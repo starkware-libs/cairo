@@ -2339,3 +2339,243 @@ error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `s
  --> lib.cairo:1:1
 #[contract]
 ^*********^
+
+//! > ==========================================================================
+
+//! > Attributes in external impl.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[generate_trait]
+    #[external(v0)]
+    impl AImpl of ATrait {
+        #[external]
+        fn foo_external(ref self: Storage) {}
+        #[l1_handler]
+        fn foo_l1_handler(ref self: Storage) {}
+        #[constructor]
+        fn foo_constructor(ref self: Storage) {}
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[generate_trait]
+    #[external(v0)]
+    impl AImpl of ATrait {
+        #[external]
+        fn foo_external(ref self: Storage) {}
+        #[l1_handler]
+        fn foo_l1_handler(ref self: Storage) {}
+        #[constructor]
+        fn foo_constructor(ref self: Storage) {}
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1497943855098052765428159941500125975725021036268295299600211708514538684495;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+    
+    #[derive(Drop, starknet::Event)] struct Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<Storage> {
+    #[external]
+        fn foo_external(ref self: Storage);
+        #[external]
+        fn foo_l1_handler(ref self: Storage);
+        #[external]
+        fn foo_constructor(ref self: Storage);
+        
+    
+}
+
+mod __external {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
+            super::AImpl::foo_external(ref storage, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
+            super::AImpl::foo_l1_handler(ref storage, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_storage();
+            super::AImpl::foo_constructor(ref storage, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+generate_trait:
+
+trait ATrait {
+    fn foo_external(ref self: Storage);
+
+    fn foo_l1_handler(ref self: Storage);
+
+    fn foo_constructor(ref self: Storage);
+}
+
+
+impls:
+
+impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop<> of Drop::<Event<>>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        Option::Some(Event {})
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The 'external' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:10:9
+        #[external]
+        ^*********^
+
+error: Plugin diagnostic: The 'l1_handler' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:12:9
+        #[l1_handler]
+        ^***********^
+
+error: Plugin diagnostic: The 'constructor' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:14:9
+        #[constructor]
+        ^************^

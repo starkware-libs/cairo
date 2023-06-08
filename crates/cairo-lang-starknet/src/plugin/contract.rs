@@ -15,9 +15,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, EVENT_ATTR,
-    EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
-    STORAGE_STRUCT_NAME,
+    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
+    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
@@ -236,6 +236,16 @@ pub fn handle_contract_by_storage(
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
+                    // TODO(yg): debug why it doesn't work.
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
+                    forbid_attribute_in_external_impl(
+                        db,
+                        &mut diagnostics,
+                        &item,
+                        CONSTRUCTOR_ATTR,
+                    );
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, L1_HANDLER_ATTR);
+
                     let ast::ImplItem::Function(item_function) = item else { continue; };
                     let function_name = RewriteNode::new_trimmed(
                         item_function.declaration(db).name(db).as_syntax_node(),
@@ -350,6 +360,22 @@ pub fn handle_contract_by_storage(
         diagnostics,
         remove_original_item: true,
     })
+}
+
+fn forbid_attribute_in_external_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    attr_name: &str,
+) {
+    if let Some(attr) = impl_item.find_attr(db, attr_name) {
+        diagnostics.push(PluginDiagnostic {
+            message: format!(
+                "The '{attr_name}' attribute is not allowed inside a contract external impl."
+            ),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
 }
 
 /// Handles a contract entrypoint function.
