@@ -397,14 +397,13 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let mut res_segment = MemBuffer::new_segment(vm);
                 let logs = self.starknet_state.logs.entry(contract_address).or_default();
 
-                let log = logs.pop_front();
-                if let Some(l) = log {
+                if let Some((keys, data)) = logs.pop_front() {
                     let keys_start_ptr = res_segment.ptr;
-                    res_segment.write_data(l.0.iter())?;
+                    res_segment.write_data(keys.iter())?;
                     let keys_end_ptr = res_segment.ptr;
 
                     let data_start_ptr = res_segment.ptr;
-                    res_segment.write_data(l.1.iter())?;
+                    res_segment.write_data(data.iter())?;
                     let data_end_ptr = res_segment.ptr;
 
                     // Option::Some variant
