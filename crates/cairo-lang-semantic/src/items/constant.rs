@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::inference::conform::InferenceConform;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;

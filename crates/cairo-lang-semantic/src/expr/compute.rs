@@ -22,6 +22,7 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use smol_str::SmolStr;
 
+use super::inference::conform::InferenceConform;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
@@ -616,7 +617,6 @@ pub fn compute_root_expr(
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    let version = ctx.resolver.inference().version;
     for (_id, expr) in ctx.exprs.iter_mut() {
         *expr = ctx
             .resolver
@@ -636,7 +636,6 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
             .rewrite(stmt.clone())
             .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
     }
-    assert!(ctx.resolver.inference().version == version, "Inference is not stable!");
     Ok(())
 }
 

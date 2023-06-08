@@ -19,6 +19,11 @@ error: Trait has no implementation in context: core::integer::NumericLiteral::<c
     let a = 'a'_Pedersen;
             ^**********^
 
+error: Type mismatch: core::hash::Pedersen and core::felt252
+ --> lib.cairo:2:13
+    let a = 'a'_Pedersen;
+            ^**********^
+
 //! > ==========================================================================
 
 //! > Literal value out of range.
