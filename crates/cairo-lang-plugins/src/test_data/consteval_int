@@ -60,30 +60,30 @@ const d: felt252 = consteval_int!(~24);
 const e: felt252 = consteval_int!(234 < 5);
 
 //! > expected_diagnostics
-error: Unsupported expression in consteval macro
- --> dummy_file.cairo:1:32
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:1:35
 const a: felt252 = consteval_int!(func_call(24));
-                               ^***********^
+                                  ^***********^
 
-error: Unsupported expression in consteval macro
- --> dummy_file.cairo:3:32
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:3:35
 const b: felt252 = consteval_int!('some string');
-                               ^***********^
+                                  ^***********^
 
-error: Unsupported unary operator in consteval macro
- --> dummy_file.cairo:5:32
+error: Unsupported unary operator in consteval_int macro
+ --> dummy_file.cairo:5:35
 const c: felt252 = consteval_int!(*24);
-                               ^*^
+                                  ^*^
 
-error: Unsupported unary operator in consteval macro
- --> dummy_file.cairo:7:32
+error: Unsupported unary operator in consteval_int macro
+ --> dummy_file.cairo:7:35
 const d: felt252 = consteval_int!(~24);
-                               ^*^
+                                  ^*^
 
-error: Unsupported binary operator in consteval macro
- --> dummy_file.cairo:9:32
+error: Unsupported binary operator in consteval_int macro
+ --> dummy_file.cairo:9:35
 const e: felt252 = consteval_int!(234 < 5);
-                               ^*****^
+                                  ^*****^
 
 //! > ==========================================================================
 
