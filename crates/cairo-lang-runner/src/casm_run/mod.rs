@@ -138,6 +138,9 @@ macro_rules! insert_value_to_cellref {
     };
 }
 
+// Log type signature
+type Log = (Vec<Felt252>, Vec<Felt252>);
+
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
@@ -148,7 +151,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, VecDeque<(Vec<Felt252>, Vec<Felt252>)>>,
+    logs: HashMap<Felt252, VecDeque<Log>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
