@@ -87,6 +87,10 @@ impl BlockUsages {
                 current.usage.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
                 current.changes.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
             }
+            Expr::LogicalOperator(expr) => {
+                self.handle_expr(function_body, expr.lhs, current);
+                self.handle_expr(function_body, expr.rhs, current);
+            }
             Expr::Block(expr) => {
                 let mut usage = Default::default();
                 for stmt in &expr.statements {
