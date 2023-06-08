@@ -83,12 +83,12 @@ pub fn lower_logical_op(
         arms: vec![
             MatchArm {
                 variant_id: corelib::false_variant(semantic_db),
-                block_id: lhs_true_block_id,
+                block_id: lhs_false_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
             MatchArm {
                 variant_id: corelib::true_variant(semantic_db),
-                block_id: lhs_false_block_id,
+                block_id: lhs_true_block_id,
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
         ],
@@ -96,7 +96,7 @@ pub fn lower_logical_op(
     builder.merge_and_end_with_match(
         ctx,
         match_info,
-        vec![sealed_block_lhs_true, sealed_block_lhs_false],
+        vec![sealed_block_lhs_false, sealed_block_lhs_true],
         location,
     )
 }
