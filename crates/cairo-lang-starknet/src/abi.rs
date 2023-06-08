@@ -22,7 +22,9 @@ use smol_str::SmolStr;
 use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
-use crate::plugin::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR};
+use crate::plugin::consts::{
+    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+};
 use crate::plugin::events::{EventData, EventFieldKind};
 
 #[cfg(test)]
@@ -133,8 +135,9 @@ impl AbiBuilder {
 
         // Add events.
         for (id, enm) in db.module_enums(module_id).unwrap_or_default() {
-            // TODO(yuval): Enforce an event attr.
-            if enm.name(db.upcast()).text(db.upcast()) == "Event" {
+            if enm.name(db.upcast()).text(db.upcast()) == "Event"
+                && enm.has_attr(db.upcast(), EVENT_ATTR)
+            {
                 // Check that the enum has no generic parameters.
                 if !db.enum_generic_params(id).unwrap_or_default().is_empty() {
                     return Err(ABIError::EventWithGenericParams);

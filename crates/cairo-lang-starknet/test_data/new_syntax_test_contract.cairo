@@ -27,6 +27,7 @@ mod CounterContract {
         other_contract: IOtherContractDispatcher
     }
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         CounterIncreased: CounterIncreased,

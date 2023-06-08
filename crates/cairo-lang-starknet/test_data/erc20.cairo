@@ -34,6 +34,7 @@ mod ERC20 {
         allowances: LegacyMap::<(ContractAddress, ContractAddress), u256>,
     }
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         Transfer: Transfer,
