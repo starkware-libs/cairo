@@ -29,6 +29,7 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         AwesomeEvent: AwesomeEvent,
@@ -79,6 +80,7 @@ mod TestContract {
     #[l1_handler]
     fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         AwesomeEvent: AwesomeEvent,
@@ -106,7 +108,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 758675051713118498812552011090249941800997844597010736827390342607429663711;
+const TEST_CLASS_HASH: felt252 = 1644041232550524306404793345452736401931936104160816453391339354962026639546;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct Storage {
@@ -116,7 +118,7 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
+
     
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {

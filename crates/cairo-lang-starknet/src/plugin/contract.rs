@@ -16,7 +16,7 @@ use indoc::formatdoc;
 
 use super::consts::{
     ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
-    EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
     L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
@@ -132,11 +132,46 @@ pub fn handle_contract_by_storage(
         {
             continue;
         }
-        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == "Event")
-            || matches!(&item, ast::Item::Enum(item) if item.name(db).text(db) == "Event")
-        {
-            has_event = true;
+
+        let has_event_attr = item.has_attr(db, EVENT_ATTR);
+        let event_name_info = match &item {
+            ast::Item::Struct(strct) => {
+                Some((strct.name(db).text(db) == "Event", strct.name(db).stable_ptr().untyped()))
+            }
+            ast::Item::Enum(enm) => {
+                Some((enm.name(db).text(db) == "Event", enm.name(db).stable_ptr().untyped()))
+            }
+            _ => None,
+        };
+        if let Some((has_event_name, stable_ptr)) = event_name_info {
+            match (has_event_attr, has_event_name) {
+                (true, false) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is marked with #[{EVENT_ATTR}] must be named \
+                             `Event`."
+                        ),
+                        stable_ptr,
+                    });
+                }
+                (false, true) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is named `Event` must be marked with \
+                             #[{EVENT_ATTR}]."
+                        ),
+                        stable_ptr,
+                    });
+                    // The attribute is missing, but we still can't create an empty event.
+                    has_event = true;
+                }
+                (true, true) => {
+                    has_event = true;
+                }
+                (false, false) => {}
+            }
         }
+
         kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
         if let Some(ident) = match item {
             ast::Item::Constant(item) => Some(item.name(db)),

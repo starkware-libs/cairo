@@ -68,8 +68,8 @@ use starknet::event::EventEmitter;
             mapping: mapping::Storage{},
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -216,8 +216,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -370,8 +370,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -528,8 +528,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -701,8 +701,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -866,8 +866,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -950,10 +950,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:7:9
-        let x = 1;
-        ^********^
 
 //! > ==========================================================================
 
@@ -999,8 +995,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1083,10 +1079,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:23
-    fn with_ref_param(ref x: felt252, y: u128) {
-                      ^*^
 
 //! > ==========================================================================
 
@@ -1132,8 +1124,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1216,10 +1208,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:6:27
+error: Unexpected return type. Expected: "core::felt252", found: "()".
+ --> lib.cairo:6:38
     fn nonunit_ret_type() -> felt252 {
-                          ^********^
+                                     ^
 
 //! > ==========================================================================
 
@@ -1265,8 +1257,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1349,10 +1341,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions cannot have generic arguments
- --> lib.cairo:6:21
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<T>. Trait has no implementation in context: core::traits::Destruct::<T>.
+ --> lib.cairo:6:25
     fn generic_event<T>(x: T) {
-                    ^*^
+                        ^
 
 //! > ==========================================================================
 
@@ -1400,8 +1392,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1484,25 +1476,6 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Event functions must not return a value.
- --> lib.cairo:6:73
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                                                                        ^********^
-
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:18
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                 ^*^
-
-error: Plugin diagnostic: `ref` parameters are not supported in contract events.
- --> lib.cairo:6:34
-    fn bad_event(ref x: felt252, ref y: felt252, z: (felt252, felt252)) -> felt252 {
-                                 ^*^
-
-error: Plugin diagnostic: Event function body must be empty.
- --> lib.cairo:7:9
-        3
-        ^
 
 //! > ==========================================================================
 
@@ -1558,8 +1531,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -1827,8 +1800,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2009,8 +1982,8 @@ use starknet::event::EventEmitter;
             same_name: same_name::Storage{},
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2262,8 +2235,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2473,8 +2446,8 @@ use starknet::event::EventEmitter;
         Storage {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] struct Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
@@ -2618,7 +2591,7 @@ impl StorageDrop<> of Drop::<Storage<>>;
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
@@ -2627,11 +2600,15 @@ impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_values(
         self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref values: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 
@@ -2650,3 +2627,308 @@ error: Plugin diagnostic: The 'constructor' attribute is not allowed inside a co
  --> lib.cairo:14:9
         #[constructor]
         ^************^
+
+//! > ==========================================================================
+
+//! > "Event" enum without #[event].
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 630648468733378027508723437737677651831264605311973040547153568922485258761;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+    
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<Storage> {
+    
+    
+}
+
+mod __external {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
+    }
+}
+
+
+impls:
+
+impl StorageDrop<> of Drop::<Storage<>>;
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
+ --> lib.cairo:8:10
+    enum Event {
+         ^***^
+
+//! > ==========================================================================
+
+//! > #[event] enum that isn't named "Event".
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum MyEvent {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum MyEvent {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+const TEST_CLASS_HASH: felt252 = 1582029945692481340710966191082993519925188868684819773595331942685503258042;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct Storage {
+    }
+    #[inline(always)]
+    fn unsafe_new_storage() -> Storage {
+        Storage {
+        }
+    }
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl StorageEventEmitter of EventEmitter<Storage, Event> {
+        fn emit(ref self: Storage, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut values = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@values),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<Storage> {
+    
+    
+}
+
+mod __external {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl MyEventDrop of Drop::<MyEvent>;
+
+
+event_impl:
+
+impl MyEventIsEvent of starknet::Event<MyEvent> {
+    fn append_keys_and_values(
+        self: @MyEvent, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<MyEvent> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
+    }
+}
+
+
+impls:
+
+impl StorageDrop<> of Drop::<Storage<>>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_values(
+        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref values: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
+ --> lib.cairo:9:10
+    enum MyEvent {
+         ^*****^
