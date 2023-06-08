@@ -15,8 +15,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, IMPL_ATTR,
-    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, EVENT_ATTR,
+    EXTERNAL_MODULE, IMPL_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
+    STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
 use super::events::handle_event;
@@ -27,9 +28,23 @@ use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// Handles a contract module item.
 pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+    if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: format!(
+                    "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
+                     `{CONTRACT_ATTR}` instead.",
+                ),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
     if !module_ast.has_attr(db, CONTRACT_ATTR) {
         return PluginResult::default();
     }
+
     let MaybeModuleBody::Some(body) = module_ast.body(db) else {
         return PluginResult {
             code: None,
