@@ -17,14 +17,6 @@ use smol_str::SmolStr;
 use super::aux_data::StarkNetEventAuxData;
 use crate::contract::starknet_keccak;
 
-/// Removes `#[event]` decorated functions from the contract.
-pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody) -> PluginResult {
-    if !function_ast.has_attr(db, "event") {
-        return PluginResult::default();
-    }
-    PluginResult { remove_original_item: true, ..Default::default() }
-}
-
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EventData {

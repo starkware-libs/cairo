@@ -41,6 +41,7 @@ mod TokenBridge {
         l2_token: ContractAddress,
     }
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         L1BridgeSet: L1BridgeSet,

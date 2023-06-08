@@ -60,8 +60,8 @@ use starknet::event::EventEmitter;
             balance: balance::Storage{},
         }
     }
-    
-    #[derive(Drop, starknet::Event)] enum Event {}
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {

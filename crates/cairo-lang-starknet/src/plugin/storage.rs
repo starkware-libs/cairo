@@ -86,7 +86,7 @@ pub fn handle_storage_struct(
         }
     }
     let empty_event_code =
-        if has_event { "" } else { "#[derive(Drop, starknet::Event)] enum Event {}\n" };
+        if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
@@ -99,7 +99,7 @@ pub fn handle_storage_struct(
                     Storage {{$member_init_code$
                     }}
                 }}
-                
+
                 $empty_event_code$
                 impl StorageEventEmitter of EventEmitter<Storage, Event> {{
                     fn emit(ref self: Storage, event: Event) {{
