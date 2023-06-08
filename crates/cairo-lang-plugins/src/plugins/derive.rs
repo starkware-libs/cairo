@@ -1,12 +1,10 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::attribute::{AttributeArg, AttributeArgVariant, AttributeStructurize};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
 use cairo_lang_syntax::node::ast::{
     AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList,
 };

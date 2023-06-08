@@ -1,10 +1,8 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::attribute::{AttributeArg, AttributeArgVariant, AttributeStructurize};
 use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
 use cairo_lang_semantic::plugin::TrivialPluginAuxData;
-use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};

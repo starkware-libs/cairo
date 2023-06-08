@@ -1,11 +1,11 @@
 use std::iter::zip;
 use std::sync::Arc;
 
+use cairo_lang_defs::attribute::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
-use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
     Expr, GenericArg, ImplItem, ItemImpl, OptionWrappedGenericParamList,
 };

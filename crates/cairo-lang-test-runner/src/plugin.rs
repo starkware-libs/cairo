@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use cairo_lang_defs::attribute::AttributeListStructurize;
 use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
 use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin};
-use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 

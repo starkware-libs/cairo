@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::attribute::{Attribute, AttributeListStructurize};
 use cairo_lang_defs::ids::{
     FunctionTitleId, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
     LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
@@ -13,7 +14,6 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
-use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::ast::{self, ImplItem, MaybeImplBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
