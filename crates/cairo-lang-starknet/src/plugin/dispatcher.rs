@@ -12,11 +12,24 @@ use indoc::formatdoc;
 use super::aux_data::StarkNetABIAuxData;
 use super::consts::{CALLDATA_PARAM_NAME, EVENT_ATTR};
 use super::utils::is_ref_param;
-use super::INTERFACE_ATTR;
+use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR};
 use crate::contract::starknet_keccak;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
+    if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: format!(
+                    "The '{DEPRECATED_ABI_ATTR}' attribute was deprecated, please use \
+                     `{INTERFACE_ATTR}` instead.",
+                ),
+                stable_ptr: trait_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
     if !trait_ast.has_attr(db, INTERFACE_ATTR) {
         return PluginResult::default();
     }
