@@ -4830,6 +4830,67 @@
           "type": "core::starknet::contract_address::ContractAddress"
         }
       ]
+    },
+    {
+      "type": "event",
+      "name": "erc20::erc20::ERC20::Transfer",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "from",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "to",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "value",
+          "type": "core::integer::u256",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "erc20::erc20::ERC20::Approval",
+      "kind": "struct",
+      "members": [
+        {
+          "name": "owner",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "spender",
+          "type": "core::starknet::contract_address::ContractAddress",
+          "kind": "ValueSerde"
+        },
+        {
+          "name": "value",
+          "type": "core::integer::u256",
+          "kind": "ValueSerde"
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "erc20::erc20::ERC20::Event",
+      "kind": "enum",
+      "variants": [
+        {
+          "name": "Transfer",
+          "type": "erc20::erc20::ERC20::Transfer",
+          "kind": "Nested"
+        },
+        {
+          "name": "Approval",
+          "type": "erc20::erc20::ERC20::Approval",
+          "kind": "Nested"
+        }
+      ]
     }
   ]
 }

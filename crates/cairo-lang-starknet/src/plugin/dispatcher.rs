@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 
 use super::aux_data::StarkNetABIAuxData;
-use super::consts::{CALLDATA_PARAM_NAME, EVENT_ATTR};
+use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::is_ref_param;
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR};
 use crate::contract::starknet_keccak;
@@ -58,11 +58,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     for item_ast in body.items(db).elements(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
-                // Ignore events.
-                if func.has_attr(db, EVENT_ATTR) {
-                    continue;
-                }
-
                 let declaration = func.declaration(db);
 
                 let mut skip_generation = false;
