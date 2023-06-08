@@ -22,7 +22,7 @@ fn test_ec_operations() {
     let p_nz = ec_point_non_zero(p);
     let (x, y) = ec_point_unwrap(p_nz);
     assert_eq(x, 1, 'x != 1');
-    assert((y == beta_p2_root) | (y == -beta_p2_root), 'y is wrong');
+    assert(y == beta_p2_root || y == -beta_p2_root, 'y is wrong');
 
     let mut state = ec_state_init();
     ec_state_add(ref state, p_nz);
@@ -49,7 +49,7 @@ fn test_ec_operations() {
         75984168971785666410219869038140038216102669781812169677875295511117260233,
         'bad double x'
     );
-    assert((double_y == expected_double_y) | (double_y == -expected_double_y), 'bad double y');
+    assert(double_y == expected_double_y || double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
     let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));

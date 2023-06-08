@@ -1020,9 +1020,8 @@ fn u256_overflow_mul(lhs: u256, rhs: u256) -> (u256, bool) {
     let (high, overflow) = match u128_overflowing_add(high1, high2) {
         Result::Ok(high) => (
             high,
-            (overflow_value1 != 0_u128)
-                | (overflow_value2 != 0_u128)
-                | ((lhs.high > 0_u128) & (rhs.high > 0_u128))
+            overflow_value1 != 0_u128 || (overflow_value2 != 0_u128) || ((lhs
+                .high > 0_u128) && (rhs.high > 0_u128))
         ),
         Result::Err(high) => (high, true),
     };

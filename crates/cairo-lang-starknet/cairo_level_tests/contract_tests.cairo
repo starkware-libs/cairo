@@ -367,8 +367,7 @@ fn test_dispatcher_serde() {
     serde::Serde::serialize(@contract0, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
-        (calldata_span.len() == 1)
-            | (*calldata_span.pop_front().unwrap() == contract_address.into()),
+        calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == contract_address.into(),
         'Serialize to 0'
     );
 
@@ -386,7 +385,7 @@ fn test_dispatcher_serde() {
     serde::Serde::serialize(@contract1, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
-        (calldata_span.len() == 1) | (*calldata_span.pop_front().unwrap() == class_hash.into()),
+        calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == class_hash.into(),
         'Serialize to class_hash'
     );
 
