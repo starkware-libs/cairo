@@ -447,9 +447,8 @@ End:
 
 blk2:
 Statements:
-  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk1, {v4 -> v0})
+  Goto(blk6, {})
 
 blk3:
 Statements:
@@ -462,6 +461,17 @@ Statements:
   (v6: ()) <- struct_construct()
 End:
   Goto(blk3, {v5 -> v3, v6 -> v2})
+
+blk5:
+Statements:
+End:
+  Goto(blk1, {v4 -> v0})
+
+blk6:
+Statements:
+  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+End:
+  Goto(blk5, {v7 -> v4})
 
 //! > lowering_diagnostics
 

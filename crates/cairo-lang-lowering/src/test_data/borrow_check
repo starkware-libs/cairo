@@ -213,16 +213,16 @@ use traits::Into;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v10: core::RangeCheck
+Parameters: v11: core::RangeCheck
 blk0 (root):
 Statements:
-  (v6: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
+  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
   (v1: core::felt252) <- 1u
-  (v14: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v10, v1)
-  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v6, v7)
+  (v17: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v11, v1)
+  (v9: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v8, v7)
   (v5: ()) <- struct_construct()
 End:
-  Return(v14, v5)
+  Return(v17, v5)
 
 //! > ==========================================================================
 

@@ -58,6 +58,10 @@ fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
 #[generate_trait]
 impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
+    fn new() -> Array<T> {
+        array_new()
+    }
+    #[inline(always)]
     fn append(ref self: Array<T>, value: T) {
         array_append(ref self, value)
     }
@@ -92,7 +96,7 @@ impl ArrayImpl<T> of ArrayTrait<T> {
 impl ArrayDefault<T> of Default<Array<T>> {
     #[inline(always)]
     fn default() -> Array<T> {
-        array_new()
+        ArrayTrait::new()
     }
 }
 
