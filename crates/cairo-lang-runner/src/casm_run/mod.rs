@@ -6,7 +6,7 @@ use std::ops::{Deref, Shl};
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{BigInteger, Field, PrimeField};
 use ark_std::UniformRand;
-use cairo_felt::{felt_str as felt252_str, Felt252, PRIME_STR};
+use cairo_felt::{felt_str as felt252_str, Felt252};
 use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
@@ -21,6 +21,7 @@ use cairo_vm::serde::deserialize_program::{
 use cairo_vm::types::exec_scope::ExecutionScopes;
 use cairo_vm::types::program::Program;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
@@ -202,7 +203,8 @@ fn get_maybe_from_addr(
     vm: &VirtualMachine,
     addr: Relocatable,
 ) -> Result<MaybeRelocatable, VirtualMachineError> {
-    vm.get_maybe(&addr).ok_or_else(|| VirtualMachineError::InvalidMemoryValueTemporaryAddress(addr))
+    vm.get_maybe(&addr)
+        .ok_or_else(|| VirtualMachineError::InvalidMemoryValueTemporaryAddress(Box::new(addr)))
 }
 
 /// Fetches the maybe relocatable value of a cell from the vm.
@@ -1810,9 +1812,9 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
-    ) -> Result<(), Box<VirtualMachineError>>,
+    ) -> Result<(), Box<CairoRunError>>,
     starknet_state: StarknetState,
-) -> Result<RunFunctionRes, Box<VirtualMachineError>> {
+) -> Result<RunFunctionRes, Box<CairoRunError>> {
     let data: Vec<MaybeRelocatable> = instructions
         .clone()
         .flat_map(|inst| inst.assemble().encode())
@@ -1823,32 +1825,31 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
     let mut hint_processor = CairoHintProcessor::new(runner, instructions, starknet_state);
 
     let data_len = data.len();
-    let program = Program {
+    let program = Program::new(
         builtins,
-        prime: PRIME_STR.to_string(),
         data,
-        constants: HashMap::new(),
-        main: Some(0),
-        start: None,
-        end: None,
-        hints: hint_processor.hints_dict.clone(),
-        reference_manager: ReferenceManager { references: Vec::new() },
-        identifiers: HashMap::new(),
-        error_message_attributes: vec![],
-        instruction_locations: None,
-    };
+        Some(0),
+        hint_processor.hints_dict.clone(),
+        ReferenceManager { references: Vec::new() },
+        HashMap::new(),
+        vec![],
+        None,
+    )
+    .map_err(CairoRunError::from)?;
     let mut runner = CairoRunner::new(&program, "all_cairo", false)
-        .map_err(VirtualMachineError::from)
+        .map_err(CairoRunError::from)
         .map_err(Box::new)?;
     let mut vm = VirtualMachine::new(true);
 
-    let end = runner.initialize(&mut vm).map_err(VirtualMachineError::from).map_err(Box::new)?;
+    let end = runner.initialize(&mut vm).map_err(CairoRunError::from)?;
 
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
-    runner.run_until_pc(end, &mut vm, &mut hint_processor)?;
-    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(Box::new)?;
-    runner.relocate(&mut vm, true).map_err(VirtualMachineError::from).map_err(Box::new)?;
+    runner
+        .run_until_pc(end, &mut None, &mut vm, &mut hint_processor)
+        .map_err(CairoRunError::from)?;
+    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(CairoRunError::from)?;
+    runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((
         runner.relocated_memory,
         vm.get_relocated_trace().unwrap().last().unwrap().ap,
