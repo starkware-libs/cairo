@@ -76,13 +76,13 @@ impl TwoMemberStructDestruct<> of Destruct::<TwoMemberStruct<>> {
 }
 impl TwoMemberStructPartialEq<> of PartialEq::<TwoMemberStruct<>> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
+    fn eq(lhs: @TwoMemberStruct<>, rhs: @TwoMemberStruct<>) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
+    fn ne(lhs: @TwoMemberStruct<>, rhs: @TwoMemberStruct<>) -> bool {
         !(lhs == rhs)
     }
 }
@@ -134,13 +134,13 @@ impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TC
 }
 impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl TPartialEq: PartialEq<T>, impl TDestruct: Destruct<T>, impl UPartialEq: PartialEq<U>, impl UDestruct: Destruct<U>> of PartialEq::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+    fn eq(lhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+    fn ne(lhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
         !(lhs == rhs)
     }
 }
@@ -181,7 +181,7 @@ impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
     }
 }
 impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
-    fn eq(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+    fn eq(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         match lhs {
             TwoVariantEnum::First(x) => match rhs {
                 TwoVariantEnum::First(y) => x == y,
@@ -194,7 +194,7 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
         }
     }
     #[inline(always)]
-    fn ne(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+    fn ne(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         !(lhs == rhs)
     }
 }

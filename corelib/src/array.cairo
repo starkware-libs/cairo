@@ -9,6 +9,7 @@ extern type Array<T>;
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
+extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
 extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
@@ -19,41 +20,6 @@ extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
-
-impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>> {
-    fn serialize(self: @Array<T>, ref output: Array<felt252>) {
-        self.len().serialize(ref output);
-        serialize_array_helper(self.span(), ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
-        let length = *serialized.pop_front()?;
-        let mut arr = Default::default();
-        deserialize_array_helper(ref serialized, arr, length)
-    }
-}
-
-
-fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
-    mut input: Span<T>, ref output: Array<felt252>
-) {
-    match input.pop_front() {
-        Option::Some(value) => {
-            value.serialize(ref output);
-            serialize_array_helper(input, ref output);
-        },
-        Option::None(_) => {},
-    }
-}
-
-fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
-    ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
-) -> Option<Array<T>> {
-    if remaining == 0 {
-        return Option::Some(curr_output);
-    }
-    curr_output.append(TSerde::deserialize(ref serialized)?);
-    deserialize_array_helper(ref serialized, curr_output, remaining - 1)
-}
 
 #[generate_trait]
 impl ArrayImpl<T> of ArrayTrait<T> {
@@ -69,6 +35,13 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
             Option::Some(x) => Option::Some(x.unbox()),
+            Option::None(_) => Option::None(()),
+        }
+    }
+    #[inline(always)]
+    fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
+        match array_pop_front_consume(self) {
+            Option::Some((arr, x)) => Option::Some((arr, x.unbox())),
             Option::None(_) => Option::None(()),
         }
     }
@@ -104,6 +77,40 @@ impl ArrayIndex<T> of IndexView<Array<T>, usize, @T> {
     fn index(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
     }
+}
+
+impl ArraySerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Array<T>> {
+    fn serialize(self: @Array<T>, ref output: Array<felt252>) {
+        self.len().serialize(ref output);
+        serialize_array_helper(self.span(), ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
+        let length = *serialized.pop_front()?;
+        let mut arr = Default::default();
+        deserialize_array_helper(ref serialized, arr, length)
+    }
+}
+
+fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+    mut input: Span<T>, ref output: Array<felt252>
+) {
+    match input.pop_front() {
+        Option::Some(value) => {
+            value.serialize(ref output);
+            serialize_array_helper(input, ref output);
+        },
+        Option::None(_) => {},
+    }
+}
+
+fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
+    ref serialized: Span<felt252>, mut curr_output: Array<T>, remaining: felt252
+) -> Option<Array<T>> {
+    if remaining == 0 {
+        return Option::Some(curr_output);
+    }
+    curr_output.append(TSerde::deserialize(ref serialized)?);
+    deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
 
 // Impls for common generic types

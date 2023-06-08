@@ -933,7 +933,9 @@ End:
 
 blk2:
 Statements:
-  (v3: core::integer::u128) <- 1u
+  (v3: core::integer::u128, v4: @core::integer::u128) <- snapshot(v0)
+  (v5: core::integer::u128) <- 1u
+  (v6: core::integer::u128, v7: @core::integer::u128) <- snapshot(v5)
 End:
   Goto(blk7, {})
 
@@ -950,53 +952,55 @@ End:
 blk5:
 Statements:
 End:
-  Goto(blk1, {v0 -> v2})
+  Goto(blk1, {v3 -> v2})
 
 blk6:
 Statements:
 End:
-  Match(match_enum(v4) {
-    bool::False(v5) => blk4,
-    bool::True(v6) => blk3,
+  Match(match_enum(v8) {
+    bool::False(v9) => blk4,
+    bool::True(v10) => blk3,
   })
 
 blk7:
 Statements:
+  (v12: core::integer::u128) <- desnap(v4)
+  (v13: core::integer::u128) <- desnap(v7)
 End:
-  Match(match core::integer::u128_eq(v0, v3) {
+  Match(match core::integer::u128_eq(v12, v13) {
     bool::False => blk8,
     bool::True => blk9,
   })
 
 blk8:
 Statements:
-  (v8: ()) <- struct_construct()
-  (v9: core::bool) <- bool::False(v8)
+  (v14: ()) <- struct_construct()
+  (v15: core::bool) <- bool::False(v14)
 End:
-  Goto(blk10, {v9 -> v10})
+  Goto(blk10, {v15 -> v16})
 
 blk9:
 Statements:
-  (v11: ()) <- struct_construct()
-  (v12: core::bool) <- bool::True(v11)
+  (v17: ()) <- struct_construct()
+  (v18: core::bool) <- bool::True(v17)
 End:
-  Goto(blk10, {v12 -> v10})
+  Goto(blk10, {v18 -> v16})
 
 blk10:
 Statements:
 End:
-  Goto(blk6, {v10 -> v4})
+  Goto(blk6, {v16 -> v8})
 
 blk11:
 Statements:
 End:
-  Goto(blk1, {v7 -> v2})
+  Goto(blk1, {v11 -> v2})
 
 blk12:
 Statements:
-  (v13: core::integer::u128) <- core::integer::U128Add::add(v1, v0)
+  (v19: core::integer::u128) <- core::integer::U128Add::add(v1, v3)
 End:
-  Goto(blk11, {v13 -> v7})
+  Goto(blk11, {v19 -> v11})
 
 //! > lowering_diagnostics
 

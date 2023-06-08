@@ -50,11 +50,11 @@ impl ClassHashSerde of serde::Serde<ClassHash> {
 
 impl ClassHashPartialEq of PartialEq<ClassHash> {
     #[inline(always)]
-    fn eq(lhs: ClassHash, rhs: ClassHash) -> bool {
-        class_hash_to_felt252(lhs) == class_hash_to_felt252(rhs)
+    fn eq(lhs: @ClassHash, rhs: @ClassHash) -> bool {
+        class_hash_to_felt252(*lhs) == class_hash_to_felt252(*rhs)
     }
     #[inline(always)]
-    fn ne(lhs: ClassHash, rhs: ClassHash) -> bool {
+    fn ne(lhs: @ClassHash, rhs: @ClassHash) -> bool {
         !(lhs == rhs)
     }
 }
