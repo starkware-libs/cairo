@@ -23,66 +23,66 @@ mod TestContract {
     use traits::Into;
     use starknet::StorageAddress;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         value: felt252,
         mapping: LegacyMap::<u128, bool>,
         large_mapping: LegacyMap::<u256, u256>,
     }
 
-    #[starknet::external]
+    #[external]
     fn get_plus_2(self: @Storage, a: felt252) -> felt252 {
         a + 2
     }
 
-    #[starknet::external]
+    #[external]
     fn spend_all_gas(self: @Storage) {
         spend_all_gas(self);
     }
 
-    #[starknet::external]
+    #[external]
     fn get_appended_array(self: @Storage, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
     }
 
-    #[starknet::external]
+    #[external]
     fn set_value(ref self: Storage, a: felt252) {
         self.value.write(a);
     }
 
-    #[starknet::external]
+    #[external]
     fn get_value(self: @Storage, ) -> felt252 {
         self.value.read()
     }
 
-    #[starknet::external]
+    #[external]
     fn insert(ref self: Storage, key: u128) {
         self.mapping.write(key, true)
     }
 
-    #[starknet::external]
+    #[external]
     fn remove(ref self: Storage, key: u128) {
         self.mapping.write(key, false)
     }
 
-    #[starknet::external]
+    #[external]
     fn contains(self: @Storage, key: u128) -> bool {
         self.mapping.read(key)
     }
 
-    #[starknet::external]
+    #[external]
     fn set_large(ref self: Storage, key: u256, value: u256) {
         self.large_mapping.write(key, value)
     }
 
-    #[starknet::external]
+    #[external]
     fn get_large(self: @Storage, key: u256) -> u256 {
         self.large_mapping.read(key)
     }
 
-    #[starknet::external]
+    #[external]
     fn test_storage_address(self: @Storage, storage_address: StorageAddress) -> StorageAddress {
         storage_address
     }
