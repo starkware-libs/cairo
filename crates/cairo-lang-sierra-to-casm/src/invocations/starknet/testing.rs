@@ -96,7 +96,7 @@ pub fn build(
             return Ok(builder.build_from_casm_builder(
                 casm_builder,
                 [
-                    ("Fallthrough", &[&[keys_start, keys_end, data_start, data_end]], None),
+                    ("Fallthrough", &[&[keys_start, keys_end], &[data_start, data_end]], None),
                     ("None", &[], Some(none_variant_id)),
                 ],
                 CostValidationInfo::default(),

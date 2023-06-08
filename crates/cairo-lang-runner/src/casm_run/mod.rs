@@ -148,7 +148,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, VecDeque<Log>>,
+    logs: HashMap<Felt252, VecDeque<(Vec<Felt252>, Vec<Felt252>)>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -158,12 +158,6 @@ impl StarknetState {
         self.next_id += Felt252::from(1);
         self.next_id.clone()
     }
-}
-
-#[derive(Clone, Default)]
-struct Log {
-    keys: Vec<Felt252>,
-    data: Vec<Felt252>,
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -403,11 +397,11 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let log = logs.pop_front();
                 if let Some(l) = log {
                     let keys_start_ptr = res_segment.ptr;
-                    res_segment.write_data(l.keys.iter())?;
+                    res_segment.write_data(l.0.iter())?;
                     let keys_end_ptr = res_segment.ptr;
 
                     let data_start_ptr = res_segment.ptr;
-                    res_segment.write_data(l.data.iter())?;
+                    res_segment.write_data(l.1.iter())?;
                     let data_end_ptr = res_segment.ptr;
 
                     // Option::Some variant
@@ -840,9 +834,8 @@ impl<'a> CairoHintProcessor<'a> {
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
-        let log = Log { keys, data };
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_front(log);
+        self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
 

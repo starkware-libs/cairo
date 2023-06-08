@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
+use super::felt252_span_ty;
 use super::interoperability::ContractAddressType;
-use super::{felt252_span_ty, ArrayType};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
@@ -10,13 +10,11 @@ use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext,
 };
-use crate::extensions::structure::StructType;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
 };
-use crate::ids::{ConcreteTypeId, UserTypeId};
-use crate::program::GenericArg;
+use crate::ids::ConcreteTypeId;
 /// Trait for implementing test setters.
 pub trait TestSetterTraits: Default {
     /// The generic libfunc id for the setter libfunc.
@@ -166,15 +164,22 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+        let span_ty = felt252_span_ty(context)?;
+
         Ok(LibfuncSignature {
             param_signatures: vec![ParamSignature::new(contract_address_ty)],
             branch_signatures: vec![
                 // Some variant branch.
                 BranchSignature {
                     vars: vec![
-                        // Log
+                        // keys
                         OutputVarInfo {
-                            ty: get_log_type(context)?,
+                            ty: span_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                        },
+                        // data
+                        OutputVarInfo {
+                            ty: span_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                         },
                     ],
@@ -189,26 +194,6 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
             fallthrough: Some(0),
         })
     }
-}
-
-/// Helper for Log type def.
-fn get_log_type(
-    context: &dyn SignatureSpecializationContext,
-) -> Result<ConcreteTypeId, SpecializationError> {
-    let felt252_array_ty = context.get_wrapped_concrete_type(
-        ArrayType::id(),
-        context.get_concrete_type(Felt252Type::id(), &[])?,
-    )?;
-    context.get_concrete_type(
-        StructType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string("core::starknet::testing::Log")),
-            // keys
-            GenericArg::Type(felt252_array_ty.clone()),
-            // data
-            GenericArg::Type(felt252_array_ty),
-        ],
-    )
 }
 
 define_libfunc_hierarchy! {
