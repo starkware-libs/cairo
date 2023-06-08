@@ -11,11 +11,11 @@ use integer::BoundedInt;
 use zeroable::Zeroable;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
-    fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs)
+    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
     }
-    fn ne(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        !(storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs))
+    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
     }
 }
 

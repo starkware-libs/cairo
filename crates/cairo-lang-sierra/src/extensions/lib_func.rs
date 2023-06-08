@@ -336,6 +336,14 @@ impl ParamSignature {
         self.allow_const = true;
         self
     }
+
+    /// Returns a modified version of [ParamSignature], with all attributes set.
+    pub fn with_allow_all(mut self) -> Self {
+        self.allow_add_const = true;
+        self.allow_deferred = true;
+        self.allow_const = true;
+        self
+    }
 }
 impl From<ConcreteTypeId> for ParamSignature {
     fn from(ty: ConcreteTypeId) -> Self {
