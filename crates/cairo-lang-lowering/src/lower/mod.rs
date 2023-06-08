@@ -20,13 +20,13 @@ use semantic::{
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
-use self::binary_op::lower_logical_op;
 use self::block_builder::SealedBlockBuilder;
 use self::context::{
     lowering_flow_error_to_sealed_block, EncapsulatingLoweringContext, LoweredExpr,
     LoweredExprExternEnum, LoweringContext, LoweringFlowError,
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
+use self::logical_op::lower_logical_op;
 use self::lower_if::lower_expr_if;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -40,11 +40,11 @@ use crate::{
     BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
 };
 
-mod binary_op;
 mod block_builder;
 pub mod context;
 mod external;
 pub mod generators;
+mod logical_op;
 mod lower_if;
 pub mod refs;
 pub mod usage;

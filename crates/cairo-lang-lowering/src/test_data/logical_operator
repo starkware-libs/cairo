@@ -28,32 +28,32 @@ Statements:
 End:
   Match(match_enum(v0) {
     bool::False(v9) => blk1,
-    bool::True(v10) => blk4,
+    bool::True(v10) => blk2,
   })
 
 blk1:
 Statements:
 End:
-  Match(match test::extern_get_bool() {
-    bool::False => blk2,
-    bool::True => blk3,
-  })
+  Goto(blk4, {})
 
 blk2:
 Statements:
 End:
-  Goto(blk5, {})
+  Match(match test::extern_get_bool() {
+    bool::False => blk3,
+    bool::True => blk5,
+  })
 
 blk3:
+Statements:
+End:
+  Goto(blk4, {})
+
+blk4:
 Statements:
   (v14: core::bool) <- test::get_bool()
 End:
   Goto(blk6, {v14 -> v17})
-
-blk4:
-Statements:
-End:
-  Goto(blk5, {})
 
 blk5:
 Statements:
