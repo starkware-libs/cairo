@@ -29,7 +29,7 @@ error: Unexpected return type. Expected: "()", found: "core::bool".
 fn foo() {
          ^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Type mismatch: core::bool and core::felt252
  --> lib.cairo:6:9
         0
         ^

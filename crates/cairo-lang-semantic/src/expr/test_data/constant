@@ -99,7 +99,7 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Type mismatch: core::bool and core::felt252
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^

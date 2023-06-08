@@ -20,7 +20,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Type mismatch: core::bool and core::felt252
  --> lib.cairo:6:19
             break 0;
                   ^

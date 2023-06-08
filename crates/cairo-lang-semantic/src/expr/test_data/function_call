@@ -150,7 +150,7 @@ error: Method `bar` not found on type "test::MyStruct". Did you import the corre
     d.bar();
       ^*^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<test::MyStruct>
+error: Type mismatch: test::MyStruct and core::felt252
  --> lib.cairo:5:9
     d + 0;
         ^
