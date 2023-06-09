@@ -222,9 +222,10 @@ pub fn priv_trait_semantic_declaration_data(
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         // TODO: Better location.
-        inference_err.report(&mut diagnostics, trait_ast.stable_ptr().untyped());
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }
     let generic_params = resolver
         .inference()

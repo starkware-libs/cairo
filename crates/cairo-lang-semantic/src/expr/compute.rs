@@ -271,7 +271,8 @@ fn compute_expr_unary_semantic(
     if let UnaryOperator::Desnap(_) = unary_op {
         let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
             TypeLongId::Var(_) => {
-                let desnapped_var = ctx.resolver.inference().new_type_var(syntax.stable_ptr().0);
+                let desnapped_var =
+                    ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr().untyped()));
                 let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
                 if ctx.resolver.inference().conform_ty(snapped_desnapped_var, expr_ty).is_err() {
                     return Err(ctx.diagnostics.report(
@@ -314,7 +315,7 @@ fn compute_expr_unary_semantic(
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
-            syntax.stable_ptr().untyped(),
+            Some(syntax.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
 
@@ -436,7 +437,7 @@ fn call_core_binary_op(
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
-            syntax.stable_ptr().untyped(),
+            Some(syntax.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
 
@@ -532,13 +533,17 @@ fn compute_expr_function_call_semantic(
                 .infer_trait_generic_function(
                     trait_function,
                     &impl_lookup_context,
-                    path.stable_ptr().untyped(),
+                    Some(path.stable_ptr().untyped()),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             let function_id = ctx
                 .resolver
                 .inference()
-                .infer_generic_function(generic_function, &impl_lookup_context)
+                .infer_generic_function(
+                    generic_function,
+                    &impl_lookup_context,
+                    Some(path.stable_ptr().untyped()),
+                )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             expr_function_call(ctx, function_id, named_args, syntax.stable_ptr().into())
         }
@@ -601,9 +606,9 @@ pub fn compute_root_expr(
     }
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
         // TODO: better location.
-        inference_err.report(ctx.diagnostics, syntax.stable_ptr().untyped());
+        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(syntax.stable_ptr().untyped()));
         return Ok(res);
     }
 
@@ -1320,7 +1325,7 @@ fn new_literal_expr(
         try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
             .map_err(|err| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), err))?
     } else {
-        ctx.resolver.inference().new_type_var(stable_ptr.untyped())
+        ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()))
     };
 
     // Numeric trait.
@@ -1332,7 +1337,7 @@ fn new_literal_expr(
     let numeric_impl = ctx
         .resolver
         .inference()
-        .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
+        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
 
     Ok(ExprLiteral { value, ty, numeric_impl, stable_ptr })
@@ -1426,7 +1431,7 @@ fn method_call_expr(
             let mut inference = inference_data.inference(ctx.db);
             let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context
+                trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
             ) else {
                 continue;
             };
@@ -1434,7 +1439,7 @@ fn method_call_expr(
             // Find impls for it.
             lookup_context.insert_module(trait_id.module_file_id(ctx.db.upcast()).0);
             if inference
-                .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
+                .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
                 .is_err()
             {
                 continue;
@@ -1471,7 +1476,12 @@ fn method_call_expr(
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference()
-        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context)
+        .infer_concrete_trait_by_self(
+            trait_function,
+            ty,
+            &lookup_context,
+            Some(stable_ptr.untyped()),
+        )
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1494,7 +1504,7 @@ fn method_call_expr(
         .infer_trait_generic_function(
             concrete_trait_function_id,
             &impl_lookup_context,
-            path.stable_ptr().untyped(),
+            Some(path.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
 

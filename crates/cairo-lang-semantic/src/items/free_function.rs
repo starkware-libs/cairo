@@ -132,9 +132,9 @@ pub fn priv_free_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
-        // TODO: Better location.
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped());
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(declaration.stable_ptr().untyped()));
     }
     let generic_params = resolver
         .inference()

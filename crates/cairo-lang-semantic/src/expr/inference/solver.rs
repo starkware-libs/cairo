@@ -1,9 +1,11 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait};
 use super::{InferenceData, InferenceError, InferenceResult, InferenceVar, LocalImplVarId};
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
+use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeLongId};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -20,8 +22,19 @@ pub fn canonic_trait_solutions(
     canonical_trait: CanonicalTrait,
     lookup_context: ImplLookupContext,
 ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-    let mut solver = Solver::new(db, canonical_trait, lookup_context);
-    solver.solution_set(db)
+    let mut solver = Solver::new(db, canonical_trait, lookup_context.clone());
+    let res = solver.solution_set(db)?;
+    eprintln!(
+        "Trait: {:?}, Solutions: {:?}, Lookup modules: {:?}, Generics: {:?}",
+        canonical_trait.0.debug(db.elongate()),
+        res,
+        lookup_context.modules.iter().copied().collect::<Vec<_>>().debug(db.elongate()),
+        lookup_context.generic_params.debug(db.elongate()),
+    );
+    if let SolutionSet::Unique(impl_id) = res {
+        eprintln!("Solution: {:?}", impl_id.0.debug(db.elongate()));
+    }
+    Ok(res)
 }
 
 pub fn canonic_trait_solutions_cycle(
@@ -79,7 +92,7 @@ impl Solver {
         &mut self,
         db: &dyn SemanticGroup,
     ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-        let mut unique_soution = None;
+        let mut unique_solution: Option<CanonicalImpl> = None;
         for candidate_solver in &mut self.candidate_solvers {
             let candidate_solution_set = candidate_solver.solution_set(db)?;
             let candidate_solution = match candidate_solution_set {
@@ -87,12 +100,18 @@ impl Solver {
                 SolutionSet::Unique(candidate_solution) => candidate_solution,
                 SolutionSet::Ambiguous => return Ok(SolutionSet::Ambiguous),
             };
-            if unique_soution.is_some() {
+            if let Some(sol) = unique_solution {
+                eprintln!(
+                    "Ambiguous impls for trait {:?}: {:?}, {:?}",
+                    self.canonical_trait.0.debug(db.elongate()),
+                    sol.0.debug(db.elongate()),
+                    candidate_solution.0.debug(db.elongate()),
+                );
                 return Ok(SolutionSet::Ambiguous);
             }
-            unique_soution = Some(candidate_solution);
+            unique_solution = Some(candidate_solution);
         }
-        Ok(unique_soution.map(SolutionSet::Unique).unwrap_or(SolutionSet::None))
+        Ok(unique_solution.map(SolutionSet::Unique).unwrap_or(SolutionSet::None))
     }
 }
 
@@ -114,11 +133,13 @@ impl CandidateSolver {
         let mut inference_data = InferenceData::new();
         let mut inference = inference_data.inference(db);
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
+        eprintln!("Embedded: {:?}", concrete_trait_id.debug(db.elongate()));
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
         lookup_context.insert_module(candidate.module_id(db.upcast()));
         // Instantiate the candidate in the inference table.
-        let candidate_impl = inference.infer_impl(candidate, concrete_trait_id, &lookup_context)?;
+        let candidate_impl =
+            inference.infer_impl(candidate, concrete_trait_id, &lookup_context, None)?;
 
         Ok(CandidateSolver {
             candidate,
@@ -137,12 +158,21 @@ impl CandidateSolver {
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique(_) => {
+                let candidate_impl = inference.rewrite(self.candidate_impl)?;
                 let canonical_impl =
-                    CanonicalImpl::canonicalize(db, self.candidate_impl, &self.canonical_embedding);
+                    CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding);
                 if let Some(canonical_impl) = canonical_impl {
                     SolutionSet::Unique(canonical_impl)
                 } else {
+                    // TODO: this is actually ok. If this is the only candidate,
+                    // these should be propagated as variables to the caller.
+                    // Impl variables should not be present.
+                    // TODO: Assert this.
                     // Free variable.
+                    eprintln!(
+                        "Free variable in impl: {:?}",
+                        self.candidate_impl.debug(db.elongate())
+                    );
                     SolutionSet::Ambiguous
                 }
             }
@@ -150,3 +180,5 @@ impl CandidateSolver {
         })
     }
 }
+
+// Current issue: Assigning values to params. Params are unassignable.

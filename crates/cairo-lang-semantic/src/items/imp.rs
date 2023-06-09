@@ -345,9 +345,10 @@ pub fn priv_impl_declaration_data_inner(
     .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         // TODO: Better location.
-        inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped());
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
     let concrete_trait = resolver
         .inference()
@@ -872,7 +873,9 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, _)) =
-    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context) else {
+    temp_inference.infer_concrete_trait_by_self(
+        trait_function_id, self_ty, &lookup_context, Some(stable_ptr),
+    ) else {
         return false;
     };
     get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
@@ -888,7 +891,10 @@ pub fn infer_impl_by_self(
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, n_snapshots)) =
-        ctx.resolver.inference().infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ) else {
+        ctx.resolver.inference().infer_concrete_trait_by_self(
+            trait_function_id, self_ty, &lookup_context, Some(stable_ptr),
+        ) else
+    {
         return None;
     };
     let Ok(_) = get_impl_at_context(
@@ -904,7 +910,11 @@ pub fn infer_impl_by_self(
     let generic_function = ctx
         .resolver
         .inference()
-        .infer_trait_generic_function(concrete_trait_function_id, &impl_lookup_context, stable_ptr)
+        .infer_trait_generic_function(
+            concrete_trait_function_id,
+            &impl_lookup_context,
+            Some(stable_ptr),
+        )
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))
         .unwrap();
 
@@ -925,7 +935,7 @@ pub fn get_impl_at_context(
 ) -> InferenceResult<ImplId> {
     let mut inference_data = InferenceData::new();
     let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
+    let impl_id = inference.new_impl_var(concrete_trait_id, Some(stable_ptr), lookup_context)?;
     if let Some((_, err)) = inference.finalize() {
         return Err(err);
     };
@@ -1102,9 +1112,10 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
         // TODO: Better location.
-        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped());
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
     let function_generic_params = resolver
         .inference()

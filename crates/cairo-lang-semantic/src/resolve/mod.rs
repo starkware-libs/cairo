@@ -461,7 +461,7 @@ impl<'db> Resolver<'db> {
                     .infer_trait_generic_function(
                         concrete_trait_function,
                         &impl_lookup_context,
-                        identifier.stable_ptr().untyped(),
+                        Some(identifier.stable_ptr().untyped()),
                     )
                     .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
 
@@ -814,7 +814,7 @@ impl<'db> Resolver<'db> {
                     .data
                     .inference_data
                     .inference(self.db)
-                    .infer_generic_arg(&generic_param, lookup_context)
+                    .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
                     .map_err(|err| err.report(diagnostics, stable_ptr));
             }
             Some(ast::GenericArg::Expr(generic_arg_expr)) => {
