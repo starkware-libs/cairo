@@ -82,7 +82,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Type mismatch: core::bool and core::felt252
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
  --> lib.cairo:2:17
     let mut x = 3;
                 ^

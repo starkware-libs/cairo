@@ -351,13 +351,11 @@ impl<'db> Inference<'db> {
         // Conform all uninferred numeric literals to felt252.
         loop {
             let mut changed = false;
-            self.solve().ok();
+            if let Err(err) = self.solve() {
+                return Some((None, err));
+            }
             for var in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
-                eprintln!(
-                    "ambiguous: {:?}",
-                    self.rewrite(impl_var.concrete_trait_id).unwrap().debug(self.db.elongate())
-                );
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
                     continue;
                 }
@@ -375,7 +373,6 @@ impl<'db> Inference<'db> {
                         err,
                     ));
                 }
-                eprintln!("changed");
                 changed = true;
                 break;
             }
@@ -383,6 +380,10 @@ impl<'db> Inference<'db> {
                 break;
             }
         }
+        assert!(
+            self.pending.is_empty(),
+            "pending should all be solved by this point. Guaranteed by solve()."
+        );
         let (var, err) = self.first_undetermined_variable()?;
         Some((self.stable_ptrs.get(&var).copied(), err))
     }
@@ -720,21 +721,36 @@ impl<'db> Inference<'db> {
         let impl_var = self.impl_var(var).clone();
         // Update the concrete trait of the impl var.
         let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id)?;
+        let mut lookup_context = impl_var.lookup_context;
+        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         self.impl_vars[impl_var.id.0].concrete_trait_id = concrete_trait_id;
+        self.impl_vars[impl_var.id.0].lookup_context = lookup_context.clone();
+
+        // Don't try to resolve impls if the first generic param is a variable.
+        let generic_args = concrete_trait_id.generic_args(self.db);
+        match generic_args.get(0) {
+            Some(GenericArgumentId::Type(ty)) => {
+                if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
+                    // Don't try to infer such impls.
+                    return Ok(SolutionSet::Ambiguous);
+                }
+            }
+            Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
+                // Don't try to infer such impls.
+                return Ok(SolutionSet::Ambiguous);
+            }
+            _ => {}
+        };
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, concrete_trait_id);
-        let solution_set =
-            self.db.canonic_trait_solutions(canonical_trait, impl_var.lookup_context)?;
+        let solution_set = self.db.canonic_trait_solutions(canonical_trait, lookup_context)?;
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique(canonical_impl) => {
                 SolutionSet::Unique(canonical_impl.embed(self, &canonicalizer))
             }
-            SolutionSet::Ambiguous => {
-                eprintln!("Ambiguous impl var: {:?}", concrete_trait_id.debug(self.db.elongate()));
-                SolutionSet::Ambiguous
-            }
+            SolutionSet::Ambiguous => SolutionSet::Ambiguous,
         })
     }
 }
