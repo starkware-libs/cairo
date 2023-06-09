@@ -22,7 +22,8 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::ids::{CrateId, UnstableSalsaId};
+use cairo_lang_filesystem::ids::CrateId;
+pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};

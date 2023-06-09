@@ -58,8 +58,9 @@ pub fn priv_type_alias_semantic_data(
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped());
     }
     let generic_params = resolver
         .inference()

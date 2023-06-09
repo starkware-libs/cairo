@@ -38,8 +38,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
-use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::{ImplVarId, Inference, InferenceData, InferenceResult};
+use crate::expr::inference::{ImplVarId, InferenceData, InferenceResult};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -293,8 +292,9 @@ pub fn priv_impl_declaration_data_inner(
     .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait));
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped());
     }
     let generic_params = resolver
         .inference()
@@ -602,9 +602,9 @@ fn get_inner_types(db: &dyn SemanticGroup, ty: TypeId) -> Maybe<Vec<TypeId>> {
 /// used for caching queries.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct TraitFilter {
-    trait_id: TraitId,
+    pub trait_id: TraitId,
     /// The filter on the generic arguments.
-    generics_filter: GenericsHeadFilter,
+    pub generics_filter: GenericsHeadFilter,
 }
 
 /// A lookup filter on generic arguments that is not based on current inference state.
@@ -678,45 +678,6 @@ fn concrete_trait_fits_trait_filter(
     })
 }
 
-/// Finds implementations for a concrete trait in a module.
-fn find_impls_at_module(
-    db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
-    lookup_context: &ImplLookupContext,
-    module_id: ModuleId,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
-) -> Maybe<Vec<UninferredImpl>> {
-    let mut res = Vec::new();
-
-    let trait_id = concrete_trait_id.trait_id(db);
-    let first_generic_filter = match concrete_trait_id.generic_args(db).first() {
-        Some(first_generic) => match first_generic.head(db) {
-            Some(head) => GenericsHeadFilter::FirstGenericFilter(head),
-            None => GenericsHeadFilter::NoFilter,
-        },
-        None => GenericsHeadFilter::NoGenerics,
-    };
-
-    let uninferred_impls = db.module_impl_ids_for_trait_filter(
-        module_id,
-        TraitFilter { trait_id, generics_filter: first_generic_filter },
-    )?;
-
-    for uninferred_impl in uninferred_impls {
-        if !inference.can_infer_impl(
-            uninferred_impl,
-            concrete_trait_id,
-            lookup_context,
-            stable_ptr,
-        )? {
-            continue;
-        }
-        res.push(uninferred_impl);
-    }
-    Ok(res)
-}
-
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ModuleIdById(pub ModuleId);
@@ -770,7 +731,7 @@ pub enum UninferredImpl {
     GenericParam(GenericParamId),
 }
 impl UninferredImpl {
-    fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
+    pub fn concrete_trait(&self, db: &dyn SemanticGroup) -> Maybe<ConcreteTraitId> {
         match self {
             UninferredImpl::Def(impl_def_id) => db.impl_def_concrete_trait(*impl_def_id),
             UninferredImpl::ImplAlias(impl_alias_id) => {
@@ -782,6 +743,14 @@ impl UninferredImpl {
                     extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
                 param.concrete_trait
             }
+        }
+    }
+    pub fn module_id(&self, db: &dyn SemanticGroup) -> ModuleId {
+        let defs_db = db.upcast();
+        match self {
+            UninferredImpl::Def(impl_def_id) => impl_def_id.module_file_id(defs_db).0,
+            UninferredImpl::ImplAlias(impl_alias_id) => impl_alias_id.module_file_id(defs_db).0,
+            UninferredImpl::GenericParam(param) => param.module_file_id(defs_db).0,
         }
     }
 }
@@ -800,36 +769,25 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
 }
 
 /// Finds all the implementations of a concrete trait, in a specific lookup context.
-pub fn find_possible_impls_at_context(
+pub fn find_candidates_at_context(
     db: &dyn SemanticGroup,
-    inference: &Inference<'_>,
     lookup_context: &ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
+    filter: TraitFilter,
 ) -> Maybe<OrderedHashSet<UninferredImpl>> {
     let mut res = OrderedHashSet::default();
     for generic_param in &lookup_context.generic_params {
         let GenericParam::Impl(param) = generic_param else {continue};
         let Ok(imp_concrete_trait_id) = param.concrete_trait else {continue};
-
-        let mut temp_inference_data = inference.data.clone();
-        let mut temp_inference = temp_inference_data.inference(db);
-        if temp_inference.conform_traits(concrete_trait_id, imp_concrete_trait_id).is_err() {
+        if !concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)? {
             continue;
         }
         res.insert(UninferredImpl::GenericParam(generic_param.id()));
     }
     let core_module = core_module(db);
     for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
-        if let Ok(imps) = find_impls_at_module(
-            db,
-            inference,
-            lookup_context,
-            *module_id,
-            concrete_trait_id,
-            stable_ptr,
-        ) {
-            res.extend(imps);
+        let imps = db.module_impl_ids_for_trait_filter(*module_id, filter.clone())?;
+        for imp in imps {
+            res.insert(imp);
         }
     }
     Ok(res)
@@ -847,7 +805,7 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, _)) =
-    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context, stable_ptr) else {
+    temp_inference.infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context) else {
         return false;
     };
     get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
@@ -863,7 +821,7 @@ pub fn infer_impl_by_self(
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, n_snapshots)) =
-        ctx.resolver.inference().infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ,stable_ptr) else {
+        ctx.resolver.inference().infer_concrete_trait_by_self(trait_function_id, self_ty, &lookup_context ) else {
         return None;
     };
     let Ok(_) = get_impl_at_context(
@@ -1077,8 +1035,9 @@ pub fn priv_impl_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped());
     }
     let function_generic_params = resolver
         .inference()

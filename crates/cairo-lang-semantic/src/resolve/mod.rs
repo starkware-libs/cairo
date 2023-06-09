@@ -772,7 +772,7 @@ impl<'db> Resolver<'db> {
                     .data
                     .inference_data
                     .inference(self.db)
-                    .infer_generic_arg(&generic_param, lookup_context, stable_ptr)
+                    .infer_generic_arg(&generic_param, lookup_context)
                     .map_err(|err| err.report(diagnostics, stable_ptr));
             }
             Some(ast::GenericArg::Expr(generic_arg_expr)) => {
