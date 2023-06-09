@@ -247,11 +247,31 @@ impl U128BitAnd of BitAnd<u128> {
         v
     }
 }
+impl TBitAnd<
+    T, impl TIntoU128: Into<T, u128>, impl U128TryIntoT: TryInto<u128, T>, impl TDrop: Drop<T>, 
+> of BitAnd<T> {
+    #[inline(always)]
+    fn bitand(lhs: T, rhs: T) -> T {
+        let lhs_u128 = TIntoU128::into(lhs);
+        let rhs_u128 = TIntoU128::into(rhs);
+        U128TryIntoT::try_into(lhs_u128 & rhs_u128).unwrap()
+    }
+}
 impl U128BitXor of BitXor<u128> {
     #[inline(always)]
     fn bitxor(lhs: u128, rhs: u128) -> u128 {
         let (_, v, _) = bitwise(lhs, rhs);
         v
+    }
+}
+impl TBitXor<
+    T, impl TIntoU128: Into<T, u128>, impl U128TryIntoT: TryInto<u128, T>, impl TDrop: Drop<T>, 
+> of BitXor<T> {
+    #[inline(always)]
+    fn bitxor(lhs: T, rhs: T) -> T {
+        let lhs_u128 = TIntoU128::into(lhs);
+        let rhs_u128 = TIntoU128::into(rhs);
+        U128TryIntoT::try_into(lhs_u128 ^ rhs_u128).unwrap()
     }
 }
 impl U128BitOr of BitOr<u128> {
@@ -261,9 +281,19 @@ impl U128BitOr of BitOr<u128> {
         v
     }
 }
-impl U128BitNot of BitNot<u128> {
-    fn bitnot(a: u128) -> u128 {
-        BoundedInt::max() - a
+impl TBitOr<
+    T, impl TIntoU128: Into<T, u128>, impl U128TryIntoT: TryInto<u128, T>, impl TDrop: Drop<T>, 
+> of BitOr<T> {
+    #[inline(always)]
+    fn bitor(lhs: T, rhs: T) -> T {
+        let lhs_u128 = TIntoU128::into(lhs);
+        let rhs_u128 = TIntoU128::into(rhs);
+        U128TryIntoT::try_into(lhs_u128 | rhs_u128).unwrap()
+    }
+}
+impl TBitNot<T, impl TBounded:BoundedInt<T>, impl TSub:Sub<T>> of BitNot<T> {
+    fn bitnot(a: T) -> T {
+        TSub::sub(TBounded::max(),a)
     }
 }
 
@@ -440,11 +470,6 @@ impl U8DivRem of DivRem<u8> {
     }
 }
 
-impl U8BitNot of BitNot<u8> {
-    fn bitnot(a: u8) -> u8 {
-        BoundedInt::max() - a
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u16;
@@ -616,11 +641,6 @@ impl U16DivRem of DivRem<u16> {
     }
 }
 
-impl U16BitNot of BitNot<u16> {
-    fn bitnot(a: u16) -> u16 {
-        BoundedInt::max() - a
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u32;
@@ -792,11 +812,6 @@ impl U32DivRem of DivRem<u32> {
     }
 }
 
-impl U32BitNot of BitNot<u32> {
-    fn bitnot(a: u32) -> u32 {
-        BoundedInt::max() - a
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u64;
@@ -968,11 +983,6 @@ impl U64DivRem of DivRem<u64> {
     }
 }
 
-impl U64BitNot of BitNot<u64> {
-    fn bitnot(a: u64) -> u64 {
-        BoundedInt::max() - a
-    }
-}
 
 #[derive(Copy, Drop, PartialEq, Serde, storage_access::StorageAccess)]
 struct u256 {
@@ -1196,12 +1206,6 @@ impl U256RemEq of RemEq<u256> {
 impl U256DivRem of DivRem<u256> {
     fn div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) {
         u256_safe_divmod(lhs, rhs)
-    }
-}
-
-impl U256BitNot of BitNot<u256> {
-    fn bitnot(a: u256) -> u256 {
-        u256 { low: ~a.low, high: ~a.high }
     }
 }
 
