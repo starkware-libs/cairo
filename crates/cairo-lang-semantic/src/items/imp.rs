@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::vec;
 
@@ -9,6 +10,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
+use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -37,7 +39,7 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::conform::InferenceConform;
-use crate::expr::inference::{ImplVar, Inference, InferenceData, InferenceResult};
+use crate::expr::inference::{ImplVarId, Inference, InferenceData, InferenceResult};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -107,7 +109,7 @@ impl ConcreteImplId {
 pub enum ImplId {
     Concrete(ConcreteImplId),
     GenericParameter(GenericParamId),
-    ImplVar(ImplVar),
+    ImplVar(ImplVarId),
 }
 impl ImplId {
     /// Returns the [ImplHead] of an impl if available.
@@ -137,7 +139,7 @@ impl DebugWithDb<dyn SemanticGroup> for ImplId {
         match self {
             ImplId::Concrete(concrete_impl_id) => write!(f, "{:?}", concrete_impl_id.debug(db)),
             ImplId::GenericParameter(param) => write!(f, "{:?}", param.debug(db)),
-            ImplId::ImplVar(var) => write!(f, "?{}", var.id),
+            ImplId::ImplVar(var) => write!(f, "?{}", var.get(db).id.0),
         }
     }
 }
@@ -225,7 +227,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
                 extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
             param_impl.concrete_trait
         }
-        ImplId::ImplVar(var) => Ok(var.concrete_trait_id),
+        ImplId::ImplVar(var) => Ok(var.get(db).concrete_trait_id),
     }
 }
 
@@ -396,11 +398,7 @@ pub fn priv_impl_definition_data(
     let module_impls = db.module_impls(module_file_id.0)?;
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
 
-    let lookup_context = ImplLookupContext {
-        module_id: module_file_id.0,
-        extra_modules: Default::default(),
-        generic_params: declaration_data.generic_params,
-    };
+    let lookup_context = ImplLookupContext::new(module_file_id.0, declaration_data.generic_params);
     check_special_impls(
         db,
         &mut diagnostics,
@@ -719,13 +717,49 @@ fn find_impls_at_module(
     Ok(res)
 }
 
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct ModuleIdById(pub ModuleId);
+impl Ord for ModuleIdById {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (
+                ModuleIdById(ModuleId::CrateRoot(crate_id)),
+                ModuleIdById(ModuleId::CrateRoot(other_crate_id)),
+            ) => crate_id.get_internal_id().cmp(other_crate_id.get_internal_id()),
+            (ModuleIdById(ModuleId::CrateRoot(_)), ModuleIdById(ModuleId::Submodule(_))) => {
+                std::cmp::Ordering::Less
+            }
+            (ModuleIdById(ModuleId::Submodule(_)), ModuleIdById(ModuleId::CrateRoot(_))) => {
+                std::cmp::Ordering::Greater
+            }
+            (
+                ModuleIdById(ModuleId::Submodule(module_id)),
+                ModuleIdById(ModuleId::Submodule(other_module_id)),
+            ) => module_id.get_internal_id().cmp(other_module_id.get_internal_id()),
+        }
+    }
+}
+impl PartialOrd for ModuleIdById {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplLookupContext {
-    pub module_id: ModuleId,
-    // TODO(spapini): Make a hash set.
-    pub extra_modules: Vec<ModuleId>,
+    pub modules: BTreeSet<ModuleIdById>,
     pub generic_params: Vec<semantic::GenericParam>,
+}
+impl ImplLookupContext {
+    pub fn new(module_id: ModuleId, generic_params: Vec<GenericParam>) -> ImplLookupContext {
+        Self { modules: [ModuleIdById(module_id)].into(), generic_params }
+    }
+
+    pub fn insert_module(&mut self, module_id: ModuleId) -> bool {
+        self.modules.insert(ModuleIdById(module_id))
+    }
 }
 
 /// An candidate impl for later inference.
@@ -785,16 +819,8 @@ pub fn find_possible_impls_at_context(
         }
         res.insert(UninferredImpl::GenericParam(generic_param.id()));
     }
-    res.extend(find_impls_at_module(
-        db,
-        inference,
-        lookup_context,
-        lookup_context.module_id,
-        concrete_trait_id,
-        stable_ptr,
-    )?);
     let core_module = core_module(db);
-    for module_id in chain!(lookup_context.extra_modules.iter(), [&core_module]) {
+    for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
         if let Ok(imps) = find_impls_at_module(
             db,
             inference,
@@ -804,28 +830,6 @@ pub fn find_possible_impls_at_context(
             stable_ptr,
         ) {
             res.extend(imps);
-        }
-    }
-    for submodule in db.module_submodules_ids(lookup_context.module_id)? {
-        res.extend(find_impls_at_module(
-            db,
-            inference,
-            lookup_context,
-            ModuleId::Submodule(submodule),
-            concrete_trait_id,
-            stable_ptr,
-        )?);
-    }
-    for use_id in db.module_uses_ids(lookup_context.module_id)? {
-        if let Ok(ResolvedGenericItem::Module(submodule)) = db.use_resolved_item(use_id) {
-            res.extend(find_impls_at_module(
-                db,
-                inference,
-                lookup_context,
-                submodule,
-                concrete_trait_id,
-                stable_ptr,
-            )?);
         }
     }
     Ok(res)

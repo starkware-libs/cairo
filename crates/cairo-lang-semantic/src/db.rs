@@ -21,6 +21,7 @@ use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::expr::inference::{ImplVar, ImplVarId};
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
@@ -92,6 +93,8 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+    #[salsa::interned]
+    fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
     // Const.
     // ====

@@ -715,12 +715,10 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        let lookup_context = ImplLookupContext {
-            module_id: self.module_file_id.0,
-            extra_modules: vec![],
-            generic_params: self.generic_params.values().copied().collect(),
-        };
-        lookup_context
+        ImplLookupContext::new(
+            self.module_file_id.0,
+            self.generic_params.values().copied().collect(),
+        )
     }
 
     pub fn resolve_generic_args(

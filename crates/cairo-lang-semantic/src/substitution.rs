@@ -10,7 +10,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
-use crate::expr::inference::{ImplVar, TypeVar};
+use crate::expr::inference::{ImplVar, ImplVarId, TypeVar};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -78,8 +78,8 @@ macro_rules! semantic_object_for_id {
 
 #[macro_export]
 macro_rules! add_rewrite {
-    (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
-        impl <$($generics)*> SemanticRewriter<$ty, $err_ty> for $self_ty {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
+        impl <$($generics),*> SemanticRewriter<$ty, $err_ty> for $self_ty {
             fn rewrite(&mut self, value: $ty) -> Result<$ty, $err_ty> {
                 $crate::substitution::SemanticObject::default_rewrite(value, self)
             }
@@ -89,8 +89,8 @@ macro_rules! add_rewrite {
 
 #[macro_export]
 macro_rules! add_rewrite_identity {
-    (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
-        impl <$($generics)*> SemanticRewriter<$ty, $err_ty> for $self_ty {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, $ty:ident) => {
+        impl <$($generics),*> SemanticRewriter<$ty, $err_ty> for $self_ty {
             fn rewrite(&mut self, value: $ty) -> Result<$ty, $err_ty> {
                 Ok(value)
             }
@@ -158,12 +158,12 @@ macro_rules! prune_single {
 
 #[macro_export]
 macro_rules! add_basic_rewrites {
-    (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
         macro_rules! __identitity_helper {
-            ($item:ident) => { $crate::add_rewrite_identity!(<$($generics)*>, $self_ty, $err_ty, $item); }
+            ($item:ident) => { $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
         macro_rules! __regular_helper {
-            ($item:ident) => { $crate::add_rewrite!(<$($generics)*>, $self_ty, $err_ty, $item); }
+            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
         $crate::prune_single!(__identitity_helper, ParamId, $($exclude)*);
@@ -181,7 +181,6 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identitity_helper, StructId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, GenericParamId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, TypeVar, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ImplVar, $($exclude)*);
         $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
@@ -194,6 +193,8 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__regular_helper, ConcreteFunctionWithBodyId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionId, $($exclude)*);
         $crate::prune_single!(__regular_helper, ImplGenericFunctionWithBodyId, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplVar, $($exclude)*);
+        $crate::prune_single!(__regular_helper, ImplVarId, $($exclude)*);
         $crate::prune_single!(__regular_helper, Parameter, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericParam, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericParamType, $($exclude)*);
@@ -227,12 +228,12 @@ macro_rules! add_basic_rewrites {
 
 #[macro_export]
 macro_rules! add_expr_rewrites {
-    (<$($generics:lifetime)*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
+    (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
         macro_rules! __identitity_helper {
-            ($item:ident) => { $crate::add_rewrite_identity!(<$($generics)*>, $self_ty, $err_ty, $item); }
+            ($item:ident) => { $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
         macro_rules! __regular_helper {
-            ($item:ident) => { $crate::add_rewrite!(<$($generics)*>, $self_ty, $err_ty, $item); }
+            ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
         $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);

@@ -196,15 +196,21 @@ impl<'db> InferenceConform for Inference<'db> {
             return Ok(impl0);
         }
         if let ImplId::ImplVar(var) = impl1 {
-            self.conform_traits(var.concrete_trait_id, self.db.impl_concrete_trait(impl0)?)?;
+            self.conform_traits(
+                var.get(self.db).concrete_trait_id,
+                self.db.impl_concrete_trait(impl0)?,
+            )?;
             let impl_id = self.rewrite(impl0)?;
-            return self.assign_impl(var, impl_id);
+            return self.assign_impl(var.get(self.db).id, impl_id);
         }
         match impl0 {
             ImplId::ImplVar(var) => {
-                self.conform_traits(var.concrete_trait_id, self.db.impl_concrete_trait(impl1)?)?;
+                self.conform_traits(
+                    var.get(self.db).concrete_trait_id,
+                    self.db.impl_concrete_trait(impl1)?,
+                )?;
                 let impl_id = self.rewrite(impl1)?;
-                self.assign_impl(var, impl_id)
+                self.assign_impl(var.get(self.db).id, impl_id)
             }
             ImplId::Concrete(concrete0) => {
                 let ImplId::Concrete(concrete1) = impl1 else {
@@ -305,10 +311,10 @@ impl<'db> InferenceConform for Inference<'db> {
             )?,
             ImplId::GenericParameter(_) => false,
             ImplId::ImplVar(new_var) => {
-                if InferenceVar::Impl(new_var.id) == var {
+                if InferenceVar::Impl(new_var.get(self.db).id) == var {
                     return Ok(true);
                 }
-                if let Some(impl_id) = self.impl_assignment.get(&new_var.id).copied() {
+                if let Some(impl_id) = self.impl_assignment(new_var.get(self.db).id) {
                     return self.impl_contains_var(&impl_id, var);
                 }
                 false
