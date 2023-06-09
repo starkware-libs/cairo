@@ -291,9 +291,9 @@ impl TBitOr<
         U128TryIntoT::try_into(lhs_u128 | rhs_u128).unwrap()
     }
 }
-impl TBitNot<T, impl TBounded:BoundedInt<T>, impl TSub:Sub<T>> of BitNot<T> {
+impl TBitNot<T, impl TBounded: BoundedInt<T>, impl TSub: Sub<T>> of BitNot<T> {
     fn bitnot(a: T) -> T {
-        TSub::sub(TBounded::max(),a)
+        TSub::sub(TBounded::max(), a)
     }
 }
 
