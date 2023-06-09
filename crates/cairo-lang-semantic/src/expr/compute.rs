@@ -1435,7 +1435,7 @@ fn method_call_expr(
             };
 
             // Find impls for it.
-            lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
+            lookup_context.insert_module(trait_id.module_file_id(ctx.db.upcast()).0);
             if inference
                 .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
                 .is_err()
@@ -1470,7 +1470,7 @@ fn method_call_expr(
     );
 
     let mut lookup_context = ctx.resolver.impl_lookup_context();
-    lookup_context.extra_modules.push(trait_function.module_file_id(ctx.db.upcast()).0);
+    lookup_context.insert_module(trait_function.module_file_id(ctx.db.upcast()).0);
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference()
