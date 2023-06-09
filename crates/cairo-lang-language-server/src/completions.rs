@@ -151,7 +151,7 @@ fn find_methods_for_type(
             let mut lookup_context = resolver.impl_lookup_context();
             // Check if trait function signature's first param can fit our expr type.
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context
+                trait_function, ty, &lookup_context, Some(stable_ptr)
             ) else {
                 eprintln!("Can't fit");
                 continue;
@@ -161,7 +161,7 @@ fn find_methods_for_type(
             let trait_id = trait_function.trait_id(db.upcast());
             lookup_context.insert_module(trait_id.module_file_id(db.upcast()).0);
             let Ok(new_var) = inference.new_impl_var(
-                concrete_trait_id, stable_ptr, lookup_context
+                concrete_trait_id, Some(stable_ptr), lookup_context
             ) else {
                 continue;
             };

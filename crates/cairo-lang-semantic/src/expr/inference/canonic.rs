@@ -116,7 +116,6 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
         let next_id = LocalTypeVarId(self.to_canonic.type_var_mapping.len());
         Ok(TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
-            ..var
         }))
     }
 }
@@ -164,8 +163,7 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
                 .from_canonic
                 .type_var_mapping
                 .entry(var.id)
-                .or_insert_with(|| self.inference.new_type_var_raw(var.stable_ptr).id),
-            ..var
+                .or_insert_with(|| self.inference.new_type_var_raw(None).id),
         }))
     }
 }
@@ -176,11 +174,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         let var = ImplVar {
             id: *self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
-                self.inference.new_impl_var_raw(
-                    var.lookup_context.clone(),
-                    concrete_trait_id,
-                    var.stable_ptr,
-                )
+                self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
             }),
             ..var
         };
@@ -223,7 +217,7 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
         let TypeLongId::Var(var) = value else { return value.default_rewrite(self); };
         let id =
             self.mapping.type_var_mapping.get(&var.id).copied().ok_or(MapperError::Type(var.id))?;
-        Ok(TypeLongId::Var(TypeVar { id, ..var }))
+        Ok(TypeLongId::Var(TypeVar { id }))
     }
 }
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {

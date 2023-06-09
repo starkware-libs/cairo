@@ -69,9 +69,9 @@ pub fn priv_extern_type_declaration_data(
     }
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
-        // TODO: Better location.
-        inference_err.report(&mut diagnostics, type_syntax.stable_ptr().untyped());
+    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(type_syntax.stable_ptr().untyped()));
     }
     let generic_params = resolver
         .inference()

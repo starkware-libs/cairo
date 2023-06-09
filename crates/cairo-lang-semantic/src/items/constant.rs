@@ -76,9 +76,9 @@ pub fn priv_constant_semantic_data(
     let constant = Constant { value: value.expr };
 
     // Check fully resolved.
-    if let Some((_stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        // TODO: Better location.
-        inference_err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());
+    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
+        inference_err
+            .report(ctx.diagnostics, stable_ptr.unwrap_or(const_ast.stable_ptr().untyped()));
     }
     let constant = ctx
         .resolver
