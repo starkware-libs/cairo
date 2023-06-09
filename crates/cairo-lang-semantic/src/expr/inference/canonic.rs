@@ -25,6 +25,7 @@ use crate::{
 };
 
 // Canonical objects.
+#[derive(Copy, Clone, PartialEq, Hash, Eq, Debug)]
 pub struct CanonicalTrait(pub ConcreteTraitId);
 impl CanonicalTrait {
     pub fn canonicalize(
@@ -39,28 +40,30 @@ impl CanonicalTrait {
     }
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct CanonicalImpl(pub ImplId);
 impl CanonicalImpl {
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         impl_id: ImplId,
         mapping: &CanonicalMapping,
-    ) -> Self {
-        Self(Mapper::map(db, impl_id, &mapping.to_canonic).unwrap())
+    ) -> Option<Self> {
+        Some(Self(Mapper::map(db, impl_id, &mapping.to_canonic).ok()?))
     }
-    pub fn embed(&self, inference: &mut Inference<'_>, mapping: &CanonicalMapping) -> ImplId {
+    pub fn embed(&self, inference: &Inference<'_>, mapping: &CanonicalMapping) -> ImplId {
         Mapper::map(inference.db, self.0, &mapping.from_canonic).unwrap()
     }
 }
 
 // Mappings.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct VarMapping {
     type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
     impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
 }
 
 /// Mapping between canonical space and inference space.
+#[derive(Debug)]
 pub struct CanonicalMapping {
     to_canonic: VarMapping,
     from_canonic: VarMapping,

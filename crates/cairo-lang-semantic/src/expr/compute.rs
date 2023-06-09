@@ -538,11 +538,7 @@ fn compute_expr_function_call_semantic(
             let function_id = ctx
                 .resolver
                 .inference()
-                .infer_generic_function(
-                    generic_function,
-                    &impl_lookup_context,
-                    path.stable_ptr().untyped(),
-                )
+                .infer_generic_function(generic_function, &impl_lookup_context)
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             expr_function_call(ctx, function_id, named_args, syntax.stable_ptr().into())
         }
@@ -605,8 +601,9 @@ pub fn compute_root_expr(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
+        // TODO: better location.
+        inference_err.report(ctx.diagnostics, syntax.stable_ptr().untyped());
         return Ok(res);
     }
 
@@ -1429,7 +1426,7 @@ fn method_call_expr(
             let mut inference = inference_data.inference(ctx.db);
             let mut lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context, stable_ptr.untyped()
+                trait_function, ty, &lookup_context
             ) else {
                 continue;
             };
@@ -1474,7 +1471,7 @@ fn method_call_expr(
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference()
-        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context, stable_ptr.untyped())
+        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context)
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();

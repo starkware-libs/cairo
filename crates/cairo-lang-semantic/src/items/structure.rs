@@ -63,8 +63,9 @@ pub fn priv_struct_declaration_data(
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, struct_ast.stable_ptr().untyped());
     }
     let generic_params = resolver
         .inference()
@@ -163,8 +164,9 @@ pub fn priv_struct_definition_data(
     }
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, struct_ast.stable_ptr().untyped());
     }
     for (_, member) in members.iter_mut() {
         member.ty = resolver

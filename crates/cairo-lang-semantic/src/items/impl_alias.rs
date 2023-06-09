@@ -67,8 +67,9 @@ pub fn priv_impl_alias_semantic_data(
     });
 
     // Check fully resolved.
-    if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+    if let Some((_stable_ptr, inference_err)) = resolver.inference().finalize() {
+        // TODO: Better location.
+        inference_err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped());
     }
     let generic_params = resolver
         .inference()
