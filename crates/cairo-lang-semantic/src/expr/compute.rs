@@ -607,7 +607,6 @@ pub fn compute_root_expr(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        // TODO: better location.
         inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(syntax.stable_ptr().untyped()));
         return Ok(res);
     }
@@ -1420,6 +1419,8 @@ fn method_call_expr(
     let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
     let ty = ctx.reduce_ty(lexpr.ty());
+    // Save some work.
+    ctx.resolver.inference().solve().ok();
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
             if name != func_name {

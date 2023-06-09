@@ -180,17 +180,12 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
- --> lib.cairo:7:13
-    let b = 123_NonZero;
-            ^*********^
-
 error: Unknown type.
  --> lib.cairo:8:13
     let b = 123_u129;
             ^******^
 
-error: Type mismatch: core::zeroable::NonZero and core::felt252
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
  --> lib.cairo:7:13
     let b = 123_NonZero;
             ^*********^

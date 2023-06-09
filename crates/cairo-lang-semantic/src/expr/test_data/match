@@ -36,7 +36,7 @@ error: Wrong number of generic arguments. Expected 2, found: 3
         (A::b(x), 1, _) => { x },
         ^*************^
 
-error: Type mismatch: test::A and core::felt252
+error: Trait has no implementation in context: core::integer::NumericLiteral::<test::A>
  --> lib.cairo:9:10
         (7, 1) => { x },
          ^
@@ -76,7 +76,7 @@ error: Wrong enum in pattern. Expected: "core::bool". Got: "test::A".
         A::b(_) => 1,
         ^**^
 
-error: Type mismatch: core::bool and core::felt252
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
  --> lib.cairo:6:15
     match a + 1 {
               ^

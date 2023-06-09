@@ -218,6 +218,11 @@ impl AnotherImpl of AnotherTrait::<felt252> {
 f
 
 //! > expected_diagnostics
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: MyTrait::foo and AnotherTrait::foo. Consider adding type annotations or explicitly refer to the impl function.
+ --> lib.cairo:5:5
+    x.foo();
+    ^*****^
+
 error: Supplied impl does not match the required trait
  --> lib.cairo:7:14
     bar::<T, GenericImpl>();

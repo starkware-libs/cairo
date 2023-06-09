@@ -1,4 +1,3 @@
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait};
@@ -22,19 +21,8 @@ pub fn canonic_trait_solutions(
     canonical_trait: CanonicalTrait,
     lookup_context: ImplLookupContext,
 ) -> InferenceResult<SolutionSet<CanonicalImpl>> {
-    let mut solver = Solver::new(db, canonical_trait, lookup_context.clone());
-    let res = solver.solution_set(db)?;
-    eprintln!(
-        "Trait: {:?}, Solutions: {:?}, Lookup modules: {:?}, Generics: {:?}",
-        canonical_trait.0.debug(db.elongate()),
-        res,
-        lookup_context.modules.iter().copied().collect::<Vec<_>>().debug(db.elongate()),
-        lookup_context.generic_params.debug(db.elongate()),
-    );
-    if let SolutionSet::Unique(impl_id) = res {
-        eprintln!("Solution: {:?}", impl_id.0.debug(db.elongate()));
-    }
-    Ok(res)
+    let mut solver = Solver::new(db, canonical_trait, lookup_context);
+    solver.solution_set(db)
 }
 
 pub fn canonic_trait_solutions_cycle(
@@ -100,13 +88,7 @@ impl Solver {
                 SolutionSet::Unique(candidate_solution) => candidate_solution,
                 SolutionSet::Ambiguous => return Ok(SolutionSet::Ambiguous),
             };
-            if let Some(sol) = unique_solution {
-                eprintln!(
-                    "Ambiguous impls for trait {:?}: {:?}, {:?}",
-                    self.canonical_trait.0.debug(db.elongate()),
-                    sol.0.debug(db.elongate()),
-                    candidate_solution.0.debug(db.elongate()),
-                );
+            if unique_solution.is_some() {
                 return Ok(SolutionSet::Ambiguous);
             }
             unique_solution = Some(candidate_solution);
@@ -133,7 +115,6 @@ impl CandidateSolver {
         let mut inference_data = InferenceData::new();
         let mut inference = inference_data.inference(db);
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
-        eprintln!("Embedded: {:?}", concrete_trait_id.debug(db.elongate()));
         // Add the defining module of the candidate to the lookup.
         let mut lookup_context = lookup_context.clone();
         lookup_context.insert_module(candidate.module_id(db.upcast()));
@@ -169,10 +150,6 @@ impl CandidateSolver {
                     // Impl variables should not be present.
                     // TODO: Assert this.
                     // Free variable.
-                    eprintln!(
-                        "Free variable in impl: {:?}",
-                        self.candidate_impl.debug(db.elongate())
-                    );
                     SolutionSet::Ambiguous
                 }
             }
