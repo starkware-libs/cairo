@@ -1,6 +1,9 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_proc_macros::SemanticObject;
+use itertools::Itertools;
 
-use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, ResultNoErrEx};
+use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::{InferenceData, InferenceError, InferenceResult, InferenceVar, LocalImplVarId};
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
@@ -11,8 +14,46 @@ use crate::{ConcreteTraitId, GenericArgumentId, TypeLongId};
 pub enum SolutionSet<T> {
     None,
     Unique(T),
-    // TODO: Add info.
-    Ambiguous,
+    Ambiguous(Ambiguity),
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject)]
+pub enum Ambiguity {
+    MultipleImplsFound {
+        concrete_trait_id: ConcreteTraitId,
+        impls: Vec<ImplId>,
+    },
+    FreeVariable {
+        impl_id: ImplId,
+        #[dont_rewrite]
+        var: InferenceVar,
+    },
+    WillNotInfer {
+        concrete_trait_id: ConcreteTraitId,
+    },
+}
+impl Ambiguity {
+    pub fn format(&self, db: &(dyn SemanticGroup + 'static)) -> String {
+        match self {
+            Ambiguity::MultipleImplsFound { concrete_trait_id, impls } => {
+                let impls_str =
+                    impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
+                format!(
+                    "Trait `{:?}` has multiple implementations, in: {impls_str}",
+                    concrete_trait_id.debug(db)
+                )
+            }
+            Ambiguity::FreeVariable { impl_id, var: _ } => {
+                format!("Candidate impl {:?} has a free variable", impl_id.debug(db),)
+            }
+            Ambiguity::WillNotInfer { concrete_trait_id } => {
+                format!(
+                    "Cannot infer trait {:?}. First generic argument must be known.",
+                    concrete_trait_id.debug(db)
+                )
+            }
+        }
+    }
 }
 
 // Assumes the lookup context is already enriched
@@ -86,10 +127,13 @@ impl Solver {
             let candidate_solution = match candidate_solution_set {
                 SolutionSet::None => continue,
                 SolutionSet::Unique(candidate_solution) => candidate_solution,
-                SolutionSet::Ambiguous => return Ok(SolutionSet::Ambiguous),
+                SolutionSet::Ambiguous(ambiguity) => return Ok(SolutionSet::Ambiguous(ambiguity)),
             };
-            if unique_solution.is_some() {
-                return Ok(SolutionSet::Ambiguous);
+            if let Some(unique_solution) = unique_solution {
+                return Ok(SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
+                    concrete_trait_id: self.canonical_trait.0,
+                    impls: vec![unique_solution.0, candidate_solution.0],
+                }));
             }
             unique_solution = Some(candidate_solution);
         }
@@ -142,18 +186,18 @@ impl CandidateSolver {
                 let candidate_impl = inference.rewrite(self.candidate_impl).no_err();
                 let canonical_impl =
                     CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding);
-                if let Some(canonical_impl) = canonical_impl {
-                    SolutionSet::Unique(canonical_impl)
-                } else {
-                    // TODO: this is actually ok. If this is the only candidate,
-                    // these should be propagated as variables to the caller.
-                    // Impl variables should not be present.
-                    // TODO: Assert this.
-                    // Free variable.
-                    SolutionSet::Ambiguous
+                match canonical_impl {
+                    Ok(canonical_impl) => SolutionSet::Unique(canonical_impl),
+                    Err(MapperError(var)) => {
+                        // Free variable.
+                        SolutionSet::Ambiguous(Ambiguity::FreeVariable {
+                            impl_id: self.candidate_impl,
+                            var,
+                        })
+                    }
                 }
             }
-            SolutionSet::Ambiguous => SolutionSet::Ambiguous,
+            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
         })
     }
 }

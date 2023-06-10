@@ -5,7 +5,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::{ImplVar, ImplVarId, Inference, LocalImplVarId, LocalTypeVarId, TypeVar};
+use super::{ImplVar, ImplVarId, Inference, InferenceVar, LocalImplVarId, LocalTypeVarId, TypeVar};
 use crate::db::SemanticGroup;
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
@@ -47,8 +47,8 @@ impl CanonicalImpl {
         db: &dyn SemanticGroup,
         impl_id: ImplId,
         mapping: &CanonicalMapping,
-    ) -> Option<Self> {
-        Some(Self(Mapper::map(db, impl_id, &mapping.to_canonic).ok()?))
+    ) -> Result<Self, MapperError> {
+        Ok(Self(Mapper::map(db, impl_id, &mapping.to_canonic)?))
     }
     pub fn embed(&self, inference: &Inference<'_>, mapping: &CanonicalMapping) -> ImplId {
         Mapper::map(inference.db, self.0, &mapping.from_canonic)
@@ -196,10 +196,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
 
 // Mapper.
 #[derive(Debug)]
-enum MapperError {
-    Type(LocalTypeVarId),
-    Impl(LocalImplVarId),
-}
+pub struct MapperError(pub InferenceVar);
 struct Mapper<'db> {
     db: &'db dyn SemanticGroup,
     mapping: &'db VarMapping,
@@ -227,8 +224,12 @@ add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId);
 impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, MapperError> {
         let TypeLongId::Var(var) = value else { return value.default_rewrite(self); };
-        let id =
-            self.mapping.type_var_mapping.get(&var.id).copied().ok_or(MapperError::Type(var.id))?;
+        let id = self
+            .mapping
+            .type_var_mapping
+            .get(&var.id)
+            .copied()
+            .ok_or(MapperError(InferenceVar::Type(var.id)))?;
         Ok(TypeLongId::Var(TypeVar { id }))
     }
 }
@@ -236,8 +237,12 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: ImplId) -> Result<ImplId, MapperError> {
         let ImplId::ImplVar(var_id) = value else { return value.default_rewrite(self); };
         let var = var_id.get(self.get_db());
-        let id =
-            self.mapping.impl_var_mapping.get(&var.id).copied().ok_or(MapperError::Impl(var.id))?;
+        let id = self
+            .mapping
+            .impl_var_mapping
+            .get(&var.id)
+            .copied()
+            .ok_or(MapperError(InferenceVar::Impl(var.id)))?;
         let var = ImplVar { id, ..var };
         Ok(ImplId::ImplVar(var.intern(self.get_db())))
     }
