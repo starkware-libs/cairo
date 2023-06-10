@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::structure::SemanticStructEx;

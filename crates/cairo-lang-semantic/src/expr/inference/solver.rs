@@ -4,12 +4,14 @@ use cairo_lang_proc_macros::SemanticObject;
 use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
+use super::infers::InferenceEmbeddings;
 use super::{InferenceData, InferenceError, InferenceResult, InferenceVar, LocalImplVarId};
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
 use crate::substitution::SemanticRewriter;
 use crate::{ConcreteTraitId, GenericArgumentId, TypeLongId};
 
+/// A generic solution set for an inference constraint system.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum SolutionSet<T> {
     None,
@@ -17,6 +19,7 @@ pub enum SolutionSet<T> {
     Ambiguous(Ambiguity),
 }
 
+/// Describes the kinds of inference ambiguities.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, SemanticObject)]
 pub enum Ambiguity {
     MultipleImplsFound {
@@ -56,7 +59,8 @@ impl Ambiguity {
     }
 }
 
-// Assumes the lookup context is already enriched
+/// Query implementation of [SemanticGroup::canonic_trait_solutions].
+/// Assumes the lookup context is already enriched by [enrich_lookup_context].
 pub fn canonic_trait_solutions(
     db: &dyn SemanticGroup,
     canonical_trait: CanonicalTrait,
@@ -66,6 +70,7 @@ pub fn canonic_trait_solutions(
     solver.solution_set(db)
 }
 
+/// Cycle handling for [canonic_trait_solutions].
 pub fn canonic_trait_solutions_cycle(
     _db: &dyn SemanticGroup,
     _cycle: &[String],
@@ -75,6 +80,7 @@ pub fn canonic_trait_solutions_cycle(
     Err(InferenceError::Cycle { var: InferenceVar::Impl(LocalImplVarId(0)) })
 }
 
+/// Adds the defining module of the trait and the generic arguments to the lookup context.
 pub fn enrich_lookup_context(
     db: &dyn SemanticGroup,
     concrete_trait_id: ConcreteTraitId,
@@ -92,6 +98,7 @@ pub fn enrich_lookup_context(
     }
 }
 
+/// A canonical trait solver.
 #[derive(Debug)]
 pub struct Solver {
     pub canonical_trait: CanonicalTrait,
@@ -141,6 +148,7 @@ impl Solver {
     }
 }
 
+/// A solver for a candidate to a canonical trait.
 #[derive(Debug)]
 pub struct CandidateSolver {
     pub candidate: UninferredImpl,
@@ -201,5 +209,3 @@ impl CandidateSolver {
         })
     }
 }
-
-// Current issue: Assigning values to params. Params are unassignable.

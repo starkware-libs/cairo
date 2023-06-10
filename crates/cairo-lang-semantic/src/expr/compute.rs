@@ -24,6 +24,7 @@ use smol_str::SmolStr;
 
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
+use super::inference::infers::InferenceEmbeddings;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
