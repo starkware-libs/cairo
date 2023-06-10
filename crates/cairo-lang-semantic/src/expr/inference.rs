@@ -18,7 +18,7 @@ use cairo_lang_utils::{define_short_id, extract_matches};
 use itertools::Itertools;
 
 use self::canonic::{CanonicalTrait, NoError};
-use self::solver::{enrich_lookup_context, SolutionSet};
+use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
 use crate::corelib::{core_felt252_ty, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
@@ -38,7 +38,7 @@ use crate::literals::LiteralId;
 use crate::substitution::{GenericSubstitution, HasDb, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{ConcreteEnumLongId, ConcreteExternTypeLongId, ConcreteStructLongId};
 use crate::{
-    add_basic_rewrites, add_expr_rewrites, semantic_object_for_id, ConcreteEnumId,
+    add_basic_rewrites, add_expr_rewrites, add_rewrite, semantic_object_for_id, ConcreteEnumId,
     ConcreteExternTypeId, ConcreteFunction, ConcreteImplId, ConcreteImplLongId, ConcreteStructId,
     ConcreteTraitId, ConcreteTraitLongId, ConcreteTypeId, ConcreteVariant, ExprLiteral, FunctionId,
     FunctionLongId, GenericArgumentId, GenericParam, LocalVariable, Member, Parameter, Pattern,
@@ -114,7 +114,7 @@ pub enum InferenceError {
 
     // TODO: These are only used for external interface.
     NoImplsFound { concrete_trait_id: ConcreteTraitId },
-    MultipleImplsFound { concrete_trait_id: ConcreteTraitId, impls: Vec<UninferredImpl> },
+    Ambiguity(Ambiguity),
     TypeNotInferred { ty: TypeId },
 }
 impl InferenceError {
@@ -140,14 +140,7 @@ impl InferenceError {
             InferenceError::NoImplsFound { concrete_trait_id } => {
                 format!("Trait has no implementation in context: {:?}", concrete_trait_id.debug(db))
             }
-            InferenceError::MultipleImplsFound { concrete_trait_id, impls } => {
-                let impls_str =
-                    impls.iter().map(|imp| format!("{:?}", imp.debug(db.upcast()))).join(", ");
-                format!(
-                    "Trait `{:?}` has multiple implementations, in: {impls_str}",
-                    concrete_trait_id.debug(db)
-                )
-            }
+            InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
             InferenceError::TypeNotInferred { ty } => {
                 format!("Type annotations needed. Failed to infer {:?}", ty.debug(db))
             }
@@ -202,7 +195,7 @@ pub struct InferenceData {
     pending: VecDeque<LocalImplVarId>,
     refuted: Vec<LocalImplVarId>,
     solved: Vec<LocalImplVarId>,
-    ambiguous: Vec<LocalImplVarId>,
+    ambiguous: Vec<(LocalImplVarId, Ambiguity)>,
 }
 impl InferenceData {
     pub fn new() -> Self {
@@ -308,15 +301,15 @@ impl<'db> Inference<'db> {
 
     pub fn solve(&mut self) -> InferenceResult<()> {
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
-        self.pending.extend(ambiguous.drain(..));
+        self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
             let solution = match self.impl_var_solution_set(var)? {
                 SolutionSet::None => {
                     self.refuted.push(var);
                     continue;
                 }
-                SolutionSet::Ambiguous => {
-                    self.ambiguous.push(var);
+                SolutionSet::Ambiguous(ambiguity) => {
+                    self.ambiguous.push((var, ambiguity));
                     continue;
                 }
                 SolutionSet::Unique(solution) => solution,
@@ -328,7 +321,7 @@ impl<'db> Inference<'db> {
             // Something changed.
             self.solved.push(var);
             let mut ambiguous = std::mem::take(&mut self.ambiguous);
-            self.pending.extend(ambiguous.drain(..));
+            self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         }
         Ok(())
     }
@@ -338,8 +331,8 @@ impl<'db> Inference<'db> {
         if !self.refuted.is_empty() {
             return Ok(SolutionSet::None);
         }
-        if !self.ambiguous.is_empty() {
-            return Ok(SolutionSet::Ambiguous);
+        if let Some((_, ambiguity)) = self.ambiguous.first() {
+            return Ok(SolutionSet::Ambiguous(ambiguity.clone()));
         }
         assert!(self.pending.is_empty(), "solution() called on an unsolved solver");
         Ok(SolutionSet::Unique(()))
@@ -355,7 +348,7 @@ impl<'db> Inference<'db> {
             if let Err(err) = self.solve() {
                 return Some((None, err));
             }
-            for var in self.ambiguous.clone() {
+            for (var, _) in self.ambiguous.clone() {
                 let impl_var = self.impl_var(var).clone();
                 if impl_var.concrete_trait_id.trait_id(self.db) != numeric_trait_id {
                     continue;
@@ -410,16 +403,10 @@ impl<'db> Inference<'db> {
                 InferenceError::NoImplsFound { concrete_trait_id },
             ));
         }
-        if let Some(var) = self.ambiguous.first().copied() {
-            let impl_var = self.impl_var(var).clone();
-            let concrete_trait_id = impl_var.concrete_trait_id;
-            let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
-            // TODO: Populate candidates.
-            let impls = vec![];
-            return Some((
-                InferenceVar::Impl(var),
-                InferenceError::MultipleImplsFound { concrete_trait_id, impls },
-            ));
+        if let Some((var, ambiguity)) = self.ambiguous.first() {
+            let var = *var;
+            let ambiguity = self.rewrite(ambiguity.clone()).no_err();
+            return Some((InferenceVar::Impl(var), InferenceError::Ambiguity(ambiguity)));
         }
         None
     }
@@ -733,12 +720,14 @@ impl<'db> Inference<'db> {
             Some(GenericArgumentId::Type(ty)) => {
                 if let TypeLongId::Var(_) = self.db.lookup_intern_type(*ty) {
                     // Don't try to infer such impls.
-                    return Ok(SolutionSet::Ambiguous);
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer {
+                        concrete_trait_id,
+                    }));
                 }
             }
             Some(GenericArgumentId::Impl(ImplId::ImplVar(_))) => {
                 // Don't try to infer such impls.
-                return Ok(SolutionSet::Ambiguous);
+                return Ok(SolutionSet::Ambiguous(Ambiguity::WillNotInfer { concrete_trait_id }));
             }
             _ => {}
         };
@@ -751,7 +740,7 @@ impl<'db> Inference<'db> {
             SolutionSet::Unique(canonical_impl) => {
                 SolutionSet::Unique(canonical_impl.embed(self, &canonicalizer))
             }
-            SolutionSet::Ambiguous => SolutionSet::Ambiguous,
+            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
         })
     }
 }
@@ -763,6 +752,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
 }
 add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId);
 add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
+add_rewrite!(<'a>, Inference<'a>, NoError, Ambiguity);
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
         if let TypeLongId::Var(var) = value {

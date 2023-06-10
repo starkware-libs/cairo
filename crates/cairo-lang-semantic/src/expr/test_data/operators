@@ -59,10 +59,10 @@ error: Unexpected return type. Expected: "()", found: "?17".
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
                                                ^
 
-error: Trait has no implementation in context: core::traits::Mul::<core::integer::u128>
- --> lib.cairo:3:9
-    a + a * a - a;
-        ^***^
+error: Trait has no implementation in context: core::traits::PartialOrd::<core::bool>
+ --> lib.cairo:7:5
+    a>a>a;
+    ^***^
 
 //! > ==========================================================================
 
