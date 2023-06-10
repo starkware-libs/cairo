@@ -31,7 +31,6 @@ pub trait InferenceConform {
         garg1: GenericArgumentId,
     ) -> Result<GenericArgumentId, InferenceError>;
     fn conform_impl(&mut self, impl0: ImplId, impl1: ImplId) -> InferenceResult<ImplId>;
-    /// Conforms generics traits. See `conform_ty()`.
     fn conform_traits(
         &mut self,
         trt0: ConcreteTraitId,

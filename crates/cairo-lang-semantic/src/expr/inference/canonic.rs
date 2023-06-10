@@ -24,10 +24,11 @@ use crate::{
     GenericParam, Parameter, Signature, TypeId, TypeLongId,
 };
 
-// Canonical objects.
+/// A canonical representation of a concrete trait that needs to be solved.
 #[derive(Copy, Clone, PartialEq, Hash, Eq, Debug)]
 pub struct CanonicalTrait(pub ConcreteTraitId);
 impl CanonicalTrait {
+    /// Canonicalizes a concrete trait that is part of an [Inference].
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         trait_id: ConcreteTraitId,
@@ -35,14 +36,18 @@ impl CanonicalTrait {
         let (t, mapping) = Canonicalizer::canonicalize(db, trait_id);
         (Self(t), mapping)
     }
+    /// Embeds a canonical trait into an [Inference].
     pub fn embed(&self, inference: &mut Inference<'_>) -> (ConcreteTraitId, CanonicalMapping) {
         Embedder::embed(inference, self.0)
     }
 }
 
+/// A solution for a [CanonicalTrait].
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct CanonicalImpl(pub ImplId);
 impl CanonicalImpl {
+    /// Canonicalizes a concrete impl that is part of an [Inference].
+    /// Uses the same same canonicalization of the trait, to be consistent.
     pub fn canonicalize(
         db: &dyn SemanticGroup,
         impl_id: ImplId,
@@ -50,20 +55,16 @@ impl CanonicalImpl {
     ) -> Result<Self, MapperError> {
         Ok(Self(Mapper::map(db, impl_id, &mapping.to_canonic)?))
     }
+    /// Embeds a canonical impl into an [Inference].
+    /// Uses the same embedding of the trait, to be consistent.
     pub fn embed(&self, inference: &Inference<'_>, mapping: &CanonicalMapping) -> ImplId {
         Mapper::map(inference.db, self.0, &mapping.from_canonic)
             .expect("Tried to embed a non canonical impl")
     }
 }
 
-// Mappings.
-#[derive(Default, Debug)]
-pub struct VarMapping {
-    type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
-    impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
-}
-
 /// Mapping between canonical space and inference space.
+/// Created by a either canonicalizing or embedding a trait.
 #[derive(Debug)]
 pub struct CanonicalMapping {
     to_canonic: VarMapping,
@@ -86,6 +87,14 @@ impl CanonicalMapping {
     }
 }
 
+// Mappings.
+#[derive(Default, Debug)]
+pub struct VarMapping {
+    type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
+    impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
+}
+
+/// A 'never' error.
 #[derive(Debug)]
 pub enum NoError {}
 pub trait ResultNoErrEx<T> {
@@ -100,7 +109,8 @@ impl<T> ResultNoErrEx<T> for Result<T, NoError> {
     }
 }
 
-// Rewriters.
+/// Canonicalization rewriter. Each encountered variable is mapped to a new free variable,
+/// in pre-order.
 struct Canonicalizer<'db> {
     db: &'db dyn SemanticGroup,
     to_canonic: VarMapping,
@@ -144,7 +154,7 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
     }
 }
 
-// Embedder.
+/// Embedder rewriter. Each canonical variable is mapped to a new inference variable.
 struct Embedder<'a, 'db> {
     inference: &'a mut Inference<'db>,
     from_canonic: VarMapping,
@@ -194,7 +204,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
     }
 }
 
-// Mapper.
+// Mapper rewriter. Maps variables according to a given [VarMapping].
 #[derive(Debug)]
 pub struct MapperError(pub InferenceVar);
 struct Mapper<'db> {
