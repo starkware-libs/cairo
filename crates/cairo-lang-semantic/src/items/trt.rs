@@ -23,6 +23,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
@@ -227,10 +228,7 @@ pub fn priv_trait_semantic_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     for generic_param in &generic_params {
         resolver.add_generic_param(*generic_param);

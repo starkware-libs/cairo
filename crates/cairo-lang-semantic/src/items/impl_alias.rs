@@ -11,6 +11,7 @@ use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
@@ -71,14 +72,8 @@ pub fn priv_impl_alias_semantic_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped()))?;
-    let resolved_impl = resolver
-        .inference()
-        .rewrite(resolved_impl)
-        .map_err(|err| err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {

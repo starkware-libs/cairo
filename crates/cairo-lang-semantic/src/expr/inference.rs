@@ -17,11 +17,12 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{define_short_id, extract_matches};
 use itertools::Itertools;
 
-use self::canonic::CanonicalTrait;
+use self::canonic::{CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, SolutionSet};
 use crate::corelib::{core_felt252_ty, get_core_trait};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::objects::*;
 use crate::expr::pattern::*;
@@ -364,7 +365,7 @@ impl<'db> Inference<'db> {
                     impl_var.concrete_trait_id.generic_args(self.db)[0],
                     GenericArgumentId::Type
                 );
-                if self.rewrite(ty) == Ok(felt_ty) {
+                if self.rewrite(ty).no_err() == felt_ty {
                     continue;
                 }
                 if let Err(err) = self.conform_ty(ty, felt_ty) {
@@ -403,7 +404,7 @@ impl<'db> Inference<'db> {
         if let Some(var) = self.refuted.first().copied() {
             let impl_var = self.impl_var(var).clone();
             let concrete_trait_id = impl_var.concrete_trait_id;
-            let concrete_trait_id = self.rewrite(concrete_trait_id).unwrap_or(concrete_trait_id);
+            let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
             return Some((
                 InferenceVar::Impl(var),
                 InferenceError::NoImplsFound { concrete_trait_id },
@@ -412,7 +413,7 @@ impl<'db> Inference<'db> {
         if let Some(var) = self.ambiguous.first().copied() {
             let impl_var = self.impl_var(var).clone();
             let concrete_trait_id = impl_var.concrete_trait_id;
-            let concrete_trait_id = self.rewrite(concrete_trait_id).unwrap_or(concrete_trait_id);
+            let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
             // TODO: Populate candidates.
             let impls = vec![];
             return Some((
@@ -590,7 +591,7 @@ impl<'db> Inference<'db> {
         let mut rewriter = SubstitutionRewriter { db: self.db, substitution: &substitution };
         let generic_args = rewriter.rewrite(generic_args.iter().copied().collect_vec())?;
         self.conform_generic_args(&generic_args, expected_generic_args)?;
-        self.rewrite(new_generic_args)
+        Ok(self.rewrite(new_generic_args).no_err())
     }
 
     /// Infers all generic_arguments given the parameters.
@@ -639,7 +640,7 @@ impl<'db> Inference<'db> {
 
         let fixed_param_ty = rewriter.rewrite(first_param.ty).ok()?;
         let (_, n_snapshots) = self.conform_ty_ex(self_ty, fixed_param_ty, true).ok()?;
-        let generic_args = self.rewrite(generic_args).ok()?;
+        let generic_args = self.rewrite(generic_args).no_err();
 
         Some((
             self.db.intern_concrete_trait(ConcreteTraitLongId { trait_id, generic_args }),
@@ -720,7 +721,7 @@ impl<'db> Inference<'db> {
     ) -> InferenceResult<SolutionSet<ImplId>> {
         let impl_var = self.impl_var(var).clone();
         // Update the concrete trait of the impl var.
-        let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id)?;
+        let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id).no_err();
         let mut lookup_context = impl_var.lookup_context;
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         self.impl_vars[impl_var.id.0].concrete_trait_id = concrete_trait_id;
@@ -760,10 +761,10 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Inference<'a> {
         self.db
     }
 }
-add_basic_rewrites!(<'a>, Inference<'a>, InferenceError, @exclude TypeLongId ImplId);
-add_expr_rewrites!(<'a>, Inference<'a>, InferenceError, @exclude);
-impl<'a> SemanticRewriter<TypeLongId, InferenceError> for Inference<'a> {
-    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, InferenceError> {
+add_basic_rewrites!(<'a>, Inference<'a>, NoError, @exclude TypeLongId ImplId);
+add_expr_rewrites!(<'a>, Inference<'a>, NoError, @exclude);
+impl<'a> SemanticRewriter<TypeLongId, NoError> for Inference<'a> {
+    fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
         if let TypeLongId::Var(var) = value {
             if let Some(type_id) = self.type_assignment.get(&var.id) {
                 return self.rewrite(self.db.lookup_intern_type(*type_id));
@@ -772,8 +773,8 @@ impl<'a> SemanticRewriter<TypeLongId, InferenceError> for Inference<'a> {
         value.default_rewrite(self)
     }
 }
-impl<'a> SemanticRewriter<ImplId, InferenceError> for Inference<'a> {
-    fn rewrite(&mut self, value: ImplId) -> InferenceResult<ImplId> {
+impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
+    fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
         if let ImplId::ImplVar(var) = value {
             // Relax the candidates.
             if let Some(impl_id) = self.impl_assignment(var.get(self.db).id) {

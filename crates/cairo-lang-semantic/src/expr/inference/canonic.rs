@@ -51,7 +51,8 @@ impl CanonicalImpl {
         Some(Self(Mapper::map(db, impl_id, &mapping.to_canonic).ok()?))
     }
     pub fn embed(&self, inference: &Inference<'_>, mapping: &CanonicalMapping) -> ImplId {
-        Mapper::map(inference.db, self.0, &mapping.from_canonic).unwrap()
+        Mapper::map(inference.db, self.0, &mapping.from_canonic)
+            .expect("Tried to embed a non canonical impl")
     }
 }
 
@@ -87,6 +88,17 @@ impl CanonicalMapping {
 
 #[derive(Debug)]
 pub enum NoError {}
+pub trait ResultNoErrEx<T> {
+    fn no_err(self) -> T;
+}
+impl<T> ResultNoErrEx<T> for Result<T, NoError> {
+    fn no_err(self) -> T {
+        match self {
+            Ok(v) => v,
+            Err(err) => match err {},
+        }
+    }
+}
 
 // Rewriters.
 struct Canonicalizer<'db> {
@@ -99,7 +111,7 @@ impl<'db> Canonicalizer<'db> {
         Self: SemanticRewriter<T, NoError>,
     {
         let mut canonicalizer = Self { db, to_canonic: Default::default() };
-        let value = canonicalizer.rewrite(value).unwrap();
+        let value = canonicalizer.rewrite(value).no_err();
         let mapping = CanonicalMapping::from_to_canonic(canonicalizer.to_canonic);
         (value, mapping)
     }
@@ -143,7 +155,7 @@ impl<'a, 'db> Embedder<'a, 'db> {
         Self: SemanticRewriter<T, NoError>,
     {
         let mut embedder = Self { inference, from_canonic: Default::default() };
-        let value = embedder.rewrite(value).unwrap();
+        let value = embedder.rewrite(value).no_err();
         let mapping = CanonicalMapping::from_from_canonic(embedder.from_canonic);
         (value, mapping)
     }

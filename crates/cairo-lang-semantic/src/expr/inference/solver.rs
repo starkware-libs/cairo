@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::LanguageElementId;
 
-use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait};
+use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, ResultNoErrEx};
 use super::{InferenceData, InferenceError, InferenceResult, InferenceVar, LocalImplVarId};
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
@@ -139,7 +139,7 @@ impl CandidateSolver {
         Ok(match solution_set {
             SolutionSet::None => SolutionSet::None,
             SolutionSet::Unique(_) => {
-                let candidate_impl = inference.rewrite(self.candidate_impl)?;
+                let candidate_impl = inference.rewrite(self.candidate_impl).no_err();
                 let canonical_impl =
                     CanonicalImpl::canonicalize(db, candidate_impl, &self.canonical_embedding);
                 if let Some(canonical_impl) = canonical_impl {

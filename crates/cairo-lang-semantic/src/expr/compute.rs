@@ -22,6 +22,7 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use smol_str::SmolStr;
 
+use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
@@ -619,11 +620,7 @@ pub fn compute_root_expr(
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx
-            .resolver
-            .inference()
-            .rewrite(expr.clone())
-            .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
+        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
         if let Expr::Literal(expr) = expr {
             validate_literal(ctx.db, expr.ty, expr.value.clone())
                 .map_err(|err| ctx.diagnostics.report_by_ptr(expr.stable_ptr.untyped(), err))
@@ -631,11 +628,7 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
         }
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
-        *stmt = ctx
-            .resolver
-            .inference()
-            .rewrite(stmt.clone())
-            .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
+        *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
     }
     Ok(())
 }
