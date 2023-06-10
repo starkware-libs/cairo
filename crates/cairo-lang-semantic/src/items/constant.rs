@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
@@ -80,14 +81,10 @@ pub fn priv_constant_semantic_data(
         inference_err
             .report(ctx.diagnostics, stable_ptr.unwrap_or(const_ast.stable_ptr().untyped()));
     }
-    let constant = ctx
-        .resolver
-        .inference()
-        .rewrite(constant)
-        .map_err(|err| err.report(ctx.diagnostics, const_ast.stable_ptr().untyped()));
+    let constant = ctx.resolver.inference().rewrite(constant).no_err();
 
     let resolver_data = Arc::new(ctx.resolver.data);
-    Ok(ConstantData { diagnostics: diagnostics.build(), constant, resolver_data })
+    Ok(ConstantData { diagnostics: diagnostics.build(), constant: Ok(constant), resolver_data })
 }
 
 /// Query implementation of [SemanticGroup::constant_semantic_diagnostics].

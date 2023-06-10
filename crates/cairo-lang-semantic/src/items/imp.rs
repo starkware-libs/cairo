@@ -38,6 +38,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::{ImplVarId, InferenceData, InferenceResult};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
@@ -297,14 +298,8 @@ pub fn priv_impl_declaration_data_inner(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, impl_ast.stable_ptr().untyped()))?;
-    let concrete_trait = resolver
-        .inference()
-        .rewrite(concrete_trait)
-        .map_err(|err| err.report(&mut diagnostics, impl_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -872,7 +867,7 @@ pub fn get_impl_at_context(
     if let Some((_, err)) = inference.finalize() {
         return Err(err);
     };
-    inference.rewrite(impl_id)
+    Ok(inference.rewrite(impl_id).no_err())
 }
 
 // === Impl Function Declaration ===
@@ -1050,14 +1045,8 @@ pub fn priv_impl_function_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let function_generic_params = resolver
-        .inference()
-        .rewrite(function_generic_params)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
-    let signature = resolver
-        .inference()
-        .rewrite(signature)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();
+    let signature = resolver.inference().rewrite(signature).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {

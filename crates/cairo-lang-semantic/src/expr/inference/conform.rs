@@ -1,5 +1,6 @@
 use itertools::zip_eq;
 
+use super::canonic::ResultNoErrEx;
 use super::{Inference, InferenceError, InferenceResult, InferenceVar};
 use crate::corelib::never_ty;
 use crate::items::imp::ImplId;
@@ -65,8 +66,8 @@ impl<'db> InferenceConform for Inference<'db> {
         ty1: TypeId,
         ty0_is_self: bool,
     ) -> Result<(TypeId, usize), InferenceError> {
-        let ty0 = self.rewrite(ty0)?;
-        let ty1 = self.rewrite(ty1)?;
+        let ty0 = self.rewrite(ty0).no_err();
+        let ty1 = self.rewrite(ty1).no_err();
         if ty0 == never_ty(self.db) {
             return Ok((ty1, 0));
         }
@@ -190,8 +191,8 @@ impl<'db> InferenceConform for Inference<'db> {
 
     /// Conforms an impl. See `conform_ty()`.
     fn conform_impl(&mut self, impl0: ImplId, impl1: ImplId) -> InferenceResult<ImplId> {
-        let impl0 = self.rewrite(impl0)?;
-        let impl1 = self.rewrite(impl1)?;
+        let impl0 = self.rewrite(impl0).no_err();
+        let impl1 = self.rewrite(impl1).no_err();
         if impl0 == impl1 {
             return Ok(impl0);
         }
@@ -200,7 +201,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 var.get(self.db).concrete_trait_id,
                 self.db.impl_concrete_trait(impl0)?,
             )?;
-            let impl_id = self.rewrite(impl0)?;
+            let impl_id = self.rewrite(impl0).no_err();
             return self.assign_impl(var.get(self.db).id, impl_id);
         }
         match impl0 {
@@ -209,7 +210,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     var.get(self.db).concrete_trait_id,
                     self.db.impl_concrete_trait(impl1)?,
                 )?;
-                let impl_id = self.rewrite(impl1)?;
+                let impl_id = self.rewrite(impl1).no_err();
                 self.assign_impl(var.get(self.db).id, impl_id)
             }
             ImplId::Concrete(concrete0) => {
@@ -253,7 +254,7 @@ impl<'db> InferenceConform for Inference<'db> {
     /// Checks if a type tree contains a certain [InferenceVar] somewhere. Used to avoid inference
     /// cycles.
     fn ty_contains_var(&mut self, ty: TypeId, var: InferenceVar) -> InferenceResult<bool> {
-        Ok(match self.db.lookup_intern_type(self.rewrite(ty)?) {
+        Ok(match self.db.lookup_intern_type(self.rewrite(ty).no_err()) {
             TypeLongId::Concrete(concrete) => {
                 let generic_args = concrete.generic_args(self.db);
                 self.generic_args_contain_var(&generic_args, var)?
