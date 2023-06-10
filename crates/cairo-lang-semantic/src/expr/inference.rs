@@ -16,7 +16,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{define_short_id, extract_matches};
 
-use self::canonic::{CanonicalTrait, NoError};
+use self::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, NoError};
 use self::solver::{enrich_lookup_context, Ambiguity, SolutionSet};
 use crate::corelib::{core_felt252_ty, get_core_trait};
 use crate::db::SemanticGroup;
@@ -467,10 +467,27 @@ impl<'db> Inference<'db> {
         let impl_var = self.impl_var(var).clone();
         // Update the concrete trait of the impl var.
         let concrete_trait_id = self.rewrite(impl_var.concrete_trait_id).no_err();
-        let mut lookup_context = impl_var.lookup_context;
-        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
         self.impl_vars[impl_var.id.0].concrete_trait_id = concrete_trait_id;
-        self.impl_vars[impl_var.id.0].lookup_context = lookup_context.clone();
+
+        let solution_set = self.trait_solution_set(concrete_trait_id, impl_var.lookup_context)?;
+        Ok(match solution_set {
+            SolutionSet::None => SolutionSet::None,
+            SolutionSet::Unique((canonical_impl, canonicalizer)) => {
+                SolutionSet::Unique(canonical_impl.embed(self, &canonicalizer))
+            }
+            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
+        })
+    }
+
+    /// Computes the solution set for an trait with a recursive query.
+    pub fn trait_solution_set(
+        &mut self,
+        concrete_trait_id: ConcreteTraitId,
+        mut lookup_context: ImplLookupContext,
+    ) -> InferenceResult<SolutionSet<(CanonicalImpl, CanonicalMapping)>> {
+        // TODO: This is done twice.
+        let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
+        enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
 
         // Don't try to resolve impls if the first generic param is a variable.
         let generic_args = concrete_trait_id.generic_args(self.db);
@@ -492,14 +509,13 @@ impl<'db> Inference<'db> {
 
         let (canonical_trait, canonicalizer) =
             CanonicalTrait::canonicalize(self.db, concrete_trait_id);
-        let solution_set = self.db.canonic_trait_solutions(canonical_trait, lookup_context)?;
-        Ok(match solution_set {
-            SolutionSet::None => SolutionSet::None,
+        match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
+            SolutionSet::None => Ok(SolutionSet::None),
             SolutionSet::Unique(canonical_impl) => {
-                SolutionSet::Unique(canonical_impl.embed(self, &canonicalizer))
+                Ok(SolutionSet::Unique((canonical_impl, canonicalizer)))
             }
-            SolutionSet::Ambiguous(ambiguity) => SolutionSet::Ambiguous(ambiguity),
-        })
+            SolutionSet::Ambiguous(ambiguity) => Ok(SolutionSet::Ambiguous(ambiguity)),
+        }
     }
 }
 

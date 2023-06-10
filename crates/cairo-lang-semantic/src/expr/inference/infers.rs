@@ -16,14 +16,6 @@ use crate::{
 };
 
 pub trait InferenceEmbeddings {
-    fn can_infer_generics(
-        &self,
-        generic_params: &[GenericParam],
-        generic_args: &[GenericArgumentId],
-        expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> bool;
     fn infer_impl(
         &mut self,
         uninferred_impl: UninferredImpl,
@@ -93,31 +85,6 @@ pub trait InferenceEmbeddings {
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
-    /// Determines if an assignment to `generic_params` can be chosen s.t. `generic_args` will be
-    /// substituted to `expected_generic_args`.
-    fn can_infer_generics(
-        &self,
-        generic_params: &[GenericParam],
-        generic_args: &[GenericArgumentId],
-        expected_generic_args: &[GenericArgumentId],
-        lookup_context: &ImplLookupContext,
-        stable_ptr: Option<SyntaxStablePtrId>,
-    ) -> bool {
-        if generic_args.len() != expected_generic_args.len() {
-            return false;
-        }
-        let mut inference_data = self.clone_data();
-        let mut inference = inference_data.inference(self.db);
-        let res = inference.infer_generic_assignment(
-            generic_params,
-            generic_args,
-            expected_generic_args,
-            lookup_context,
-            stable_ptr,
-        );
-        res.is_ok()
-    }
-
     /// Infers all the variables required to make an uninferred impl provide a concrete trait.
     fn infer_impl(
         &mut self,

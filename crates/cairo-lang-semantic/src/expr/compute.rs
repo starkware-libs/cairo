@@ -25,6 +25,7 @@ use smol_str::SmolStr;
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
 use super::inference::infers::InferenceEmbeddings;
+use super::inference::solver::SolutionSet;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
@@ -1424,7 +1425,7 @@ fn method_call_expr(
             // Check if trait function signature's first param can fit our expr type.
             let mut inference_data = ctx.resolver.inference().clone_data();
             let mut inference = inference_data.inference(ctx.db);
-            let mut lookup_context = ctx.resolver.impl_lookup_context();
+            let lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
                 trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
             ) else {
@@ -1432,13 +1433,13 @@ fn method_call_expr(
             };
 
             // Find impls for it.
-            lookup_context.insert_module(trait_id.module_file_id(ctx.db.upcast()).0);
-            if inference
-                .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
-                .is_err()
-            {
+            inference.solve().ok();
+            if !matches!(
+                inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
+                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+            ) {
                 continue;
-            };
+            }
 
             candidates.push(trait_function);
         }
