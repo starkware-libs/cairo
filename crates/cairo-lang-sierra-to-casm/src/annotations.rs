@@ -20,9 +20,8 @@ use crate::environment::{
 use crate::invocations::{ApTrackingChange, BranchChanges};
 use crate::metadata::Metadata;
 use crate::references::{
-    build_function_parameters_refs, check_types_match, IntroductionPoint,
+    build_function_parameters_refs, check_types_match, Anchor, IntroductionPoint,
     OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
-    VariableApIndependentLocationInfo,
 };
 use crate::type_sizes::TypeSizeMap;
 
@@ -205,8 +204,7 @@ impl ProgramAnnotations {
             // Check if the variable doesn't match on type, expression or stack information.
             if !(actual_ref.ty == expected_ref.ty
                 && actual_ref.expression == expected_ref.expression
-                && actual_ref.ap_independent_location_info
-                    == expected_ref.ap_independent_location_info)
+                && actual_ref.anchor == expected_ref.anchor)
             {
                 return false;
             }
@@ -273,13 +271,12 @@ impl ProgramAnnotations {
                             error,
                         })?,
                     ty: ref_value.ty.clone(),
-                    ap_independent_location_info: match &ref_value.ap_independent_location_info {
-                        VariableApIndependentLocationInfo::ContinuousStack(_)
-                            if branch_changes.clear_old_stack =>
-                        {
-                            VariableApIndependentLocationInfo::Other
-                        }
-                        other => other.clone(),
+                    anchor: if matches!(ref_value.anchor, Some(Anchor::ContinuousStack(_)))
+                        && branch_changes.clear_old_stack
+                    {
+                        None
+                    } else {
+                        ref_value.anchor.clone()
                     },
                     introduction_point: ref_value.introduction_point.clone(),
                 },
@@ -292,7 +289,7 @@ impl ProgramAnnotations {
                 branch_changes.refs.into_iter().map(|value| ReferenceValue {
                     expression: value.expression,
                     ty: value.ty,
-                    ap_independent_location_info: value.ap_independent_location_info,
+                    anchor: value.anchor,
                     introduction_point: match value.introduction_point {
                         OutputReferenceValueIntroductionPoint::New(output_idx) => {
                             IntroductionPoint {
@@ -319,12 +316,7 @@ impl ProgramAnnotations {
         // find a missing variable.
         let available_stack_indices: UnorderedHashSet<_> = refs
             .values()
-            .flat_map(|r| {
-                try_extract_matches!(
-                    r.ap_independent_location_info,
-                    VariableApIndependentLocationInfo::ContinuousStack
-                )
-            })
+            .flat_map(|r| try_extract_matches!(r.anchor.as_ref()?, Anchor::ContinuousStack))
             .collect();
         let new_stack_size_opt = (0..branch_changes.new_stack_size)
             .find(|i| !available_stack_indices.contains(&(branch_changes.new_stack_size - 1 - i)));
@@ -332,16 +324,11 @@ impl ProgramAnnotations {
             // The number of stack elements which were removed.
             let stack_removal = branch_changes.new_stack_size - new_stack_size;
             for r in refs.values_mut() {
-                r.ap_independent_location_info = match &r.ap_independent_location_info {
-                    VariableApIndependentLocationInfo::ContinuousStack(stack_idx) => {
+                r.anchor = match &r.anchor {
+                    Some(Anchor::ContinuousStack(stack_idx)) => {
                         // Subtract the number of stack elements removed. If the result is negative,
-                        // `stack_idx` is set to `None` and the variable is removed from the stack.
-                        match stack_idx.checked_sub(stack_removal) {
-                            Some(new_stack_idx) => {
-                                VariableApIndependentLocationInfo::ContinuousStack(new_stack_idx)
-                            }
-                            None => VariableApIndependentLocationInfo::Other,
-                        }
+                        // anchor is set to `None` and the variable is removed from the stack.
+                        stack_idx.checked_sub(stack_removal).map(Anchor::ContinuousStack)
                     }
                     other => other.clone(),
                 };
@@ -456,12 +443,8 @@ fn test_var_consistency(
     expected: &ReferenceValue,
     ap_tracking_enabled: bool,
 ) -> bool {
-    // If the variable is on the stack, or is local, it can always be merged.
-    if matches!(
-        actual.ap_independent_location_info,
-        VariableApIndependentLocationInfo::ContinuousStack(_)
-            | VariableApIndependentLocationInfo::Local
-    ) {
+    // If the variable is anchored (it is on the stack or local), it can always be merged.
+    if actual.anchor.is_some() {
         return true;
     }
     // If the variable is not ap-dependent it can always be merged.

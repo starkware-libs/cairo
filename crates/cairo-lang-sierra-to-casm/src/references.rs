@@ -26,18 +26,16 @@ pub enum ReferencesError {
 
 pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 
-/// Information about the location of a variable that is not dependent on the actual AP values.
-/// Used for recompilability checks.
+/// The anchoring information of the variable, if a variable across branches has the same anchor, it
+/// can be merged.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum VariableApIndependentLocationInfo {
+pub enum Anchor {
     /// The variable is on the continuous-stack, with the given index. 0 represents the oldest
     /// element on the stack.
     ContinuousStack(usize),
-    /// The variable was defined as a local variable. May be a function param, or an explicitly
+    /// The variable was defined as a local variable. May be a function parameter, or an explicitly
     /// defined local.
     Local,
-    /// Any other case.
-    Other,
 }
 
 /// A Sierra reference to a value.
@@ -46,8 +44,8 @@ pub enum VariableApIndependentLocationInfo {
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// Location information for the variable that does not depend on AP.
-    pub ap_independent_location_info: VariableApIndependentLocationInfo,
+    /// Anchor for the value if exists.
+    pub anchor: Option<Anchor>,
     /// The location the value was introduced.
     pub introduction_point: IntroductionPoint,
 }
@@ -78,8 +76,8 @@ pub struct IntroductionPoint {
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// Location information for the variable that does not depend on AP.
-    pub ap_independent_location_info: VariableApIndependentLocationInfo,
+    /// Anchor for the value if exists.
+    pub anchor: Option<Anchor>,
     /// The statememt and output index where the value was introduced.
     /// Statement may be New if it is to be populated later.
     pub introduction_point: OutputReferenceValueIntroductionPoint,
@@ -159,7 +157,7 @@ pub fn build_function_parameters_refs(
                             .collect(),
                     },
                     ty: param.ty.clone(),
-                    ap_independent_location_info: VariableApIndependentLocationInfo::Local,
+                    anchor: Some(Anchor::Local),
                     introduction_point: IntroductionPoint {
                         source_statement_idx: None,
                         destination_statement_idx: func.entry_point,

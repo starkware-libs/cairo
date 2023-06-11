@@ -357,6 +357,34 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "empty_enum")]
+#[test_case(indoc! {"
+            type felt252 = felt252;
+            type NonZeroFelt252 = NonZero<felt252>;
+            type Unit = Struct<ut@Tuple>;
+
+            libfunc branch_align = branch_align;
+            libfunc jump = jump;
+            libfunc felt252_is_zero = felt252_is_zero;
+            libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+            libfunc revoke_ap_tracking = revoke_ap_tracking;
+
+            revoke_ap_tracking() -> ();
+            felt252_is_zero([1]) { fallthrough() 4([1]) };
+            branch_align() -> ();
+            jump() { 6() };
+            branch_align() -> ();
+            drop_nz_felt252([1]) -> ();
+            return ([2]);
+
+            test_program@0([1]: felt252, [2]: Unit) -> (Unit);
+        "},
+        false,
+        indoc! {"
+            jmp rel 4 if [fp + -3] != 0;
+            jmp rel 2;
+            ret;
+        "};
+        "merge unit param")]
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(

@@ -24,8 +24,8 @@ use crate::environment::frame_state::{FrameState, FrameStateError};
 use crate::environment::Environment;
 use crate::metadata::Metadata;
 use crate::references::{
-    OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
-    ReferenceValue, VariableApIndependentLocationInfo,
+    Anchor, OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
+    ReferenceValue,
 };
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -136,15 +136,9 @@ impl BranchChanges {
                 .enumerate()
                 .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
                     validate_output_var_refs(ref_info, &expression);
-                    let ap_independent_location_info = calc_output_ap_independent_location_info(
-                        ref_info,
-                        stack_base,
-                        clear_old_stack,
-                        &param_ref,
-                    );
-                    if let VariableApIndependentLocationInfo::ContinuousStack(stack_idx) =
-                        ap_independent_location_info
-                    {
+                    let anchor =
+                        calc_output_anchor(ref_info, stack_base, clear_old_stack, &param_ref);
+                    if let Some(Anchor::ContinuousStack(stack_idx)) = anchor {
                         new_stack_size = new_stack_size.max(stack_idx + 1);
                     }
                     let introduction_point =
@@ -156,12 +150,7 @@ impl BranchChanges {
                             // Marking the statement as unknown to be fixed later.
                             OutputReferenceValueIntroductionPoint::New(output_idx)
                         };
-                    OutputReferenceValue {
-                        expression,
-                        ty: ty.clone(),
-                        ap_independent_location_info,
-                        introduction_point,
-                    }
+                    OutputReferenceValue { expression, ty: ty.clone(), anchor, introduction_point }
                 })
                 .collect(),
             ap_change,
@@ -198,26 +187,31 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
     };
 }
 
-/// Calculates the continuous stack index for an output var of a branch.
+/// Calculates the anchor for an output var of a branch.
 /// `param_ref` is used to fetch the reference value of a param of the libfunc.
-fn calc_output_ap_independent_location_info<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
+fn calc_output_anchor<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
     ref_info: &OutputVarReferenceInfo,
     stack_base: usize,
     clear_old_stack: bool,
     param_ref: &ParamRef,
-) -> VariableApIndependentLocationInfo {
+) -> Option<Anchor> {
     match ref_info {
         OutputVarReferenceInfo::NewTempVar { idx } => {
-            VariableApIndependentLocationInfo::ContinuousStack(stack_base + idx)
+            Some(Anchor::ContinuousStack(stack_base + idx))
         }
-        OutputVarReferenceInfo::NewLocalVar => VariableApIndependentLocationInfo::Local,
+        OutputVarReferenceInfo::NewLocalVar => Some(Anchor::Local),
         OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
-            param_ref(*param_idx).ap_independent_location_info.clone()
+            param_ref(*param_idx).anchor.clone()
+        }
+        OutputVarReferenceInfo::PartialParam { param_idx }
+            if matches!(param_ref(*param_idx).anchor, Some(Anchor::Local)) =>
+        {
+            Some(Anchor::Local)
         }
         OutputVarReferenceInfo::SameAsParam { .. }
         | OutputVarReferenceInfo::SimpleDerefs
         | OutputVarReferenceInfo::PartialParam { .. }
-        | OutputVarReferenceInfo::Deferred(_) => VariableApIndependentLocationInfo::Other,
+        | OutputVarReferenceInfo::Deferred(_) => None,
     }
 }
 
