@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use traits::Into;
 use option::Option;
+use integer::u512;
 
 // Usage:
 //
@@ -86,6 +87,15 @@ impl U256PrintImpl of PrintTrait<u256> {
     fn print(self: u256) {
         Into::<u128, felt252>::into(self.low).print();
         Into::<u128, felt252>::into(self.high).print();
+    }
+}
+
+impl U2512PrintImpl of PrintTrait<u512> {
+    fn print(self: u512) {
+        Into::<u128, felt252>::into(self.limb0).print();
+        Into::<u128, felt252>::into(self.limb1).print();
+        Into::<u128, felt252>::into(self.limb2).print();
+        Into::<u128, felt252>::into(self.limb3).print();
     }
 }
 
