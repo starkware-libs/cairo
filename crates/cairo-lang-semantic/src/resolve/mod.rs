@@ -628,8 +628,8 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.generic_params.get(&ident) {
-            let item = match generic_param_id {
+        if let Some(generic_param) = self.data.generic_params.get(&ident) {
+            let item = match generic_param {
                 GenericParam::Type(param) => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(param.id)),
                 ),
@@ -640,7 +640,6 @@ impl<'db> Resolver<'db> {
             };
             return Some(item);
         }
-
         // TODO(spapini): Resolve local variables.
 
         None
