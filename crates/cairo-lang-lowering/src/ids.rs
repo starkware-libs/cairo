@@ -4,6 +4,7 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::define_short_id;
+use defs::diagnostic_utils::StableLocation;
 use defs::ids::FreeFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
@@ -183,6 +184,15 @@ impl ConcreteFunctionWithBodyId {
         db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
         self.get(db).base_semantic_function(db)
+    }
+    pub fn stable_location(&self, db: &dyn LoweringGroup) -> StableLocation {
+        match self.get(db) {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(db.upcast()),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                // TODO(ilya): use the location of generated.element.
+                generated.parent.stable_location(db.upcast())
+            }
+        }
     }
 }
 
