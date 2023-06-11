@@ -314,6 +314,7 @@ pub fn handle_contract_by_storage(
             use starknet::SyscallResultTrait;
             use starknet::SyscallResultTraitImpl;
 
+            #[cfg(test)]
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $storage_code$
 

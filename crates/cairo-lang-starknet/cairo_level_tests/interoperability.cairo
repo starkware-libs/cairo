@@ -33,6 +33,21 @@ mod ContractA {
         self.value.write(a);
         value
     }
+
+    #[generate_trait]
+    impl MyImpl of MyTrait {
+        fn internal_func(self: @ContractState) -> u128 {
+            5
+        }
+    }
+}
+
+use ContractA::MyTrait;
+#[test]
+#[available_gas(30000000)]
+fn test_internal_func() {
+    let mut contract_state = ContractA::contract_state_for_testing();
+    contract_state.internal_func();
 }
 
 #[test]

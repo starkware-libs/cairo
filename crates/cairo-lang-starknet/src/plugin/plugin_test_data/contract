@@ -108,6 +108,7 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
+#[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1806595664558943735149157506799143391873470310576915631605369224994529262019;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
@@ -118,6 +119,12 @@ use starknet::event::EventEmitter;
         ContractState {
         }
     }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
 
     
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
