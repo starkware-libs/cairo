@@ -2972,6 +2972,34 @@
       "state_mutability": "external"
     },
     {
+      "type": "struct",
+      "name": "core::starknet::account::Call",
+      "members": [
+        {
+          "name": "to",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "selector",
+          "type": "core::felt252"
+        },
+        {
+          "name": "calldata",
+          "type": "core::array::Array::<core::felt252>"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "core::array::Span::<core::felt252>",
+      "members": [
+        {
+          "name": "snapshot",
+          "type": "@core::array::Array::<core::felt252>"
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "__execute__",
       "inputs": [

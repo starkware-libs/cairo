@@ -4783,6 +4783,20 @@
       "interface_name": "erc20::erc20::IERC20"
     },
     {
+      "type": "struct",
+      "name": "core::integer::u256",
+      "members": [
+        {
+          "name": "low",
+          "type": "core::integer::u128"
+        },
+        {
+          "name": "high",
+          "type": "core::integer::u128"
+        }
+      ]
+    },
+    {
       "type": "interface",
       "name": "erc20::erc20::IERC20",
       "items": [

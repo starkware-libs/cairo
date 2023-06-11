@@ -511,10 +511,6 @@ impl AbiBuilder {
             }
         }
 
-        if is_native_type(db, &concrete) {
-            return Ok(());
-        }
-
         match concrete {
             ConcreteTypeId::Struct(id) => self.abi.items.push(Item::Struct(Struct {
                 name: concrete.format(db),
@@ -564,14 +560,6 @@ fn get_enum_variants(
             })
         })
         .collect::<Result<Vec<_>, DiagnosticAdded>>()
-}
-
-/// Returns true if concrete is a native type.
-///
-/// native types are not added to the ABI.
-fn is_native_type(db: &dyn SemanticGroup, concrete: &ConcreteTypeId) -> bool {
-    let def_db = db.upcast();
-    concrete.generic_type(db).parent_module(def_db).owning_crate(def_db) == db.core_crate()
 }
 
 #[derive(Error, Debug)]
