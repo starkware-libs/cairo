@@ -123,11 +123,11 @@ use starknet::event::EventEmitter;
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
             let mut keys = Default::<array::Array>::default();
-            let mut values = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::syscalls::emit_event_syscall(
                 array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@values),
+                array::ArrayTrait::span(@data),
             ).unwrap_syscall()
         }
     }
@@ -325,38 +325,38 @@ impl EventDrop of Drop::<Event>;
 event_impl:
 
 impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_values(
-        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
         match self {
             Event::AwesomeEvent(val) => {
                 array::ArrayTrait::append(ref keys, 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82);
-                starknet::Event::append_keys_and_values(
-                    val, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
                 );
             },
             Event::BestEventEver(val) => {
                 array::ArrayTrait::append(ref keys, 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed);
-                starknet::Event::append_keys_and_values(
-                    val, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
                 );
             },
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
             if selector == 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82 {
                 let val = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;
                 return Option::Some(Event::AwesomeEvent(val));
             }
             if selector == 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed {
                 let val = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;
                 return Option::Some(Event::BestEventEver(val));
             }
@@ -373,20 +373,20 @@ impl AwesomeEventDrop<> of Drop::<AwesomeEvent<>>;
 event_impl:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
-    fn append_keys_and_values(
-        self: @AwesomeEvent, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @AwesomeEvent, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref values);
-                serde::Serde::serialize(self.data, ref values);
+                serde::Serde::serialize(self.x, ref data);
+                serde::Serde::serialize(self.data, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<AwesomeEvent> {
                 let x = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;
                 let data = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;
         Option::Some(AwesomeEvent {x, data, })
     }
@@ -400,12 +400,12 @@ impl BestEventEverDrop<> of Drop::<BestEventEver<>>;
 event_impl:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
-    fn append_keys_and_values(
-        self: @BestEventEver, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @BestEventEver, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<BestEventEver> {
         Option::Some(BestEventEver {})
     }

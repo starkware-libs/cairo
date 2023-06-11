@@ -349,11 +349,11 @@ fn event_serde_tester<
 ) {
     let original_event = event.clone();
     let mut keys = Default::default();
-    let mut values = Default::default();
-    event.append_keys_and_values(ref keys, ref values);
+    let mut data = Default::default();
+    event.append_keys_and_data(ref keys, ref data);
     let mut keys = keys.span();
-    let mut values = values.span();
-    let mut event = Event::deserialize(ref keys, ref values).unwrap();
+    let mut data = data.span();
+    let mut event = Event::deserialize(ref keys, ref data).unwrap();
     assert_eq(@event, @original_event, 'Event deserialization failed');
 }
 

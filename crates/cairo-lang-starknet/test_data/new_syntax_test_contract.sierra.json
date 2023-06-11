@@ -1956,7 +1956,7 @@
       ],
       [
         171,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_values>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_data>"
       ],
       [
         172,
@@ -2184,7 +2184,7 @@
       ],
       [
         228,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_values>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_data>"
       ],
       [
         229,
@@ -2196,7 +2196,7 @@
       ],
       [
         231,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_values>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_data>"
       ],
       [
         232,
@@ -2438,7 +2438,7 @@
       ],
       [
         27,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_values"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_data"
       ],
       [
         28,
@@ -2462,11 +2462,11 @@
       ],
       [
         33,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_values"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_data"
       ],
       [
         34,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_values"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_data"
       ],
       [
         35,
@@ -2571,7 +2571,7 @@
         {
           "name": "amount",
           "type": "core::integer::u128",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -2583,7 +2583,7 @@
         {
           "name": "amount",
           "type": "core::integer::u128",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -2595,12 +2595,12 @@
         {
           "name": "CounterIncreased",
           "type": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased",
-          "kind": "Nested"
+          "kind": "nested"
         },
         {
           "name": "CounterDecreased",
           "type": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased",
-          "kind": "Nested"
+          "kind": "nested"
         }
       ]
     }

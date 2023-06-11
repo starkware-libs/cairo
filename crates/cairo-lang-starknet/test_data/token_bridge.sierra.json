@@ -2900,7 +2900,7 @@
       ],
       [
         234,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_values>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_data>"
       ],
       [
         235,
@@ -3160,7 +3160,7 @@
       ],
       [
         299,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_values>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_data>"
       ],
       [
         300,
@@ -3172,7 +3172,7 @@
       ],
       [
         302,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_values>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_data>"
       ],
       [
         303,
@@ -3184,7 +3184,7 @@
       ],
       [
         305,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_values>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_data>"
       ],
       [
         306,
@@ -3196,7 +3196,7 @@
       ],
       [
         308,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_values>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_data>"
       ],
       [
         309,
@@ -3430,7 +3430,7 @@
       ],
       [
         40,
-        "token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_values"
+        "token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_data"
       ],
       [
         41,
@@ -3458,19 +3458,19 @@
       ],
       [
         47,
-        "token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_values"
+        "token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_data"
       ],
       [
         48,
-        "token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_values"
+        "token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_data"
       ],
       [
         49,
-        "token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_values"
+        "token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_data"
       ],
       [
         50,
-        "token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_values"
+        "token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_data"
       ],
       [
         51,
@@ -3620,7 +3620,7 @@
         {
           "name": "l1_bridge_address",
           "type": "core::starknet::eth_address::EthAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -3632,7 +3632,7 @@
         {
           "name": "l2_token_address",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -3644,17 +3644,17 @@
         {
           "name": "l1_recipient",
           "type": "core::starknet::eth_address::EthAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "amount",
           "type": "core::integer::u256",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "caller_address",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -3666,12 +3666,12 @@
         {
           "name": "account",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "amount",
           "type": "core::integer::u256",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -3683,22 +3683,22 @@
         {
           "name": "L1BridgeSet",
           "type": "token_bridge::token_bridge::TokenBridge::L1BridgeSet",
-          "kind": "Nested"
+          "kind": "nested"
         },
         {
           "name": "L2TokenSet",
           "type": "token_bridge::token_bridge::TokenBridge::L2TokenSet",
-          "kind": "Nested"
+          "kind": "nested"
         },
         {
           "name": "WithdrawInitiated",
           "type": "token_bridge::token_bridge::TokenBridge::WithdrawInitiated",
-          "kind": "Nested"
+          "kind": "nested"
         },
         {
           "name": "DepositHandled",
           "type": "token_bridge::token_bridge::TokenBridge::DepositHandled",
-          "kind": "Nested"
+          "kind": "nested"
         }
       ]
     }
