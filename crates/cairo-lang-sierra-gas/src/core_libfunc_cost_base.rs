@@ -206,6 +206,7 @@ pub fn core_libfunc_cost(
                 vec![steps(info_provider.type_size(&libfunc.ty) as i32).into()]
             }
             ArrayConcreteLibfunc::PopFront(_)
+            | ArrayConcreteLibfunc::PopFrontConsume(_)
             | ArrayConcreteLibfunc::SnapshotPopFront(_)
             | ArrayConcreteLibfunc::SnapshotPopBack(_) => vec![steps(2).into(), steps(3).into()],
             ArrayConcreteLibfunc::Get(libfunc) => {

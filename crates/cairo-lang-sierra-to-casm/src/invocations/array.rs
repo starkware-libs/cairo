@@ -17,8 +17,15 @@ pub fn build(
         ArrayConcreteLibfunc::New(_) => build_array_new(builder),
         ArrayConcreteLibfunc::Append(_) => build_array_append(builder),
         ArrayConcreteLibfunc::PopFront(libfunc)
-        | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => build_pop_front(&libfunc.ty, builder),
-        ArrayConcreteLibfunc::SnapshotPopBack(libfunc) => build_pop_back(&libfunc.ty, builder),
+        | ArrayConcreteLibfunc::SnapshotPopFront(libfunc) => {
+            build_pop_front(&libfunc.ty, builder, false)
+        }
+        ArrayConcreteLibfunc::PopFrontConsume(libfunc) => {
+            build_pop_front(&libfunc.ty, builder, true)
+        }
+        ArrayConcreteLibfunc::SnapshotPopBack(libfunc) => {
+            build_pop_back(&libfunc.ty, builder, false)
+        }
         ArrayConcreteLibfunc::Get(libfunc) => build_array_get(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Slice(libfunc) => build_array_slice(&libfunc.ty, builder),
         ArrayConcreteLibfunc::Len(libfunc) => build_array_len(&libfunc.ty, builder),
@@ -70,6 +77,7 @@ fn build_array_append(
 fn build_pop_front(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
+    consume: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
@@ -88,11 +96,13 @@ fn build_pop_front(
         let new_start = arr_start + element_size_imm;
     };
     let failure_handle = get_non_fallthrough_statement_id(&builder);
+    let arr_arr = [arr_start, arr_end];
+    let failure_ret = if consume { vec![] } else { vec![&arr_arr[..]] };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
             ("Fallthrough", &[&[new_start, arr_end], &[arr_start]], None),
-            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+            ("Failure", &failure_ret[..], Some(failure_handle)),
         ],
         Default::default(),
     ))
@@ -102,6 +112,7 @@ fn build_pop_front(
 fn build_pop_back(
     elem_ty: &ConcreteTypeId,
     builder: CompiledInvocationBuilder<'_>,
+    consume: bool,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [arr_start, arr_end] = builder.try_get_refs::<1>()?[0].try_unpack()?;
     let element_size = builder.program_info.type_sizes[elem_ty];
@@ -120,11 +131,13 @@ fn build_pop_back(
         let new_end = arr_end - element_size_imm;
     };
     let failure_handle = get_non_fallthrough_statement_id(&builder);
+    let arr_arr = [arr_start, arr_end];
+    let failure_ret = if consume { vec![] } else { vec![&arr_arr[..]] };
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
             ("Fallthrough", &[&[arr_start, new_end], &[new_end]], None),
-            ("Failure", &[&[arr_start, arr_end]], Some(failure_handle)),
+            ("Failure", &failure_ret[..], Some(failure_handle)),
         ],
         Default::default(),
     ))
@@ -147,7 +160,7 @@ fn build_array_get(
         deref_or_immediate index;
         deref arr_start;
         deref arr_end;
-        deref range_check;
+        buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -222,7 +235,7 @@ fn build_array_slice(
         deref_or_immediate slice_length;
         deref arr_start;
         deref arr_end;
-        deref range_check;
+        buffer(1) range_check;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;

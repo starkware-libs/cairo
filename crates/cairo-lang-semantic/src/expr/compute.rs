@@ -407,8 +407,8 @@ fn compute_expr_binary_semantic(
 fn call_core_binary_op(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBinary,
-    lexpr: ExprAndId,
-    rexpr: ExprAndId,
+    mut lexpr: ExprAndId,
+    mut rexpr: ExprAndId,
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let stable_ptr = syntax.stable_ptr().into();
@@ -416,7 +416,7 @@ fn call_core_binary_op(
 
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
-    let concrete_trait_function = match core_binary_operator(
+    let (concrete_trait_function, snapshot) = match core_binary_operator(
         db,
         &mut ctx.resolver.inference(),
         &binary_op,
@@ -425,8 +425,18 @@ fn call_core_binary_op(
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&binary_op, err_kind));
         }
-        Ok(concrete_trait_function) => concrete_trait_function,
+        Ok(res) => res,
     };
+    if snapshot {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(lexpr.ty()));
+        let expr =
+            Expr::Snapshot(ExprSnapshot { inner: lexpr.id, ty, stable_ptr: lexpr.stable_ptr() });
+        lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(rexpr.ty()));
+        let expr =
+            Expr::Snapshot(ExprSnapshot { inner: rexpr.id, ty, stable_ptr: rexpr.stable_ptr() });
+        rexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+    }
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let function = ctx

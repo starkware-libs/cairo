@@ -47,13 +47,13 @@ impls:
 
 impl APartialEq<> of PartialEq::<A<>> {
     #[inline(always)]
-    fn eq(lhs: A<>, rhs: A<>) -> bool {
+    fn eq(lhs: @A<>, rhs: @A<>) -> bool {
         if lhs.x != rhs.x { return false; }
         if lhs.data != rhs.data { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: A<>, rhs: A<>) -> bool {
+    fn ne(lhs: @A<>, rhs: @A<>) -> bool {
         !(lhs == rhs)
     }
 }
@@ -98,12 +98,12 @@ impls:
 
 impl BPartialEq<> of PartialEq::<B<>> {
     #[inline(always)]
-    fn eq(lhs: B<>, rhs: B<>) -> bool {
+    fn eq(lhs: @B<>, rhs: @B<>) -> bool {
         if lhs.x != rhs.x { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: B<>, rhs: B<>) -> bool {
+    fn ne(lhs: @B<>, rhs: @B<>) -> bool {
         !(lhs == rhs)
     }
 }
@@ -141,7 +141,7 @@ impl BIsEvent of starknet::Event<B> {
 impls:
 
 impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
-    fn eq(lhs: MyEventEnum, rhs: MyEventEnum) -> bool {
+    fn eq(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
         match lhs {
             MyEventEnum::A(x) => match rhs {
                 MyEventEnum::A(y) => x == y,
@@ -154,7 +154,7 @@ impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
         }
     }
     #[inline(always)]
-    fn ne(lhs: MyEventEnum, rhs: MyEventEnum) -> bool {
+    fn ne(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
         !(lhs == rhs)
     }
 }

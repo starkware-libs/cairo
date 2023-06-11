@@ -179,6 +179,69 @@ test::foo@0([0]: Array<felt252>) -> (Array<felt252>, core::option::Option::<core
 
 //! > ==========================================================================
 
+//! > array_pop_front_consume libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(arr: Array<felt252>) -> Option::<(Array<felt252>, Box<felt252>)> {
+    array::array_pop_front_consume::<felt252>(arr)
+}
+
+//! > casm
+[fp + -3] = [ap + 0] + [fp + -4], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 10;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [fp + -4], ap++;
+jmp rel 10;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 700})
+
+//! > sierra_code
+type felt252 = felt252;
+type Array<felt252> = Array<felt252>;
+type Box<felt252> = Box<felt252>;
+type Tuple<Array<felt252>, Box<felt252>> = Struct<ut@Tuple, Array<felt252>, Box<felt252>>;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)> = Enum<ut@core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, Tuple<Array<felt252>, Box<felt252>>, Unit>;
+
+libfunc array_pop_front_consume<felt252> = array_pop_front_consume<felt252>;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Tuple<Array<felt252>, Box<felt252>>> = struct_construct<Tuple<Array<felt252>, Box<felt252>>>;
+libfunc enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0> = enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0>;
+libfunc store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>> = store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1> = enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1>;
+libfunc rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>> = rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>;
+
+array_pop_front_consume<felt252>([0]) { fallthrough([1], [2]) 6() };
+branch_align() -> ();
+struct_construct<Tuple<Array<felt252>, Box<felt252>>>([1], [2]) -> ([3]);
+enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 0>([3]) -> ([4]);
+store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([4]) -> ([5]);
+jump() { 10() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([6]);
+enum_init<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>, 1>([6]) -> ([7]);
+store_temp<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([7]) -> ([5]);
+rename<core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>>([5]) -> ([8]);
+return([8]);
+
+test::foo@0([0]: Array<felt252>) -> (core::option::Option::<(core::array::Array::<core::felt252>, core::box::Box::<core::felt252>)>);
+
+//! > ==========================================================================
+
 //! > array_snapshot_pop_front libfunc
 
 //! > test_runner_name

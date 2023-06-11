@@ -34,13 +34,17 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v34: core::RangeCheck, v0: core::integer::u256
+Parameters: v40: core::RangeCheck, v0: core::integer::u256
 blk0 (root):
 Statements:
   (v3: core::integer::u128, v4: core::integer::u128) <- struct_destructure(v0)
-  (v5: core::integer::u128) <- 0u
+  (v5: core::integer::u128, v6: @core::integer::u128) <- snapshot(v4)
+  (v7: core::integer::u128) <- 0u
+  (v8: core::integer::u128, v9: @core::integer::u128) <- snapshot(v7)
+  (v19: core::integer::u128) <- desnap(v6)
+  (v20: core::integer::u128) <- desnap(v9)
 End:
-  Match(match core::integer::u128_eq(v4, v5) {
+  Match(match core::integer::u128_eq(v19, v20) {
     bool::False => blk1,
     bool::True => blk2,
   })
@@ -48,37 +52,37 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk5, {v34 -> v38})
+  Goto(blk5, {v40 -> v44})
 
 blk2:
 Statements:
-  (v47: core::RangeCheck, v9: core::option::Option::<core::integer::u64>) <- core::integer::U128TryIntoU64::try_into(v34, v3)
+  (v53: core::RangeCheck, v13: core::option::Option::<core::integer::u64>) <- core::integer::U128TryIntoU64::try_into(v40, v3)
 End:
-  Match(match_enum(v9) {
-    Option::Some(v20) => blk3,
-    Option::None(v21) => blk4,
+  Match(match_enum(v13) {
+    Option::Some(v26) => blk3,
+    Option::None(v27) => blk4,
   })
 
 blk3:
 Statements:
-  (v31: (core::integer::u64,)) <- struct_construct(v20)
-  (v32: core::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v31)
+  (v37: (core::integer::u64,)) <- struct_construct(v26)
+  (v38: core::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v37)
 End:
-  Return(v47, v32)
+  Return(v53, v38)
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v47 -> v38})
+  Goto(blk5, {v53 -> v44})
 
 blk5:
 Statements:
-  (v30: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-  (v13: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
-  (v28: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v30, v13)
-  (v33: core::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v28)
+  (v36: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v17: core::felt252) <- 29721761890975875353235833581453094220424382983267374u
+  (v34: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v36, v17)
+  (v39: core::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v34)
 End:
-  Return(v38, v33)
+  Return(v44, v39)
 
 //! > lowering
 Main:
