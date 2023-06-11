@@ -5,7 +5,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -47,15 +47,11 @@ pub fn priv_type_alias_semantic_data(
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &type_alias_ast.generic_params(syntax_db),
-        false,
-    )?;
+    let generic_params_data = db.type_alias_generic_params_data(type_alias_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+
     let ty = resolve_type(db, &mut diagnostics, &mut resolver, &type_alias_ast.ty(syntax_db));
 
     // Check fully resolved.
@@ -65,7 +61,9 @@ pub fn priv_type_alias_semantic_data(
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let ty = resolver.inference().rewrite(ty).no_err();
-
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
+    });
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),
@@ -87,20 +85,16 @@ pub fn priv_type_alias_semantic_data_cycle(
     let type_alias_ast = module_type_aliases.get(type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&type_alias_ast.name(syntax_db), TypeAliasCycle));
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &type_alias_ast.generic_params(syntax_db),
-        false,
-    )?;
+    let generic_params_data = db.type_alias_generic_params_data(*type_alias_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),
         resolved_type: err,
         generic_params,
-        resolver_data: Arc::new(ResolverData::new(module_file_id)),
+        resolver_data: Arc::new(resolver.data),
     })
 }
 
@@ -125,7 +119,34 @@ pub fn type_alias_generic_params(
     db: &dyn SemanticGroup,
     type_alias_id: TypeAliasId,
 ) -> Maybe<Vec<GenericParam>> {
-    Ok(db.priv_type_alias_semantic_data(type_alias_id)?.generic_params)
+    Ok(db.type_alias_generic_params_data(type_alias_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::type_alias_generic_params_data].
+pub fn type_alias_generic_params_data(
+    db: &dyn SemanticGroup,
+    type_alias_id: TypeAliasId,
+) -> Maybe<GenericParamsData> {
+    let module_file_id = type_alias_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
+    let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
+    let syntax_db = db.upcast();
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &type_alias_ast.generic_params(syntax_db),
+    )?;
+
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped())
+    });
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_alias_resolver_data].

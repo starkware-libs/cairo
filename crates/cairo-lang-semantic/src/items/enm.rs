@@ -10,7 +10,7 @@ use cairo_lang_utils::Upcast;
 use itertools::enumerate;
 use smol_str::SmolStr;
 
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -49,16 +49,10 @@ pub fn priv_enum_declaration_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &enum_ast.generic_params(db.upcast()),
-        false,
-    )?;
-
+    let generic_params_data = db.enum_generic_params_data(enum_id)?;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    let generic_params = generic_params_data.generic_params;
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
@@ -66,7 +60,6 @@ pub fn priv_enum_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(EnumDeclarationData {
@@ -90,7 +83,34 @@ pub fn enum_generic_params(
     db: &dyn SemanticGroup,
     enum_id: EnumId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_enum_declaration_data(enum_id)?.generic_params)
+    Ok(db.enum_generic_params_data(enum_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_generic_params_data].
+pub fn enum_generic_params_data(
+    db: &dyn SemanticGroup,
+    enum_id: EnumId,
+) -> Maybe<GenericParamsData> {
+    let module_file_id = enum_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_enums = db.module_enums(module_file_id.0)?;
+    let enum_ast = module_enums.get(&enum_id).to_maybe()?;
+
+    // Generic params.
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &enum_ast.generic_params(db.upcast()),
+    )?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, enum_ast.stable_ptr().untyped())
+    });
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_attributes].
@@ -152,11 +172,9 @@ pub fn priv_enum_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = db.enum_generic_params(enum_id)?;
-    for generic_param in generic_params {
-        resolver.add_generic_param(generic_param);
-    }
+    let generic_params_data = db.enum_generic_params_data(enum_id)?;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Variants.
     let mut variants = OrderedHashMap::default();
