@@ -1337,6 +1337,22 @@ impl BoundedU256 of BoundedInt<u256> {
     }
 }
 
+impl BoundedU512 of BoundedInt<u512> {
+    #[inline(always)]
+    fn min() -> u512 nopanic {
+        u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }
+    }
+    #[inline(always)]
+    fn max() -> u512 nopanic {
+        u512 {
+            limb0: BoundedInt::max(),
+            limb1: BoundedInt::max(),
+            limb2: BoundedInt::max(),
+            limb3: BoundedInt::max(),
+        }
+    }
+}
+
 /// Conversions.
 impl Felt252TryIntoU8 of TryInto<felt252, u8> {
     fn try_into(self: felt252) -> Option<u8> {
@@ -1462,6 +1478,11 @@ impl U256Default of Default<u256> {
     }
 }
 
+impl U512Default of Default<u512> {
+    fn default() -> u512 nopanic {
+        u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }
+    }
+}
 
 /// Default values for felt252_dict values.
 impl U8Felt252DictValue of Felt252DictValue<u8> {
@@ -1565,6 +1586,24 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
     }
 }
 
+impl U8IntoU512 of Into<u8, u512> {
+    fn into(self: u8) -> u512 {
+        u512 { limb0: upcast(self), limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+    }
+}
+
+impl U512TryIntoU8 of TryInto<u512, u8> {
+    fn try_into(self: u512) -> Option<u8> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+
+        if limb3 != 0 || limb2 != 0 || limb1 != 0 {
+            return Option::None(());
+        }
+
+        limb0.try_into()
+    }
+}
+
 impl U16IntoU32 of Into<u16, u32> {
     fn into(self: u16) -> u32 {
         upcast(self)
@@ -1619,6 +1658,24 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
     }
 }
 
+impl U16IntoU512 of Into<u16, u512> {
+    fn into(self: u16) -> u512 {
+        u512 { limb0: upcast(self), limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+    }
+}
+
+impl U512TryIntoU16 of TryInto<u512, u16> {
+    fn try_into(self: u512) -> Option<u16> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+
+        if limb3 != 0 || limb2 != 0 || limb1 != 0 {
+            return Option::None(());
+        }
+
+        limb0.try_into()
+    }
+}
+
 impl U32IntoU64 of Into<u32, u64> {
     fn into(self: u32) -> u64 {
         upcast(self)
@@ -1661,6 +1718,24 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
     }
 }
 
+impl U32IntoU512 of Into<u32, u512> {
+    fn into(self: u32) -> u512 {
+        u512 { limb0: upcast(self), limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+    }
+}
+
+impl U512TryIntoU32 of TryInto<u512, u32> {
+    fn try_into(self: u512) -> Option<u32> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+
+        if limb3 != 0 || limb2 != 0 || limb1 != 0 {
+            return Option::None(());
+        }
+
+        limb0.try_into()
+    }
+}
+
 impl U64IntoU128 of Into<u64, u128> {
     fn into(self: u64) -> u128 {
         upcast(self)
@@ -1691,6 +1766,24 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
     }
 }
 
+impl U64IntoU512 of Into<u64, u512> {
+    fn into(self: u64) -> u512 {
+        u512 { limb0: upcast(self), limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+    }
+}
+
+impl U512TryIntoU64 of TryInto<u512, u64> {
+    fn try_into(self: u512) -> Option<u64> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+
+        if limb3 != 0 || limb2 != 0 || limb1 != 0 {
+            return Option::None(());
+        }
+
+        limb0.try_into()
+    }
+}
+
 impl U128IntoU256 of Into<u128, u256> {
     fn into(self: u128) -> u256 {
         u256 { low: self, high: 0_u128 }
@@ -1709,6 +1802,21 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
     }
 }
 
+impl U256IntoU512 of Into<u256, u512> {
+    fn into(self: u256) -> u512 {
+        u512 { limb0: self.low, limb1: self.high, limb2: 0, limb3: 0 }
+    }
+}
+
+impl U512TryIntoU256 of TryInto<u512, u256> {
+    fn try_into(self: u512) -> Option<u256> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+        if limb3 != 0 || limb2 != 0 {
+            return Option::None(());
+        }
+        Option::Some(u256 { low: limb0, high: limb1 })
+    }
+}
 
 // === Zeroable ===
 
