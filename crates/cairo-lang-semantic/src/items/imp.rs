@@ -31,7 +31,7 @@ use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyDat
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
-use super::generics::{semantic_generic_params, GenericArgumentHead};
+use super::generics::{semantic_generic_params, GenericArgumentHead, GenericParamsData};
 use super::structure::SemanticStructEx;
 use super::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitGenericFunctionLongId};
 use crate::corelib::{copy_trait, core_module, drop_trait};
@@ -177,13 +177,6 @@ impl ImplDeclarationData {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
-#[debug_db(dyn SemanticGroup + 'static)]
-pub struct ImplGenericParamsData {
-    generic_params: Vec<semantic::GenericParam>,
-    resolver_data: Arc<ResolverData>,
-}
-
 // --- Selectors ---
 
 /// Query implementation of [crate::db::SemanticGroup::impl_semantic_declaration_diagnostics].
@@ -198,7 +191,7 @@ pub fn impl_semantic_declaration_diagnostics(
 pub fn impl_def_generic_params_data(
     db: &dyn SemanticGroup,
     impl_def_id: ImplDefId,
-) -> Maybe<ImplGenericParamsData> {
+) -> Maybe<GenericParamsData> {
     let module_file_id = impl_def_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
 
@@ -217,7 +210,7 @@ pub fn impl_def_generic_params_data(
     )?;
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
-    Ok(ImplGenericParamsData { generic_params, resolver_data })
+    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_generic_params].
@@ -234,6 +227,14 @@ pub fn impl_def_resolver_data(
     impl_def_id: ImplDefId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_impl_declaration_data(impl_def_id)?.resolver_data)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_def_functions_asts].
+pub fn impl_def_functions_asts(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>> {
+    Ok(db.priv_impl_definition_data(impl_def_id)?.function_asts)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_def_concrete_trait].
@@ -291,7 +292,7 @@ pub fn impl_concrete_trait(db: &dyn SemanticGroup, impl_id: ImplId) -> Maybe<Con
         }
         ImplId::GenericParameter(param) => {
             let param_impl =
-                extract_matches!(db.generic_param_semantic(param)?, GenericParam::Impl);
+                extract_matches!(db.generic_param_semantic(param, false)?, GenericParam::Impl);
             param_impl.concrete_trait
         }
         ImplId::ImplVar(var) => Ok(var.get(db).concrete_trait_id),
@@ -334,10 +335,11 @@ pub fn priv_impl_declaration_data_inner(
     let syntax_db = db.upcast();
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
 
+    // Generic params.
     let generic_params_data = db.impl_def_generic_params_data(impl_def_id)?;
     let generic_params = generic_params_data.generic_params;
-    // Generic params.
     let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
     let concrete_trait = if resolve_trait {
@@ -357,7 +359,6 @@ pub fn priv_impl_declaration_data_inner(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
@@ -799,7 +800,7 @@ impl UninferredImpl {
             }
             UninferredImpl::GenericParam(param) => {
                 let param =
-                    extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
+                    extract_matches!(db.generic_param_semantic(*param, false)?, GenericParam::Impl);
                 param.concrete_trait
             }
         }
@@ -814,7 +815,7 @@ impl UninferredImpl {
             }
             UninferredImpl::GenericParam(param) => {
                 let param =
-                    extract_matches!(db.generic_param_semantic(*param)?, GenericParam::Impl);
+                    extract_matches!(db.generic_param_semantic(*param, false)?, GenericParam::Impl);
                 param.concrete_trait.map(|concrete_trait| concrete_trait.trait_id(db))
             }
         }
@@ -858,8 +859,10 @@ pub fn find_candidates_at_context(
         if filter.trait_id != trait_id {
             continue;
         }
-        let param =
-            extract_matches!(db.generic_param_semantic(*generic_param_id)?, GenericParam::Impl);
+        let param = extract_matches!(
+            db.generic_param_semantic(*generic_param_id, false)?,
+            GenericParam::Impl
+        );
         let Ok(imp_concrete_trait_id) = param.concrete_trait else {continue};
         if !concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)? {
             continue;
@@ -994,10 +997,37 @@ pub fn impl_function_generic_params(
     db: &dyn SemanticGroup,
     impl_function_id: ImplFunctionId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db
-        .priv_impl_function_declaration_data(impl_function_id)?
-        .function_declaration_data
-        .generic_params)
+    Ok(db.impl_function_generic_params_data(impl_function_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_function_generic_params_data].
+pub fn impl_function_generic_params_data(
+    db: &dyn SemanticGroup,
+    impl_function_id: ImplFunctionId,
+) -> Maybe<GenericParamsData> {
+    let module_file_id = impl_function_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let impl_def_id = impl_function_id.impl_def_id(db.upcast());
+    let data = db.priv_impl_definition_data(impl_def_id)?;
+    let function_syntax = &data.function_asts[impl_function_id];
+    let syntax_db = db.upcast();
+    let declaration = function_syntax.declaration(syntax_db);
+    let mut resolver = Resolver::new(db, module_file_id);
+    let impl_def_generic_params = db.impl_def_generic_params(impl_def_id)?;
+    for generic_param in impl_def_generic_params {
+        resolver.add_generic_param(generic_param);
+    }
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &declaration.generic_params(syntax_db),
+        false,
+    )?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_function_attributes].
@@ -1078,19 +1108,12 @@ pub fn priv_impl_function_declaration_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
-    let mut resolver = Resolver::new(db, module_file_id);
-    let impl_def_generic_params = db.impl_def_generic_params(impl_def_id)?;
-    for generic_param in impl_def_generic_params {
-        resolver.add_generic_param(generic_param);
-    }
-    let function_generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &declaration.generic_params(syntax_db),
-        false,
-    )?;
+
+    let function_generic_params_data = db.impl_function_generic_params_data(impl_function_id)?;
+    let function_generic_params = function_generic_params_data.generic_params;
+    let mut resolver =
+        Resolver::with_data(db, (*function_generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
 
@@ -1131,7 +1154,6 @@ pub fn priv_impl_function_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let function_generic_params = resolver.inference().rewrite(function_generic_params).no_err();
     let signature = resolver.inference().rewrite(signature).no_err();
 
     let resolver_data = Arc::new(resolver.data);
