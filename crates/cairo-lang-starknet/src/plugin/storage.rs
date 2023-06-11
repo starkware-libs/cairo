@@ -104,11 +104,11 @@ pub fn handle_storage_struct(
                 impl StorageEventEmitter of EventEmitter<Storage, Event> {{
                     fn emit(ref self: Storage, event: Event) {{
                         let mut keys = Default::<array::Array>::default();
-                        let mut values = Default::<array::Array>::default();
-                        starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+                        let mut data = Default::<array::Array>::default();
+                        starknet::Event::append_keys_and_data(@event, ref keys, ref data);
                         starknet::syscalls::emit_event_syscall(
                             array::ArrayTrait::span(@keys),
-                            array::ArrayTrait::span(@values),
+                            array::ArrayTrait::span(@data),
                         ).unwrap_syscall()
                     }}
                 }}

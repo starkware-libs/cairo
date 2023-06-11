@@ -68,11 +68,11 @@ use starknet::event::EventEmitter;
     impl StorageEventEmitter of EventEmitter<Storage, Event> {
         fn emit(ref self: Storage, event: Event) {
             let mut keys = Default::<array::Array>::default();
-            let mut values = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::syscalls::emit_event_syscall(
                 array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@values),
+                array::ArrayTrait::span(@data),
             ).unwrap_syscall()
         }
     }
@@ -171,14 +171,14 @@ impl EventDrop of Drop::<Event>;
 event_impl:
 
 impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_values(
-        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
         match self {
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         

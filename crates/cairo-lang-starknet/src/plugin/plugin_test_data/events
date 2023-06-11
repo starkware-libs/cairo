@@ -13,7 +13,7 @@ struct A {
 
 #[derive(starknet::Event, PartialEq, Drop, Serde)]
 struct B {
-    x: felt252, 
+    x: felt252,
 }
 
 #[derive(starknet::Event, PartialEq, Drop)]
@@ -34,7 +34,7 @@ struct A {
 
 #[derive(starknet::Event, PartialEq, Drop, Serde)]
 struct B {
-    x: felt252, 
+    x: felt252,
 }
 
 #[derive(starknet::Event, PartialEq, Drop)]
@@ -75,17 +75,17 @@ impl ASerde<> of serde::Serde::<A<>> {
 event_impl:
 
 impl AIsEvent of starknet::Event<A> {
-    fn append_keys_and_values(
-        self: @A, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @A, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref values);
+                serde::Serde::serialize(self.x, ref data);
                 serde::Serde::serialize(self.data, ref keys);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<A> {
                 let x = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;
                 let data = serde::Serde::deserialize(
                     ref keys
@@ -123,16 +123,16 @@ impl BSerde<> of serde::Serde::<B<>> {
 event_impl:
 
 impl BIsEvent of starknet::Event<B> {
-    fn append_keys_and_values(
-        self: @B, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @B, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
-                serde::Serde::serialize(self.x, ref values);
+                serde::Serde::serialize(self.x, ref data);
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<B> {
                 let x = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;
         Option::Some(B {x, })
     }
@@ -164,38 +164,38 @@ impl MyEventEnumDrop of Drop::<MyEventEnum>;
 event_impl:
 
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
-    fn append_keys_and_values(
-        self: @MyEventEnum, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @MyEventEnum, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
         match self {
             MyEventEnum::A(val) => {
                 array::ArrayTrait::append(ref keys, 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760);
-                starknet::Event::append_keys_and_values(
-                    val, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
                 );
             },
             MyEventEnum::B(val) => {
                 array::ArrayTrait::append(ref keys, 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111);
-                starknet::Event::append_keys_and_values(
-                    val, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
                 );
             },
         }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<MyEventEnum> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
             if selector == 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760 {
                 let val = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::A(val));
             }
             if selector == 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111 {
                 let val = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::B(val));
             }

@@ -4042,7 +4042,7 @@
       ],
       [
         310,
-        "function_call<user@erc20::erc20::ERC20::EventIsEvent::append_keys_and_values>"
+        "function_call<user@erc20::erc20::ERC20::EventIsEvent::append_keys_and_data>"
       ],
       [
         311,
@@ -4290,7 +4290,7 @@
       ],
       [
         372,
-        "function_call<user@erc20::erc20::ERC20::TransferIsEvent::append_keys_and_values>"
+        "function_call<user@erc20::erc20::ERC20::TransferIsEvent::append_keys_and_data>"
       ],
       [
         373,
@@ -4302,7 +4302,7 @@
       ],
       [
         375,
-        "function_call<user@erc20::erc20::ERC20::ApprovalIsEvent::append_keys_and_values>"
+        "function_call<user@erc20::erc20::ERC20::ApprovalIsEvent::append_keys_and_data>"
       ],
       [
         376,
@@ -4680,7 +4680,7 @@
       ],
       [
         67,
-        "erc20::erc20::ERC20::EventIsEvent::append_keys_and_values"
+        "erc20::erc20::ERC20::EventIsEvent::append_keys_and_data"
       ],
       [
         68,
@@ -4708,11 +4708,11 @@
       ],
       [
         74,
-        "erc20::erc20::ERC20::TransferIsEvent::append_keys_and_values"
+        "erc20::erc20::ERC20::TransferIsEvent::append_keys_and_data"
       ],
       [
         75,
-        "erc20::erc20::ERC20::ApprovalIsEvent::append_keys_and_values"
+        "erc20::erc20::ERC20::ApprovalIsEvent::append_keys_and_data"
       ],
       [
         76,
@@ -4986,17 +4986,17 @@
         {
           "name": "from",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "to",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "value",
           "type": "core::integer::u256",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -5008,17 +5008,17 @@
         {
           "name": "owner",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "spender",
           "type": "core::starknet::contract_address::ContractAddress",
-          "kind": "ValueSerde"
+          "kind": "data"
         },
         {
           "name": "value",
           "type": "core::integer::u256",
-          "kind": "ValueSerde"
+          "kind": "data"
         }
       ]
     },
@@ -5030,12 +5030,12 @@
         {
           "name": "Transfer",
           "type": "erc20::erc20::ERC20::Transfer",
-          "kind": "Nested"
+          "kind": "nested"
         },
         {
           "name": "Approval",
           "type": "erc20::erc20::ERC20::Approval",
-          "kind": "Nested"
+          "kind": "nested"
         }
       ]
     }
