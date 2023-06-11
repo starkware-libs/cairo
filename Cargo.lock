@@ -819,7 +819,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-type-size"
-version = "2.0.0-rc0"
+version = "2.0.0-rc2"
 dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-utils",
