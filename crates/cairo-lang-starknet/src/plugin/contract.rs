@@ -261,7 +261,6 @@ pub fn handle_contract_by_storage(
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
-                    // TODO(yg): debug why it doesn't work.
                     forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
                     forbid_attribute_in_external_impl(
                         db,
