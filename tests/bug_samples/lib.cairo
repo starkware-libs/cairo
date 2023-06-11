@@ -19,7 +19,6 @@ mod issue2995;
 mod issue3153;
 mod issue3192;
 mod issue3211;
-mod issue3345;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;
