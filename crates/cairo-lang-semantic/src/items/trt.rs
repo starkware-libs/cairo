@@ -224,7 +224,6 @@ pub fn priv_trait_semantic_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        // TODO: Better location.
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }

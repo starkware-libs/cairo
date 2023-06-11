@@ -204,7 +204,7 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
     }
 }
 
-// Mapper rewriter. Maps variables according to a given [VarMapping].
+/// Mapper rewriter. Maps variables according to a given [VarMapping].
 #[derive(Debug)]
 pub struct MapperError(pub InferenceVar);
 struct Mapper<'db> {

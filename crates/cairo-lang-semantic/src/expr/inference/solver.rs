@@ -47,7 +47,10 @@ impl Ambiguity {
                 )
             }
             Ambiguity::FreeVariable { impl_id, var: _ } => {
-                format!("Candidate impl {:?} has a free variable", impl_id.debug(db),)
+                format!(
+                    "Candidate impl {:?} has a free variable with no constraints.",
+                    impl_id.debug(db),
+                )
             }
             Ambiguity::WillNotInfer { concrete_trait_id } => {
                 format!(

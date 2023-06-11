@@ -15,6 +15,8 @@ use crate::{
     FunctionLongId, GenericArgumentId, GenericParam, TypeId,
 };
 
+/// Functions for embedding generic semantic objects in an existing [Inference] object, by
+/// introducing new variables.
 pub trait InferenceEmbeddings {
     fn infer_impl(
         &mut self,
