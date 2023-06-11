@@ -103,8 +103,10 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
                 self.infer_impl_alias(impl_alias_id, concrete_trait_id, lookup_context, stable_ptr)?
             }
             UninferredImpl::GenericParam(param_id) => {
-                let param =
-                    self.db.generic_param_semantic(param_id).map_err(InferenceError::Failed)?;
+                let param = self
+                    .db
+                    .generic_param_semantic(param_id, false)
+                    .map_err(InferenceError::Failed)?;
                 let param = extract_matches!(param, GenericParam::Impl);
                 let imp_concrete_trait_id = param.concrete_trait.unwrap();
                 self.conform_traits(concrete_trait_id, imp_concrete_trait_id)?;

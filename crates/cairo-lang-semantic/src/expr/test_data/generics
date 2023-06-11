@@ -285,3 +285,49 @@ error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core
  --> lib.cairo:8:9
     x = bar::<u16, u32>();
         ^***************^
+
+//! > ==========================================================================
+
+//! > Test out of order generics.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+trait ATrait2<T, impl Timpl: ATrait<T>> {}
+
+struct B<impl Timpl1: ATrait<T>, T, impl Timpl2: ATrait2<T>> {
+    t: T
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test out of order generic impls.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+trait ATrait2<T, impl Timpl: ATrait<T>> {}
+
+struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
+    t: T
+}
+
+//! > expected_diagnostics
