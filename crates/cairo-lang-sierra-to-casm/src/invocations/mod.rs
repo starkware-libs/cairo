@@ -25,7 +25,7 @@ use crate::environment::Environment;
 use crate::metadata::Metadata;
 use crate::references::{
     OutputReferenceValue, OutputReferenceValueIntroductionPoint, ReferenceExpression,
-    ReferenceValue,
+    ReferenceValue, VariableApIndependentLocationInfo,
 };
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
 use crate::type_sizes::TypeSizeMap;
@@ -136,13 +136,15 @@ impl BranchChanges {
                 .enumerate()
                 .map(|(output_idx, (expression, OutputVarInfo { ref_info, ty }))| {
                     validate_output_var_refs(ref_info, &expression);
-                    let stack_idx = calc_output_var_stack_idx(
+                    let ap_independent_location_info = calc_output_ap_independent_location_info(
                         ref_info,
                         stack_base,
                         clear_old_stack,
                         &param_ref,
                     );
-                    if let Some(stack_idx) = stack_idx {
+                    if let VariableApIndependentLocationInfo::ContinuousStack(stack_idx) =
+                        ap_independent_location_info
+                    {
                         new_stack_size = new_stack_size.max(stack_idx + 1);
                     }
                     let introduction_point =
@@ -157,7 +159,7 @@ impl BranchChanges {
                     OutputReferenceValue {
                         expression,
                         ty: ty.clone(),
-                        stack_idx,
+                        ap_independent_location_info,
                         introduction_point,
                     }
                 })
@@ -198,22 +200,24 @@ fn validate_output_var_refs(ref_info: &OutputVarReferenceInfo, expression: &Refe
 
 /// Calculates the continuous stack index for an output var of a branch.
 /// `param_ref` is used to fetch the reference value of a param of the libfunc.
-fn calc_output_var_stack_idx<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
+fn calc_output_ap_independent_location_info<'a, ParamRef: Fn(usize) -> &'a ReferenceValue>(
     ref_info: &OutputVarReferenceInfo,
     stack_base: usize,
     clear_old_stack: bool,
     param_ref: &ParamRef,
-) -> Option<usize> {
+) -> VariableApIndependentLocationInfo {
     match ref_info {
-        OutputVarReferenceInfo::NewTempVar { idx } => Some(stack_base + idx),
+        OutputVarReferenceInfo::NewTempVar { idx } => {
+            VariableApIndependentLocationInfo::ContinuousStack(stack_base + idx)
+        }
+        OutputVarReferenceInfo::NewLocalVar => VariableApIndependentLocationInfo::Local,
         OutputVarReferenceInfo::SameAsParam { param_idx } if !clear_old_stack => {
-            param_ref(*param_idx).stack_idx
+            param_ref(*param_idx).ap_independent_location_info.clone()
         }
         OutputVarReferenceInfo::SameAsParam { .. }
         | OutputVarReferenceInfo::SimpleDerefs
-        | OutputVarReferenceInfo::NewLocalVar
         | OutputVarReferenceInfo::PartialParam { .. }
-        | OutputVarReferenceInfo::Deferred(_) => None,
+        | OutputVarReferenceInfo::Deferred(_) => VariableApIndependentLocationInfo::Other,
     }
 }
 
