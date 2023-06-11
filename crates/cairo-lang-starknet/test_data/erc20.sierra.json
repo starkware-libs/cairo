@@ -27,13 +27,13 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x2d40729f88cfb80f13551fe8a99d3302d182531e475f5b4938940110018a4b3",
-    "0xeca34d646ff4cad78fe95530c468873d035a0d100b98519f18efae6bc7719f",
-    "0x1b59412c52576ad5600244833d60b949e6ba4240a8ab43b8f25bb3890e02a22",
-    "0x16537dc6ee2eed95e029515b3ab9041593220fa08a4507d041388a2238260a4",
-    "0x3b31d3289a5582e1fff46053cc0f769b7ad4603d0b179e4cef787718a661d8d",
-    "0x38c09841f2d9f0b144199ed5bb881f039976194fb099b7ed7619b43aef39da0",
-    "0x353fe6810454f8114e207fe0224c951c3eff18378e2ee2ad5dd2f206e96b09d",
+    "0x3803921216a150ff551d354f09acf6878f7d4f6ba9b8203f449b0a272b4f88c",
+    "0x3230a79784e9eff548adc64db615939c261d969b63ca8d35818d9a904cbc8a1",
+    "0x349decfb75507a5909b5447e2740b452d49289fb304d7467aacfac8c8548a64",
+    "0x1f664b7c119a6748e20c034b361d01eaf9f055c1e1c8902075ab7c6e91858eb",
+    "0x21f09b6ad2f2d009e723102f62c38d69d758dc492c5621d3c9e487562cd4acc",
+    "0x2bd4c7d4a0ec33e904c83db0f43fe70340fe0f90f2fb3d5698f76a2de9e6d5d",
+    "0x1cc6776781f78d2fc485b3430891dd091f5e8db73a6452908c7e7f0302469ce",
     "0xa",
     "0xb",
     "0xc",
@@ -65,7 +65,7 @@
     "0x506564657273656e",
     "0x12867ecd09c884a5cf1f6d9eb0193b4695ce3bb3b2d796a8367d0c371f59cb2",
     "0x10",
-    "0x2efd1e212b8333c75ff5d3aafeee7724123d80ebdba525fbeca1c485372bcf8",
+    "0x9789743bec8ac62bed705408010d7bfb0c731119a355e6196f6b92c23f6710",
     "0x23",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
     "0x3b9ddf97bd58cc7301a2107c3eabad82196f38221c880cd3645d07c3aac1422",
@@ -75,16 +75,16 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x2b",
-    "0x21b9fadafa4db1b106cf30254f4c4a8fda19426a14911a28479eadf23cccb27",
+    "0xafcf2fc79d91825579ba6653fcfff9daa5743ad443fb656850c7802441d9c8",
     "0x2d",
-    "0x18bf231c49296657e7f69faf2f52532262c1c6988c9fa618ccb762bc2d6b853",
+    "0x1a69ffccdbdfb9515120aa13cab7b6de2e84376b1ceade4fcbd5f7c21ccd09f",
     "0x2f",
-    "0x27e7e8032d456b570875e843a17efb0d2a0cf80c6a6f111c56899dcd9f85eee",
+    "0x3ebdfe811a78044ccd2ec882895cf0e68ad803dd0f998b3db96ad8f1bb33e27",
     "0x31",
     "0x4e6f6e5a65726f",
-    "0x27aa2bf3b3893aa2a362a91105235836e9145e56447f7280e33fb8b5bbd38b5",
+    "0xb2afad4c2e2f20a9895fb6be9e93b09fdbf48ef07d88a9f5c8d95fa01639c8",
     "0x34",
-    "0x1ade5431855f31b2e2cd1f898ef170b5c5abfd93b2ad9db1a396cbc74676870",
+    "0x2777bf84a1e6528acfe07caed175c9c82a2bb576f5d53fecfd3177eca3a703a",
     "0x36",
     "0x1197aabc5364528d114a4ade3c7d99fc8559a1f786946e3b3fb9a5ac7667662",
     "0x29dc527d6a242e3c293fac7f4cf702d66521b7efda003f03baa1935eb8b18c1",
@@ -117,7 +117,7 @@
     "0x4a",
     "0x26c97610bba318e7be7ed9746815afccc1b89e6a3174fbec5d5534288167ac7",
     "0x4b",
-    "0x4d096dce977ebf7b5262698da29642649e801894d43696a7fc20b6e3677472",
+    "0x34fcd68ec10576271ba0783f494dd83629f8ffb4a13a0931ad91c22275270d9",
     "0x4d",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0xd3a26a7712a33547a4a74e7594a446ca400cb36a0c2c307b92eff9ce82ff8",
@@ -2484,31 +2484,31 @@
       ],
       [
         10,
-        "erc20::erc20::ERC20::name::Storage"
+        "erc20::erc20::ERC20::name::ContractState"
       ],
       [
         11,
-        "erc20::erc20::ERC20::symbol::Storage"
+        "erc20::erc20::ERC20::symbol::ContractState"
       ],
       [
         12,
-        "erc20::erc20::ERC20::decimals::Storage"
+        "erc20::erc20::ERC20::decimals::ContractState"
       ],
       [
         13,
-        "erc20::erc20::ERC20::total_supply::Storage"
+        "erc20::erc20::ERC20::total_supply::ContractState"
       ],
       [
         14,
-        "erc20::erc20::ERC20::balances::Storage"
+        "erc20::erc20::ERC20::balances::ContractState"
       ],
       [
         15,
-        "erc20::erc20::ERC20::allowances::Storage"
+        "erc20::erc20::ERC20::allowances::ContractState"
       ],
       [
         16,
-        "erc20::erc20::ERC20::Storage"
+        "erc20::erc20::ERC20::ContractState"
       ],
       [
         17,
@@ -2584,11 +2584,11 @@
       ],
       [
         35,
-        "Tuple<erc20::erc20::ERC20::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::ContractState, Unit>"
       ],
       [
         36,
-        "core::PanicResult::<(erc20::erc20::ERC20::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::ContractState, ())>"
       ],
       [
         37,
@@ -2624,27 +2624,27 @@
       ],
       [
         45,
-        "Tuple<erc20::erc20::ERC20::name::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::name::ContractState, Unit>"
       ],
       [
         46,
-        "core::PanicResult::<(erc20::erc20::ERC20::name::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>"
       ],
       [
         47,
-        "Tuple<erc20::erc20::ERC20::symbol::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::symbol::ContractState, Unit>"
       ],
       [
         48,
-        "core::PanicResult::<(erc20::erc20::ERC20::symbol::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>"
       ],
       [
         49,
-        "Tuple<erc20::erc20::ERC20::decimals::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::decimals::ContractState, Unit>"
       ],
       [
         50,
-        "core::PanicResult::<(erc20::erc20::ERC20::decimals::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>"
       ],
       [
         51,
@@ -2652,19 +2652,19 @@
       ],
       [
         52,
-        "Tuple<erc20::erc20::ERC20::total_supply::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::total_supply::ContractState, Unit>"
       ],
       [
         53,
-        "core::PanicResult::<(erc20::erc20::ERC20::total_supply::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>"
       ],
       [
         54,
-        "Tuple<erc20::erc20::ERC20::balances::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::balances::ContractState, Unit>"
       ],
       [
         55,
-        "core::PanicResult::<(erc20::erc20::ERC20::balances::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>"
       ],
       [
         56,
@@ -2752,11 +2752,11 @@
       ],
       [
         77,
-        "Tuple<erc20::erc20::ERC20::allowances::Storage, Unit>"
+        "Tuple<erc20::erc20::ERC20::allowances::ContractState, Unit>"
       ],
       [
         78,
-        "core::PanicResult::<(erc20::erc20::ERC20::allowances::Storage, ())>"
+        "core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>"
       ],
       [
         79,
@@ -2902,39 +2902,39 @@
       ],
       [
         25,
-        "struct_construct<erc20::erc20::ERC20::name::Storage>"
+        "struct_construct<erc20::erc20::ERC20::name::ContractState>"
       ],
       [
         26,
-        "struct_construct<erc20::erc20::ERC20::symbol::Storage>"
+        "struct_construct<erc20::erc20::ERC20::symbol::ContractState>"
       ],
       [
         27,
-        "struct_construct<erc20::erc20::ERC20::decimals::Storage>"
+        "struct_construct<erc20::erc20::ERC20::decimals::ContractState>"
       ],
       [
         28,
-        "struct_construct<erc20::erc20::ERC20::total_supply::Storage>"
+        "struct_construct<erc20::erc20::ERC20::total_supply::ContractState>"
       ],
       [
         29,
-        "struct_construct<erc20::erc20::ERC20::balances::Storage>"
+        "struct_construct<erc20::erc20::ERC20::balances::ContractState>"
       ],
       [
         30,
-        "struct_construct<erc20::erc20::ERC20::allowances::Storage>"
+        "struct_construct<erc20::erc20::ERC20::allowances::ContractState>"
       ],
       [
         31,
-        "struct_construct<erc20::erc20::ERC20::Storage>"
+        "struct_construct<erc20::erc20::ERC20::ContractState>"
       ],
       [
         32,
-        "snapshot_take<erc20::erc20::ERC20::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::ContractState>"
       ],
       [
         33,
-        "drop<erc20::erc20::ERC20::Storage>"
+        "drop<erc20::erc20::ERC20::ContractState>"
       ],
       [
         34,
@@ -2946,7 +2946,7 @@
       ],
       [
         36,
-        "store_temp<erc20::erc20::ERC20::Storage>"
+        "store_temp<erc20::erc20::ERC20::ContractState>"
       ],
       [
         37,
@@ -3150,11 +3150,11 @@
       ],
       [
         87,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::ContractState, ())>>"
       ],
       [
         88,
-        "drop<Tuple<erc20::erc20::ERC20::Storage, Unit>>"
+        "drop<Tuple<erc20::erc20::ERC20::ContractState, Unit>>"
       ],
       [
         89,
@@ -3194,35 +3194,35 @@
       ],
       [
         98,
-        "struct_deconstruct<erc20::erc20::ERC20::Storage>"
+        "struct_deconstruct<erc20::erc20::ERC20::ContractState>"
       ],
       [
         99,
-        "drop<erc20::erc20::ERC20::symbol::Storage>"
+        "drop<erc20::erc20::ERC20::symbol::ContractState>"
       ],
       [
         100,
-        "drop<erc20::erc20::ERC20::decimals::Storage>"
+        "drop<erc20::erc20::ERC20::decimals::ContractState>"
       ],
       [
         101,
-        "drop<erc20::erc20::ERC20::total_supply::Storage>"
+        "drop<erc20::erc20::ERC20::total_supply::ContractState>"
       ],
       [
         102,
-        "drop<erc20::erc20::ERC20::balances::Storage>"
+        "drop<erc20::erc20::ERC20::balances::ContractState>"
       ],
       [
         103,
-        "drop<erc20::erc20::ERC20::allowances::Storage>"
+        "drop<erc20::erc20::ERC20::allowances::ContractState>"
       ],
       [
         104,
-        "store_temp<erc20::erc20::ERC20::name::Storage>"
+        "store_temp<erc20::erc20::ERC20::name::ContractState>"
       ],
       [
         105,
-        "function_call<user@erc20::erc20::ERC20::name::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::name::InternalContractStateImpl::read>"
       ],
       [
         106,
@@ -3250,23 +3250,23 @@
       ],
       [
         112,
-        "drop<erc20::erc20::ERC20::name::Storage>"
+        "drop<erc20::erc20::ERC20::name::ContractState>"
       ],
       [
         113,
-        "store_temp<erc20::erc20::ERC20::symbol::Storage>"
+        "store_temp<erc20::erc20::ERC20::symbol::ContractState>"
       ],
       [
         114,
-        "function_call<user@erc20::erc20::ERC20::symbol::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::symbol::InternalContractStateImpl::read>"
       ],
       [
         115,
-        "store_temp<erc20::erc20::ERC20::decimals::Storage>"
+        "store_temp<erc20::erc20::ERC20::decimals::ContractState>"
       ],
       [
         116,
-        "function_call<user@erc20::erc20::ERC20::decimals::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::decimals::InternalContractStateImpl::read>"
       ],
       [
         117,
@@ -3294,11 +3294,11 @@
       ],
       [
         123,
-        "store_temp<erc20::erc20::ERC20::total_supply::Storage>"
+        "store_temp<erc20::erc20::ERC20::total_supply::ContractState>"
       ],
       [
         124,
-        "function_call<user@erc20::erc20::ERC20::total_supply::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::total_supply::InternalContractStateImpl::read>"
       ],
       [
         125,
@@ -3362,11 +3362,11 @@
       ],
       [
         140,
-        "store_temp<erc20::erc20::ERC20::balances::Storage>"
+        "store_temp<erc20::erc20::ERC20::balances::ContractState>"
       ],
       [
         141,
-        "function_call<user@erc20::erc20::ERC20::balances::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::balances::InternalContractStateImpl::read>"
       ],
       [
         142,
@@ -3374,7 +3374,7 @@
       ],
       [
         143,
-        "store_temp<erc20::erc20::ERC20::allowances::Storage>"
+        "store_temp<erc20::erc20::ERC20::allowances::ContractState>"
       ],
       [
         144,
@@ -3382,7 +3382,7 @@
       ],
       [
         145,
-        "function_call<user@erc20::erc20::ERC20::allowances::InternalStorageImpl::read>"
+        "function_call<user@erc20::erc20::ERC20::allowances::InternalContractStateImpl::read>"
       ],
       [
         146,
@@ -3426,23 +3426,23 @@
       ],
       [
         156,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::ContractState, Unit>>"
       ],
       [
         157,
-        "struct_construct<Tuple<erc20::erc20::ERC20::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::ContractState, Unit>>"
       ],
       [
         158,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::ContractState, ())>, 0>"
       ],
       [
         159,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::ContractState, ())>>"
       ],
       [
         160,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::ContractState, ())>, 1>"
       ],
       [
         161,
@@ -3458,7 +3458,7 @@
       ],
       [
         164,
-        "snapshot_take<erc20::erc20::ERC20::allowances::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::allowances::ContractState>"
       ],
       [
         165,
@@ -3526,39 +3526,39 @@
       ],
       [
         181,
-        "function_call<user@erc20::erc20::ERC20::name::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::name::InternalContractStateImpl::write>"
       ],
       [
         182,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::name::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
       ],
       [
         183,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::name::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::name::ContractState, Unit>>"
       ],
       [
         184,
-        "function_call<user@erc20::erc20::ERC20::symbol::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::symbol::InternalContractStateImpl::write>"
       ],
       [
         185,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::symbol::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
       ],
       [
         186,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::symbol::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::symbol::ContractState, Unit>>"
       ],
       [
         187,
-        "function_call<user@erc20::erc20::ERC20::decimals::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::decimals::InternalContractStateImpl::write>"
       ],
       [
         188,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::decimals::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
       ],
       [
         189,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::decimals::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::decimals::ContractState, Unit>>"
       ],
       [
         190,
@@ -3582,27 +3582,27 @@
       ],
       [
         195,
-        "function_call<user@erc20::erc20::ERC20::total_supply::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::total_supply::InternalContractStateImpl::write>"
       ],
       [
         196,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::total_supply::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
       ],
       [
         197,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::total_supply::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::total_supply::ContractState, Unit>>"
       ],
       [
         198,
-        "function_call<user@erc20::erc20::ERC20::balances::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::balances::InternalContractStateImpl::write>"
       ],
       [
         199,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::balances::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
       ],
       [
         200,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::balances::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::balances::ContractState, Unit>>"
       ],
       [
         201,
@@ -3622,7 +3622,7 @@
       ],
       [
         205,
-        "function_call<user@erc20::erc20::ERC20::StorageEventEmitter::emit>"
+        "function_call<user@erc20::erc20::ERC20::ContractStateEventEmitter::emit>"
       ],
       [
         206,
@@ -3730,11 +3730,11 @@
       ],
       [
         232,
-        "function_call<user@erc20::erc20::ERC20::balances::InternalStorageImpl::address>"
+        "function_call<user@erc20::erc20::ERC20::balances::InternalContractStateImpl::address>"
       ],
       [
         233,
-        "function_call<user@erc20::erc20::ERC20::allowances::InternalStorageImpl::address>"
+        "function_call<user@erc20::erc20::ERC20::allowances::InternalContractStateImpl::address>"
       ],
       [
         234,
@@ -3798,7 +3798,7 @@
       ],
       [
         249,
-        "snapshot_take<erc20::erc20::ERC20::balances::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::balances::ContractState>"
       ],
       [
         250,
@@ -3826,39 +3826,39 @@
       ],
       [
         256,
-        "dup<erc20::erc20::ERC20::name::Storage>"
+        "dup<erc20::erc20::ERC20::name::ContractState>"
       ],
       [
         257,
-        "dup<erc20::erc20::ERC20::symbol::Storage>"
+        "dup<erc20::erc20::ERC20::symbol::ContractState>"
       ],
       [
         258,
-        "dup<erc20::erc20::ERC20::decimals::Storage>"
+        "dup<erc20::erc20::ERC20::decimals::ContractState>"
       ],
       [
         259,
-        "dup<erc20::erc20::ERC20::total_supply::Storage>"
+        "dup<erc20::erc20::ERC20::total_supply::ContractState>"
       ],
       [
         260,
-        "dup<erc20::erc20::ERC20::balances::Storage>"
+        "dup<erc20::erc20::ERC20::balances::ContractState>"
       ],
       [
         261,
-        "dup<erc20::erc20::ERC20::allowances::Storage>"
+        "dup<erc20::erc20::ERC20::allowances::ContractState>"
       ],
       [
         262,
-        "function_call<user@erc20::erc20::ERC20::allowances::InternalStorageImpl::write>"
+        "function_call<user@erc20::erc20::ERC20::allowances::InternalContractStateImpl::write>"
       ],
       [
         263,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::allowances::Storage, ())>>"
+        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
       ],
       [
         264,
-        "struct_deconstruct<Tuple<erc20::erc20::ERC20::allowances::Storage, Unit>>"
+        "struct_deconstruct<Tuple<erc20::erc20::ERC20::allowances::ContractState, Unit>>"
       ],
       [
         265,
@@ -3902,7 +3902,7 @@
       ],
       [
         275,
-        "snapshot_take<erc20::erc20::ERC20::name::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::name::ContractState>"
       ],
       [
         276,
@@ -3938,63 +3938,63 @@
       ],
       [
         284,
-        "struct_construct<Tuple<erc20::erc20::ERC20::name::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::name::ContractState, Unit>>"
       ],
       [
         285,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 0>"
       ],
       [
         286,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::name::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
       ],
       [
         287,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 1>"
       ],
       [
         288,
-        "snapshot_take<erc20::erc20::ERC20::symbol::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::symbol::ContractState>"
       ],
       [
         289,
-        "struct_construct<Tuple<erc20::erc20::ERC20::symbol::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::symbol::ContractState, Unit>>"
       ],
       [
         290,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 0>"
       ],
       [
         291,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::symbol::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
       ],
       [
         292,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 1>"
       ],
       [
         293,
-        "snapshot_take<erc20::erc20::ERC20::decimals::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::decimals::ContractState>"
       ],
       [
         294,
-        "struct_construct<Tuple<erc20::erc20::ERC20::decimals::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::decimals::ContractState, Unit>>"
       ],
       [
         295,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 0>"
       ],
       [
         296,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::decimals::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
       ],
       [
         297,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 1>"
       ],
       [
         298,
-        "snapshot_take<erc20::erc20::ERC20::total_supply::Storage>"
+        "snapshot_take<erc20::erc20::ERC20::total_supply::ContractState>"
       ],
       [
         299,
@@ -4002,35 +4002,35 @@
       ],
       [
         300,
-        "struct_construct<Tuple<erc20::erc20::ERC20::total_supply::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::total_supply::ContractState, Unit>>"
       ],
       [
         301,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 0>"
       ],
       [
         302,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::total_supply::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
       ],
       [
         303,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 1>"
       ],
       [
         304,
-        "struct_construct<Tuple<erc20::erc20::ERC20::balances::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::balances::ContractState, Unit>>"
       ],
       [
         305,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 0>"
       ],
       [
         306,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::balances::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
       ],
       [
         307,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 1>"
       ],
       [
         308,
@@ -4230,19 +4230,19 @@
       ],
       [
         357,
-        "struct_construct<Tuple<erc20::erc20::ERC20::allowances::Storage, Unit>>"
+        "struct_construct<Tuple<erc20::erc20::ERC20::allowances::ContractState, Unit>>"
       ],
       [
         358,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 0>"
       ],
       [
         359,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::allowances::Storage, ())>>"
+        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
       ],
       [
         360,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 1>"
       ],
       [
         361,
@@ -4540,19 +4540,19 @@
       ],
       [
         32,
-        "erc20::erc20::ERC20::name::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::name::InternalContractStateImpl::read"
       ],
       [
         33,
-        "erc20::erc20::ERC20::symbol::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::symbol::InternalContractStateImpl::read"
       ],
       [
         34,
-        "erc20::erc20::ERC20::decimals::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::decimals::InternalContractStateImpl::read"
       ],
       [
         35,
-        "erc20::erc20::ERC20::total_supply::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::total_supply::InternalContractStateImpl::read"
       ],
       [
         36,
@@ -4560,11 +4560,11 @@
       ],
       [
         37,
-        "erc20::erc20::ERC20::balances::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::balances::InternalContractStateImpl::read"
       ],
       [
         38,
-        "erc20::erc20::ERC20::allowances::InternalStorageImpl::read"
+        "erc20::erc20::ERC20::allowances::InternalContractStateImpl::read"
       ],
       [
         39,
@@ -4600,27 +4600,27 @@
       ],
       [
         47,
-        "erc20::erc20::ERC20::name::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::name::InternalContractStateImpl::write"
       ],
       [
         48,
-        "erc20::erc20::ERC20::symbol::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::symbol::InternalContractStateImpl::write"
       ],
       [
         49,
-        "erc20::erc20::ERC20::decimals::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::decimals::InternalContractStateImpl::write"
       ],
       [
         50,
-        "erc20::erc20::ERC20::total_supply::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::total_supply::InternalContractStateImpl::write"
       ],
       [
         51,
-        "erc20::erc20::ERC20::balances::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::balances::InternalContractStateImpl::write"
       ],
       [
         52,
-        "erc20::erc20::ERC20::StorageEventEmitter::emit"
+        "erc20::erc20::ERC20::ContractStateEventEmitter::emit"
       ],
       [
         53,
@@ -4644,11 +4644,11 @@
       ],
       [
         58,
-        "erc20::erc20::ERC20::balances::InternalStorageImpl::address"
+        "erc20::erc20::ERC20::balances::InternalContractStateImpl::address"
       ],
       [
         59,
-        "erc20::erc20::ERC20::allowances::InternalStorageImpl::address"
+        "erc20::erc20::ERC20::allowances::InternalContractStateImpl::address"
       ],
       [
         60,
@@ -4660,7 +4660,7 @@
       ],
       [
         62,
-        "erc20::erc20::ERC20::allowances::InternalStorageImpl::write"
+        "erc20::erc20::ERC20::allowances::InternalContractStateImpl::write"
       ],
       [
         63,

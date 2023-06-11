@@ -25,22 +25,22 @@ mod TestContract {
     }
 
     #[external]
-    fn get_another_address(self: @Storage) -> ContractAddress {
+    fn get_another_address(self: @ContractState) -> ContractAddress {
         self.another.read().contract_address
     }
 
     #[external]
-    fn set_another_address(ref self: Storage, contract_address: ContractAddress) {
+    fn set_another_address(ref self: ContractState, contract_address: ContractAddress) {
         self.another.write(IAnotherContractDispatcher { contract_address });
     }
 
     #[external]
-    fn get_another_class_hash(self: @Storage) -> ClassHash {
+    fn get_another_class_hash(self: @ContractState) -> ClassHash {
         self.another_as_library.read().class_hash
     }
 
     #[external]
-    fn set_another_class_hash(ref self: Storage, class_hash: ClassHash) {
+    fn set_another_class_hash(ref self: ContractState, class_hash: ClassHash) {
         self.another_as_library.write(IAnotherContractLibraryDispatcher { class_hash });
     }
 }

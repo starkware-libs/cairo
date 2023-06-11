@@ -32,10 +32,10 @@ fn test_contract_resolving() {
                 }
 
                 #[external]
-                fn ep1(ref self: Storage) {}
+                fn ep1(ref self: ContractState) {}
 
                 #[external]
-                fn ep2(ref self: Storage) {}
+                fn ep2(ref self: ContractState) {}
             }
         "},
     );

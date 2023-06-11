@@ -319,7 +319,7 @@ pub fn handle_contract_by_storage(
 
             $event_functions$
 
-            trait {ABI_TRAIT}<Storage> {{
+            trait {ABI_TRAIT}<ContractState> {{
                 $abi_functions$
                 $abi_events$
             }}

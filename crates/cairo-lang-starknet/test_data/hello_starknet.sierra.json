@@ -28,14 +28,14 @@
     "0x753332",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x4275696c74696e436f737473",
-    "0x2475ed66c27cbf059d7249f23bed6f3c49469e42e2665f33f0a6dd5e3deb6be",
-    "0x3177057b98d151108601a0b3bfbd37070e9df4a5285a5aef67481c15b14c701",
+    "0x117f8dd6812873d3aeeacdfe88181a6eb024b50a122679c11870b3b47a1ec88",
+    "0x5af52ee38c32146750e2728e3556e24468de85c9684e8215a6a54f774a0eb9",
     "0xb",
     "0x53797374656d",
     "0xc",
     "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
     "0xf",
-    "0x1b0a855332bf0c0dd8cee1a55b5c73c3abd6e7682c171a08f91a9410c56e90c",
+    "0xc949853352b4434f25227d549c57768af2e33c773595301c6dda379193b30",
     "0xe",
     "0x10",
     "0x5",
@@ -46,7 +46,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x16",
-    "0x268f2e70520aa31d706a1e20d61a7b8fce9c9623f3d6658d8788b69508bd54e",
+    "0x3f58e2353a42e2af7c8c1713d6b8285bcd556eae87e109f862b2c5bf1ccbf43",
     "0x18",
     "0x53746f726167654261736541646472657373",
     "0x53746f7261676541646472657373",
@@ -409,11 +409,11 @@
       ],
       [
         11,
-        "hello_starknet::hello_starknet::HelloStarknet::balance::Storage"
+        "hello_starknet::hello_starknet::HelloStarknet::balance::ContractState"
       ],
       [
         12,
-        "hello_starknet::hello_starknet::HelloStarknet::Storage"
+        "hello_starknet::hello_starknet::HelloStarknet::ContractState"
       ],
       [
         13,
@@ -421,7 +421,7 @@
       ],
       [
         14,
-        "Tuple<hello_starknet::hello_starknet::HelloStarknet::Storage, Unit>"
+        "Tuple<hello_starknet::hello_starknet::HelloStarknet::ContractState, Unit>"
       ],
       [
         15,
@@ -433,7 +433,7 @@
       ],
       [
         17,
-        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::Storage, ())>"
+        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>"
       ],
       [
         18,
@@ -461,11 +461,11 @@
       ],
       [
         24,
-        "Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::Storage, Unit>"
+        "Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, Unit>"
       ],
       [
         25,
-        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::Storage, ())>"
+        "core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>"
       ],
       [
         26,
@@ -607,11 +607,11 @@
       ],
       [
         28,
-        "struct_construct<hello_starknet::hello_starknet::HelloStarknet::balance::Storage>"
+        "struct_construct<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState>"
       ],
       [
         29,
-        "struct_construct<hello_starknet::hello_starknet::HelloStarknet::Storage>"
+        "struct_construct<hello_starknet::hello_starknet::HelloStarknet::ContractState>"
       ],
       [
         30,
@@ -623,7 +623,7 @@
       ],
       [
         32,
-        "store_temp<hello_starknet::hello_starknet::HelloStarknet::Storage>"
+        "store_temp<hello_starknet::hello_starknet::HelloStarknet::ContractState>"
       ],
       [
         33,
@@ -635,11 +635,11 @@
       ],
       [
         35,
-        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::Storage, ())>>"
+        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
       ],
       [
         36,
-        "drop<Tuple<hello_starknet::hello_starknet::HelloStarknet::Storage, Unit>>"
+        "drop<Tuple<hello_starknet::hello_starknet::HelloStarknet::ContractState, Unit>>"
       ],
       [
         37,
@@ -711,11 +711,11 @@
       ],
       [
         54,
-        "snapshot_take<hello_starknet::hello_starknet::HelloStarknet::Storage>"
+        "snapshot_take<hello_starknet::hello_starknet::HelloStarknet::ContractState>"
       ],
       [
         55,
-        "drop<hello_starknet::hello_starknet::HelloStarknet::Storage>"
+        "drop<hello_starknet::hello_starknet::HelloStarknet::ContractState>"
       ],
       [
         56,
@@ -787,19 +787,19 @@
       ],
       [
         73,
-        "struct_deconstruct<hello_starknet::hello_starknet::HelloStarknet::Storage>"
+        "struct_deconstruct<hello_starknet::hello_starknet::HelloStarknet::ContractState>"
       ],
       [
         74,
-        "snapshot_take<hello_starknet::hello_starknet::HelloStarknet::balance::Storage>"
+        "snapshot_take<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState>"
       ],
       [
         75,
-        "store_temp<hello_starknet::hello_starknet::HelloStarknet::balance::Storage>"
+        "store_temp<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState>"
       ],
       [
         76,
-        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::InternalStorageImpl::read>"
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::InternalContractStateImpl::read>"
       ],
       [
         77,
@@ -807,35 +807,35 @@
       ],
       [
         78,
-        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::InternalStorageImpl::write>"
+        "function_call<user@hello_starknet::hello_starknet::HelloStarknet::balance::InternalContractStateImpl::write>"
       ],
       [
         79,
-        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::Storage, ())>>"
+        "enum_match<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
       ],
       [
         80,
-        "struct_deconstruct<Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::Storage, Unit>>"
+        "struct_deconstruct<Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, Unit>>"
       ],
       [
         81,
-        "struct_construct<Tuple<hello_starknet::hello_starknet::HelloStarknet::Storage, Unit>>"
+        "struct_construct<Tuple<hello_starknet::hello_starknet::HelloStarknet::ContractState, Unit>>"
       ],
       [
         82,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 0>"
       ],
       [
         83,
-        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::Storage, ())>>"
+        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>>"
       ],
       [
         84,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::ContractState, ())>, 1>"
       ],
       [
         85,
-        "drop<hello_starknet::hello_starknet::HelloStarknet::balance::Storage>"
+        "drop<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState>"
       ],
       [
         86,
@@ -927,19 +927,19 @@
       ],
       [
         108,
-        "struct_construct<Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::Storage, Unit>>"
+        "struct_construct<Tuple<hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, Unit>>"
       ],
       [
         109,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 0>"
       ],
       [
         110,
-        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::Storage, ())>>"
+        "store_temp<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>>"
       ],
       [
         111,
-        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(hello_starknet::hello_starknet::HelloStarknet::balance::ContractState, ())>, 1>"
       ],
       [
         112,
@@ -997,11 +997,11 @@
       ],
       [
         7,
-        "hello_starknet::hello_starknet::HelloStarknet::balance::InternalStorageImpl::read"
+        "hello_starknet::hello_starknet::HelloStarknet::balance::InternalContractStateImpl::read"
       ],
       [
         8,
-        "hello_starknet::hello_starknet::HelloStarknet::balance::InternalStorageImpl::write"
+        "hello_starknet::hello_starknet::HelloStarknet::balance::InternalContractStateImpl::write"
       ],
       [
         9,

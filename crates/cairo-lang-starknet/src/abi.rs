@@ -75,7 +75,7 @@ impl AbiBuilder {
         // storage type from aux data from the plugin.
         let mut storage_type = None;
         for (id, strct) in db.module_structs(module_id).unwrap_or_default() {
-            if strct.name(db.upcast()).text(db.upcast()) == "Storage" {
+            if strct.name(db.upcast()).text(db.upcast()) == "ContractState" {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }

@@ -31,59 +31,61 @@ mod TestContract {
     }
 
     #[external]
-    fn get_plus_2(self: @Storage, a: felt252) -> felt252 {
+    fn get_plus_2(self: @ContractState, a: felt252) -> felt252 {
         a + 2
     }
 
     #[external]
-    fn spend_all_gas(self: @Storage) {
+    fn spend_all_gas(self: @ContractState) {
         spend_all_gas(self);
     }
 
     #[external]
-    fn get_appended_array(self: @Storage, mut arr: Array<felt252>) -> Array<felt252> {
+    fn get_appended_array(self: @ContractState, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
     }
 
     #[external]
-    fn set_value(ref self: Storage, a: felt252) {
+    fn set_value(ref self: ContractState, a: felt252) {
         self.value.write(a);
     }
 
     #[external]
-    fn get_value(self: @Storage, ) -> felt252 {
+    fn get_value(self: @ContractState, ) -> felt252 {
         self.value.read()
     }
 
     #[external]
-    fn insert(ref self: Storage, key: u128) {
+    fn insert(ref self: ContractState, key: u128) {
         self.mapping.write(key, true)
     }
 
     #[external]
-    fn remove(ref self: Storage, key: u128) {
+    fn remove(ref self: ContractState, key: u128) {
         self.mapping.write(key, false)
     }
 
     #[external]
-    fn contains(self: @Storage, key: u128) -> bool {
+    fn contains(self: @ContractState, key: u128) -> bool {
         self.mapping.read(key)
     }
 
     #[external]
-    fn set_large(ref self: Storage, key: u256, value: u256) {
+    fn set_large(ref self: ContractState, key: u256, value: u256) {
         self.large_mapping.write(key, value)
     }
 
     #[external]
-    fn get_large(self: @Storage, key: u256) -> u256 {
+    fn get_large(self: @ContractState, key: u256) -> u256 {
         self.large_mapping.read(key)
     }
 
     #[external]
-    fn test_storage_address(self: @Storage, storage_address: StorageAddress) -> StorageAddress {
+    fn test_storage_address(
+        self: @ContractState, storage_address: StorageAddress
+    ) -> StorageAddress {
         storage_address
     }
 }
