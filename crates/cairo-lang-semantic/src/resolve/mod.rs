@@ -2,7 +2,7 @@ use std::iter::Peekable;
 use std::ops::{Deref, DerefMut, Neg};
 
 use cairo_lang_defs::ids::{
-    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
+    GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -91,6 +91,7 @@ pub struct ResolverData {
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
     generic_params: OrderedHashMap<SmolStr, GenericParam>,
+    unresolved_generic_params: OrderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
@@ -101,6 +102,7 @@ impl ResolverData {
         Self {
             module_file_id,
             generic_params: Default::default(),
+            unresolved_generic_params: Default::default(),
             resolved_items: Default::default(),
             inference_data: Default::default(),
         }
@@ -147,6 +149,7 @@ impl<'db> Resolver<'db> {
             data: ResolverData {
                 module_file_id,
                 generic_params: Default::default(),
+                unresolved_generic_params: Default::default(),
                 resolved_items: Default::default(),
                 inference_data: Default::default(),
             },
@@ -167,6 +170,24 @@ impl<'db> Resolver<'db> {
     pub fn add_generic_param(&mut self, generic_param: GenericParam) {
         let db = self.db.upcast();
         self.generic_params.insert(generic_param.id().name(db), generic_param);
+    }
+
+    /// Adds an unresolved generic param which exists in the context of a generic param which is
+    /// being resolved. An unresolved generic param will be resolved if it's identifier (name) is
+    /// used in the context of the generic param which is being resolved.
+    pub fn add_unresolved_generic_param(&mut self, generic_param_id: GenericParamId) {
+        let db = self.db.upcast();
+        self.unresolved_generic_params.insert(generic_param_id.name(db), generic_param_id);
+    }
+
+    /// Returns a generic param from the resolved generic params map, and if it doesn't exist, tries
+    /// to find it in the unresolved generic params map and resolve it.
+    fn lookup_generic_param(&self, name: &SmolStr) -> Option<GenericParam> {
+        self.generic_params.get(name).copied().or_else(|| {
+            self.unresolved_generic_params
+                .get(name)
+                .and_then(|id| self.db.generic_param_semantic(*id).ok())
+        })
     }
 
     /// Resolves a concrete item, given a path.
@@ -628,8 +649,8 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.generic_params.get(&ident) {
-            let item = match generic_param_id {
+        if let Some(generic_param) = self.lookup_generic_param(&ident) {
+            let item = match generic_param {
                 GenericParam::Type(param) => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(param.id)),
                 ),
@@ -640,7 +661,6 @@ impl<'db> Resolver<'db> {
             };
             return Some(item);
         }
-
         // TODO(spapini): Resolve local variables.
 
         None
