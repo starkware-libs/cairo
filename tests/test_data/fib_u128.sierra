@@ -1,9 +1,11 @@
 type u128 = u128;
 type RangeCheck = RangeCheck;
 type Tuple<u128> = Struct<ut@Tuple, u128>;
+type core::Panic = Struct<ut@core::Panic>;
 type felt252 = felt252;
 type Array<felt252> = Array<felt252>;
-type core::PanicResult::<(core::integer::u128,)> = Enum<ut@core::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Array<felt252>>;
+type Tuple<core::Panic, Array<felt252>> = Struct<ut@Tuple, core::Panic, Array<felt252>>;
+type core::PanicResult::<(core::integer::u128,)> = Enum<ut@core::PanicResult::<(core::integer::u128,)>, Tuple<u128>, Tuple<core::Panic, Array<felt252>>>;
 type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
 
 libfunc disable_ap_tracking = disable_ap_tracking;
@@ -41,6 +43,8 @@ libfunc enum_match<core::result::Result::<core::integer::u128, core::integer::u1
 libfunc drop<felt252> = drop<felt252>;
 libfunc array_new<felt252> = array_new<felt252>;
 libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::Panic> = struct_construct<core::Panic>;
+libfunc struct_construct<Tuple<core::Panic, Array<felt252>>> = struct_construct<Tuple<core::Panic, Array<felt252>>>;
 
 disable_ap_tracking() -> ();
 snapshot_take<u128>([3]) -> ([4], [5]);
@@ -172,9 +176,11 @@ branch_align() -> ();
 drop<u128>([3]) -> ();
 array_new<felt252>() -> ([7]);
 array_append<felt252>([7], [1]) -> ([8]);
-enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([8]) -> ([9]);
-store_temp<core::PanicResult::<(core::integer::u128,)>>([9]) -> ([10]);
-return([10]);
+struct_construct<core::Panic>() -> ([9]);
+struct_construct<Tuple<core::Panic, Array<felt252>>>([9], [8]) -> ([10]);
+enum_init<core::PanicResult::<(core::integer::u128,)>, 1>([10]) -> ([11]);
+store_temp<core::PanicResult::<(core::integer::u128,)>>([11]) -> ([12]);
+return([12]);
 
 examples::fib_u128::fib@0([0]: RangeCheck, [1]: u128, [2]: u128, [3]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@65([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::PanicResult::<(core::integer::u128,)>);
