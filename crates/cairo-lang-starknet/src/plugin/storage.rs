@@ -99,6 +99,12 @@ pub fn handle_storage_struct(
                     ContractState {{$member_init_code$
                     }}
                 }}
+                #[cfg(test)]
+                #[inline(always)]
+                fn contract_state_for_testing() -> ContractState {{
+                    unsafe_new_contract_state()
+                }}
+
 
                 $empty_event_code$
                 impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {{
