@@ -16,10 +16,6 @@ mod CounterContract {
     use super::{
         IOtherContractDispatcher, IOtherContractDispatcherTrait, IOtherContractLibraryDispatcher
     };
-    use super::{
-        ICounterContractDispatcher, ICounterContractDispatcherTrait,
-        ICounterContractLibraryDispatcher
-    };
 
     #[storage]
     struct Storage {
