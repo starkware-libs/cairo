@@ -106,7 +106,7 @@ error: Invalid member expression.
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Candidate impl test::AnotherOptionTraitImpl::<core::felt252> has a free variable
+error: Candidate impl test::AnotherOptionTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:34:7
     x.is_some();
       ^*****^

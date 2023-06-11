@@ -112,7 +112,8 @@ pub enum InferenceError {
     TraitMismatch { trt0: TraitId, trt1: TraitId },
     ConstInferenceNotSupported,
 
-    // TODO: These are only used for external interface.
+    // TODO(spapini): These are only used for external interface. Separate them along with the
+    // finalize() function to a wrapper.
     NoImplsFound { concrete_trait_id: ConcreteTraitId },
     Ambiguity(Ambiguity),
     TypeNotInferred { ty: TypeId },
@@ -163,8 +164,6 @@ impl InferenceError {
     ) -> DiagnosticAdded {
         match self {
             InferenceError::Failed(diagnostic_added) => *diagnostic_added,
-            // TODO(spapini): Better save the DiagnosticAdded on the variable.
-            // InferenceError::AlreadyReported => skip_diagnostic(),
             _ => diagnostics.report_by_ptr(
                 stable_ptr,
                 SemanticDiagnosticKind::InternalInferenceError(self.clone()),
@@ -424,8 +423,8 @@ impl<'db> Inference<'db> {
         }
         if let Some((var, ambiguity)) = self.ambiguous.first() {
             let var = *var;
-            let ambiguity = self.rewrite(ambiguity.clone()).no_err();
-            return Some((InferenceVar::Impl(var), InferenceError::Ambiguity(ambiguity)));
+            // Note: do not rewrite `ambiguity`, since it is expressed in canonical variables.
+            return Some((InferenceVar::Impl(var), InferenceError::Ambiguity(ambiguity.clone())));
         }
         None
     }
@@ -485,7 +484,7 @@ impl<'db> Inference<'db> {
         concrete_trait_id: ConcreteTraitId,
         mut lookup_context: ImplLookupContext,
     ) -> InferenceResult<SolutionSet<(CanonicalImpl, CanonicalMapping)>> {
-        // TODO: This is done twice.
+        // TODO(spapini): This is done twice. Consider doing it only here.
         let concrete_trait_id = self.rewrite(concrete_trait_id).no_err();
         enrich_lookup_context(self.db, concrete_trait_id, &mut lookup_context);
 

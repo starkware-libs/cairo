@@ -167,7 +167,7 @@ error: Plugin diagnostic: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
-error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has a free variable.
+error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> impls:1:1
 impl StorageDrop<> of Drop::<Storage<>>;
 ^**************************************^

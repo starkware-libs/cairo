@@ -345,7 +345,6 @@ pub fn priv_impl_declaration_data_inner(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        // TODO: Better location.
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
@@ -1110,7 +1109,6 @@ pub fn priv_impl_function_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        // TODO: Better location.
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }

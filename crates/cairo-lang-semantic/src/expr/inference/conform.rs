@@ -11,6 +11,7 @@ use crate::{
     TypeId, TypeLongId,
 };
 
+/// Functions for conforming semantic objects with each other.
 pub trait InferenceConform {
     fn conform_ty(&mut self, ty0: TypeId, ty1: TypeId) -> Result<TypeId, InferenceError>;
     fn conform_ty_ex(
