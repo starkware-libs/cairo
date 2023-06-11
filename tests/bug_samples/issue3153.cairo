@@ -95,7 +95,7 @@ mod TestContract {
     }
 
     #[external]
-    fn reproduce(ref self: Storage) {
+    fn reproduce(ref self: ContractState) {
         self._single_proposal.read();
 
         self._proposals.write(1, Proposal { proposer: 0, last_updated_at: 0 });

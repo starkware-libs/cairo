@@ -27,10 +27,10 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x3922d26617d94b06ece474f73393d0a65fd642095e21bae2dead327d71066fc",
-    "0x4f4edf93c866685236d794fc0c278ed61c2d1e3b47e6dfdaf52c8dc9adad5a",
-    "0x13350db73db0fe2ed783bd287f5665e01512e6352ac22bc75cd0e73f330359b",
-    "0x11939b28e1b46d660ed129caaf146975335525d433209a7f608174fa678a8b",
+    "0x30236d584ffddc192784c36d3b37c90836a944bdb87974b728f57e41c8f914a",
+    "0x308b6c4e9a848bf4520854f23259c3575e403fb0db2ca0a046d2e1541e9e813",
+    "0x3924e5f5e8941da781a06098e2800768baaa28f70d132c8aa82d1e9db695a39",
+    "0x265930ce27c5b3eee7cf703aeeb5aa8d15d9d214b388526e08d09fe684a4d7d",
     "0xa",
     "0xb",
     "0xc",
@@ -45,7 +45,7 @@
     "0x24d668d7ede46c87d2cddfbcf73195c96f0ca8075ae10c8a468054b80120d78",
     "0x13",
     "0xd",
-    "0x14bf8d76ffbb41ef64740305457942f361d92b0e9ca5b1ac1362c272c6ef185",
+    "0x18c062da7fc810bdf40afe83f72e16915d181227d57245fd1bf3a50473c55c0",
     "0x15",
     "0x436f6e747261637441646472657373",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
@@ -61,7 +61,7 @@
     "0x4e6f6e5a65726f",
     "0x2f528e3c691e195fca674982b69c0dc4284f206c3ea4d680220e99b59315a92",
     "0x20",
-    "0x4002a120b6637ecf786e64ca1f806cb8cf74ba412826737417ae7d07bb0344",
+    "0x360d539ff961f5014e47c5ae883f18f3b096faf105782b3f303bc133eb54b47",
     "0x22",
     "0x11d056809d6b91303161b39532ec9b6bdd4bdaed6f9a821a9e99ce5d4880f6f",
     "0x259fb31a4e7b0377c09e783815c81bfed6454de43be508ae9e1843492e19db9",
@@ -72,7 +72,7 @@
     "0x25",
     "0x26",
     "0x27",
-    "0x21bbf8a7d53ac5a439e6c602382564635a26ab0e654b7b530bfa5347e1f1a4a",
+    "0x119443597e40f4359762f0a0faaafc1a1cd823e3176b4c5c4ad009fb276d3e1",
     "0x29",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x18a8a18484eb6f98bcdc87d2795f91743a396c246eee5eb7f892ff610439aec",
@@ -82,7 +82,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x30",
-    "0x37c3a24cffec85d7af642a732d6b09d0a2f6c669db2586b5bc36e7ca1db3e3c",
+    "0x19825a455af5ee4fe3434d4d9da255b3607e08ab0ecfb3b69b304f6393ae841",
     "0x32",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -1722,19 +1722,19 @@
       ],
       [
         10,
-        "token_bridge::token_bridge::TokenBridge::governor::Storage"
+        "token_bridge::token_bridge::TokenBridge::governor::ContractState"
       ],
       [
         11,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::Storage"
+        "token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState"
       ],
       [
         12,
-        "token_bridge::token_bridge::TokenBridge::l2_token::Storage"
+        "token_bridge::token_bridge::TokenBridge::l2_token::ContractState"
       ],
       [
         13,
-        "token_bridge::token_bridge::TokenBridge::Storage"
+        "token_bridge::token_bridge::TokenBridge::ContractState"
       ],
       [
         14,
@@ -1766,11 +1766,11 @@
       ],
       [
         21,
-        "Tuple<token_bridge::token_bridge::TokenBridge::Storage, Unit>"
+        "Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>"
       ],
       [
         22,
-        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::Storage, ())>"
+        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>"
       ],
       [
         23,
@@ -1818,11 +1818,11 @@
       ],
       [
         34,
-        "Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, Unit>"
+        "Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>"
       ],
       [
         35,
-        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, ())>"
+        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>"
       ],
       [
         36,
@@ -1846,11 +1846,11 @@
       ],
       [
         41,
-        "Tuple<token_bridge::token_bridge::TokenBridge::l2_token::Storage, Unit>"
+        "Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>"
       ],
       [
         42,
-        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::Storage, ())>"
+        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>"
       ],
       [
         43,
@@ -1882,11 +1882,11 @@
       ],
       [
         50,
-        "Tuple<token_bridge::token_bridge::TokenBridge::governor::Storage, Unit>"
+        "Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>"
       ],
       [
         51,
-        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::Storage, ())>"
+        "core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>"
       ],
       [
         52,
@@ -2064,27 +2064,27 @@
       ],
       [
         25,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::governor::Storage>"
+        "struct_construct<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
       ],
       [
         26,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage>"
+        "struct_construct<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
       ],
       [
         27,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::l2_token::Storage>"
+        "struct_construct<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
       ],
       [
         28,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::Storage>"
+        "struct_construct<token_bridge::token_bridge::TokenBridge::ContractState>"
       ],
       [
         29,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::Storage>"
+        "snapshot_take<token_bridge::token_bridge::TokenBridge::ContractState>"
       ],
       [
         30,
-        "drop<token_bridge::token_bridge::TokenBridge::Storage>"
+        "drop<token_bridge::token_bridge::TokenBridge::ContractState>"
       ],
       [
         31,
@@ -2196,7 +2196,7 @@
       ],
       [
         58,
-        "store_temp<token_bridge::token_bridge::TokenBridge::Storage>"
+        "store_temp<token_bridge::token_bridge::TokenBridge::ContractState>"
       ],
       [
         59,
@@ -2208,11 +2208,11 @@
       ],
       [
         61,
-        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::Storage, ())>>"
+        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>>"
       ],
       [
         62,
-        "drop<Tuple<token_bridge::token_bridge::TokenBridge::Storage, Unit>>"
+        "drop<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
       ],
       [
         63,
@@ -2316,19 +2316,19 @@
       ],
       [
         88,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::Storage>"
+        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::ContractState>"
       ],
       [
         89,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::governor::Storage>"
+        "snapshot_take<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
       ],
       [
         90,
-        "store_temp<token_bridge::token_bridge::TokenBridge::governor::Storage>"
+        "store_temp<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
       ],
       [
         91,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalStorageImpl::read>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::read>"
       ],
       [
         92,
@@ -2352,15 +2352,15 @@
       ],
       [
         97,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage>"
+        "snapshot_take<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
       ],
       [
         98,
-        "store_temp<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage>"
+        "store_temp<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
       ],
       [
         99,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalStorageImpl::read>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::read>"
       ],
       [
         100,
@@ -2388,15 +2388,15 @@
       ],
       [
         106,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalStorageImpl::write>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::write>"
       ],
       [
         107,
-        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, ())>>"
+        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>>"
       ],
       [
         108,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>>"
       ],
       [
         109,
@@ -2412,39 +2412,39 @@
       ],
       [
         112,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::StorageEventEmitter::emit>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit>"
       ],
       [
         113,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::Storage, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
       ],
       [
         114,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::Storage, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
       ],
       [
         115,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>, 0>"
       ],
       [
         116,
-        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::Storage, ())>>"
+        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>>"
       ],
       [
         117,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>, 1>"
       ],
       [
         118,
-        "drop<token_bridge::token_bridge::TokenBridge::governor::Storage>"
+        "drop<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
       ],
       [
         119,
-        "drop<token_bridge::token_bridge::TokenBridge::l2_token::Storage>"
+        "drop<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
       ],
       [
         120,
-        "drop<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage>"
+        "drop<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
       ],
       [
         121,
@@ -2476,15 +2476,15 @@
       ],
       [
         128,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::l2_token::Storage>"
+        "snapshot_take<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
       ],
       [
         129,
-        "store_temp<token_bridge::token_bridge::TokenBridge::l2_token::Storage>"
+        "store_temp<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
       ],
       [
         130,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalStorageImpl::read>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::read>"
       ],
       [
         131,
@@ -2492,15 +2492,15 @@
       ],
       [
         132,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalStorageImpl::write>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::write>"
       ],
       [
         133,
-        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::Storage, ())>>"
+        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>>"
       ],
       [
         134,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::Storage, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>>"
       ],
       [
         135,
@@ -2680,15 +2680,15 @@
       ],
       [
         179,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalStorageImpl::write>"
+        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::write>"
       ],
       [
         180,
-        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::Storage, ())>>"
+        "enum_match<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>>"
       ],
       [
         181,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::governor::Storage, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>>"
       ],
       [
         182,
@@ -2876,19 +2876,19 @@
       ],
       [
         228,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>>"
       ],
       [
         229,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>, 0>"
       ],
       [
         230,
-        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, ())>>"
+        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>>"
       ],
       [
         231,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>, 1>"
       ],
       [
         232,
@@ -2912,19 +2912,19 @@
       ],
       [
         237,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::Storage, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>>"
       ],
       [
         238,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>, 0>"
       ],
       [
         239,
-        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::Storage, ())>>"
+        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>>"
       ],
       [
         240,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>, 1>"
       ],
       [
         241,
@@ -3024,19 +3024,19 @@
       ],
       [
         265,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::governor::Storage, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>>"
       ],
       [
         266,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>, 0>"
       ],
       [
         267,
-        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::Storage, ())>>"
+        "store_temp<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>>"
       ],
       [
         268,
-        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>, 1>"
       ],
       [
         269,
@@ -3350,11 +3350,11 @@
       ],
       [
         20,
-        "token_bridge::token_bridge::TokenBridge::governor::InternalStorageImpl::read"
+        "token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::read"
       ],
       [
         21,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalStorageImpl::read"
+        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::read"
       ],
       [
         22,
@@ -3362,19 +3362,19 @@
       ],
       [
         23,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalStorageImpl::write"
+        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::write"
       ],
       [
         24,
-        "token_bridge::token_bridge::TokenBridge::StorageEventEmitter::emit"
+        "token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit"
       ],
       [
         25,
-        "token_bridge::token_bridge::TokenBridge::l2_token::InternalStorageImpl::read"
+        "token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::read"
       ],
       [
         26,
-        "token_bridge::token_bridge::TokenBridge::l2_token::InternalStorageImpl::write"
+        "token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::write"
       ],
       [
         27,
@@ -3398,7 +3398,7 @@
       ],
       [
         32,
-        "token_bridge::token_bridge::TokenBridge::governor::InternalStorageImpl::write"
+        "token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::write"
       ],
       [
         33,

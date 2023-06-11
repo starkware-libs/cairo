@@ -27,7 +27,7 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x2c78170c3b1068f57a8e9afd91ad1bd48868a1b8da113c63f0b353cb74605fd",
+    "0x2a8c26879debefc5a8fc3ebbbfd771e67184dcc0e70d03acef76bb3921ddd45",
     "0x5",
     "0x14de46c93830b854d231d540339ee8ae16bb18830a375fe81572a472d5945f1",
     "0xc",
@@ -213,7 +213,7 @@
       ],
       [
         10,
-        "minimal_contract::minimal_contract::MinimalContract::Storage"
+        "minimal_contract::minimal_contract::MinimalContract::ContractState"
       ],
       [
         11,
@@ -339,11 +339,11 @@
       ],
       [
         25,
-        "struct_construct<minimal_contract::minimal_contract::MinimalContract::Storage>"
+        "struct_construct<minimal_contract::minimal_contract::MinimalContract::ContractState>"
       ],
       [
         26,
-        "store_temp<minimal_contract::minimal_contract::MinimalContract::Storage>"
+        "store_temp<minimal_contract::minimal_contract::MinimalContract::ContractState>"
       ],
       [
         27,
@@ -351,7 +351,7 @@
       ],
       [
         28,
-        "drop<minimal_contract::minimal_contract::MinimalContract::Storage>"
+        "drop<minimal_contract::minimal_contract::MinimalContract::ContractState>"
       ],
       [
         29,

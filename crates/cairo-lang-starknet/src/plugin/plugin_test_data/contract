@@ -18,16 +18,16 @@ mod TestContract {
     }
 
     #[external]
-    fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
+    fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
     #[external]
-    fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
+    fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
+    fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -45,7 +45,7 @@ mod TestContract {
 
     #[external]
     fn test_serde(
-        ref self: Storage,
+        ref self: ContractState,
         contract_address: ContractAddress,
         class_hash: ClassHash,
         storage_address: StorageAddress,
@@ -69,16 +69,16 @@ mod TestContract {
     }
 
     #[external]
-    fn get_something(self: @Storage, ref arg: felt252, mut num: felt252) -> felt252 {
+    fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
     #[external]
-    fn set_something(ref self: Storage, ref arg: felt252, num: felt252) {}
+    fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252) {}
+    fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252) {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -96,7 +96,7 @@ mod TestContract {
 
     #[external]
     fn test_serde(
-        ref self: Storage,
+        ref self: ContractState,
         contract_address: ContractAddress,
         class_hash: ClassHash,
         storage_address: StorageAddress,
@@ -108,20 +108,20 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1644041232550524306404793345452736401931936104160816453391339354962026639546;
+const TEST_CLASS_HASH: felt252 = 1806595664558943735149157506799143391873470310576915631605369224994529262019;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -136,16 +136,16 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn get_something(self: @Storage, ref arg: felt252, num: felt252) -> felt252;
+        fn get_something(self: @ContractState, ref arg: felt252, num: felt252) -> felt252;
         #[external]
-        fn set_something(ref self: Storage, ref arg: felt252, num: felt252);
+        fn set_something(ref self: ContractState, ref arg: felt252, num: felt252);
         #[l1_handler]
-        fn l1_handler_func(ref self: Storage, from_address: felt252, arg: felt252, num: felt252);
+        fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252);
         #[external]
         fn test_serde(
-        ref self: Storage,
+        ref self: ContractState,
         contract_address: ContractAddress,
         class_hash: ClassHash,
         storage_address: StorageAddress,
@@ -186,7 +186,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             
             let res = super::get_something(@storage, ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
@@ -215,7 +215,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::set_something(ref storage, ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
@@ -245,7 +245,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::test_serde(ref storage, __arg_contract_address, __arg_class_hash, __arg_storage_address);
             let mut arr = array::array_new();
             // References.
@@ -290,7 +290,7 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::l1_handler_func(ref storage, __arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
             // References.
@@ -413,6 +413,6 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 //! > expected_diagnostics

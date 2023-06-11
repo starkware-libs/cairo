@@ -51,38 +51,38 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 32322719094342763308093097348692218613210228506568356660875427442154507179;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
-        var_felt252: var_felt252::Storage,
-        var_u8: var_u8::Storage,
-        var_u16: var_u16::Storage,
-        var_u32: var_u32::Storage,
-        var_u64: var_u64::Storage,
-        var_u128: var_u128::Storage,
-        var_bool: var_bool::Storage,
-        felt252_to_u128: felt252_to_u128::Storage,
-        u128_to_bool: u128_to_bool::Storage,
-        bool_to_felt252: bool_to_felt252::Storage,
+    struct ContractState {
+        var_felt252: var_felt252::ContractState,
+        var_u8: var_u8::ContractState,
+        var_u16: var_u16::ContractState,
+        var_u32: var_u32::ContractState,
+        var_u64: var_u64::ContractState,
+        var_u128: var_u128::ContractState,
+        var_bool: var_bool::ContractState,
+        felt252_to_u128: felt252_to_u128::ContractState,
+        u128_to_bool: u128_to_bool::ContractState,
+        bool_to_felt252: bool_to_felt252::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
-            var_felt252: var_felt252::Storage{},
-            var_u8: var_u8::Storage{},
-            var_u16: var_u16::Storage{},
-            var_u32: var_u32::Storage{},
-            var_u64: var_u64::Storage{},
-            var_u128: var_u128::Storage{},
-            var_bool: var_bool::Storage{},
-            felt252_to_u128: felt252_to_u128::Storage{},
-            u128_to_bool: u128_to_bool::Storage{},
-            bool_to_felt252: bool_to_felt252::Storage{},
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            var_felt252: var_felt252::ContractState{},
+            var_u8: var_u8::ContractState{},
+            var_u16: var_u16::ContractState{},
+            var_u32: var_u32::ContractState{},
+            var_u64: var_u64::ContractState{},
+            var_u128: var_u128::ContractState{},
+            var_bool: var_bool::ContractState{},
+            felt252_to_u128: felt252_to_u128::ContractState{},
+            u128_to_bool: u128_to_bool::ContractState{},
+            bool_to_felt252: bool_to_felt252::ContractState{},
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -93,7 +93,7 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use var_felt252::InternalStorageTrait as var_felt252StorageTrait;
+    use var_felt252::InternalContractStateTrait as var_felt252ContractStateTrait;
     mod var_felt252 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -105,18 +105,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> felt252;
-            fn write(ref self: Storage, value: felt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0xaa97ff6377ea4c71d88150f635730828734fd5bfd6f834e2ae92d29676846c>()
             }
-            fn read(self: @Storage) -> felt252 {
+            fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::read(
@@ -124,7 +124,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: felt252) {
+            fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::write(
@@ -135,7 +135,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_u8::InternalStorageTrait as var_u8StorageTrait;
+    use var_u8::InternalContractStateTrait as var_u8ContractStateTrait;
     mod var_u8 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -147,18 +147,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> u8;
-            fn write(ref self: Storage, value: u8);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> u8;
+            fn write(ref self: ContractState, value: u8);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x2c1cc4c68869a16c4afd31a765927ce369b8ef4b1208114ea00e820ea36fc23>()
             }
-            fn read(self: @Storage) -> u8 {
+            fn read(self: @ContractState) -> u8 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u8>::read(
@@ -166,7 +166,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: u8) {
+            fn write(ref self: ContractState, value: u8) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u8>::write(
@@ -177,7 +177,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_u16::InternalStorageTrait as var_u16StorageTrait;
+    use var_u16::InternalContractStateTrait as var_u16ContractStateTrait;
     mod var_u16 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -189,18 +189,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> u16;
-            fn write(ref self: Storage, value: u16);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> u16;
+            fn write(ref self: ContractState, value: u16);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0xf3b2ea0485e7fdfaec3d3e519eeedf3d5dc3434b4f9c8858c217ca6a8b1d45>()
             }
-            fn read(self: @Storage) -> u16 {
+            fn read(self: @ContractState) -> u16 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u16>::read(
@@ -208,7 +208,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: u16) {
+            fn write(ref self: ContractState, value: u16) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u16>::write(
@@ -219,7 +219,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_u32::InternalStorageTrait as var_u32StorageTrait;
+    use var_u32::InternalContractStateTrait as var_u32ContractStateTrait;
     mod var_u32 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -231,18 +231,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> u32;
-            fn write(ref self: Storage, value: u32);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> u32;
+            fn write(ref self: ContractState, value: u32);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x19490a04fdf74ff92d2d73deff1f53be2aa23274d5a6896a509931d308ffa2d>()
             }
-            fn read(self: @Storage) -> u32 {
+            fn read(self: @ContractState) -> u32 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u32>::read(
@@ -250,7 +250,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: u32) {
+            fn write(ref self: ContractState, value: u32) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u32>::write(
@@ -261,7 +261,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_u64::InternalStorageTrait as var_u64StorageTrait;
+    use var_u64::InternalContractStateTrait as var_u64ContractStateTrait;
     mod var_u64 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -273,18 +273,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> u64;
-            fn write(ref self: Storage, value: u64);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> u64;
+            fn write(ref self: ContractState, value: u64);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x2b58a04fca59322572a3335b3f8e9a63dd34db1b715eaaae3ab367afa90a194>()
             }
-            fn read(self: @Storage) -> u64 {
+            fn read(self: @ContractState) -> u64 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u64>::read(
@@ -292,7 +292,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: u64) {
+            fn write(ref self: ContractState, value: u64) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u64>::write(
@@ -303,7 +303,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_u128::InternalStorageTrait as var_u128StorageTrait;
+    use var_u128::InternalContractStateTrait as var_u128ContractStateTrait;
     mod var_u128 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -315,18 +315,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> u128;
-            fn write(ref self: Storage, value: u128);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> u128;
+            fn write(ref self: ContractState, value: u128);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x1ba472df0f88c033d4e0c12eb95fd291de570db0f2df241297c6ebf905889a>()
             }
-            fn read(self: @Storage) -> u128 {
+            fn read(self: @ContractState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u128>::read(
@@ -334,7 +334,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: u128) {
+            fn write(ref self: ContractState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u128>::write(
@@ -345,7 +345,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use var_bool::InternalStorageTrait as var_boolStorageTrait;
+    use var_bool::InternalContractStateTrait as var_boolContractStateTrait;
     mod var_bool {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -357,18 +357,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> bool;
-            fn write(ref self: Storage, value: bool);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> bool;
+            fn write(ref self: ContractState, value: bool);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x379caae8ce359ad2da9b1cd83d4df406d959c199192b9c9e787595a50e0db27>()
             }
-            fn read(self: @Storage) -> bool {
+            fn read(self: @ContractState) -> bool {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<bool>::read(
@@ -376,7 +376,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: bool) {
+            fn write(ref self: ContractState, value: bool) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<bool>::write(
@@ -387,7 +387,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use felt252_to_u128::InternalStorageTrait as felt252_to_u128StorageTrait;
+    use felt252_to_u128::InternalContractStateTrait as felt252_to_u128ContractStateTrait;
     mod felt252_to_u128 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -399,19 +399,19 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage, key: felt252) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage, key: felt252) -> u128;
-            fn write(ref self: Storage, key: felt252, value: u128);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState, key: felt252) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState, key: felt252) -> u128;
+            fn write(ref self: ContractState, key: felt252, value: u128);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage, key: felt252) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState, key: felt252) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
             }
-            fn read(self: @Storage, key: felt252) -> u128 {
+            fn read(self: @ContractState, key: felt252) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u128>::read(
@@ -419,7 +419,7 @@ use starknet::event::EventEmitter;
                     self.address(key),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, key: felt252, value: u128) {
+            fn write(ref self: ContractState, key: felt252, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<u128>::write(
@@ -430,7 +430,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use u128_to_bool::InternalStorageTrait as u128_to_boolStorageTrait;
+    use u128_to_bool::InternalContractStateTrait as u128_to_boolContractStateTrait;
     mod u128_to_bool {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -442,19 +442,19 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage, key: u128) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage, key: u128) -> bool;
-            fn write(ref self: Storage, key: u128, value: bool);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState, key: u128) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState, key: u128) -> bool;
+            fn write(ref self: ContractState, key: u128, value: bool);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage, key: u128) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState, key: u128) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
             }
-            fn read(self: @Storage, key: u128) -> bool {
+            fn read(self: @ContractState, key: u128) -> bool {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<bool>::read(
@@ -462,7 +462,7 @@ use starknet::event::EventEmitter;
                     self.address(key),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, key: u128, value: bool) {
+            fn write(ref self: ContractState, key: u128, value: bool) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<bool>::write(
@@ -473,7 +473,7 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use bool_to_felt252::InternalStorageTrait as bool_to_felt252StorageTrait;
+    use bool_to_felt252::InternalContractStateTrait as bool_to_felt252ContractStateTrait;
     mod bool_to_felt252 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -485,19 +485,19 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage, key: bool) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage, key: bool) -> felt252;
-            fn write(ref self: Storage, key: bool, value: felt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState, key: bool) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState, key: bool) -> felt252;
+            fn write(ref self: ContractState, key: bool, value: felt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage, key: bool) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState, key: bool) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
             }
-            fn read(self: @Storage, key: bool) -> felt252 {
+            fn read(self: @ContractState, key: bool) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::read(
@@ -505,7 +505,7 @@ use starknet::event::EventEmitter;
                     self.address(key),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, key: bool, value: felt252) {
+            fn write(ref self: ContractState, key: bool, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::write(
@@ -520,7 +520,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -558,7 +558,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:

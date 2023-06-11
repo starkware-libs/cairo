@@ -5,8 +5,8 @@ struct Node {
 }
 
 #[starknet::interface]
-trait ITree<TStorage> {
-    fn sorted_list(ref self: TStorage, root: u128);
+trait ITree<TContractState> {
+    fn sorted_list(ref self: TContractState, root: u128);
 }
 
 #[starknet::contract]
@@ -22,7 +22,7 @@ mod ExampleFailure {
 
     #[generate_trait]
     impl Impl of MyTrait {
-        fn append_in_order_nodes(self: @Storage, ref list: Array<(u128, Node)>, at: u128) {
+        fn append_in_order_nodes(self: @ContractState, ref list: Array<(u128, Node)>, at: u128) {
             let node = self.nodes.read(at);
             if (node.left != 0) {
                 self.append_in_order_nodes(ref list, node.left);
@@ -35,8 +35,8 @@ mod ExampleFailure {
     }
 
     #[external(v0)]
-    impl Tree of ITree<Storage> {
-        fn sorted_list(ref self: Storage, root: u128) {
+    impl Tree of ITree<ContractState> {
+        fn sorted_list(ref self: ContractState, root: u128) {
             let mut in_order: Array<(u128, Node)> = ArrayTrait::new();
             self.append_in_order_nodes(ref in_order, root);
         }

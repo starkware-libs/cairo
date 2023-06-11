@@ -11,13 +11,13 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(ref self: Storage, amount: felt252) {
+    fn increase_balance(ref self: ContractState, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
     #[external]
-    fn get_balance(self: @Storage) -> felt252 {
+    fn get_balance(self: @ContractState) -> felt252 {
         self.balance.read()
     }
 }
@@ -32,13 +32,13 @@ mod HelloStarknet {
 
     // Increases the balance by the given amount.
     #[external]
-    fn increase_balance(ref self: Storage, amount: felt252) {
+    fn increase_balance(ref self: ContractState, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
     #[external]
-    fn get_balance(self: @Storage) -> felt252 {
+    fn get_balance(self: @ContractState) -> felt252 {
         self.balance.read()
     }
 }
@@ -48,23 +48,23 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 563546462035407704605837950970021550797870009287519032764335094032973360472;
+const TEST_CLASS_HASH: felt252 = 1497905547283796345028171189586039523695589234393994974564547326236831577928;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
-        balance: balance::Storage,
+    struct ContractState {
+        balance: balance::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
-            balance: balance::Storage{},
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            balance: balance::ContractState{},
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -75,7 +75,7 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use balance::InternalStorageTrait as balanceStorageTrait;
+    use balance::InternalContractStateTrait as balanceContractStateTrait;
     mod balance {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -87,18 +87,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> felt252;
-            fn write(ref self: Storage, value: felt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
-            fn read(self: @Storage) -> felt252 {
+            fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::read(
@@ -106,7 +106,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: felt252) {
+            fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::write(
@@ -121,11 +121,11 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn increase_balance(ref self: Storage, amount: felt252);
+        fn increase_balance(ref self: ContractState, amount: felt252);
         #[external]
-        fn get_balance(self: @Storage) -> felt252;
+        fn get_balance(self: @ContractState) -> felt252;
         
     
 }
@@ -153,7 +153,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::increase_balance(ref storage, __arg_amount);
             let mut arr = array::array_new();
             // References.
@@ -174,7 +174,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             
             let res = super::get_balance(@storage, );
             let mut arr = array::array_new();
@@ -209,7 +209,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:

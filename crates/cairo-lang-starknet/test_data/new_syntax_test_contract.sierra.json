@@ -27,9 +27,9 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x3e4925475a54c55b2de5aaba077c4d20a3dce91e620e9f977d7e61b7cbcae4f",
-    "0x2579be6e176b504d12bda740dd7e7d6647bba8df3730efa980c65c058087db6",
-    "0x318c7851b863a9b50de1713926c49a114c92c5f19aafb37d8d16e6807726c1e",
+    "0x9b8ee4e8113431b55e39ef48f9c4b19aabc04a6057afe1332baab1072d492e",
+    "0xcff5fd812fe56ea67099249d4ae47a084bfa2dbe2972c0e94f81a8d3bb901a",
+    "0x37ed8ab0202cefe84d71cf4b8f8ae6613f58cb1c8e84e04d6bf437307fed6d1",
     "0xa",
     "0xb",
     "0x53797374656d",
@@ -45,7 +45,7 @@
     "0x13",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0xc",
-    "0x34e4ddf912f5cface5d218d9c9aff46e87e2295f20abaef7d0a42b10e608831",
+    "0x389a149dd6b44b1be8432cabafb8c9c1b94e8b736c0416d84e0aa086a7f3e97",
     "0x16",
     "0x436f6e747261637441646472657373",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
@@ -53,7 +53,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x1a",
-    "0x79ffa394fe9442ec9f0064e0f22740b491fa9563095b0b7eebf49a8a93b04b",
+    "0x2c45c1210d27d630ebafefe2a48f66b0a30c64689e6131eaf7624cbdb5fe2d8",
     "0x1c",
     "0x20a2a856e734cb4d8263b3bb88ed552926d9520046adf5935c6320e3686341d",
     "0x1b0e14950a2da822b774d239517b06384fe0447224c8bf42aa7ab1e821eb61e",
@@ -68,7 +68,7 @@
     "0x358506fd2d97ec152c79646571b0b818eb31f8ed5ffd4080a2e22571074b909",
     "0x24",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x268539cb0f794f78285bbb0e311571912b7628b5ba0604e8189c363b9c2a6c8",
+    "0x31e1e0d22c8b04a4ba0bae813669ce544c9d487412bac2a269ca8a22a86afd9",
     "0x27",
     "0x53746f726167654261736541646472657373",
     "0x2cf4ead4392e987c9b56754a10f0a8e0f13776791e096fa6503893f05582c51",
@@ -1070,15 +1070,15 @@
       ],
       [
         10,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState"
       ],
       [
         11,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState"
       ],
       [
         12,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState"
       ],
       [
         13,
@@ -1118,11 +1118,11 @@
       ],
       [
         22,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>"
       ],
       [
         23,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, ())>"
+        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>"
       ],
       [
         24,
@@ -1142,11 +1142,11 @@
       ],
       [
         28,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>"
       ],
       [
         29,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, ())>"
+        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>"
       ],
       [
         30,
@@ -1186,11 +1186,11 @@
       ],
       [
         39,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>"
       ],
       [
         40,
-        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, ())>"
+        "core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>"
       ],
       [
         41,
@@ -1372,23 +1372,23 @@
       ],
       [
         25,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
       ],
       [
         26,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
       ],
       [
         27,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
       ],
       [
         28,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
       ],
       [
         29,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
       ],
       [
         30,
@@ -1400,7 +1400,7 @@
       ],
       [
         32,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
       ],
       [
         33,
@@ -1516,11 +1516,11 @@
       ],
       [
         61,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, ())>>"
+        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
       ],
       [
         62,
-        "drop<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, Unit>>"
+        "drop<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
       ],
       [
         63,
@@ -1552,19 +1552,19 @@
       ],
       [
         70,
-        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage>"
+        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
       ],
       [
         71,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
       ],
       [
         72,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
       ],
       [
         73,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalStorageImpl::read>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read>"
       ],
       [
         74,
@@ -1656,7 +1656,7 @@
       ],
       [
         96,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
       ],
       [
         97,
@@ -1668,15 +1668,15 @@
       ],
       [
         99,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalStorageImpl::write>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::write>"
       ],
       [
         100,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, ())>>"
+        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
       ],
       [
         101,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>>"
       ],
       [
         102,
@@ -1692,43 +1692,43 @@
       ],
       [
         105,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::StorageEventEmitter::emit>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit>"
       ],
       [
         106,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
       ],
       [
         107,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
       ],
       [
         108,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 0>"
       ],
       [
         109,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, ())>>"
+        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
       ],
       [
         110,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 1>"
       ],
       [
         111,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
       ],
       [
         112,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
       ],
       [
         113,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
       ],
       [
         114,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalStorageImpl::read>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::read>"
       ],
       [
         115,
@@ -1756,11 +1756,11 @@
       ],
       [
         121,
-        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage>"
+        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
       ],
       [
         122,
-        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage>"
+        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
       ],
       [
         123,
@@ -1804,15 +1804,15 @@
       ],
       [
         133,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalStorageImpl::write>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::write>"
       ],
       [
         134,
-        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, ())>>"
+        "enum_match<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
       ],
       [
         135,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>>"
       ],
       [
         136,
@@ -1932,19 +1932,19 @@
       ],
       [
         165,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>>"
       ],
       [
         166,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 0>"
       ],
       [
         167,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, ())>>"
+        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
       ],
       [
         168,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 1>"
       ],
       [
         169,
@@ -2096,19 +2096,19 @@
       ],
       [
         206,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>>"
       ],
       [
         207,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, ())>, 0>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 0>"
       ],
       [
         208,
-        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, ())>>"
+        "store_temp<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
       ],
       [
         209,
-        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::Storage, ())>, 1>"
+        "enum_init<core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 1>"
       ],
       [
         210,
@@ -2378,7 +2378,7 @@
       ],
       [
         12,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalStorageImpl::read"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read"
       ],
       [
         13,
@@ -2394,15 +2394,15 @@
       ],
       [
         16,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalStorageImpl::write"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::write"
       ],
       [
         17,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::StorageEventEmitter::emit"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit"
       ],
       [
         18,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalStorageImpl::read"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::read"
       ],
       [
         19,
@@ -2418,7 +2418,7 @@
       ],
       [
         22,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalStorageImpl::write"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::write"
       ],
       [
         23,
