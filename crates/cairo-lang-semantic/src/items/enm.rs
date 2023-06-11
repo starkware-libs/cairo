@@ -93,6 +93,11 @@ pub fn enum_generic_params(
     Ok(db.priv_enum_declaration_data(enum_id)?.generic_params)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::enum_attributes].
+pub fn enum_attributes(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
 pub fn enum_declaration_resolver_data(
     db: &dyn SemanticGroup,
