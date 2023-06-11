@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::plugin::DynPluginAuxData;
@@ -13,8 +14,6 @@ use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
 };
-use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
@@ -70,12 +69,16 @@ impl AbiBuilder {
         let mut builder = Self::default();
         let module_id = ModuleId::Submodule(submodule_id);
 
+        // TODO(yuval): iterate module_items and match the items instead of the multiple AST queries
+        // here.
+
         // Get storage type for later validations.
         // TODO(yuval): This is a temporary measure to find the Storage type. Instead, get
         // storage type from aux data from the plugin.
         let mut storage_type = None;
-        for (id, strct) in db.module_structs(module_id).unwrap_or_default() {
-            if strct.name(db.upcast()).text(db.upcast()) == "ContractState" {
+        for (id, _) in db.module_structs(module_id).unwrap_or_default() {
+            let strct_name = id.name(db.upcast());
+            if strct_name == "ContractState" {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }
@@ -87,7 +90,7 @@ impl AbiBuilder {
                 ))));
             }
             // Forbid a struct named Event.
-            if strct.name(db.upcast()).text(db.upcast()) == "Event" {
+            if strct_name == "Event" {
                 return Err(ABIError::EventMustBeEnum);
             }
         }
@@ -96,8 +99,8 @@ impl AbiBuilder {
         };
 
         // Add impls to ABI.
-        for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
-            if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
+        for (id, _) in db.module_impls(module_id).unwrap_or_default() {
+            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
                 builder.add_impl(db, id, storage_type)?;
                 continue;
             }
@@ -118,25 +121,32 @@ impl AbiBuilder {
 
         // Add external functions, constructor and L1 handlers to ABI.
         let mut ctor = None;
-        for (id, function) in db.module_free_functions(module_id).unwrap_or_default() {
-            if function.has_attr(db.upcast(), EXTERNAL_ATTR) {
+        for (id, _) in db.module_free_functions(module_id).unwrap_or_default() {
+            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
                 builder.add_free_function(db, id, storage_type)?;
-            } else if function.has_attr(db.upcast(), CONSTRUCTOR_ATTR) {
+            } else if id
+                .has_attr(db.upcast(), CONSTRUCTOR_ATTR)
+                .map_err(|_| ABIError::CompilationError)?
+            {
                 if ctor.is_some() {
                     return Err(ABIError::MultipleConstructors);
                 } else {
                     ctor = Some(id);
                     builder.add_constructor(db, id, storage_type)?;
                 }
-            } else if function.has_attr(db.upcast(), L1_HANDLER_ATTR) {
+            } else if id
+                .has_attr(db.upcast(), L1_HANDLER_ATTR)
+                .map_err(|_| ABIError::CompilationError)?
+            {
                 builder.add_l1_handler(db, id, storage_type)?;
             }
         }
 
         // Add events.
-        for (id, enm) in db.module_enums(module_id).unwrap_or_default() {
-            if enm.name(db.upcast()).text(db.upcast()) == "Event"
-                && enm.has_attr(db.upcast(), EVENT_ATTR)
+        for (id, _) in db.module_enums(module_id).unwrap_or_default() {
+            let enm_name = id.name(db.upcast());
+            if enm_name == "Event"
+                && id.has_attr(db.upcast(), EVENT_ATTR).map_err(|_| ABIError::CompilationError)?
             {
                 // Check that the enum has no generic parameters.
                 if !db.enum_generic_params(id).unwrap_or_default().is_empty() {
@@ -232,8 +242,7 @@ impl AbiBuilder {
         // If the trait is marked as starknet::interface, add the interface. Otherwise, add the
         // functions as external functions.
         let trait_id = trt.trait_id(db);
-        let attrs = db.trait_attributes(trait_id).map_err(|_| ABIError::CompilationError)?;
-        if attrs.into_iter().any(|x| x.id == INTERFACE_ATTR) {
+        if trait_id.has_attr(db, INTERFACE_ATTR).map_err(|_| ABIError::CompilationError)? {
             self.abi
                 .items
                 .push(Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path }));

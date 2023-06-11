@@ -243,6 +243,14 @@ pub fn impl_def_concrete_trait(
     db.priv_impl_declaration_data(impl_def_id)?.concrete_trait
 }
 
+/// Query implementation of [crate::db::SemanticGroup::impl_def_attributes].
+pub fn impl_def_attributes(
+    db: &dyn SemanticGroup,
+    impl_def_id: ImplDefId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_impl_declaration_data(impl_def_id)?.attributes)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::impl_def_trait].
 pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<TraitId> {
     let module_file_id = impl_def_id.module_file_id(db.upcast());
