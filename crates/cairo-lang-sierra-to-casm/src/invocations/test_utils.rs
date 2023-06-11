@@ -21,9 +21,7 @@ use super::{compile_invocation, CompiledInvocation, ProgramInfo};
 use crate::environment::gas_wallet::GasWallet;
 use crate::environment::Environment;
 use crate::metadata::Metadata;
-use crate::references::{
-    IntroductionPoint, ReferenceExpression, ReferenceValue, VariableApIndependentLocationInfo,
-};
+use crate::references::{IntroductionPoint, ReferenceExpression, ReferenceValue};
 use crate::relocations::RelocationEntry;
 
 /// Creates a Felt252BinaryOperator from a token operator.
@@ -269,7 +267,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         .map(|(expression, param)| ReferenceValue {
             expression,
             ty: param.ty.clone(),
-            ap_independent_location_info: VariableApIndependentLocationInfo::Other,
+            stack_idx: None,
             introduction_point: IntroductionPoint {
                 source_statement_idx: None,
                 destination_statement_idx: StatementIdx(0),
