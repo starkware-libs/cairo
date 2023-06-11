@@ -3543,6 +3543,16 @@
       "state_mutability": "view"
     },
     {
+      "type": "struct",
+      "name": "core::starknet::eth_address::EthAddress",
+      "members": [
+        {
+          "name": "address",
+          "type": "core::felt252"
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "set_l1_bridge",
       "inputs": [
@@ -3565,6 +3575,20 @@
       ],
       "outputs": [],
       "state_mutability": "external"
+    },
+    {
+      "type": "struct",
+      "name": "core::integer::u256",
+      "members": [
+        {
+          "name": "low",
+          "type": "core::integer::u128"
+        },
+        {
+          "name": "high",
+          "type": "core::integer::u128"
+        }
+      ]
     },
     {
       "type": "function",
