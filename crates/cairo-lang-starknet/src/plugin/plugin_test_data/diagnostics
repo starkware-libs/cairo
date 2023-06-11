@@ -167,7 +167,7 @@ error: Plugin diagnostic: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
-error: Invalid drop trait implementation, Trait `core::traits::Drop::<<missing>>` has multiple implementations, in: "test::TestContract::StorageDrop", "test::TestContract::EventDrop", "core::traits::SnapshotDrop", "core::traits::TupleSize0Drop", "core::traits::TupleSize1Drop", "core::traits::TupleSize2Drop", "core::traits::TupleSize3Drop", "core::traits::TupleSize4Drop", "core::boolDrop", "core::felt252Drop".
+error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> impls:1:1
 impl StorageDrop<> of Drop::<Storage<>>;
 ^**************************************^
@@ -652,7 +652,7 @@ error: Type not found.
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
-error: Plugin diagnostic: Type annotations needed. Failed to infer ?14
+error: Plugin diagnostic: Type annotations needed. Failed to infer ?11
  --> lib.cairo:6:8
     fn foo<T>(ref self: Storage, x: T) {
        ^*^

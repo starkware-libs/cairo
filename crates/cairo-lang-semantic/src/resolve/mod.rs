@@ -24,6 +24,8 @@ use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::inference::conform::InferenceConform;
+use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::{Inference, InferenceData};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
@@ -460,7 +462,7 @@ impl<'db> Resolver<'db> {
                     .infer_trait_generic_function(
                         concrete_trait_function,
                         &impl_lookup_context,
-                        identifier.stable_ptr().untyped(),
+                        Some(identifier.stable_ptr().untyped()),
                     )
                     .map_err(|err| err.report(diagnostics, identifier.stable_ptr().untyped()))?;
 
@@ -756,12 +758,10 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        let lookup_context = ImplLookupContext {
-            module_id: self.module_file_id.0,
-            extra_modules: vec![],
-            generic_params: self.generic_params.values().copied().collect(),
-        };
-        lookup_context
+        ImplLookupContext::new(
+            self.module_file_id.0,
+            self.generic_params.values().copied().collect(),
+        )
     }
 
     pub fn resolve_generic_args(
@@ -815,7 +815,7 @@ impl<'db> Resolver<'db> {
                     .data
                     .inference_data
                     .inference(self.db)
-                    .infer_generic_arg(&generic_param, lookup_context, stable_ptr)
+                    .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
                     .map_err(|err| err.report(diagnostics, stable_ptr));
             }
             Some(ast::GenericArg::Expr(generic_arg_expr)) => {

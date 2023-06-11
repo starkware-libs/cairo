@@ -603,7 +603,7 @@ fn get_core_trait_function_infer(
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
-        .map(|_| GenericArgumentId::Type(inference.new_type_var(stable_ptr)))
+        .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
     let concrete_trait_id =
         db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });

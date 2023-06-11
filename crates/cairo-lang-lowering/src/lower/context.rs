@@ -48,11 +48,10 @@ impl<'db> VariableAllocator<'db> {
             db,
             variables,
             module_file_id: function_id.module_file_id(db.upcast()),
-            lookup_context: ImplLookupContext {
-                module_id: function_id.parent_module(db.upcast()),
-                extra_modules: vec![],
+            lookup_context: ImplLookupContext::new(
+                function_id.parent_module(db.upcast()),
                 generic_params,
-            },
+            ),
         })
     }
 

@@ -21,6 +21,7 @@ use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
@@ -92,6 +93,8 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+    #[salsa::interned]
+    fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
     // Const.
     // ====
@@ -404,6 +407,14 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
     ) -> Maybe<Vec<UninferredImpl>>;
+    // Returns the solution set for a canonical trait.
+    #[salsa::invoke(inference::solver::canonic_trait_solutions)]
+    #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
+    fn canonic_trait_solutions(
+        &self,
+        canonical_trait: inference::canonic::CanonicalTrait,
+        lookup_context: ImplLookupContext,
+    ) -> inference::InferenceResult<inference::solver::SolutionSet<inference::canonic::CanonicalImpl>>;
 
     // Impl.
     // =======

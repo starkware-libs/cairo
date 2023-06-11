@@ -23,6 +23,7 @@
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::ids::CrateId;
+pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
@@ -240,13 +241,6 @@ macro_rules! toplevel_enum {
     }
 }
 
-/// A trait for getting the internal salsa::InternId of a short id object.
-/// This id is unstable across runs and should not be used to anything that is externally visible.
-/// This is currently used to pick representative for strongly connected components.
-pub trait UnstableSalsaId {
-    fn get_internal_id(&self) -> &salsa::InternId;
-}
-
 /// Id for a module. Either the root module of a crate, or a submodule.
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum ModuleId {
@@ -304,6 +298,11 @@ define_language_element_id!(
     lookup_intern_submodule,
     name
 );
+impl UnstableSalsaId for SubmoduleId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 
 define_language_element_id!(
     ConstantId,
