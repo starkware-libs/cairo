@@ -553,6 +553,7 @@ define_language_element_id_as_enum! {
         Enum(EnumId),
         ExternType(ExternTypeId),
         TypeAlias(TypeAliasId),
+        ImplAlias(ImplAliasId),
     }
 }
 impl GenericItemId {
@@ -628,6 +629,9 @@ impl GenericItemId {
             )),
             SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_type_alias(
                 TypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+            )),
+            SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
+                ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
             )),
             _ => panic!(),
         }

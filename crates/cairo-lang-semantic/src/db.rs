@@ -273,7 +273,7 @@ pub trait SemanticGroup:
     fn impl_alias_resolved_impl(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplId>;
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_generic_params)]
-    fn impl_alias_generic_params(&self, enum_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
+    fn impl_alias_generic_params(&self, impl_alias_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolver_data)]
     fn impl_alias_resolver_data(&self, impl_alias_id: ImplAliasId) -> Maybe<Arc<ResolverData>>;
