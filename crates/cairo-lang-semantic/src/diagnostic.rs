@@ -159,6 +159,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::ImplAliasCycle => {
                 "Cycle detected while resolving 'impls alias' items.".into()
             }
+            SemanticDiagnosticKind::ImplRequirmentCycle => {
+                "Cycle detected while resolving generic param.".into()
+            }
             SemanticDiagnosticKind::ExpectedConcreteVariant => {
                 "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
@@ -659,6 +662,7 @@ pub enum SemanticDiagnosticKind {
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,
+    ImplRequirmentCycle,
     ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,
