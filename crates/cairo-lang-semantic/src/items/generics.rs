@@ -1,21 +1,29 @@
+use std::sync::Arc;
+
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericItemId, GenericKind, GenericParamId, GenericParamLongId, ModuleFileId,
+    GenericItemId, GenericKind, GenericParamId, GenericParamLongId, LanguageElementId,
+    ModuleFileId, TraitId,
 };
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{Diagnostics, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
+use syntax::node::ast::{
+    ExprPath, OptionWrappedGenericParamList, OptionWrappedGenericParamListPtr,
+};
+use syntax::node::db::SyntaxGroup;
+use syntax::node::stable_ptr::SyntaxStablePtr;
 
 use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::literals::LiteralId;
-use crate::resolve::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::types::{resolve_type, TypeHead};
-use crate::{ConcreteTraitId, TypeId};
+use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
 
 /// Generic argument.
 /// A value assigned to a generic parameter.
@@ -129,6 +137,16 @@ pub struct GenericParamImpl {
     pub concrete_trait: Maybe<ConcreteTraitId>,
 }
 
+/// The result of the computation of the semantic model of a generic parameters list.
+#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub struct GenericParamsData {
+    pub generic_params: Vec<GenericParam>,
+    pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub resolver_data: Arc<ResolverData>,
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_param_semantic].
 pub fn generic_param_semantic(
     db: &dyn SemanticGroup,
     generic_param_id: GenericParamId,
@@ -136,6 +154,112 @@ pub fn generic_param_semantic(
     let generic_item = generic_param_id.generic_item(db.upcast());
     let generic_params = generic_item_generic_params(db, generic_item)?;
     Ok(*generic_params.iter().find(|generic_param| generic_param.id() == generic_param_id).unwrap())
+}
+
+/// Cycle handling for [crate::db::SemanticGroup::generic_param_semantic].
+pub fn generic_param_semantic_cycle(
+    db: &dyn SemanticGroup,
+    _cycle: &[String],
+    generic_param_id: &GenericParamId,
+) -> Maybe<GenericParam> {
+    let diagnostics = &mut SemanticDiagnostics::new(generic_param_id.module_file_id(db.upcast()));
+    Err(diagnostics.report_by_ptr(
+        generic_param_id.stable_ptr(db.upcast()).untyped(),
+        SemanticDiagnosticKind::ImplRequirmentCycle,
+    ))
+}
+
+/// Computes the semantic model of a generic parameter given a specific context.
+pub fn generic_param_semantic_with_context(
+    db: &dyn SemanticGroup,
+    generic_param_id: GenericParamId,
+    resolver: &mut Resolver<'_>,
+    diagnostics: &mut SemanticDiagnostics,
+    allow_consts: bool,
+) -> Maybe<GenericParam> {
+    let syntax_db: &dyn SyntaxGroup = db.upcast();
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
+    let generic_params_syntax = extract_matches!(
+        option_generic_params_syntax,
+        OptionWrappedGenericParamList::WrappedGenericParamList
+    );
+
+    let generic_param_syntax = generic_params_syntax
+        .generic_params(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .find(|param_syntax| {
+            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
+                == generic_param_id
+        })
+        .unwrap();
+    // If the generic parameter is an impl, we add to the resolver the generic parameters of the
+    // generic item. These generic parameters will be resolved only if the resolver encounters the
+    // identifier of the generic parameter.
+    if let ast::GenericParam::Impl(syntax) = generic_param_syntax.clone() {
+        let trait_path_syntax = syntax.trait_path(db.upcast());
+        if let Some(trait_id) = extract_trait_id_from_path(trait_path_syntax, resolver) {
+            let required_impls = db.trait_required_impls(trait_id)?;
+
+            for cur_generic_param_syntax in
+                generic_params_syntax.generic_params(syntax_db).elements(syntax_db).iter()
+            {
+                let cur_generic_param_id = db.intern_generic_param(GenericParamLongId(
+                    module_file_id,
+                    cur_generic_param_syntax.stable_ptr(),
+                ));
+                if cur_generic_param_id == generic_param_id {
+                    continue;
+                }
+                // Filter impls which are not required by the current impl to avoid cycles.
+                if let ast::GenericParam::Impl(generic_impl_syntax) = cur_generic_param_syntax {
+                    let trait_path_syntax = generic_impl_syntax.trait_path(db.upcast());
+                    if let Some(trait_id) = extract_trait_id_from_path(trait_path_syntax, resolver)
+                    {
+                        if !required_impls.contains(&trait_id) {
+                            continue;
+                        }
+                    }
+                }
+
+                // TODO(Gil): Handle real dependency cycles, and raise diagnostics.
+                let cur_generic_param = generic_param_semantic_with_context(
+                    db,
+                    cur_generic_param_id,
+                    resolver,
+                    diagnostics,
+                    allow_consts,
+                )?;
+                resolver.add_generic_param(cur_generic_param);
+            }
+        }
+    };
+
+    let param_semantic = semantic_from_generic_param_ast(
+        db,
+        resolver,
+        diagnostics,
+        module_file_id,
+        &generic_param_syntax,
+        allow_consts,
+    );
+    Ok(param_semantic)
+}
+
+/// Returns the trait id of the trait represented by a given path.
+fn extract_trait_id_from_path(
+    trait_path_syntax: ExprPath,
+    resolver: &mut Resolver<'_>,
+) -> Option<TraitId> {
+    // A temporary diagnostics object is created to avoid adding the same diagnostic multiple times.
+    // Any diagnostic related to the generic parameter will be added when this parameter semantic
+    // model is computed.
+    let diagnostics = &mut SemanticDiagnostics::new(resolver.module_file_id);
+    resolver
+        .resolve_generic_path_with_args(diagnostics, &trait_path_syntax, NotFoundItemType::Trait)
+        .ok()
+        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
 }
 
 fn generic_item_generic_params(
@@ -157,7 +281,28 @@ fn generic_item_generic_params(
     }
 }
 
-/// Returns the parameters of the given function signature's AST.
+fn generic_param_generic_params_list(
+    db: &dyn SemanticGroup,
+    generic_param_id: GenericParamId,
+) -> Maybe<OptionWrappedGenericParamList> {
+    let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
+    // Traverse up the tree to the generic params list ptr.
+    let SyntaxStablePtr::Child { parent, .. } =
+        db.lookup_intern_stable_ptr(generic_param_long_id.1.0) else { panic!() };
+    let SyntaxStablePtr::Child { parent, .. } =
+        db.lookup_intern_stable_ptr(parent) else { panic!() };
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let file_id = db.module_file(module_file_id)?;
+    let root = db.file_syntax(file_id)?;
+    let generic_param_list = OptionWrappedGenericParamList::from_ptr(
+        db.upcast(),
+        &root,
+        OptionWrappedGenericParamListPtr(parent),
+    );
+    Ok(generic_param_list)
+}
+
+/// Returns the semantic model of a generic parameters list given the list AST.
 pub fn semantic_generic_params(
     db: &dyn SemanticGroup,
     diagnostics: &mut SemanticDiagnostics,
@@ -169,27 +314,29 @@ pub fn semantic_generic_params(
     let syntax_db = db.upcast();
 
     let res = match generic_params {
-        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => vec![],
+        syntax::node::ast::OptionWrappedGenericParamList::Empty(_) => Ok(vec![]),
         syntax::node::ast::OptionWrappedGenericParamList::WrappedGenericParamList(syntax) => syntax
             .generic_params(syntax_db)
             .elements(syntax_db)
             .iter()
             .map(|param_syntax| {
-                let param_semantic = semantic_from_generic_param_ast(
+                let id = db.intern_generic_param(GenericParamLongId(
+                    module_file_id,
+                    param_syntax.stable_ptr(),
+                ));
+                let param_semantic = generic_param_semantic_with_context(
                     db,
+                    id,
                     resolver,
                     diagnostics,
-                    module_file_id,
-                    param_syntax,
                     allow_consts,
-                );
+                )?;
                 resolver.add_generic_param(param_semantic);
-                param_semantic
+                Ok(param_semantic)
             })
-            .collect(),
+            .collect::<Result<Vec<_>, _>>(),
     };
-
-    Ok(res)
+    res
 }
 
 /// Computes the semantic model of a generic parameter give its ast.
