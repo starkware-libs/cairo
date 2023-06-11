@@ -439,9 +439,8 @@ fn test_var_consistency(
         return true;
     }
     // If the variable is not ap-dependent it can always be merged.
-    // We consider empty variables as ap-dependent since we don't know their actual
-    // source.
-    if !actual.expression.cells.is_empty() && actual.expression.can_apply_unknown() {
+    // Note: This makes the assumption that empty variables are always mergable.
+    if actual.expression.can_apply_unknown() {
         return true;
     }
     // Ap tracking must be enabled when merging non-stack ap-dependent variables.
