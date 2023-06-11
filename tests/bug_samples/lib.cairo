@@ -23,3 +23,4 @@ mod issue3345;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;
+mod generic_cycles;

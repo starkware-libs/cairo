@@ -8,11 +8,12 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
+use cairo_lang_syntax::node::ast::TraitItemFunction;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::{define_short_id, try_extract_matches};
 use smol_str::SmolStr;
 
 use super::function_with_body::{get_implicit_precedence, get_inline_config};
@@ -21,10 +22,10 @@ use super::generics::semantic_generic_params;
 use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
-use crate::diagnostic::SemanticDiagnostics;
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::Environment;
 use crate::expr::inference::canonic::ResultNoErrEx;
-use crate::resolve::{Resolver, ResolverData};
+use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
     semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
@@ -242,6 +243,47 @@ pub fn priv_trait_semantic_declaration_data(
     })
 }
 
+/// Query implementation of [crate::db::SemanticGroup::trait_required_impls].
+pub fn trait_required_impls(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashSet<TraitId>> {
+    let syntax_db: &dyn SyntaxGroup = db.upcast();
+    let module_file_id = trait_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_traits = db.module_traits(module_file_id.0)?;
+    let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+    match trait_ast.generic_params(syntax_db) {
+        ast::OptionWrappedGenericParamList::Empty(_) => Ok(OrderedHashSet::default()),
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList(params_list) => {
+            let mut resolver = Resolver::new(db, module_file_id);
+            let mut required_impls = OrderedHashSet::default();
+            for param in params_list.generic_params(syntax_db).elements(syntax_db) {
+                match param {
+                    ast::GenericParam::Impl(generic_impl_syntax) => {
+                        let trait_path_syntax = generic_impl_syntax.trait_path(db.upcast());
+                        let trait_id = resolver
+                            .resolve_generic_path_with_args(
+                                &mut diagnostics,
+                                &trait_path_syntax,
+                                NotFoundItemType::Trait,
+                            )
+                            .ok()
+                            .and_then(|generic_item| {
+                                try_extract_matches!(generic_item, ResolvedGenericItem::Trait)
+                            })
+                            .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))?;
+                        required_impls.insert(trait_id);
+                        required_impls.extend(db.trait_required_impls(trait_id)?);
+                    }
+                    _ => {}
+                }
+            }
+            Ok(required_impls)
+        }
+    }
+}
+
 // === Trait Definition ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -295,6 +337,14 @@ pub fn trait_function_by_name(
     name: SmolStr,
 ) -> Maybe<Option<TraitFunctionId>> {
     Ok(db.trait_functions(trait_id)?.get(&name).copied())
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_asts].
+pub fn trait_function_asts(
+    db: &dyn SemanticGroup,
+    trait_id: TraitId,
+) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>> {
+    Ok(db.priv_trait_semantic_definition_data(trait_id)?.function_asts)
 }
 
 // --- Computation ---
