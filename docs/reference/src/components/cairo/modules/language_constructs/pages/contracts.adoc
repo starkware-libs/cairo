@@ -64,7 +64,7 @@ function using one of the attributes below:
 [source]
 ----
     #[external]
-    fn external_example(ref self: Storage, value: felt252) {
+    fn external_example(ref self: ContractState, value: felt252) {
         x::write(value);
     }
 ----
@@ -74,7 +74,7 @@ Another possibility is to get a read-only reference to the storage:
 [source]
 ----
     #[external]
-    fn view_example(self: @Storage) -> felt252 {
+    fn view_example(self: @ContractState) -> felt252 {
         x::read(value)
     }
 ----
@@ -160,9 +160,9 @@ in the following way:
 [source,rust]
 ----
 #[starknet::interface]
-trait IMyContract<TStorage> {
+trait IMyContract<TContractState> {
     #[external]
-    fn foo(ref self: TStorage, value: felt252) -> felt252;
+    fn foo(ref self: TContractState, value: felt252) -> felt252;
 }
 
 #[starknet::contract]

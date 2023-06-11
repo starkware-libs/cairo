@@ -1,13 +1,13 @@
 #[starknet::interface]
-trait IOtherContract<TStorage> {
-    fn decrease_allowed(self: @TStorage) -> bool;
+trait IOtherContract<TContractState> {
+    fn decrease_allowed(self: @TContractState) -> bool;
 }
 
 #[starknet::interface]
-trait ICounterContract<TStorage> {
-    fn increase_counter(ref self: TStorage, amount: u128);
-    fn decrease_counter(ref self: TStorage, amount: u128);
-    fn get_counter(self: @TStorage) -> u128;
+trait ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128);
+    fn decrease_counter(ref self: TContractState, amount: u128);
+    fn get_counter(self: @TContractState) -> u128;
 }
 
 #[starknet::contract]
@@ -41,7 +41,7 @@ mod CounterContract {
     }
 
     #[constructor]
-    fn init(ref self: Storage, initial_counter: u128, other_contract_addr: ContractAddress) {
+    fn init(ref self: ContractState, initial_counter: u128, other_contract_addr: ContractAddress) {
         self.counter.write(initial_counter);
         self
             .other_contract
@@ -49,18 +49,18 @@ mod CounterContract {
     }
 
     #[external(v0)]
-    impl CounterContract of super::ICounterContract<Storage> {
-        fn get_counter(self: @Storage) -> u128 {
+    impl CounterContract of super::ICounterContract<ContractState> {
+        fn get_counter(self: @ContractState) -> u128 {
             self.counter.read()
         }
 
-        fn increase_counter(ref self: Storage, amount: u128) {
+        fn increase_counter(ref self: ContractState, amount: u128) {
             let current = self.counter.read();
             self.counter.write(current + amount);
             self.emit(Event::CounterIncreased(CounterIncreased { amount }));
         }
 
-        fn decrease_counter(ref self: Storage, amount: u128) {
+        fn decrease_counter(ref self: ContractState, amount: u128) {
             let allowed = self.other_contract.read().decrease_allowed();
             if allowed {
                 let current = self.counter.read();

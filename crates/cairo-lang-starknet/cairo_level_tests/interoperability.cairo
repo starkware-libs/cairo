@@ -23,12 +23,12 @@ mod ContractA {
     }
 
     #[constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    fn constructor(ref self: ContractState, value_: u128) {
         self.value.write(value_);
     }
 
     #[external]
-    fn foo(ref self: Storage, a: u128) -> u128 {
+    fn foo(ref self: ContractState, a: u128) -> u128 {
         let value = self.value.read();
         self.value.write(a);
         value
@@ -123,7 +123,7 @@ mod ContractFailedConstructor {
     struct Storage {}
 
     #[constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    fn constructor(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }
@@ -148,7 +148,7 @@ mod ContractFailedEntrypoint {
     struct Storage {}
 
     #[external]
-    fn foo(ref self: Storage, value_: u128) {
+    fn foo(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }

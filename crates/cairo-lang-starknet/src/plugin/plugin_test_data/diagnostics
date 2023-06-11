@@ -59,20 +59,20 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 1341682109668993677560518930855711196908916948134858721445948442570067905693;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
-        mapping: mapping::Storage,
+    struct ContractState {
+        mapping: mapping::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
-            mapping: mapping::Storage{},
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            mapping: mapping::ContractState{},
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -87,7 +87,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -125,7 +125,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -169,8 +169,8 @@ error: Plugin diagnostic: Identifier not found.
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> impls:1:1
-impl StorageDrop<> of Drop::<Storage<>>;
-^**************************************^
+impl ContractStateDrop<> of Drop::<ContractState<>>;
+^**************************************************^
 
 //! > ==========================================================================
 
@@ -185,7 +185,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage, x: (felt252, felt252)) {
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
     }
 }
 
@@ -197,7 +197,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage, x: (felt252, felt252)) {
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
     }
 }
 
@@ -206,21 +206,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1034301153973438775075306730874673306161093390606026853333490455949258936982;
+const TEST_CLASS_HASH: felt252 = 1460312078797661331777634083655921544238599930096957524306884986783950739842;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -235,9 +235,9 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo(ref self: Storage, x: (felt252, felt252));
+        fn foo(ref self: ContractState, x: (felt252, felt252));
         
     
 }
@@ -265,7 +265,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::foo(ref storage, __arg_x);
             let mut arr = array::array_new();
             // References.
@@ -298,7 +298,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -339,7 +339,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage) -> (felt252, felt252) {
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
     }
 }
 
@@ -351,7 +351,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage) -> (felt252, felt252) {
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
     }
 }
 
@@ -360,21 +360,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 645028213164848354976962446509000813296048360815628558135148450310497503156;
+const TEST_CLASS_HASH: felt252 = 1085681203938695457350905679214019253602052240602183085516661084732923084593;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -389,9 +389,9 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo(ref self: Storage) -> (felt252, felt252);
+        fn foo(ref self: ContractState) -> (felt252, felt252);
         
     
 }
@@ -417,7 +417,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             
             let res = super::foo(ref storage, );
             let mut arr = array::array_new();
@@ -452,7 +452,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -480,9 +480,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:53
-    fn foo(ref self: Storage) -> (felt252, felt252) {
-                                                    ^
+ --> lib.cairo:6:59
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
+                                                          ^
 
 //! > ==========================================================================
 
@@ -497,7 +497,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo<T>(ref self: Storage, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {
     }
 }
 
@@ -509,7 +509,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo<T>(ref self: Storage, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {
     }
 }
 
@@ -518,21 +518,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 806228951886353633908385835583968857108769493883539718628345997870026845589;
+const TEST_CLASS_HASH: felt252 = 986680701890279147065748532178080828207279458327175386486245847124129097172;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -547,9 +547,9 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo<T>(ref self: Storage, x: T);
+        fn foo<T>(ref self: ContractState, x: T);
         
     
 }
@@ -577,7 +577,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::foo(ref storage, __arg_x);
             let mut arr = array::array_new();
             // References.
@@ -610,7 +610,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -639,13 +639,13 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract entry points cannot have generic arguments
  --> lib.cairo:6:11
-    fn foo<T>(ref self: Storage, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {
           ^*^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<T>. Trait has no implementation in context: core::traits::Destruct::<T>.
- --> lib.cairo:6:34
-    fn foo<T>(ref self: Storage, x: T) {
-                                 ^
+ --> lib.cairo:6:40
+    fn foo<T>(ref self: ContractState, x: T) {
+                                       ^
 
 error: Type not found.
  --> contract:53:32
@@ -654,7 +654,7 @@ error: Type not found.
 
 error: Plugin diagnostic: Type annotations needed. Failed to infer ?11
  --> lib.cairo:6:8
-    fn foo<T>(ref self: Storage, x: T) {
+    fn foo<T>(ref self: ContractState, x: T) {
        ^*^
 
 //! > ==========================================================================
@@ -670,7 +670,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
 
@@ -682,7 +682,7 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
 
@@ -691,21 +691,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1187068906559299466397010226230256579055199563279401076790518261432379447822;
+const TEST_CLASS_HASH: felt252 = 347376211869286392247638345228494664456994337665073734689856581643720590414;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -720,9 +720,9 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
+        fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
     
 }
@@ -753,7 +753,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             
             let res = super::foo(ref storage, __arg_x, __arg_y);
             let mut arr = array::array_new();
@@ -788,7 +788,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -816,9 +816,9 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
- --> lib.cairo:6:99
-    fn foo(ref self: Storage, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
-                                                                                                  ^
+ --> lib.cairo:6:105
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+                                                                                                        ^
 
 //! > ==========================================================================
 
@@ -833,13 +833,13 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn __validate__(ref self: Storage) {}
+    fn __validate__(ref self: ContractState) {}
     #[external]
-    fn __validate_declare__(ref self: Storage) {}
+    fn __validate_declare__(ref self: ContractState) {}
     #[external]
-    fn __validate_deploy__(ref self: Storage) {}
+    fn __validate_deploy__(ref self: ContractState) {}
     #[external]
-    fn __execute__(ref self: Storage) {}
+    fn __execute__(ref self: ContractState) {}
 }
 
 //! > generated_cairo_code
@@ -850,13 +850,13 @@ mod TestContract {
     #[storage]
     struct Storage {}
     #[external]
-    fn __validate__(ref self: Storage) {}
+    fn __validate__(ref self: ContractState) {}
     #[external]
-    fn __validate_declare__(ref self: Storage) {}
+    fn __validate_declare__(ref self: ContractState) {}
     #[external]
-    fn __validate_deploy__(ref self: Storage) {}
+    fn __validate_deploy__(ref self: ContractState) {}
     #[external]
-    fn __execute__(ref self: Storage) {}
+    fn __execute__(ref self: ContractState) {}
 }
 
 contract:
@@ -864,21 +864,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 604216878481447986133438871915028413702571651845656363747932155876521089953;
+const TEST_CLASS_HASH: felt252 = 1634753115141814283796594638234959991248210536627122676485228671802081386262;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -893,15 +893,15 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn __validate__(ref self: Storage);
+        fn __validate__(ref self: ContractState);
         #[external]
-        fn __validate_declare__(ref self: Storage);
+        fn __validate_declare__(ref self: ContractState);
         #[external]
-        fn __validate_deploy__(ref self: Storage);
+        fn __validate_deploy__(ref self: ContractState);
         #[external]
-        fn __execute__(ref self: Storage);
+        fn __execute__(ref self: ContractState);
         
     
 }
@@ -927,7 +927,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::__validate__(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -948,7 +948,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::__validate_declare__(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -969,7 +969,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::__validate_deploy__(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -990,7 +990,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::__execute__(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -1023,7 +1023,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -1066,20 +1066,20 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
 
     #[external]
     #[raw_output]
-    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
 
     #[external]
     #[raw_output]
-    fn bar2(ref self: Storage, a: felt252) {}
+    fn bar2(ref self: ContractState, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
@@ -1087,7 +1087,7 @@ mod TestContract {
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
         array::array_new()
     }
 }
@@ -1102,20 +1102,20 @@ mod TestContract {
 
     #[external]
     #[raw_output]
-    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
 
     #[external]
     #[raw_output]
-    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
 
     #[external]
     #[raw_output]
-    fn bar2(ref self: Storage, a: felt252) {}
+    fn bar2(ref self: ContractState, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
     #[external]
     #[raw_output]
-    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
          array::array_new()
     }
 
@@ -1123,7 +1123,7 @@ mod TestContract {
     type my_felt252_array_type = Array::<felt252>;
     #[external]
     #[raw_output]
-    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
         array::array_new()
     }
 }
@@ -1133,21 +1133,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1739479241842800905565541161273314339401758749909029446798199907586357724178;
+const TEST_CLASS_HASH: felt252 = 1339255375740182838173000168531687646915489118170655670928431587424555758987;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1162,17 +1162,17 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo(ref self: Storage, ref a: felt252, ref b: felt252);
+        fn foo(ref self: ContractState, ref a: felt252, ref b: felt252);
         #[external]
-        fn bar1(ref self: Storage, a: felt252) -> felt252;
+        fn bar1(ref self: ContractState, a: felt252) -> felt252;
         #[external]
-        fn bar2(ref self: Storage, a: felt252);
+        fn bar2(ref self: ContractState, a: felt252);
         #[external]
-        fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252>;
+        fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252>;
         #[external]
-        fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type;
+        fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type;
         
     
 }
@@ -1213,7 +1213,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -1241,39 +1241,39 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:8:31
-    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
-                              ^*^
+ --> lib.cairo:8:37
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                    ^*^
 
 error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
- --> lib.cairo:8:47
-    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
-                                              ^*^
+ --> lib.cairo:8:53
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                                    ^*^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:8:63
-    fn foo(ref self: Storage, ref a: felt252, ref b: felt252) {}
-                                                              ^
+ --> lib.cairo:8:69
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                                                    ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:12:47
-    fn bar1(ref self: Storage, a: felt252) -> felt252 { 0 }
-                                              ^*****^
+ --> lib.cairo:12:53
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+                                                    ^*****^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:16:44
-    fn bar2(ref self: Storage, a: felt252) {}
-                                           ^
+ --> lib.cairo:16:50
+    fn bar2(ref self: ContractState, a: felt252) {}
+                                                 ^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:21:47
-    fn bar3(ref self: Storage, a: felt252) -> core::Array::<felt252> {
-                                              ^********************^
+ --> lib.cairo:21:53
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+                                                    ^********************^
 
 error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
- --> lib.cairo:29:47
-    fn bar4(ref self: Storage, a: felt252) -> my_felt252_array_type {
-                                              ^*******************^
+ --> lib.cairo:29:53
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
+                                                    ^*******************^
 
 //! > ==========================================================================
 
@@ -1316,20 +1316,20 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 740643162547049089477684638892724514387240513222624188091347173391995815741;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
-        same_name: same_name::Storage,
+    struct ContractState {
+        same_name: same_name::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
-            same_name: same_name::Storage{},
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            same_name: same_name::ContractState{},
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1340,7 +1340,7 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use same_name::InternalStorageTrait as same_nameStorageTrait;
+    use same_name::InternalContractStateTrait as same_nameContractStateTrait;
     mod same_name {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1352,18 +1352,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> felt252;
-            fn write(ref self: Storage, value: felt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
             }
-            fn read(self: @Storage) -> felt252 {
+            fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::read(
@@ -1371,7 +1371,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: felt252) {
+            fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::StorageAccess::<felt252>::write(
@@ -1386,7 +1386,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -1424,7 +1424,7 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -1571,18 +1571,18 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 421416711325618464026129086548833816049770041305674853614145850831686865933;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1597,7 +1597,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -1653,7 +1653,7 @@ trait BTrait {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -1745,11 +1745,11 @@ mod TestContract {
     #[external(v0)]
     impl AImpl of ATrait {
         #[external]
-        fn foo_external(ref self: Storage) {}
+        fn foo_external(ref self: ContractState) {}
         #[l1_handler]
-        fn foo_l1_handler(ref self: Storage) {}
+        fn foo_l1_handler(ref self: ContractState) {}
         #[constructor]
-        fn foo_constructor(ref self: Storage) {}
+        fn foo_constructor(ref self: ContractState) {}
     }
 }
 
@@ -1766,11 +1766,11 @@ mod TestContract {
     #[external(v0)]
     impl AImpl of ATrait {
         #[external]
-        fn foo_external(ref self: Storage) {}
+        fn foo_external(ref self: ContractState) {}
         #[l1_handler]
-        fn foo_l1_handler(ref self: Storage) {}
+        fn foo_l1_handler(ref self: ContractState) {}
         #[constructor]
-        fn foo_constructor(ref self: Storage) {}
+        fn foo_constructor(ref self: ContractState) {}
     }
 }
 
@@ -1779,21 +1779,21 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1497943855098052765428159941500125975725021036268295299600211708514538684495;
+const TEST_CLASS_HASH: felt252 = 963300983981179617199812266398042899520458873776324561789509750269407080949;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1808,13 +1808,13 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn foo_external(ref self: Storage);
+        fn foo_external(ref self: ContractState);
         #[external]
-        fn foo_l1_handler(ref self: Storage);
+        fn foo_l1_handler(ref self: ContractState);
         #[external]
-        fn foo_constructor(ref self: Storage);
+        fn foo_constructor(ref self: ContractState);
         
     
 }
@@ -1841,7 +1841,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::AImpl::foo_external(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -1862,7 +1862,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::AImpl::foo_l1_handler(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -1883,7 +1883,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::AImpl::foo_constructor(ref storage, );
             let mut arr = array::array_new();
             // References.
@@ -1919,17 +1919,17 @@ mod __constructor {
 generate_trait:
 
 trait ATrait {
-    fn foo_external(ref self: Storage);
+    fn foo_external(ref self: ContractState);
 
-    fn foo_l1_handler(ref self: Storage);
+    fn foo_l1_handler(ref self: ContractState);
 
-    fn foo_constructor(ref self: Storage);
+    fn foo_constructor(ref self: ContractState);
 }
 
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
@@ -2012,17 +2012,17 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 630648468733378027508723437737677651831264605311973040547153568922485258761;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2037,7 +2037,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -2102,7 +2102,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
@@ -2153,18 +2153,18 @@ use starknet::SyscallResultTraitImpl;
 const TEST_CLASS_HASH: felt252 = 1582029945692481340710966191082993519925188868684819773595331942685503258042;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
 
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2179,7 +2179,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -2244,7 +2244,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
