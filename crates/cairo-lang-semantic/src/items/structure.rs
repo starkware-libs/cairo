@@ -9,7 +9,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -17,7 +17,7 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
-use crate::{semantic, SemanticDiagnostic};
+use crate::{semantic, GenericParam, SemanticDiagnostic};
 
 #[cfg(test)]
 #[path = "structure_test.rs"]
@@ -51,15 +51,10 @@ pub fn priv_struct_declaration_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &struct_ast.generic_params(db.upcast()),
-        false,
-    )?;
+    let generic_params_data = db.struct_generic_params_data(struct_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
@@ -91,8 +86,39 @@ pub fn struct_declaration_diagnostics(
 pub fn struct_generic_params(
     db: &dyn SemanticGroup,
     struct_id: StructId,
-) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_struct_declaration_data(struct_id)?.generic_params)
+) -> Maybe<Vec<GenericParam>> {
+    db.struct_generic_params_data(struct_id).map(|data| data.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::struct_generic_params_data].
+pub fn struct_generic_params_data(
+    db: &dyn SemanticGroup,
+    struct_id: StructId,
+) -> Maybe<GenericParamsData> {
+    let module_file_id = struct_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
+    // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
+    // the item instead of all the module data.
+    // TODO(spapini): Add generic args when they are supported on structs.
+    let module_structs = db.module_structs(module_file_id.0)?;
+    let struct_ast = module_structs.get(&struct_id).to_maybe()?;
+    // Generic params.
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &struct_ast.generic_params(db.upcast()),
+        false,
+    )?;
+    for generic_param in generic_params.iter() {
+        resolver.add_generic_param(*generic_param);
+    }
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::struct_attributes].
@@ -139,11 +165,9 @@ pub fn priv_struct_definition_data(
     let syntax_db = db.upcast();
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = db.struct_generic_params(struct_id)?;
-    for generic_param in generic_params {
-        resolver.add_generic_param(generic_param);
-    }
+    let generic_params_data = db.struct_generic_params_data(struct_id)?;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Members.
     let mut members = OrderedHashMap::default();
