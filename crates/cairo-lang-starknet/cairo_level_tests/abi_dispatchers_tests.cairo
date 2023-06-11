@@ -50,8 +50,8 @@ mod TestContract {
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     TestContract::__external::set_another_address(serialized_element(a));
-    let mut retdata = TestContract::__external::get_another_address(Default::default().span());
-    assert_eq(single_deserialize(ref retdata), a, 'Wrong result');
+    let mut retdata = TestContract::__external::get_another_address(ArrayTrait::new().span());
+    assert_eq(@single_deserialize(ref retdata), @a, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
 
@@ -60,7 +60,7 @@ fn test_dispatcher_serialization() {
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     TestContract::__external::set_another_class_hash(serialized_element(a));
-    let mut retdata = TestContract::__external::get_another_class_hash(Default::default().span());
-    assert_eq(single_deserialize(ref retdata), a, 'Wrong result');
+    let mut retdata = TestContract::__external::get_another_class_hash(ArrayTrait::new().span());
+    assert_eq(@single_deserialize(ref retdata), @a, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }

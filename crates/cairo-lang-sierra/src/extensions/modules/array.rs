@@ -43,6 +43,7 @@ define_libfunc_hierarchy! {
         New(ArrayNewLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
+        PopFrontConsume(ArrayPopFrontConsumeLibfunc),
         Get(ArrayGetLibfunc),
         Slice(ArraySliceLibfunc),
         Len(ArrayLenLibfunc),
@@ -173,6 +174,50 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
 }
 pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontLibfuncWrapped>;
 
+/// Libfunc for popping the first value from the beginning of an array.
+#[derive(Default)]
+pub struct ArrayPopFrontConsumeLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
+    const STR_ID: &'static str = "array_pop_front_consume";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_ty.clone())],
+            branch_signatures: vec![
+                // Non-empty.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: boxed_ty(context, ty)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Empty.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type ArrayPopFrontConsumeLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontConsumeLibfuncWrapped>;
+
 /// Libfunc for fetching a value from a specific array index.
 #[derive(Default)]
 pub struct ArrayGetLibfuncWrapped {}
@@ -188,7 +233,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
@@ -241,7 +286,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(arr_snapshot_type.clone()),
             // Start
             ParamSignature::new(index_type.clone()),

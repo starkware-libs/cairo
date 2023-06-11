@@ -57,13 +57,13 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
         !self.is_zero()
     }
 }
-impl ContractAddressPartialEq of PartialEq<EthAddress> {
+impl EthAddressPartialEq of PartialEq<EthAddress> {
     #[inline(always)]
-    fn eq(lhs: EthAddress, rhs: EthAddress) -> bool {
-        lhs.address == rhs.address
+    fn eq(lhs: @EthAddress, rhs: @EthAddress) -> bool {
+        *lhs.address == *rhs.address
     }
     #[inline(always)]
-    fn ne(lhs: EthAddress, rhs: EthAddress) -> bool {
+    fn ne(lhs: @EthAddress, rhs: @EthAddress) -> bool {
         !(lhs == rhs)
     }
 }
