@@ -354,7 +354,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
@@ -393,7 +393,7 @@ pub enum DeferredOutputKind {
 }
 
 /// Contains information regarding an output variable in a single branch.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,

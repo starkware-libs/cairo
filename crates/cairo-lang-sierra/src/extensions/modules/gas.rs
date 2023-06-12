@@ -48,21 +48,22 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(gas_builtin_type.clone()),
             ],
             branch_signatures: vec![
                 // Success:
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -73,12 +74,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
                 // Failure:
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info,
                         OutputVarInfo {
                             ty: gas_builtin_type,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
@@ -246,9 +242,15 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(gas_builtin_type.clone()),
                 ParamSignature::new(builtin_costs_type),
             ],
@@ -256,12 +258,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
                 // Success:
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: gas_builtin_type.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -272,12 +269,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
                 // Failure:
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info,
                         OutputVarInfo {
                             ty: gas_builtin_type,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },

@@ -54,13 +54,23 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let felt252_array_ty = context.get_wrapped_concrete_type(ArrayType::id(), felt252_ty)?;
 
+        let gb_output_info = OutputVarInfo {
+            ty: gas_builtin_ty.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+        };
+        let system_output_info = OutputVarInfo {
+            ty: system_ty.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 1,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: chain!(
                 [
                     // Gas builtin
-                    ParamSignature::new(gas_builtin_ty.clone()),
+                    ParamSignature::new(gas_builtin_ty),
                     // System
-                    ParamSignature::new(system_ty.clone()).with_allow_add_const(),
+                    ParamSignature::new(system_ty).with_allow_add_const(),
                 ],
                 T::input_tys(context)?.into_iter().map(ParamSignature::new)
             )
@@ -71,19 +81,9 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
                     vars: chain!(
                         [
                             // Gas builtin
-                            OutputVarInfo {
-                                ty: gas_builtin_ty.clone(),
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::Generic
-                                ),
-                            },
+                            gb_output_info.clone(),
                             // System
-                            OutputVarInfo {
-                                ty: system_ty.clone(),
-                                ref_info: OutputVarReferenceInfo::Deferred(
-                                    DeferredOutputKind::AddConst { param_idx: 1 },
-                                ),
-                            }
+                            system_output_info.clone()
                         ],
                         T::success_output_tys(context)?.into_iter().map(|ty| OutputVarInfo {
                             ty,
@@ -97,17 +97,9 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
                 BranchSignature {
                     vars: vec![
                         // Gas builtin
-                        OutputVarInfo {
-                            ty: gas_builtin_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                        },
+                        gb_output_info,
                         // System
-                        OutputVarInfo {
-                            ty: system_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 1 },
-                            ),
-                        },
+                        system_output_info,
                         // Revert reason
                         OutputVarInfo {
                             ty: felt252_array_ty,

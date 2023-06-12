@@ -33,11 +33,15 @@ impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let bitwise_ty = context.get_concrete_type(BitwiseType::id(), &[])?;
         let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
+        let deffered_u128_output_info = OutputVarInfo {
+            ty: u128_ty.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+        };
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(bitwise_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(u128_ty.clone()),
-                ParamSignature::new(u128_ty.clone()),
+                ParamSignature::new(u128_ty),
             ],
             vec![
                 OutputVarInfo {
@@ -46,18 +50,9 @@ impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo {
-                    ty: u128_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-                OutputVarInfo {
-                    ty: u128_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
-                OutputVarInfo {
-                    ty: u128_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
-                },
+                deffered_u128_output_info.clone(),
+                deffered_u128_output_info.clone(),
+                deffered_u128_output_info,
             ],
             SierraApChange::Known { new_vars_only: true },
         ))
