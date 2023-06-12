@@ -26,6 +26,7 @@ use self::context::{
     LoweredExprExternEnum, LoweringContext, LoweringFlowError,
 };
 use self::external::{extern_facade_expr, extern_facade_return_tys};
+use self::logical_op::lower_logical_op;
 use self::lower_if::lower_expr_if;
 use crate::blocks::FlatBlocks;
 use crate::db::LoweringGroup;
@@ -43,6 +44,7 @@ mod block_builder;
 pub mod context;
 mod external;
 pub mod generators;
+mod logical_op;
 mod lower_if;
 pub mod refs;
 pub mod usage;
@@ -450,6 +452,7 @@ fn lower_expr(
         semantic::Expr::Snapshot(expr) => lower_expr_snapshot(ctx, expr, builder),
         semantic::Expr::Desnap(expr) => lower_expr_desnap(ctx, expr, builder),
         semantic::Expr::Assignment(expr) => lower_expr_assignment(ctx, expr, builder),
+        semantic::Expr::LogicalOperator(expr) => lower_logical_op(ctx, builder, expr),
         semantic::Expr::Block(expr) => lower_expr_block(ctx, builder, expr),
         semantic::Expr::FunctionCall(expr) => lower_expr_function_call(ctx, expr, builder),
         semantic::Expr::Match(expr) => lower_expr_match(ctx, expr, builder),
@@ -671,6 +674,7 @@ fn perform_function_call(
                 ),
                 input: call_result.returns[0],
                 arms: vec![],
+                location,
             })));
         }
 
@@ -849,6 +853,7 @@ fn lower_expr_match(
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
+        location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -1229,6 +1234,7 @@ fn lower_expr_error_propagate(
                 var_ids: vec![err_value],
             },
         ],
+        location,
     });
     builder.merge_and_end_with_match(
         ctx,

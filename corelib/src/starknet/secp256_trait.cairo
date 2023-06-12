@@ -124,7 +124,7 @@ fn is_signature_entry_valid<
 >(
     value: u256
 ) -> bool {
-    (value != 0_u256) & (value < Secp256Impl::get_curve_size())
+    value != 0_u256 && value < Secp256Impl::get_curve_size()
 }
 
 /// Converts a public key point to the corresponding Ethereum address.

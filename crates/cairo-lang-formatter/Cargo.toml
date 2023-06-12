@@ -8,11 +8,11 @@ description = "Cairo formatter."
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "1.1.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "1.1.0" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "1.1.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "1.1.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "1.1.0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.0.0-rc0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.0.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc0" }
 colored.workspace = true
 diffy.workspace = true
 ignore.workspace = true

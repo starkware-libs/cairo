@@ -10,6 +10,7 @@ use crate::extensions::lib_func::{
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::try_from_felt252::TryFromFelt252;
+use crate::extensions::utils::reinterpret_cast_signature;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -63,18 +64,9 @@ impl NoGenericArgsGenericLibfunc for StorageAddressToFelt252Libfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(StorageAddressType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ))
     }
 }
@@ -97,18 +89,9 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
+            context.get_concrete_type(StorageAddressType::id(), &[])?,
         ))
     }
 }

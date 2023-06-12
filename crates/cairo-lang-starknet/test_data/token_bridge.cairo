@@ -30,7 +30,7 @@ mod TokenBridge {
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';
     const CONTRACT_VERSION: felt252 = 2;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         // The address of the L2 governor of this contract. Only the governor can set the other
         // storage variables.
@@ -41,15 +41,12 @@ mod TokenBridge {
         l2_token: ContractAddress,
     }
 
+    #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        #[nested]
         L1BridgeSet: L1BridgeSet,
-        #[nested]
         L2TokenSet: L2TokenSet,
-        #[nested]
         WithdrawInitiated: WithdrawInitiated,
-        #[nested]
         DepositHandled: DepositHandled,
     }
 
@@ -87,25 +84,25 @@ mod TokenBridge {
         amount: u256,
     }
 
-    #[starknet::constructor]
-    fn constructor(ref self: Storage, governor_address: ContractAddress) {
+    #[constructor]
+    fn constructor(ref self: ContractState, governor_address: ContractAddress) {
         assert(governor_address.is_non_zero(), 'ZERO_GOVERNOR_ADDRESS');
         self.governor.write(governor_address);
     }
 
     #[generate_trait]
-    #[starknet::imp(v0)]
+    #[external(v0)]
     impl TokenBridgeImpl of ITokenBridge {
         // TODO(spapini): Consider adding a pure option, with no parameters.
-        fn get_version(self: @Storage) -> felt252 {
+        fn get_version(self: @ContractState) -> felt252 {
             CONTRACT_VERSION
         }
 
-        fn get_identity(self: @Storage) -> felt252 {
+        fn get_identity(self: @ContractState) -> felt252 {
             CONTRACT_IDENTITY
         }
 
-        fn set_l1_bridge(ref self: Storage, l1_bridge_address: EthAddress) {
+        fn set_l1_bridge(ref self: ContractState, l1_bridge_address: EthAddress) {
             // The call is restricted to the governor.
             assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
 
@@ -116,7 +113,7 @@ mod TokenBridge {
             self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
         }
 
-        fn set_l2_token(ref self: Storage, l2_token_address: ContractAddress) {
+        fn set_l2_token(ref self: ContractState, l2_token_address: ContractAddress) {
             // The call is restricted to the governor.
             assert(get_caller_address() == self.governor.read(), 'GOVERNOR_ONLY');
 
@@ -127,7 +124,7 @@ mod TokenBridge {
             self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
         }
 
-        fn initiate_withdraw(ref self: Storage, l1_recipient: EthAddress, amount: u256) {
+        fn initiate_withdraw(ref self: ContractState, l1_recipient: EthAddress, amount: u256) {
             // Call burn on l2_token contract.
             let caller_address = get_caller_address();
             IMintableTokenDispatcher {
@@ -153,9 +150,9 @@ mod TokenBridge {
         }
     }
 
-    #[starknet::l1_handler]
+    #[l1_handler]
     fn handle_deposit(
-        ref self: Storage, from_address: felt252, account: ContractAddress, amount: u256
+        ref self: ContractState, from_address: felt252, account: ContractAddress, amount: u256
     ) {
         assert(from_address == self.l1_bridge.read(), 'EXPECTED_FROM_BRIDGE_ONLY');
 
@@ -171,14 +168,14 @@ mod TokenBridge {
     #[generate_trait]
     impl HelperImpl of HelperTrait {
         // Read l1_bridge and verify it's initialized.
-        fn read_initialized_l1_bridge(self: @Storage) -> felt252 {
+        fn read_initialized_l1_bridge(self: @ContractState) -> felt252 {
             let l1_bridge_address = self.l1_bridge.read();
             assert(l1_bridge_address.is_non_zero(), 'UNINITIALIZED_L1_BRIDGE_ADDRESS');
             l1_bridge_address
         }
 
         // Read l2_token and verify it's initialized.
-        fn read_initialized_l2_token(self: @Storage) -> ContractAddress {
+        fn read_initialized_l2_token(self: @ContractState) -> ContractAddress {
             let l2_token_address = self.l2_token.read();
             assert(l2_token_address.is_non_zero(), 'UNINITIALIZED_TOKEN');
             l2_token_address

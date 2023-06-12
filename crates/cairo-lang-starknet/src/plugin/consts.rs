@@ -5,14 +5,15 @@ pub const CONSTRUCTOR_MODULE: &str = "__constructor";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 
 // TODO(spapini): Remove this attribute. It's for the old contract syntax.
+pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const EVENT_ATTR: &str = "event";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
-pub const IMPL_ATTR: &str = "starknet::imp";
+pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
-pub const STORAGE_ATTR: &str = "starknet::storage";
-pub const EXTERNAL_ATTR: &str = "starknet::external";
-pub const L1_HANDLER_ATTR: &str = "starknet::l1_handler";
-pub const CONSTRUCTOR_ATTR: &str = "starknet::constructor";
+pub const STORAGE_ATTR: &str = "storage";
+pub const EXTERNAL_ATTR: &str = "external";
+pub const L1_HANDLER_ATTR: &str = "l1_handler";
+pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";

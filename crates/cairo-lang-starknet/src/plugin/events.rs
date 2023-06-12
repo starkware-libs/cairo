@@ -6,36 +6,39 @@ use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{self, OptionReturnTypeClause, OptionWrappedGenericParamList};
+use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::indoc;
+use serde::{Deserialize, Serialize};
+use smol_str::SmolStr;
 
-use super::aux_data::StarkNetABIAuxData;
-use super::utils::is_ref_param;
+use super::aux_data::StarkNetEventAuxData;
 use crate::contract::starknet_keccak;
 
-/// Removes `#[event]` decorated functions from the contract.
-pub fn handle_function(db: &dyn SyntaxGroup, function_ast: ast::FunctionWithBody) -> PluginResult {
-    if !function_ast.has_attr(db, "event") {
-        return PluginResult::default();
-    }
-    PluginResult { remove_original_item: true, ..Default::default() }
+/// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EventData {
+    Struct { members: Vec<(SmolStr, EventFieldKind)> },
+    Enum { variants: Vec<(SmolStr, EventFieldKind)> },
 }
 
-/// Describes how to serialize the event's member.
-#[derive(Copy, Clone, Debug)]
-enum EventMemberKind {
+/// Describes how to serialize the event's field.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EventFieldKind {
     // Serialize to `keys` using `Serde`.
+    #[serde(rename = "key")]
     KeySerde,
-    // Serialize to `values` using `Serde`.
-    ValueSerde,
+    // Serialize to `data` using `Serde`.
+    #[serde(rename = "data")]
+    DataSerde,
     // Serialize as a nested event.
+    #[serde(rename = "nested")]
     Nested,
 }
 
-// TODO(spapini): Avoid names collisions with `keys` and `values`.
+// TODO(spapini): Avoid names collisions with `keys` and `data`.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
     let mut builder = PatchBuilder::new(db);
@@ -51,19 +54,21 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         return PluginResult{ code: None, diagnostics, remove_original_item: false };
     };
 
-    // Generate append_keys_and_values() code.
+    // Generate append_keys_and_data() code.
     let mut append_members = vec![];
     let mut deserialize_members = vec![];
     let mut ctor = vec![];
+    let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_member_kind(db, &mut diagnostics, member);
+        let member_kind = get_field_kind(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
+        members.push((member.name(db).text(db), member_kind));
 
-        let value_for_append = RewriteNode::interpolate_patched(
+        let member_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
             [(String::from("member_name"), member_name.clone())].into(),
         );
-        let append_member = append_field(member_kind, value_for_append);
+        let append_member = append_field(member_kind, member_for_append);
         let deserialize_member = deserialize_field(member_kind, member_name.clone());
         append_members.push(append_member);
         deserialize_members.push(deserialize_member);
@@ -72,6 +77,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
             [(String::from("member_name"), member_name)].into(),
         ));
     }
+    let event_data = EventData::Struct { members };
     let append_members = RewriteNode::Modified(ModifiedNode { children: Some(append_members) });
     let deserialize_members =
         RewriteNode::Modified(ModifiedNode { children: Some(deserialize_members) });
@@ -82,12 +88,12 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let event_impl = RewriteNode::interpolate_patched(
         indoc! {"
             impl $struct_name$IsEvent of starknet::Event<$struct_name$> {
-                fn append_keys_and_values(
-                    self: @$struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                fn append_keys_and_data(
+                    self: @$struct_name$, ref keys: Array<felt252>, ref data: Array<felt252>
                 ) {$append_members$
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$struct_name$> {$deserialize_members$
                     Option::Some($struct_name$ {$ctor$})
                 }
@@ -107,8 +113,9 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
                 patches: builder.patches,
+                event_data,
             })),
         }),
         diagnostics,
@@ -116,27 +123,35 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-fn get_member_kind(
+fn get_field_kind(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    member: ast::Member,
-) -> EventMemberKind {
+    member: &ast::Member,
+    default: EventFieldKind,
+) -> EventFieldKind {
     let is_nested = member.has_attr(db, "nested");
     let is_key = member.has_attr(db, "key");
-    if is_nested && is_key {
+    let is_serde = member.has_attr(db, "serde");
+
+    // Currently, nested fields are unsupported.
+    if is_nested {
         diagnostics.push(PluginDiagnostic {
-            message: "Event structs cannot have members annotated with both `nested` and `key`"
-                .to_string(),
+            message: "Nested event fields are currently unsupported".to_string(),
             stable_ptr: member.stable_ptr().untyped(),
         });
     }
-    if is_nested {
-        EventMemberKind::Nested
-    } else if is_key {
-        EventMemberKind::KeySerde
-    } else {
-        EventMemberKind::ValueSerde
+    // Currently, serde fields are unsupported.
+    if is_serde {
+        diagnostics.push(PluginDiagnostic {
+            message: "Serde event fields are currently unsupported".to_string(),
+            stable_ptr: member.stable_ptr().untyped(),
+        });
     }
+
+    if is_key {
+        return EventFieldKind::KeySerde;
+    }
+    default
 }
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
@@ -161,11 +176,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     let mut append_variants = vec![];
     let mut deserialize_variants = vec![];
-    for member in enum_ast.variants(db).elements(db) {
-        let variant_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let name = member.name(db).text(db);
+    let mut variants = vec![];
+    for variant in enum_ast.variants(db).elements(db) {
+        let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
+        let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let member_kind = get_member_kind(db, &mut diagnostics, member);
+        let member_kind = get_field_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
+        variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
             "
@@ -197,6 +214,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         append_variants.push(append_variant);
         deserialize_variants.push(deserialize_variant);
     }
+    let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
     let deserialize_variants =
         RewriteNode::Modified(ModifiedNode { children: Some(deserialize_variants) });
@@ -205,14 +223,14 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     let event_impl = RewriteNode::interpolate_patched(
         indoc! {"
             impl $enum_name$IsEvent of starknet::Event<$enum_name$> {
-                fn append_keys_and_values(
-                    self: @$enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                fn append_keys_and_data(
+                    self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
                 ) {
                     match self {$append_variants$
                     }
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {
                     let selector = *array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_variants$
@@ -234,8 +252,9 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
+            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
                 patches: builder.patches,
+                event_data,
             })),
         }),
         diagnostics,
@@ -265,165 +284,51 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
     })
 }
 
-/// Generates code to emit an event for a value
-fn append_field(member_kind: EventMemberKind, value: RewriteNode) -> RewriteNode {
+/// Generates code to emit an event for a field
+fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode {
     match member_kind {
-        EventMemberKind::Nested => RewriteNode::interpolate_patched(
+        EventFieldKind::Nested => RewriteNode::interpolate_patched(
             "
-                starknet::Event::append_keys_and_values(
-                    $value$, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    $field$, ref keys, ref data
                 );",
-            [(String::from("value"), value)].into(),
+            [(String::from("field"), field)].into(),
         ),
-        EventMemberKind::KeySerde => RewriteNode::interpolate_patched(
+        EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($value$, ref keys);",
-            [(String::from("value"), value)].into(),
+                serde::Serde::serialize($field$, ref keys);",
+            [(String::from("field"), field)].into(),
         ),
-        EventMemberKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($value$, ref values);",
-            [(String::from("value"), value)].into(),
+                serde::Serde::serialize($field$, ref data);",
+            [(String::from("field"), field)].into(),
         ),
     }
 }
 
-fn deserialize_field(member_kind: EventMemberKind, member_name: RewriteNode) -> RewriteNode {
+fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> RewriteNode {
     match member_kind {
-        EventMemberKind::Nested => RewriteNode::interpolate_patched(
+        EventFieldKind::Nested => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
-        EventMemberKind::KeySerde => RewriteNode::interpolate_patched(
+        EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
                     ref keys
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
-        EventMemberKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
     }
-}
-
-/// Generates a function to emit an event and the corresponding ABI item.
-/// On success, returns a RewriteNode for the event function and a RewriteNode for the ABI
-/// declaration. On failure returns None. In addition, returns diagnostics.
-pub fn handle_event(
-    db: &dyn SyntaxGroup,
-    function_ast: ast::FunctionWithBody,
-) -> (Option<(RewriteNode, RewriteNode)>, Vec<PluginDiagnostic>) {
-    let mut diagnostics = vec![];
-    let declaration = function_ast.declaration(db);
-
-    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
-        declaration.generic_params(db)
-    {
-        diagnostics.push(PluginDiagnostic {
-            message: "Event functions cannot have generic arguments".to_string(),
-            stable_ptr: generic_params.stable_ptr().untyped(),
-        })
-    }
-
-    let signature = declaration.signature(db);
-    let ret_ty = declaration.signature(db).ret_ty(db);
-    if matches!(ret_ty, OptionReturnTypeClause::ReturnTypeClause(_)) {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: ret_ty.stable_ptr().untyped(),
-            message: "Event functions must not return a value.".to_string(),
-        });
-    }
-
-    let mut param_serializations = Vec::new();
-    for param in signature.parameters(db).elements(db) {
-        // If we encounter errors with this parameter that don't allow us to serialize it, we skip
-        // the serialization of it in the generated code.
-        let mut skip_param_serialization = false;
-        if is_ref_param(db, &param) {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: param.modifiers(db).stable_ptr().untyped(),
-                message: "`ref` parameters are not supported in contract events.".to_string(),
-            });
-            skip_param_serialization = true;
-        }
-
-        let param_name = param.name(db);
-        let param_type_ast = param.type_clause(db).ty(db);
-        let type_name = param_type_ast.as_syntax_node().get_text(db);
-        if skip_param_serialization {
-            continue;
-        }
-
-        // TODO(yuval): use panicable version of deserializations when supported.
-        let param_serialization = RewriteNode::interpolate_patched(
-            &format!(
-                "serde::Serde::<{type_name}>::serialize(@$param_name$, ref __data);\n        "
-            ),
-            [("param_name".to_string(), RewriteNode::new_trimmed(param_name.as_syntax_node()))]
-                .into(),
-        );
-        param_serializations.push(param_serialization);
-    }
-
-    if !function_ast.body(db).statements(db).elements(db).is_empty() {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: function_ast.body(db).statements(db).stable_ptr().untyped(),
-            message: "Event function body must be empty.".to_string(),
-        });
-    }
-
-    if !diagnostics.is_empty() {
-        return (None, diagnostics);
-    }
-
-    let name = declaration.name(db).text(db);
-    let event_key = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-
-    (
-        Some((
-            // Event function
-            RewriteNode::interpolate_patched(
-                &format!(
-                    "
-    $declaration$ {{
-        let mut __keys = array::array_new();
-        array::array_append(ref __keys, {event_key});
-        let mut __data = array::array_new();
-        $param_serializations$
-        starknet::syscalls::emit_event_syscall(
-            array::ArrayTrait::span(@__keys),
-            array::ArrayTrait::span(@__data),
-        ).unwrap_syscall()
-    }}
-            "
-                ),
-                [
-                    (
-                        "declaration".to_string(),
-                        RewriteNode::new_trimmed(declaration.as_syntax_node()),
-                    ),
-                    (
-                        "param_serializations".to_string(),
-                        RewriteNode::new_modified(param_serializations),
-                    ),
-                ]
-                .into(),
-            ),
-            // ABI event
-            RewriteNode::new_modified(vec![
-                RewriteNode::Text("#[event]\n        ".to_string()),
-                RewriteNode::new_trimmed(function_ast.declaration(db).as_syntax_node()),
-                RewriteNode::Text(";\n        ".to_string()),
-            ]),
-        )),
-        diagnostics,
-    )
 }

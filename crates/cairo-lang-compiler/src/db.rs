@@ -40,7 +40,6 @@ impl salsa::ParallelDatabase for RootDatabase {
         salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
     }
 }
-impl std::panic::RefUnwindSafe for RootDatabase {}
 impl RootDatabase {
     fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };

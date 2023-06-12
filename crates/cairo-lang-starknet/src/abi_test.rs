@@ -26,17 +26,14 @@ fn test_abi() {
             trait MyAbi<T> {
                 fn foo(ref self: T, a: felt252, b: u128) -> Option::<()>;
 
-                #[starknet::external]
+                #[external]
                 fn foo_external(ref self: T, a: felt252, b: u128) -> MyStruct::<u256>;
 
-                #[starknet::external]
+                #[external]
                 fn foo_view(self: @T, a: felt252, b: u128) -> MyEnum::<u128>;
 
-                #[starknet::external]
+                #[external]
                 fn empty(ref self: T);
-
-                #[event]
-                fn foo_event(a: felt252, b: u128);
             }
         "},
     )
@@ -54,6 +51,20 @@ fn test_abi() {
         actual_serialization,
         indoc! {
         r#"[
+            {
+              "type": "enum",
+              "name": "core::option::Option::<()>",
+              "variants": [
+                {
+                  "name": "Some",
+                  "type": "()"
+                },
+                {
+                  "name": "None",
+                  "type": "()"
+                }
+              ]
+            },
             {
               "type": "function",
               "name": "foo",
@@ -73,6 +84,20 @@ fn test_abi() {
                 }
               ],
               "state_mutability": "external"
+            },
+            {
+              "type": "struct",
+              "name": "core::integer::u256",
+              "members": [
+                {
+                  "name": "low",
+                  "type": "core::integer::u128"
+                },
+                {
+                  "name": "high",
+                  "type": "core::integer::u128"
+                }
+              ]
             },
             {
               "type": "struct",
@@ -148,20 +173,6 @@ fn test_abi() {
               "inputs": [],
               "outputs": [],
               "state_mutability": "external"
-            },
-            {
-              "type": "event",
-              "name": "foo_event",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ]
             }
           ]"#}
     );

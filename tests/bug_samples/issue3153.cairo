@@ -88,14 +88,14 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
 #[starknet::contract]
 mod TestContract {
     use super::Proposal;
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         _proposals: LegacyMap<u32, Proposal>,
         _single_proposal: Proposal
     }
 
-    #[starknet::external]
-    fn reproduce(ref self: Storage) {
+    #[external]
+    fn reproduce(ref self: ContractState) {
         self._single_proposal.read();
 
         self._proposals.write(1, Proposal { proposer: 0, last_updated_at: 0 });

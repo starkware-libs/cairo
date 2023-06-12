@@ -21,11 +21,12 @@ use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
 use crate::items::generics::GenericParam;
-use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
+use crate::items::imp::{ImplGenericParamsData, ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
@@ -92,6 +93,8 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+    #[salsa::interned]
+    fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
     // Const.
     // ====
@@ -270,7 +273,7 @@ pub trait SemanticGroup:
     fn impl_alias_resolved_impl(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplId>;
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_generic_params)]
-    fn impl_alias_generic_params(&self, enum_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
+    fn impl_alias_generic_params(&self, impl_alias_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolver_data)]
     fn impl_alias_resolver_data(&self, impl_alias_id: ImplAliasId) -> Maybe<Arc<ResolverData>>;
@@ -404,6 +407,14 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
     ) -> Maybe<Vec<UninferredImpl>>;
+    // Returns the solution set for a canonical trait.
+    #[salsa::invoke(inference::solver::canonic_trait_solutions)]
+    #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
+    fn canonic_trait_solutions(
+        &self,
+        canonical_trait: inference::canonic::CanonicalTrait,
+        lookup_context: ImplLookupContext,
+    ) -> inference::InferenceResult<inference::solver::SolutionSet<inference::canonic::CanonicalImpl>>;
 
     // Impl.
     // =======
@@ -413,6 +424,9 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the generic parameters of an impl.
+    #[salsa::invoke(items::imp::impl_def_generic_params_data)]
+    fn impl_def_generic_params_data(&self, impl_def_id: ImplDefId) -> Maybe<ImplGenericParamsData>;
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_def_generic_params)]
     fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
@@ -425,6 +439,9 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
+    /// Returns the trait that is implemented by the impl.
+    #[salsa::invoke(items::imp::impl_def_trait)]
+    fn impl_def_trait(&self, impl_def_id: ImplDefId) -> Maybe<TraitId>;
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]

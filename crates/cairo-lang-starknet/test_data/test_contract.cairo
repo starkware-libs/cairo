@@ -12,7 +12,7 @@ mod TestContract {
     };
     use dict::Felt252DictTrait;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         my_storage_var: felt252
     }
@@ -21,38 +21,38 @@ mod TestContract {
         1
     }
 
-    #[starknet::external]
-    fn test(ref self: Storage, ref arg: felt252, arg1: felt252, arg2: felt252) -> felt252 {
+    #[external]
+    fn test(ref self: ContractState, ref arg: felt252, arg1: felt252, arg2: felt252) -> felt252 {
         let mut x = self.my_storage_var.read();
         x += 1;
         self.my_storage_var.write(x);
         x + internal_func()
     }
 
-    #[starknet::external]
-    fn another_function(ref self: Storage, x: MyType) {}
+    #[external]
+    fn another_function(ref self: ContractState, x: MyType) {}
 
-    #[starknet::external]
+    #[external]
     fn call_foo(
-        ref self: Storage, another_contract_address: starknet::ContractAddress, a: u128
+        ref self: ContractState, another_contract_address: starknet::ContractAddress, a: u128
     ) -> u128 {
         IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
     }
 
-    #[starknet::external]
-    fn libcall_foo(ref self: Storage, a: u128) -> u128 {
+    #[external]
+    fn libcall_foo(ref self: ContractState, a: u128) -> u128 {
         IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }.foo(a)
     }
 
     /// An external method that requires the `segment_arena` builtin.
-    #[starknet::external]
-    fn segment_arena_builtin(ref self: Storage, ) {
+    #[external]
+    fn segment_arena_builtin(ref self: ContractState, ) {
         let x = felt252_dict_new::<felt252>();
         x.squash();
     }
 
-    #[starknet::l1_handler]
-    fn l1_handle(ref self: Storage, from_address: felt252, arg: felt252) -> felt252 {
+    #[l1_handler]
+    fn l1_handle(ref self: ContractState, from_address: felt252, arg: felt252) -> felt252 {
         arg
     }
 }

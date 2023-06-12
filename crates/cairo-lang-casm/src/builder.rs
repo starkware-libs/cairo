@@ -811,13 +811,13 @@ macro_rules! casm_build_extend {
         $builder.fail();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_name:ident {
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
             $($input_name:ident : $input_value:ident),*
         } into {
             $($output_name:ident : $output_value:ident),*
         }; $($tok:tt)*) => {
         $builder.add_hint(
-            |[$($input_name),*], [$($output_name),*]| $crate::hints::CoreHint::$hint_name {
+            |[$($input_name),*], [$($output_name),*]| $hint_head$(::$hint_tail)+ {
                 $($input_name,)* $($output_name,)*
             },
             [$($input_value,)*],
@@ -826,22 +826,22 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_name:ident {
-        $($arg_name:ident : $arg_value:ident),*
-    }; $($tok:tt)*) => {
-        $builder.add_hint(
-            |[$($arg_name),*], []| $crate::hints::CoreHint::$hint_name { $($arg_name),* },
-            [$($arg_value),*], []
-        );
-        $crate::casm_build_extend!($builder, $($tok)*)
+            $($input_name:ident : $input_value:ident),*
+        } into {
+            $($output_name:ident : $output_value:ident),*
+        }; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, hint $crate::hints::CoreHint::$hint_name {
+            $($input_name : $input_value),*
+        } into {
+            $($output_name : $output_value),*
+        }; $($tok)*)
     };
-    ($builder:ident, hint $hint_lead:ident::$hint_name:ident {
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* {
         $($arg_name:ident : $arg_value:ident),*
     }; $($tok:tt)*) => {
-        $builder.add_hint(
-            |[$($arg_name),*], []| $hint_lead::$hint_name { $($arg_name),* },
-            [$($arg_value),*], []
-        );
-        $crate::casm_build_extend!($builder, $($tok)*)
+        $crate::casm_build_extend!($builder, hint $hint_head$(::$hint_tail)* {
+            $($arg_name : $arg_value),*
+        } into {}; $($tok)*)
     };
     ($builder:ident, hint $hint_lead:ident::$hint_name:ident {
             $($input_name:ident : $input_value:ident),*
