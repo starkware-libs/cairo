@@ -188,7 +188,7 @@ pub fn generate_entry_point_wrapper(
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             $output_handling$
         }",
         [

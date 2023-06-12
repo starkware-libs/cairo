@@ -52,6 +52,20 @@ fn test_abi() {
         indoc! {
         r#"[
             {
+              "type": "enum",
+              "name": "core::option::Option::<()>",
+              "variants": [
+                {
+                  "name": "Some",
+                  "type": "()"
+                },
+                {
+                  "name": "None",
+                  "type": "()"
+                }
+              ]
+            },
+            {
               "type": "function",
               "name": "foo",
               "inputs": [
@@ -70,6 +84,20 @@ fn test_abi() {
                 }
               ],
               "state_mutability": "external"
+            },
+            {
+              "type": "struct",
+              "name": "core::integer::u256",
+              "members": [
+                {
+                  "name": "low",
+                  "type": "core::integer::u128"
+                },
+                {
+                  "name": "high",
+                  "type": "core::integer::u128"
+                }
+              ]
             },
             {
               "type": "struct",

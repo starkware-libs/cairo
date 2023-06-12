@@ -11,11 +11,11 @@ use integer::BoundedInt;
 use zeroable::Zeroable;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
-    fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs)
+    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
     }
-    fn ne(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        !(storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs))
+    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
     }
 }
 
@@ -53,12 +53,12 @@ mod TestContract {
     }
 
     #[external]
-    fn set_data(ref self: Storage, value: AbcEtc) {
+    fn set_data(ref self: ContractState, value: AbcEtc) {
         self.data.write(value);
     }
 
     #[external]
-    fn get_data(self: @Storage) -> AbcEtc {
+    fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
     }
 }

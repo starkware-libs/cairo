@@ -1,5 +1,5 @@
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, SierraApChange, SignatureOnlyGenericLibfunc,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureOnlyGenericLibfunc,
     SignatureSpecializationContext,
 };
 use crate::extensions::{args_as_single_type, OutputVarReferenceInfo, SpecializationError};
@@ -22,8 +22,8 @@ impl SignatureOnlyGenericLibfunc for DupLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(
-            vec![ty.clone()],
+        Ok(LibfuncSignature::new_non_branch_ex(
+            vec![ParamSignature::new(ty.clone()).with_allow_const()],
             vec![
                 OutputVarInfo {
                     ty: ty.clone(),

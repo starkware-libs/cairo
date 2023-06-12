@@ -18,10 +18,12 @@ use smol_str::SmolStr;
 use super::function_with_body::{get_implicit_precedence, get_inline_config};
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::semantic_generic_params;
+use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
@@ -78,6 +80,16 @@ impl ConcreteTraitId {
     }
     pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
         self.trait_id(db).full_path(db.upcast())
+    }
+    pub fn filter(&self, db: &dyn SemanticGroup) -> TraitFilter {
+        let generics_filter = match self.generic_args(db).first() {
+            Some(first_generic) => match first_generic.head(db) {
+                Some(head) => GenericsHeadFilter::FirstGenericFilter(head),
+                None => GenericsHeadFilter::NoFilter,
+            },
+            None => GenericsHeadFilter::NoGenerics,
+        };
+        TraitFilter { trait_id: self.trait_id(db), generics_filter }
     }
 }
 
@@ -212,12 +224,10 @@ pub fn priv_trait_semantic_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     for generic_param in &generic_params {
         resolver.add_generic_param(*generic_param);

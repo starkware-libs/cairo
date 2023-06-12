@@ -153,6 +153,7 @@ fn generic_item_generic_params(
         GenericItemId::Enum(id) => db.enum_generic_params(id),
         GenericItemId::ExternType(id) => db.extern_type_declaration_generic_params(id),
         GenericItemId::TypeAlias(id) => db.type_alias_generic_params(id),
+        GenericItemId::ImplAlias(id) => db.impl_alias_generic_params(id),
     }
 }
 

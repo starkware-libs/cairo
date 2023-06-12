@@ -75,7 +75,7 @@ impl AbiBuilder {
         // storage type from aux data from the plugin.
         let mut storage_type = None;
         for (id, strct) in db.module_structs(module_id).unwrap_or_default() {
-            if strct.name(db.upcast()).text(db.upcast()) == "Storage" {
+            if strct.name(db.upcast()).text(db.upcast()) == "ContractState" {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }
@@ -469,7 +469,7 @@ impl AbiBuilder {
         name: SmolStr,
     ) -> Result<EventField, ABIError> {
         match kind {
-            EventFieldKind::KeySerde | EventFieldKind::ValueSerde => self.add_type(db, ty)?,
+            EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(db, ty)?,
             EventFieldKind::Nested => self.add_event(db, ty)?,
         };
         Ok(EventField { name: name.into(), ty: ty.format(db), kind })
@@ -509,10 +509,6 @@ impl AbiBuilder {
             if let GenericArgumentId::Type(type_id) = generic_arg {
                 self.add_type(db, type_id)?;
             }
-        }
-
-        if is_native_type(db, &concrete) {
-            return Ok(());
         }
 
         match concrete {
@@ -564,14 +560,6 @@ fn get_enum_variants(
             })
         })
         .collect::<Result<Vec<_>, DiagnosticAdded>>()
-}
-
-/// Returns true if concrete is a native type.
-///
-/// native types are not added to the ABI.
-fn is_native_type(db: &dyn SemanticGroup, concrete: &ConcreteTypeId) -> bool {
-    let def_db = db.upcast();
-    concrete.generic_type(db).parent_module(def_db).owning_crate(def_db) == db.core_crate()
 }
 
 #[derive(Error, Debug)]
