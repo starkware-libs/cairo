@@ -31,9 +31,9 @@ impl MacroPlugin for ConstevalIntMacroPlugin {
     }
 }
 
-// Rewrite a constant declaration that contains a consteval_int macro
-// into a constant declaration with the computed value,
-// e.g. `const a: felt252 = consteval_int!(2 * 2 * 2);` into `const a: felt252 = 8;`.
+/// Rewrite a constant declaration that contains a consteval_int macro
+/// into a constant declaration with the computed value,
+/// e.g. `const a: felt252 = consteval_int!(2 * 2 * 2);` into `const a: felt252 = 8;`.
 fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> PluginResult {
     let constant_value = constant_ast.value(db);
     if let ast::Expr::InlineMacro(inline_macro) = constant_value {
@@ -68,7 +68,7 @@ fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> Pl
     PluginResult::default()
 }
 
-// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
+/// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
 fn extract_consteval_macro_expression(
     db: &dyn SyntaxGroup,
     macro_ast: &ast::ExprInlineMacro,
@@ -94,8 +94,8 @@ fn extract_consteval_macro_expression(
     }
 }
 
-// Compute the actual value of an integer expression, or fail with diagnostics.
-// This computation handles arbitrary integers, unlike regular Cairo math.
+/// Compute the actual value of an integer expression, or fail with diagnostics.
+/// This computation handles arbitrary integers, unlike regular Cairo math.
 fn compute_constant_expr(
     db: &dyn SyntaxGroup,
     value: &ast::Expr,
