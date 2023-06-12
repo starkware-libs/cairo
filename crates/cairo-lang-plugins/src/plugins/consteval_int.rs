@@ -31,6 +31,9 @@ impl MacroPlugin for ConstevalIntMacroPlugin {
     }
 }
 
+// Rewrite a constant declaration that contains a consteval_int macro
+// into a constant declaration with the computed value,
+// e.g. `const a: felt252 = consteval_int!(2 * 2 * 2);` into `const a: felt252 = 8;`.
 fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> PluginResult {
     let constant_value = constant_ast.value(db);
     if let ast::Expr::InlineMacro(inline_macro) = constant_value {
@@ -43,7 +46,7 @@ fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> Pl
         if constant_expression.is_none() {
             return PluginResult { diagnostics, ..Default::default() };
         }
-        let new_value = rec_compute(db, &constant_expression.unwrap(), &mut diagnostics);
+        let new_value = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
         if new_value.is_none() {
             return PluginResult { diagnostics, ..Default::default() };
         }
@@ -65,6 +68,7 @@ fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> Pl
     PluginResult::default()
 }
 
+// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
 fn extract_consteval_macro_expression(
     db: &dyn SyntaxGroup,
     macro_ast: &ast::ExprInlineMacro,
@@ -90,7 +94,9 @@ fn extract_consteval_macro_expression(
     }
 }
 
-fn rec_compute(
+// Compute the actual value of an integer expression, or fail with diagnostics.
+// This computation handles arbitrary integers, unlike regular Cairo math.
+fn compute_constant_expr(
     db: &dyn SyntaxGroup,
     value: &ast::Expr,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -99,36 +105,36 @@ fn rec_compute(
         ast::Expr::Literal(lit) => lit.numeric_value(db),
         ast::Expr::Binary(bin_expr) => match bin_expr.op(db) {
             ast::BinaryOperator::Plus(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    + rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    + compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Mul(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    * rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    * compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Minus(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    - rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    - compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Div(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    / rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    / compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Mod(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    % rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    % compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::And(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    & rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    & compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Or(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    | rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    | compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             ast::BinaryOperator::Xor(_) => Some(
-                rec_compute(db, &bin_expr.lhs(db), diagnostics)?
-                    ^ rec_compute(db, &bin_expr.rhs(db), diagnostics)?,
+                compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
+                    ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
             _ => {
                 diagnostics.push(PluginDiagnostic {
@@ -139,7 +145,9 @@ fn rec_compute(
             }
         },
         ast::Expr::Unary(un_expr) => match un_expr.op(db) {
-            ast::UnaryOperator::Minus(_) => Some(-rec_compute(db, &un_expr.expr(db), diagnostics)?),
+            ast::UnaryOperator::Minus(_) => {
+                Some(-compute_constant_expr(db, &un_expr.expr(db), diagnostics)?)
+            }
             _ => {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: un_expr.stable_ptr().untyped(),
@@ -148,7 +156,9 @@ fn rec_compute(
                 None
             }
         },
-        ast::Expr::Parenthesized(paren_expr) => rec_compute(db, &paren_expr.expr(db), diagnostics),
+        ast::Expr::Parenthesized(paren_expr) => {
+            compute_constant_expr(db, &paren_expr.expr(db), diagnostics)
+        }
         _ => {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: value.stable_ptr().untyped(),
