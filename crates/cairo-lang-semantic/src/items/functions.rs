@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
+    LanguageElementId, ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
 use cairo_lang_filesystem::ids::UnstableSalsaId;
@@ -239,6 +240,16 @@ impl GenericFunctionWithBodyId {
             }
         }
     }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        match self {
+            GenericFunctionWithBodyId::Free(free_function) => {
+                free_function.stable_location(db.upcast())
+            }
+            GenericFunctionWithBodyId::Impl(impl_function) => {
+                impl_function.function.stable_location(db.upcast())
+            }
+        }
+    }
 }
 
 /// A long Id of a concrete function with body.
@@ -419,6 +430,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.get(db).name(db)
+    }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        self.get(db).generic_function.stable_location(db)
     }
 }
 
