@@ -800,6 +800,7 @@ dependencies = [
  "cairo-lang-sierra",
  "cairo-lang-sierra-ap-change",
  "cairo-lang-sierra-gas",
+ "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
  "env_logger",
  "indoc",
@@ -811,6 +812,14 @@ dependencies = [
  "test-case",
  "test-log",
  "thiserror",
+]
+
+[[package]]
+name = "cairo-lang-sierra-type-size"
+version = "2.0.0-rc0"
+dependencies = [
+ "cairo-lang-sierra",
+ "cairo-lang-utils",
 ]
 
 [[package]]
