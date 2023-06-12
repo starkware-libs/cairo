@@ -770,14 +770,14 @@ impl Display for StarknetHint {
                 )
             }
             StarknetHint::PopLog {
-                value,
+                value: _,
                 opt_variant: _,
                 keys_start: _,
                 keys_end: _,
                 data_start: _,
                 data_end: _,
             } => {
-                write!(f, "Get log from address: {}", ResOperandFormatter(value),)
+                write!(f, "raise NotImplemented")
             }
         }
     }
