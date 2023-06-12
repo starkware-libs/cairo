@@ -60,4 +60,8 @@ Please try to create bug reports that are:
 5. Run the code formatter for Rust and Cairo (`scripts/rust_fmt.sh && scripts/cairo_fmt.sh`)
 6. Commit your changes (`git commit -m 'feat: Add amazing_feature'`)
 7. Push to the branch (`git push origin feat/amazing_feature`)
-8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare)
+8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare) to one of the following branches:
+    * [cairo-major-update](https://github.com/starkware-libs/cairo/tree/cairo-major-update) If the change breaks existing high level code.
+    * [sierra-minor-update](https://github.com/starkware-libs/cairo/tree/sierra-minor-update) If the will enable generation of Sierra not compilable by the older version of the Sierra to CASM compiler.
+    * [sierra-major-update](https://github.com/starkware-libs/cairo/tree/sierra-major-update) If older versions of Sierra will not be compilable by the newer version, or the resulting CASM itself would be different.
+    * [main](https://github.com/starkware-libs/cairo/tree/main) - If the change does not break any existing Cairo code, and does not affect Sierra to CASM compilation.
