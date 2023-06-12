@@ -141,21 +141,22 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
 
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(felt252_ty),
             ],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: nonzero_ecpoint_ty,
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -165,10 +166,7 @@ impl NoGenericArgsGenericLibfunc for EcPointFromXLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                    }],
+                    vars: vec![rc_output_info],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
@@ -191,18 +189,13 @@ impl NoGenericArgsGenericLibfunc for EcUnwrapPointLibfunc {
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
 
+        let felt252_partial_param_0_output_info = OutputVarInfo {
+            ty: felt252_ty,
+            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+        };
         Ok(LibfuncSignature::new_non_branch(
             vec![nonzero_ecpoint_ty],
-            vec![
-                OutputVarInfo {
-                    ty: felt252_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
-                },
-                OutputVarInfo {
-                    ty: felt252_ty,
-                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
-                },
-            ],
+            vec![felt252_partial_param_0_output_info.clone(), felt252_partial_param_0_output_info],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

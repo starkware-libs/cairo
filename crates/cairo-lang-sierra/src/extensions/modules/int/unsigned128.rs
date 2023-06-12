@@ -115,9 +115,15 @@ impl GenericLibfunc for Uint128OperationLibfunc {
         }
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(ty.clone()),
                 ParamSignature::new(ty.clone()),
             ],
@@ -125,12 +131,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                 // No overflow.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: ty.clone(),
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -141,12 +142,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
                 // Overflow.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info,
                         OutputVarInfo {
                             ty,
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -245,20 +241,21 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             branch_signatures: vec![
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
@@ -268,12 +265,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
                 },
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type,
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info,
                         OutputVarInfo {
                             ty: context.get_concrete_type(Uint128Type::id(), &[])?,
                             ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },

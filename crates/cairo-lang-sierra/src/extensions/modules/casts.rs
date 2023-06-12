@@ -118,21 +118,22 @@ impl NamedLibfunc for DowncastLibfunc {
         }
 
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output_info = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(from_ty),
             ],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: to_ty,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
@@ -142,12 +143,7 @@ impl NamedLibfunc for DowncastLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
+                    vars: vec![rc_output_info],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

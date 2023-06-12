@@ -62,13 +62,15 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = get_u256_type(context)?;
+        let u256_type = get_u256_type(context)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let simple_deref_u256_output_info =
+            OutputVarInfo { ty: u256_type.clone(), ref_info: OutputVarReferenceInfo::SimpleDerefs };
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(nonzero_ty(context, &ty)?),
+                ParamSignature::new(u256_type.clone()),
+                ParamSignature::new(nonzero_ty(context, &u256_type)?),
             ],
             vec![
                 OutputVarInfo {
@@ -77,8 +79,8 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
                         param_idx: 0,
                     }),
                 },
-                OutputVarInfo { ty: ty.clone(), ref_info: OutputVarReferenceInfo::SimpleDerefs },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                simple_deref_u256_output_info.clone(),
+                simple_deref_u256_output_info,
             ],
             SierraApChange::Known { new_vars_only: false },
         ))

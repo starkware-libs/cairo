@@ -22,18 +22,13 @@ impl SignatureOnlyGenericLibfunc for DupLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
+        let output_info = OutputVarInfo {
+            ty: ty.clone(),
+            ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+        };
         Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature::new(ty.clone()).with_allow_const()],
-            vec![
-                OutputVarInfo {
-                    ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                },
-                OutputVarInfo {
-                    ty,
-                    ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-                },
-            ],
+            vec![ParamSignature::new(ty).with_allow_const()],
+            vec![output_info.clone(), output_info],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
