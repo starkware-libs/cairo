@@ -15,7 +15,7 @@ fn foo() {
 foo
 
 //! > module_code
-use array::ArrayTrait;
+use array::{ArrayTrait, Container};
 
 //! > semantic_diagnostics
 

@@ -179,7 +179,7 @@ pub fn generate_entry_point_wrapper(
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             $arg_definitions$
-            if !array::SpanTrait::is_empty(data) {
+            if !array::Container::is_empty(@data) {
                 // Force the inclusion of `System` in the list of implicits.
                 starknet::use_system_implicit();
 

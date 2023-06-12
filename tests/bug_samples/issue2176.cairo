@@ -1,4 +1,4 @@
-use array::ArrayTrait;
+use array::{ArrayTrait, Container};
 use test::test_utils::{assert_eq, assert_ne};
 
 #[test]

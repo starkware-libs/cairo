@@ -1,4 +1,4 @@
-use array::ArrayTrait;
+use array::{ArrayTrait, Container};
 
 // Returns an array of size n with the values of the Fibonacci sequence, the length of the array,
 // and the value of the last element.

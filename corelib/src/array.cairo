@@ -21,8 +21,17 @@ extern fn array_slice<T>(
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
-#[generate_trait]
-impl ArrayImpl<T> of ArrayTrait<T> {
+trait ArrayTrait<T, impl TContainer: Container<Array<T>>> {
+    fn new() -> Array<T>;
+    fn append(ref self: Array<T>, value: T);
+    fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
+    fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic;
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
+    fn at(self: @Array<T>, index: usize) -> @T;
+    fn span(self: @Array<T>) -> Span<T>;
+}
+
+impl ArrayImpl<T> of ArrayTrait<T, ArrayContainer<T>> {
     #[inline(always)]
     fn new() -> Array<T> {
         array_new()
@@ -51,14 +60,6 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     }
     fn at(self: @Array<T>, index: usize) -> @T {
         array_at(self, index).unbox()
-    }
-    #[inline(always)]
-    fn len(self: @Array<T>) -> usize {
-        array_len(self)
-    }
-    #[inline(always)]
-    fn is_empty(self: @Array<T>) -> bool {
-        self.len() == 0_usize
     }
     #[inline(always)]
     fn span(self: @Array<T>) -> Span<T> {
@@ -137,8 +138,15 @@ impl SpanSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Span<T>> 
     }
 }
 
-#[generate_trait]
-impl SpanImpl<T> of SpanTrait<T> {
+trait SpanTrait<T, impl TContainer: Container<Span<T>>> {
+    fn pop_front(ref self: Span<T>) -> Option<@T>;
+    fn pop_back(ref self: Span<T>) -> Option<@T>;
+    fn get(self: Span<T>, index: usize) -> Option<Box<@T>>;
+    fn at(self: Span<T>, index: usize) -> @T;
+    fn slice(self: Span<T>, start: usize, length: usize) -> Span<T>;
+}
+
+impl SpanImpl<T> of SpanTrait<T, SpanContainer<T>> {
     #[inline(always)]
     fn pop_front(ref self: Span<T>) -> Option<@T> {
         let mut snapshot = self.snapshot;
@@ -171,14 +179,6 @@ impl SpanImpl<T> of SpanTrait<T> {
     fn slice(self: Span<T>, start: usize, length: usize) -> Span<T> {
         Span { snapshot: array_slice(self.snapshot, start, length).expect('Index out of bounds') }
     }
-    #[inline(always)]
-    fn len(self: Span<T>) -> usize {
-        array_len(self.snapshot)
-    }
-    #[inline(always)]
-    fn is_empty(self: Span<T>) -> bool {
-        self.len() == 0_usize
-    }
 }
 
 impl SpanIndex<T> of IndexView<Span<T>, usize, @T> {
@@ -204,5 +204,32 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
             };
         };
         response
+    }
+}
+
+trait Container<C> {
+    fn len(self: @C) -> usize;
+    fn is_empty(self: @C) -> bool;
+}
+
+impl ArrayContainer<T> of Container<Array<T>> {
+    #[inline(always)]
+    fn len(self: @Array<T>) -> usize {
+        array_len(self)
+    }
+    #[inline(always)]
+    fn is_empty(self: @Array<T>) -> bool {
+        self.len() == 0_usize
+    }
+}
+
+impl SpanContainer<T> of Container<Span<T>> {
+    #[inline(always)]
+    fn len(self: @Span<T>) -> usize {
+        array_len(*self.snapshot)
+    }
+    #[inline(always)]
+    fn is_empty(self: @Span<T>) -> bool {
+        self.len() == 0_usize
     }
 }
