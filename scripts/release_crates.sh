@@ -8,6 +8,7 @@ cargo publish --package cairo-lang-filesystem && \
 cargo publish --package cairo-lang-diagnostics && \
 cargo publish --package cairo-lang-project && \
 cargo publish --package cairo-lang-sierra && \
+cargo publish --package cairo-lang-sierra-type-size && \
 cargo publish --package cairo-lang-sierra-ap-change && \
 cargo publish --package cairo-lang-sierra-gas && \
 cargo publish --package cairo-lang-sierra-to-casm && \

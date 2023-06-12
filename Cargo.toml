@@ -22,6 +22,7 @@ members = [
     "crates/cairo-lang-sierra-gas",
     "crates/cairo-lang-sierra-generator",
     "crates/cairo-lang-sierra-to-casm",
+    "crates/cairo-lang-sierra-type-size",
     "crates/cairo-lang-starknet",
     "crates/cairo-lang-syntax",
     "crates/cairo-lang-syntax-codegen",
