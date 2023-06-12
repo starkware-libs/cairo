@@ -1,15 +1,21 @@
 use std::fmt::Display;
 
 use cairo_lang_utils::bigint::BigIntAsHex;
+use parity_scale_codec_derive::{Decode, Encode};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, JsonSchema,
+)]
 pub enum Register {
+    #[codec(index = 0)]
     AP,
+    #[codec(index = 1)]
     FP,
 }
 impl Display for Register {
@@ -22,11 +28,15 @@ impl Display for Register {
 }
 
 // Represents the rhs operand of an assert equal InstructionBody.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
 pub enum ResOperand {
+    #[codec(index = 0)]
     Deref(CellRef),
+    #[codec(index = 1)]
     DoubleDeref(CellRef, i16),
+    #[codec(index = 2)]
     Immediate(BigIntAsHex),
+    #[codec(index = 3)]
     BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
@@ -55,7 +65,7 @@ impl<T: Into<BigIntAsHex>> From<T> for ResOperand {
 }
 
 /// Represents an operand of the form [reg + offset].
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
 pub struct CellRef {
     pub register: Register,
     pub offset: i16,
@@ -71,9 +81,11 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
     CellRef { register: Register::AP, offset }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
 pub enum DerefOrImmediate {
+    #[codec(index = 0)]
     Deref(CellRef),
+    #[codec(index = 1)]
     Immediate(BigIntAsHex),
 }
 impl Display for DerefOrImmediate {
@@ -95,9 +107,11 @@ impl From<CellRef> for DerefOrImmediate {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
 pub enum Operation {
+    #[codec(index = 0)]
     Add,
+    #[codec(index = 1)]
     Mul,
 }
 impl Display for Operation {
@@ -109,7 +123,7 @@ impl Display for Operation {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
 pub struct BinOpOperand {
     pub op: Operation,
     pub a: CellRef,

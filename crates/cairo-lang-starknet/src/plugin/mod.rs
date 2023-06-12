@@ -15,7 +15,7 @@ pub mod aux_data;
 mod contract;
 mod dispatcher;
 mod entry_point;
-mod events;
+pub mod events;
 mod storage;
 mod storage_access;
 mod utils;
@@ -25,7 +25,7 @@ use events::derive_event_needed;
 use storage_access::derive_storage_access_needed;
 
 use self::contract::{handle_contract_by_storage, handle_module};
-use self::events::{handle_enum, handle_function};
+use self::events::handle_enum;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -42,11 +42,10 @@ impl MacroPlugin for StarkNetPlugin {
             ast::Item::Struct(struct_ast) if derive_storage_access_needed(&struct_ast, db) => {
                 storage_access::handle_struct(db, struct_ast)
             }
-            ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, "starknet::storage") => {
+            ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_contract_by_storage(db, struct_ast).unwrap_or_default()
             }
             ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast),
-            ast::Item::FreeFunction(function_ast) => handle_function(db, function_ast),
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }

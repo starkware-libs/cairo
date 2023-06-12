@@ -1,10 +1,10 @@
 use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
-    core_array_felt252_ty, core_felt252_ty, core_submodule, get_function_id, get_ty_by_name,
-    option_none_variant, option_some_variant, unit_ty,
+    core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
+    get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
-use cairo_lang_semantic::GenericArgumentId;
+use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -12,7 +12,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementLiteral,
+    StatementCall, StatementLiteral, StatementStructConstruct,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -130,8 +130,19 @@ fn create_panic_block(
         ty: core_felt252_ty(db.upcast()),
         location: StableLocationOption::None,
     });
+    let panic_instance_var = variables.new_var(VarRequest {
+        ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
+        location: StableLocationOption::None,
+    });
     let panic_data_var = variables.new_var(VarRequest {
         ty: core_array_felt252_ty(db.upcast()),
+        location: StableLocationOption::None,
+    });
+    let err_data_var = variables.new_var(VarRequest {
+        ty: db.intern_type(TypeLongId::Tuple(vec![
+            variables[panic_instance_var].ty,
+            variables[panic_data_var].ty,
+        ])),
         location: StableLocationOption::None,
     });
     lowered.variables = variables.variables;
@@ -170,7 +181,15 @@ fn create_panic_block(
                 outputs: vec![panic_data_var],
                 location: StableLocationOption::None,
             }),
+            Statement::StructConstruct(StatementStructConstruct {
+                inputs: vec![],
+                output: panic_instance_var,
+            }),
+            Statement::StructConstruct(StatementStructConstruct {
+                inputs: vec![panic_instance_var, panic_data_var],
+                output: err_data_var,
+            }),
         ],
-        end: FlatBlockEnd::Panic(panic_data_var),
+        end: FlatBlockEnd::Panic(err_data_var),
     })
 }

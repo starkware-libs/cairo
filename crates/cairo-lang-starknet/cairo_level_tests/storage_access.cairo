@@ -9,14 +9,13 @@ use starknet::eth_address::Felt252TryIntoEthAddress;
 use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
 use zeroable::Zeroable;
-use starknet::{};
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
-    fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs)
+    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
     }
-    fn ne(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        !(storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs))
+    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
     }
 }
 
@@ -44,22 +43,22 @@ struct AbcEtc {
 }
 
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::AbcEtc;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         data: AbcEtc, 
     }
 
     #[external]
-    fn set_data(ref self: Storage, value: AbcEtc) {
+    fn set_data(ref self: ContractState, value: AbcEtc) {
         self.data.write(value);
     }
 
     #[external]
-    fn get_data(self: @Storage) -> AbcEtc {
+    fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
     }
 }

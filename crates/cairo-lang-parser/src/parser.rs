@@ -55,7 +55,7 @@ pub struct Parser<'a> {
 // never a missing kind.
 // Should only be called after checking the current token.
 
-const MAX_PRECEDENCE: usize = 10;
+const MAX_PRECEDENCE: usize = 1000;
 const TOP_LEVEL_ITEM_DESCRIPTION: &str =
     "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
@@ -718,6 +718,8 @@ impl<'a> Parser<'a> {
     /// Assumes the current token is an operator (binary or unary).
     /// Returns a GreenId of the operator or None if the operator is a unary-only operator.
     fn try_parse_binary_operator(&mut self) -> Option<BinaryOperatorGreen> {
+        // Note that if this code is not reached you might need to add the operator to
+        // `get_post_operator_precedence`.
         if matches!(self.peek().kind, SyntaxKind::TerminalNot | SyntaxKind::TerminalAt) {
             None
         } else {
@@ -741,6 +743,8 @@ impl<'a> Parser<'a> {
                 SyntaxKind::TerminalLE => self.take::<TerminalLE>().into(),
                 SyntaxKind::TerminalGE => self.take::<TerminalGE>().into(),
                 SyntaxKind::TerminalAnd => self.take::<TerminalAnd>().into(),
+                SyntaxKind::TerminalAndAnd => self.take::<TerminalAndAnd>().into(),
+                SyntaxKind::TerminalOrOr => self.take::<TerminalOrOr>().into(),
                 SyntaxKind::TerminalOr => self.take::<TerminalOr>().into(),
                 SyntaxKind::TerminalXor => self.take::<TerminalXor>().into(),
                 _ => unreachable!(),

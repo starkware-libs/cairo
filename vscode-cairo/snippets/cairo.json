@@ -19,17 +19,10 @@
     "body": ["u256 { low: $1, high: $2 }"],
     "description": "Creates an u256"
   },
-  "Creates event": {
-    "prefix": ["event", "#[event]"],
-    "body": [
-      "#[event]",
-      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) {}"
-    ],
-    "description": "Creates an event"
-  },
   "Creates storage": {
     "prefix": "storage",
     "body": [
+      "#[storage]",
       "struct Storage {",
       "\t$1: ${2|felt252, u128, u64, u32, u16, u8, bool|},",
       "}"
@@ -147,15 +140,12 @@
   "Creates a default contract": {
     "prefix": "contract",
     "body": [
-      "#[contract]",
+      "#[starknet::contract]",
       "",
       "mod $1 {",
       "\tstruct Storage {",
       "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
       "\t}",
-      "",
-      "\t#[event]",
-      "\tfn $4($5: ${6|felt252, u128, u64, u32, u16, u8, bool|}) {}",
       "",
       "\t#[external]",
       "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",

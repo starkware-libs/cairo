@@ -4,22 +4,22 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
     #[external]
     #[raw_output]
-    fn test_raw_output(ref self: Storage) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -27,22 +27,22 @@ mod TestContract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
     #[external]
     #[raw_output]
-    fn test_raw_output(ref self: Storage) -> Span::<felt252> {
+    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  > {
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
     }
 }
@@ -52,27 +52,34 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 1348838999098828658181850123465309163350231483164418541983960453285793899585;
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 496467993860656971014768480101995430067197153434631914833246400084882928457;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
+    struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
         }
     }
-    
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
             let mut keys = Default::<array::Array>::default();
-            let mut values = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::syscalls::emit_event_syscall(
                 array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@values),
+                array::ArrayTrait::span(@data),
             ).unwrap_syscall()
         }
     }
@@ -81,11 +88,11 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     #[external]
-        fn test_raw_output(ref self: Storage) -> Span::<felt252>;
+        fn test_raw_output(ref self: ContractState) -> Span::<felt252>;
         #[external]
-        fn test_raw_output_with_spaces(ref self: Storage) -> Span     ::   < felt252  >;
+        fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  >;
         
     
 }
@@ -112,7 +119,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::test_raw_output(ref storage, )
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -129,7 +136,7 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut storage = super::unsafe_new_contract_state();
             super::test_raw_output_with_spaces(ref storage, )
         }
         
@@ -160,25 +167,29 @@ mod __constructor {
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
 
 impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_values(
-        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
     }
 }
 

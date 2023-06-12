@@ -7,12 +7,13 @@ use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use test_case::test_case;
 
-use super::{sierra_from_felt252s, sierra_to_felt252s};
+use super::{sierra_from_felt252s, sierra_to_felt252s, SERDE_SUPPORTED_LONG_IDS};
 use crate::compiler_version;
 use crate::felt252_serde::Felt252Serde;
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 fn test_felt252_serde(example_file_name: &str) {
     let sierra = ProgramParser::new()
@@ -46,5 +47,15 @@ fn test_libfunc_serde() {
     for libfunc_id in CoreLibfunc::supported_ids() {
         libfunc_id.serialize(&mut output).expect("Serialization failed.");
         output.clear()
+    }
+}
+
+#[test]
+fn test_long_ids() {
+    for libfunc_id in SERDE_SUPPORTED_LONG_IDS.iter() {
+        assert!(
+            libfunc_id.len() > 31,
+            "`{libfunc_id}` should be removed from `SERDE_SUPPORTED_LONG_IDS`."
+        );
     }
 }

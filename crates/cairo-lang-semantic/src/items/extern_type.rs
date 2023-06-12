@@ -7,6 +7,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::Resolver;
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
@@ -70,12 +71,10 @@ pub fn priv_extern_type_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(type_syntax.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, type_syntax.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
 }

@@ -46,7 +46,8 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
     let packed = packed.into();
 
     let proposer = (packed & MASK_160).try_into().unwrap();
-    let last_updated_at: u64 = ((packed / TWO_POW_160) & MASK_64).try_into().unwrap();
+    let last_updated_at: u64 = U256TryIntoU64::try_into(((packed / TWO_POW_160) & MASK_64))
+        .unwrap();
 
     (proposer, last_updated_at)
 }
@@ -84,18 +85,17 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
     }
 }
 
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use super::Proposal;
-
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         _proposals: LegacyMap<u32, Proposal>,
         _single_proposal: Proposal
     }
 
     #[external]
-    fn reproduce(ref self: Storage) {
+    fn reproduce(ref self: ContractState) {
         self._single_proposal.read();
 
         self._proposals.write(1, Proposal { proposer: 0, last_updated_at: 0 });

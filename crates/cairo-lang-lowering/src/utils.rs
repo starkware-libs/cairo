@@ -120,6 +120,7 @@ pub trait RebuilderEx: Rebuilder {
                                     .collect(),
                             })
                             .collect(),
+                        location: stmt.location,
                     }),
                 },
             },

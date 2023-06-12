@@ -28,12 +28,14 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         | SyntaxKind::TerminalGT
         | SyntaxKind::TerminalLE
         | SyntaxKind::TerminalGE => Some(8),
+        SyntaxKind::TerminalAndAnd => Some(9),
+        SyntaxKind::TerminalOrOr => Some(10),
         SyntaxKind::TerminalEq
         | SyntaxKind::TerminalPlusEq
         | SyntaxKind::TerminalMinusEq
         | SyntaxKind::TerminalMulEq
         | SyntaxKind::TerminalDivEq
-        | SyntaxKind::TerminalModEq => Some(9),
+        | SyntaxKind::TerminalModEq => Some(11),
         _ => None,
     }
 }
