@@ -23,16 +23,31 @@ mod ContractA {
     }
 
     #[constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    fn constructor(ref self: ContractState, value_: u128) {
         self.value.write(value_);
     }
 
     #[external]
-    fn foo(ref self: Storage, a: u128) -> u128 {
+    fn foo(ref self: ContractState, a: u128) -> u128 {
         let value = self.value.read();
         self.value.write(a);
         value
     }
+
+    #[generate_trait]
+    impl MyImpl of MyTrait {
+        fn internal_func(self: @ContractState) -> u128 {
+            5
+        }
+    }
+}
+
+use ContractA::MyTrait;
+#[test]
+#[available_gas(30000000)]
+fn test_internal_func() {
+    let mut contract_state = ContractA::contract_state_for_testing();
+    contract_state.internal_func();
 }
 
 #[test]
@@ -123,7 +138,7 @@ mod ContractFailedConstructor {
     struct Storage {}
 
     #[constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    fn constructor(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }
@@ -148,7 +163,7 @@ mod ContractFailedEntrypoint {
     struct Storage {}
 
     #[external]
-    fn foo(ref self: Storage, value_: u128) {
+    fn foo(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }

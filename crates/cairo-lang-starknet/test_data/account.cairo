@@ -21,15 +21,15 @@ mod Account {
     }
 
     #[constructor]
-    fn constructor(ref self: Storage, public_key_: felt252) {
+    fn constructor(ref self: ContractState, public_key_: felt252) {
         self.public_key.write(public_key_);
     }
 
     trait StorageTrait {
-        fn validate_transaction(self: @Storage) -> felt252;
+        fn validate_transaction(self: @ContractState) -> felt252;
     }
     impl StorageImpl of StorageTrait {
-        fn validate_transaction(self: @Storage) -> felt252 {
+        fn validate_transaction(self: @ContractState) -> felt252 {
             let tx_info = starknet::get_tx_info().unbox();
             let signature = tx_info.signature;
             assert(signature.len() == 2_u32, 'INVALID_SIGNATURE_LENGTH');
@@ -50,19 +50,22 @@ mod Account {
 
     #[external]
     fn __validate_deploy__(
-        self: @Storage, class_hash: felt252, contract_address_salt: felt252, public_key_: felt252
+        self: @ContractState,
+        class_hash: felt252,
+        contract_address_salt: felt252,
+        public_key_: felt252
     ) -> felt252 {
         self.validate_transaction()
     }
 
     #[external(v0)]
-    impl AccountContractImpl of starknet::account::AccountContract<Storage> {
-        fn __validate_declare__(self: @Storage, class_hash: felt252) -> felt252 {
+    impl AccountContractImpl of starknet::account::AccountContract<ContractState> {
+        fn __validate_declare__(self: @ContractState, class_hash: felt252) -> felt252 {
             self.validate_transaction()
         }
 
         fn __validate__(
-            ref self: Storage,
+            ref self: ContractState,
             contract_address: ContractAddress,
             entry_point_selector: felt252,
             calldata: Array<felt252>
@@ -72,7 +75,7 @@ mod Account {
 
         #[raw_output]
         fn __execute__(
-            ref self: Storage, mut calls: Array<starknet::account::Call>
+            ref self: ContractState, mut calls: Array<starknet::account::Call>
         ) -> Span<felt252> {
             // Validate caller.
             assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');

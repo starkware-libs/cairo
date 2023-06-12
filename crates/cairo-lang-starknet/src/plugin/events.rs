@@ -28,14 +28,17 @@ pub enum EventData {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EventFieldKind {
     // Serialize to `keys` using `Serde`.
+    #[serde(rename = "key")]
     KeySerde,
-    // Serialize to `values` using `Serde`.
-    ValueSerde,
+    // Serialize to `data` using `Serde`.
+    #[serde(rename = "data")]
+    DataSerde,
     // Serialize as a nested event.
+    #[serde(rename = "nested")]
     Nested,
 }
 
-// TODO(spapini): Avoid names collisions with `keys` and `values`.
+// TODO(spapini): Avoid names collisions with `keys` and `data`.
 /// Derive the `Event` trait for structs annotated with `derive(starknet::Event)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
     let mut builder = PatchBuilder::new(db);
@@ -51,21 +54,21 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         return PluginResult{ code: None, diagnostics, remove_original_item: false };
     };
 
-    // Generate append_keys_and_values() code.
+    // Generate append_keys_and_data() code.
     let mut append_members = vec![];
     let mut deserialize_members = vec![];
     let mut ctor = vec![];
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_field_kind(db, &mut diagnostics, &member, EventFieldKind::ValueSerde);
+        let member_kind = get_field_kind(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
         members.push((member.name(db).text(db), member_kind));
 
-        let value_for_append = RewriteNode::interpolate_patched(
+        let member_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
             [(String::from("member_name"), member_name.clone())].into(),
         );
-        let append_member = append_field(member_kind, value_for_append);
+        let append_member = append_field(member_kind, member_for_append);
         let deserialize_member = deserialize_field(member_kind, member_name.clone());
         append_members.push(append_member);
         deserialize_members.push(deserialize_member);
@@ -85,12 +88,12 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let event_impl = RewriteNode::interpolate_patched(
         indoc! {"
             impl $struct_name$IsEvent of starknet::Event<$struct_name$> {
-                fn append_keys_and_values(
-                    self: @$struct_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                fn append_keys_and_data(
+                    self: @$struct_name$, ref keys: Array<felt252>, ref data: Array<felt252>
                 ) {$append_members$
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$struct_name$> {$deserialize_members$
                     Option::Some($struct_name$ {$ctor$})
                 }
@@ -220,14 +223,14 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     let event_impl = RewriteNode::interpolate_patched(
         indoc! {"
             impl $enum_name$IsEvent of starknet::Event<$enum_name$> {
-                fn append_keys_and_values(
-                    self: @$enum_name$, ref keys: Array<felt252>, ref values: Array<felt252>
+                fn append_keys_and_data(
+                    self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
                 ) {
                     match self {$append_variants$
                     }
                 }
                 fn deserialize(
-                    ref keys: Span<felt252>, ref values: Span<felt252>,
+                    ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {
                     let selector = *array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_variants$
@@ -281,25 +284,25 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
     })
 }
 
-/// Generates code to emit an event for a value
-fn append_field(member_kind: EventFieldKind, value: RewriteNode) -> RewriteNode {
+/// Generates code to emit an event for a field
+fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode {
     match member_kind {
         EventFieldKind::Nested => RewriteNode::interpolate_patched(
             "
-                starknet::Event::append_keys_and_values(
-                    $value$, ref keys, ref values
+                starknet::Event::append_keys_and_data(
+                    $field$, ref keys, ref data
                 );",
-            [(String::from("value"), value)].into(),
+            [(String::from("field"), field)].into(),
         ),
         EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($value$, ref keys);",
-            [(String::from("value"), value)].into(),
+                serde::Serde::serialize($field$, ref keys);",
+            [(String::from("field"), field)].into(),
         ),
-        EventFieldKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
-                serde::Serde::serialize($value$, ref values);",
-            [(String::from("value"), value)].into(),
+                serde::Serde::serialize($field$, ref data);",
+            [(String::from("field"), field)].into(),
         ),
     }
 }
@@ -309,7 +312,7 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
         EventFieldKind::Nested => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = starknet::Event::deserialize(
-                    ref keys, ref values
+                    ref keys, ref data
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
@@ -320,10 +323,10 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
-        EventFieldKind::ValueSerde => RewriteNode::interpolate_patched(
+        EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
                 let $member_name$ = serde::Serde::deserialize(
-                    ref values
+                    ref data
                 )?;",
             [(String::from("member_name"), member_name)].into(),
         ),
