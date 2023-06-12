@@ -5,10 +5,10 @@
 use cairo_lang_eq_solver::Expr;
 use cairo_lang_sierra::extensions::core::{CoreConcreteLibfunc, CoreLibfunc, CoreType};
 use cairo_lang_sierra::extensions::gas::{CostTokenType, GasConcreteLibfunc};
-use cairo_lang_sierra::extensions::ConcreteType;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId, FunctionId};
 use cairo_lang_sierra::program::{Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -52,7 +52,7 @@ struct InvocationCostInfoProviderForEqGen<
     ApChangeVarValue: Fn() -> usize,
 > {
     /// Registry for providing the sizes of the types.
-    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
+    type_sizes: &'a TypeSizeMap,
     /// Closure providing the token usages for the invocation.
     token_usages: TokenUsages,
     /// Closure providing the ap changes for the invocation.
@@ -64,7 +64,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     for InvocationCostInfoProviderForEqGen<'a, TokenUsages, ApChangeVarValue>
 {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
+        self.type_sizes[ty].into_or_panic()
     }
 
     fn token_usages(&self, token_type: CostTokenType) -> usize {
@@ -76,18 +76,10 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Implementation of [CostInfoProvider] given a [program registry](ProgramRegistry).
-pub struct ComputeCostInfoProviderImpl<'a> {
-    registry: &'a ProgramRegistry<CoreType, CoreLibfunc>,
-}
-impl<'a> ComputeCostInfoProviderImpl<'a> {
-    pub fn new(registry: &'a ProgramRegistry<CoreType, CoreLibfunc>) -> Self {
-        Self { registry }
-    }
-}
-impl<'a> CostInfoProvider for ComputeCostInfoProviderImpl<'a> {
+/// Implementation of [CostInfoProvider] given a [TypeSizeMap].
+impl CostInfoProvider for TypeSizeMap {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
-        self.registry.get_type(ty).unwrap().info().size.into_or_panic()
+        self[ty].into_or_panic()
     }
 }
 
@@ -114,7 +106,7 @@ pub fn calc_gas_precost_info(
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
 pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let info_provider = ComputeCostInfoProviderImpl::new(&registry);
+    let type_sizes = get_type_size_map(program, &registry).unwrap();
 
     Ok(compute_costs::compute_costs(
         program,
@@ -122,7 +114,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
             let core_libfunc = registry
                 .get_libfunc(libfunc_id)
                 .expect("Program registry creation would have already failed.");
-            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &info_provider)
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_sizes)
         }),
         &compute_costs::PreCostContext {},
     ))
@@ -136,6 +128,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let type_sizes = get_type_size_map(program, &registry).unwrap();
     calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {
@@ -147,7 +140,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
                 idx,
                 libfunc,
                 &InvocationCostInfoProviderForEqGen {
-                    registry: &registry,
+                    type_sizes: &type_sizes,
                     token_usages: |token_type| {
                         precost_gas_info.variable_values[(*idx, token_type)].into_or_panic()
                     },
