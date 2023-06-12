@@ -1166,7 +1166,7 @@ fn lower_expr_struct_ctor(
             inputs: members
                 .into_iter()
                 .map(|(_, member)| {
-                    lower_expr(ctx, builder, member_expr[member.id])?.var(ctx, builder)
+                    lower_expr(ctx, builder, member_expr[&member.id])?.var(ctx, builder)
                 })
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
