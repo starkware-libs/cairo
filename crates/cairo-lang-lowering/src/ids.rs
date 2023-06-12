@@ -148,14 +148,17 @@ impl ConcreteFunctionWithBodyId {
             semantic,
         ))
     }
+    pub fn get(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyLongId {
+        db.lookup_intern_lowering_concrete_function_with_body(*self)
+    }
     pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_with_body_id(db)
+        self.get(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).substitution(db)
+        self.get(db).substitution(db)
     }
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_id(db)
+        self.get(db).function_id(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
@@ -179,7 +182,7 @@ impl ConcreteFunctionWithBodyId {
         &self,
         db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).base_semantic_function(db)
+        self.get(db).base_semantic_function(db)
     }
 }
 
