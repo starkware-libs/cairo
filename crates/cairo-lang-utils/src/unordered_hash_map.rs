@@ -84,13 +84,15 @@ impl<Key: Hash + Eq, Value> UnorderedHashMap<Key, Value> {
     }
 }
 
-impl<Key: Hash + Eq, IndexType: Into<Key>, Value> Index<IndexType>
-    for UnorderedHashMap<Key, Value>
+impl<Key, Q: ?Sized, Value> Index<&Q> for UnorderedHashMap<Key, Value>
+where
+    Key: Eq + Hash + Borrow<Q>,
+    Q: Eq + Hash,
 {
     type Output = Value;
 
-    fn index(&self, index: IndexType) -> &Self::Output {
-        &self.0[&index.into()]
+    fn index(&self, key: &Q) -> &Self::Output {
+        self.0.index(key)
     }
 }
 
