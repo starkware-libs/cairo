@@ -1,17 +1,11 @@
-use serde::Serde;
-use starknet::ContractAddress;
-use array::ArrayTrait;
-use array::SpanTrait;
-use option::OptionTrait;
-
 #[starknet::contract]
 mod Account {
-    use array::ArrayTrait;
-    use array::SpanTrait;
+    use array::{ArrayTrait, SpanTrait};
     use box::BoxTrait;
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;
-    use starknet::ContractAddress;
+    use starknet::account::Call;
+    use starknet::{ContractAddress, call_contract_syscall};
     use zeroable::Zeroable;
     use array::ArraySerde;
 
@@ -64,19 +58,11 @@ mod Account {
             self.validate_transaction()
         }
 
-        fn __validate__(
-            ref self: ContractState,
-            contract_address: ContractAddress,
-            entry_point_selector: felt252,
-            calldata: Array<felt252>
-        ) -> felt252 {
+        fn __validate__(ref self: ContractState, calls: Array<Call>) -> felt252 {
             self.validate_transaction()
         }
 
-        #[raw_output]
-        fn __execute__(
-            ref self: ContractState, mut calls: Array<starknet::account::Call>
-        ) -> Span<felt252> {
+        fn __execute__(ref self: ContractState, mut calls: Array<Call>) -> Array<Span<felt252>> {
             // Validate caller.
             assert(starknet::get_caller_address().is_zero(), 'INVALID_CALLER');
 
@@ -84,14 +70,24 @@ mod Account {
             let tx_info = starknet::get_tx_info().unbox();
             assert(tx_info.version != 0, 'INVALID_TX_VERSION');
 
-            // TODO(ilya): Implement multi call.
-            assert(calls.len() == 1_u32, 'MULTI_CALL_NOT_SUPPORTED');
-            let Call{to, selector, calldata } = calls.pop_front().unwrap();
-
-            starknet::call_contract_syscall(
-                address: to, entry_point_selector: selector, calldata: calldata.span()
-            )
-                .unwrap_syscall()
+            let mut result = ArrayTrait::new();
+            loop {
+                match calls.pop_front() {
+                    Option::Some(call) => {
+                        let mut res = call_contract_syscall(
+                            address: call.to,
+                            entry_point_selector: call.selector,
+                            calldata: call.calldata.span()
+                        )
+                            .unwrap_syscall();
+                        result.append(res);
+                    },
+                    Option::None(()) => {
+                        break; // Can't break result; because of 'variable was previously moved'
+                    },
+                };
+            };
+            result
         }
     }
 }
