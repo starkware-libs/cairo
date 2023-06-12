@@ -5,7 +5,7 @@ mod Account {
     use ecdsa::check_ecdsa_signature;
     use option::OptionTrait;
     use starknet::account::Call;
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, call_contract_syscall};
     use zeroable::Zeroable;
     use array::ArraySerde;
 
@@ -74,7 +74,12 @@ mod Account {
             loop {
                 match calls.pop_front() {
                     Option::Some(call) => {
-                        let mut res = do_call_contract(call);
+                        let mut res = call_contract_syscall(
+                            address: call.to,
+                            entry_point_selector: call.selector,
+                            calldata: call.calldata.span()
+                        )
+                            .unwrap_syscall();
                         result.append(res);
                     },
                     Option::None(()) => {
@@ -84,12 +89,5 @@ mod Account {
             };
             result
         }
-    }
-
-    fn do_call_contract(call: Call) -> Span<felt252> {
-        starknet::call_contract_syscall(
-            address: call.to, entry_point_selector: call.selector, calldata: call.calldata.span()
-        )
-            .unwrap_syscall()
     }
 }
