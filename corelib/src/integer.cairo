@@ -1804,7 +1804,7 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
 
 impl U128IntoU512 of Into<u128, u512> {
     fn into(self: u128) -> u512 {
-        u512 { limb0: self, limb1: 0_u182, limb2: 0_u128, limb3: 0_u128 }
+        u512 { limb0: self, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
     }
 }
 
