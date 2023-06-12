@@ -1480,7 +1480,7 @@ impl U256Default of Default<u256> {
 
 impl U512Default of Default<u512> {
     fn default() -> u512 nopanic {
-        u512 { limb0: 0, limb1: 0, limb2: 0, limb3: 0 }
+        u512 { limb0: 0_u128, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
     }
 }
 
@@ -1799,6 +1799,23 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
         }
 
         Option::Some(low)
+    }
+}
+
+impl U128IntoU512 of Into<u128, u512> {
+    fn into(self: u128) -> u512 {
+        u512 { limb0: self, limb1: 0_u182, limb2: 0_u128, limb3: 0_u128 }
+    }
+}
+
+impl U512TryIntoU128 of TryInto<u512, u128> {
+    fn try_into(self: u512) -> Option<u128> {
+        let u512{limb0: limb0, limb1: limb1, limb2: limb2, limb3: limb3 } = self;
+        if limb3 != 0 || limb2 != 0 || limb1 != 0 {
+            return Option::None(());
+        }
+
+        Option::Some(limb0)
     }
 }
 

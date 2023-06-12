@@ -921,12 +921,72 @@ fn proper_cast() {
     assert(cast_must_pass(0xFF_u8, 0xFF_u32), 'u8 to_and_fro u32');
     assert(cast_must_pass(0xFF_u8, 0xFF_u64), 'u8 to_and_fro u64');
     assert(cast_must_pass(0xFF_u8, 0xFF_u128), 'u8 to_and_fro u128');
+    assert(cast_must_pass(0xFF_u8, 0xFF_u256), 'u8 to_and_fro u256');
+    assert(
+        cast_must_pass(
+            0xFF_u8, u512 { limb0: 0xFF_u128, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+        ),
+        'u8 to_and_fro u512'
+    );
     assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u32), 'u16 to_and_fro u32');
     assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u64), 'u16 to_and_fro u64');
     assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u128), 'u16 to_and_fro u128');
+    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u256), 'u16 to_and_fro u256');
+    assert(
+        cast_must_pass(
+            0xFFFF_u16, u512 { limb0: 0xFFFF_u128, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+        ),
+        'u16 to_and_fro u512'
+    );
     assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64), 'u32 to_and_fro u64');
     assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
+    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u256), 'u32 to_and_fro u256');
+    assert(
+        cast_must_pass(
+            0xFFFFFFFF_u32,
+            u512 { limb0: 0xFFFFFFFF_u128, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+        ),
+        'u32 to_and_fro u512'
+    );
     assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
+    assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u256), 'u64 to_and_fro u256');
+    assert(
+        cast_must_pass(
+            0xFFFFFFFFFFFFFFFF_u64,
+            u512 { limb0: 0xFFFFFFFFFFFFFFFF_u128, limb1: 0_u128, limb2: 0_u128, limb3: 0_u128 }
+        ),
+        'u64 to_and_fro u512'
+    );
+    assert(
+        cast_must_pass(
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u256
+        ),
+        'u128 to_and_fro u256'
+    );
+    assert(
+        cast_must_pass(
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+            u512 {
+                limb0: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+                limb1: 0_u128,
+                limb2: 0_u128,
+                limb3: 0_u128
+            }
+        ),
+        'u128 to_and_fro u512'
+    );
+    assert(
+        cast_must_pass(
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u256,
+            u512 {
+                limb0: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+                limb1: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF_u128,
+                limb2: 0_u128,
+                limb3: 0_u128
+            }
+        ),
+        'u256 to_and_fro u512'
+    );
 }
 
 #[test]
