@@ -317,10 +317,10 @@ fn test_pop_log() {
     starknet::emit_event_syscall(keys.span(), data.span());
     let (keys, data) = starknet::testing::pop_log(contract_address).unwrap();
 
-    assert_eq(keys.len(), 1, 'unexpected keys size');
-    assert_eq(data.len(), 1, 'unexpected data size');
-    assert_eq(*keys.at(0), 1234, 'unexpected key');
-    assert_eq(*data.at(0), 2345, 'unexpected data');
+    assert_eq(@keys.len(), @1, 'unexpected keys size');
+    assert_eq(@data.len(), @1, 'unexpected data size');
+    assert_eq(keys.at(0), @1234, 'unexpected key');
+    assert_eq(data.at(0), @2345, 'unexpected data');
 }
 
 #[test]
