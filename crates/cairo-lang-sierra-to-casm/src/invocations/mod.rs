@@ -15,6 +15,7 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 };
 use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
 use cairo_lang_sierra_gas::objects::ConstCost;
+use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
@@ -28,7 +29,6 @@ use crate::references::{
     ReferenceValue,
 };
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
-use crate::type_sizes::TypeSizeMap;
 
 mod array;
 mod bitwise;
