@@ -117,6 +117,7 @@ pub fn lower_expr_if_bool(
                 var_ids: vec![main_block_var_id],
             },
         ],
+        location: if_location,
     });
     builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }

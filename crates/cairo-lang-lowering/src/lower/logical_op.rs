@@ -92,6 +92,7 @@ pub fn lower_logical_op(
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
         ],
+        location,
     });
     builder.merge_and_end_with_match(
         ctx,

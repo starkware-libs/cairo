@@ -674,6 +674,7 @@ fn perform_function_call(
                 ),
                 input: call_result.returns[0],
                 arms: vec![],
+                location,
             })));
         }
 
@@ -852,6 +853,7 @@ fn lower_expr_match(
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
+        location,
     });
     builder.merge_and_end_with_match(ctx, match_info, sealed_blocks, location)
 }
@@ -1232,6 +1234,7 @@ fn lower_expr_error_propagate(
                 var_ids: vec![err_value],
             },
         ],
+        location,
     });
     builder.merge_and_end_with_match(
         ctx,

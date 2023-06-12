@@ -253,6 +253,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                         var_ids: vec![err_var],
                     },
                 ],
+                location,
             }),
         };
 

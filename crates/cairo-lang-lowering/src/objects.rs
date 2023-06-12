@@ -262,6 +262,8 @@ pub struct MatchEnumInfo {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
+    /// Location for the match.
+    pub location: StableLocationOption,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
