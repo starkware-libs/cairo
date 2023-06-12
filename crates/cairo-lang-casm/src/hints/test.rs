@@ -110,7 +110,7 @@ fn test_debug_hint_format() {
             curr = memory[ap + 6]
             end = memory[fp + -8]
             while curr != end:
-                print(memory[curr])
+                print(hex(memory[curr]))
                 curr += 1
         "}
     );
