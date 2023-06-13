@@ -4,8 +4,8 @@ use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 
 use crate::invocations::{
-    add_input_variables, CompiledInvocation, CompiledInvocationBuilder, CostValidationInfo,
-    InvocationError,
+    add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
+    CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
 /// Builds instructions for starknet test setup operations.
@@ -72,8 +72,39 @@ pub fn build(
                 hint StarknetHint::SetSignature { start: start, end: end };
             };
         }
+        TestingConcreteLibfunc::PopLog(_) => {
+            let address = declare_single_value()?;
+
+            casm_build_extend! {casm_builder,
+                tempvar variant;
+                tempvar keys_start;
+                tempvar keys_end;
+                tempvar data_start;
+                tempvar data_end;
+                hint StarknetHint::PopLog {
+                    value: address
+                } into {
+                    opt_variant: variant, keys_start: keys_start,
+                    keys_end: keys_end, data_start: data_start,
+                    data_end: data_end
+                };
+                ap += 5;
+                jump None if variant != 0;
+            };
+
+            let none_variant_id = get_non_fallthrough_statement_id(&builder);
+            return Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [
+                    ("Fallthrough", &[&[keys_start, keys_end], &[data_start, data_end]], None),
+                    ("None", &[], Some(none_variant_id)),
+                ],
+                CostValidationInfo::default(),
+            ));
+        }
     }
     casm_build_extend! {casm_builder, ap += 0; };
+
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[], None)],
