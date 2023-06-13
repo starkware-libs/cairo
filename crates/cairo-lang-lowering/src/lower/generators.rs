@@ -13,7 +13,7 @@ use crate::ids::ObjectOriginId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
-    StatementStructDestructure,
+    StatementStructDestructure, VarUsage,
 };
 use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
@@ -52,7 +52,7 @@ pub struct Call {
     /// Called function.
     pub function: crate::ids::FunctionId,
     /// Inputs to function.
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
     pub extra_ret_tys: Vec<semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
@@ -81,7 +81,7 @@ impl Call {
 
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs,
+            inputs: self.inputs.into_iter().map(|var_usage| var_usage.var_id).collect(),
             outputs,
             location: self.location,
         }));

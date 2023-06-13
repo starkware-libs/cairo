@@ -14,7 +14,9 @@ use super::refs::{SemanticLoweringMapping, StructRecomposer};
 use super::usage::MemberPath;
 use crate::diagnostic::LoweringDiagnosticKind;
 use crate::ids::ObjectOriginId;
-use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::{
+    BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+};
 
 /// FlatBlock builder, describing its current state.
 #[derive(Clone)]
@@ -85,12 +87,14 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         member_path: &ExprVarMemberPath,
-    ) -> Option<VariableId> {
-        let location = ctx.get_location(member_path.stable_ptr().untyped());
-        self.semantics.get(
-            BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-            &member_path.into(),
-        )
+    ) -> Option<VarUsage> {
+        let origin = ctx.get_location(member_path.stable_ptr().untyped());
+        self.semantics
+            .get(
+                BlockStructRecomposer { statements: &mut self.statements, ctx, location: origin },
+                &member_path.into(),
+            )
+            .map(|var_id| VarUsage { var_id, origin })
     }
 
     /// Gets the current lowered variable bound to a semantic variable.
