@@ -360,7 +360,7 @@ fn compute_expr_binary_semantic(
                     .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
             }
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[member_path.base_var()].is_mut() {
+            if !ctx.semantic_defs[&member_path.base_var()].is_mut() {
                 ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
             }
             return Ok(Expr::Assignment(ExprAssignment {
@@ -1731,7 +1731,7 @@ fn expr_function_call(
                     arg.stable_ptr().untyped(), RefArgNotAVariable));
             };
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[ref_arg.base_var()].is_mut() {
+            if !ctx.semantic_defs[&ref_arg.base_var()].is_mut() {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
             }
             // Verify that it is passed explicitly as 'ref'.
