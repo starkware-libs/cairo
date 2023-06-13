@@ -131,28 +131,19 @@ pub enum CoreHint {
     /// Note: the hint may be used to write an already assigned memory cell.
     #[codec(index = 4)]
     DivMod { lhs: ResOperand, rhs: ResOperand, quotient: CellRef, remainder: CellRef },
-    /// Divides dividend_low<<128+dividend_high by divisor_low<<128+divisor_high.
-    /// Splits the remainder to 128bit words: remainder_low and remainder_high.
-    /// Splits the quotient and the divisor to 128bit words.
-    /// The lower 128 bits of the quotient are written to quotient0 and quotient1.
-    /// The lower 128 bits of the divisor are written to divisor0 and divisor1.
-    /// If the divisor is greater than 2^128, the upper 128 bits of the divisor are written to
-    /// extra0 and extra1. In this case, quotient must be lower than 2^128.
-    /// Otherwise, the upper 128 bits of the quotient are written to extra0 and extra1.
+    /// Divides dividend (represented by 2 128bit limbs) by divisor (represented by 2 128bit
+    /// limbs). Returns the quotient (represented by 2 128bit limbs) and remainder (represented by
+    /// 2 128bit limbs). In all cases - `name`0 is the least significant limb.
     #[codec(index = 5)]
     Uint256DivMod {
-        dividend_low: ResOperand,
-        dividend_high: ResOperand,
-        divisor_low: ResOperand,
-        divisor_high: ResOperand,
+        dividend0: ResOperand,
+        dividend1: ResOperand,
+        divisor0: ResOperand,
+        divisor1: ResOperand,
         quotient0: CellRef,
         quotient1: CellRef,
-        divisor0: CellRef,
-        divisor1: CellRef,
-        extra0: CellRef,
-        extra1: CellRef,
-        remainder_low: CellRef,
-        remainder_high: CellRef,
+        remainder0: CellRef,
+        remainder1: CellRef,
     },
     /// Divides dividend (represented by 4 128bit limbs) by divisor (represented by 2 128bit
     /// limbs). Returns the quotient (represented by 4 128bit limbs) and remainder (represented
@@ -402,44 +393,32 @@ impl Display for CoreHint {
                 ResOperandFormatter(rhs)
             ),
             CoreHint::Uint256DivMod {
-                dividend_low,
-                dividend_high,
-                divisor_low,
-                divisor_high,
+                dividend0,
+                dividend1,
                 quotient0,
                 quotient1,
                 divisor0,
                 divisor1,
-                extra0,
-                extra1,
-                remainder_low,
-                remainder_high,
+                remainder0,
+                remainder1,
             } => {
-                let (dividend_low, dividend_high, divisor_low, divisor_high) = (
-                    ResOperandFormatter(dividend_low),
-                    ResOperandFormatter(dividend_high),
-                    ResOperandFormatter(divisor_low),
-                    ResOperandFormatter(divisor_high),
+                let (dividend0, dividend1, divisor0, divisor1) = (
+                    ResOperandFormatter(dividend0),
+                    ResOperandFormatter(dividend1),
+                    ResOperandFormatter(divisor0),
+                    ResOperandFormatter(divisor1),
                 );
                 writedoc!(
                     f,
                     "
 
-                        dividend = {dividend_low} + {dividend_high} * 2**128
-                        divisor = {divisor_low} + {divisor_high} * 2**128
+                        dividend = {dividend0} + {dividend1} * 2**128
+                        divisor = {divisor0} + {divisor1} * 2**128
                         quotient, remainder = divmod(dividend, divisor)
-                        memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFF
-                        memory{quotient1} = (quotient >> 64) & 0xFFFFFFFFFFFFFFFF
-                        memory{divisor0} = divisor & 0xFFFFFFFFFFFFFFFF
-                        memory{divisor1} = (divisor >> 64) & 0xFFFFFFFFFFFFFFFF
-                        memory{remainder_low} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-                        memory{remainder_high} = remainder >> 128
-                        if {divisor_high} == 0:
-                            memory{extra0} = (quotient >> 128) & 0xFFFFFFFFFFFFFFFF
-                            memory{extra1} = quotient >> 192
-                        else:
-                            memory{extra0} = (divisor >> 128) & 0xFFFFFFFFFFFFFFFF
-                            memory{extra1} = divisor >> 192
+                        memory{quotient0} = quotient & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{quotient1} = quotient >> 128
+                        memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+                        memory{remainder1} = remainder >> 128
                     "
                 )?;
                 Ok(())
