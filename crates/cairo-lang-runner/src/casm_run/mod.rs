@@ -34,7 +34,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::{Arg, RunResultValue, SierraCasmRunner};
+use crate::{Arg, RunResultValue, SierraCasmRunner, build_hints_dict};
 
 #[cfg(test)]
 mod test;
@@ -73,14 +73,7 @@ struct Secp256k1ExecutionScope {
     ec_points: Vec<secp256k1::Affine>,
 }
 
-/// Is able to build dict from hint offset to hint params.
-/// Mainly used to cache the result in the structure for the future re-use.
-pub trait HintDictBuild {
-    fn build_hints_dict<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        &mut self,
-        instructions: Instructions,
-    ) -> HashMap<usize, Vec<HintParams>>;
-}
+
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
 #[derive(Default)]
@@ -99,35 +92,6 @@ pub struct CairoHintProcessor<'a> {
     pub string_to_hint: HashMap<String, Hint>,
     // The starknet state.
     pub starknet_state: StarknetState,
-}
-
-impl<'a> HintDictBuild for CairoHintProcessor<'a> {
-    fn build_hints_dict<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        &mut self,
-        instructions: Instructions,
-    ) -> HashMap<usize, Vec<HintParams>> {
-        let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
-        let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
-
-        let mut hint_offset = 0;
-
-        for instruction in instructions {
-            if !instruction.hints.is_empty() {
-                // Register hint with string for the hint processor.
-                for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.to_string(), hint.clone());
-                }
-                // Add hint, associated with the instruction offset.
-                hints_dict.insert(
-                    hint_offset,
-                    instruction.hints.iter().map(hint_to_hint_params).collect(),
-                );
-            }
-            hint_offset += instruction.body.op_size();
-        }
-        self.string_to_hint = string_to_hint;
-        hints_dict.clone()
-    }
 }
 
 fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -1820,7 +1784,9 @@ pub struct RunFunctionContext<'a> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 
-pub fn run_function<'a, 'b: 'a, Instructions>(
+/// Runs `program` on layout with prime, and returns the memory layout and ap value.
+/// Run used CairoHintProcessor and StarknetState to emulate Starknet behaviour.
+pub fn run_function_with_starknet_context<'a, 'b: 'a, Instructions>(
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
@@ -1835,20 +1801,22 @@ where
         string_to_hint: HashMap::new(),
         starknet_state: StarknetState::default(),
     };
-    run_function_internal(instructions, builtins, additional_initialization, &mut hint_processor)
+    let (hints_dict, _) = build_hints_dict(instructions.clone());
+    run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
 }
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
-pub fn run_function_internal<'a, 'b: 'a, Instructions, Processor>(
+/// Allows injecting custom HintProcessor.
+pub fn run_function<'a, 'b: 'a, Instructions>(
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<VirtualMachineError>>,
-    hint_processor: &mut Processor,
+    hint_processor: &mut dyn HintProcessor,
+    hints_dict: HashMap<usize, Vec<HintParams>>,
 ) -> Result<RunFunctionRes, Box<VirtualMachineError>>
 where
-    Processor: HintDictBuild + HintProcessor,
     Instructions: Iterator<Item = &'a Instruction> + Clone,
 {
     let data: Vec<MaybeRelocatable> = instructions
@@ -1859,7 +1827,6 @@ where
         .collect();
 
     let data_len = data.len();
-    let hints_dict = hint_processor.build_hints_dict(instructions);
     let program = Program {
         builtins,
         prime: PRIME_STR.to_string(),
