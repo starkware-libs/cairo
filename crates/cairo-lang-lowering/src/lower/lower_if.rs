@@ -12,7 +12,9 @@ use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringRe
 use super::{lower_expr, lowered_expr_to_block_scope_end};
 use crate::ids::SemanticFunctionIdEx;
 use crate::lower::context::VarRequest;
-use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
+use crate::lower::{
+    create_subscope_with_bound_refs, generators, lower_block, lower_expr_to_var_usage,
+};
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
 
 #[allow(dead_code)]
@@ -140,8 +142,8 @@ pub fn lower_expr_if_eq(
     } else if is_zero(ctx, expr_a) {
         lower_expr(ctx, builder, expr_b)?.var(ctx, builder)?
     } else {
-        let lowered_a = lower_expr(ctx, builder, expr_a)?.var(ctx, builder)?;
-        let lowered_b = lower_expr(ctx, builder, expr_b)?.var(ctx, builder)?;
+        let lowered_a = lower_expr_to_var_usage(ctx, builder, expr_a)?;
+        let lowered_b = lower_expr_to_var_usage(ctx, builder, expr_b)?;
         let ret_ty = corelib::core_felt252_ty(ctx.db.upcast());
         let call_result = generators::Call {
             function: corelib::felt252_sub(ctx.db.upcast()).lowered(ctx.db),

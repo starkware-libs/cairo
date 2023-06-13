@@ -242,7 +242,7 @@ impl LoweredExpr {
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, builder),
             LoweredExpr::Member(member_path, _location) => {
-                Ok(builder.get_ref(ctx, &member_path).unwrap())
+                Ok(builder.get_ref(ctx, &member_path).unwrap().var_id)
             }
             LoweredExpr::Snapshot { expr, location } => {
                 let (original, snapshot) =
