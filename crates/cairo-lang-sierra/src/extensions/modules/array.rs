@@ -1,3 +1,4 @@
+use super::int::unsigned::Uint32Type;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
 use super::starknet::getter::boxed_ty;
