@@ -47,12 +47,7 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
                 ParamSignature::new(felt252_ty.clone()),
             ],
             vec![
-                OutputVarInfo {
-                    ty: pedersen_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(pedersen_ty, 0),
                 OutputVarInfo {
                     ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

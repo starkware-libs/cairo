@@ -6,9 +6,8 @@ use super::range_check::RangeCheckType;
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
-    SpecializationContext,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureOnlyGenericLibfunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     args_as_two_types, NamedLibfunc, NamedType, OutputVarReferenceInfo,
@@ -118,12 +117,7 @@ impl NamedLibfunc for DowncastLibfunc {
         }
 
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),

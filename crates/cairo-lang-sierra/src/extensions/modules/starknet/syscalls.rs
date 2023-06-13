@@ -58,12 +58,7 @@ impl<T: SyscallGenericLibfunc> NoGenericArgsGenericLibfunc for T {
             ty: gas_builtin_ty.clone(),
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
         };
-        let system_output_info = OutputVarInfo {
-            ty: system_ty.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 1,
-            }),
-        };
+        let system_output_info = OutputVarInfo::new_builtin(system_ty.clone(), 1);
         Ok(LibfuncSignature {
             param_signatures: chain!(
                 [

@@ -398,6 +398,15 @@ pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
 }
+impl OutputVarInfo {
+    /// Convenience function to get the common OutputVarInfo for builtins.
+    pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
+        Self {
+            ty: builtin,
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+        }
+    }
+}
 
 /// Contains information on the variables returned in a single libfunc branch
 /// for all the output variables in an output branch.
