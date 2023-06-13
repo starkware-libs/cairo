@@ -36,7 +36,7 @@ use crate::ids::{
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
-    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VariableId,
+    BlockId, FlatLowered, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage, VariableId,
 };
 
 mod block_builder;
@@ -438,6 +438,24 @@ fn lower_single_pattern(
     Ok(())
 }
 
+/// Lowers a semantic expression to a VarUsage.
+///
+/// For example, if we have the code:
+/// foo(a + b)
+///
+/// then `a + b` will be assigned  variable and a VarUsage object whose origin
+/// is the location of the `a + b` expression.
+fn lower_expr_to_var_usage(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr_id: semantic::ExprId,
+) -> LoweringResult<VarUsage> {
+    Ok(VarUsage {
+        var_id: lower_expr(ctx, builder, expr_id)?.var(ctx, builder)?,
+        location: ctx.get_location(ctx.function_body.exprs[expr_id].stable_ptr().untyped()),
+    })
+}
+
 /// Lowers a semantic expression.
 fn lower_expr(
     ctx: &mut LoweringContext<'_, '_>,
@@ -583,7 +601,7 @@ fn lower_expr_function_call(
     let location = ctx.get_location(expr.stable_ptr.untyped());
 
     // TODO(spapini): Use the correct stable pointer.
-    let arg_inputs = lower_exprs_as_vars(ctx, &expr.args, builder)?;
+    let arg_inputs = lower_exprs_to_var_usages(ctx, &expr.args, builder)?;
     let ref_args_iter = expr
         .args
         .iter()
@@ -593,7 +611,7 @@ fn lower_expr_function_call(
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
-        return Err(LoweringFlowError::Panic(input));
+        return Err(LoweringFlowError::Panic(input.var_id));
     }
 
     // The following is relevant only to extern functions.
@@ -604,7 +622,7 @@ fn lower_expr_function_call(
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
-                inputs: arg_inputs,
+                inputs: arg_inputs.into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
                 member_paths: ref_args_iter.cloned().collect(),
                 location,
             };
@@ -636,7 +654,7 @@ fn perform_function_call(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     function: semantic::FunctionId,
-    inputs: Vec<VariableId>,
+    inputs: Vec<VarUsage>,
     extra_ret_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
     location: LocationId,
@@ -1061,11 +1079,11 @@ fn extract_concrete_enum(
 
 /// Lowers a sequence of expressions and return them all. If the flow ended in the middle,
 /// propagates that flow error without returning any variable.
-fn lower_exprs_as_vars(
+fn lower_exprs_to_var_usages(
     ctx: &mut LoweringContext<'_, '_>,
     args: &[semantic::ExprFunctionCallArg],
     builder: &mut BlockBuilder,
-) -> Result<Vec<VariableId>, LoweringFlowError> {
+) -> Result<Vec<VarUsage>, LoweringFlowError> {
     // Since value expressions may depends on the same variables as the references, which must be
     // variables, all expressions must be evaluated before using the references for binding into the
     // call.
@@ -1074,7 +1092,7 @@ fn lower_exprs_as_vars(
     let mut value_iter = args
         .iter()
         .filter_map(|arg| try_extract_matches!(arg, ExprFunctionCallArg::Value))
-        .map(|arg_expr_id| lower_expr(ctx, builder, *arg_expr_id)?.var(ctx, builder))
+        .map(|arg_expr_id| lower_expr_to_var_usage(ctx, builder, *arg_expr_id))
         .collect::<Result<Vec<_>, _>>()?
         .into_iter();
     Ok(args
