@@ -54,6 +54,7 @@ jobs:
       - run: |
           cargo ${{ matrix.cmd }}
   test:
+    if: ${{ always() }}
     needs: parallel-tests
     runs-on: ubuntu-latest
     steps:
