@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
-    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, SubmoduleId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
+    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -69,28 +69,37 @@ impl AbiBuilder {
         let mut builder = Self::default();
         let module_id = ModuleId::Submodule(submodule_id);
 
-        // TODO(yuval): iterate module_items and match the items instead of the multiple AST queries
-        // here.
+        let mut free_functions = Vec::new();
+        let mut enums = Vec::new();
+        let mut structs = Vec::new();
+        let mut impls = Vec::new();
+        for item in &*db.module_items(module_id).unwrap_or_default() {
+            match item {
+                ModuleItemId::FreeFunction(id) => free_functions.push(*id),
+                ModuleItemId::Struct(id) => structs.push(*id),
+                ModuleItemId::Enum(id) => enums.push(*id),
+                ModuleItemId::Impl(id) => impls.push(*id),
+                _ => {}
+            }
+        }
 
         // Get storage type for later validations.
-        // TODO(yuval): This is a temporary measure to find the Storage type. Instead, get
-        // storage type from aux data from the plugin.
         let mut storage_type = None;
-        for (id, _) in db.module_structs(module_id).unwrap_or_default() {
-            let strct_name = id.name(db.upcast());
-            if strct_name == "ContractState" {
+        for struct_id in structs {
+            let struct_name = struct_id.name(db.upcast());
+            if struct_name == "ContractState" {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }
                 storage_type = Some(db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(
                     db.intern_concrete_struct(ConcreteStructLongId {
-                        struct_id: id,
+                        struct_id,
                         generic_args: vec![],
                     }),
                 ))));
             }
             // Forbid a struct named Event.
-            if strct_name == "Event" {
+            if struct_name == "Event" {
                 return Err(ABIError::EventMustBeEnum);
             }
         }
@@ -98,63 +107,74 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
-        // Add impls to ABI.
-        for (id, _) in db.module_impls(module_id).unwrap_or_default() {
-            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
-                builder.add_impl(db, id, storage_type)?;
+        // Find the Event type and add impls to ABI.
+        for impl_id in impls {
+            // Handle external impls.
+            if impl_id
+                .has_attr(db.upcast(), EXTERNAL_ATTR)
+                .map_err(|_| ABIError::CompilationError)?
+            {
+                builder.add_impl(db, impl_id, storage_type)?;
                 continue;
             }
+
+            // Handle impls of starknet::Event.
             // Check if we have an Event derive plugin data on the impl.
-            let module_file = id.module_file_id(db.upcast());
+            let module_file = impl_id.module_file_id(db.upcast());
             let generate_info =
                 db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
             let Some(generate_info) = generate_info else { continue };
             let Some(mapper) = generate_info.aux_data.0.as_any(
-                    ).downcast_ref::<DynPluginAuxData>() else { continue; };
+                            ).downcast_ref::<DynPluginAuxData>() else { continue; };
             let Some(aux_data) = mapper.0.as_any(
-                    ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
-            let concrete_trait_id = db.impl_def_concrete_trait(id)?;
-            let ty =
+                            ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
+            let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
+            let event_type =
                 extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
-            builder.event_derive_data.insert(ty, aux_data.event_data.clone());
+            builder.event_derive_data.insert(event_type, aux_data.event_data.clone());
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
         let mut ctor = None;
-        for (id, _) in db.module_free_functions(module_id).unwrap_or_default() {
-            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
-                builder.add_free_function(db, id, storage_type)?;
-            } else if id
+        for free_function_id in free_functions {
+            if free_function_id
+                .has_attr(db.upcast(), EXTERNAL_ATTR)
+                .map_err(|_| ABIError::CompilationError)?
+            {
+                builder.add_free_function(db, free_function_id, storage_type)?;
+            } else if free_function_id
                 .has_attr(db.upcast(), CONSTRUCTOR_ATTR)
                 .map_err(|_| ABIError::CompilationError)?
             {
                 if ctor.is_some() {
                     return Err(ABIError::MultipleConstructors);
                 } else {
-                    ctor = Some(id);
-                    builder.add_constructor(db, id, storage_type)?;
+                    ctor = Some(free_function_id);
+                    builder.add_constructor(db, free_function_id, storage_type)?;
                 }
-            } else if id
+            } else if free_function_id
                 .has_attr(db.upcast(), L1_HANDLER_ATTR)
                 .map_err(|_| ABIError::CompilationError)?
             {
-                builder.add_l1_handler(db, id, storage_type)?;
+                builder.add_l1_handler(db, free_function_id, storage_type)?;
             }
         }
 
-        // Add events.
-        for (id, _) in db.module_enums(module_id).unwrap_or_default() {
-            let enm_name = id.name(db.upcast());
+        // Add events to ABI.
+        for enum_id in enums {
+            let enm_name = enum_id.name(db.upcast());
             if enm_name == "Event"
-                && id.has_attr(db.upcast(), EVENT_ATTR).map_err(|_| ABIError::CompilationError)?
+                && enum_id
+                    .has_attr(db.upcast(), EVENT_ATTR)
+                    .map_err(|_| ABIError::CompilationError)?
             {
                 // Check that the enum has no generic parameters.
-                if !db.enum_generic_params(id).unwrap_or_default().is_empty() {
+                if !db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
                     return Err(ABIError::EventWithGenericParams);
                 }
                 // Get the ConcreteEnumId from the EnumId.
-                let concrete_enum_id = db
-                    .intern_concrete_enum(ConcreteEnumLongId { enum_id: id, generic_args: vec![] });
+                let concrete_enum_id =
+                    db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args: vec![] });
                 // Get the TypeId of the enum.
                 let ty =
                     db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
