@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 
@@ -13,7 +13,7 @@ pub fn create_bool(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     variant: semantic::ConcreteVariant,
-    location: StableLocationOption,
+    location: StableLocation,
 ) -> VariableId {
     let semantic_db = ctx.db.upcast();
 
@@ -92,6 +92,7 @@ pub fn lower_logical_op(
                 var_ids: vec![ctx.new_var(VarRequest { ty: unit_ty, location })],
             },
         ],
+        location,
     });
     builder.merge_and_end_with_match(
         ctx,

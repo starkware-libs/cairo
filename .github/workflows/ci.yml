@@ -42,14 +42,11 @@ jobs:
           - nextest run -p cairo-lang-utils
           - test -p tests
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
           toolchain: nightly-2022-11-03
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
@@ -67,10 +64,9 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           components: rustfmt
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
@@ -80,11 +76,8 @@ jobs:
   cairofmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_fmt.sh --check
 
@@ -92,11 +85,8 @@ jobs:
   cairotest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_test.sh
       - run: scripts/starknet_test.sh
@@ -105,11 +95,10 @@ jobs:
   udeps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         name: "Rust Toolchain Setup"
         with:
-          profile: minimal
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - name: "Download and run cargo-udeps"
@@ -122,11 +111,10 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-          toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -134,10 +122,8 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
@@ -145,7 +131,7 @@ jobs:
   sierra-updated-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: '0'
       - run: >

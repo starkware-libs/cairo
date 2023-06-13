@@ -5,7 +5,7 @@
 
 use std::ops::{Deref, DerefMut};
 
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Diagnostics;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::{ConcreteEnumId, ConcreteVariant};
@@ -109,7 +109,7 @@ pub struct Variable {
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
-    pub location: StableLocationOption,
+    pub location: StableLocation,
 }
 
 /// Lowered statement.
@@ -176,7 +176,7 @@ pub struct StatementCall {
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
-    pub location: StableLocationOption,
+    pub location: StableLocation,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -250,7 +250,7 @@ pub struct MatchExternInfo {
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
     /// Location for the call.
-    pub location: StableLocationOption,
+    pub location: StableLocation,
 }
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
@@ -262,6 +262,8 @@ pub struct MatchEnumInfo {
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
+    /// Location for the match.
+    pub location: StableLocation,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

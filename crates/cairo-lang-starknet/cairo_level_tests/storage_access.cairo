@@ -53,12 +53,12 @@ mod TestContract {
     }
 
     #[external]
-    fn set_data(ref self: Storage, value: AbcEtc) {
+    fn set_data(ref self: ContractState, value: AbcEtc) {
         self.data.write(value);
     }
 
     #[external]
-    fn get_data(self: @Storage) -> AbcEtc {
+    fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
     }
 }

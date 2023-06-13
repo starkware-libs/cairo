@@ -36,6 +36,7 @@ use salsa;
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
+use crate::diagnostic_utils::StableLocation;
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
@@ -48,6 +49,8 @@ pub trait LanguageElementId {
     fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
         self.module_file_id(db).1
     }
+
+    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation;
 }
 pub trait TopLevelLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
@@ -121,6 +124,10 @@ macro_rules! define_language_element_id_partial {
             }
             fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
                 self.stable_ptr(db).untyped()
+            }
+            fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+                let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
+                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
             }
         }
     };
@@ -205,6 +212,14 @@ macro_rules! define_language_element_id_as_enum {
                     )*
                 }
             }
+            fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+                 match self {
+                    $(
+                        $enum_name::$variant(id) => id.stable_location(db),
+                    )*
+                }
+            }
+
         }
 
         // Conversion from enum to its child.

@@ -26,28 +26,15 @@ pub enum ReferencesError {
 
 pub type StatementRefs = HashMap<VarId, ReferenceValue>;
 
-/// Information about the location of a variable that is not dependent on the actual AP values.
-/// Used for recompilability checks.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum VariableApIndependentLocationInfo {
-    /// The variable is on the continuous-stack, with the given index. 0 represents the oldest
-    /// element on the stack.
-    ContinuousStack(usize),
-    /// The variable was defined as a local variable. May be a function param, or an explicitly
-    /// defined local.
-    Local,
-    /// Any other case.
-    Other,
-}
-
 /// A Sierra reference to a value.
 /// Corresponds to an argument or return value of a Sierra statement.
 #[derive(Clone, Debug)]
 pub struct ReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// Location information for the variable that does not depend on AP.
-    pub ap_independent_location_info: VariableApIndependentLocationInfo,
+    /// The index of the variable on the continuous-stack. 0 represents the oldest element on the
+    /// stack.
+    pub stack_idx: Option<usize>,
     /// The location the value was introduced.
     pub introduction_point: IntroductionPoint,
 }
@@ -78,8 +65,8 @@ pub struct IntroductionPoint {
 pub struct OutputReferenceValue {
     pub expression: ReferenceExpression,
     pub ty: ConcreteTypeId,
-    /// Location information for the variable that does not depend on AP.
-    pub ap_independent_location_info: VariableApIndependentLocationInfo,
+    /// The index of the variable on the continuous-stack.
+    pub stack_idx: Option<usize>,
     /// The statememt and output index where the value was introduced.
     /// Statement may be New if it is to be populated later.
     pub introduction_point: OutputReferenceValueIntroductionPoint,
@@ -159,7 +146,7 @@ pub fn build_function_parameters_refs(
                             .collect(),
                     },
                     ty: param.ty.clone(),
-                    ap_independent_location_info: VariableApIndependentLocationInfo::Local,
+                    stack_idx: None,
                     introduction_point: IntroductionPoint {
                         source_statement_idx: None,
                         destination_statement_idx: func.entry_point,

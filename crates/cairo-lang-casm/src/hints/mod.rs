@@ -71,6 +71,15 @@ pub enum StarknetHint {
     SetNonce { value: ResOperand },
     #[codec(index = 12)]
     SetSignature { start: ResOperand, end: ResOperand },
+    #[codec(index = 13)]
+    PopLog {
+        value: ResOperand,
+        opt_variant: CellRef,
+        keys_start: CellRef,
+        keys_end: CellRef,
+        data_start: CellRef,
+        data_end: CellRef,
+    },
 }
 
 // Represents a cairo core hint.
@@ -682,7 +691,7 @@ impl Display for CoreHint {
                     curr = {}
                     end = {}
                     while curr != end:
-                        print(memory[curr])
+                        print(hex(memory[curr]))
                         curr += 1
                 ",
                 ResOperandFormatter(start),
@@ -759,6 +768,16 @@ impl Display for StarknetHint {
                     ResOperandFormatter(start),
                     ResOperandFormatter(end)
                 )
+            }
+            StarknetHint::PopLog {
+                value: _,
+                opt_variant: _,
+                keys_start: _,
+                keys_end: _,
+                data_start: _,
+                data_end: _,
+            } => {
+                write!(f, "raise NotImplemented")
             }
         }
     }
