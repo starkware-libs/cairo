@@ -1,8 +1,9 @@
 use itertools::Itertools;
 
-use super::args_as_single_type;
 use super::error::{ExtensionError, SpecializationError};
+use super::range_check::RangeCheckType;
 use super::type_specialization_context::TypeSpecializationContext;
+use super::{args_as_single_type, NamedType};
 use crate::ids::{ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId};
 use crate::program::{Function, FunctionSignature, GenericArg};
 
@@ -397,6 +398,15 @@ pub enum DeferredOutputKind {
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
+}
+impl OutputVarInfo {
+    /// Convenience function to get the common OutputVarInfo for builtins.
+    pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
+        Self {
+            ty: builtin,
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+        }
+    }
 }
 
 /// Contains information on the variables returned in a single libfunc branch

@@ -118,12 +118,7 @@ impl NamedLibfunc for DowncastLibfunc {
         }
 
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),

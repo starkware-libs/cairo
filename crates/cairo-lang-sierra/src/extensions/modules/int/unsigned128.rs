@@ -115,12 +115,7 @@ impl GenericLibfunc for Uint128OperationLibfunc {
         }
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -218,12 +213,7 @@ impl NoGenericArgsGenericLibfunc for U128MulGuaranteeVerifyLibfunc {
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(context.get_concrete_type(U128MulGuaranteeType::id(), &[])?),
             ],
-            vec![OutputVarInfo {
-                ty: range_check_type,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                    param_idx: 0,
-                }),
-            }],
+            vec![OutputVarInfo::new_builtin(range_check_type, 0)],
             SierraApChange::Known { new_vars_only: false },
         ))
     }
@@ -241,12 +231,7 @@ impl NoGenericArgsGenericLibfunc for Uint128sFromFelt252Libfunc {
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -303,12 +288,7 @@ impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
             ],
             vec![
                 // bitwise
-                OutputVarInfo {
-                    ty: bitwise_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(bitwise_ty, 0),
                 // result
                 OutputVarInfo {
                     ty: u128_ty,

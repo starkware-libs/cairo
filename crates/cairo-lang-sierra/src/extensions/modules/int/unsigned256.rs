@@ -73,12 +73,7 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
                 ParamSignature::new(nonzero_ty(context, &u256_type)?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 simple_deref_u256_output_info.clone(),
                 simple_deref_u256_output_info,
             ],
@@ -104,12 +99,7 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
                 ParamSignature::new(get_u256_type(context)?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 OutputVarInfo {
                     ty: context.get_concrete_type(Uint128Type::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::SimpleDerefs,
