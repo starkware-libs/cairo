@@ -38,7 +38,10 @@ End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -111,7 +114,10 @@ End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -202,7 +208,10 @@ End:
   Return(v7, v10)
 
 
-Generated:
+Generated lowering for source location:
+  loop {
+  ^****^
+
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
 Statements:
@@ -285,7 +294,10 @@ End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -374,7 +386,10 @@ End:
   Return(v0)
 
 
-Generated:
+Generated lowering for source location:
+  loop {
+  ^****^
+
 Parameters:
 blk0 (root):
 Statements:
