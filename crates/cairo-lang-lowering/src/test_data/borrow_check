@@ -129,7 +129,7 @@ Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
 Statements:
   () <- test::use_a_drop(v0)
-  (v4: core::PanicResult::<((),)>) <- test::bar()
+  (v4: core::panics::PanicResult::<((),)>) <- test::bar()
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -140,13 +140,13 @@ blk1:
 Statements:
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
-  (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
+  (v9: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
 End:
   Return(v9)
 
 blk2:
 Statements:
-  (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
+  (v10: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
 End:
   Return(v10)
 

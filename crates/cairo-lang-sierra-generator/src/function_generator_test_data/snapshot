@@ -85,7 +85,7 @@ store_temp<RangeCheck>([0]) -> ([7])
 store_temp<u32>([3]) -> ([8])
 store_temp<u32>([4]) -> ([9])
 function_call<user@core::integer::U32Add::add>([7], [8], [9]) -> ([5], [6])
-enum_match<core::PanicResult::<(core::integer::u32,)>>([6]) { fallthrough([10]) label10([11]) }
+enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([6]) { fallthrough([10]) label10([11]) }
 branch_align() -> ()
 drop<Tuple<u32>>([10]) -> ()
 rename<u32>([1]) -> ([12])
@@ -94,27 +94,27 @@ store_temp<RangeCheck>([5]) -> ([16])
 store_temp<u32>([12]) -> ([17])
 store_temp<u32>([13]) -> ([18])
 function_call<user@core::integer::U32Add::add>([16], [17], [18]) -> ([14], [15])
-enum_match<core::PanicResult::<(core::integer::u32,)>>([15]) { fallthrough([19]) label12([20]) }
+enum_match<core::panics::PanicResult::<(core::integer::u32,)>>([15]) { fallthrough([19]) label12([20]) }
 branch_align() -> ()
 drop<Tuple<u32>>([19]) -> ()
 struct_construct<Unit>() -> ([21])
 struct_construct<Tuple<Unit>>([21]) -> ([22])
-enum_init<core::PanicResult::<((),)>, 0>([22]) -> ([23])
+enum_init<core::panics::PanicResult::<((),)>, 0>([22]) -> ([23])
 store_temp<RangeCheck>([14]) -> ([24])
-store_temp<core::PanicResult::<((),)>>([23]) -> ([25])
+store_temp<core::panics::PanicResult::<((),)>>([23]) -> ([25])
 return([24], [25])
 label12:
 branch_align() -> ()
-enum_init<core::PanicResult::<((),)>, 1>([20]) -> ([26])
+enum_init<core::panics::PanicResult::<((),)>, 1>([20]) -> ([26])
 store_temp<RangeCheck>([14]) -> ([27])
-store_temp<core::PanicResult::<((),)>>([26]) -> ([28])
+store_temp<core::panics::PanicResult::<((),)>>([26]) -> ([28])
 return([27], [28])
 label13:
 label10:
 branch_align() -> ()
 drop<u32>([1]) -> ()
-enum_init<core::PanicResult::<((),)>, 1>([11]) -> ([29])
+enum_init<core::panics::PanicResult::<((),)>, 1>([11]) -> ([29])
 store_temp<RangeCheck>([5]) -> ([30])
-store_temp<core::PanicResult::<((),)>>([29]) -> ([31])
+store_temp<core::panics::PanicResult::<((),)>>([29]) -> ([31])
 return([30], [31])
 label11:

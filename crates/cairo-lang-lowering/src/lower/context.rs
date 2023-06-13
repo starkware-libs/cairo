@@ -69,8 +69,12 @@ impl<'db> VariableAllocator<'db> {
                 .map_err(InferenceError::Failed)
                 .and_then(|info| info.droppable),
             destruct_impl: ty_info
+                .clone()
                 .map_err(InferenceError::Failed)
                 .and_then(|info| info.destruct_impl),
+            panic_destruct_impl: ty_info
+                .map_err(InferenceError::Failed)
+                .and_then(|info| info.panic_destruct_impl),
             ty: req.ty,
             location: req.location,
         })
