@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut, Index};
 use std::sync::Arc;
 
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{LanguageElementId, ModuleFileId};
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -77,8 +77,8 @@ impl<'db> VariableAllocator<'db> {
     }
 
     /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocationOption {
-        StableLocationOption::new(self.module_file_id, stable_ptr)
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocation {
+        StableLocation::new(self.module_file_id, stable_ptr)
     }
 }
 impl<'db> Index<VariableId> for VariableAllocator<'db> {
@@ -189,7 +189,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
     }
 
     /// Retrieves the StableLocation of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocationOption {
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> StableLocation {
         self.variables.get_location(stable_ptr)
     }
 }
@@ -197,7 +197,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
 /// Request for a lowered variable allocation.
 pub struct VarRequest {
     pub ty: semantic::TypeId,
-    pub location: StableLocationOption,
+    pub location: StableLocation,
 }
 
 /// Representation of the value of a computed expression.
@@ -208,14 +208,14 @@ pub enum LoweredExpr {
     /// The expression value is a tuple.
     Tuple {
         exprs: Vec<LoweredExpr>,
-        location: StableLocationOption,
+        location: StableLocation,
     },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
-    Member(ExprVarMemberPath, StableLocationOption),
+    Member(ExprVarMemberPath, StableLocation),
     Snapshot {
         expr: Box<LoweredExpr>,
-        location: StableLocationOption,
+        location: StableLocation,
     },
 }
 impl LoweredExpr {
@@ -278,7 +278,7 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
     pub member_paths: Vec<semantic::ExprVarMemberPath>,
-    pub location: StableLocationOption,
+    pub location: StableLocation,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -361,7 +361,7 @@ pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
     Panic(VariableId),
-    Return(VariableId, StableLocationOption),
+    Return(VariableId, StableLocation),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),
