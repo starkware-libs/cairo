@@ -228,6 +228,8 @@ impl std::fmt::Debug for ReducedCompiledInvocation {
 ///     ...
 ///     k([0], [2],..., [n_k])
 /// }
+///
+/// Currently, only works if all the libfunc's types (both inputs and output) are of size 1.
 pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> ReducedCompiledInvocation {
     let long_id = cairo_lang_sierra::ConcreteLibfuncLongIdParser::new()
         .parse(libfunc.to_string().as_str())
@@ -239,13 +241,11 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
 
     let mut type_sizes: TypeSizeMap = Default::default();
     for param in libfunc.param_signatures() {
-        type_sizes
-            .insert(param.ty.clone(), context.try_get_type_info(param.ty.clone()).unwrap().size);
+        type_sizes.insert(param.ty.clone(), 1);
     }
     for branch_signature in libfunc.branch_signatures() {
         for var in &branch_signature.vars {
-            type_sizes
-                .insert(var.ty.clone(), context.try_get_type_info(var.ty.clone()).unwrap().size);
+            type_sizes.insert(var.ty.clone(), 1);
         }
     }
     let program_info = ProgramInfo {

@@ -62,7 +62,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
-                size: 1,
+                zero_sized: false,
             })
         } else if id == "UninitializedInt".into() {
             Some(TypeInfo {
@@ -70,7 +70,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
-                size: 0,
+                zero_sized: true,
             })
         } else if id == "ArrayU128".into() {
             Some(TypeInfo {
@@ -78,7 +78,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: false,
-                size: 2,
+                zero_sized: false,
             })
         } else {
             None

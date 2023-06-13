@@ -76,8 +76,8 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Implementation of [CostInfoProvider] given a [TypeSizeMap].
-impl<'a> CostInfoProvider for TypeSizeMap {
+/// Implementation of [CostInfoProvider] for [TypeSizeMap].
+impl CostInfoProvider for TypeSizeMap {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self[ty].into_or_panic()
     }
@@ -106,7 +106,7 @@ pub fn calc_gas_precost_info(
 /// Calculates gas pre-cost information for a given program - the gas costs of non-step tokens.
 pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(&program, &registry).unwrap();
+    let type_sizes = get_type_size_map(program, &registry).unwrap();
 
     Ok(compute_costs::compute_costs(
         program,
@@ -128,7 +128,7 @@ pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     ap_change_var_value: ApChangeVarValue,
 ) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
-    let type_sizes = get_type_size_map(&program, &registry).unwrap();
+    let type_sizes = get_type_size_map(program, &registry).unwrap();
     calc_gas_info_inner(
         program,
         |statement_future_cost, idx, libfunc_id| {

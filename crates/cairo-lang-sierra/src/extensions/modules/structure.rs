@@ -60,7 +60,7 @@ impl StructConcreteType {
         let mut duplicatable = true;
         let mut droppable = true;
         let mut members: Vec<ConcreteTypeId> = Vec::new();
-        let mut size = 0;
+        let mut zero_sized = true;
         for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
@@ -75,7 +75,7 @@ impl StructConcreteType {
             if !info.droppable {
                 droppable = false;
             }
-            size += info.size;
+            zero_sized = zero_sized && info.zero_sized;
             members.push(ty);
         }
         Ok(StructConcreteType {
@@ -87,7 +87,7 @@ impl StructConcreteType {
                 duplicatable,
                 droppable,
                 storable: true,
-                size,
+                zero_sized,
             },
             members,
         })
