@@ -23,6 +23,7 @@
         "contract_address_try_from_felt252",
         "deploy_syscall",
         "disable_ap_tracking",
+        "downcast",
         "drop",
         "dup",
         "ec_neg",
@@ -127,6 +128,7 @@
         "u8_wide_mul",
         "unbox",
         "unwrap_non_zero",
+        "upcast",
         "withdraw_gas",
         "withdraw_gas_all"
     ]
