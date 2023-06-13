@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
+description = "Compiler executable for the Sierra intemediate representation"
 
 [dependencies]
 anyhow.workspace = true
@@ -11,8 +12,8 @@ log.workspace = true
 clap.workspace = true
 indoc.workspace = true
 
-cairo-lang-sierra = { path = "../../cairo-lang-sierra" }
-cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc1" }
+cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "2.0.0-rc1" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc1", features = [
     "env_logger",
 ] }
