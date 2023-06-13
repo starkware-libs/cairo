@@ -298,8 +298,7 @@
     │   │       │   │   │   │           ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │           │   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'some_macro'
-    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   ├── bang (kind: TerminalNot)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenNot): '!'
