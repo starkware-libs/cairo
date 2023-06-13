@@ -47,210 +47,135 @@ fn build_u256_divmod(
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, dividend, divisor] = builder.try_get_refs()?;
     let [range_check] = range_check.try_unpack()?;
-    let [dividend_low, dividend_high] = dividend.try_unpack()?;
-    let [divisor_low, divisor_high] = divisor.try_unpack()?;
+    let [dividend0, dividend1] = dividend.try_unpack()?;
+    let [divisor0, divisor1] = divisor.try_unpack()?;
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(16) range_check;
-        deref dividend_low;
-        deref dividend_high;
-        deref divisor_low;
-        deref divisor_high;
+        buffer(7) range_check;
+        deref dividend0;
+        deref dividend1;
+        deref divisor0;
+        deref divisor1;
     };
 
     casm_build_extend! {casm_builder,
+        const zero = 0;
         const one = 1;
-        const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
+        const u128_bound_minus_i16_upper_bound = u128::MAX - i16::MAX as u128;
+        const i16_lower_bound = BigInt::from(i16::MIN);
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
-        const u128_half = u128::MAX / 2 + 1;
+        const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         let orig_range_check = range_check;
 
-        // Remainder 128-bit limbs.
-        tempvar remainder_low;
-        tempvar remainder_high;
-        // Quotient 128-bit limbs. These are needed for the output.
-        tempvar quotient_low;
-        tempvar quotient_high;
-        // quotient_low 64-bit limbs.
+        // Quotient 128-bit limbs.
         tempvar quotient0;
         tempvar quotient1;
-        // divisor_low 64-bit limbs.
-        tempvar divisor0;
-        tempvar divisor1;
-        // 64-bit limbs for either quotient_high or divisor_high - since only once of them can
-        // be non-zero.
-        tempvar extra0;
-        tempvar extra1;
+        // Remainder 128-bit limbs.
+        tempvar remainder0;
+        tempvar remainder1;
 
         // Divide in a hint.
         hint Uint256DivMod {
-            dividend_low: dividend_low,
-            dividend_high: dividend_high,
-            divisor_low: divisor_low,
-            divisor_high: divisor_high
+            dividend0: dividend0,
+            dividend1: dividend1,
+            divisor0: divisor0,
+            divisor1: divisor1
         } into {
-            quotient0:quotient0,
-            quotient1:quotient1,
-            divisor0:divisor0,
-            divisor1:divisor1,
-            extra0:extra0,
-            extra1:extra1,
-            remainder_low:remainder_low,
-            remainder_high:remainder_high
+            quotient0: quotient0,
+            quotient1: quotient1,
+            remainder0: remainder0,
+            remainder1: remainder1
         };
 
-        // Verify the hint consistency and ranges.
-        // Assert range on quotient limbs.
+        // Verify the hint ranges.
         assert quotient0 = *(range_check++);
-        tempvar a = quotient0 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
         assert quotient1 = *(range_check++);
-        tempvar a = quotient1 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
-
-        // Assert range on divisor limbs.
-        assert divisor0 = *(range_check++);
-        tempvar a = divisor0 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
-        assert divisor1 = *(range_check++);
-        tempvar a = divisor1 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
-
-        // Assert range on extra limbs.
-        assert extra0 = *(range_check++);
-        tempvar a = extra0 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
-        assert extra1 = *(range_check++);
-        tempvar a = extra1 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
-
-        // Assert range on remainder limbs.
-        assert remainder_low = *(range_check++);
-        assert remainder_high = *(range_check++);
+        assert remainder0 = *(range_check++);
+        assert remainder1 = *(range_check++);
 
         // Assert remainder is less than divisor.
-        tempvar high_diff = divisor_high - remainder_high;
-        tempvar low_diff = divisor_low - remainder_low;
-        tempvar low_diff_min_1 = low_diff - one;
-        jump HighDiff if high_diff != 0;
-        assert low_diff_min_1 = *(range_check++);
+        tempvar diff1 = divisor1 - remainder1;
+        tempvar diff0 = divisor0 - remainder0;
+        tempvar diff0_min_1 = diff0 - one;
+        jump HighDiff if diff1 != 0;
+        assert diff0_min_1 = *(range_check++);
         jump After;
-        HighDiff:
-        assert high_diff = *(range_check++);
-        After:
-
-        // Check consistency for divisor and quotient.
-        tempvar shifted_divisor1 = divisor1 * u64_limit;
-        assert divisor_low = divisor0 + shifted_divisor1;
-        tempvar shifted_quotient1 = quotient1 * u64_limit;
-        assert quotient_low = quotient0 + shifted_quotient1;
-
-        // Multiply in parts.
-        // Check that divisor * quotient + remainder - dividend = 0.
-        // This can be rewritten by opening to limbs:
-        //   2**0   * (divisor0 * quotient0 + remainder_low - dividend_low) +
-        //   2**64  * (divisor1 * quotient0 + divisor0 * quotient1) +
-        //   2**128 * (divisor1 * quotient1 + remainder_high - dividend_high + ...) +
-        //   2**192 * (...) = 0
-
-        // Limb0.
-        // First accumulate the coefficients of 2**0. They are bounded by 2**128, so no overflow
-        // can happen.
-        const zero_const = 0;
-        tempvar zero = zero_const;
-        tempvar element = divisor0 * quotient0;
-        tempvar accum0 = remainder_low + element;
-        tempvar accum1 = accum0 - dividend_low;
-        // The result is in [-2**128, 2*2**128).
-        // It should be divisible by 2**64, since all the parts not divisible by 2**64 were added,
-        // and the end result should be 0.
-        // Divide by 2**64 and check that we got an integer. This is the carry for the next
-        // computation.
-        tempvar accum2 = accum1 / u64_limit;
-        tempvar temp = accum2 + u128_half;
-        assert temp = *(range_check++);
-
-        // The next limb computation is similar, only we also accumulate the carry from the previous
-        // computations.
-        // Limb1.
-        tempvar element = divisor1 * quotient0;
-        tempvar accum3 = accum2 + element;
-        tempvar element = divisor0 * quotient1;
-        tempvar accum4 = accum3 + element;
-        tempvar accum5 = accum4 / u64_limit;
-        assert accum5 = *(range_check++);
-
-        // Limb2.
-        tempvar accum6 = accum5 + remainder_high;
-        tempvar accum7 = accum6 - dividend_high;
-        tempvar element = divisor1 * quotient1;
-        tempvar accum8 = accum7 + element;
+    HighDiff:
+        assert diff1 = *(range_check++);
+    After:
     }
-
+    // Do basic calculations.
     casm_build_extend! {casm_builder,
-        jump DivisorIsLarge if divisor_high != 0;
-
-        // Here, quotient is large.
-        let quotient2 = extra0;
-        let quotient3 = extra1;
-
-        // Limb2 cont. - no need to range-check the overflow - as we sum it with values in the
-        // order of 2**128, and compare to 0.
-        tempvar element = divisor0 * quotient2;
-        tempvar accum9 = accum8 + element;
-        tempvar accuma = accum9 / u64_limit;
-
-        // Limb3.
-        tempvar element = divisor1 * quotient2;
-        tempvar accumb = accuma + element;
-        tempvar element = divisor0 * quotient3;
-        let accumc = accumb + element;
-        assert zero = accumc;
-
-        // Check that the high part is zero.
-        assert zero = divisor1 * quotient3;
-
-        // Push quotient_high for output.
-        tempvar shifted_quotient3 = quotient3 * u64_limit;
-        assert quotient_high = quotient2 + shifted_quotient3;
-        jump End;
-
-        DivisorIsLarge:
-        let divisor2 = extra0;
-        let divisor3 = extra1;
-
-        // Check consistency.
-        tempvar shifted_divisor3 = divisor3 * u64_limit;
-        assert divisor_high = divisor2 + shifted_divisor3;
-
-        // Limb2 cont. - no need to range-check the overflow - as we sum it with values in the
-        // order of 2**128, and compare to 0.
-        tempvar element = divisor2 * quotient0;
-        tempvar accum9 = accum8 + element;
-        tempvar accuma = accum9 / u64_limit;
-
-        // Limb3.
-        tempvar element = divisor2 * quotient1;
-        tempvar accumb = accuma + element;
-        tempvar element = divisor3 * quotient0;
-        let accumc = accumb + element;
-        assert zero = accumc;
-
-        // Check that the high part is zero.
-        assert zero = divisor3 * quotient1;
-
-        // Push quotient_high for output.
-        assert quotient_high = zero;
-
-        End:
+        tempvar q0d0_low;
+        tempvar q0d0_high;
+        hint WideMul128 { lhs: quotient0, rhs: divisor0 } into { low: q0d0_low, high: q0d0_high };
+    }
+    casm_build_extend! {casm_builder,
+        // Validating `quotient * divisor + remainder - dividend = 0`.
+        // Validate limb0.
+        // Note that limb0 is a combination of 3 u128s, so its absolute value should be less than
+        // 3 * 2**128.
+        tempvar part0 = q0d0_low + remainder0;
+        tempvar part1 = part0 - dividend0;
+        // Divide by 2**128 and check that we got an integer in [-2**15, 2**15).
+        // This validates that we couldn't have wrapped around the prime in the division.
+        tempvar leftover = part1 / u128_limit;
+        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
+        assert a = *(range_check++);
+        tempvar a = leftover - i16_lower_bound;
+        assert a = *(range_check++);
+        // Validate limb1.
+        // We know that limb2 and limb3 should be 0.
+        // Therfore quotient1 or divisor1 should also be 0.
+        // We also know that quotient0*divisor1 and quotient1*divisor0 should be smaller than 2**128.
+        // Therefore the smaller of each pair must be smaller than 2**64.
+        // So by checking this we can avoid wraparound on the prime.
+        tempvar qd1_small;
+        tempvar qd1_large;
+        jump DIVISOR1_EQ_ZERO if quotient1 != 0;
+        // quotient3 is 0 - no need to multiply it by the divisor.
+        tempvar quotient0_less_than_divisor1;
+        hint TestLessThan { lhs: quotient0, rhs: divisor1 } into { dst: quotient0_less_than_divisor1 };
+        jump QUOTIENT0_LESS_THAN_DIVISOR1 if quotient0_less_than_divisor1 != 0;
+        assert qd1_small = divisor1;
+        assert qd1_large = quotient0;
+        jump MERGE;
+    QUOTIENT0_LESS_THAN_DIVISOR1:
+        assert qd1_small = quotient0;
+        assert qd1_large = divisor1;
+        jump MERGE;
+    DIVISOR1_EQ_ZERO:
+        // divisor1 is 0 - no need to multiply it by the quotient.
+        assert divisor1 = zero;
+        tempvar quotient1_less_than_divisor0;
+        hint TestLessThan { lhs: quotient1, rhs: divisor0 } into { dst: quotient1_less_than_divisor0 };
+        jump QUOTIENT1_LESS_THAN_DIVISOR0 if quotient1_less_than_divisor0 != 0;
+        assert qd1_small = divisor0;
+        assert qd1_large = quotient1;
+        jump MERGE;
+    QUOTIENT1_LESS_THAN_DIVISOR0:
+        assert qd1_small = quotient1;
+        assert qd1_large = divisor0;
+    MERGE:
+        tempvar qd1_small_fixed = qd1_small + u128_bound_minus_u64_bound;
+        assert qd1_small_fixed = *(range_check++);
+        tempvar qd1 = qd1_small * qd1_large;
+        tempvar part0 = leftover + q0d0_high;
+        tempvar part1 = part0 + remainder1;
+        assert dividend1 = part1 + qd1;
     };
 
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [(
             "Fallthrough",
-            &[&[range_check], &[quotient_low, quotient_high], &[remainder_low, remainder_high]],
+            &[
+                &[range_check],
+                &[quotient0, quotient1],
+                &[remainder0, remainder1],
+                &[quotient0, divisor0, q0d0_high, q0d0_low],
+            ],
             None,
         )],
         CostValidationInfo {
