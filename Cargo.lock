@@ -336,9 +336,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-felt"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c689785216b614922341f1f7c1503a3d8468a35377c70f0a230882b7e736df0d"
+checksum = "451a9144bbe8bf0b351672fa0bf34e6dcc8733e2ff3a3201c8f7480fe7eb68a6"
 dependencies = [
  "lazy_static",
  "num-bigint",
@@ -974,9 +974,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-take_until_unbalanced"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a925c2b9b377f3ed4b0455a25f60520c77cee49398a0696d9577ab123a64109"
+checksum = "9ec66f846411e5fdecd2527d429135fd39ca98ef46b0df3f1558cc272b596a30"
 dependencies = [
  "nom",
 ]
@@ -992,9 +992,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8357c35e32298071a0505469dce45db8f3cee4152195e293cb01cd9068db20b2"
+checksum = "b0c73ed69023e595a18799552803550fe0a3af83713f1fc97f9edaaa677f59a8"
 dependencies = [
  "anyhow",
  "bincode",
