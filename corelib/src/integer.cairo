@@ -440,6 +440,28 @@ impl U8DivRem of DivRem<u8> {
     }
 }
 
+impl U8BitAnd of BitAnd<u8> {
+    #[inline(always)]
+    fn bitand(lhs: u8, rhs: u8) -> u8 {
+        let (v, _, _) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
+    }
+}
+impl U8BitXor of BitXor<u8> {
+    #[inline(always)]
+    fn bitxor(lhs: u8, rhs: u8) -> u8 {
+        let (_, v, _) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
+    }
+}
+impl U8BitOr of BitOr<u8> {
+    #[inline(always)]
+    fn bitor(lhs: u8, rhs: u8) -> u8 {
+        let (_, _, v) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
+    }
+}
+
 impl U8BitNot of BitNot<u8> {
     fn bitnot(a: u8) -> u8 {
         BoundedInt::max() - a
@@ -965,6 +987,28 @@ impl U64RemEq of RemEq<u64> {
 impl U64DivRem of DivRem<u64> {
     fn div_rem(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) {
         u64_safe_divmod(lhs, rhs)
+    }
+}
+
+impl U64BitAnd of BitAnd<u64> {
+    #[inline(always)]
+    fn bitand(lhs: u64, rhs: u64) -> u64 {
+        let (v, _, _) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
+    }
+}
+impl U64BitXor of BitXor<u64> {
+    #[inline(always)]
+    fn bitxor(lhs: u64, rhs: u64) -> u64 {
+        let (_, v, _) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
+    }
+}
+impl U64BitOr of BitOr<u64> {
+    #[inline(always)]
+    fn bitor(lhs: u64, rhs: u64) -> u64 {
+        let (_, _, v) = bitwise(lhs.into(), rhs.into());
+        v.try_into().unwrap()
     }
 }
 
