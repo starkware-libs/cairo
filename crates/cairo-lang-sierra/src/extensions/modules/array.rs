@@ -1,3 +1,4 @@
+use super::int::unsigned::Uint32Type;
 use super::range_check::RangeCheckType;
 use super::snapshot::snapshot_ty;
 use super::starknet::getter::boxed_ty;
@@ -276,13 +277,14 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
             snapshot_ty(context, context.get_wrapped_concrete_type(ArrayType::id(), ty)?)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
+        let u32_type = context.get_concrete_type(Uint32Type::id(), &[])?;
         let param_signatures = vec![
             ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(arr_snapshot_type.clone()),
             // Start
-            ParamSignature::new(index_type.clone()),
-            // Length
             ParamSignature::new(index_type),
+            // Length
+            ParamSignature::new(u32_type),
         ];
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
