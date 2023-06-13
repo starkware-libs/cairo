@@ -37,14 +37,14 @@ impl fmt::Display for TypeDeclaration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let TypeDeclaration { id, long_id, declared_type_info } = self;
         write!(f, "type {} = {}", id, long_id)?;
-        if let Some(DeclaredTypeInfo { storable, droppable, duplicatable, size }) =
+        if let Some(DeclaredTypeInfo { storable, droppable, duplicatable, zero_sized }) =
             declared_type_info
         {
             writeln!(f, " with_info {{")?;
             writeln!(f, "  storable: {:?}", storable)?;
             writeln!(f, "  droppable: {:?}", droppable)?;
             writeln!(f, "  duplicatable: {:?}", duplicatable)?;
-            writeln!(f, "  size: {:?}", size)?;
+            writeln!(f, "  zero_sized: {:?}", zero_sized)?;
             write!(f, "}}")?;
         }
         Ok(())

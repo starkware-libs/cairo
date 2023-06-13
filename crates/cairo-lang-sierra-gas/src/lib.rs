@@ -76,7 +76,7 @@ impl<'a, TokenUsages: Fn(CostTokenType) -> usize, ApChangeVarValue: Fn() -> usiz
     }
 }
 
-/// Implementation of [CostInfoProvider] given a [TypeSizeMap].
+/// Implementation of [CostInfoProvider] for [TypeSizeMap].
 impl CostInfoProvider for TypeSizeMap {
     fn type_size(&self, ty: &ConcreteTypeId) -> usize {
         self[ty].into_or_panic()

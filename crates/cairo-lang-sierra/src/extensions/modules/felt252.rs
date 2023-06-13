@@ -24,7 +24,7 @@ impl NoGenericArgsGenericType for Felt252Type {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
