@@ -127,7 +127,7 @@ macro_rules! define_language_element_id_partial {
             }
             fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
                 let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
-                StableLocation {module_file_id, stable_ptr: stable_ptr.untyped()}
+                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
             }
         }
     };
