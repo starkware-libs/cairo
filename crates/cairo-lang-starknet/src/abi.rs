@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
-    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, SubmoduleId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
+    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -68,16 +68,16 @@ impl AbiBuilder {
     ) -> Result<Contract, ABIError> {
         let mut builder = Self::default();
         let module_id = ModuleId::Submodule(submodule_id);
-
-        // TODO(yuval): iterate module_items and match the items instead of the multiple AST queries
-        // here.
+        println!("yg module path: {}", module_id.full_path(db.upcast()));
 
         // Get storage type for later validations.
         // TODO(yuval): This is a temporary measure to find the Storage type. Instead, get
-        // storage type from aux data from the plugin.
+        // storage type from aux data from the plugin. Then move this into the match in the module
+        // items loop below.
         let mut storage_type = None;
         for (id, _) in db.module_structs(module_id).unwrap_or_default() {
             let strct_name = id.name(db.upcast());
+            println!("yg struct name: {}", strct_name);
             if strct_name == "Storage" {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
@@ -98,67 +98,86 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
-        // Add impls to ABI.
-        for (id, _) in db.module_impls(module_id).unwrap_or_default() {
-            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
-                builder.add_impl(db, id, storage_type)?;
-                continue;
-            }
-            // Check if we have an Event derive plugin data on the impl.
-            let module_file = id.module_file_id(db.upcast());
-            let generate_info =
-                db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
-            let Some(generate_info) = generate_info else { continue };
-            let Some(mapper) = generate_info.aux_data.0.as_any(
-                    ).downcast_ref::<DynPluginAuxData>() else { continue; };
-            let Some(aux_data) = mapper.0.as_any(
-                    ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
-            let concrete_trait_id = db.impl_def_concrete_trait(id)?;
-            let ty =
-                extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
-            builder.event_derive_data.insert(ty, aux_data.event_data.clone());
-        }
-
-        // Add external functions, constructor and L1 handlers to ABI.
+        // TODO(yuval): iterate module_items and match the items instead of the multiple AST queries
+        // here.
         let mut ctor = None;
-        for (id, _) in db.module_free_functions(module_id).unwrap_or_default() {
-            if id.has_attr(db.upcast(), EXTERNAL_ATTR).map_err(|_| ABIError::CompilationError)? {
-                builder.add_free_function(db, id, storage_type)?;
-            } else if id
-                .has_attr(db.upcast(), CONSTRUCTOR_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                if ctor.is_some() {
-                    return Err(ABIError::MultipleConstructors);
-                } else {
-                    ctor = Some(id);
-                    builder.add_constructor(db, id, storage_type)?;
+        for item in &*db.module_items(module_id).unwrap_or_default() {
+            match item {
+                // Add external functions, constructor and L1 handlers to ABI.
+                ModuleItemId::FreeFunction(id) => {
+                    if id
+                        .has_attr(db.upcast(), EXTERNAL_ATTR)
+                        .map_err(|_| ABIError::CompilationError)?
+                    {
+                        builder.add_free_function(db, *id, storage_type)?;
+                    } else if id
+                        .has_attr(db.upcast(), CONSTRUCTOR_ATTR)
+                        .map_err(|_| ABIError::CompilationError)?
+                    {
+                        if ctor.is_some() {
+                            return Err(ABIError::MultipleConstructors);
+                        } else {
+                            ctor = Some(id);
+                            builder.add_constructor(db, *id, storage_type)?;
+                        }
+                    } else if id
+                        .has_attr(db.upcast(), L1_HANDLER_ATTR)
+                        .map_err(|_| ABIError::CompilationError)?
+                    {
+                        builder.add_l1_handler(db, *id, storage_type)?;
+                    }
                 }
-            } else if id
-                .has_attr(db.upcast(), L1_HANDLER_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                builder.add_l1_handler(db, id, storage_type)?;
-            }
-        }
-
-        // Add events.
-        for (id, _) in db.module_enums(module_id).unwrap_or_default() {
-            let enm_name = id.name(db.upcast());
-            if enm_name == "Event"
-                && id.has_attr(db.upcast(), EVENT_ATTR).map_err(|_| ABIError::CompilationError)?
-            {
-                // Check that the enum has no generic parameters.
-                if !db.enum_generic_params(id).unwrap_or_default().is_empty() {
-                    return Err(ABIError::EventWithGenericParams);
+                // Add enums to ABI.
+                ModuleItemId::Enum(id) => {
+                    let enm_name = id.name(db.upcast());
+                    println!("yg enum name: {}", enm_name);
+                    if enm_name == "Event"
+                        && id
+                            .has_attr(db.upcast(), EVENT_ATTR)
+                            .map_err(|_| ABIError::CompilationError)?
+                    {
+                        // Check that the enum has no generic parameters.
+                        if !db.enum_generic_params(*id).unwrap_or_default().is_empty() {
+                            return Err(ABIError::EventWithGenericParams);
+                        }
+                        // Get the ConcreteEnumId from the EnumId.
+                        let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId {
+                            enum_id: *id,
+                            generic_args: vec![],
+                        });
+                        // Get the TypeId of the enum.
+                        let ty = db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(
+                            concrete_enum_id,
+                        )));
+                        builder.add_event(db, ty)?;
+                    }
                 }
-                // Get the ConcreteEnumId from the EnumId.
-                let concrete_enum_id = db
-                    .intern_concrete_enum(ConcreteEnumLongId { enum_id: id, generic_args: vec![] });
-                // Get the TypeId of the enum.
-                let ty =
-                    db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)));
-                builder.add_event(db, ty)?;
+                // Add impls to ABI.
+                ModuleItemId::Impl(id) => {
+                    if id
+                        .has_attr(db.upcast(), EXTERNAL_ATTR)
+                        .map_err(|_| ABIError::CompilationError)?
+                    {
+                        builder.add_impl(db, *id, storage_type)?;
+                        continue;
+                    }
+                    // Check if we have an Event derive plugin data on the impl.
+                    let module_file = id.module_file_id(db.upcast());
+                    let generate_info =
+                        db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
+                    let Some(generate_info) = generate_info else { continue };
+                    let Some(mapper) = generate_info.aux_data.0.as_any(
+                            ).downcast_ref::<DynPluginAuxData>() else { continue; };
+                    let Some(aux_data) = mapper.0.as_any(
+                            ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
+                    let concrete_trait_id = db.impl_def_concrete_trait(*id)?;
+                    let ty = extract_matches!(
+                        concrete_trait_id.generic_args(db)[0],
+                        GenericArgumentId::Type
+                    );
+                    builder.event_derive_data.insert(ty, aux_data.event_data.clone());
+                }
+                _ => {}
             }
         }
 
