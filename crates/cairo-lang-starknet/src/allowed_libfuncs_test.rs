@@ -24,6 +24,7 @@ fn experimental_list_includes_all() {
         "set_chain_id",
         "set_nonce",
         "set_signature",
+        "pop_log",
         "get_available_gas",
     ];
     pretty_assertions::assert_eq!(
