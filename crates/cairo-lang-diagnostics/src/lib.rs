@@ -8,3 +8,4 @@ pub use self::diagnostics::{
     format_diagnostics, skip_diagnostic, DiagnosticAdded, DiagnosticEntry, DiagnosticLocation,
     Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
 };
+pub use self::location_marks::get_location_marks;
