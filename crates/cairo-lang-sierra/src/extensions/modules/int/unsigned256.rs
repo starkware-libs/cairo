@@ -1,4 +1,4 @@
-use super::unsigned128::Uint128Type;
+use super::unsigned128::{U128MulGuaranteeType, Uint128Type};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -79,6 +79,10 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
                 },
                 OutputVarInfo { ty: ty.clone(), ref_info: OutputVarReferenceInfo::SimpleDerefs },
                 OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                OutputVarInfo {
+                    ty: context.get_concrete_type(U128MulGuaranteeType::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))

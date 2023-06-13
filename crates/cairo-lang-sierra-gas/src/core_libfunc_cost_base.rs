@@ -546,7 +546,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::IsZero(_) => {
             vec![steps(2), steps(2)]
         }
-        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 59, holes: 0, range_checks: 17 }],
+        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 28, holes: 0, range_checks: 8 }],
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 33, holes: 0, range_checks: 8 }],
     }
 }
