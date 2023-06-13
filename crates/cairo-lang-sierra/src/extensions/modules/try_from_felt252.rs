@@ -3,8 +3,8 @@ use std::marker::PhantomData;
 use super::felt252::Felt252Type;
 use super::range_check::RangeCheckType;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo, SpecializationError,
@@ -33,12 +33,7 @@ impl<TTryFromFelt252: TryFromFelt252> NoGenericArgsGenericLibfunc
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),

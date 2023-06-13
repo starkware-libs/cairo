@@ -172,12 +172,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintSquareRootLibf
                 ParamSignature::new(ty),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 OutputVarInfo {
                     ty: sqrt_ty,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -248,12 +243,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
             | (IntOperator::OverflowingSub, false) => OutputVarReferenceInfo::NewTempVar { idx: 0 },
         };
 
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -356,12 +346,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericLibfunc for UintDivmodLibfunc<
                 ParamSignature::new(nonzero_ty(context, &ty)?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 OutputVarInfo {
                     ty: ty.clone(),
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },

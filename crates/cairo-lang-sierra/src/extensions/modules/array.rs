@@ -237,12 +237,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type,
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and element; failure branch does not return
             // an element.
@@ -289,12 +284,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
             // Length
             ParamSignature::new(index_type),
         ];
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type,
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and the slice snapshot; failure branch does
             // not return an element.

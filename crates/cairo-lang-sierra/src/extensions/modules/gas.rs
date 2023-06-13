@@ -48,12 +48,7 @@ impl NoGenericArgsGenericLibfunc for WithdrawGasLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
@@ -242,12 +237,7 @@ impl NoGenericArgsGenericLibfunc for BuiltinCostWithdrawGasLibfunc {
         let gas_builtin_type = context.get_concrete_type(GasBuiltinType::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let builtin_costs_type = context.get_concrete_type(BuiltinCostsType::id(), &[])?;
-        let rc_output_info = OutputVarInfo {
-            ty: range_check_type.clone(),
-            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                param_idx: 0,
-            }),
-        };
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
