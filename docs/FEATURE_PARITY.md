@@ -19,8 +19,8 @@
 | Append-only arrays     | ✅     |
 | Named arguments        | ✅     |
 | Serde (serialization)  | ✅     |
-| Dict                   | ⏳     |
-| `if (cond1 && cond2)`  |        |
+| Dict                   | ✅     |
+| `if (cond1 && cond2)`  | ✅     |
 | Find element           |        |
 
 

@@ -383,6 +383,25 @@ pub trait SemanticGroup:
         function_id: TraitFunctionId,
     ) -> Maybe<items::functions::FunctionDeclarationData>;
 
+    /// Returns the semantic diagnostics of a trait function definition (declaration + body).
+    #[salsa::invoke(items::trt::trait_function_body_diagnostics)]
+    fn trait_function_body_diagnostics(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the body of a trait function, if any.
+    #[salsa::invoke(items::trt::trait_function_body)]
+    fn trait_function_body(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<Arc<FunctionBody>>>;
+    /// Private query to compute data about a trait function definition (declaration + body)
+    #[salsa::invoke(items::trt::priv_trait_function_body_data)]
+    fn priv_trait_function_body_data(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<items::function_with_body::FunctionBodyData>>;
+
     // Concrete Trait function.
     // ========================
     /// Returns the generic params of a concrete trait function.

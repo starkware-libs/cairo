@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
     core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
@@ -37,13 +37,12 @@ fn add_withdraw_gas_to_function(
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let location = StableLocationOption::Some(function.stable_location(db));
+    let location = function.stable_location(db);
     let panic_block = create_panic_block(db, function, lowered, location)?;
 
     let old_root_block = lowered.blocks.root_block()?.clone();
     let old_root_new_id = lowered.blocks.push(old_root_block);
     let panic_block_id = lowered.blocks.push(panic_block);
-
     let gas_module = core_submodule(db.upcast(), "gas");
 
     // Add variable of type BuiltinCosts.
@@ -52,6 +51,7 @@ fn add_withdraw_gas_to_function(
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
+
     let builtin_costs_var = variables.new_var(VarRequest {
         ty: get_ty_by_name(db.upcast(), gas_module, "BuiltinCosts".into(), Vec::new()),
         location,
@@ -117,7 +117,7 @@ fn create_panic_block(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
-    location: StableLocationOption,
+    location: StableLocation,
 ) -> Maybe<FlatBlock> {
     let mut variables = VariableAllocator::new(
         db,

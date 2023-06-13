@@ -210,7 +210,8 @@ impl SierraCasmRunner {
         let long_id = &info.long_id;
         Ok(
             if long_id.generic_id == EnumType::ID
-                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
+                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut)
+                if ut.debug_name.as_ref().unwrap().starts_with("core::panics::PanicResult::"))
             {
                 // The function includes a panic wrapper.
                 if values[0] != Felt252::from(0) {

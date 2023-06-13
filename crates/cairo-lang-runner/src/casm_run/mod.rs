@@ -1,6 +1,6 @@
 use std::any::Any;
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, Shl};
 
 use ark_ff::fields::{Fp256, MontBackend, MontConfig};
@@ -139,6 +139,9 @@ macro_rules! insert_value_to_cellref {
     };
 }
 
+// Log type signature
+type Log = (Vec<Felt252>, Vec<Felt252>);
+
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
@@ -148,6 +151,8 @@ pub struct StarknetState {
     /// A mapping from contract address to class hash.
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
+    /// A mapping from contract address to logs.
+    logs: HashMap<Felt252, VecDeque<Log>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -382,6 +387,38 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let end = get_ptr(vm, cell, &offset)?;
                 self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
             }
+            StarknetHint::PopLog {
+                value,
+                opt_variant,
+                keys_start,
+                keys_end,
+                data_start,
+                data_end,
+            } => {
+                let contract_address = get_val(vm, value)?;
+                let mut res_segment = MemBuffer::new_segment(vm);
+                let logs = self.starknet_state.logs.entry(contract_address).or_default();
+
+                if let Some((keys, data)) = logs.pop_front() {
+                    let keys_start_ptr = res_segment.ptr;
+                    res_segment.write_data(keys.iter())?;
+                    let keys_end_ptr = res_segment.ptr;
+
+                    let data_start_ptr = res_segment.ptr;
+                    res_segment.write_data(data.iter())?;
+                    let data_end_ptr = res_segment.ptr;
+
+                    // Option::Some variant
+                    insert_value_to_cellref!(vm, opt_variant, 0)?;
+                    insert_value_to_cellref!(vm, keys_start, keys_start_ptr)?;
+                    insert_value_to_cellref!(vm, keys_end, keys_end_ptr)?;
+                    insert_value_to_cellref!(vm, data_start, data_start_ptr)?;
+                    insert_value_to_cellref!(vm, data_end, data_end_ptr)?;
+                } else {
+                    // Option::None variant
+                    insert_value_to_cellref!(vm, opt_variant, 1)?;
+                }
+            }
         };
         Ok(())
     }
@@ -592,10 +629,7 @@ impl<'a> CairoHintProcessor<'a> {
                 self.get_execution_info(gas_counter, system_buffer)
             }),
             "EmitEvent" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                let _keys = system_buffer.next_arr()?;
-                let _values = system_buffer.next_arr()?;
-                deduct_gas!(gas_counter, 50);
-                Ok(SyscallResult::Success(vec![]))
+                self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
             }),
             "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 let _to_address = system_buffer.next_felt252()?;
@@ -794,6 +828,19 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(exec_info.caller_address.clone())?;
         res_segment.write(exec_info.contract_address.clone())?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
+    }
+
+    /// Executes the `emit_event_syscall` syscall.
+    fn emit_event(
+        &mut self,
+        gas_counter: &mut usize,
+        keys: Vec<Felt252>,
+        data: Vec<Felt252>,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+        let contract = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
+        Ok(SyscallResult::Success(vec![]))
     }
 
     /// Executes the `deploy_syscall` syscall.
