@@ -25,7 +25,7 @@ impl NoGenericArgsGenericType for StorageBaseAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for creating a constant storage base address.
@@ -51,7 +51,7 @@ impl NoGenericArgsGenericType for StorageAddressType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for converting a StorageAddress into a felt252.

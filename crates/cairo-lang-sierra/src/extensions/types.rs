@@ -86,7 +86,7 @@ pub trait NoGenericArgsGenericType: Default {
     const STORABLE: bool;
     const DUPLICATABLE: bool;
     const DROPPABLE: bool;
-    const SIZE: i16;
+    const ZERO_SIZED: bool;
 }
 impl<T: NoGenericArgsGenericType> NamedType for T {
     type Concrete = InfoOnlyConcreteType;
@@ -104,7 +104,7 @@ impl<T: NoGenericArgsGenericType> NamedType for T {
                     storable: T::STORABLE,
                     droppable: T::DROPPABLE,
                     duplicatable: T::DUPLICATABLE,
-                    size: T::SIZE,
+                    zero_sized: T::ZERO_SIZED,
                 },
             })
         } else {
@@ -155,8 +155,8 @@ pub struct TypeInfo {
     pub droppable: bool,
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
-    /// The size of an element of this type.
-    pub size: i16,
+    /// Is the type zero sized.
+    pub zero_sized: bool,
 }
 
 /// Trait for a specialized type.

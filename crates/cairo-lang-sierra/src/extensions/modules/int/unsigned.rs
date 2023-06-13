@@ -67,7 +67,7 @@ impl<TUintTraits: UintTraits> NoGenericArgsGenericType for UintType<TUintTraits>
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for creating a constant unsigned integer.

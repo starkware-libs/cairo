@@ -17,7 +17,7 @@ impl NoGenericArgsGenericType for BitwiseType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 /// Libfunc for computing the Bitwise (and,or,xor) of two u128s.
