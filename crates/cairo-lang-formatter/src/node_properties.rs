@@ -19,6 +19,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenRBrack
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
+            SyntaxKind::TokenNot
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprInlineMacro)) =>
+            {
+                true
+            }
             SyntaxKind::TokenLParen
                 if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
             {
