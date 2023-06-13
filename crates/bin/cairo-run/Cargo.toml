@@ -4,17 +4,18 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
+description = "Runner executable for the Cairo programming language"
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
 
-cairo-lang-runner = { path = "../../cairo-lang-runner" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet" }
-cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics" }
-cairo-lang-sierra = { path = "../../cairo-lang-sierra" }
-cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator" }
-cairo-lang-compiler = { path = "../../cairo-lang-compiler" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+cairo-lang-runner = { path = "../../cairo-lang-runner", version = "2.0.0-rc1" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc1" }
+cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics", version = "2.0.0-rc1" }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc1" }
+cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "2.0.0-rc1" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc1" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc1", features = [
     "env_logger",
 ] }

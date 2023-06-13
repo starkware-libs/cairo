@@ -4,10 +4,11 @@ version.workspace = true
 edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
+description = "Compiler executable for the Sierra intemediate representation with StarkNet extensions"
 
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
 serde_json.workspace = true
 
-cairo-lang-starknet = { path = "../../cairo-lang-starknet" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc1" }
