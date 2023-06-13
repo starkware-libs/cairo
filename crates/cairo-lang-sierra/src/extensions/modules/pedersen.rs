@@ -40,11 +40,12 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let pedersen_ty = context.get_concrete_type(PedersenType::id(), &[])?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let felt252_param = ParamSignature::new(felt252_ty.clone());
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(pedersen_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty.clone()),
+                felt252_param.clone(),
+                felt252_param,
             ],
             vec![
                 OutputVarInfo::new_builtin(pedersen_ty, 0),

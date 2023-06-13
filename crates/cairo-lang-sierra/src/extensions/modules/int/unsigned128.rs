@@ -116,33 +116,26 @@ impl GenericLibfunc for Uint128OperationLibfunc {
         let ty = context.get_concrete_type(Uint128Type::id(), &[])?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let ty_param = ParamSignature::new(ty.clone());
+        let ty_output_info = OutputVarInfo {
+            ty: ty.clone(),
+            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+        };
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(ty.clone()),
+                ty_param.clone(),
+                ty_param,
             ],
             branch_signatures: vec![
                 // No overflow.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info.clone(),
-                        OutputVarInfo {
-                            ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                        },
-                    ],
+                    vars: vec![rc_output_info.clone(), ty_output_info.clone()],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
                 // Overflow.
                 BranchSignature {
-                    vars: vec![
-                        rc_output_info,
-                        OutputVarInfo {
-                            ty,
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
-                        },
-                    ],
+                    vars: vec![rc_output_info, ty_output_info],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],
