@@ -733,6 +733,7 @@ version = "2.0.0-rc2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
  "env_logger",
  "indoc",
@@ -748,6 +749,7 @@ version = "2.0.0-rc2"
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
+ "cairo-lang-sierra-type-size",
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
