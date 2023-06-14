@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
 use num_traits::One;
 
+use super::build_const;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
@@ -24,7 +25,7 @@ pub fn build(
         Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
         Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
+        Uint128Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),

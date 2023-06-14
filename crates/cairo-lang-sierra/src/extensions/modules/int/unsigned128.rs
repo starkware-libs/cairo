@@ -1,7 +1,8 @@
 use super::unsigned::{
-    Uint64Type, UintBitwiseLibfunc, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
-    UintOperationLibfunc, UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
+    Uint64Type, UintBitwiseLibfunc, UintDivmodLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
+    UintTraits,
 };
+use super::{IntConstLibfunc, IntEqualLibfunc, IntToFelt252Libfunc, IntTraits, IntType};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
@@ -18,7 +19,7 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 
 /// Type for u128.
-pub type Uint128Type = UintType<Uint128Traits>;
+pub type Uint128Type = IntType<Uint128Traits>;
 
 /// A type that contains 4 u128s (a, b, c, d) and guarantees that `a * b = 2**128 * c + d`.
 ///
@@ -40,11 +41,11 @@ define_libfunc_hierarchy! {
         Divmod(UintDivmodLibfunc<Uint128Traits>),
         GuaranteeMul(U128GuaranteeMulLibfunc),
         MulGuaranteeVerify(U128MulGuaranteeVerifyLibfunc),
-        Equal(UintEqualLibfunc<Uint128Traits>),
+        Equal(IntEqualLibfunc<Uint128Traits>),
         SquareRoot(UintSquareRootLibfunc<Uint128Traits>),
-        Const(UintConstLibfunc<Uint128Traits>),
+        Const(IntConstLibfunc<Uint128Traits>),
         FromFelt252(Uint128sFromFelt252Libfunc),
-        ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
+        ToFelt252(IntToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
         Bitwise(UintBitwiseLibfunc<Uint128Traits>),
         ByteReverse(U128ByteReverseLibfunc),
@@ -54,18 +55,21 @@ define_libfunc_hierarchy! {
 #[derive(Default)]
 pub struct Uint128Traits;
 
-impl UintTraits for Uint128Traits {
-    type UintType = u128;
+impl IntTraits for Uint128Traits {
+    type IntType = u128;
     const GENERIC_TYPE_ID: GenericTypeId = GenericTypeId::new_inline("u128");
     const IS_SMALL: bool = false;
     const CONST: &'static str = "u128_const";
     const EQUAL: &'static str = "u128_eq";
-    const SQUARE_ROOT: &'static str = "u128_sqrt";
-    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
-    const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
-    const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
     const TO_FELT252: &'static str = "u128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u128_try_from_felt252";
+}
+
+impl UintTraits for Uint128Traits {
+    const OVERFLOWING_ADD: &'static str = "u128_overflowing_add";
+    const OVERFLOWING_SUB: &'static str = "u128_overflowing_sub";
+    const SQUARE_ROOT: &'static str = "u128_sqrt";
+    const SQUARE_ROOT_TYPE_ID: GenericTypeId = <Uint64Type as NamedType>::ID;
     const DIVMOD: &'static str = "u128_safe_divmod";
     const BITWISE: &'static str = "bitwise";
 }
