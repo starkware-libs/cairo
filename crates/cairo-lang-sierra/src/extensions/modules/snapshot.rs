@@ -20,12 +20,18 @@ impl GenericTypeArgGenericType for SnapshotTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { size, storable, duplicatable, .. }: TypeInfo,
+        TypeInfo { zero_sized, storable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Duplicatable types are their own snapshot - as the snapshot itself is useless if we can
         // dup the value already.
         if storable && !duplicatable {
-            Ok(TypeInfo { long_id, size, storable: true, droppable: true, duplicatable: true })
+            Ok(TypeInfo {
+                long_id,
+                zero_sized,
+                storable: true,
+                droppable: true,
+                duplicatable: true,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

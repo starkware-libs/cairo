@@ -35,7 +35,7 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size: _,
+            zero_sized: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -53,7 +53,13 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
@@ -158,7 +164,7 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size: _,
+            zero_sized: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -176,7 +182,13 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

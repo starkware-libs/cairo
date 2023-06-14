@@ -23,6 +23,7 @@ use cairo_lang_sierra_to_casm::compiler::{CairoProgram, CompilationError};
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, Metadata, MetadataComputationConfig, MetadataError,
 };
+use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -100,6 +101,8 @@ pub struct SierraCasmRunner {
     metadata: Metadata,
     /// Program registry for the Sierra program.
     sierra_program_registry: ProgramRegistry<CoreType, CoreLibfunc>,
+    /// Program registry for the Sierra program.
+    type_sizes: TypeSizeMap,
     /// The casm program matching the Sierra code.
     casm_program: CairoProgram,
     #[allow(dead_code)]
@@ -116,6 +119,7 @@ impl SierraCasmRunner {
         let metadata = create_metadata(&sierra_program, metadata_config)?;
         let sierra_program_registry =
             ProgramRegistry::<CoreType, CoreLibfunc>::new(&sierra_program)?;
+        let type_sizes = get_type_size_map(&sierra_program, &sierra_program_registry).unwrap();
         let casm_program = cairo_lang_sierra_to_casm::compiler::compile(
             &sierra_program,
             &metadata,
@@ -127,6 +131,7 @@ impl SierraCasmRunner {
             sierra_program,
             metadata,
             sierra_program_registry,
+            type_sizes,
             casm_program,
             starknet_contracts_info,
         })
@@ -228,8 +233,7 @@ impl SierraCasmRunner {
                 } else {
                     // The run resulted successfully, returning the inner value.
                     let inner_ty = extract_matches!(&long_id.generic_args[1], GenericArg::Type);
-                    let inner_ty_size =
-                        self.sierra_program_registry.get_type(inner_ty)?.info().size as usize;
+                    let inner_ty_size = self.type_sizes[inner_ty] as usize;
                     let skip_size = values.len() - inner_ty_size;
                     RunResultValue::Success(values.into_iter().skip(skip_size).collect())
                 }
@@ -249,7 +253,7 @@ impl SierraCasmRunner {
     ) -> Result<Vec<(cairo_lang_sierra::ids::ConcreteTypeId, Vec<Felt252>)>, RunnerError> {
         let mut results_data = vec![];
         for ty in func.signature.ret_types.iter().rev() {
-            let size = self.sierra_program_registry.get_type(ty)?.info().size as usize;
+            let size = self.type_sizes[ty] as usize;
             let values: Vec<Felt252> =
                 ((ap - size)..ap).map(|index| cells[index].clone().unwrap()).collect();
             ap -= size;
@@ -345,6 +349,7 @@ impl SierraCasmRunner {
         }
         for ty in func.signature.param_types.iter() {
             let info = self.get_info(ty);
+            let ty_size = self.type_sizes[ty];
             let generic_ty = &info.long_id.generic_id;
             if let Some(offset) = builtin_offset.get(generic_ty) {
                 casm_extend! {ctx,
@@ -373,7 +378,7 @@ impl SierraCasmRunner {
                     [ap + 0] = [ap - 1] + (values.len()), ap++;
                 }
             } else {
-                let arg_size = info.size;
+                let arg_size = ty_size;
                 expected_arguments_size += arg_size as usize;
                 for _ in 0..arg_size {
                     if let Some(value) = arg_iter.next() {
@@ -384,7 +389,7 @@ impl SierraCasmRunner {
                     }
                 }
             };
-            ap_offset += info.size;
+            ap_offset += ty_size;
         }
         if expected_arguments_size != args.len() {
             return Err(RunnerError::ArgumentsSizeMismatch {

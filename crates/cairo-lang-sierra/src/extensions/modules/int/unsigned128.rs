@@ -34,7 +34,7 @@ impl NoGenericArgsGenericType for U128MulGuaranteeType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 4;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
