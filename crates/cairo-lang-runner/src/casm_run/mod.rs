@@ -1837,7 +1837,7 @@ where
     let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
     let mut hint_processor = CairoHintProcessor {
         runner: None,
-        string_to_hint: string_to_hint,
+        string_to_hint,
         starknet_state: StarknetState::default(),
     };
     run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
