@@ -1,6 +1,5 @@
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -33,7 +32,7 @@ use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::ids::{
     FunctionLongId, FunctionWithBodyId, FunctionWithBodyLongId, GeneratedFunction,
-    SemanticFunctionIdEx, Signature,
+    SemanticFunctionIdEx, Signature, SourceLocationId,
 };
 use crate::lower::context::{LoweringResult, VarRequest};
 use crate::{
@@ -640,7 +639,7 @@ fn perform_function_call(
     inputs: Vec<VariableId>,
     extra_ret_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
-    location: StableLocation,
+    location: SourceLocationId,
 ) -> Result<(Vec<VariableId>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
@@ -873,7 +872,7 @@ fn lower_optimized_extern_match(
         .map_err(LoweringFlowError::Failed)?;
     if match_arms.len() != concrete_variants.len() {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report_by_location(location, UnsupportedMatchArms),
+            ctx.diagnostics.report_by_location(location.get(ctx.db), UnsupportedMatchArms),
         ));
     }
     // Merge arm blocks.
@@ -1252,7 +1251,7 @@ fn lower_optimized_extern_error_propagate(
     ok_variant: &semantic::ConcreteVariant,
     err_variant: &semantic::ConcreteVariant,
     func_err_variant: &semantic::ConcreteVariant,
-    location: StableLocation,
+    location: SourceLocationId,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Started lowering of an optimized error-propagate expression.");
 

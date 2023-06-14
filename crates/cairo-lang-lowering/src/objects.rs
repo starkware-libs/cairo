@@ -19,7 +19,18 @@ use semantic::items::imp::ImplId;
 
 use self::blocks::FlatBlocks;
 use crate::diagnostic::LoweringDiagnostic;
-use crate::ids::{FunctionId, Signature};
+use crate::ids::{FunctionId, Signature, SourceLocationId};
+
+/// The source location associated with a lowering object.
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct SourceLocation {
+    pub stable_location: StableLocation,
+}
+impl SourceLocation {
+    pub fn new(stable_location: StableLocation) -> Self {
+        Self { stable_location }
+    }
+}
 
 pub type VariableId = Id<Variable>;
 
@@ -44,7 +55,7 @@ pub type VariableId = Id<Variable>;
 ///         ^
 pub struct VarUsage {
     pub var_id: VariableId,
-    pub location: StableLocation,
+    pub location: SourceLocationId,
 }
 
 /// A lowered function code using flat blocks.
@@ -135,7 +146,7 @@ pub struct Variable {
     /// Semantic type of the variable.
     pub ty: semantic::TypeId,
     /// Location of the variable.
-    pub location: StableLocation,
+    pub location: SourceLocationId,
 }
 
 /// Lowered statement.
@@ -202,7 +213,7 @@ pub struct StatementCall {
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
-    pub location: StableLocation,
+    pub location: SourceLocationId,
 }
 
 /// A statement that construct a variant of an enum with a single argument, and binds it to a
@@ -276,7 +287,7 @@ pub struct MatchExternInfo {
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
     /// Location for the call.
-    pub location: StableLocation,
+    pub location: SourceLocationId,
 }
 
 /// A statement that matches an enum, and "calls" a possibly different block for each branch.
@@ -289,7 +300,7 @@ pub struct MatchEnumInfo {
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
     /// Location for the match.
-    pub location: StableLocation,
+    pub location: SourceLocationId,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

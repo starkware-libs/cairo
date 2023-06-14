@@ -7,6 +7,8 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
+use crate::SourceLocation;
+
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
     pub module_file_id: ModuleFileId,
@@ -23,20 +25,23 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(StableLocation::new(self.module_file_id, stable_ptr), kind)
+        self.report_by_location(
+            SourceLocation::new(StableLocation::new(self.module_file_id, stable_ptr)),
+            kind,
+        )
     }
     pub fn report_by_location(
         &mut self,
-        stable_location: StableLocation,
+        location: SourceLocation,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
+        self.diagnostics.add(LoweringDiagnostic { location, kind })
     }
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoweringDiagnostic {
-    pub stable_location: StableLocation,
+    pub location: SourceLocation,
     pub kind: LoweringDiagnosticKind,
 }
 impl DiagnosticEntry for LoweringDiagnostic {
@@ -93,12 +98,13 @@ impl DiagnosticEntry for LoweringDiagnostic {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { last_statement_ptr } => {
                 return self
+                    .location
                     .stable_location
                     .diagnostic_location_until(db.upcast(), *last_statement_ptr);
             }
             _ => {}
         }
-        self.stable_location.diagnostic_location(db.upcast())
+        self.location.stable_location.diagnostic_location(db.upcast())
     }
 }
 

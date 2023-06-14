@@ -12,7 +12,7 @@ use semantic::TypeId;
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, SourceLocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
 
@@ -24,7 +24,7 @@ struct Context<'a> {
     implicits_tys: Vec<TypeId>,
     implicit_vars_for_block: HashMap<BlockId, Vec<VariableId>>,
     visited: HashSet<BlockId>,
-    location: StableLocation,
+    location: SourceLocationId,
 }
 
 /// Lowering phase that adds implicits.
@@ -46,8 +46,10 @@ pub fn inner_lower_implicits(
 ) -> Maybe<()> {
     let semantic_function = function_id.function_with_body_id(db).base_semantic_function(db);
     let module_file_id = semantic_function.module_file_id(db.upcast());
-    let location =
-        StableLocation::new(module_file_id, semantic_function.untyped_stable_ptr(db.upcast()));
+    let location = SourceLocationId::from_stable_location(
+        db,
+        StableLocation::new(module_file_id, semantic_function.untyped_stable_ptr(db.upcast())),
+    );
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();
 
@@ -88,7 +90,7 @@ pub fn inner_lower_implicits(
 fn alloc_implicits(
     ctx: &mut VariableAllocator<'_>,
     implicits_tys: &[TypeId],
-    location: StableLocation,
+    location: SourceLocationId,
 ) -> Vec<VariableId> {
     implicits_tys.iter().copied().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec()
 }
