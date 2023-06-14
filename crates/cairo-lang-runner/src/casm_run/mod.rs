@@ -1821,11 +1821,9 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-// ) -> Result<(), Box<CairoRunError>>,
-// starknet_state: StarknetState,
-// ) -> Result<RunFunctionRes, Box<CairoRunError>> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
+type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Run used CairoHintProcessor and StarknetState to emulate Starknet behaviour.
@@ -1835,7 +1833,7 @@ pub fn run_function_with_starknet_context<'a, 'b: 'a, Instructions>(
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<CairoRunError>>,
-) -> Result<RunFunctionRes, Box<CairoRunError>>
+) -> Result<RunFunctionResStarknet, Box<CairoRunError>>
 where
     Instructions: Iterator<Item = &'a Instruction> + Clone,
 {
@@ -1846,6 +1844,7 @@ where
     };
     let (hints_dict, _) = build_hints_dict(instructions.clone());
     run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
+        .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
 }
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
@@ -1891,20 +1890,12 @@ where
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
-        .run_until_pc(end, &mut None, &mut vm, &mut hint_processor)
+        .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
         .map_err(CairoRunError::from)?;
-    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor).map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((
         runner.relocated_memory,
         vm.get_relocated_trace().unwrap().last().unwrap().ap,
-        hint_processor.starknet_state,
     ))
 }
-
-// runner.run_until_pc(end, &mut vm, hint_processor as &mut dyn HintProcessor)?;
-// runner
-//     .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
-//     .map_err(Box::new)?;
-// runner.relocate(&mut vm, true).map_err(VirtualMachineError::from).map_err(Box::new)?;
-// Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
