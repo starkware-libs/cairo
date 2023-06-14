@@ -1,5 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
@@ -26,18 +26,30 @@ enum IfCondition {
 // TODO(lior): Make it an actual tree (handling && and ||).
 fn analyze_condition(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> IfCondition {
     let expr = &ctx.function_body.exprs[expr_id];
-    if let semantic::Expr::FunctionCall(function_call) = expr {
-        if function_call.function == corelib::felt252_eq(ctx.db.upcast())
-            && function_call.args.len() == 2
-        {
-            return IfCondition::Eq(
-                extract_matches!(function_call.args[0], ExprFunctionCallArg::Value),
-                extract_matches!(function_call.args[1], ExprFunctionCallArg::Value),
-            );
-        };
+    let semantic::Expr::FunctionCall(function_call) = expr else {
+        return IfCondition::BoolExpr(expr_id);
     };
-
-    IfCondition::BoolExpr(expr_id)
+    if function_call.function != corelib::felt252_eq(ctx.db.upcast()) {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    let [expr_a, expr_b] = &function_call.args[..] else {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    let ExprFunctionCallArg::Value(expr_a) = expr_a else {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    let ExprFunctionCallArg::Value(expr_b) = expr_b else {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    let expr_a = &ctx.function_body.exprs[*expr_a];
+    let expr_b = &ctx.function_body.exprs[*expr_b];
+    let semantic::Expr::Snapshot(expr_a) = expr_a else {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    let semantic::Expr::Snapshot(expr_b) = expr_b else {
+        return IfCondition::BoolExpr(expr_id);
+    };
+    IfCondition::Eq(expr_a.inner, expr_b.inner)
 }
 
 fn is_zero(ctx: &LoweringContext<'_, '_>, expr_id: semantic::ExprId) -> bool {
@@ -105,6 +117,7 @@ pub fn lower_expr_if_bool(
                 var_ids: vec![main_block_var_id],
             },
         ],
+        location: if_location,
     });
     builder.merge_and_end_with_match(ctx, match_info, vec![block_main, block_else], if_location)
 }
@@ -190,7 +203,7 @@ fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_, '_>,
     mut builder: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
-    if_location: StableLocationOption,
+    if_location: StableLocation,
 ) -> Maybe<SealedBlockBuilder> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {

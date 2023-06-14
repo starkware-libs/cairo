@@ -1,4 +1,4 @@
-#[abi]
-trait IContract {
-    fn foo(calldata: felt252);
+#[starknet::interface]
+trait IContract<TContractState> {
+    fn foo(self: @TContractState, calldata: felt252);
 }

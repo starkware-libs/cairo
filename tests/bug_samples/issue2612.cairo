@@ -1,6 +1,6 @@
-use dict::Felt252DictTrait;
+//use dict::Felt252DictTrait;
 
 #[test]
 fn main() {
-    let d = Felt252DictTrait::<felt252>::new();
+    let d: Felt252Dict<felt252> = Default::default();
 }

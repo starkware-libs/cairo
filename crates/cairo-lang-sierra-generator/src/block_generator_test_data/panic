@@ -25,7 +25,7 @@ fn expect(opt: Option<felt252>) -> felt252 {
 
 #[inline(never)]
 fn no_inline_panic() -> never {
-  let mut data = ArrayTrait::new();
+  let mut data = Default::default();
   data.append(1);
   panic(data)
 }
@@ -49,13 +49,13 @@ End:
 blk1:
 Statements:
   (v6: (core::felt252,)) <- struct_construct(v2)
-  (v7: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
+  (v7: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v6)
 End:
   Return(v7)
 
 blk2:
 Statements:
-  (v8: core::PanicResult::<(core::never,)>) <- test::no_inline_panic()
+  (v8: core::panics::PanicResult::<(core::never,)>) <- test::no_inline_panic()
 End:
   Match(match_enum(v8) {
     PanicResult::Ok(v9) => blk3,
@@ -71,7 +71,7 @@ End:
 
 blk4:
 Statements:
-  (v12: core::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
+  (v12: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v11)
 End:
   Return(v12)
 
@@ -79,23 +79,23 @@ End:
 enum_match<core::option::Option::<core::felt252>>([0]) { fallthrough([1]) label0([2]) }
 branch_align() -> ()
 struct_construct<Tuple<felt252>>([1]) -> ([3])
-enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
-PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
+PushValues([4]: core::panics::PanicResult::<(core::felt252,)>) -> ([5])
 return([5])
 label0:
 branch_align() -> ()
 drop<Unit>([2]) -> ()
 PushValues() -> ()
 function_call<user@test::no_inline_panic>() -> ([6])
-enum_match<core::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label3([8]) }
+enum_match<core::panics::PanicResult::<(core::never,)>>([6]) { fallthrough([7]) label3([8]) }
 branch_align() -> ()
 struct_deconstruct<Tuple<core::never>>([7]) -> ([9])
 enum_match<core::never>([9]) { }
 label5:
 label3:
 branch_align() -> ()
-enum_init<core::PanicResult::<(core::felt252,)>, 1>([8]) -> ([10])
-PushValues([10]: core::PanicResult::<(core::felt252,)>) -> ([11])
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([8]) -> ([10])
+PushValues([10]: core::panics::PanicResult::<(core::felt252,)>) -> ([11])
 return([11])
 label4:
 label1:

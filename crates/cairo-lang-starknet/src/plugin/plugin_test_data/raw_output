@@ -4,57 +4,100 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
     use array::ArrayTrait;
 
+    #[storage]
+    struct Storage {}
+
     #[external]
     #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
-        ArrayTrait::new().span()
+    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+        Default::<Array<felt252>>::default().span()
     }
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
-        ArrayTrait::new().span()
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
+        Default::<Array<felt252>>::default().span()
     }
 }
 
 //! > generated_cairo_code
-mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+lib.cairo:
 
+#[starknet::contract]
+mod TestContract {
     use array::ArrayTrait;
 
-    #[external]
-    #[raw_output]
-    fn test_raw_output() -> Span::<felt252> {
-        ArrayTrait::new().span()
-    }
+    #[storage]
+    struct Storage {}
 
     #[external]
     #[raw_output]
-    fn test_raw_output_with_spaces() -> Span     ::   < felt252  > {
-        ArrayTrait::new().span()
+    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
+        Default::<Array<felt252>>::default().span()
     }
 
-    const TEST_CLASS_HASH: felt252 = 1595346637997809727776061868410989672215034814070995454976363664880494301941;
-    
+    #[external]
+    #[raw_output]
+    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
+        Default::<Array<felt252>>::default().span()
+    }
+}
 
-    
+contract:
 
-    trait __abi {
-        #[external]
-        fn test_raw_output() -> Span::<felt252>;
-        #[external]
-        fn test_raw_output_with_spaces() -> Span     ::   < felt252  >;
-        
-        
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 496467993860656971014768480101995430067197153434631914833246400084882928457;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
     }
 
-    mod __external {
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<ContractState> {
+    #[external]
+        fn test_raw_output(ref self: ContractState) -> Span::<felt252>;
+        #[external]
+        fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  >;
+        
+    
+}
+
+mod __external {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -62,7 +105,7 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -76,7 +119,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output()
+            let mut storage = super::unsafe_new_contract_state();
+            super::test_raw_output(ref storage, )
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -92,12 +136,13 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::test_raw_output_with_spaces()
+            let mut storage = super::unsafe_new_contract_state();
+            super::test_raw_output_with_spaces(ref storage, )
         }
         
-    }
+}
 
-    mod __l1_handler {
+mod __l1_handler {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -105,10 +150,10 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
+}
 
-    mod __constructor {
+mod __constructor {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -116,7 +161,35 @@ mod TestContract {
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+    
+}
+
+
+impls:
+
+impl ContractStateDrop<> of Drop::<ContractState<>>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
         
+        Option::None(())
     }
 }
 

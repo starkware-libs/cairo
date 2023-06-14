@@ -3,13 +3,14 @@ use num_bigint::BigInt;
 use super::syscalls::SyscallGenericLibfunc;
 use crate::extensions::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use crate::extensions::felt252::Felt252Type;
-use crate::extensions::int::unsigned::{Uint32Type, Uint8Type};
+use crate::extensions::int::unsigned::{Uint32Type, Uint64Type, Uint8Type};
 use crate::extensions::lib_func::{
     DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::try_from_felt252::TryFromFelt252;
+use crate::extensions::utils::reinterpret_cast_signature;
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
     SpecializationError,
@@ -63,18 +64,9 @@ impl NoGenericArgsGenericLibfunc for StorageAddressToFelt252Libfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(StorageAddressType::id(), &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?,
         ))
     }
 }
@@ -97,18 +89,9 @@ impl NoGenericArgsGenericLibfunc for StorageAddressFromBaseLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(StorageAddressType::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
+            context.get_concrete_type(StorageAddressType::id(), &[])?,
         ))
     }
 }
@@ -155,12 +138,7 @@ impl NoGenericArgsGenericLibfunc for StorageBaseAddressFromFelt252Libfunc {
                 ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_ty, 0),
                 OutputVarInfo {
                     ty: context.get_concrete_type(StorageBaseAddressType::id(), &[])?,
                     ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
@@ -218,5 +196,30 @@ impl SyscallGenericLibfunc for StorageWriteLibfunc {
         _context: &dyn SignatureSpecializationContext,
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         Ok(vec![])
+    }
+}
+
+/// Libfunc for a get block hash system call.
+#[derive(Default)]
+pub struct GetBlockHashLibfunc {}
+impl SyscallGenericLibfunc for GetBlockHashLibfunc {
+    const STR_ID: &'static str = "get_block_hash_syscall";
+
+    fn input_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Block number.
+            context.get_concrete_type(Uint64Type::id(), &[])?,
+        ])
+    }
+
+    fn success_output_tys(
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
+        Ok(vec![
+            // Block hash.
+            context.get_concrete_type(Felt252Type::id(), &[])?,
+        ])
     }
 }

@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
+    LanguageElementId, ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -189,12 +191,6 @@ impl FunctionId {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    /// Returns the [ConcreteFunctionWithBodyId] if this is a function with body, otherwise returns
-    /// None.
-    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        self.get_concrete(db).body(db)
-    }
-
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{:?}", self.get_concrete(db)).into()
     }
@@ -241,6 +237,16 @@ impl GenericFunctionWithBodyId {
             GenericFunctionWithBodyId::Impl(imp) => {
                 format!("{}::{}", imp.concrete_impl_id.name(db), imp.function.name(db.upcast()))
                     .into()
+            }
+        }
+    }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        match self {
+            GenericFunctionWithBodyId::Free(free_function) => {
+                free_function.stable_location(db.upcast())
+            }
+            GenericFunctionWithBodyId::Impl(impl_function) => {
+                impl_function.function.stable_location(db.upcast())
             }
         }
     }
@@ -424,6 +430,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.get(db).name(db)
+    }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        self.get(db).generic_function.stable_location(db)
     }
 }
 

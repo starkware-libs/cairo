@@ -4,13 +4,28 @@ use traits::{
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
     TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
     TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
-    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue
+    TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
+use serde::Serde;
+use array::SpanTrait;
 
 #[derive(Copy, Drop)]
 enum bool {
     False: (),
     True: (),
+}
+
+impl BoolSerde of Serde<bool> {
+    fn serialize(self: @bool, ref output: Array<felt252>) {
+        if *self {
+            1
+        } else {
+            0
+        }.serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<bool> {
+        Option::Some(*serialized.pop_front()? != 0)
+    }
 }
 
 extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
@@ -53,12 +68,12 @@ impl BoolBitXor of BitXor<bool> {
 extern fn bool_eq(lhs: bool, rhs: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
-    fn eq(lhs: bool, rhs: bool) -> bool {
-        bool_eq(lhs, rhs)
+    fn eq(lhs: @bool, rhs: @bool) -> bool {
+        bool_eq(*lhs, *rhs)
     }
     #[inline(always)]
-    fn ne(lhs: bool, rhs: bool) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @bool, rhs: @bool) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -80,6 +95,15 @@ extern type SegmentArena;
 #[derive(Copy, Drop)]
 extern type felt252;
 extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
+
+impl Felt252Serde of Serde<felt252> {
+    fn serialize(self: @felt252, ref output: Array<felt252>) {
+        output.append(*self);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<felt252> {
+        Option::Some(*serialized.pop_front()?)
+    }
+}
 
 impl Felt252Add of Add<felt252> {
     #[inline(always)]
@@ -135,15 +159,15 @@ extern fn felt252_div(lhs: felt252, rhs: NonZero<felt252>) -> felt252 nopanic;
 
 impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
-    fn eq(lhs: felt252, rhs: felt252) -> bool {
-        match lhs - rhs {
+    fn eq(lhs: @felt252, rhs: @felt252) -> bool {
+        match *lhs - *rhs {
             0 => bool::True(()),
             _ => bool::False(()),
         }
     }
     #[inline(always)]
-    fn ne(lhs: felt252, rhs: felt252) -> bool {
-        !(lhs == rhs)
+    fn ne(lhs: @felt252, rhs: @felt252) -> bool {
+        !(*lhs == *rhs)
     }
 }
 
@@ -239,16 +263,14 @@ use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
-enum PanicResult<T> {
-    Ok: T,
-    Err: Array<felt252>,
-}
+mod panics;
+use panics::{panic, Panic, PanicResult};
+
 enum never {}
-extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
-    let mut data = ArrayTrait::new();
+    let mut data = Default::default();
     data.append(err_code);
     panic(data)
 }

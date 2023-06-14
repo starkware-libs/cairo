@@ -1,17 +1,18 @@
+use debug::PrintTrait;
+use integer::{u128_safe_divmod, U128TryIntoNonZero, U256TryIntoFelt252};
+use option::{Option, OptionTrait};
 use serde::Serde;
 use traits::{Into, TryInto};
 use zeroable::Zeroable;
-use option::{Option, OptionTrait};
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, storage_access::StorageAccess)]
 struct EthAddress {
     address: felt252, 
 }
 impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
     fn try_into(self: felt252) -> Option<EthAddress> {
-        // TODO(yuval): change to a constant once u256 literals are supported.
-        let ETH_ADDRESS_BOUND = u256 { high: 0x100000000_u128, low: 0_u128 }; // 2 ** 160
+        let ETH_ADDRESS_BOUND = 0x10000000000000000000000000000000000000000_u256; // 2 ** 160
 
         if self.into() < ETH_ADDRESS_BOUND {
             Option::Some(EthAddress { address: self })
@@ -23,6 +24,16 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
 impl EthAddressIntoFelt252 of Into<EthAddress, felt252> {
     fn into(self: EthAddress) -> felt252 {
         self.address
+    }
+}
+impl U256IntoEthAddress of Into<u256, EthAddress> {
+    fn into(self: u256) -> EthAddress {
+        // The Ethereum address is the 20 least significant bytes (=160=128+32 bits) of the value.
+        let high_32_bits = self.high % 0x100000000_u128;
+        EthAddress {
+            address: high_32_bits.into() * 0x100000000000000000000000000000000_felt252
+                + self.low.into()
+        }
     }
 }
 impl EthAddressSerde of Serde<EthAddress> {
@@ -46,13 +57,19 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
         !self.is_zero()
     }
 }
-impl ContractAddressPartialEq of PartialEq<EthAddress> {
+impl EthAddressPartialEq of PartialEq<EthAddress> {
     #[inline(always)]
-    fn eq(lhs: EthAddress, rhs: EthAddress) -> bool {
-        lhs.address == rhs.address
+    fn eq(lhs: @EthAddress, rhs: @EthAddress) -> bool {
+        *lhs.address == *rhs.address
     }
     #[inline(always)]
-    fn ne(lhs: EthAddress, rhs: EthAddress) -> bool {
+    fn ne(lhs: @EthAddress, rhs: @EthAddress) -> bool {
         !(lhs == rhs)
+    }
+}
+
+impl EthAddressPrintImpl of PrintTrait<EthAddress> {
+    fn print(self: EthAddress) {
+        self.address.print();
     }
 }

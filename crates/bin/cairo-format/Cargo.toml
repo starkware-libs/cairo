@@ -1,0 +1,18 @@
+[package]
+name = "cairo-format"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+log.workspace = true
+colored.workspace = true
+ignore.workspace = true
+
+cairo-lang-formatter = { path = "../../cairo-lang-formatter" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+    "env_logger",
+] }

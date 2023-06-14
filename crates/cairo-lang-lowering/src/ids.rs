@@ -4,7 +4,8 @@ use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::define_short_id;
-use defs::ids::FreeFunctionId;
+use defs::diagnostic_utils::StableLocation;
+use defs::ids::{FreeFunctionId, LanguageElementId};
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -148,14 +149,17 @@ impl ConcreteFunctionWithBodyId {
             semantic,
         ))
     }
+    pub fn get(&self, db: &dyn LoweringGroup) -> ConcreteFunctionWithBodyLongId {
+        db.lookup_intern_lowering_concrete_function_with_body(*self)
+    }
     pub fn function_with_body_id(&self, db: &dyn LoweringGroup) -> FunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_with_body_id(db)
+        self.get(db).function_with_body_id(db)
     }
     pub fn substitution(&self, db: &dyn LoweringGroup) -> Maybe<GenericSubstitution> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).substitution(db)
+        self.get(db).substitution(db)
     }
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).function_id(db)
+        self.get(db).function_id(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
@@ -179,7 +183,22 @@ impl ConcreteFunctionWithBodyId {
         &self,
         db: &dyn LoweringGroup,
     ) -> semantic::ConcreteFunctionWithBodyId {
-        db.lookup_intern_lowering_concrete_function_with_body(*self).base_semantic_function(db)
+        self.get(db).base_semantic_function(db)
+    }
+    pub fn stable_location(&self, db: &dyn LoweringGroup) -> Maybe<StableLocation> {
+        let semantic_db = db.upcast();
+        Ok(match self.get(db) {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
+            ConcreteFunctionWithBodyLongId::Generated(generated) => {
+                let parent_id = generated.parent.function_with_body_id(semantic_db);
+                StableLocation {
+                    module_file_id: parent_id.module_file_id(semantic_db.upcast()),
+                    stable_ptr: db.function_body(parent_id)?.exprs[generated.element]
+                        .stable_ptr()
+                        .untyped(),
+                }
+            }
+        })
     }
 }
 

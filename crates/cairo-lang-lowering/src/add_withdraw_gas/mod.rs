@@ -1,10 +1,10 @@
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic::corelib::{
-    core_array_felt252_ty, core_felt252_ty, core_submodule, get_function_id, get_ty_by_name,
-    option_none_variant, option_some_variant, unit_ty,
+    core_array_felt252_ty, core_felt252_ty, core_module, core_submodule, get_function_id,
+    get_ty_by_name, option_none_variant, option_some_variant, unit_ty,
 };
-use cairo_lang_semantic::GenericArgumentId;
+use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
@@ -12,7 +12,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
-    StatementCall, StatementLiteral,
+    StatementCall, StatementLiteral, StatementStructConstruct,
 };
 
 /// Main function for the add_withdraw_gas lowering phase. Adds a `withdraw_gas` statement to the
@@ -37,12 +37,12 @@ fn add_withdraw_gas_to_function(
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    let panic_block = create_panic_block(db, function, lowered)?;
+    let location = function.stable_location(db)?;
+    let panic_block = create_panic_block(db, function, lowered, location)?;
 
     let old_root_block = lowered.blocks.root_block()?.clone();
     let old_root_new_id = lowered.blocks.push(old_root_block);
     let panic_block_id = lowered.blocks.push(panic_block);
-
     let gas_module = core_submodule(db.upcast(), "gas");
 
     // Add variable of type BuiltinCosts.
@@ -51,9 +51,10 @@ fn add_withdraw_gas_to_function(
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
+
     let builtin_costs_var = variables.new_var(VarRequest {
         ty: get_ty_by_name(db.upcast(), gas_module, "BuiltinCosts".into(), Vec::new()),
-        location: StableLocationOption::None,
+        location,
     });
     lowered.variables = variables.variables;
 
@@ -70,7 +71,7 @@ fn add_withdraw_gas_to_function(
                 .lowered(db),
                 inputs: vec![],
                 outputs: vec![builtin_costs_var],
-                location: StableLocationOption::None,
+                location,
             }),
         ],
         end: FlatBlockEnd::Match {
@@ -101,7 +102,7 @@ fn add_withdraw_gas_to_function(
                         var_ids: vec![],
                     },
                 ],
-                location: StableLocationOption::None,
+                location,
             }),
         },
     };
@@ -116,23 +117,29 @@ fn create_panic_block(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
+    location: StableLocation,
 ) -> Maybe<FlatBlock> {
     let mut variables = VariableAllocator::new(
         db,
         function.function_with_body_id(db).base_semantic_function(db),
         lowered.variables.clone(),
     )?;
-    let new_array_var = variables.new_var(VarRequest {
-        ty: core_array_felt252_ty(db.upcast()),
-        location: StableLocationOption::None,
+    let new_array_var =
+        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
+    let out_of_gas_err_var =
+        variables.new_var(VarRequest { ty: core_felt252_ty(db.upcast()), location });
+    let panic_instance_var = variables.new_var(VarRequest {
+        ty: get_ty_by_name(db.upcast(), core_module(db.upcast()), "Panic".into(), vec![]),
+        location,
     });
-    let out_of_gas_err_var = variables.new_var(VarRequest {
-        ty: core_felt252_ty(db.upcast()),
-        location: StableLocationOption::None,
-    });
-    let panic_data_var = variables.new_var(VarRequest {
-        ty: core_array_felt252_ty(db.upcast()),
-        location: StableLocationOption::None,
+    let panic_data_var =
+        variables.new_var(VarRequest { ty: core_array_felt252_ty(db.upcast()), location });
+    let err_data_var = variables.new_var(VarRequest {
+        ty: db.intern_type(TypeLongId::Tuple(vec![
+            variables[panic_instance_var].ty,
+            variables[panic_data_var].ty,
+        ])),
+        location,
     });
     lowered.variables = variables.variables;
 
@@ -152,7 +159,7 @@ fn create_panic_block(
                 .lowered(db),
                 inputs: vec![],
                 outputs: vec![new_array_var],
-                location: StableLocationOption::None,
+                location,
             }),
             Statement::Literal(StatementLiteral {
                 value: BigInt::from_bytes_be(Sign::Plus, "Out of gas".as_bytes()),
@@ -168,9 +175,17 @@ fn create_panic_block(
                 .lowered(db),
                 inputs: vec![new_array_var, out_of_gas_err_var],
                 outputs: vec![panic_data_var],
-                location: StableLocationOption::None,
+                location,
+            }),
+            Statement::StructConstruct(StatementStructConstruct {
+                inputs: vec![],
+                output: panic_instance_var,
+            }),
+            Statement::StructConstruct(StatementStructConstruct {
+                inputs: vec![panic_instance_var, panic_data_var],
+                output: err_data_var,
             }),
         ],
-        end: FlatBlockEnd::Panic(panic_data_var),
+        end: FlatBlockEnd::Panic(err_data_var),
     })
 }

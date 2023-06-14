@@ -10,13 +10,13 @@ struct A{}
 #[derive(Copy, Drop)]
 struct B{}
 
-#[derive(Clone, Destruct, PartialEq, Serde)]
+#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Copy, Destruct)]
+#[derive(Copy, Destruct, PanicDestruct)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -30,7 +30,7 @@ struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     b: U,
 }
 
-#[derive(Clone, Destruct, PartialEq, Serde)]
+#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -54,7 +54,7 @@ impl BCopy<> of Copy::<B<>>;
 impl BDrop<> of Drop::<B<>>;
 
 
-#[derive(Clone, Destruct, PartialEq, Serde)]
+#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
@@ -74,15 +74,21 @@ impl TwoMemberStructDestruct<> of Destruct::<TwoMemberStruct<>> {
         traits::Destruct::destruct(self.b);
     }
 }
+impl TwoMemberStructPanicDestruct<> of PanicDestruct::<TwoMemberStruct<>> {
+    fn destruct(self: TwoMemberStruct<>, ref panic: Panic) nopanic {
+        traits::PanicDestruct::panic_destruct(self.a, ref panic);
+        traits::PanicDestruct::panic_destruct(self.b, ref panic);
+    }
+}
 impl TwoMemberStructPartialEq<> of PartialEq::<TwoMemberStruct<>> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
+    fn eq(lhs: @TwoMemberStruct<>, rhs: @TwoMemberStruct<>) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberStruct<>, rhs: TwoMemberStruct<>) -> bool {
+    fn ne(lhs: @TwoMemberStruct<>, rhs: @TwoMemberStruct<>) -> bool {
         !(lhs == rhs)
     }
 }
@@ -100,7 +106,7 @@ impl TwoMemberStructSerde<> of serde::Serde::<TwoMemberStruct<>> {
 }
 
 
-#[derive(Copy, Destruct)]
+#[derive(Copy, Destruct, PanicDestruct)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -109,6 +115,11 @@ impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T, >>;
 impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T, >> {
     fn destruct(self: GenericStruct<T, >) nopanic {
         traits::Destruct::destruct(self.a);
+    }
+}
+impl GenericStructPanicDestruct<T, impl TPanicDestruct: PanicDestruct<T>> of PanicDestruct::<GenericStruct<T, >> {
+    fn destruct(self: GenericStruct<T, >, ref panic: Panic) nopanic {
+        traits::PanicDestruct::panic_destruct(self.a, ref panic);
     }
 }
 
@@ -134,13 +145,13 @@ impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TC
 }
 impl TwoMemberGenericStructPartialEq<T, U, impl USomeTrait: SomeTrait<U, T>, impl TPartialEq: PartialEq<T>, impl TDestruct: Destruct<T>, impl UPartialEq: PartialEq<U>, impl UDestruct: Destruct<U>> of PartialEq::<TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >> {
     #[inline(always)]
-    fn eq(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+    fn eq(lhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
         if lhs.a != rhs.a { return false; }
         if lhs.b != rhs.b { return false; }
         true
     }
     #[inline(always)]
-    fn ne(lhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
+    fn ne(lhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >, rhs: @TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>, >) -> bool {
         !(lhs == rhs)
     }
 }
@@ -158,7 +169,7 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TS
 }
 
 
-#[derive(Clone, Destruct, PartialEq, Serde)]
+#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     Second: B,
@@ -180,8 +191,16 @@ impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
         }
     }
 }
+impl TwoVariantEnumPanicDestruct of PanicDestruct::<TwoVariantEnum> {
+    fn panic_destruct(self: TwoVariantEnum, ref panic: Panic) nopanic {
+        match self {
+            TwoVariantEnum::First(x) => traits::PanicDestruct::panic_destruct(x, ref panic),
+            TwoVariantEnum::Second(x) => traits::PanicDestruct::panic_destruct(x, ref panic),
+        }
+    }
+}
 impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
-    fn eq(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+    fn eq(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         match lhs {
             TwoVariantEnum::First(x) => match rhs {
                 TwoVariantEnum::First(y) => x == y,
@@ -194,7 +213,7 @@ impl TwoVariantEnumPartialEq of PartialEq::<TwoVariantEnum> {
         }
     }
     #[inline(always)]
-    fn ne(lhs: TwoVariantEnum, rhs: TwoVariantEnum) -> bool {
+    fn ne(lhs: @TwoVariantEnum, rhs: @TwoVariantEnum) -> bool {
         !(lhs == rhs)
     }
 }

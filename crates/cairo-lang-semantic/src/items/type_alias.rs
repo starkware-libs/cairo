@@ -9,6 +9,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
@@ -59,16 +60,11 @@ pub fn priv_type_alias_semantic_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(type_alias_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped()))?;
-    let ty = resolver
-        .inference()
-        .rewrite(ty)
-        .map_err(|err| err.report(&mut diagnostics, type_alias_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    let ty = resolver.inference().rewrite(ty).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData {

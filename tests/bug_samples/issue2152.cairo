@@ -3,11 +3,13 @@ use hash::LegacyHash;
 use integer::u256_from_felt252;
 use option::OptionTrait;
 
+#[test]
+#[available_gas(100000)]
 fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
         Option::None(_) => {
-            let mut data = ArrayTrait::new();
+            let mut data = Default::default();
             data.append('OOG');
             panic(data);
         }

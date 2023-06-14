@@ -1996,7 +1996,9 @@ pub enum BinaryOperator {
     Neq(TerminalNeq),
     Eq(TerminalEq),
     And(TerminalAnd),
+    AndAnd(TerminalAndAnd),
     Or(TerminalOr),
+    OrOr(TerminalOrOr),
     Xor(TerminalXor),
     LE(TerminalLE),
     GE(TerminalGE),
@@ -2090,8 +2092,18 @@ impl From<TerminalAndPtr> for BinaryOperatorPtr {
         Self(value.0)
     }
 }
+impl From<TerminalAndAndPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalAndAndPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalOrPtr> for BinaryOperatorPtr {
     fn from(value: TerminalOrPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrPtr> for BinaryOperatorPtr {
+    fn from(value: TerminalOrOrPtr) -> Self {
         Self(value.0)
     }
 }
@@ -2200,8 +2212,18 @@ impl From<TerminalAndGreen> for BinaryOperatorGreen {
         Self(value.0)
     }
 }
+impl From<TerminalAndAndGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalAndAndGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<TerminalOrGreen> for BinaryOperatorGreen {
     fn from(value: TerminalOrGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<TerminalOrOrGreen> for BinaryOperatorGreen {
+    fn from(value: TerminalOrOrGreen) -> Self {
         Self(value.0)
     }
 }
@@ -2274,7 +2296,13 @@ impl TypedSyntaxNode for BinaryOperator {
             SyntaxKind::TerminalNeq => BinaryOperator::Neq(TerminalNeq::from_syntax_node(db, node)),
             SyntaxKind::TerminalEq => BinaryOperator::Eq(TerminalEq::from_syntax_node(db, node)),
             SyntaxKind::TerminalAnd => BinaryOperator::And(TerminalAnd::from_syntax_node(db, node)),
+            SyntaxKind::TerminalAndAnd => {
+                BinaryOperator::AndAnd(TerminalAndAnd::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalOr => BinaryOperator::Or(TerminalOr::from_syntax_node(db, node)),
+            SyntaxKind::TerminalOrOr => {
+                BinaryOperator::OrOr(TerminalOrOr::from_syntax_node(db, node))
+            }
             SyntaxKind::TerminalXor => BinaryOperator::Xor(TerminalXor::from_syntax_node(db, node)),
             SyntaxKind::TerminalLE => BinaryOperator::LE(TerminalLE::from_syntax_node(db, node)),
             SyntaxKind::TerminalGE => BinaryOperator::GE(TerminalGE::from_syntax_node(db, node)),
@@ -2303,7 +2331,9 @@ impl TypedSyntaxNode for BinaryOperator {
             BinaryOperator::Neq(x) => x.as_syntax_node(),
             BinaryOperator::Eq(x) => x.as_syntax_node(),
             BinaryOperator::And(x) => x.as_syntax_node(),
+            BinaryOperator::AndAnd(x) => x.as_syntax_node(),
             BinaryOperator::Or(x) => x.as_syntax_node(),
+            BinaryOperator::OrOr(x) => x.as_syntax_node(),
             BinaryOperator::Xor(x) => x.as_syntax_node(),
             BinaryOperator::LE(x) => x.as_syntax_node(),
             BinaryOperator::GE(x) => x.as_syntax_node(),
@@ -2338,7 +2368,9 @@ impl BinaryOperator {
             SyntaxKind::TerminalNeq => true,
             SyntaxKind::TerminalEq => true,
             SyntaxKind::TerminalAnd => true,
+            SyntaxKind::TerminalAndAnd => true,
             SyntaxKind::TerminalOr => true,
+            SyntaxKind::TerminalOrOr => true,
             SyntaxKind::TerminalXor => true,
             SyntaxKind::TerminalLE => true,
             SyntaxKind::TerminalGE => true,
@@ -8039,7 +8071,7 @@ impl Attribute {
         db: &dyn SyntaxGroup,
         hash: TerminalHashGreen,
         lbrack: TerminalLBrackGreen,
-        attr: TerminalIdentifierGreen,
+        attr: ExprPathGreen,
         arguments: OptionArgListParenthesizedGreen,
         rbrack: TerminalRBrackGreen,
     ) -> AttributeGreen {
@@ -8058,8 +8090,8 @@ impl Attribute {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
         TerminalLBrack::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn attr(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
-        TerminalIdentifier::from_syntax_node(db, self.children[2].clone())
+    pub fn attr(&self, db: &dyn SyntaxGroup) -> ExprPath {
+        ExprPath::from_syntax_node(db, self.children[2].clone())
     }
     pub fn arguments(&self, db: &dyn SyntaxGroup) -> OptionArgListParenthesized {
         OptionArgListParenthesized::from_syntax_node(db, self.children[3].clone())
@@ -8088,7 +8120,7 @@ impl TypedSyntaxNode for Attribute {
                 children: vec![
                     TerminalHash::missing(db).0,
                     TerminalLBrack::missing(db).0,
-                    TerminalIdentifier::missing(db).0,
+                    ExprPath::missing(db).0,
                     OptionArgListParenthesized::missing(db).0,
                     TerminalRBrack::missing(db).0,
                 ],

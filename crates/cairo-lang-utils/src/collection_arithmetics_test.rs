@@ -9,7 +9,7 @@ fn test_add_map_and_sub_map() {
     let y = OrderedHashMap::<i64, i64>::from_iter([(0, 2), (10, 5), (30, -3), (40, 3)]);
 
     assert_eq!(
-        add_maps(x.clone(), y.clone()),
+        add_maps(x.clone(), y.iter().map(|(k, v)| (*k, *v))),
         OrderedHashMap::<i64, i64>::from_iter([(10, 8), (20, 7), (0, 2), (40, 6)])
     );
     assert_eq!(

@@ -163,6 +163,9 @@ fn generate_derive_code_for_type(
                 "Destruct" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_destruct_impl(&name, &extra_info))
                 }
+                "PanicDestruct" if !matches!(extra_info, ExtraInfo::Extern) => {
+                    impls.push(get_panic_destruct_impl(&name, &extra_info))
+                }
                 "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_partial_eq_impl(&name, &extra_info))
                 }
@@ -267,18 +270,54 @@ fn get_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
     }
 }
 
+fn get_panic_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}PanicDestruct of PanicDestruct::<{name}> {{
+                        fn panic_destruct(self: {name}, ref panic: Panic) nopanic {{
+                            match self {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ", variants.iter().map(|variant| {
+                format!(
+                    "{name}::{variant}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),",
+                )
+            }).join("\n            ")}
+        }
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
+            formatdoc! {"
+                    impl {name}PanicDestruct{generics_impl} of PanicDestruct::<{name}{generics}> {{
+                        fn destruct(self: {name}{generics}, ref panic: Panic) nopanic {{
+                            {}
+                        }}
+                    }}
+                ", members.iter().map(|member| {
+                    format!("traits::PanicDestruct::panic_destruct(self.{member}, ref panic);")
+                }).join("\n        "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}PanicDestruct: PanicDestruct<{t}>"))
+            }
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
 fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
     match extra_info {
         ExtraInfo::Enum(variants) => {
             formatdoc! {"
                     impl {name}PartialEq of PartialEq::<{name}> {{
-                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                        fn eq(lhs: @{name}, rhs: @{name}) -> bool {{
                             match lhs {{
                                 {}
                             }}
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                        fn ne(lhs: @{name}, rhs: @{name}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
@@ -299,12 +338,12 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
             formatdoc! {"
                     impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
                         #[inline(always)]
-                        fn eq(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             {}
                             true
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}

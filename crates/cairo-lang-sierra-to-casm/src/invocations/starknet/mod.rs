@@ -19,7 +19,7 @@ use crate::invocations::{
 
 mod testing;
 
-mod secp256k1;
+mod secp256;
 mod storage;
 
 /// Builds instructions for Sierra starknet operations.
@@ -58,6 +58,9 @@ pub fn build(
             build_syscalls(builder, "CallContract", [1, 1, 2], [2])
         }
         StarkNetConcreteLibfunc::EmitEvent(_) => build_syscalls(builder, "EmitEvent", [2, 2], []),
+        StarkNetConcreteLibfunc::GetBlockHash(_) => {
+            build_syscalls(builder, "GetBlockHash", [1], [1])
+        }
         StarkNetConcreteLibfunc::GetExecutionInfo(_) => {
             build_syscalls(builder, "GetExecutionInfo", [], [1])
         }
@@ -75,7 +78,7 @@ pub fn build(
             build_syscalls(builder, "SendMessageToL1", [1, 2], [])
         }
         StarkNetConcreteLibfunc::Testing(libfunc) => testing::build(libfunc, builder),
-        StarkNetConcreteLibfunc::Secp256K1(libfunc) => secp256k1::build(libfunc, builder),
+        StarkNetConcreteLibfunc::Secp256(libfunc) => secp256::build(libfunc, builder),
     }
 }
 

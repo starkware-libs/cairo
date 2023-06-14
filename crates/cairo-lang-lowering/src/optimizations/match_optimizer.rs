@@ -2,15 +2,18 @@
 #[path = "match_optimizer_test.rs"]
 mod test;
 
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::DemandReporter;
-use crate::borrow_check::LoweredDemand;
+use crate::borrow_check::Demand;
 use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, VarRemapping, VariableId,
 };
+
+pub type LoweredDemand = Demand<VariableId>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevent match arm.
@@ -22,6 +25,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 
+        let mut target_blocks = UnorderedHashSet::default();
         for FixInfo { statement_location, target_block, remapping } in ctx.fixes.into_iter() {
             let block = &mut lowered.blocks[statement_location.0];
 
@@ -32,7 +36,33 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             );
             block.statements.pop();
 
-            block.end = FlatBlockEnd::Goto(target_block, remapping)
+            block.end = FlatBlockEnd::Goto(target_block, remapping);
+            target_blocks.insert(target_block);
+        }
+
+        // Fix match arms not to jump directly to blocks that have incoming gotos.
+        let mut new_blocks = vec![];
+        let mut next_block_id = BlockId(lowered.blocks.len());
+        for block in lowered.blocks.iter_mut() {
+            if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
+                &mut block.end
+            {
+                for arm in arms {
+                    if target_blocks.contains(&arm.block_id) {
+                        new_blocks.push(FlatBlock {
+                            statements: vec![],
+                            end: FlatBlockEnd::Goto(arm.block_id, VarRemapping::default()),
+                        });
+
+                        arm.block_id = next_block_id;
+                        next_block_id = next_block_id.next_block_id();
+                    }
+                }
+            }
+        }
+
+        for block in new_blocks.into_iter() {
+            lowered.blocks.push(block);
         }
     }
 }
@@ -180,9 +210,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
-            MatchInfo::Enum(MatchEnumInfo { concrete_enum_id: _, input, arms })
-                if !demand.vars.contains(input) =>
-            {
+            MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) if !demand.vars.contains(input) => {
                 Some(OptimizationCandidate {
                     match_variable: *input,
                     match_arms: arms,

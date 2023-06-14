@@ -23,17 +23,19 @@ fn test_contract_resolving() {
         indoc! {"
             mod NotAContract {}
 
-            #[contract]
+            #[starknet::contract]
             mod ERC20 {
+                #[storage]
+                struct Storage {}
                 fn internal_func(ref system: System) -> felt252 {
                     1
                 }
 
                 #[external]
-                fn ep1() {}
+                fn ep1(ref self: ContractState) {}
 
                 #[external]
-                fn ep2() {}
+                fn ep2(ref self: ContractState) {}
             }
         "},
     );

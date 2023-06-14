@@ -25,8 +25,9 @@ use crate::items::us::SemanticUseEx;
 use crate::resolve::ResolvedGenericItem;
 use crate::types::ConcreteEnumLongId;
 use crate::{
-    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteVariant, Expr, ExprId,
-    ExprTuple, FunctionId, FunctionLongId, GenericArgumentId, Mutability, TypeId, TypeLongId,
+    semantic, ConcreteEnumId, ConcreteFunction, ConcreteImplLongId, ConcreteTypeId,
+    ConcreteVariant, Expr, ExprId, ExprTuple, FunctionId, FunctionLongId, GenericArgumentId,
+    Mutability, TypeId, TypeLongId,
 };
 
 pub fn core_module(db: &dyn SemanticGroup) -> ModuleId {
@@ -249,9 +250,10 @@ pub fn get_enum_concrete_variant(
     generic_args: Vec<GenericArgumentId>,
     variant_name: &str,
 ) -> ConcreteVariant {
-    let enum_item = db.module_item_by_name(module_id, enum_name.into()).unwrap().unwrap();
-    let enum_id = extract_matches!(enum_item, ModuleItemId::Enum);
-    let concrete_enum_id = db.intern_concrete_enum(ConcreteEnumLongId { enum_id, generic_args });
+    let ty = get_ty_by_name(db, module_id, enum_name.into(), generic_args);
+    let concrete_ty = extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete);
+    let concrete_enum_id = extract_matches!(concrete_ty, ConcreteTypeId::Enum);
+    let enum_id = concrete_enum_id.enum_id(db);
     let variant_id = db.enum_variants(enum_id).unwrap()[variant_name];
     let variant = db.variant_semantic(enum_id, variant_id).unwrap();
     db.concrete_enum_variant(concrete_enum_id, &variant).unwrap()
@@ -362,35 +364,38 @@ pub fn core_binary_operator(
     inference: &mut Inference<'_>,
     binary_op: &BinaryOperator,
     stable_ptr: SyntaxStablePtrId,
-) -> Maybe<Result<ConcreteTraitGenericFunctionId, SemanticDiagnosticKind>> {
-    let (trait_name, function_name) = match binary_op {
-        BinaryOperator::Plus(_) => ("Add", "add"),
-        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq"),
-        BinaryOperator::Minus(_) => ("Sub", "sub"),
-        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq"),
-        BinaryOperator::Mul(_) => ("Mul", "mul"),
-        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq"),
-        BinaryOperator::Div(_) => ("Div", "div"),
-        BinaryOperator::DivEq(_) => ("DivEq", "div_eq"),
-        BinaryOperator::Mod(_) => ("Rem", "rem"),
-        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq"),
-        BinaryOperator::EqEq(_) => ("PartialEq", "eq"),
-        BinaryOperator::Neq(_) => ("PartialEq", "ne"),
-        BinaryOperator::LE(_) => ("PartialOrd", "le"),
-        BinaryOperator::GE(_) => ("PartialOrd", "ge"),
-        BinaryOperator::LT(_) => ("PartialOrd", "lt"),
-        BinaryOperator::GT(_) => ("PartialOrd", "gt"),
-        BinaryOperator::And(_) => ("BitAnd", "bitand"),
-        BinaryOperator::Or(_) => ("BitOr", "bitor"),
-        BinaryOperator::Xor(_) => ("BitXor", "bitxor"),
+) -> Maybe<Result<(ConcreteTraitGenericFunctionId, bool), SemanticDiagnosticKind>> {
+    let (trait_name, function_name, snapshot) = match binary_op {
+        BinaryOperator::Plus(_) => ("Add", "add", false),
+        BinaryOperator::PlusEq(_) => ("AddEq", "add_eq", false),
+        BinaryOperator::Minus(_) => ("Sub", "sub", false),
+        BinaryOperator::MinusEq(_) => ("SubEq", "sub_eq", false),
+        BinaryOperator::Mul(_) => ("Mul", "mul", false),
+        BinaryOperator::MulEq(_) => ("MulEq", "mul_eq", false),
+        BinaryOperator::Div(_) => ("Div", "div", false),
+        BinaryOperator::DivEq(_) => ("DivEq", "div_eq", false),
+        BinaryOperator::Mod(_) => ("Rem", "rem", false),
+        BinaryOperator::ModEq(_) => ("RemEq", "rem_eq", false),
+        BinaryOperator::EqEq(_) => ("PartialEq", "eq", true),
+        BinaryOperator::Neq(_) => ("PartialEq", "ne", true),
+        BinaryOperator::LE(_) => ("PartialOrd", "le", false),
+        BinaryOperator::GE(_) => ("PartialOrd", "ge", false),
+        BinaryOperator::LT(_) => ("PartialOrd", "lt", false),
+        BinaryOperator::GT(_) => ("PartialOrd", "gt", false),
+        BinaryOperator::And(_) => ("BitAnd", "bitand", false),
+        BinaryOperator::Or(_) => ("BitOr", "bitor", false),
+        BinaryOperator::Xor(_) => ("BitXor", "bitxor", false),
         _ => return Ok(Err(SemanticDiagnosticKind::UnknownBinaryOperator)),
     };
-    Ok(Ok(get_core_trait_function_infer(
-        db,
-        inference,
-        trait_name.into(),
-        function_name.into(),
-        stable_ptr,
+    Ok(Ok((
+        get_core_trait_function_infer(
+            db,
+            inference,
+            trait_name.into(),
+            function_name.into(),
+            stable_ptr,
+        ),
+        snapshot,
     )))
 }
 
@@ -543,6 +548,10 @@ pub fn concrete_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTr
     get_core_concrete_trait(db, "Destruct".into(), vec![GenericArgumentId::Type(ty)])
 }
 
+pub fn concrete_panic_destruct_trait(db: &dyn SemanticGroup, ty: TypeId) -> ConcreteTraitId {
+    get_core_concrete_trait(db, "PanicDestruct".into(), vec![GenericArgumentId::Type(ty)])
+}
+
 pub fn copy_trait(db: &dyn SemanticGroup) -> TraitId {
     get_core_trait(db, "Copy".into())
 }
@@ -600,7 +609,7 @@ fn get_core_trait_function_infer(
     let generic_params = db.trait_generic_params(trait_id).unwrap();
     let generic_args = generic_params
         .iter()
-        .map(|_| GenericArgumentId::Type(inference.new_type_var(stable_ptr)))
+        .map(|_| GenericArgumentId::Type(inference.new_type_var(Some(stable_ptr))))
         .collect();
     let concrete_trait_id =
         db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });

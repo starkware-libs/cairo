@@ -33,12 +33,15 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr14](v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr16](v0)
 End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -66,7 +69,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr14](v2)
+  (v9: core::felt252, v8: core::bool) <- foo[expr16](v2)
 End:
   Return(v9, v8)
 
@@ -106,12 +109,15 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr13](v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr15](v0)
 End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -139,7 +145,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr13](v2)
+  (v9: core::felt252, v8: core::bool) <- foo[expr15](v2)
 End:
   Return(v9, v8)
 
@@ -202,7 +208,10 @@ End:
   Return(v7, v10)
 
 
-Generated:
+Generated lowering for source location:
+  loop {
+  ^****^
+
 Parameters: v0: core::integer::u32, v1: test::B, v2: test::A
 blk0 (root):
 Statements:
@@ -280,12 +289,15 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr19](v0)
+  (v2: core::felt252, v1: core::bool) <- foo[expr23](v0)
 End:
   Return(v1)
 
 
-Generated:
+Generated lowering for source location:
+    loop {
+    ^****^
+
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
@@ -301,7 +313,7 @@ End:
 
 blk1:
 Statements:
-  (v6: core::felt252, v5: core::bool) <- foo[expr19](v2)
+  (v6: core::felt252, v5: core::bool) <- foo[expr23](v2)
 End:
   Return(v6, v5)
 
@@ -334,7 +346,7 @@ End:
 
 blk6:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- foo[expr19](v2)
+  (v14: core::felt252, v13: core::bool) <- foo[expr23](v2)
 End:
   Return(v14, v13)
 
@@ -374,7 +386,10 @@ End:
   Return(v0)
 
 
-Generated:
+Generated lowering for source location:
+  loop {
+  ^****^
+
 Parameters:
 blk0 (root):
 Statements:

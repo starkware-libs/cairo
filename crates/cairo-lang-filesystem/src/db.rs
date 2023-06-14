@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
 use crate::cfg::CfgSet;
@@ -28,7 +28,7 @@ pub trait FilesGroup {
 
     /// Main input of the project. Lists all the crates.
     #[salsa::input]
-    fn crate_roots(&self) -> Arc<HashMap<CrateId, Directory>>;
+    fn crate_roots(&self) -> Arc<OrderedHashMap<CrateId, Directory>>;
 
     /// Overrides for file content. Mostly used by language server and tests.
     /// TODO(spapini): Currently, when this input changes, all the file_content() queries will
@@ -36,12 +36,12 @@ pub trait FilesGroup {
     /// Change this mechanism to hold file_overrides on the db struct outside salsa mechanism,
     /// and invalidate manually.
     #[salsa::input]
-    fn file_overrides(&self) -> Arc<HashMap<FileId, Arc<String>>>;
+    fn file_overrides(&self) -> Arc<OrderedHashMap<FileId, Arc<String>>>;
 
     // TODO(yuval): consider moving this to a separate crate, or rename this crate.
     /// The compilation flags.
     #[salsa::input]
-    fn flags(&self) -> Arc<HashMap<FlagId, Arc<Flag>>>;
+    fn flags(&self) -> Arc<OrderedHashMap<FlagId, Arc<Flag>>>;
     /// The `#[cfg(...)]` options.
     #[salsa::input]
     fn cfg_set(&self) -> Arc<CfgSet>;
@@ -63,9 +63,9 @@ pub trait FilesGroup {
 
 pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
     // Initialize inputs.
-    db.set_file_overrides(Arc::new(HashMap::new()));
-    db.set_crate_roots(Arc::new(HashMap::new()));
-    db.set_flags(Arc::new(HashMap::new()));
+    db.set_file_overrides(Arc::new(OrderedHashMap::default()));
+    db.set_crate_roots(Arc::new(OrderedHashMap::default()));
+    db.set_flags(Arc::new(OrderedHashMap::default()));
     db.set_cfg_set(Arc::new(CfgSet::new()));
 }
 
@@ -87,7 +87,7 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
         let mut overrides = Upcast::upcast(self).file_overrides().as_ref().clone();
         match content {
             Some(content) => overrides.insert(file, content),
-            None => overrides.remove(&file),
+            None => overrides.swap_remove(&file),
         };
         self.as_files_group_mut().set_file_overrides(Arc::new(overrides));
     }
@@ -96,7 +96,7 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
         let mut crate_roots = Upcast::upcast(self).crate_roots().as_ref().clone();
         match root {
             Some(root) => crate_roots.insert(crt, root),
-            None => crate_roots.remove(&crt),
+            None => crate_roots.swap_remove(&crt),
         };
         self.as_files_group_mut().set_crate_roots(Arc::new(crate_roots));
     }
@@ -105,7 +105,7 @@ pub trait FilesGroupEx: Upcast<dyn FilesGroup> + AsFilesGroupMut {
         let mut flags = Upcast::upcast(self).flags().as_ref().clone();
         match value {
             Some(value) => flags.insert(id, value),
-            None => flags.remove(&id),
+            None => flags.swap_remove(&id),
         };
         self.as_files_group_mut().set_flags(Arc::new(flags));
     }

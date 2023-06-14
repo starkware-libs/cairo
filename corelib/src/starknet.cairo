@@ -18,13 +18,15 @@ use storage_access::{
 // Module containing all the extern declaration of the syscalls.
 mod syscalls;
 use syscalls::{
-    call_contract_syscall, deploy_syscall, emit_event_syscall, get_execution_info_syscall,
-    library_call_syscall, send_message_to_l1_syscall, storage_read_syscall, storage_write_syscall,
-    replace_class_syscall, keccak_syscall
+    call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
+    get_execution_info_syscall, library_call_syscall, send_message_to_l1_syscall,
+    storage_read_syscall, storage_write_syscall, replace_class_syscall, keccak_syscall
 };
 
-// secp256k1
+// secp256
+mod secp256_trait;
 mod secp256k1;
+mod secp256r1;
 
 // ContractAddress
 mod contract_address;
@@ -54,6 +56,9 @@ use info::{
 
 mod event;
 use event::Event;
+
+mod account;
+use account::AccountContract;
 
 extern type System;
 

@@ -46,7 +46,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         enum_snapshot: "enum_snapshot",
         felt252_dict: "felt252_dict",
         felt252: "felt252",
-        gas: "gas",
         nullable: "nullable",
         poseidon: "poseidon",
         snapshot: "snapshot",
@@ -65,7 +64,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e_skip_add_gas,
     "e2e_test_data/libfuncs",
     {
-        withdraw_gas_all: "withdraw_gas_all",
+        gas: "gas",
     },
     SmallE2ETestRunnerSkipAddGas
 );
@@ -77,6 +76,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         class_hash: "class_hash",
         contract_address: "contract_address",
         secp256k1: "secp256k1",
+        secp256r1: "secp256r1",
         storage_address: "storage_address",
         syscalls: "syscalls",
     },

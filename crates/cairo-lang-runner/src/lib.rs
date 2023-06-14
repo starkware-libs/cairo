@@ -25,8 +25,9 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::serde::deserialize_program::BuiltinName;
-use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 pub use casm_run::StarknetState;
 use itertools::chain;
 use num_traits::ToPrimitive;
@@ -56,7 +57,7 @@ pub enum RunnerError {
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
-    VirtualMachineError(#[from] Box<VirtualMachineError>),
+    CairoRunError(#[from] Box<CairoRunError>),
 }
 
 /// The full result of a run.
@@ -103,13 +104,13 @@ pub struct SierraCasmRunner {
     casm_program: CairoProgram,
     #[allow(dead_code)]
     // Mapping from class_hash to contract info.
-    starknet_contracts_info: HashMap<Felt252, ContractInfo>,
+    starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 }
 impl SierraCasmRunner {
     pub fn new(
         sierra_program: cairo_lang_sierra::program::Program,
         metadata_config: Option<MetadataComputationConfig>,
-        starknet_contracts_info: HashMap<Felt252, ContractInfo>,
+        starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     ) -> Result<Self, RunnerError> {
         let gas_usage_check = metadata_config.is_some();
         let metadata = create_metadata(&sierra_program, metadata_config)?;
@@ -209,7 +210,8 @@ impl SierraCasmRunner {
         let long_id = &info.long_id;
         Ok(
             if long_id.generic_id == EnumType::ID
-                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
+                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut)
+                if ut.debug_name.as_ref().unwrap().starts_with("core::panics::PanicResult::"))
             {
                 // The function includes a panic wrapper.
                 if values[0] != Felt252::from(0) {

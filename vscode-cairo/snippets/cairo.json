@@ -11,7 +11,7 @@
   },
   "Creates an empty array": {
     "prefix": "array",
-    "body": ["let mut ${1:arr} = ArrayTrait::new();"],
+    "body": ["let mut ${1:arr} = Default::default();"],
     "description": "Creates an empty array"
   },
   "Creates an u256": {
@@ -19,17 +19,10 @@
     "body": ["u256 { low: $1, high: $2 }"],
     "description": "Creates an u256"
   },
-  "Creates event": {
-    "prefix": ["event", "#[event]"],
-    "body": [
-      "#[event]",
-      "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) {}"
-    ],
-    "description": "Creates an event"
-  },
   "Creates storage": {
     "prefix": "storage",
     "body": [
+      "#[storage]",
       "struct Storage {",
       "\t$1: ${2|felt252, u128, u64, u32, u16, u8, bool|},",
       "}"
@@ -56,9 +49,9 @@
     "description": "Creates an external function"
   },
   "Creates an view function": {
-    "prefix": ["view", "#[view]"],
+    "prefix": ["view", "#[external]"],
     "body": [
-      "#[view]",
+      "#[external]",
       "fn $1($2: ${3|felt252, u128, u64, u32, u16, u8, bool|}) -> ${4|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t$5",
       "}"
@@ -147,22 +140,19 @@
   "Creates a default contract": {
     "prefix": "contract",
     "body": [
-      "#[contract]",
+      "#[starknet::contract]",
       "",
       "mod $1 {",
       "\tstruct Storage {",
       "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
       "\t}",
       "",
-      "\t#[event]",
-      "\tfn $4($5: ${6|felt252, u128, u64, u32, u16, u8, bool|}) {}",
-      "",
       "\t#[external]",
       "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",
       "\t\t$11",
       "\t}",
       "",
-      "\t#[view]",
+      "\t#[external]",
       "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
       "\t\t$16",
       "\t}",

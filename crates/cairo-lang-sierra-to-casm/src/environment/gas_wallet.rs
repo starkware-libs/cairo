@@ -35,7 +35,7 @@ impl GasWallet {
     ) -> Result<Self, GasWalletError> {
         match &self {
             Self::Value(existing) => {
-                let new_value = add_maps(existing.clone(), request.clone());
+                let new_value = add_maps(existing.clone(), request.iter().map(|(k, v)| (*k, *v)));
                 for (token_type, val) in new_value.iter() {
                     if *val < 0 {
                         return Err(GasWalletError::OutOfGas {

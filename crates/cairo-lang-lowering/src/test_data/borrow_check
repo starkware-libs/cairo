@@ -101,7 +101,7 @@ fn foo(ref x: ADrop, y: ADrop) {
 }
 
 fn bar(){
-  let mut data = ArrayTrait::new();
+  let mut data = Default::default();
   data.append(1);
   panic(data);
 }
@@ -129,7 +129,7 @@ Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
 Statements:
   () <- test::use_a_drop(v0)
-  (v4: core::PanicResult::<((),)>) <- test::bar()
+  (v4: core::panics::PanicResult::<((),)>) <- test::bar()
 End:
   Match(match_enum(v4) {
     PanicResult::Ok(v5) => blk1,
@@ -140,13 +140,13 @@ blk1:
 Statements:
   (v3: ()) <- struct_construct()
   (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
-  (v9: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
+  (v9: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
 End:
   Return(v9)
 
 blk2:
 Statements:
-  (v10: core::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
+  (v10: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
 End:
   Return(v10)
 
@@ -196,7 +196,7 @@ test_function_lowering
 
 //! > function
 fn foo() {
-   let mut arr = ArrayTrait::<u256>::new();
+   let mut arr: Array<u256> = Default::default();
    arr.append(1.into());
 }
 
@@ -213,16 +213,16 @@ use traits::Into;
 //! > lowering_diagnostics
 
 //! > lowering_flat
-Parameters: v10: core::RangeCheck
+Parameters: v11: core::RangeCheck
 blk0 (root):
 Statements:
-  (v6: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
+  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
   (v1: core::felt252) <- 1u
-  (v14: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v10, v1)
-  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v6, v7)
+  (v17: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v11, v1)
+  (v9: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v8, v7)
   (v5: ()) <- struct_construct()
 End:
-  Return(v14, v5)
+  Return(v17, v5)
 
 //! > ==========================================================================
 

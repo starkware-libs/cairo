@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::vec;
 
 use cairo_lang_defs::db::get_all_path_leafs;
@@ -10,41 +9,115 @@ use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, ACCOUNT_CONTRACT_ATTR, ACCOUNT_CONTRACT_ENTRY_POINTS, CONSTRUCTOR_MODULE,
-    CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
-    STORAGE_STRUCT_NAME,
+    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
+    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
-use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
-/// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
-pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
-    let is_account_contract = module_ast.has_attr(db, ACCOUNT_CONTRACT_ATTR);
-
-    if !is_account_contract && !module_ast.has_attr(db, CONTRACT_ATTR) {
+/// Handles a contract module item.
+pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+    if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: format!(
+                    "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
+                     `{CONTRACT_ATTR}` instead.",
+                ),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
+    if !module_ast.has_attr(db, CONTRACT_ATTR) {
         return PluginResult::default();
+    }
+
+    let MaybeModuleBody::Some(body) = module_ast.body(db) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "Contracts without body are not supported.".to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    };
+    let Some(storage_struct_ast) = body.items(db).elements(db).into_iter().find(|item| {
+        matches!(item, ast::Item::Struct(struct_ast) if struct_ast.name(db).text(db) == "Storage")
+    }) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "Contracts must define a 'Storage' struct.".to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    };
+
+    if !storage_struct_ast.has_attr(db, STORAGE_ATTR) {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "'Storage' struct must be annotated with #[storage].".to_string(),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
+
+    PluginResult::default()
+}
+
+/// Accumulated data for contract generation.
+#[derive(Default)]
+struct ContractGenerationData {
+    generated_external_functions: Vec<RewriteNode>,
+    generated_constructor_functions: Vec<RewriteNode>,
+    generated_l1_handler_functions: Vec<RewriteNode>,
+    abi_functions: Vec<RewriteNode>,
+    event_functions: Vec<RewriteNode>,
+    abi_events: Vec<RewriteNode>,
+}
+
+/// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
+pub fn handle_contract_by_storage(
+    db: &dyn SyntaxGroup,
+    struct_ast: ast::ItemStruct,
+) -> Option<PluginResult> {
+    let module_node = struct_ast.as_syntax_node().parent()?.parent()?.parent()?;
+    if module_node.kind(db) != SyntaxKind::ItemModule {
+        return None;
+    }
+    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
+
+    if !module_ast.has_attr(db, CONTRACT_ATTR) {
+        return None;
     }
 
     let body = match module_ast.body(db) {
         MaybeModuleBody::Some(body) => body,
         MaybeModuleBody::None(empty_body) => {
-            return PluginResult {
+            return Some(PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
                     message: "Contracts without body are not supported.".to_string(),
                     stable_ptr: empty_body.stable_ptr().untyped(),
                 }],
                 remove_original_item: false,
-            };
+            });
         }
     };
     let mut diagnostics = vec![];
@@ -52,13 +125,53 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
 
     // A mapping from a 'use' item to its path.
     let mut extra_uses = OrderedHashMap::default();
+    let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
-        if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
-            || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
+        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
         }
+
+        let has_event_attr = item.has_attr(db, EVENT_ATTR);
+        let event_name_info = match &item {
+            ast::Item::Struct(strct) => {
+                Some((strct.name(db).text(db) == "Event", strct.name(db).stable_ptr().untyped()))
+            }
+            ast::Item::Enum(enm) => {
+                Some((enm.name(db).text(db) == "Event", enm.name(db).stable_ptr().untyped()))
+            }
+            _ => None,
+        };
+        if let Some((has_event_name, stable_ptr)) = event_name_info {
+            match (has_event_attr, has_event_name) {
+                (true, false) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is marked with #[{EVENT_ATTR}] must be named \
+                             `Event`."
+                        ),
+                        stable_ptr,
+                    });
+                }
+                (false, true) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is named `Event` must be marked with \
+                             #[{EVENT_ATTR}]."
+                        ),
+                        stable_ptr,
+                    });
+                    // The attribute is missing, but we still can't create an empty event.
+                    has_event = true;
+                }
+                (true, true) => {
+                    has_event = true;
+                }
+                (false, false) => {}
+            }
+        }
+
         kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
         if let Some(ident) = match item {
             ast::Item::Constant(item) => Some(item.name(db)),
@@ -66,6 +179,9 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             ast::Item::Use(item) => {
                 let leaves = get_all_path_leafs(db, item.use_path(db));
                 for leaf in leaves {
+                    if leaf.stable_ptr().identifier(db) == "Event" {
+                        has_event = true;
+                    }
                     extra_uses
                         .entry(leaf.stable_ptr().identifier(db))
                         .or_insert_with_key(|ident| format!("super::{}", ident));
@@ -110,110 +226,77 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
             .collect(),
     );
 
-    let mut generated_external_functions = Vec::new();
-    let mut generated_constructor_functions = Vec::new();
-    let mut generated_l1_handler_functions = Vec::new();
+    let mut data = ContractGenerationData::default();
 
     let mut storage_code = RewriteNode::Text("".to_string());
-    let mut abi_functions = Vec::new();
-    let mut event_functions = Vec::new();
-    let mut abi_events = Vec::new();
     for item in body.items(db).elements(db) {
         match &item {
-            ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
-                let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
-                if let Some((event_function_rewrite, abi_event_rewrite)) = rewrite_nodes {
-                    event_functions.push(event_function_rewrite);
-                    abi_events.push(abi_event_rewrite);
-                }
-                diagnostics.extend(event_diagnostics);
-            }
             ast::Item::FreeFunction(item_function) => {
-                if let Some(entry_point_kind) =
-                    EntryPointKind::try_from_function_with_body(db, item_function)
-                {
-                    let attr = entry_point_kind.get_attr();
+                let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(db, item_function) else {
+                    continue;
+                };
+                let function_name = RewriteNode::new_trimmed(
+                    item_function.declaration(db).name(db).as_syntax_node(),
+                );
+                handle_entry_point(
+                    entry_point_kind,
+                    item_function,
+                    function_name,
+                    db,
+                    &mut diagnostics,
+                    &mut data,
+                );
+            }
+            ast::Item::Impl(item_impl) => {
+                let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
+                    continue;
+                };
+                // TODO(spapini): Check attr args instead.
+                if attr.as_syntax_node().get_text_without_trivia(db) != "#[external(v0)]" {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "Only #[external(v0)] is supported.".to_string(),
+                        stable_ptr: attr.stable_ptr().untyped(),
+                    });
+                }
+                let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
+                let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
+                for item in body.items(db).elements(db) {
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
+                    forbid_attribute_in_external_impl(
+                        db,
+                        &mut diagnostics,
+                        &item,
+                        CONSTRUCTOR_ATTR,
+                    );
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, L1_HANDLER_ATTR);
 
-                    let declaration = item_function.declaration(db);
-                    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
-                        declaration.generic_params(db)
-                    {
-                        diagnostics.push(PluginDiagnostic {
-                            message: "Contract entry points cannot have generic arguments"
-                                .to_string(),
-                            stable_ptr: generic_params.stable_ptr().untyped(),
-                        })
-                    }
-
-                    let name = declaration.name(db);
-                    let name_str = name.text(db);
-
-                    if !is_account_contract {
-                        for account_contract_entry_point in ACCOUNT_CONTRACT_ENTRY_POINTS {
-                            if name_str == account_contract_entry_point {
-                                diagnostics.push(PluginDiagnostic {
-                                    message: format!(
-                                        "Only an account contract may implement `{name_str}`."
-                                    ),
-
-                                    stable_ptr: name.stable_ptr().untyped(),
-                                })
-                            }
-                        }
-                    }
-                    // TODO(ilya): Validate that an account contract has all the required functions.
-
-                    let mut declaration_node =
-                        RewriteNode::new_trimmed(declaration.as_syntax_node());
-                    let original_parameters = declaration_node
-                        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-                        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
-                    let params = declaration.signature(db).parameters(db);
-                    for (param_idx, param) in params.elements(db).iter().enumerate() {
-                        // This assumes `mut` can only appear alone.
-                        if is_mut_param(db, param) {
-                            original_parameters
-                                .modify_child(db, param_idx * 2)
-                                .modify_child(db, ast::Param::INDEX_MODIFIERS)
-                                .set_str("".to_string());
-                        }
-                    }
-                    abi_functions.push(RewriteNode::new_modified(vec![
-                        RewriteNode::Text(format!("#[{attr}]\n        ")),
-                        declaration_node,
-                        RewriteNode::Text(";\n        ".to_string()),
-                    ]));
-
-                    match generate_entry_point_wrapper(db, item_function) {
-                        Ok(generated_function) => {
-                            let generated = match entry_point_kind {
-                                EntryPointKind::Constructor => &mut generated_constructor_functions,
-                                EntryPointKind::L1Handler => {
-                                    validate_l1_handler_first_parameter(
-                                        db,
-                                        &params,
-                                        &mut diagnostics,
-                                    );
-                                    &mut generated_l1_handler_functions
-                                }
-                                EntryPointKind::External | EntryPointKind::View => {
-                                    &mut generated_external_functions
-                                }
-                            };
-                            generated.push(generated_function);
-                            generated.push(RewriteNode::Text("\n        ".to_string()));
-                        }
-                        Err(entry_point_diagnostics) => {
-                            diagnostics.extend(entry_point_diagnostics);
-                        }
-                    }
+                    let ast::ImplItem::Function(item_function) = item else { continue; };
+                    let function_name = RewriteNode::new_trimmed(
+                        item_function.declaration(db).name(db).as_syntax_node(),
+                    );
+                    let function_name = RewriteNode::interpolate_patched(
+                        "$impl_name$::$func_name$",
+                        [
+                            ("impl_name".to_string(), impl_name.clone()),
+                            ("func_name".to_string(), function_name),
+                        ]
+                        .into(),
+                    );
+                    handle_entry_point(
+                        EntryPointKind::External,
+                        &item_function,
+                        function_name,
+                        db,
+                        &mut diagnostics,
+                        &mut data,
+                    );
                 }
             }
             ast::Item::Struct(item_struct)
                 if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
             {
                 let (storage_rewrite_node, storage_diagnostics) =
-                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node);
+                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node, has_event);
                 storage_code = storage_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
             }
@@ -228,68 +311,67 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            mod $contract_name$ {{
-                use starknet::SyscallResultTrait;
-                use starknet::SyscallResultTraitImpl;
+            use starknet::SyscallResultTrait;
+            use starknet::SyscallResultTraitImpl;
 
-            $original_items$
-                const TEST_CLASS_HASH: felt252 = {test_class_hash};
-                $storage_code$
+            #[cfg(test)]
+            const TEST_CLASS_HASH: felt252 = {test_class_hash};
+            $storage_code$
 
-                $event_functions$
+            $event_functions$
 
-                trait {ABI_TRAIT} {{
-                    $abi_functions$
-                    $abi_events$
-                }}
+            trait {ABI_TRAIT}<ContractState> {{
+                $abi_functions$
+                $abi_events$
+            }}
 
-                mod {EXTERNAL_MODULE} {{$extra_uses$
+            mod {EXTERNAL_MODULE} {{$extra_uses$
 
-                    $generated_external_functions$
-                }}
+                $generated_external_functions$
+            }}
 
-                mod {L1_HANDLER_MODULE} {{$extra_uses$
+            mod {L1_HANDLER_MODULE} {{$extra_uses$
 
-                    $generated_l1_handler_functions$
-                }}
+                $generated_l1_handler_functions$
+            }}
 
-                mod {CONSTRUCTOR_MODULE} {{$extra_uses$
+            mod {CONSTRUCTOR_MODULE} {{$extra_uses$
 
-                    $generated_constructor_functions$
-                }}
+                $generated_constructor_functions$
             }}
         "
         )
         .as_str(),
-        HashMap::from([
+        [
             (
                 "contract_name".to_string(),
                 RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
             ),
             ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
             ("storage_code".to_string(), storage_code),
-            ("event_functions".to_string(), RewriteNode::new_modified(event_functions)),
-            ("abi_functions".to_string(), RewriteNode::new_modified(abi_functions)),
-            ("abi_events".to_string(), RewriteNode::new_modified(abi_events)),
+            ("event_functions".to_string(), RewriteNode::new_modified(data.event_functions)),
+            ("abi_functions".to_string(), RewriteNode::new_modified(data.abi_functions)),
+            ("abi_events".to_string(), RewriteNode::new_modified(data.abi_events)),
             ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),
-                RewriteNode::new_modified(generated_external_functions),
+                RewriteNode::new_modified(data.generated_external_functions),
             ),
             (
                 "generated_l1_handler_functions".to_string(),
-                RewriteNode::new_modified(generated_l1_handler_functions),
+                RewriteNode::new_modified(data.generated_l1_handler_functions),
             ),
             (
                 "generated_constructor_functions".to_string(),
-                RewriteNode::new_modified(generated_constructor_functions),
+                RewriteNode::new_modified(data.generated_constructor_functions),
             ),
-        ]),
+        ]
+        .into(),
     );
 
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(generated_contract_mod);
-    PluginResult {
+    Some(PluginResult {
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: builder.code,
@@ -302,6 +384,84 @@ pub fn handle_mod(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginRe
         }),
         diagnostics,
         remove_original_item: true,
+    })
+}
+
+fn forbid_attribute_in_external_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    attr_name: &str,
+) {
+    if let Some(attr) = impl_item.find_attr(db, attr_name) {
+        diagnostics.push(PluginDiagnostic {
+            message: format!(
+                "The '{attr_name}' attribute is not allowed inside a contract external impl."
+            ),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
+}
+
+/// Handles a contract entrypoint function.
+fn handle_entry_point(
+    entry_point_kind: EntryPointKind,
+    item_function: &ast::FunctionWithBody,
+    function_name: RewriteNode,
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    data: &mut ContractGenerationData,
+) {
+    let attr = entry_point_kind.get_attr();
+
+    let declaration = item_function.declaration(db);
+    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
+        declaration.generic_params(db)
+    {
+        diagnostics.push(PluginDiagnostic {
+            message: "Contract entry points cannot have generic arguments".to_string(),
+            stable_ptr: generic_params.stable_ptr().untyped(),
+        })
+    }
+
+    // TODO(ilya): Validate that an account contract has all the required functions.
+
+    let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
+    let original_parameters = declaration_node
+        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
+        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
+    let params = declaration.signature(db).parameters(db);
+    for (param_idx, param) in params.elements(db).iter().enumerate() {
+        // This assumes `mut` can only appear alone.
+        if is_mut_param(db, param) {
+            original_parameters
+                .modify_child(db, param_idx * 2)
+                .modify_child(db, ast::Param::INDEX_MODIFIERS)
+                .set_str("".to_string());
+        }
+    }
+    data.abi_functions.push(RewriteNode::new_modified(vec![
+        RewriteNode::Text(format!("#[{attr}]\n        ")),
+        declaration_node,
+        RewriteNode::Text(";\n        ".to_string()),
+    ]));
+
+    match generate_entry_point_wrapper(db, item_function, function_name) {
+        Ok(generated_function) => {
+            let generated = match entry_point_kind {
+                EntryPointKind::Constructor => &mut data.generated_constructor_functions,
+                EntryPointKind::L1Handler => {
+                    validate_l1_handler_first_parameter(db, &params, diagnostics);
+                    &mut data.generated_l1_handler_functions
+                }
+                EntryPointKind::External => &mut data.generated_external_functions,
+            };
+            generated.push(generated_function);
+            generated.push(RewriteNode::Text("\n        ".to_string()));
+        }
+        Err(entry_point_diagnostics) => {
+            diagnostics.extend(entry_point_diagnostics);
+        }
     }
 }
 
@@ -312,11 +472,11 @@ fn validate_l1_handler_first_parameter(
     params: &ast::ParamList,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) {
-    if let Some(first_param) = params.elements(db).first() {
+    if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
         if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be of type `felt252`."
+                message: "The second parameter of an L1 handler must be of type `felt252`."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });
@@ -327,14 +487,15 @@ fn validate_l1_handler_first_parameter(
             != L1_HANDLER_FIRST_PARAM_NAME
         {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of an L1 handler must be named 'from_address'."
+                message: "The second parameter of an L1 handler must be named 'from_address'."
                     .to_string(),
                 stable_ptr: first_param.stable_ptr().untyped(),
             });
         }
     } else {
         diagnostics.push(PluginDiagnostic {
-            message: "An L1 handler must have the 'from_address' parameter.".to_string(),
+            message: "An L1 handler must have the 'from_address' as its second parameter."
+                .to_string(),
             stable_ptr: params.stable_ptr().untyped(),
         });
     };

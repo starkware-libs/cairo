@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::{StableLocation, StableLocationOption};
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -23,14 +23,14 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(StableLocationOption::new(self.module_file_id, stable_ptr), kind)
+        self.report_by_location(StableLocation::new(self.module_file_id, stable_ptr), kind)
     }
     pub fn report_by_location(
         &mut self,
-        stable_location: StableLocationOption,
+        stable_location: StableLocation,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(LoweringDiagnostic { stable_location: stable_location.unwrap(), kind })
+        self.diagnostics.add(LoweringDiagnostic { stable_location, kind })
     }
 }
 
@@ -64,9 +64,13 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
                 format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
             }
-            LoweringDiagnosticKind::UnsupportedMatch => "Unsupported match. Currently, matches \
-                                                         require one arm per variant, in the \
-                                                         order of variant definition."
+            LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
+                                                                Currently, only matches on enums \
+                                                                and felt252s are supported."
+                .into(),
+            LoweringDiagnosticKind::UnsupportedMatchArms => "Unsupported match. Currently, \
+                                                             matches require one arm per variant, \
+                                                             in the order of variant definition."
                 .into(),
             LoweringDiagnosticKind::UnsupportedMatchArmNotAVariant => {
                 "Unsupported match arm - not a variant.".into()
@@ -108,7 +112,8 @@ pub enum LoweringDiagnosticKind {
     VariableMoved { inference_error: InferenceError },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
-    UnsupportedMatch,
+    UnsupportedMatchedValue,
+    UnsupportedMatchArms,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,

@@ -152,8 +152,8 @@ felt252_const<3>() -> ([0])
 felt252_const<6>() -> ([1])
 felt252_add([0], [1]) -> ([2])
 struct_construct<Tuple<felt252>>([2]) -> ([3])
-enum_init<core::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
-PushValues([4]: core::PanicResult::<(core::felt252,)>) -> ([5])
+enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([3]) -> ([4])
+PushValues([4]: core::panics::PanicResult::<(core::felt252,)>) -> ([5])
 return([5])
 
 //! > lowering_flat
@@ -164,6 +164,6 @@ Statements:
   (v1: core::felt252) <- 6u
   (v2: core::felt252) <- test::felt252_add(v0, v1)
   (v3: (core::felt252,)) <- struct_construct(v2)
-  (v4: core::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
+  (v4: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v3)
 End:
   Return(v4)

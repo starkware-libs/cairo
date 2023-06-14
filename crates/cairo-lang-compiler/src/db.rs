@@ -35,6 +35,11 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
+impl salsa::ParallelDatabase for RootDatabase {
+    fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
+        salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
+    }
+}
 impl RootDatabase {
     fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };

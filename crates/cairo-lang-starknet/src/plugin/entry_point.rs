@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
-use cairo_lang_syntax::node::ast::{FunctionWithBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{self, FunctionWithBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -10,14 +8,13 @@ use itertools::Itertools;
 
 use super::consts::{
     CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR,
-    VIEW_ATTR,
 };
 use super::utils::{is_felt252_span, is_ref_param};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EntryPointKind {
     External,
-    View,
     Constructor,
     L1Handler,
 }
@@ -29,8 +26,6 @@ impl EntryPointKind {
     ) -> Option<Self> {
         if item_function.has_attr(db, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
-        } else if item_function.has_attr(db, VIEW_ATTR) {
-            Some(EntryPointKind::View)
         } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
         } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
@@ -44,7 +39,6 @@ impl EntryPointKind {
     pub fn get_attr(&self) -> &str {
         match self {
             EntryPointKind::External => EXTERNAL_ATTR,
-            EntryPointKind::View => VIEW_ATTR,
             EntryPointKind::Constructor => CONSTRUCTOR_ATTR,
             EntryPointKind::L1Handler => L1_HANDLER_ATTR,
         }
@@ -55,16 +49,32 @@ impl EntryPointKind {
 pub fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &FunctionWithBody,
+    wrapped_function_name: RewriteNode,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
-    let params = sig.parameters(db).elements(db);
+    let mut params = sig.parameters(db).elements(db).into_iter();
     let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
+
+    let Some(first_param) = params.next() else {
+        return Err(vec![PluginDiagnostic{
+            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
+            stable_ptr: sig.stable_ptr().untyped(),
+        }]);
+    };
+    if first_param.name(db).text(db) != "self" {
+        return Err(vec![PluginDiagnostic {
+            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
+            stable_ptr: sig.stable_ptr().untyped(),
+        }]);
+    };
+    let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
+    // TODO(spapini): Check modifiers and type.
 
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
@@ -101,8 +111,8 @@ pub fn generate_entry_point_wrapper(
 
     let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
     let wrapped_name = RewriteNode::interpolate_patched(
-        "super::$function_name$",
-        HashMap::from([("function_name".to_string(), function_name.clone())]),
+        "super::$wrapped_function_name$",
+        [("wrapped_function_name".to_string(), wrapped_function_name)].into(),
     );
 
     let ret_ty = sig.ret_ty(db);
@@ -135,11 +145,12 @@ pub fn generate_entry_point_wrapper(
         return Err(diagnostics);
     }
 
+    let storage_arg = if is_snapshot { "@storage" } else { "ref storage" };
     let output_handling_string = if raw_output {
-        format!("$wrapped_name$({arg_names_str})")
+        format!("$wrapped_name$({storage_arg}, {arg_names_str})")
     } else {
         format!(
-            "{let_res}$wrapped_name$({arg_names_str});
+            "{let_res}$wrapped_name$({storage_arg}, {arg_names_str});
             let mut arr = array::array_new();
             // References.$ref_appends$
             // Result.{append_res}
@@ -149,10 +160,11 @@ pub fn generate_entry_point_wrapper(
 
     let output_handling = RewriteNode::interpolate_patched(
         &output_handling_string,
-        HashMap::from([
+        [
             ("wrapped_name".to_string(), wrapped_name),
             ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
-        ]),
+        ]
+        .into(),
     );
 
     let implicit_precedence = RewriteNode::Text(format!("#[implicit_precedence({})]", {
@@ -176,13 +188,15 @@ pub fn generate_entry_point_wrapper(
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_contract_state();
             $output_handling$
         }",
-        HashMap::from([
+        [
             ("function_name".to_string(), function_name),
             ("output_handling".to_string(), output_handling),
             ("arg_definitions".to_string(), arg_definitions),
             ("implicit_precedence".to_string(), implicit_precedence),
-        ]),
+        ]
+        .into(),
     ))
 }

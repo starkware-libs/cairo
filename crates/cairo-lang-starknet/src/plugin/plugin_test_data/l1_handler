@@ -4,82 +4,125 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[contract]
+#[starknet::contract]
 mod TestContract {
-    #[l1_handler]
-    fn good_l1_handler(from_address: felt252, arg: felt252) {}
+    #[storage]
+    struct Storage {}
 
     #[l1_handler]
-    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
+    fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_no_params() {}
+    fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+    fn l1_handler_no_params(ref self: ContractState) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
+    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
 }
 
 //! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
 mod TestContract {
-    use starknet::SyscallResultTrait;
-    use starknet::SyscallResultTraitImpl;
+    #[storage]
+    struct Storage {}
 
     #[l1_handler]
-    fn good_l1_handler(from_address: felt252, arg: felt252) {}
+    fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn good_l1_handler_ignored(_from_address: felt252, arg: felt252) {}
+    fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_no_params() {}
+    fn l1_handler_no_params(ref self: ContractState) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
+    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
 
     #[l1_handler]
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
+    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
+}
 
-    const TEST_CLASS_HASH: felt252 = 1055478556891347552205958247167314964337017986860946356987102910672004927573;
-    
+contract:
 
-    
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
 
-    trait __abi {
-        #[l1_handler]
-        fn good_l1_handler(from_address: felt252, arg: felt252);
-        #[l1_handler]
-        fn good_l1_handler_ignored(_from_address: felt252, arg: felt252);
-        #[l1_handler]
-        fn l1_handler_no_params();
-        #[l1_handler]
-        fn l1_handler_wrong_first_param_name(abc: felt252);
-        #[l1_handler]
-        fn l1_handler_wrong_first_param_type(from_address: u128);
-        
-        
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 163010207270130705852809562941790435675492496513793075754021342799706585500;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
     }
 
-    mod __external {
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<ContractState> {
+    #[l1_handler]
+        fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252);
+        #[l1_handler]
+        fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252);
+        #[l1_handler]
+        fn l1_handler_no_params(ref self: ContractState);
+        #[l1_handler]
+        fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252);
+        #[l1_handler]
+        fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128);
+        
+    
+}
+
+mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        
-    }
+    
+}
 
-    mod __l1_handler {
+mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -98,7 +141,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler(__arg_from_address, __arg_arg);
+            let mut storage = super::unsafe_new_contract_state();
+            super::good_l1_handler(ref storage, __arg_from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -123,7 +167,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::good_l1_handler_ignored(__arg__from_address, __arg_arg);
+            let mut storage = super::unsafe_new_contract_state();
+            super::good_l1_handler_ignored(ref storage, __arg__from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -143,7 +188,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_no_params();
+            let mut storage = super::unsafe_new_contract_state();
+            super::l1_handler_no_params(ref storage, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -165,7 +211,8 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_name(__arg_abc);
+            let mut storage = super::unsafe_new_contract_state();
+            super::l1_handler_wrong_first_param_name(ref storage, __arg_abc);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -187,38 +234,67 @@ mod TestContract {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            super::l1_handler_wrong_first_param_type(__arg_from_address);
+            let mut storage = super::unsafe_new_contract_state();
+            super::l1_handler_wrong_first_param_type(ref storage, __arg_from_address);
             let mut arr = array::array_new();
             // References.
             // Result.
             array::ArrayTrait::span(@arr)
         }
         
-    }
+}
 
-    mod __constructor {
+mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
         use option::OptionTrait;
         use option::OptionTraitImpl;
 
+    
+}
+
+
+impls:
+
+impl ContractStateDrop<> of Drop::<ContractState<>>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
         
+        Option::None(())
     }
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An L1 handler must have the 'from_address' parameter.
- --> lib.cairo:10:29
-    fn l1_handler_no_params() {}
-                            ^
+error: Plugin diagnostic: An L1 handler must have the 'from_address' as its second parameter.
+ --> lib.cairo:13:29
+    fn l1_handler_no_params(ref self: ContractState) {}
+                            ^*********************^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be named 'from_address'.
- --> lib.cairo:13:42
-    fn l1_handler_wrong_first_param_name(abc: felt252) {}
-                                         ^**********^
+error: Plugin diagnostic: The second parameter of an L1 handler must be named 'from_address'.
+ --> lib.cairo:16:67
+    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
+                                                                  ^**********^
 
-error: Plugin diagnostic: The first parameter of an L1 handler must be of type `felt252`.
- --> lib.cairo:16:42
-    fn l1_handler_wrong_first_param_type(from_address: u128) {}
-                                         ^****************^
+error: Plugin diagnostic: The second parameter of an L1 handler must be of type `felt252`.
+ --> lib.cairo:19:67
+    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
+                                                                  ^****************^
