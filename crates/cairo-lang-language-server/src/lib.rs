@@ -47,7 +47,7 @@ use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
 use lsp::notification::Notification;
-use salsa::{Cancelled, InternKey};
+use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
 use serde::{Deserialize, Serialize};
@@ -67,7 +67,6 @@ pub mod completions;
 pub mod vfs;
 
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
-pub type Cancellable<T> = Result<T, Cancelled>;
 
 pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]

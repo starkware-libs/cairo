@@ -24,4 +24,12 @@ cargo publish --package cairo-lang-compiler && \
 cargo publish --package cairo-lang-starknet && \
 cargo publish --package cairo-lang-runner && \
 cargo publish --package cairo-lang-test-runner && \
-cargo publish --package cairo-lang-language-server
+cargo publish --package cairo-lang-language-server && \
+cargo publish --package cairo-compile && \
+cargo publish --package cairo-format && \
+cargo publish --package cairo-language-server && \
+cargo publish --package cairo-run && \
+cargo publish --package cairo-test && \
+cargo publish --package sierra-compile && \
+cargo publish --package starknet-compile && \
+cargo publish --package starknet-sierra-compile
