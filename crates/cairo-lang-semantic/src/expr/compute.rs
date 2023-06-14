@@ -672,7 +672,7 @@ pub fn compute_expr_block_semantic(
         let ty = if let Some(t) = &tail_semantic_expr {
             t.ty()
         } else if let Some(statement) = statements_semantic.last() {
-            if let Statement::Return(_) = &new_ctx.statements[*statement] {
+            if let Statement::Return(_) | Statement::Break(_) = &new_ctx.statements[*statement] {
                 never_ty(new_ctx.db)
             } else {
                 unit_ty(db)
