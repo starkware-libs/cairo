@@ -35,7 +35,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::{Arg, RunResultValue, SierraCasmRunner};
+use crate::{build_hints_dict, Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -87,41 +87,10 @@ pub struct CairoHintProcessor<'a> {
     /// The Cairo runner.
     #[allow(dead_code)]
     pub runner: Option<&'a SierraCasmRunner>,
-    // A dict from instruction offset to hint vector.
-    pub hints_dict: HashMap<usize, Vec<HintParams>>,
     // A mapping from a string that represents a hint to the hint object.
     pub string_to_hint: HashMap<String, Hint>,
     // The starknet state.
     pub starknet_state: StarknetState,
-}
-
-impl<'a> CairoHintProcessor<'a> {
-    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        runner: Option<&'a SierraCasmRunner>,
-        instructions: Instructions,
-        starknet_state: StarknetState,
-    ) -> Self {
-        let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
-        let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
-
-        let mut hint_offset = 0;
-
-        for instruction in instructions {
-            if !instruction.hints.is_empty() {
-                // Register hint with string for the hint processor.
-                for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.to_string(), hint.clone());
-                }
-                // Add hint, associated with the instruction offset.
-                hints_dict.insert(
-                    hint_offset,
-                    instruction.hints.iter().map(hint_to_hint_params).collect(),
-                );
-            }
-            hint_offset += instruction.body.op_size();
-        }
-        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
-    }
 }
 
 fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -1018,7 +987,7 @@ impl<'a> CairoHintProcessor<'a> {
             .get_function(entry_point)
             .expect("Entrypoint exists, but not found.");
         let mut res = runner
-            .run_function(
+            .run_function_with_starknet_context(
                 function,
                 &[Arg::Array(calldata)],
                 Some(*gas_counter),
@@ -1841,33 +1810,57 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-type RunFunctionRes = (Vec<Option<Felt252>>, usize, StarknetState);
+type RunFunctionRes = (Vec<Option<Felt252>>, usize);
+type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
-pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> + Clone>(
-    runner: Option<&'b SierraCasmRunner>,
+/// Run used CairoHintProcessor and StarknetState to emulate Starknet behaviour.
+pub fn run_function_with_starknet_context<'a, 'b: 'a, Instructions>(
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
         context: RunFunctionContext<'_>,
     ) -> Result<(), Box<CairoRunError>>,
-    starknet_state: StarknetState,
-) -> Result<RunFunctionRes, Box<CairoRunError>> {
+) -> Result<RunFunctionResStarknet, Box<CairoRunError>>
+where
+    Instructions: Iterator<Item = &'a Instruction> + Clone,
+{
+    let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
+    let mut hint_processor = CairoHintProcessor {
+        runner: None,
+        string_to_hint,
+        starknet_state: StarknetState::default(),
+    };
+    run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
+        .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
+}
+
+/// Runs `program` on layout with prime, and returns the memory layout and ap value.
+/// Allows injecting custom HintProcessor.
+pub fn run_function<'a, 'b: 'a, Instructions>(
+    instructions: Instructions,
+    builtins: Vec<BuiltinName>,
+    additional_initialization: fn(
+        context: RunFunctionContext<'_>,
+    ) -> Result<(), Box<CairoRunError>>,
+    hint_processor: &mut dyn HintProcessor,
+    hints_dict: HashMap<usize, Vec<HintParams>>,
+) -> Result<RunFunctionRes, Box<CairoRunError>>
+where
+    Instructions: Iterator<Item = &'a Instruction> + Clone,
+{
     let data: Vec<MaybeRelocatable> = instructions
-        .clone()
         .flat_map(|inst| inst.assemble().encode())
         .map(Felt252::from)
         .map(MaybeRelocatable::from)
         .collect();
-
-    let mut hint_processor = CairoHintProcessor::new(runner, instructions, starknet_state);
 
     let data_len = data.len();
     let program = Program::new(
         builtins,
         data,
         Some(0),
-        hint_processor.hints_dict.clone(),
+        hints_dict,
         ReferenceManager { references: Vec::new() },
         HashMap::new(),
         vec![],
@@ -1884,13 +1877,11 @@ pub fn run_function<'a, 'b: 'a, Instructions: Iterator<Item = &'a Instruction> +
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
-        .run_until_pc(end, &mut None, &mut vm, &mut hint_processor)
+        .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
         .map_err(CairoRunError::from)?;
-    runner.end_run(true, false, &mut vm, &mut hint_processor).map_err(CairoRunError::from)?;
+    runner
+        .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
+        .map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
-    Ok((
-        runner.relocated_memory,
-        vm.get_relocated_trace().unwrap().last().unwrap().ap,
-        hint_processor.starknet_state,
-    ))
+    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }

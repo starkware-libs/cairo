@@ -191,7 +191,7 @@ fn run_function(
     )
     .expect("Failed setting up runner.");
     let result = runner
-        .run_function(
+        .run_function_with_starknet_context(
             // find first
             runner.find_function("").expect("Failed finding the function."),
             &params.iter().cloned().map(Arg::Value).collect_vec(),

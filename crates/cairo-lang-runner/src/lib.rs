@@ -2,6 +2,7 @@
 use std::collections::HashMap;
 
 use cairo_felt::Felt252;
+use cairo_lang_casm::hints::Hint;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::{casm, casm_extend};
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -27,9 +28,11 @@ use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use cairo_vm::serde::deserialize_program::BuiltinName;
+use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
+use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
-pub use casm_run::StarknetState;
+use casm_run::hint_to_hint_params;
+pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -61,12 +64,19 @@ pub enum RunnerError {
     CairoRunError(#[from] Box<CairoRunError>),
 }
 
+/// The full result of a run with Starknet state.
+pub struct RunResultStarknet {
+    pub gas_counter: Option<Felt252>,
+    pub memory: Vec<Option<Felt252>>,
+    pub value: RunResultValue,
+    pub starknet_state: StarknetState,
+}
+
 /// The full result of a run.
 pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
     pub value: RunResultValue,
-    pub starknet_state: StarknetState,
 }
 
 /// The ran function return value.
@@ -91,6 +101,30 @@ impl From<Felt252> for Arg {
     fn from(value: Felt252) -> Self {
         Self::Value(value)
     }
+}
+
+/// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
+pub fn build_hints_dict<'b>(
+    instructions: impl Iterator<Item = &'b Instruction>,
+) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
+    let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
+    let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
+
+    let mut hint_offset = 0;
+
+    for instruction in instructions {
+        if !instruction.hints.is_empty() {
+            // Register hint with string for the hint processor.
+            for hint in instruction.hints.iter() {
+                string_to_hint.insert(hint.to_string(), hint.clone());
+            }
+            // Add hint, associated with the instruction offset.
+            hints_dict
+                .insert(hint_offset, instruction.hints.iter().map(hint_to_hint_params).collect());
+        }
+        hint_offset += instruction.body.op_size();
+    }
+    (hints_dict, string_to_hint)
 }
 
 /// Runner enabling running a Sierra program on the vm.
@@ -137,21 +171,48 @@ impl SierraCasmRunner {
         })
     }
 
-    /// Runs the vm starting from a function. Function may have implicits, but no other ref params.
-    /// The cost of the function is deducted from available_gas before the execution begins.
-    pub fn run_function(
+    /// Runs the vm starting from a function in the context of a given starknet state.
+    pub fn run_function_with_starknet_context(
         &self,
         func: &Function,
         args: &[Arg],
         available_gas: Option<usize>,
         starknet_state: StarknetState,
-    ) -> Result<RunResult, RunnerError> {
+    ) -> Result<RunResultStarknet, RunnerError> {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let (cells, ap, starknet_state) = casm_run::run_function(
-            Some(self),
-            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter()),
+        let instructions =
+            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
+        let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
+        let mut hint_processor =
+            CairoHintProcessor { runner: Some(self), starknet_state, string_to_hint };
+        self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
+            RunResultStarknet {
+                gas_counter: v.gas_counter,
+                memory: v.memory,
+                value: v.value,
+                starknet_state: hint_processor.starknet_state,
+            }
+        })
+    }
+
+    /// Runs the vm starting from a function with custom hint processor. Function may have
+    /// implicits, but no other ref params. The cost of the function is deducted from
+    /// available_gas before the execution begins.
+    pub fn run_function<'a, Instructions>(
+        &self,
+        func: &Function,
+        hint_processor: &mut dyn HintProcessor,
+        hints_dict: HashMap<usize, Vec<HintParams>>,
+        instructions: Instructions,
+        builtins: Vec<BuiltinName>,
+    ) -> Result<RunResult, RunnerError>
+    where
+        Instructions: Iterator<Item = &'a Instruction> + Clone,
+    {
+        let (cells, ap) = casm_run::run_function(
+            instructions,
             builtins,
             |context| {
                 let vm = context.vm;
@@ -171,7 +232,8 @@ impl SierraCasmRunner {
                     .map_err(|e| Box::new(e.into()))?;
                 Ok(())
             },
-            starknet_state,
+            hint_processor,
+            hints_dict,
         )?;
         let mut results_data = self.get_results_data(func, &cells, ap)?;
         // Handling implicits.
@@ -201,7 +263,7 @@ impl SierraCasmRunner {
             let [(ty, values)] = <[_; 1]>::try_from(results_data).ok().unwrap();
             self.handle_main_return_value(ty, values, &cells)?
         };
-        Ok(RunResult { gas_counter, memory: cells, value, starknet_state })
+        Ok(RunResult { gas_counter, memory: cells, value })
     }
 
     /// Handling the main return value to create a `RunResultValue`.

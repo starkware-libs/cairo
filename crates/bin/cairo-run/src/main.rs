@@ -71,7 +71,7 @@ fn main() -> anyhow::Result<()> {
     )
     .with_context(|| "Failed setting up runner.")?;
     let result = runner
-        .run_function(
+        .run_function_with_starknet_context(
             runner.find_function("::main")?,
             &[],
             args.available_gas,
