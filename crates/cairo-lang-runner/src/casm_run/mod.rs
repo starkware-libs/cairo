@@ -35,7 +35,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::{Arg, RunResultValue, SierraCasmRunner, build_hints_dict};
+use crate::{build_hints_dict, Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -73,8 +73,6 @@ struct Secp256k1ExecutionScope {
     /// The id of a point is the index in the vector.
     ec_points: Vec<secp256k1::Affine>,
 }
-
-
 
 /// Helper object to allocate and track Secp256r1 elliptic curve points.
 #[derive(Default)]
@@ -1821,7 +1819,6 @@ pub struct RunFunctionContext<'a> {
     pub data_len: usize,
 }
 
-
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
 
@@ -1862,7 +1859,6 @@ where
     Instructions: Iterator<Item = &'a Instruction> + Clone,
 {
     let data: Vec<MaybeRelocatable> = instructions
-        .clone()
         .flat_map(|inst| inst.assemble().encode())
         .map(Felt252::from)
         .map(MaybeRelocatable::from)
@@ -1892,10 +1888,9 @@ where
     runner
         .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
         .map_err(CairoRunError::from)?;
-    runner.end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor).map_err(CairoRunError::from)?;
+    runner
+        .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
+        .map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
-    Ok((
-        runner.relocated_memory,
-        vm.get_relocated_trace().unwrap().last().unwrap().ap,
-    ))
+    Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }

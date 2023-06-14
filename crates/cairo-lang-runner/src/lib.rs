@@ -29,9 +29,9 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
-use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -103,7 +103,7 @@ impl From<Felt252> for Arg {
 }
 
 /// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
-pub fn build_hints_dict<'b, >(
+pub fn build_hints_dict<'b>(
     instructions: impl Iterator<Item = &'b Instruction>,
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
     let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
@@ -118,16 +118,13 @@ pub fn build_hints_dict<'b, >(
                 string_to_hint.insert(hint.to_string(), hint.clone());
             }
             // Add hint, associated with the instruction offset.
-            hints_dict.insert(
-                hint_offset,
-                instruction.hints.iter().map(hint_to_hint_params).collect(),
-            );
+            hints_dict
+                .insert(hint_offset, instruction.hints.iter().map(hint_to_hint_params).collect());
         }
         hint_offset += instruction.body.op_size();
     }
     (hints_dict, string_to_hint)
 }
-
 
 /// Runner enabling running a Sierra program on the vm.
 pub struct SierraCasmRunner {
@@ -180,13 +177,11 @@ impl SierraCasmRunner {
         let initial_gas = self.get_initial_available_gas(func, available_gas)?;
         let (entry_code, builtins) = self.create_entry_code(func, args, initial_gas)?;
         let footer = self.create_code_footer();
-        let instructions = chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
+        let instructions =
+            chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
-        let mut hint_processor = CairoHintProcessor {
-            runner: Some(self),
-            starknet_state,
-            string_to_hint: string_to_hint,
-        };
+        let mut hint_processor =
+            CairoHintProcessor { runner: Some(self), starknet_state, string_to_hint };
         self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
             RunResultStarknet {
                 gas_counter: v.gas_counter,
@@ -200,14 +195,13 @@ impl SierraCasmRunner {
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// available_gas before the execution begins.
-    /// 
     pub fn run_function<'a, Instructions>(
         &self,
         func: &Function,
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
-        builtins: Vec<BuiltinName>
+        builtins: Vec<BuiltinName>,
     ) -> Result<RunResult, RunnerError>
     where
         Instructions: Iterator<Item = &'a Instruction> + Clone,
