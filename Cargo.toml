@@ -86,7 +86,7 @@ proc-macro2 = "1.0"
 quote = "1.0.21"
 rayon = "1.7.0"
 rstest = "0.16.0"
-salsa = "0.17.0-pre.2"
+salsa = "0.16.1"
 scarb-metadata = "1.3.0"
 schemars = { version = "0.8.12", features = ["preserve_order"] }
 serde = { version = "1.0.130", features = ["derive"] }
