@@ -11,11 +11,11 @@ use integer::BoundedInt;
 use zeroable::Zeroable;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
-    fn eq(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs)
+    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
     }
-    fn ne(lhs: StorageAddress, rhs: StorageAddress) -> bool {
-        !(storage_address_to_felt252(lhs) == storage_address_to_felt252(rhs))
+    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
+        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
     }
 }
 
@@ -47,18 +47,18 @@ struct AbcEtc {
 mod TestContract {
     use super::AbcEtc;
 
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         data: AbcEtc, 
     }
 
-    #[starknet::external]
-    fn set_data(ref self: Storage, value: AbcEtc) {
+    #[external]
+    fn set_data(ref self: ContractState, value: AbcEtc) {
         self.data.write(value);
     }
 
-    #[starknet::external]
-    fn get_data(self: @Storage) -> AbcEtc {
+    #[external]
+    fn get_data(self: @ContractState) -> AbcEtc {
         self.data.read()
     }
 }

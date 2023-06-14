@@ -7,11 +7,13 @@ use itertools::{zip_eq, Itertools};
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::borrow_check::demand::DemandReporter;
-use crate::borrow_check::LoweredDemand;
+use crate::borrow_check::Demand;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementEnumConstruct, VarRemapping, VariableId,
 };
+
+pub type LoweredDemand = Demand<VariableId>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevent match arm.
@@ -42,9 +44,8 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
         let mut new_blocks = vec![];
         let mut next_block_id = BlockId(lowered.blocks.len());
         for block in lowered.blocks.iter_mut() {
-            if let FlatBlockEnd::Match {
-                info: MatchInfo::Enum(MatchEnumInfo { concrete_enum_id: _, input: _, arms }),
-            } = &mut block.end
+            if let FlatBlockEnd::Match { info: MatchInfo::Enum(MatchEnumInfo { arms, .. }) } =
+                &mut block.end
             {
                 for arm in arms {
                     if target_blocks.contains(&arm.block_id) {
@@ -209,9 +210,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
-            MatchInfo::Enum(MatchEnumInfo { concrete_enum_id: _, input, arms })
-                if !demand.vars.contains(input) =>
-            {
+            MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) if !demand.vars.contains(input) => {
                 Some(OptimizationCandidate {
                     match_variable: *input,
                     match_arms: arms,

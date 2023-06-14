@@ -15,11 +15,11 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_MODULE, CONTRACT_ATTR, EVENT_ATTR, EXTERNAL_MODULE, IMPL_ATTR,
-    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
+    EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
-use super::events::handle_event;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -27,9 +27,23 @@ use crate::plugin::aux_data::StarkNetContractAuxData;
 
 /// Handles a contract module item.
 pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
+    if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: format!(
+                    "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
+                     `{CONTRACT_ATTR}` instead.",
+                ),
+                stable_ptr: module_ast.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
+    }
     if !module_ast.has_attr(db, CONTRACT_ATTR) {
         return PluginResult::default();
     }
+
     let MaybeModuleBody::Some(body) = module_ast.body(db) else {
         return PluginResult {
             code: None,
@@ -57,8 +71,7 @@ pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> Plugi
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
-                message: "'Storage' struct must be annotated with #[starknet::storage]."
-                    .to_string(),
+                message: "'Storage' struct must be annotated with #[storage].".to_string(),
                 stable_ptr: module_ast.stable_ptr().untyped(),
             }],
             remove_original_item: false,
@@ -115,16 +128,50 @@ pub fn handle_contract_by_storage(
     let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skipping elements that only generate other code, but their code itself is ignored.
-        if matches!(&item, ast::Item::FreeFunction(item) if item.has_attr(db, EVENT_ATTR))
-            || matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
+        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
         }
-        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == "Event")
-            || matches!(&item, ast::Item::Enum(item) if item.name(db).text(db) == "Event")
-        {
-            has_event = true;
+
+        let has_event_attr = item.has_attr(db, EVENT_ATTR);
+        let event_name_info = match &item {
+            ast::Item::Struct(strct) => {
+                Some((strct.name(db).text(db) == "Event", strct.name(db).stable_ptr().untyped()))
+            }
+            ast::Item::Enum(enm) => {
+                Some((enm.name(db).text(db) == "Event", enm.name(db).stable_ptr().untyped()))
+            }
+            _ => None,
+        };
+        if let Some((has_event_name, stable_ptr)) = event_name_info {
+            match (has_event_attr, has_event_name) {
+                (true, false) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is marked with #[{EVENT_ATTR}] must be named \
+                             `Event`."
+                        ),
+                        stable_ptr,
+                    });
+                }
+                (false, true) => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Contract type that is named `Event` must be marked with \
+                             #[{EVENT_ATTR}]."
+                        ),
+                        stable_ptr,
+                    });
+                    // The attribute is missing, but we still can't create an empty event.
+                    has_event = true;
+                }
+                (true, true) => {
+                    has_event = true;
+                }
+                (false, false) => {}
+            }
         }
+
         kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
         if let Some(ident) = match item {
             ast::Item::Constant(item) => Some(item.name(db)),
@@ -184,14 +231,6 @@ pub fn handle_contract_by_storage(
     let mut storage_code = RewriteNode::Text("".to_string());
     for item in body.items(db).elements(db) {
         match &item {
-            ast::Item::FreeFunction(item_function) if item_function.has_attr(db, EVENT_ATTR) => {
-                let (rewrite_nodes, event_diagnostics) = handle_event(db, item_function.clone());
-                if let Some((event_function_rewrite, abi_event_rewrite)) = rewrite_nodes {
-                    data.event_functions.push(event_function_rewrite);
-                    data.abi_events.push(abi_event_rewrite);
-                }
-                diagnostics.extend(event_diagnostics);
-            }
             ast::Item::FreeFunction(item_function) => {
                 let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(db, item_function) else {
                     continue;
@@ -209,19 +248,28 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                let Some(attr) = item_impl.find_attr(db, IMPL_ATTR) else {
+                let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
                     continue;
                 };
                 // TODO(spapini): Check attr args instead.
-                if attr.as_syntax_node().get_text_without_trivia(db) != "#[starknet::imp(v0)]" {
+                if attr.as_syntax_node().get_text_without_trivia(db) != "#[external(v0)]" {
                     diagnostics.push(PluginDiagnostic {
-                        message: "Only #[starknet::imp(v0)] is supported.".to_string(),
+                        message: "Only #[external(v0)] is supported.".to_string(),
                         stable_ptr: attr.stable_ptr().untyped(),
                     });
                 }
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
+                    forbid_attribute_in_external_impl(
+                        db,
+                        &mut diagnostics,
+                        &item,
+                        CONSTRUCTOR_ATTR,
+                    );
+                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, L1_HANDLER_ATTR);
+
                     let ast::ImplItem::Function(item_function) = item else { continue; };
                     let function_name = RewriteNode::new_trimmed(
                         item_function.declaration(db).name(db).as_syntax_node(),
@@ -266,12 +314,13 @@ pub fn handle_contract_by_storage(
             use starknet::SyscallResultTrait;
             use starknet::SyscallResultTraitImpl;
 
+            #[cfg(test)]
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $storage_code$
 
             $event_functions$
 
-            trait {ABI_TRAIT}<Storage> {{
+            trait {ABI_TRAIT}<ContractState> {{
                 $abi_functions$
                 $abi_events$
             }}
@@ -336,6 +385,22 @@ pub fn handle_contract_by_storage(
         diagnostics,
         remove_original_item: true,
     })
+}
+
+fn forbid_attribute_in_external_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    attr_name: &str,
+) {
+    if let Some(attr) = impl_item.find_attr(db, attr_name) {
+        diagnostics.push(PluginDiagnostic {
+            message: format!(
+                "The '{attr_name}' attribute is not allowed inside a contract external impl."
+            ),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
 }
 
 /// Handles a contract entrypoint function.

@@ -3,8 +3,9 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
+use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
-use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
@@ -148,28 +149,22 @@ fn find_methods_for_type(
         for trait_function in methods {
             let clone_data = &mut resolver.inference().clone_data();
             let mut inference = clone_data.inference(db);
-            let mut lookup_context = resolver.impl_lookup_context();
+            let lookup_context = resolver.impl_lookup_context();
             // Check if trait function signature's first param can fit our expr type.
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context, stable_ptr
+                trait_function, ty, &lookup_context, Some(stable_ptr)
             ) else {
                 eprintln!("Can't fit");
                 continue;
             };
 
             // Find impls for it.
-            let trait_id = trait_function.trait_id(db.upcast());
-            lookup_context.extra_modules.push(trait_id.module_file_id(db.upcast()).0);
-            let Ok(new_var) = inference.new_impl_var(
-                concrete_trait_id, stable_ptr, lookup_context
-            ) else {
+            inference.solve().ok();
+            if !matches!(
+                inference.trait_solution_set(concrete_trait_id, lookup_context),
+                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+            ) {
                 continue;
-            };
-            if let ImplId::ImplVar(var) = new_var {
-                inference.finalize();
-                if inference.get_candidates(&var).is_none() {
-                    continue;
-                }
             }
             relevant_methods.push(trait_function);
         }

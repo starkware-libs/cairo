@@ -13,19 +13,22 @@ use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::define_short_id;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use smol_str::SmolStr;
 
-use super::function_with_body::{get_implicit_precedence, get_inline_config};
+use super::function_with_body::{get_implicit_precedence, get_inline_config, FunctionBodyData};
 use super::functions::{FunctionDeclarationData, ImplicitPrecedence, InlineConfiguration};
 use super::generics::semantic_generic_params;
+use super::imp::{GenericsHeadFilter, TraitFilter};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::SemanticDiagnostics;
-use crate::expr::compute::Environment;
+use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
-    semantic, semantic_object_for_id, GenericArgumentId, GenericParam, Mutability,
+    semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
     SemanticDiagnostic, TypeId,
 };
 
@@ -72,6 +75,22 @@ impl ConcreteTraitId {
     }
     pub fn generic_args(&self, db: &dyn SemanticGroup) -> Vec<GenericArgumentId> {
         db.lookup_intern_concrete_trait(*self).generic_args
+    }
+    pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
+        self.trait_id(db).name(db.upcast())
+    }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        self.trait_id(db).full_path(db.upcast())
+    }
+    pub fn filter(&self, db: &dyn SemanticGroup) -> TraitFilter {
+        let generics_filter = match self.generic_args(db).first() {
+            Some(first_generic) => match first_generic.head(db) {
+                Some(head) => GenericsHeadFilter::FirstGenericFilter(head),
+                None => GenericsHeadFilter::NoFilter,
+            },
+            None => GenericsHeadFilter::NoGenerics,
+        };
+        TraitFilter { trait_id: self.trait_id(db), generics_filter }
     }
 }
 
@@ -206,12 +225,10 @@ pub fn priv_trait_semantic_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, trait_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     for generic_param in &generic_params {
         resolver.add_generic_param(*generic_param);
@@ -521,4 +538,82 @@ pub fn concrete_trait_function_signature(
     let generic_signature =
         db.trait_function_signature(concrete_trait_function_id.function_id(db))?;
     SubstitutionRewriter { db, substitution: &substitution }.rewrite(generic_signature)
+}
+
+// === Body ===
+
+// --- Selectors ---
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_body_diagnostics].
+pub fn trait_function_body_diagnostics(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Diagnostics<SemanticDiagnostic> {
+    db.priv_trait_function_body_data(trait_function_id)
+        .map(|data| match data {
+            Some(data) => data.diagnostics,
+            None => Diagnostics::<SemanticDiagnostic>::new(),
+        })
+        .unwrap_or_default()
+}
+
+/// Query implementation of [crate::db::SemanticGroup::trait_function_body].
+pub fn trait_function_body(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Option<Arc<FunctionBody>>> {
+    Ok(match db.priv_trait_function_body_data(trait_function_id)? {
+        Some(body_data) => Some(body_data.body),
+        None => None,
+    })
+}
+
+// --- Computation ---
+
+/// Query implementation of [crate::db::SemanticGroup::priv_trait_function_body_data].
+pub fn priv_trait_function_body_data(
+    db: &dyn SemanticGroup,
+    trait_function_id: TraitFunctionId,
+) -> Maybe<Option<FunctionBodyData>> {
+    let defs_db = db.upcast();
+    let module_file_id = trait_function_id.module_file_id(defs_db);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let trait_id = trait_function_id.trait_id(defs_db);
+    let data = db.priv_trait_semantic_definition_data(trait_id)?;
+    let function_syntax = &data.function_asts[trait_function_id];
+    // Compute declaration semantic.
+    let trait_function_declaration_data =
+        db.priv_trait_function_declaration_data(trait_function_id)?;
+    let parent_resolver_data = db.trait_resolver_data(trait_id)?;
+    let mut resolver = Resolver::with_data(db, (*parent_resolver_data).clone());
+    for generic_param in trait_function_declaration_data.generic_params {
+        resolver.add_generic_param(generic_param);
+    }
+    let environment = trait_function_declaration_data.environment;
+
+    // Compute body semantic expr.
+    let mut ctx = ComputationContext::new(
+        db,
+        &mut diagnostics,
+        resolver,
+        Some(&trait_function_declaration_data.signature),
+        environment,
+    );
+    let function_body = match function_syntax.body(db.upcast()) {
+        ast::MaybeTraitFunctionBody::Some(expr_block) => expr_block,
+        ast::MaybeTraitFunctionBody::None(_) => return Ok(None),
+    };
+    let return_type = trait_function_declaration_data.signature.return_type;
+    let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
+    let ComputationContext { exprs, statements, resolver, .. } = ctx;
+
+    let expr_lookup: UnorderedHashMap<_, _> =
+        exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+    let resolver_data = Arc::new(resolver.data);
+    Ok(Some(FunctionBodyData {
+        diagnostics: diagnostics.build(),
+        expr_lookup,
+        resolver_data,
+        body: Arc::new(FunctionBody { exprs, statements, body_expr }),
+    }))
 }

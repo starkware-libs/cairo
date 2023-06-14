@@ -17,22 +17,37 @@ trait IContract<T> {
 mod ContractA {
     use traits::Into;
     use starknet::info::get_contract_address;
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         value: u128, 
     }
 
-    #[starknet::constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
         self.value.write(value_);
     }
 
-    #[starknet::external]
-    fn foo(ref self: Storage, a: u128) -> u128 {
+    #[external]
+    fn foo(ref self: ContractState, a: u128) -> u128 {
         let value = self.value.read();
         self.value.write(a);
         value
     }
+
+    #[generate_trait]
+    impl MyImpl of MyTrait {
+        fn internal_func(self: @ContractState) -> u128 {
+            5
+        }
+    }
+}
+
+use ContractA::MyTrait;
+#[test]
+#[available_gas(30000000)]
+fn test_internal_func() {
+    let mut contract_state = ContractA::contract_state_for_testing();
+    contract_state.internal_func();
 }
 
 #[test]
@@ -55,16 +70,16 @@ fn test_flow() {
     let mut contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert_eq(contract0.foo(300), 100, 'contract0.foo(300) == 100');
-    assert_eq(contract1.foo(300), 200, 'contract1.foo(300) == 200');
-    assert_eq(contract0.foo(300), 300, 'contract0.foo(300) == 300');
-    assert_eq(contract1.foo(300), 300, 'contract1.foo(300) == 300');
+    assert_eq(@contract0.foo(300), @100, 'contract0.foo(300) == 100');
+    assert_eq(@contract1.foo(300), @200, 'contract1.foo(300) == 200');
+    assert_eq(@contract0.foo(300), @300, 'contract0.foo(300) == 300');
+    assert_eq(@contract1.foo(300), @300, 'contract1.foo(300) == 300');
 
     // Library calls.
     let mut library = IContractLibraryDispatcher {
         class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert_eq(library.foo(300), 0, 'library.foo(300) == 0');
+    assert_eq(@library.foo(300), @0, 'library.foo(300) == 0');
 }
 
 #[test]
@@ -88,16 +103,16 @@ fn test_flow_out_of_gas() {
     let mut contract1 = IContractDispatcher { contract_address: address1 };
 
     // Interact.
-    assert_eq(contract0.foo(300), 100, 'contract0.foo(300) == 100');
-    assert_eq(contract1.foo(300), 200, 'contract1.foo(300) == 200');
-    assert_eq(contract0.foo(300), 300, 'contract0.foo(300) == 300');
-    assert_eq(contract1.foo(300), 300, 'contract1.foo(300) == 300');
+    assert_eq(@contract0.foo(300), @100, 'contract0.foo(300) == 100');
+    assert_eq(@contract1.foo(300), @200, 'contract1.foo(300) == 200');
+    assert_eq(@contract0.foo(300), @300, 'contract0.foo(300) == 300');
+    assert_eq(@contract1.foo(300), @300, 'contract1.foo(300) == 300');
 
     // Library calls.
     let mut library = IContractLibraryDispatcher {
         class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap()
     };
-    assert_eq(library.foo(300), 0, 'library.foo(300) == 0');
+    assert_eq(@library.foo(300), @0, 'library.foo(300) == 0');
 }
 
 #[test]
@@ -106,7 +121,7 @@ fn test_class_hash_not_found() {
     let mut calldata = Default::default();
     calldata.append(100);
     let mut err = deploy_syscall(5.try_into().unwrap(), 0, calldata.span(), false).unwrap_err();
-    assert_eq(err.pop_front().unwrap(), 'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
+    assert_eq(@err.pop_front().unwrap(), @'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
 }
 
 #[test]
@@ -119,11 +134,11 @@ fn test_contract_not_deployed() {
 
 #[starknet::contract]
 mod ContractFailedConstructor {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::constructor]
-    fn constructor(ref self: Storage, value_: u128) {
+    #[constructor]
+    fn constructor(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }
@@ -138,17 +153,17 @@ fn test_failed_constructor() {
         ContractFailedConstructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
         .unwrap_err();
-    assert_eq(err.pop_front().unwrap(), 'Failure', 'err == "Failure"');
-    assert_eq(err.pop_front().unwrap(), 'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
+    assert_eq(@err.pop_front().unwrap(), @'Failure', 'err == "Failure"');
+    assert_eq(@err.pop_front().unwrap(), @'CONSTRUCTOR_FAILED', 'err == "CONSTRUCTOR_FAILED"');
 }
 
 #[starknet::contract]
 mod ContractFailedEntrypoint {
-    #[starknet::storage]
+    #[storage]
     struct Storage {}
 
-    #[starknet::external]
-    fn foo(ref self: Storage, value_: u128) {
+    #[external]
+    fn foo(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
 }

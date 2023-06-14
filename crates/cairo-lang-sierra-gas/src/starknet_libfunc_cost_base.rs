@@ -1,8 +1,9 @@
 use std::vec;
 
 use cairo_lang_sierra::extensions::starknet::secp256::{
-    Secp256EcConcreteLibfunc, Secp256EcOpConcreteLibfunc,
+    Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
@@ -46,23 +47,28 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(4),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
-        StarkNetConcreteLibfunc::Testing(_) => vec![steps(1)],
-        StarkNetConcreteLibfunc::Secp256(libfunc) => match libfunc {
-            Secp256EcConcreteLibfunc::K1(libfunc) => match libfunc {
-                Secp256EcOpConcreteLibfunc::New(_) => syscall_cost(4),
-                Secp256EcOpConcreteLibfunc::Add(_) => syscall_cost(2),
-                Secp256EcOpConcreteLibfunc::Mul(_)
-                | Secp256EcOpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
-                Secp256EcOpConcreteLibfunc::GetCoordinates(_) => syscall_cost(1),
-            },
-            Secp256EcConcreteLibfunc::R1(libfunc) => match libfunc {
-                Secp256EcOpConcreteLibfunc::New(_) => syscall_cost(4),
-                Secp256EcOpConcreteLibfunc::Add(_) => syscall_cost(2),
-                Secp256EcOpConcreteLibfunc::Mul(_)
-                | Secp256EcOpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
-                Secp256EcOpConcreteLibfunc::GetCoordinates(_) => syscall_cost(1),
-            },
+        StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
+            TestingConcreteLibfunc::PopLog(_) => vec![steps(2), steps(2)],
+            _ => vec![steps(1)],
         },
+        StarkNetConcreteLibfunc::Secp256(libfunc) => {
+            match libfunc {
+                Secp256ConcreteLibfunc::K1(libfunc) => match libfunc {
+                    Secp256OpConcreteLibfunc::New(_) => syscall_cost(4),
+                    Secp256OpConcreteLibfunc::Add(_) => syscall_cost(2),
+                    Secp256OpConcreteLibfunc::Mul(_)
+                    | Secp256OpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
+                    Secp256OpConcreteLibfunc::GetXy(_) => syscall_cost(1),
+                },
+                Secp256ConcreteLibfunc::R1(libfunc) => match libfunc {
+                    Secp256OpConcreteLibfunc::New(_) => syscall_cost(4),
+                    Secp256OpConcreteLibfunc::Add(_) => syscall_cost(2),
+                    Secp256OpConcreteLibfunc::Mul(_)
+                    | Secp256OpConcreteLibfunc::GetPointFromX(_) => syscall_cost(3),
+                    Secp256OpConcreteLibfunc::GetXy(_) => syscall_cost(1),
+                },
+            }
+        }
     }
 }
 

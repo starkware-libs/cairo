@@ -13,9 +13,6 @@ trait IContract<T> {
     fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     fn bad_sig2(self: @T, __calldata__: felt252);
-
-    #[event]
-    fn my_event();
 }
 
 //! > generated_cairo_code
@@ -30,9 +27,6 @@ trait IContract<T> {
     fn bad_sig(ref self: T, ref arg1: felt252, ref arg2: felt252) -> felt252;
 
     fn bad_sig2(self: @T, __calldata__: felt252);
-
-    #[event]
-    fn my_event();
 }
 
 IContractDispatcherTrait:

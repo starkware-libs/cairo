@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use indoc::writedoc;
 use parity_scale_codec_derive::{Decode, Encode};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
@@ -12,7 +13,7 @@ mod test;
 // Represents a cairo hint.
 // Note: Hint encoding should be backwards-compatible. This is an API guarantee.
 // For example, new variants should have new `index`.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode, JsonSchema)]
 #[serde(untagged)]
 pub enum Hint {
     #[codec(index = 0)]
@@ -42,7 +43,7 @@ impl Display for Hint {
 }
 
 /// Represents a hint that triggers a system call.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode, JsonSchema)]
 pub enum StarknetHint {
     #[codec(index = 0)]
     SystemCall { system: ResOperand },
@@ -70,10 +71,19 @@ pub enum StarknetHint {
     SetNonce { value: ResOperand },
     #[codec(index = 12)]
     SetSignature { start: ResOperand, end: ResOperand },
+    #[codec(index = 13)]
+    PopLog {
+        value: ResOperand,
+        opt_variant: CellRef,
+        keys_start: CellRef,
+        keys_end: CellRef,
+        data_start: CellRef,
+        data_end: CellRef,
+    },
 }
 
 // Represents a cairo core hint.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode, JsonSchema)]
 #[serde(untagged)]
 pub enum CoreHintBase {
     #[codec(index = 0)]
@@ -104,7 +114,7 @@ impl Display for CoreHintBase {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode, JsonSchema)]
 pub enum CoreHint {
     #[codec(index = 0)]
     AllocSegment { dst: CellRef },
@@ -250,7 +260,7 @@ pub enum CoreHint {
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
 /// contracts.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode)]
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone, Encode, Decode, JsonSchema)]
 pub enum DeprecatedHint {
     /// Asserts that the current access indices list is empty (after the loop).
     #[codec(index = 0)]
@@ -681,7 +691,7 @@ impl Display for CoreHint {
                     curr = {}
                     end = {}
                     while curr != end:
-                        print(memory[curr])
+                        print(hex(memory[curr]))
                         curr += 1
                 ",
                 ResOperandFormatter(start),
@@ -758,6 +768,16 @@ impl Display for StarknetHint {
                     ResOperandFormatter(start),
                     ResOperandFormatter(end)
                 )
+            }
+            StarknetHint::PopLog {
+                value: _,
+                opt_variant: _,
+                keys_start: _,
+                keys_end: _,
+                data_start: _,
+                data_end: _,
+            } => {
+                write!(f, "raise NotImplemented")
             }
         }
     }

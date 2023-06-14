@@ -265,7 +265,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 }
 
 //! > expected_diagnostics
-error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: "test::MyImpl1", "test::MyImpl2"
+error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: test::MyImpl1, test::MyImpl2
  --> lib.cairo:17:13
    MyTrait::foo(5);
             ^*^
@@ -539,5 +539,28 @@ struct B{
    a: A,
 }
 impl I<impl TI: Drop::<A>> of Drop::<B>;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > equality from signature
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   assert_eq(1, 2 + 3, '4');
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline]
+fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
+    assert(a == b, err_code);
+}
 
 //! > expected_diagnostics

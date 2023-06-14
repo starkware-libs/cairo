@@ -1,4 +1,5 @@
 use super::boxing::BoxType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
@@ -90,18 +91,9 @@ impl SignatureAndTypeGenericLibfunc for NullableFromBoxLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_wrapped_concrete_type(NullableType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?,
+            context.get_wrapped_concrete_type(NullableType::id(), ty)?,
         ))
     }
 }

@@ -3,6 +3,7 @@
 //! Implements the LSP protocol over stdin/out.
 
 use std::collections::{HashMap, HashSet};
+use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -153,7 +154,10 @@ impl Backend {
         let db_mut = self.db_mutex.lock().await;
         let db = db_mut.snapshot();
         drop(db_mut);
-        std::panic::catch_unwind(|| f(&db)).map_err(|_| LSPError::internal_error())
+        std::panic::catch_unwind(AssertUnwindSafe(|| f(&db))).map_err(|_| {
+            eprintln!("Caught panic in LSP worker thread.");
+            LSPError::internal_error()
+        })
     }
 
     /// Locks and gets a database instance.

@@ -106,7 +106,7 @@ error: Invalid member expression.
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Trait `test::OptionTrait::<core::felt252>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
+error: Candidate impl test::AnotherOptionTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:34:7
     x.is_some();
       ^*****^

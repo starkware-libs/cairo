@@ -29,9 +29,9 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
-use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use itertools::chain;
 use num_traits::ToPrimitive;
 use thiserror::Error;
@@ -60,7 +60,7 @@ pub enum RunnerError {
     #[error(transparent)]
     ApChangeError(#[from] ApChangeError),
     #[error(transparent)]
-    VirtualMachineError(#[from] Box<VirtualMachineError>),
+    CairoRunError(#[from] Box<CairoRunError>),
 }
 
 /// The full result of a run with Starknet state.
@@ -278,7 +278,8 @@ impl SierraCasmRunner {
         let long_id = &info.long_id;
         Ok(
             if long_id.generic_id == EnumType::ID
-                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut) if ut.debug_name.as_ref().unwrap().starts_with("core::PanicResult::"))
+                && matches!(&long_id.generic_args[0], GenericArg::UserType(ut)
+                if ut.debug_name.as_ref().unwrap().starts_with("core::panics::PanicResult::"))
             {
                 // The function includes a panic wrapper.
                 if values[0] != Felt252::from(0) {

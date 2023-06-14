@@ -3,11 +3,11 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureOnlyGenericLibfunc, SignatureSpecializationContext,
-    SpecializationContext,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureOnlyGenericLibfunc, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     args_as_two_types, NamedLibfunc, NamedType, OutputVarReferenceInfo,
@@ -77,14 +77,7 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
-        Ok(LibfuncSignature::new_non_branch(
-            vec![from_ty],
-            vec![OutputVarInfo {
-                ty: to_ty,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
+        Ok(reinterpret_cast_signature(from_ty, to_ty))
     }
 }
 
@@ -124,21 +117,17 @@ impl NamedLibfunc for DowncastLibfunc {
         }
 
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
         Ok(LibfuncSignature {
             param_signatures: vec![
-                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(range_check_type).with_allow_add_const(),
                 ParamSignature::new(from_ty),
             ],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
                     vars: vec![
-                        OutputVarInfo {
-                            ty: range_check_type.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(
-                                DeferredOutputKind::AddConst { param_idx: 0 },
-                            ),
-                        },
+                        rc_output_info.clone(),
                         OutputVarInfo {
                             ty: to_ty,
                             ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 1 },
@@ -148,12 +137,7 @@ impl NamedLibfunc for DowncastLibfunc {
                 },
                 // Failure.
                 BranchSignature {
-                    vars: vec![OutputVarInfo {
-                        ty: range_check_type,
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    }],
+                    vars: vec![rc_output_info],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
             ],

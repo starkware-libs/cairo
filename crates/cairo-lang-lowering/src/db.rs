@@ -337,7 +337,6 @@ fn concrete_function_with_body_postpanic_lowered(
 // * Optimizes matches.
 // * Optimizes remappings again.
 // * Reorganizes blocks (topological sort).
-// * Replaces `withdraw_gas` calls with `withdraw_gas_all` where necessary.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,

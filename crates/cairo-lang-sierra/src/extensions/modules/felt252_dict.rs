@@ -84,12 +84,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(segment_arena_ty.clone()).with_allow_add_const()],
             vec![
-                OutputVarInfo {
-                    ty: segment_arena_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(segment_arena_ty, 0),
                 OutputVarInfo {
                     ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

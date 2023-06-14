@@ -19,6 +19,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenRBrack
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
+            SyntaxKind::TokenNot
+                if matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprInlineMacro)) =>
+            {
+                true
+            }
             SyntaxKind::TokenLParen
                 if matches!(grandparent_kind(db, self), Some(SyntaxKind::FunctionSignature)) =>
             {
@@ -550,7 +555,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TerminalAnd => WrappingBreakLinePoints {
+                SyntaxKind::TerminalAndAnd => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         10,
                         BreakLinePointIndentation::Indented,
@@ -559,7 +564,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TerminalOr => WrappingBreakLinePoints {
+                SyntaxKind::TerminalOrOr => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         11,
                         BreakLinePointIndentation::Indented,
@@ -568,7 +573,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TerminalXor => WrappingBreakLinePoints {
+                SyntaxKind::TerminalAnd => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         12,
                         BreakLinePointIndentation::Indented,
@@ -577,9 +582,27 @@ impl SyntaxNodeFormat for SyntaxNode {
                     )),
                     trailing: None,
                 },
-                SyntaxKind::TerminalDot => WrappingBreakLinePoints {
+                SyntaxKind::TerminalOr => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         13,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
+                    trailing: None,
+                },
+                SyntaxKind::TerminalXor => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        14,
+                        BreakLinePointIndentation::Indented,
+                        true,
+                        true,
+                    )),
+                    trailing: None,
+                },
+                SyntaxKind::TerminalDot => WrappingBreakLinePoints {
+                    leading: Some(BreakLinePointProperties::new(
+                        15,
                         BreakLinePointIndentation::Indented,
                         true,
                         false,
@@ -594,7 +617,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::TokenModEq => WrappingBreakLinePoints {
                     leading: None,
                     trailing: Some(BreakLinePointProperties::new(
-                        14,
+                        16,
                         BreakLinePointIndentation::Indented,
                         true,
                         true,

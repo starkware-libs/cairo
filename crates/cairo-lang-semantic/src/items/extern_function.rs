@@ -14,6 +14,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
@@ -163,16 +164,12 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
-    let signature = resolver
-        .inference()
-        .rewrite(signature)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+
+    let signature = resolver.inference().rewrite(signature).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),

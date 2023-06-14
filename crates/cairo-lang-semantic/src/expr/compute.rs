@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::ops::Deref;
 
-use ast::{BinaryOperator, PathSegment};
+use ast::PathSegment;
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
@@ -22,6 +22,10 @@ use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
 use smol_str::SmolStr;
 
+use super::inference::canonic::ResultNoErrEx;
+use super::inference::conform::InferenceConform;
+use super::inference::infers::InferenceEmbeddings;
+use super::inference::solver::SolutionSet;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
@@ -239,13 +243,10 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
+        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) | ast::Expr::InlineMacro(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
-        ast::Expr::InlineMacro(_) => {
-            unreachable!("Inline marcos must be expanded before the semantic pass")
-        }
     }
 }
 
@@ -270,7 +271,8 @@ fn compute_expr_unary_semantic(
     if let UnaryOperator::Desnap(_) = unary_op {
         let desnapped_ty = match ctx.db.lookup_intern_type(expr_ty) {
             TypeLongId::Var(_) => {
-                let desnapped_var = ctx.resolver.inference().new_type_var(syntax.stable_ptr().0);
+                let desnapped_var =
+                    ctx.resolver.inference().new_type_var(Some(syntax.stable_ptr().untyped()));
                 let snapped_desnapped_var = ctx.db.intern_type(TypeLongId::Snapshot(desnapped_var));
                 if ctx.resolver.inference().conform_ty(snapped_desnapped_var, expr_ty).is_err() {
                     return Err(ctx.diagnostics.report(
@@ -313,7 +315,7 @@ fn compute_expr_unary_semantic(
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
-            syntax.stable_ptr().untyped(),
+            Some(syntax.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
 
@@ -337,36 +339,69 @@ fn compute_expr_binary_semantic(
     let lhs_syntax = &syntax.lhs(syntax_db);
     let lexpr = compute_expr_semantic(ctx, lhs_syntax);
     let rhs_syntax = syntax.rhs(syntax_db);
-    if matches!(binary_op, BinaryOperator::Dot(_)) {
+    if matches!(binary_op, ast::BinaryOperator::Dot(_)) {
         return dot_expr(ctx, lexpr, rhs_syntax, stable_ptr);
     }
     let rexpr = compute_expr_semantic(ctx, &rhs_syntax);
-    if matches!(binary_op, BinaryOperator::Eq(_)) {
-        let member_path = match lexpr.expr {
-            Expr::Var(expr) => ExprVarMemberPath::Var(expr),
-            Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
-            _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
-        };
+    match binary_op {
+        ast::BinaryOperator::Eq(_) => {
+            let member_path = match lexpr.expr {
+                Expr::Var(expr) => ExprVarMemberPath::Var(expr),
+                Expr::MemberAccess(ExprMemberAccess { member_path: Some(ref_arg), .. }) => ref_arg,
+                _ => return Err(ctx.diagnostics.report(lhs_syntax, InvalidLhsForAssignment)),
+            };
 
-        let expected_ty = ctx.reduce_ty(member_path.ty());
-        let actual_ty = ctx.reduce_ty(rexpr.ty());
+            let expected_ty = ctx.reduce_ty(member_path.ty());
+            let actual_ty = ctx.reduce_ty(rexpr.ty());
 
-        if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
-            return Err(ctx
-                .diagnostics
-                .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+            if ctx.resolver.inference().conform_ty(actual_ty, expected_ty).is_err() {
+                return Err(ctx
+                    .diagnostics
+                    .report(&rhs_syntax, WrongArgumentType { expected_ty, actual_ty }));
+            }
+            // Verify the variable argument is mutable.
+            if !ctx.semantic_defs[&member_path.base_var()].is_mut() {
+                ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+            }
+            return Ok(Expr::Assignment(ExprAssignment {
+                ref_arg: member_path,
+                rhs: rexpr.id,
+                ty: unit_ty(db),
+                stable_ptr,
+            }));
         }
-        // Verify the variable argument is mutable.
-        if !ctx.semantic_defs[member_path.base_var()].is_mut() {
-            ctx.diagnostics.report(syntax, AssignmentToImmutableVar);
+        ast::BinaryOperator::AndAnd(_) | ast::BinaryOperator::OrOr(_) => {
+            let op = match binary_op {
+                ast::BinaryOperator::AndAnd(_) => LogicalOperator::AndAnd,
+                ast::BinaryOperator::OrOr(_) => LogicalOperator::OrOr,
+                _ => unreachable!(),
+            };
+
+            let bool_ty = core_bool_ty(db);
+            if ctx.resolver.inference().conform_ty(lexpr.expr.ty(), bool_ty).is_err() {
+                ctx.diagnostics.report(
+                    lhs_syntax,
+                    WrongType { expected_ty: bool_ty, actual_ty: lexpr.expr.ty() },
+                );
+            }
+
+            if ctx.resolver.inference().conform_ty(rexpr.expr.ty(), bool_ty).is_err() {
+                ctx.diagnostics.report(
+                    &rhs_syntax,
+                    WrongType { expected_ty: bool_ty, actual_ty: rexpr.expr.ty() },
+                );
+            }
+
+            return Ok(Expr::LogicalOperator(ExprLogicalOperator {
+                lhs: lexpr.id,
+                op,
+                rhs: rexpr.id,
+                ty: bool_ty,
+                stable_ptr,
+            }));
         }
-        return Ok(Expr::Assignment(ExprAssignment {
-            ref_arg: member_path,
-            rhs: rexpr.id,
-            ty: unit_ty(db),
-            stable_ptr,
-        }));
-    }
+        _ => {}
+    };
     call_core_binary_op(ctx, syntax, lexpr, rexpr)
 }
 
@@ -374,8 +409,8 @@ fn compute_expr_binary_semantic(
 fn call_core_binary_op(
     ctx: &mut ComputationContext<'_>,
     syntax: &ast::ExprBinary,
-    lexpr: ExprAndId,
-    rexpr: ExprAndId,
+    mut lexpr: ExprAndId,
+    mut rexpr: ExprAndId,
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let stable_ptr = syntax.stable_ptr().into();
@@ -383,7 +418,7 @@ fn call_core_binary_op(
 
     ctx.reduce_ty(lexpr.ty()).check_not_missing(db)?;
     ctx.reduce_ty(rexpr.ty()).check_not_missing(db)?;
-    let concrete_trait_function = match core_binary_operator(
+    let (concrete_trait_function, snapshot) = match core_binary_operator(
         db,
         &mut ctx.resolver.inference(),
         &binary_op,
@@ -392,8 +427,18 @@ fn call_core_binary_op(
         Err(err_kind) => {
             return Err(ctx.diagnostics.report(&binary_op, err_kind));
         }
-        Ok(concrete_trait_function) => concrete_trait_function,
+        Ok(res) => res,
     };
+    if snapshot {
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(lexpr.ty()));
+        let expr =
+            Expr::Snapshot(ExprSnapshot { inner: lexpr.id, ty, stable_ptr: lexpr.stable_ptr() });
+        lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+        let ty = ctx.db.intern_type(TypeLongId::Snapshot(rexpr.ty()));
+        let expr =
+            Expr::Snapshot(ExprSnapshot { inner: rexpr.id, ty, stable_ptr: rexpr.stable_ptr() });
+        rexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
+    }
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let function = ctx
@@ -402,7 +447,7 @@ fn call_core_binary_op(
         .infer_trait_function(
             concrete_trait_function,
             &impl_lookup_context,
-            syntax.stable_ptr().untyped(),
+            Some(syntax.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, syntax.stable_ptr().untyped()))?;
 
@@ -498,7 +543,7 @@ fn compute_expr_function_call_semantic(
                 .infer_trait_generic_function(
                     trait_function,
                     &impl_lookup_context,
-                    path.stable_ptr().untyped(),
+                    Some(path.stable_ptr().untyped()),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             let function_id = ctx
@@ -507,7 +552,7 @@ fn compute_expr_function_call_semantic(
                 .infer_generic_function(
                     generic_function,
                     &impl_lookup_context,
-                    path.stable_ptr().untyped(),
+                    Some(path.stable_ptr().untyped()),
                 )
                 .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
             expr_function_call(ctx, function_id, named_args, syntax.stable_ptr().into())
@@ -572,7 +617,7 @@ pub fn compute_root_expr(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {
-        inference_err.report(ctx.diagnostics, stable_ptr);
+        inference_err.report(ctx.diagnostics, stable_ptr.unwrap_or(syntax.stable_ptr().untyped()));
         return Ok(res);
     }
 
@@ -583,13 +628,8 @@ pub fn compute_root_expr(
 }
 
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
-    let version = ctx.resolver.inference().version;
     for (_id, expr) in ctx.exprs.iter_mut() {
-        *expr = ctx
-            .resolver
-            .inference()
-            .rewrite(expr.clone())
-            .map_err(|err| err.report(ctx.diagnostics, expr.stable_ptr().untyped()))?;
+        *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
         if let Expr::Literal(expr) = expr {
             validate_literal(ctx.db, expr.ty, expr.value.clone())
                 .map_err(|err| ctx.diagnostics.report_by_ptr(expr.stable_ptr.untyped(), err))
@@ -597,13 +637,8 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
         }
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
-        *stmt = ctx
-            .resolver
-            .inference()
-            .rewrite(stmt.clone())
-            .map_err(|err| err.report(ctx.diagnostics, stmt.stable_ptr().untyped()))?;
+        *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
     }
-    assert!(ctx.resolver.inference().version == version, "Inference is not stable!");
     Ok(())
 }
 
@@ -1274,9 +1309,7 @@ fn literal_to_semantic(
     let db = ctx.db;
     let syntax_db = db.upcast();
 
-    let value = literal_syntax.numeric_value(syntax_db).unwrap_or_default();
-
-    let ty = literal_syntax.suffix(syntax_db);
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
     let ty = ty.as_ref().map(SmolStr::as_str);
 
     new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
@@ -1293,7 +1326,7 @@ fn new_literal_expr(
         try_get_core_ty_by_name(ctx.db, ty_str.into(), vec![])
             .map_err(|err| ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), err))?
     } else {
-        ctx.resolver.inference().new_type_var(stable_ptr.untyped())
+        ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()))
     };
 
     // Numeric trait.
@@ -1305,7 +1338,7 @@ fn new_literal_expr(
     let numeric_impl = ctx
         .resolver
         .inference()
-        .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
+        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
 
     Ok(ExprLiteral { value, ty, numeric_impl, stable_ptr })
@@ -1388,6 +1421,8 @@ fn method_call_expr(
     let generic_args_syntax = segment.generic_args(syntax_db);
     let mut candidates = vec![];
     let ty = ctx.reduce_ty(lexpr.ty());
+    // Save some work.
+    ctx.resolver.inference().solve().ok();
     for trait_id in all_module_trait_ids(ctx)? {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
             if name != func_name {
@@ -1397,21 +1432,21 @@ fn method_call_expr(
             // Check if trait function signature's first param can fit our expr type.
             let mut inference_data = ctx.resolver.inference().clone_data();
             let mut inference = inference_data.inference(ctx.db);
-            let mut lookup_context = ctx.resolver.impl_lookup_context();
+            let lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context, stable_ptr.untyped()
+                trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
             ) else {
                 continue;
             };
 
             // Find impls for it.
-            lookup_context.extra_modules.push(trait_id.module_file_id(ctx.db.upcast()).0);
-            if inference
-                .new_impl_var(concrete_trait_id, stable_ptr.untyped(), lookup_context)
-                .is_err()
-            {
+            inference.solve().ok();
+            if !matches!(
+                inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
+                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+            ) {
                 continue;
-            };
+            }
 
             candidates.push(trait_function);
         }
@@ -1440,11 +1475,16 @@ fn method_call_expr(
     );
 
     let mut lookup_context = ctx.resolver.impl_lookup_context();
-    lookup_context.extra_modules.push(trait_function.module_file_id(ctx.db.upcast()).0);
+    lookup_context.insert_module(trait_function.module_file_id(ctx.db.upcast()).0);
     let (concrete_trait_id, n_snapshots) = ctx
         .resolver
         .inference()
-        .infer_concrete_trait_by_self(trait_function, ty, &lookup_context, stable_ptr.untyped())
+        .infer_concrete_trait_by_self(
+            trait_function,
+            ty,
+            &lookup_context,
+            Some(stable_ptr.untyped()),
+        )
         .unwrap();
     let signature = ctx.db.trait_function_signature(trait_function).unwrap();
     let first_param = signature.params.into_iter().next().unwrap();
@@ -1467,7 +1507,7 @@ fn method_call_expr(
         .infer_trait_generic_function(
             concrete_trait_function_id,
             &impl_lookup_context,
-            path.stable_ptr().untyped(),
+            Some(path.stable_ptr().untyped()),
         )
         .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
 
@@ -1691,7 +1731,7 @@ fn expr_function_call(
                     arg.stable_ptr().untyped(), RefArgNotAVariable));
             };
             // Verify the variable argument is mutable.
-            if !ctx.semantic_defs[ref_arg.base_var()].is_mut() {
+            if !ctx.semantic_defs[&ref_arg.base_var()].is_mut() {
                 ctx.diagnostics.report_by_ptr(arg.stable_ptr().untyped(), RefArgNotMutable);
             }
             // Verify that it is passed explicitly as 'ref'.

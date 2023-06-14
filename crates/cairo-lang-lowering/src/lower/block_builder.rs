@@ -1,4 +1,4 @@
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::MemberId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
@@ -98,7 +98,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         semantic_var_id: semantic::VarId,
-        location: StableLocationOption,
+        location: StableLocation,
     ) -> VariableId {
         self.semantics
             .get(
@@ -134,7 +134,7 @@ impl BlockBuilder {
         mut self,
         ctx: &mut LoweringContext<'_, '_>,
         expr: VariableId,
-        location: StableLocationOption,
+        location: StableLocation,
     ) -> Maybe<()> {
         let ref_vars = ctx
             .signature
@@ -170,7 +170,7 @@ impl BlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         match_info: MatchInfo,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: StableLocationOption,
+        location: StableLocation,
     ) -> LoweringResult<LoweredExpr> {
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
             return Err(LoweringFlowError::Match(match_info));
@@ -190,7 +190,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: StableLocationOption,
+        location: StableLocation,
     ) -> Option<(LoweredExpr, BlockId)> {
         // TODO(spapini): When adding Gotos, include the callsite target in the required information
         // to merge.
@@ -274,7 +274,7 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-        location: StableLocationOption,
+        location: StableLocation,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
@@ -306,7 +306,7 @@ impl SealedBlockBuilder {
 struct BlockStructRecomposer<'a, 'b, 'c> {
     statements: &'a mut StatementsBuilder,
     ctx: &'a mut LoweringContext<'b, 'c>,
-    location: StableLocationOption,
+    location: StableLocation,
 }
 impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
     fn deconstruct(

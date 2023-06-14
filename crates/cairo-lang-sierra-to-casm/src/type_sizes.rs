@@ -35,13 +35,14 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::StorageAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ContractAddress(_))
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::ClassHash(_))
-            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Secp256EcPoint(_))
+            | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::Secp256Point(_))
             | CoreTypeConcrete::Pedersen(_)
             | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::Felt252DictEntry(_)
             | CoreTypeConcrete::SegmentArena(_) => Some(1),
             CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty)
