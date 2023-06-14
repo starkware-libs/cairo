@@ -139,7 +139,6 @@ pub fn core_libfunc_cost(
             BoolConcreteLibfunc::Not(_) => vec![steps(1).into()],
             BoolConcreteLibfunc::Xor(_) => vec![steps(1).into()],
             BoolConcreteLibfunc::Or(_) => vec![steps(2).into()],
-            BoolConcreteLibfunc::Equal(_) => vec![steps(2).into(), steps(3).into()],
             BoolConcreteLibfunc::ToFelt252(_) => vec![steps(0).into()],
         },
         Cast(libfunc) => match libfunc {
