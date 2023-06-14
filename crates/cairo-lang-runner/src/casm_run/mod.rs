@@ -704,6 +704,13 @@ impl<'a> CairoHintProcessor<'a> {
                     system_buffer,
                 )
             }),
+            "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+                self.replace_class(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer,
+                )
+            }),
             _ => panic!("Unknown selector for system call!"),
         }
     }
@@ -934,6 +941,20 @@ impl<'a> CairoHintProcessor<'a> {
                 fail_syscall!(revert_reason, b"ENTRYPOINT_FAILED");
             }
         }
+    }
+
+    /// Executes the `replace_class_syscall` syscall.
+    fn replace_class(
+        &mut self,
+        gas_counter: &mut usize,
+        new_class: Felt252,
+        _vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+        // Prepare runner for running the call.
+        let address = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state.deployed_contracts.insert(address, new_class);
+        Ok(SyscallResult::Success(vec![]))
     }
 
     /// Executes the entry point with the given calldata.
