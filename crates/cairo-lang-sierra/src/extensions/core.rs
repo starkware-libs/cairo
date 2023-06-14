@@ -1,6 +1,6 @@
 use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
-use super::bitwise::{BitwiseLibfunc, BitwiseType};
+use super::bitwise::BitwiseType;
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::casts::CastLibfunc;
@@ -79,7 +79,6 @@ define_libfunc_hierarchy! {
     pub enum CoreLibfunc {
         ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
-        Bitwise(BitwiseLibfunc),
         BranchAlign(BranchAlignLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
