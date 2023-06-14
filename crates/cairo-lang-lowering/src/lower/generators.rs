@@ -81,7 +81,7 @@ impl Call {
 
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs.into_iter().map(|var_usage| var_usage.var_id).collect(),
+            inputs: self.inputs,
             outputs,
             location: self.location,
         }));
@@ -115,7 +115,7 @@ impl EnumConstruct {
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
-            input: self.input.var_id,
+            input: self.input,
             output,
         }));
         VarUsage { var_id: output, location: self.location }
@@ -142,7 +142,7 @@ impl Snapshot {
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Snapshot(StatementSnapshot {
-            input: self.input.var_id,
+            input: self.input,
             output_original,
             output_snapshot,
         }));
@@ -166,10 +166,7 @@ impl Desnap {
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::Desnap(StatementDesnap {
-            input: self.input.var_id,
-            output,
-        }));
+        builder.push_statement(Statement::Desnap(StatementDesnap { input: self.input, output }));
         VarUsage { var_id: output, location: self.location }
     }
 }
@@ -192,7 +189,8 @@ impl StructDestructure {
     ) -> Vec<VariableId> {
         let outputs: Vec<_> = self.var_reqs.into_iter().map(|req| ctx.new_var(req)).collect();
         builder.push_statement(Statement::StructDestructure(StatementStructDestructure {
-            input: self.input,
+            // TODO(ilya): Fix to usage location.
+            input: VarUsage { var_id: self.input, location: ctx.variables[self.input].location },
             outputs: outputs.clone(),
         }));
         outputs
@@ -242,7 +240,12 @@ impl StructConstruct {
     ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         builder.push_statement(Statement::StructConstruct(StatementStructConstruct {
-            inputs: self.inputs,
+            // TODO(ilya): Fix to usage location.
+            inputs: self
+                .inputs
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location: ctx.variables[var_id].location })
+                .collect(),
             output,
         }));
         VarUsage { var_id: output, location: self.location }

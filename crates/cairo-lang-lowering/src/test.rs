@@ -192,8 +192,8 @@ fn test_diagnostics() {
     db.set_semantic_plugins(get_default_plugins());
     let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
-        .with_auto_generation_note(db, "withdraw_gas".into())
-        .with_auto_generation_note(db, "destructor".into())
+        .with_auto_generation_note(db, "withdraw_gas")
+        .with_auto_generation_note(db, "destructor")
         .get(db);
 
     let mut builder = DiagnosticsBuilder::new();

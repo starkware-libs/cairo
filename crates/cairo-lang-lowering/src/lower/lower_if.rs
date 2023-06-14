@@ -14,7 +14,7 @@ use crate::lower::context::VarRequest;
 use crate::lower::{
     create_subscope_with_bound_refs, generators, lower_block, lower_expr_to_var_usage,
 };
-use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -105,7 +105,7 @@ pub fn lower_expr_if_bool(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
-        input: condition_var,
+        input: VarUsage { var_id: condition_var, location: if_location },
         arms: vec![
             MatchArm {
                 variant_id: corelib::false_variant(semantic_db),
@@ -179,7 +179,7 @@ pub fn lower_expr_if_eq(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![condition_var],
+        inputs: vec![VarUsage { var_id: condition_var, location: if_location }],
         arms: vec![
             MatchArm {
                 variant_id: corelib::jump_nz_zero_variant(semantic_db),

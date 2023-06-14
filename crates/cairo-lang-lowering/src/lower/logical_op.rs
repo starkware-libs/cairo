@@ -4,7 +4,7 @@ use cairo_lang_semantic::corelib;
 use super::block_builder::BlockBuilder;
 use super::context::{LoweredExpr, LoweringContext, LoweringResult, VarRequest};
 use super::generators::{self, StructConstruct};
-use super::{create_subscope_with_bound_refs, lower_expr};
+use super::{create_subscope_with_bound_refs, lower_expr, lower_expr_to_var_usage};
 use crate::ids::LocationId;
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VariableId};
 
@@ -36,7 +36,7 @@ pub fn lower_logical_op(
     let semantic_db = ctx.db.upcast();
 
     let unit_ty = corelib::unit_ty(semantic_db);
-    let lhs_var = lower_expr(ctx, builder, expr.lhs)?.var(ctx, builder)?;
+    let lhs = lower_expr_to_var_usage(ctx, builder, expr.lhs)?;
 
     let mut subscope_lhs_true = create_subscope_with_bound_refs(ctx, builder);
     let lhs_true_block_id = subscope_lhs_true.block_id;
@@ -81,7 +81,7 @@ pub fn lower_logical_op(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
-        input: lhs_var,
+        input: lhs,
         arms: vec![
             MatchArm {
                 variant_id: corelib::false_variant(semantic_db),
