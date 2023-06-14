@@ -23,6 +23,30 @@ use crate::ids::{FunctionId, Signature};
 
 pub type VariableId = Id<Variable>;
 
+/// Represents a usage of a variable.
+///
+/// For example if we have:
+///
+/// fn foo(a: u32) {
+///     1 + a
+/// }
+///
+/// Then there is a usage of the variable 'a' in the body of the function.
+///
+/// Note usage location is not the location of the variable.
+/// The location of var_id points to the defintion:
+///
+/// fn foo(a: u32)
+///        ^
+///
+/// while the usage location is:
+///     1 + a
+///         ^
+pub struct VarUsage {
+    pub var_id: VariableId,
+    pub location: StableLocation,
+}
+
 /// A lowered function code using flat blocks.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FlatLowered {
