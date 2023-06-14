@@ -13,20 +13,20 @@ ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.0.0-rc1" }
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.0.0-rc1" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc1" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc1" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc1" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc1" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc1" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc1" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.0.0-rc1" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.0.0-rc1" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc1" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.0.0-rc1" }
-cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.0.0-rc1" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc1" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.0.0-rc2" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.0.0-rc2" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc2" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc2" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc2" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc2" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.0.0-rc2" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.0.0-rc2" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc2" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.0.0-rc2" }
+cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.0.0-rc2" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
 cairo-vm.workspace = true
 itertools.workspace = true
 keccak.workspace = true

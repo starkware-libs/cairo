@@ -12,7 +12,7 @@ lalrpop = "0.19.9"
 regex = "1"
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc1" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
