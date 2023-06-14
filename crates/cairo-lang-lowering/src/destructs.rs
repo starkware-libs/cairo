@@ -51,7 +51,7 @@ struct PanicDeconstructionEntry {
     impl_id: ImplId,
 }
 
-impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
+impl<'a> DemandReporter<VariableId, VariableId, PanicState> for DestructAdder<'a> {
     type IntroducePosition = StatementLocation;
     type UsePosition = ();
 

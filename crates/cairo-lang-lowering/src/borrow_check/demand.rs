@@ -2,15 +2,15 @@
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 /// A reporting trait that reports each variables dup, drop and last_use positions.
-pub trait DemandReporter<Var, Aux = ()> {
+pub trait DemandReporter<Var, VarUseage = Var, Aux = ()> {
     type UsePosition: Copy;
     type IntroducePosition: Copy;
     fn drop_aux(&mut self, position: Self::IntroducePosition, var: Var, _aux: Aux) {
         self.drop(position, var);
     }
     fn drop(&mut self, _position: Self::IntroducePosition, _var: Var) {}
-    fn dup(&mut self, _position: Self::UsePosition, _var: Var) {}
-    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: Var) {}
+    fn dup(&mut self, _position: Self::UsePosition, _var: VarUseage) {}
+    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: VarUseage) {}
     fn unused_mapped_var(&mut self, _var: Var) {}
 }
 
@@ -34,20 +34,24 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Updates the demand when a variable remapping occurs.
-    pub fn apply_remapping<V: Into<Var>, T: DemandReporter<Var, Aux>>(
+    pub fn apply_remapping<
+        V1: Into<Var>,
+        V2: Into<Var> + Into<VarUsage> + Copy,
+        VarUsage: Into<Var> + Copy,
+        T: DemandReporter<Var, VarUsage, Aux>,
+    >(
         &mut self,
         reporter: &mut T,
-        remapping: impl Iterator<Item = (V, V)>,
+        remapping: impl Iterator<Item = (V1, V2)>,
         position: T::UsePosition,
     ) {
         for (var_index, (dst, src)) in remapping.enumerate() {
-            let src = src.into();
             let dst = dst.into();
             if self.vars.swap_remove(&dst) {
-                if self.vars.insert(src) {
-                    reporter.last_use(position, var_index, src);
+                if self.vars.insert(src.into()) {
+                    reporter.last_use(position, var_index, src.into());
                 } else {
-                    reporter.dup(position, src);
+                    reporter.dup(position, src.into());
                 }
             } else {
                 reporter.unused_mapped_var(dst);
@@ -56,7 +60,11 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Updates the demand when some variables are used right before the current flow.
-    pub fn variables_used<V: Copy + Into<Var>, T: DemandReporter<Var, Aux>>(
+    pub fn variables_used<
+        V: Copy + Into<Var> + Into<VarUsage>,
+        VarUsage,
+        T: DemandReporter<Var, VarUsage, Aux>,
+    >(
         &mut self,
         reporter: &mut T,
         vars: &[V],
@@ -73,7 +81,11 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Updates the demand when some variables are introduced right before the current flow.
-    pub fn variables_introduced<V: Copy + Into<Var>, T: DemandReporter<Var, Aux>>(
+    pub fn variables_introduced<
+        V: Copy + Into<Var>,
+        VarUsage,
+        T: DemandReporter<Var, VarUsage, Aux>,
+    >(
         &mut self,
         reporter: &mut T,
         vars: &[V],
@@ -88,7 +100,7 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Merges [Demand]s from multiple branches into one, reporting diagnostics in the way.
-    pub fn merge_demands<T: DemandReporter<Var, Aux>>(
+    pub fn merge_demands<V, T: DemandReporter<Var, V, Aux>>(
         demands: &[(Self, T::IntroducePosition)],
         reporter: &mut T,
     ) -> Self {

@@ -55,9 +55,15 @@ pub type VariableId = Id<Variable>;
 /// while the usage location is:
 ///     1 + a
 ///         ^
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct VarUsage {
     pub var_id: VariableId,
     pub location: LocationId,
+}
+impl From<VarUsage> for VariableId {
+    fn from(var_usage: VarUsage) -> Self {
+        var_usage.var_id
+    }
 }
 
 /// A lowered function code using flat blocks.

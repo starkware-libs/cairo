@@ -14,6 +14,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId
 
 pub mod analysis;
 pub mod demand;
+use crate::VarUsage;
 
 pub type LoweredDemand = Demand<VariableId, PanicState>;
 pub struct BorrowChecker<'a> {
@@ -21,6 +22,19 @@ pub struct BorrowChecker<'a> {
     diagnostics: &'a mut LoweringDiagnostics,
     lowered: &'a FlatLowered,
     success: Maybe<()>,
+}
+
+impl BorrowChecker<'_> {
+    // TODO(ilya): Remove the following function once we have locations for inputs.
+    fn add_locations(&self, var_ids: &[VariableId]) -> Vec<VarUsage> {
+        var_ids
+            .iter()
+            .map(|var_id| VarUsage {
+                var_id: *var_id,
+                location: self.lowered.variables[*var_id].location,
+            })
+            .collect()
+    }
 }
 
 /// A state saved for each position in the back analysis.
@@ -44,7 +58,7 @@ impl AuxCombine for PanicState {
     }
 }
 
-impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
+impl<'a> DemandReporter<VariableId, VarUsage, PanicState> for BorrowChecker<'a> {
     type IntroducePosition = ();
     type UsePosition = ();
 
@@ -61,12 +75,13 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         ));
     }
 
-    fn dup(&mut self, _position: (), var: VariableId) {
-        let var = &self.lowered.variables[var];
+    fn dup(&mut self, _position: (), var_usage: VarUsage) {
+        let var = &self.lowered.variables[var_usage.var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
-            self.success = Err(self
-                .diagnostics
-                .report_by_location(var.location.get(self.db), VariableMoved { inference_error }));
+            self.success = Err(self.diagnostics.report_by_location(
+                var_usage.location.get(self.db),
+                VariableMoved { inference_error },
+            ));
         }
     }
 }
@@ -116,7 +131,13 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.apply_remapping(
+            self,
+            remapping.iter().map(|(dst, src)| {
+                (*dst, VarUsage { var_id: *src, location: self.lowered.variables[*src].location })
+            }),
+            (),
+        );
     }
 
     fn merge_match(
@@ -143,7 +164,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut info = LoweredDemand::default();
-        info.variables_used(self, vars, ());
+        info.variables_used(self, &self.add_locations(vars), ());
         info
     }
 
@@ -153,7 +174,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         data: &VariableId,
     ) -> Self::Info {
         let mut info = LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-        info.variables_used(self, &[*data], ());
+        info.variables_used(self, &self.add_locations(&[*data]), ());
         info
     }
 }
