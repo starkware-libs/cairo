@@ -13,7 +13,7 @@ use num_bigint::{BigInt, ToBigInt};
 
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 use crate::references::ReferenceExpression;
@@ -338,6 +338,7 @@ pub fn build_uint<TUintTraits: UintMulTraits + IsZeroTraits, const LIMIT: u128>(
         UintConcrete::FromFelt252(_) => build_small_uint_from_felt252::<LIMIT, 2>(builder),
         UintConcrete::IsZero(_) => misc::build_is_zero(builder),
         UintConcrete::Divmod(_) => build_divmod::<LIMIT>(builder),
+        UintConcrete::Bitwise(_) => bitwise::build(builder),
         UintConcrete::WideMul(_) => build_small_wide_mul(builder),
     }
 }

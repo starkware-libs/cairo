@@ -1,5 +1,5 @@
 use super::unsigned::{
-    Uint64Type, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
+    Uint64Type, UintBitwiseLibfunc, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
     UintOperationConcreteLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
     UintToFelt252Libfunc, UintTraits, UintType,
 };
@@ -49,6 +49,7 @@ define_libfunc_hierarchy! {
         FromFelt252(Uint128sFromFelt252Libfunc),
         ToFelt252(UintToFelt252Libfunc<Uint128Traits>),
         IsZero(IsZeroLibfunc<Uint128Traits>),
+        Bitwise(UintBitwiseLibfunc<Uint128Traits>),
         ByteReverse(U128ByteReverseLibfunc),
     }, Uint128Concrete
 }
@@ -69,6 +70,7 @@ impl UintTraits for Uint128Traits {
     const TO_FELT252: &'static str = "u128_to_felt252";
     const TRY_FROM_FELT252: &'static str = "u128_try_from_felt252";
     const DIVMOD: &'static str = "u128_safe_divmod";
+    const BITWISE: &'static str = "bitwise";
 }
 
 impl IsZeroTraits for Uint128Traits {
