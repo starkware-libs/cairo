@@ -1,24 +1,21 @@
 use super::unsigned::{
     Uint64Type, UintBitwiseLibfunc, UintConstLibfunc, UintDivmodLibfunc, UintEqualLibfunc,
-    UintOperationConcreteLibfunc, UintOperationLibfunc, UintSquareRootLibfunc,
-    UintToFelt252Libfunc, UintTraits, UintType,
+    UintOperationLibfunc, UintSquareRootLibfunc, UintToFelt252Libfunc, UintTraits, UintType,
 };
-use super::IntOperator;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext, SpecializationContext,
+    SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
-    GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
-    OutputVarReferenceInfo, SpecializationError,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
 };
-use crate::ids::{GenericLibfuncId, GenericTypeId};
-use crate::program::GenericArg;
+use crate::ids::GenericTypeId;
 
 /// Type for u128.
 pub type Uint128Type = UintType<Uint128Traits>;
@@ -76,83 +73,6 @@ impl UintTraits for Uint128Traits {
 impl IsZeroTraits for Uint128Traits {
     const IS_ZERO: &'static str = "u128_is_zero";
     const GENERIC_TYPE_ID: GenericTypeId = <Uint128Type as NamedType>::ID;
-}
-
-/// Libfunc for u128 operations.
-pub struct Uint128OperationLibfunc {
-    pub operator: IntOperator,
-}
-impl Uint128OperationLibfunc {
-    fn new(operator: IntOperator) -> Self {
-        Self { operator }
-    }
-    const OVERFLOWING_ADD: &str = "u128_overflowing_add";
-    const OVERFLOWING_SUB: &str = "u128_overflowing_sub";
-}
-impl GenericLibfunc for Uint128OperationLibfunc {
-    type Concrete = UintOperationConcreteLibfunc;
-
-    fn supported_ids() -> Vec<GenericLibfuncId> {
-        vec![
-            GenericLibfuncId::from(Self::OVERFLOWING_ADD),
-            GenericLibfuncId::from(Self::OVERFLOWING_SUB),
-        ]
-    }
-
-    fn by_id(id: &GenericLibfuncId) -> Option<Self> {
-        match id.0.as_str() {
-            Self::OVERFLOWING_ADD => Some(Self::new(IntOperator::OverflowingAdd)),
-            Self::OVERFLOWING_SUB => Some(Self::new(IntOperator::OverflowingSub)),
-            _ => None,
-        }
-    }
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        if !args.is_empty() {
-            return Err(SpecializationError::WrongNumberOfGenericArgs);
-        }
-        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
-        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
-        let u128_ty = context.get_concrete_type(Uint128Type::id(), &[])?;
-        let u128_param = ParamSignature::new(u128_ty.clone());
-        let u128_tempvar_output_info =
-            OutputVarInfo { ty: u128_ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } };
-        Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature::new(range_check_type).with_allow_add_const(),
-                u128_param.clone(),
-                u128_param,
-            ],
-            branch_signatures: vec![
-                // No overflow.
-                BranchSignature {
-                    vars: vec![rc_output_info.clone(), u128_tempvar_output_info.clone()],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                // Overflow.
-                BranchSignature {
-                    vars: vec![rc_output_info, u128_tempvar_output_info],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
-    }
-
-    fn specialize(
-        &self,
-        context: &dyn SpecializationContext,
-        args: &[GenericArg],
-    ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(UintOperationConcreteLibfunc {
-            operator: self.operator,
-            signature: self.specialize_signature(context.upcast(), args)?,
-        })
-    }
 }
 
 /// Libfunc for u128_guarantee_mul.
