@@ -14,6 +14,7 @@ use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
 };
+use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
@@ -127,10 +128,29 @@ impl AbiBuilder {
                         builder.add_l1_handler(db, *id, storage_type)?;
                     }
                 }
-                // Add enums to ABI.
+                // Add events to ABI.
                 ModuleItemId::Enum(id) => {
                     let enm_name = id.name(db.upcast());
                     println!("yg enum name: {}", enm_name);
+                    println!("yg enum attrs: {:?}", db.enum_attributes(*id).unwrap().len());
+                    println!("yg enum attrs: {:?}", db.enum_attributes(*id).unwrap()[0].id);
+                    let arg1 = db.enum_attributes(*id).unwrap()[1].args[0]
+                        .arg
+                        .arg_clause(db.upcast())
+                        .as_syntax_node()
+                        .get_text(db.upcast());
+                    let arg2 = db.enum_attributes(*id).unwrap()[1].args[1]
+                        .arg
+                        .arg_clause(db.upcast())
+                        .as_syntax_node()
+                        .get_text(db.upcast());
+                    println!(
+                        "yg enum attrs: {:?}, {}, {}, {}",
+                        db.enum_attributes(*id).unwrap()[1].id,
+                        db.enum_attributes(*id).unwrap()[1].args.len(),
+                        arg1,
+                        arg2
+                    );
                     if enm_name == "Event"
                         && id
                             .has_attr(db.upcast(), EVENT_ATTR)
@@ -151,9 +171,12 @@ impl AbiBuilder {
                         )));
                         builder.add_event(db, ty)?;
                     }
+                    println!("yg end of enum case");
                 }
                 // Add impls to ABI.
                 ModuleItemId::Impl(id) => {
+                    println!("yg impl name: {}", id.name(db.upcast()));
+                    // Handle external impls.
                     if id
                         .has_attr(db.upcast(), EXTERNAL_ATTR)
                         .map_err(|_| ABIError::CompilationError)?
@@ -161,6 +184,8 @@ impl AbiBuilder {
                         builder.add_impl(db, *id, storage_type)?;
                         continue;
                     }
+
+                    // Handle impls of starknet::Event.
                     // Check if we have an Event derive plugin data on the impl.
                     let module_file = id.module_file_id(db.upcast());
                     let generate_info =
@@ -171,11 +196,33 @@ impl AbiBuilder {
                     let Some(aux_data) = mapper.0.as_any(
                             ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
                     let concrete_trait_id = db.impl_def_concrete_trait(*id)?;
-                    let ty = extract_matches!(
+                    println!(
+                        "yg impl's trait name: {}",
+                        concrete_trait_id.trait_id(db.upcast()).name(db.upcast())
+                    );
+                    println!(
+                        "yg impl's trait's first arg name: {}",
+                        extract_matches!(
+                            concrete_trait_id.generic_args(db)[0],
+                            GenericArgumentId::Type
+                        )
+                        .format(db)
+                    );
+                    let event_type = extract_matches!(
                         concrete_trait_id.generic_args(db)[0],
                         GenericArgumentId::Type
                     );
-                    builder.event_derive_data.insert(ty, aux_data.event_data.clone());
+                    // TODO(ygg): the problem is this:
+                    // the aux data is on the impl. We (sometimes) first go over the enum event and
+                    // don't find builder.event_derive_data as we weren't here already. Only later
+                    // we get to the impl with the aux data and populate builder.event_derive_data.
+                    // we need to first get the event types from the aux data, before iterating the
+                    // items. So either build this builder.event_derive_data from the aux data like
+                    // here, but before this loop, or instead of checking in
+                    // builder.event_derive_data, check directly in aux data.
+                    // Or, if this doesn't work - first go over the impls...
+                    // TODO(yg): do something similar for getting the storage type.
+                    builder.event_derive_data.insert(event_type, aux_data.event_data.clone());
                 }
                 _ => {}
             }
@@ -438,17 +485,21 @@ impl AbiBuilder {
 
     /// Adds an event to the ABI from a type with an Event derive.
     fn add_event(&mut self, db: &dyn SemanticGroup, type_id: TypeId) -> Result<(), ABIError> {
+        println!("yg add_event 1");
         if !self.events.insert(type_id) {
             // The event was handled previously.
             return Ok(());
         }
+        println!("yg add_event 2");
 
         let TypeLongId::Concrete(concrete) = db.lookup_intern_type(type_id) else {
             return Err(ABIError::UnexpectedType);
         };
+        println!("yg add_event 3");
         let Some(event_data) = self.event_derive_data.get(&type_id) else {
             return Err(ABIError::EventNotDerived)
         };
+        println!("yg add_event 4");
 
         let event_kind = match event_data.clone() {
             EventData::Struct { members } => {

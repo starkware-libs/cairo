@@ -151,6 +151,7 @@ fn get_field_kind(
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
+    println!("yg handle enum: {}", enum_ast.name(db).text(db));
     if !derive_event_needed(&enum_ast, db) {
         return PluginResult::default();
     }
@@ -209,6 +210,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         append_variants.push(append_variant);
         deserialize_variants.push(deserialize_variant);
     }
+    println!("yg adding event data, #variants: {}", variants.len());
     let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
     let deserialize_variants =

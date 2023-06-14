@@ -15,6 +15,7 @@ pub fn handle_storage_struct(
     extra_uses_node: &RewriteNode,
     has_event: bool,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
+    println!("yg handle_contract_by_storage -> handle_storage_struct");
     let mut members_code = Vec::new();
     let mut members_init_code = Vec::new();
     let mut vars_code = Vec::new();
@@ -85,8 +86,14 @@ pub fn handle_storage_struct(
             }
         }
     }
-    let empty_event_code =
-        if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
+
+    let empty_event_code = if has_event {
+        println!("yg not adding empty event");
+        ""
+    } else {
+        println!("yg adding empty event");
+        "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n"
+    };
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "

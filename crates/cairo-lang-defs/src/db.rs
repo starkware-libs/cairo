@@ -265,6 +265,7 @@ pub struct ModuleData {
 
 // TODO(spapini): Make this private.
 fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
+    println!("yg module name: {}", module_id.full_path(db));
     let syntax_db = db.upcast();
     let module_file = db.module_main_file(module_id)?;
 

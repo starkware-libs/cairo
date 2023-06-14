@@ -97,6 +97,7 @@ pub fn handle_contract_by_storage(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
 ) -> Option<PluginResult> {
+    println!("yg handle_contract_by_storage");
     let module_node = struct_ast.as_syntax_node().parent()?.parent()?.parent()?;
     if module_node.kind(db) != SyntaxKind::ItemModule {
         return None;
