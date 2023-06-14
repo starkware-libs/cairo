@@ -34,6 +34,7 @@ jobs:
           - nextest run -p cairo-lang-sierra-gas
           - nextest run -p cairo-lang-sierra-generator
           - nextest run -p cairo-lang-sierra-to-casm
+          - nextest run -p cairo-lang-sierra-type-size
           - test -p cairo-lang-starknet
           - nextest run -p cairo-lang-syntax
           - nextest run -p cairo-lang-syntax-codegen

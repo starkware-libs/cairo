@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use cairo_lang_casm::ap_change::ApChange;
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType};
@@ -15,6 +13,7 @@ use cairo_lang_sierra::ids::{ConcreteTypeId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget, Invocation, StatementIdx};
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
 use cairo_lang_sierra_gas::gas_info::GasInfo;
+use cairo_lang_sierra_type_size::TypeSizeMap;
 use itertools::{zip_eq, Itertools};
 
 use super::{compile_invocation, CompiledInvocation, ProgramInfo};
@@ -238,7 +237,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         CoreLibfunc::specialize_by_id(&context, &long_id.generic_id, &long_id.generic_args)
             .unwrap();
 
-    let mut type_sizes = HashMap::default();
+    let mut type_sizes: TypeSizeMap = Default::default();
     for param in libfunc.param_signatures() {
         type_sizes
             .insert(param.ty.clone(), context.try_get_type_info(param.ty.clone()).unwrap().size);
