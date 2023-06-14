@@ -244,11 +244,12 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         };
 
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let ty_param = ParamSignature::new(ty.clone());
         Ok(LibfuncSignature {
             param_signatures: vec![
                 ParamSignature::new(range_check_type).with_allow_add_const(),
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(ty.clone()),
+                ty_param.clone(),
+                ty_param,
             ],
             branch_signatures: vec![
                 BranchSignature {

@@ -37,11 +37,12 @@ impl NoGenericArgsGenericLibfunc for BitwiseLibfunc {
             ty: u128_ty.clone(),
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
         };
+        let u128_param = ParamSignature::new(u128_ty);
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(bitwise_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(u128_ty.clone()),
-                ParamSignature::new(u128_ty),
+                u128_param.clone(),
+                u128_param,
             ],
             vec![
                 OutputVarInfo::new_builtin(bitwise_ty, 0),

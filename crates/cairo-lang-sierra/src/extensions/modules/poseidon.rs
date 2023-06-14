@@ -40,22 +40,23 @@ impl NoGenericArgsGenericLibfunc for HadesPermutationLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let poseidon_ty = context.get_concrete_type(PoseidonType::id(), &[])?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
-        let deffered_felt252_output_info = OutputVarInfo {
+        let deferred_felt252_output_info = OutputVarInfo {
             ty: felt252_ty.clone(),
             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
         };
+        let felt252_param = ParamSignature::new(felt252_ty);
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(poseidon_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty),
+                felt252_param.clone(),
+                felt252_param.clone(),
+                felt252_param,
             ],
             vec![
                 OutputVarInfo::new_builtin(poseidon_ty, 0),
-                deffered_felt252_output_info.clone(),
-                deffered_felt252_output_info.clone(),
-                deffered_felt252_output_info,
+                deferred_felt252_output_info.clone(),
+                deferred_felt252_output_info.clone(),
+                deferred_felt252_output_info,
             ],
             SierraApChange::Known { new_vars_only: true },
         ))

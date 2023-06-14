@@ -94,15 +94,12 @@ impl NoGenericArgsGenericLibfunc for EcCreatePointLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let ecpoint_ty = context.get_concrete_type(EcPointType::id(), &[])?;
         let nonzero_ecpoint_ty = nonzero_ty(context, &ecpoint_ty)?;
+        let felt252_param = ParamSignature::new(context.get_concrete_type(Felt252Type::id(), &[])?);
 
         Ok(LibfuncSignature {
-            param_signatures: vec![
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty),
-            ],
+            param_signatures: vec![felt252_param.clone(), felt252_param],
             branch_signatures: vec![
                 // Success.
                 BranchSignature {
