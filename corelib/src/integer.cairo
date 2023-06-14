@@ -1148,9 +1148,19 @@ fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
 }
 
 extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
+
+/// Calculates division with remainder of a u256 by a non-zero u256.
+/// Additionally returns a `U128MulGuarantee` that is required for validating the calculation.
 extern fn u256_safe_divmod(
     lhs: u256, rhs: NonZero<u256>
-) -> (u256, u256) implicits(RangeCheck) nopanic;
+) -> (u256, u256, U128MulGuarantee) implicits(RangeCheck) nopanic;
+
+/// Calculates division with remainder of a u256 by a non-zero u256.
+#[inline(always)]
+fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(RangeCheck) nopanic {
+    let (q, r, _) = u256_safe_divmod(lhs, rhs);
+    (q, r)
+}
 extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
@@ -1169,7 +1179,7 @@ impl U256TryIntoNonZero of TryInto<u256, NonZero<u256>> {
 
 impl U256Div of Div<u256> {
     fn div(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
         q
     }
 }
@@ -1182,7 +1192,7 @@ impl U256DivEq of DivEq<u256> {
 
 impl U256Rem of Rem<u256> {
     fn rem(lhs: u256, rhs: u256) -> u256 {
-        let (q, r) = u256_safe_divmod(lhs, rhs.try_into().expect('Division by 0'));
+        let (q, r) = u256_safe_div_rem(lhs, rhs.try_into().expect('Division by 0'));
         r
     }
 }
@@ -1195,7 +1205,7 @@ impl U256RemEq of RemEq<u256> {
 
 impl U256DivRem of DivRem<u256> {
     fn div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) {
-        u256_safe_divmod(lhs, rhs)
+        u256_safe_div_rem(lhs, rhs)
     }
 }
 

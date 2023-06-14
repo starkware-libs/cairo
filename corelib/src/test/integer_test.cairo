@@ -666,6 +666,18 @@ fn test_u256_operators() {
         @0_u256,
         'u256 mod'
     );
+    assert_eq(@(BoundedInt::max() % 0x100000000), @0xffffffff_u256, 'u256 mod');
+    assert_eq(@(BoundedInt::max() % 0x10000000000000000), @0xffffffffffffffff_u256, 'u256 mod');
+    assert_eq(
+        @(BoundedInt::max() / 0x10000000000000000000000000000000000000000),
+        @0xffffffffffffffffffffffff_u256,
+        'u256 div'
+    );
+    assert_eq(
+        @(BoundedInt::max() / 0x1000000000000000000000000000000000000000000000000),
+        @0xffffffffffffffff_u256,
+        'u256 div'
+    );
     assert_eq(
         @~max_u128,
         @0xffffffffffffffffffffffffffffffff00000000000000000000000000000000,
