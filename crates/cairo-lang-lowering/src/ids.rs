@@ -12,6 +12,7 @@ use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::db::LoweringGroup;
 use crate::ids::semantic::substitution::SemanticRewriter;
+use crate::ObjectOrigin;
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FunctionWithBodyLongId {
@@ -324,4 +325,18 @@ fn parameter_as_member_path(param: semantic::Parameter) -> semantic::ExprVarMemb
         ty,
         stable_ptr: ast::ExprPtr(stable_ptr.0),
     })
+}
+
+define_short_id!(ObjectOriginId, ObjectOrigin, LoweringGroup, lookup_intern_object_origin);
+impl ObjectOriginId {
+    pub fn from_stable_location(
+        db: &dyn LoweringGroup,
+        stable_location: StableLocation,
+    ) -> ObjectOriginId {
+        db.intern_object_origin(ObjectOrigin::new(stable_location))
+    }
+
+    pub fn get(&self, db: &dyn LoweringGroup) -> ObjectOrigin {
+        db.lookup_intern_object_origin(*self)
+    }
 }

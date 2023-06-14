@@ -23,7 +23,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, FlatBlockEnd, FlatLowered, MatchInfo, Statement};
+use crate::{ids, FlatBlockEnd, FlatLowered, MatchInfo, ObjectOrigin, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -40,6 +40,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         id: ids::FunctionWithBodyLongId,
     ) -> ids::FunctionWithBodyId;
+
+    #[salsa::interned]
+    fn intern_object_origin(&self, id: ObjectOrigin) -> ids::ObjectOriginId;
 
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
