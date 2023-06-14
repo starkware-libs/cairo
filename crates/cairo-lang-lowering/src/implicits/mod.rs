@@ -14,7 +14,9 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
-use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VariableId};
+use crate::{
+    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage, VariableId,
+};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
@@ -108,13 +110,16 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     for statement in &mut ctx.lowered.blocks[block_id].statements {
         if let Statement::Call(stmt) = statement {
             let callee_implicits = ctx.db.function_implicits(stmt.function)?;
+
+            let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
             let indices = callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
-            let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
+            let implicit_input_vars =
+                indices.iter().map(|i| VarUsage { var_id: implicits[*i], location });
             stmt.inputs.splice(0..0, implicit_input_vars);
             let implicit_output_vars = callee_implicits
                 .iter()
                 .copied()
-                .map(|ty| ctx.variables.new_var(VarRequest { ty, location: stmt.location }))
+                .map(|ty| ctx.variables.new_var(VarRequest { ty, location }))
                 .collect_vec();
             for (i, var) in zip_eq(indices, implicit_output_vars.iter()) {
                 implicits[i] = *var;
@@ -154,9 +159,12 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
             }
             MatchInfo::Extern(stmt) => {
                 let callee_implicits = ctx.db.function_implicits(stmt.function)?;
+                let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
                 let indices =
                     callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
-                let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
+
+                let implicit_input_vars =
+                    indices.iter().map(|i| VarUsage { var_id: implicits[*i], location });
                 stmt.inputs.splice(0..0, implicit_input_vars);
                 let location = stmt.location;
 

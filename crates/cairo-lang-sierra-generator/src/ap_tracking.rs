@@ -107,7 +107,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             info.vars.swap_remove(&var_id);
         }
 
-        info.variables_used(self, &stmt.inputs(), block_id);
+        info.variables_used(
+            self,
+            &stmt.inputs().into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            block_id,
+        );
     }
 
     fn visit_goto(
@@ -174,7 +178,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, &match_info.inputs(), block_id);
+        info.variables_used(
+            self,
+            &match_info.inputs().into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            block_id,
+        );
         info
     }
 

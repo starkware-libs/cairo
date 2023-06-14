@@ -4,9 +4,9 @@ mod test;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, enumerate, zip_eq};
+use itertools::{chain, enumerate, zip_eq, Itertools};
 use lowering::borrow_check::analysis::StatementLocation;
-use lowering::MatchArm;
+use lowering::{MatchArm, VarUsage};
 use sierra::extensions::lib_func::SierraApChange;
 use sierra::program;
 use {cairo_lang_lowering as lowering, cairo_lang_sierra as sierra};
@@ -284,7 +284,12 @@ fn generate_statement_call_code(
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     // Prepare the Sierra input and output variables.
-    let inputs = context.get_sierra_variables(&statement.inputs);
+    let inputs = statement
+        .inputs
+        .iter()
+        .map(|var_usage| context.get_sierra_variable(var_usage.var_id))
+        .collect_vec();
+
     let outputs = context.get_sierra_variables(&statement.outputs);
 
     // Check if this is a user defined function or a libfunc.
@@ -304,7 +309,7 @@ fn generate_statement_call_code(
         let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
         let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-        for (idx, (var_id, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
+        for (idx, (var_usage, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
             let use_location = UseLocation { statement_location: *statement_location, idx };
             let should_dup = should_dup(context, &use_location);
             // Allocate a temporary Sierra variable that represents the argument placed on the
@@ -313,7 +318,7 @@ fn generate_statement_call_code(
             push_values_vec.push(pre_sierra::PushValue {
                 var,
                 var_on_stack: arg_on_stack.clone(),
-                ty: context.get_variable_sierra_type(*var_id)?,
+                ty: context.get_variable_sierra_type(var_usage.var_id)?,
                 dup: should_dup,
             });
             args_on_stack.push(arg_on_stack);
@@ -350,7 +355,7 @@ fn should_dup(context: &mut ExprGeneratorContext<'_>, use_location: &UseLocation
 fn maybe_add_dup_statements(
     context: &mut ExprGeneratorContext<'_>,
     statement_location: &StatementLocation,
-    lowering_vars: &[id_arena::Id<lowering::Variable>],
+    lowering_vars: &[VarUsage],
     statements: &mut Vec<pre_sierra::Statement>,
 ) -> Maybe<Vec<sierra::ids::VarId>> {
     lowering_vars
@@ -368,7 +373,7 @@ fn maybe_add_dup_statement(
     context: &mut ExprGeneratorContext<'_>,
     statement_location: &StatementLocation,
     idx: usize,
-    lowering_var: &id_arena::Id<lowering::Variable>,
+    lowering_var: &VarUsage,
     statements: &mut Vec<pre_sierra::Statement>,
 ) -> Maybe<sierra::ids::VarId> {
     let sierra_var = context.get_sierra_variable(*lowering_var);
@@ -531,7 +536,7 @@ fn generate_statement_struct_destructure_code(
     statements.push(simple_statement(
         struct_deconstruct_libfunc_id(
             context.get_db(),
-            context.get_variable_sierra_type(statement.input)?,
+            context.get_variable_sierra_type(statement.input.var_id)?,
         )?,
         &[input],
         &context.get_sierra_variables(&statement.outputs),
@@ -576,7 +581,7 @@ fn generate_statement_snapshot(
     let input =
         maybe_add_dup_statement(context, statement_location, 0, &statement.input, &mut statements)?;
 
-    let ty = context.get_variable_sierra_type(statement.input)?;
+    let ty = context.get_variable_sierra_type(statement.input.var_id)?;
     let func = snapshot_take_libfunc_id(context.get_db(), ty);
 
     statements.push(simple_statement(
@@ -602,7 +607,10 @@ fn generate_statement_desnap(
         maybe_add_dup_statements(context, statement_location, &[statement.input], &mut statements)?;
 
     statements.push(simple_statement(
-        rename_libfunc_id(context.get_db(), context.get_variable_sierra_type(statement.input)?),
+        rename_libfunc_id(
+            context.get_db(),
+            context.get_variable_sierra_type(statement.input.var_id)?,
+        ),
         &inputs_after_dup,
         &[context.get_sierra_variable(statement.output)],
     ));

@@ -84,10 +84,10 @@ fn check_variable_lifetime(
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
-                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
+                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx].var_id,
                 }
             } else {
-                statements[location.statement_location.1].inputs()[location.idx]
+                statements[location.statement_location.1].inputs()[location.idx].var_id
             };
             format!("v{}: {location:?}", var_id.index())
         })
