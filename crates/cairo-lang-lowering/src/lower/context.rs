@@ -365,7 +365,11 @@ impl LoweredExprExternEnum {
 
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function.lowered(ctx.db),
-            inputs: self.inputs,
+            inputs: self
+                .inputs
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location: ctx.variables[var_id].location })
+                .collect(),
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
                 .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
                 .collect(),

@@ -10,7 +10,7 @@ use crate::borrow_check::analysis::BackAnalysis;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 pub mod analysis;
 pub mod demand;
@@ -106,7 +106,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
             }
             _ => {}
         }
-        info.variables_used(self, stmt.inputs().iter().map(|var_id| (var_id, ())));
+        info.variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 
     fn visit_goto(
@@ -133,7 +133,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
             })
             .collect_vec();
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, match_info.inputs().iter().map(|var_id| (var_id, ())));
+        demand.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
         demand
     }
 

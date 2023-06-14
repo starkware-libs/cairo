@@ -13,7 +13,7 @@ use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
-use lowering::FlatLowered;
+use lowering::{FlatLowered, VarUsage};
 
 /// Represents the location where a drop statement for a variable should be added.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -55,6 +55,12 @@ pub enum SierraGenVar {
 impl From<VariableId> for SierraGenVar {
     fn from(var: VariableId) -> Self {
         SierraGenVar::LoweringVar(var)
+    }
+}
+
+impl From<VarUsage> for SierraGenVar {
+    fn from(var_usage: VarUsage) -> Self {
+        SierraGenVar::LoweringVar(var_usage.var_id)
     }
 }
 

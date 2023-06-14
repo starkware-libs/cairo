@@ -186,7 +186,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementCall {
         write!(f, "{:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
-            var.fmt(f, ctx)?;
+            var.var_id.fmt(f, ctx)?;
             if inputs.peek().is_some() {
                 write!(f, ", ")?;
             }
@@ -200,7 +200,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchExternInfo {
         write!(f, "match {:?}(", self.function.lookup(ctx.db).debug(ctx.db))?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
-            var.fmt(f, ctx)?;
+            var.var_id.fmt(f, ctx)?;
             if inputs.peek().is_some() {
                 write!(f, ", ")?;
             }
@@ -245,7 +245,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for MatchArm {
 impl DebugWithDb<LoweredFormatter<'_>> for MatchEnumInfo {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "match_enum(")?;
-        self.input.fmt(f, ctx)?;
+        self.input.var_id.fmt(f, ctx)?;
         writeln!(f, ") {{")?;
         for arm in &self.arms {
             arm.fmt(f, ctx)?;
@@ -261,7 +261,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementEnumConstruct {
             self.variant.concrete_enum_id.enum_id(ctx.db.upcast()).name(ctx.db.upcast());
         let variant_name = self.variant.id.name(ctx.db.upcast());
         write!(f, "{enum_name}::{variant_name}(",)?;
-        self.input.fmt(f, ctx)?;
+        self.input.var_id.fmt(f, ctx)?;
         write!(f, ")")
     }
 }
@@ -271,7 +271,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementStructConstruct {
         write!(f, "struct_construct(")?;
         let mut inputs = self.inputs.iter().peekable();
         while let Some(var) = inputs.next() {
-            var.fmt(f, ctx)?;
+            var.var_id.fmt(f, ctx)?;
             if inputs.peek().is_some() {
                 write!(f, ", ")?;
             }
@@ -283,7 +283,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementStructConstruct {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementStructDestructure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "struct_destructure(")?;
-        self.input.fmt(f, ctx)?;
+        self.input.var_id.fmt(f, ctx)?;
         write!(f, ")")
     }
 }
@@ -291,7 +291,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementStructDestructure {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementSnapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "snapshot(")?;
-        self.input.fmt(f, ctx)?;
+        self.input.var_id.fmt(f, ctx)?;
         write!(f, ")")
     }
 }
@@ -299,7 +299,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for StatementSnapshot {
 impl DebugWithDb<LoweredFormatter<'_>> for StatementDesnap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
         write!(f, "desnap(")?;
-        self.input.fmt(f, ctx)?;
+        self.input.var_id.fmt(f, ctx)?;
         write!(f, ")")
     }
 }

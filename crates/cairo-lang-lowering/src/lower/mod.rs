@@ -703,7 +703,7 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: call_result.returns[0],
+                input: VarUsage { var_id: call_result.returns[0], location } ,
                 arms: vec![],
                 location,
             })));
@@ -890,7 +890,7 @@ fn lower_expr_match(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
-        input: expr_var,
+        input: VarUsage { var_id: expr_var, location },
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -972,7 +972,12 @@ fn lower_optimized_extern_match(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum.inputs,
+        inputs: extern_enum
+            .inputs
+            .iter()
+            .cloned()
+            .map(|var_id| VarUsage { var_id, location })
+            .collect(),
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -1037,7 +1042,7 @@ fn lower_expr_match_felt252(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![expr_var],
+        inputs: vec![VarUsage { var_id: expr_var, location }],
         arms: vec![
             MatchArm {
                 variant_id: jump_nz_zero_variant(semantic_db),
@@ -1265,7 +1270,7 @@ fn lower_expr_error_propagate(
     // Merge blocks.
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: ok_variant.concrete_enum_id,
-        input: var,
+        input: VarUsage { var_id: var, location },
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),
@@ -1331,7 +1336,12 @@ fn lower_optimized_extern_error_propagate(
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum.inputs,
+        inputs: extern_enum
+            .inputs
+            .iter()
+            .cloned()
+            .map(|var_id| VarUsage { var_id, location })
+            .collect(),
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),

@@ -99,8 +99,8 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
     // Find condition 2 (see module doc).
     for (_, block) in lowered.blocks.iter() {
         for stmt in &block.statements {
-            for var in stmt.inputs() {
-                let var = ctx.map_var_id(var);
+            for var_usage in stmt.inputs() {
+                let var = ctx.map_var_id(var_usage.var_id);
                 ctx.set_used(var);
             }
         }
@@ -117,8 +117,8 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
             }
             FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::Match { info } => {
-                for var in info.inputs() {
-                    let var = ctx.map_var_id(var);
+                for var_usage in info.inputs() {
+                    let var = ctx.map_var_id(var_usage.var_id);
                     ctx.set_used(var);
                 }
             }
