@@ -22,7 +22,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
+    INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -78,7 +79,7 @@ impl AbiBuilder {
         let mut storage_type = None;
         for (id, _) in db.module_structs(module_id).unwrap_or_default() {
             let strct_name = id.name(db.upcast());
-            if strct_name == "ContractState" {
+            if strct_name == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }
@@ -90,7 +91,7 @@ impl AbiBuilder {
                 ))));
             }
             // Forbid a struct named Event.
-            if strct_name == "Event" {
+            if strct_name == EVENT_TYPE_NAME {
                 return Err(ABIError::EventMustBeEnum);
             }
         }
@@ -145,7 +146,7 @@ impl AbiBuilder {
         // Add events.
         for (id, _) in db.module_enums(module_id).unwrap_or_default() {
             let enm_name = id.name(db.upcast());
-            if enm_name == "Event"
+            if enm_name == EVENT_TYPE_NAME
                 && id.has_attr(db.upcast(), EVENT_ATTR).map_err(|_| ABIError::CompilationError)?
             {
                 // Check that the enum has no generic parameters.
