@@ -27,7 +27,7 @@ use crate::ids::{FunctionId, ObjectOriginId, Signature};
 /// user code that caused the object to be created.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ObjectOrigin {
-    /// The stable location of the object.
+    /// The stable location that caused the object to be created.
     pub stable_location: StableLocation,
 }
 impl ObjectOrigin {
@@ -48,18 +48,18 @@ pub type VariableId = Id<Variable>;
 ///
 /// Then there is a usage of the variable 'a' in the body of the function.
 ///
-/// Note usage location is not the location of the variable.
-/// The location of var_id points to the defintion:
+/// Note usage origin is not the origin of the variable.
+/// The origin of var_id points to the defintion:
 ///
 /// fn foo(a: u32)
 ///        ^
 ///
-/// while the usage location is:
+/// while the usage origin is:
 ///     1 + a
 ///         ^
 pub struct VarUsage {
     pub var_id: VariableId,
-    pub location: ObjectOriginId,
+    pub origin: ObjectOriginId,
 }
 
 /// A lowered function code using flat blocks.
