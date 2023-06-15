@@ -200,8 +200,8 @@ pub fn handle_contract_by_storage(
             | ast::Item::ExternType(_)
             | ast::Item::Trait(_)
             | ast::Item::FreeFunction(_)
+            | ast::Item::ImplAlias(_)
             | ast::Item::Missing(_) => None,
-            ast::Item::ImplAlias(_) => todo!(),
         } {
             extra_uses
                 .entry(ident.text(db))
