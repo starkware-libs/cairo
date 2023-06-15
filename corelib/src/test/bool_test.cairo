@@ -28,5 +28,5 @@ fn test_bool_casts() {
     assert_eq(true.into(), 1, 'true as felt252');
     assert_eq(0_felt252.try_into().unwrap(), false, 'felt252 as false');
     assert_eq(1_felt252.try_into().unwrap(), true, 'felt252 as true');
-    assert_eq(2_felt252.try_into().unwrap(), (), felt252 as non-bool');
+    assert_eq(2_felt252.try_into().unwrap(), (), 'felt252 as non-bool');
 }
