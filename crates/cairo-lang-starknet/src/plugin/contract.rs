@@ -6,7 +6,9 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
-use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
+use cairo_lang_syntax::node::ast::{
+    Attribute, MaybeModuleBody, OptionArgListParenthesized, OptionWrappedGenericParamList,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -251,13 +253,13 @@ pub fn handle_contract_by_storage(
                 let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
                     continue;
                 };
-                // TODO(spapini): Check attr args instead.
-                if attr.as_syntax_node().get_text_without_trivia(db) != "#[external(v0)]" {
+                if !is_arg_v0(db, &attr) {
                     diagnostics.push(PluginDiagnostic {
                         message: "Only #[external(v0)] is supported.".to_string(),
                         stable_ptr: attr.stable_ptr().untyped(),
                     });
                 }
+
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
@@ -385,6 +387,17 @@ pub fn handle_contract_by_storage(
         diagnostics,
         remove_original_item: true,
     })
+}
+
+/// Checks if the only arg of the given attribute is "v0".
+fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
+    match attr.arguments(db) {
+        OptionArgListParenthesized::ArgListParenthesized(y) => match &y.args(db).elements(db)[..] {
+            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0" => true,
+            _ => false,
+        },
+        OptionArgListParenthesized::Empty(_) => false,
+    }
 }
 
 fn forbid_attribute_in_external_impl(
