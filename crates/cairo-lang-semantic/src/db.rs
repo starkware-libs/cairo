@@ -208,6 +208,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::enm::enum_generic_params)]
     fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the attributes attached to an enum.
+    #[salsa::invoke(items::enm::enum_attributes)]
+    fn enum_attributes(&self, enum_id: EnumId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of an enum declaration.
     #[salsa::invoke(items::enm::enum_declaration_resolver_data)]
     fn enum_declaration_resolver_data(&self, enum_id: EnumId) -> Maybe<Arc<ResolverData>>;
@@ -455,6 +458,9 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the impl.
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
+    /// Returns the attributes attached to the impl.
+    #[salsa::invoke(items::imp::impl_def_attributes)]
+    fn impl_def_attributes(&self, impl_def_id: ImplDefId) -> Maybe<Vec<Attribute>>;
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
