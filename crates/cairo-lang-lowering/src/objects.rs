@@ -27,10 +27,16 @@ use crate::ids::{FunctionId, LocationId, Signature};
 pub struct Location {
     /// The stable location of the object.
     pub stable_location: StableLocation,
+    pub notes: Vec<smol_str::SmolStr>,
 }
 impl Location {
     pub fn new(stable_location: StableLocation) -> Self {
-        Self { stable_location }
+        Self { stable_location, notes: vec![] }
+    }
+
+    pub fn with_note(mut self, note: smol_str::SmolStr) -> Self {
+        self.notes.push(note);
+        self
     }
 }
 

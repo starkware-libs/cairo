@@ -339,4 +339,16 @@ impl LocationId {
     pub fn get(&self, db: &dyn LoweringGroup) -> Location {
         db.lookup_intern_location(*self)
     }
+
+    pub fn with_note(&self, db: &dyn LoweringGroup, note: smol_str::SmolStr) -> LocationId {
+        db.intern_location(self.get(db).with_note(note))
+    }
+
+    pub fn with_auto_generation_note(
+        &self,
+        db: &dyn LoweringGroup,
+        logic_name: smol_str::SmolStr,
+    ) -> LocationId {
+        self.with_note(db, format!("while compiling auto-generated {logic_name}",).into())
+    }
 }
