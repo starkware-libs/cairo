@@ -31,10 +31,10 @@ fn test_contract_resolving() {
                     1
                 }
 
-                #[external]
+                #[external(v0)]
                 fn ep1(ref self: ContractState) {}
 
-                #[external]
+                #[external(v0)]
                 fn ep2(ref self: ContractState) {}
             }
         "},

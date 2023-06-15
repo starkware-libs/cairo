@@ -27,7 +27,7 @@ mod ContractA {
         self.value.write(value_);
     }
 
-    #[external]
+    #[external(v0)]
     fn replace(ref self: ContractState) {
         starknet::replace_class_syscall(super::ContractB::TEST_CLASS_HASH.try_into().unwrap())
             .unwrap();
@@ -46,7 +46,7 @@ mod ContractB {
         value: u128, 
     }
 
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState) -> u128 {
         self.value.read()
     }
