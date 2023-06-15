@@ -182,7 +182,7 @@ fn compile_contract_with_prepared_and_checked_db(
     let entry_points_by_type = ContractEntryPoints {
         external: get_entry_points(db, &external, &replacer)?,
         l1_handler: get_entry_points(db, &l1_handler, &replacer)?,
-        /// TODO(orizi): Validate there is at most one constructor.
+        // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
     let contract_class = ContractClass {
