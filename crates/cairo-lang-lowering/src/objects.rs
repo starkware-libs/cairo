@@ -44,17 +44,17 @@ pub type VariableId = Id<Variable>;
 ///     1 + a
 /// }
 ///
-/// Then there is a usage of the variable 'a' in the body of the function.
-///
-/// Note usage location is not the location of the variable.
-/// The location of var_id points to the defintion:
-///
-/// fn foo(a: u32)
-///        ^
-///
-/// while the usage location is:
+/// Then the right hand side of the tail expression `1 + a` a VarUsage Object with
+/// the variable id of the variable `a` and the location:
 ///     1 + a
 ///         ^
+/// Note that the location assosiated with the variable that was assigned to 'a' is
+/// fn foo(a: u32)
+///        ^
+/// and it is different from the location in the VarUsage.
+///
+/// The tail expression `1 + a`  is also going to be assinged a variable and a VarUsage.
+/// in that case, the location of both the variable and the usage will be the same.
 pub struct VarUsage {
     pub var_id: VariableId,
     pub location: LocationId,
