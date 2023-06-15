@@ -51,9 +51,9 @@
     "0x20680017fff7fff",
     "0x48",
     "0x1104800180018000",
-    "0x96f",
+    "0x965",
     "0x482480017fff8000",
-    "0x96e",
+    "0x964",
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -236,9 +236,9 @@
     "0x20680017fff7fff",
     "0x48",
     "0x1104800180018000",
-    "0x8b6",
+    "0x8ac",
     "0x482480017fff8000",
-    "0x8b5",
+    "0x8ab",
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -359,12 +359,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffffead4",
+    "0xffffffffffffffffffffffffffffec64",
     "0x400280007ff87fff",
     "0x10780017fff7fff",
     "0xc3",
     "0x4825800180007ffa",
-    "0x152c",
+    "0x139c",
     "0x400280007ff87fff",
     "0x482680017ff88000",
     "0x1",
@@ -411,9 +411,9 @@
     "0x20680017fff7fff",
     "0x4c",
     "0x1104800180018000",
-    "0x807",
+    "0x7fd",
     "0x482480017fff8000",
-    "0x806",
+    "0x7fc",
     "0x480080007fff8000",
     "0x480080027fff8000",
     "0x484480017fff8000",
@@ -612,19 +612,19 @@
     "0x20680017fff7fff",
     "0x3a",
     "0x1104800180018000",
-    "0x73e",
+    "0x734",
     "0x482480017fff8000",
-    "0x73d",
+    "0x733",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x7",
     "0x482480017fef8000",
-    "0xffffffffffffffffffffffffffff59f2",
+    "0xffffffffffffffffffffffffffff5b82",
     "0x400080007fed7fff",
     "0x10780017fff7fff",
     "0x1f",
     "0x4824800180007fef",
-    "0xa60e",
+    "0xa47e",
     "0x400080007fed7fff",
     "0x48127fff7fff8000",
     "0x480a7ffb7fff8000",
@@ -758,9 +758,9 @@
     "0x20680017fff7fff",
     "0x3b",
     "0x1104800180018000",
-    "0x6ac",
+    "0x6a2",
     "0x482480017fff8000",
-    "0x6ab",
+    "0x6a1",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x7",
@@ -1246,7 +1246,7 @@
     "0x48127ffa7fff8000",
     "0x480080007ff68000",
     "0x1104800180018000",
-    "0x299",
+    "0x294",
     "0x20680017fff7ffa",
     "0xc",
     "0x48127ff87fff8000",
@@ -1288,7 +1288,7 @@
     "0x480a7ffa7fff8000",
     "0x480a7ffb7fff8000",
     "0x1104800180018000",
-    "0x2ed",
+    "0x2e3",
     "0x20680017fff7ffd",
     "0xb9",
     "0x4824800180007fff",
@@ -1388,7 +1388,7 @@
     "0x480080087fe58000",
     "0x480080097fe48000",
     "0x1104800180018000",
-    "0x29e",
+    "0x294",
     "0x20680017fff7ffd",
     "0x9",
     "0x48127ff67fff8000",
@@ -1487,7 +1487,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x247",
+    "0x23d",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ffb7fff8000",
@@ -1509,7 +1509,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x265",
+    "0x25b",
     "0x20680017fff7ffd",
     "0xa",
     "0x48127ffb7fff8000",
@@ -1558,7 +1558,7 @@
     "0x480280067ffd8000",
     "0x480280077ffd8000",
     "0x1104800180018000",
-    "0x25f",
+    "0x255",
     "0x20680017fff7ffd",
     "0xa",
     "0x48127ff67fff8000",
@@ -1713,7 +1713,7 @@
     "0x48127ff27fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x1d1",
+    "0x1c7",
     "0x20680017fff7fff",
     "0x9",
     "0x40780017fff7fff",
@@ -1728,19 +1728,19 @@
     "0x48127fdc7fff8000",
     "0x480a7ffa7fff8000",
     "0x1104800180018000",
-    "0x1c2",
+    "0x1b8",
     "0x48127ffd7fff8000",
     "0x48127fa37fff8000",
     "0x48127fa37fff8000",
     "0x480a7ffc7fff8000",
     "0x1104800180018000",
-    "0x1bc",
+    "0x1b2",
     "0x48127fdd7fff8000",
     "0x48127fdd7fff8000",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x1104800180018000",
-    "0x1ef",
+    "0x1e5",
     "0x20680017fff7fff",
     "0x6",
     "0x40780017fff7fff",
@@ -1762,7 +1762,7 @@
     "0x48127fc97fff8000",
     "0x48127fc97fff8000",
     "0x1104800180018000",
-    "0x22a",
+    "0x220",
     "0x20680017fff7fff",
     "0x6",
     "0x40780017fff7fff",
@@ -1804,20 +1804,15 @@
     "0x480680017fff8000",
     "0x0",
     "0x208b7fff7fff7ffe",
-    "0x1104800180018000",
-    "0x295",
-    "0x482480017fff8000",
-    "0x294",
-    "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ff88000",
-    "0xffffffffffffffffffffffffffffed5e",
+    "0xffffffffffffffffffffffffffffeeee",
     "0x400280007ff77fff",
     "0x10780017fff7fff",
     "0x4c",
     "0x4825800180007ff8",
-    "0x12a2",
+    "0x1112",
     "0x400280007ff77fff",
     "0x482680017ff78000",
     "0x1",
@@ -1837,7 +1832,7 @@
     "0x480a7ff97fff8000",
     "0x480a7ffa7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffc31",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffc36",
     "0x20680017fff7ffe",
     "0x27",
     "0x400280007ffc7fff",
@@ -1851,7 +1846,7 @@
     "0x4825800180007ffd",
     "0x1",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffd3",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffd8",
     "0x20680017fff7ffa",
     "0xc",
     "0x48127ff87fff8000",
@@ -1910,20 +1905,15 @@
     "0x482480017ff78000",
     "0x1",
     "0x208b7fff7fff7ffe",
-    "0x1104800180018000",
-    "0x22b",
-    "0x482480017fff8000",
-    "0x22a",
-    "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ff88000",
-    "0xffffffffffffffffffffffffffffbdca",
+    "0xffffffffffffffffffffffffffffc0ea",
     "0x400280007ff77fff",
     "0x10780017fff7fff",
     "0x60",
     "0x4825800180007ff8",
-    "0x4236",
+    "0x3f16",
     "0x400280007ff77fff",
     "0x482680017ff78000",
     "0x1",
@@ -1964,7 +1954,7 @@
     "0x4825800180007ffd",
     "0x1",
     "0x1104800180018000",
-    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffcc",
+    "0x800000000000010ffffffffffffffffffffffffffffffffffffffffffffffd1",
     "0x20680017fff7ffa",
     "0xc",
     "0x48127ff87fff8000",
@@ -2336,13 +2326,13 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb03",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb0d",
     "0x20680017fff7ffe",
     "0x54",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffa38",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffa42",
     "0x40137ff07fff8001",
     "0x20680017fff7ffe",
     "0x3c",
@@ -2352,7 +2342,7 @@
     "0x48127ffa7fff8000",
     "0x40137ffb7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb2c",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb36",
     "0x20680017fff7ffa",
     "0x22",
     "0x20680017fff7ffd",
@@ -2723,7 +2713,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x152c"
+              "Immediate": "0x139c"
             },
             "rhs": {
               "Deref": {
@@ -2883,7 +2873,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0xa60e"
+              "Immediate": "0xa47e"
             },
             "rhs": {
               "Deref": {
@@ -3409,12 +3399,12 @@
       ]
     ],
     [
-      1807,
+      1802,
       [
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x12a2"
+              "Immediate": "0x1112"
             },
             "rhs": {
               "Deref": {
@@ -3431,7 +3421,7 @@
       ]
     ],
     [
-      1888,
+      1883,
       [
         {
           "AllocSegment": {
@@ -3444,12 +3434,12 @@
       ]
     ],
     [
-      1913,
+      1903,
       [
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x4236"
+              "Immediate": "0x3f16"
             },
             "rhs": {
               "Deref": {
@@ -3466,7 +3456,7 @@
       ]
     ],
     [
-      2014,
+      2004,
       [
         {
           "AllocSegment": {
@@ -3479,7 +3469,7 @@
       ]
     ],
     [
-      2078,
+      2068,
       [
         {
           "SystemCall": {
@@ -3494,7 +3484,7 @@
       ]
     ],
     [
-      2123,
+      2113,
       [
         {
           "SystemCall": {
@@ -3509,7 +3499,7 @@
       ]
     ],
     [
-      2184,
+      2174,
       [
         {
           "RandomEcPoint": {
@@ -3537,7 +3527,7 @@
       ]
     ],
     [
-      2246,
+      2236,
       [
         {
           "RandomEcPoint": {
@@ -3665,7 +3655,7 @@
     [
       354,
       [
-        "memory[ap + 0] = 5420 <= memory[fp + -6]"
+        "memory[ap + 0] = 5020 <= memory[fp + -6]"
       ]
     ],
     [
@@ -3725,7 +3715,7 @@
     [
       614,
       [
-        "memory[ap + 0] = 42510 <= memory[ap + -16]"
+        "memory[ap + 0] = 42110 <= memory[ap + -16]"
       ]
     ],
     [
@@ -3909,50 +3899,50 @@
       ]
     ],
     [
-      1807,
+      1802,
       [
-        "memory[ap + 0] = 4770 <= memory[fp + -8]"
+        "memory[ap + 0] = 4370 <= memory[fp + -8]"
       ]
     ],
     [
-      1888,
-      [
-        "memory[ap + 0] = segments.add()"
-      ]
-    ],
-    [
-      1913,
-      [
-        "memory[ap + 0] = 16950 <= memory[fp + -8]"
-      ]
-    ],
-    [
-      2014,
+      1883,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      2078,
+      1903,
+      [
+        "memory[ap + 0] = 16150 <= memory[fp + -8]"
+      ]
+    ],
+    [
+      2004,
+      [
+        "memory[ap + 0] = segments.add()"
+      ]
+    ],
+    [
+      2068,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -4])"
       ]
     ],
     [
-      2123,
+      2113,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -3])"
       ]
     ],
     [
-      2184,
+      2174,
       [
         "\nfrom starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import random_ec_point\n(memory[ap + 4], memory[ap + 5]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)\n",
         "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 6] = __boxed_segment\n__boxed_segment += 2\n"
       ]
     ],
     [
-      2246,
+      2236,
       [
         "\nfrom starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME\nfrom starkware.python.math_utils import random_ec_point\n(memory[ap + 4], memory[ap + 5]) = random_ec_point(FIELD_PRIME, ALPHA, BETA)\n",
         "\nif '__boxed_segment' not in globals():\n    __boxed_segment = segments.add()\nmemory[ap + 6] = __boxed_segment\n__boxed_segment += 2\n"

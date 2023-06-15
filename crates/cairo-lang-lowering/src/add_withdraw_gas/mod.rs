@@ -45,44 +45,13 @@ fn add_withdraw_gas_to_function(
 
     let gas_module = core_submodule(db.upcast(), "gas");
 
-    // Add variable of type BuiltinCosts.
-    let mut variables = VariableAllocator::new(
-        db,
-        function.function_with_body_id(db).base_semantic_function(db),
-        lowered.variables.clone(),
-    )?;
-    let builtin_costs_var = variables.new_var(VarRequest {
-        ty: get_ty_by_name(db.upcast(), gas_module, "BuiltinCosts".into(), Vec::new()),
-        location: StableLocationOption::None,
-    });
-    lowered.variables = variables.variables;
-
     let new_root_block = FlatBlock {
-        statements: vec![
-            // A statement call to `get_builtin_costs`.
-            Statement::Call(StatementCall {
-                function: get_function_id(
-                    db.upcast(),
-                    gas_module,
-                    "get_builtin_costs".into(),
-                    vec![],
-                )
-                .lowered(db),
-                inputs: vec![],
-                outputs: vec![builtin_costs_var],
-                location: StableLocationOption::None,
-            }),
-        ],
+        statements: vec![],
         end: FlatBlockEnd::Match {
             info: MatchInfo::Extern(MatchExternInfo {
-                function: get_function_id(
-                    db.upcast(),
-                    gas_module,
-                    "withdraw_gas_all".into(),
-                    vec![],
-                )
-                .lowered(db),
-                inputs: vec![builtin_costs_var],
+                function: get_function_id(db.upcast(), gas_module, "withdraw_gas".into(), vec![])
+                    .lowered(db),
+                inputs: vec![],
                 arms: vec![
                     MatchArm {
                         variant_id: option_some_variant(
