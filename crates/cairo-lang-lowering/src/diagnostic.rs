@@ -6,6 +6,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use itertools::Itertools;
 
 use crate::Location;
 
@@ -48,7 +49,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
     fn format(&self, db: &Self::DbType) -> String {
-        match &self.kind {
+        let msg = match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::NonZeroValueInMatch => {
                 "Match with a non-zero value is not supported.".into()
@@ -90,7 +91,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::MemberPathLoop => {
                 "Currently, loops must change the entire variable.".into()
             }
-        }
+        };
+
+        itertools::chain!(self.location.notes.iter(), std::iter::once(&msg)).join(",\n")
     }
 
     #[allow(unreachable_patterns, clippy::single_match)]

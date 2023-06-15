@@ -1,16 +1,19 @@
 use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
 use crate::destructs::add_destructs;
+use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::fmt::LoweredFormatter;
-use crate::ids::ConcreteFunctionWithBodyId;
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::delay_var_def::delay_var_def;
@@ -181,4 +184,36 @@ fn test_function_lowering_phases(
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
     let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
     format!("{:?}", lowered.debug(&lowered_formatter))
+}
+
+#[test]
+fn test_diagnostics() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    db.set_semantic_plugins(get_default_plugins());
+    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
+    let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
+        .with_auto_generation_note(db, "withdraw_gas".into())
+        .with_auto_generation_note(db, "destructor".into())
+        .get(db);
+
+    let mut builder = DiagnosticsBuilder::new();
+
+    builder.add(LoweringDiagnostic {
+        location,
+        kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+    });
+
+    // TODO(ilya): Consider moving the notes to the end of the error message.
+    assert_eq!(
+        builder.build().format(db),
+        indoc::indoc! {"
+error: while compiling auto-generated withdraw_gas,
+while compiling auto-generated destructor,
+Cannot inline a function that might call itself.
+ --> lib.cairo:1:1
+fn test_func() { let mut a = 5; {
+^*******************************^
+
+"}
+    );
 }
