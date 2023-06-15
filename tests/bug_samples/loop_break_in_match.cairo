@@ -1,5 +1,4 @@
 use core::array::ArrayTrait;
-use core::debug::PrintTrait;
 
 #[available_gas(2000000)]
 #[test]
@@ -17,9 +16,5 @@ fn main() {
                 break 'hi';
             }
         };
-
-        v.print();
     };
-
-    a.print();
 }
