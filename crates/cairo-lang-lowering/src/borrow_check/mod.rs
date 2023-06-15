@@ -55,9 +55,10 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         if matches!(panic_state, PanicState::EndsWithPanic) {
             let Err(_panic_destruct_err) = var.panic_destruct_impl.clone() else { return; };
         }
-        self.success = Err(self
-            .diagnostics
-            .report_by_location(var.location, VariableNotDropped { drop_err, destruct_err }));
+        self.success = Err(self.diagnostics.report_by_location(
+            var.location.get(self.db),
+            VariableNotDropped { drop_err, destruct_err },
+        ));
     }
 
     fn dup(&mut self, _position: (), var: VariableId) {
@@ -65,7 +66,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self
                 .diagnostics
-                .report_by_location(var.location, VariableMoved { inference_error }));
+                .report_by_location(var.location.get(self.db), VariableMoved { inference_error }));
         }
     }
 }
@@ -98,7 +99,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.duplicatable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location,
+                        var.location.get(self.db),
                         DesnappingANonCopyableType { inference_error },
                     ));
                 }

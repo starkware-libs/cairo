@@ -1,4 +1,3 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::corelib;
 
@@ -6,6 +5,7 @@ use super::block_builder::BlockBuilder;
 use super::context::{LoweredExpr, LoweringContext, LoweringResult, VarRequest};
 use super::generators::{self, StructConstruct};
 use super::{create_subscope_with_bound_refs, lower_expr};
+use crate::ids::ObjectOriginId;
 use crate::{MatchArm, MatchEnumInfo, MatchInfo, VariableId};
 
 /// Creates a bool variable with the given variant.
@@ -13,7 +13,7 @@ pub fn create_bool(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
     variant: semantic::ConcreteVariant,
-    location: StableLocation,
+    location: ObjectOriginId,
 ) -> VariableId {
     let semantic_db = ctx.db.upcast();
 

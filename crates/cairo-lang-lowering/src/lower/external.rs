@@ -1,8 +1,8 @@
-use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_semantic as semantic;
 
 use super::context::LoweringContext;
 use super::LoweredExpr;
+use crate::ids::ObjectOriginId;
 use crate::VariableId;
 
 /// Given a return type of an external function, gets the real output variable types for that call.
@@ -27,7 +27,7 @@ pub fn extern_facade_expr(
     ctx: &mut LoweringContext<'_, '_>,
     ty: semantic::TypeId,
     returns: Vec<VariableId>,
-    location: StableLocation,
+    location: ObjectOriginId,
 ) -> LoweredExpr {
     if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
         assert_eq!(returns.len(), subtypes.len());
