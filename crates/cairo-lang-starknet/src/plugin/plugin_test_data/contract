@@ -17,13 +17,13 @@ mod TestContract {
         1
     }
 
-    #[external]
+    #[external(v0)]
     fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[external]
+    #[external(v0)]
     fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
@@ -43,7 +43,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[external]
+    #[external(v0)]
     fn test_serde(
         ref self: ContractState,
         contract_address: ContractAddress,
@@ -68,13 +68,13 @@ mod TestContract {
         1
     }
 
-    #[external]
+    #[external(v0)]
     fn get_something(self: @ContractState, ref arg: felt252, mut num: felt252) -> felt252 {
         num += 1;
         num
     }
 
-    #[external]
+    #[external(v0)]
     fn set_something(ref self: ContractState, ref arg: felt252, num: felt252) {}
 
     #[l1_handler]
@@ -94,7 +94,7 @@ mod TestContract {
     #[derive(Drop, starknet::Event)]
     struct BestEventEver {}
 
-    #[external]
+    #[external(v0)]
     fn test_serde(
         ref self: ContractState,
         contract_address: ContractAddress,
@@ -109,7 +109,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1806595664558943735149157506799143391873470310576915631605369224994529262019;
+const TEST_CLASS_HASH: felt252 = 823635924068355694126825787803803617383697245045784617310030339236599123365;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {

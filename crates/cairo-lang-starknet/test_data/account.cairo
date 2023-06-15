@@ -42,7 +42,7 @@ mod Account {
     }
 
 
-    #[external]
+    #[external(v0)]
     fn __validate_deploy__(
         self: @ContractState,
         class_hash: felt252,

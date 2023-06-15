@@ -1,6 +1,8 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
-use cairo_lang_syntax::node::ast::{self, FunctionWithBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{
+    self, Attribute, FunctionWithBody, OptionArgListParenthesized, OptionReturnTypeClause,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -22,9 +24,11 @@ impl EntryPointKind {
     /// Returns the entry point kind if the given function is indeed an entry point.
     pub fn try_from_function_with_body(
         db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
         item_function: &FunctionWithBody,
     ) -> Option<Self> {
-        if item_function.has_attr(db, EXTERNAL_ATTR) {
+        if let Some(attr) = item_function.find_attr(db, EXTERNAL_ATTR) {
+            validate_external_v0(db, diagnostics, &attr);
             Some(EntryPointKind::External)
         } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
@@ -199,4 +203,29 @@ pub fn generate_entry_point_wrapper(
         ]
         .into(),
     ))
+}
+
+/// Checks if the only arg of the given attribute is "v0".
+fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
+    match attr.arguments(db) {
+        OptionArgListParenthesized::ArgListParenthesized(y) => {
+            matches!(&y.args(db).elements(db)[..],
+            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
+        }
+        OptionArgListParenthesized::Empty(_) => false,
+    }
+}
+
+/// Assuming the attribute is EXTERNAL_ATTR, validate it's #[external(v0)].
+pub fn validate_external_v0(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    attr: &Attribute,
+) {
+    if !is_arg_v0(db, &attr) {
+        diagnostics.push(PluginDiagnostic {
+            message: "Only #[external(v0)] is supported.".to_string(),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
 }

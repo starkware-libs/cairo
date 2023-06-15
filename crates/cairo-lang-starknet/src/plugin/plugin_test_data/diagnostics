@@ -181,6 +181,238 @@ impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 //! > ==========================================================================
 
+//! > Test non-v0 external function.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external(v1)]
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod TestContract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external(v1)]
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 754105767191811147979944710646961209961363280570278494420555505184329284073;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit(ref self: ContractState, event: Event) {
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<ContractState> {
+    #[external]
+        fn foo_v0(ref self: ContractState, x: (felt252, felt252));
+        #[external]
+        fn foo(ref self: ContractState, x: (felt252, felt252));
+        #[external]
+        fn foo_v1(ref self: ContractState, x: (felt252, felt252));
+        
+    
+}
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_contract_state();
+            super::foo_v0(ref storage, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_contract_state();
+            super::foo(ref storage, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+            if !array::SpanTrait::is_empty(data) {
+                // Force the inclusion of `System` in the list of implicits.
+                starknet::use_system_implicit();
+
+                let mut err_data = array::array_new();
+                array::array_append(ref err_data, 'Input too long for arguments');
+                panic(err_data);
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut storage = super::unsafe_new_contract_state();
+            super::foo_v1(ref storage, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl ContractStateDrop<> of Drop::<ContractState<>>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:8:5
+    #[external]
+    ^*********^
+
+error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:11:5
+    #[external(v1)]
+    ^*************^
+
+//! > ==========================================================================
+
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_runner_name
@@ -191,7 +423,7 @@ ExpandContractTestRunner
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, x: (felt252, felt252)) {
     }
 }
@@ -203,7 +435,7 @@ lib.cairo:
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, x: (felt252, felt252)) {
     }
 }
@@ -214,7 +446,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1460312078797661331777634083655921544238599930096957524306884986783950739842;
+const TEST_CLASS_HASH: felt252 = 176944079142407587387190530893114389990845565313618653790365543142034343496;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -352,7 +584,7 @@ ExpandContractTestRunner
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState) -> (felt252, felt252) {
     }
 }
@@ -364,7 +596,7 @@ lib.cairo:
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState) -> (felt252, felt252) {
     }
 }
@@ -375,7 +607,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1085681203938695457350905679214019253602052240602183085516661084732923084593;
+const TEST_CLASS_HASH: felt252 = 674733877474415941508584206307591616829394990485238586786524939912659551605;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -517,7 +749,7 @@ ExpandContractTestRunner
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo<T>(ref self: ContractState, x: T) {
     }
 }
@@ -529,7 +761,7 @@ lib.cairo:
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo<T>(ref self: ContractState, x: T) {
     }
 }
@@ -540,7 +772,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 986680701890279147065748532178080828207279458327175386486245847124129097172;
+const TEST_CLASS_HASH: felt252 = 1429429983509870149720508681041011741538943313114434010796762656739872213454;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -697,7 +929,7 @@ ExpandContractTestRunner
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
@@ -709,7 +941,7 @@ lib.cairo:
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
     }
 }
@@ -720,7 +952,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 347376211869286392247638345228494664456994337665073734689856581643720590414;
+const TEST_CLASS_HASH: felt252 = 501657588045192249015495923887077829935164555967246544055516439806515603398;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -867,13 +1099,13 @@ ExpandContractTestRunner
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn __validate__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __validate_declare__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __validate_deploy__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __execute__(ref self: ContractState) {}
 }
 
@@ -884,13 +1116,13 @@ lib.cairo:
 mod TestContract {
     #[storage]
     struct Storage {}
-    #[external]
+    #[external(v0)]
     fn __validate__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __validate_declare__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __validate_deploy__(ref self: ContractState) {}
-    #[external]
+    #[external(v0)]
     fn __execute__(ref self: ContractState) {}
 }
 
@@ -900,7 +1132,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1634753115141814283796594638234959991248210536627122676485228671802081386262;
+const TEST_CLASS_HASH: felt252 = 938238064410810455539553151030852030316348638665372096617601853905966039814;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1106,20 +1338,20 @@ mod TestContract {
     #[storage]
     struct Storage {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar2(ref self: ContractState, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
          array::array_new()
@@ -1127,7 +1359,7 @@ mod TestContract {
 
     // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
         array::array_new()
@@ -1142,20 +1374,20 @@ mod TestContract {
     #[storage]
     struct Storage {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar2(ref self: ContractState, a: felt252) {}
 
     // Should generate diagnostic as path resolving is not supported.
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
          array::array_new()
@@ -1163,7 +1395,7 @@ mod TestContract {
 
     // Should generate diagnostic as alias resolving is not supported.
     type my_felt252_array_type = Array::<felt252>;
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
         array::array_new()
@@ -1176,7 +1408,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1339255375740182838173000168531687646915489118170655670928431587424555758987;
+const TEST_CLASS_HASH: felt252 = 406140038303566402066747746329142593547865136993594396332720436023616420884;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
