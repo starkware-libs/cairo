@@ -367,7 +367,7 @@ pub fn core_libfunc_postcost<Ops: CostOperations, InfoProvider: InvocationCostIn
                 }
                 // Failure branch have some additional costs.
                 if !success {
-                    if with_builtin_costs || cost_computation > 0 {
+                    if cost_computation > 0 {
                         // The additional jump to failure branch, and an additional minus 1 for the
                         // range checked gas counter result.
                         steps += 2;

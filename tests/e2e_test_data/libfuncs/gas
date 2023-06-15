@@ -414,9 +414,8 @@ fn foo(costs: BuiltinCosts) -> Option::<()> {
 
 //! > casm
 %{ memory[ap + 0] = 870 <= memory[fp + -4] %}
-jmp rel 9 if [ap + 0] != 0, ap++;
-[fp + -4] = [ap + 0] + 870, ap++;
-[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -4] + 340282366920938463463374607431768210586, ap++;
 [ap + -1] = [[fp + -5] + 0];
 jmp rel 12;
 [fp + -4] = [ap + 0] + 870, ap++;
@@ -424,7 +423,7 @@ jmp rel 12;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;
 [ap + 0] = [fp + -3], ap++;
-call rel -16;
+call rel -14;
 ret;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [fp + -4], ap++;
@@ -432,7 +431,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 870})
+test::foo: OrderedHashMap({Const: 770})
 
 //! > sierra_code
 type BuiltinCosts = BuiltinCosts;

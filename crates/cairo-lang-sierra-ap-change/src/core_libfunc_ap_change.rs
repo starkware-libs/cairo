@@ -148,10 +148,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                     BuiltinCostWithdrawGasLibfunc::cost_computation_steps(|token_type| {
                         info_provider.token_usages(token_type)
                     });
-                vec![
-                    ApChange::Known(cost_computation_ap_change + 2),
-                    ApChange::Known(cost_computation_ap_change + 3),
-                ]
+                if cost_computation_ap_change == 0 {
+                    vec![ApChange::Known(2), ApChange::Known(2)]
+                } else {
+                    vec![
+                        ApChange::Known(cost_computation_ap_change + 2),
+                        ApChange::Known(cost_computation_ap_change + 3),
+                    ]
+                }
             }
             GasConcreteLibfunc::GetBuiltinCosts(_) => vec![ApChange::Known(3)],
         },
