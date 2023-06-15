@@ -36,8 +36,8 @@ fn add_withdraw_gas_to_function(
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
-    // TODO(ilya): Add metadata
-    let location = LocationId::from_stable_location(db, function.stable_location(db)?);
+    let location = LocationId::from_stable_location(db, function.stable_location(db)?)
+        .with_auto_generation_note(db, "withdraw_gas".into());
     let panic_block = create_panic_block(db, function, lowered, location)?;
 
     let old_root_block = lowered.blocks.root_block()?.clone();
