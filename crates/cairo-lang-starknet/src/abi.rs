@@ -22,7 +22,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, EVENT_ATTR, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
+    INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -87,7 +88,7 @@ impl AbiBuilder {
         let mut storage_type = None;
         for struct_id in structs {
             let struct_name = struct_id.name(db.upcast());
-            if struct_name == "ContractState" {
+            if struct_name == CONTRACT_STATE_NAME {
                 if storage_type.is_some() {
                     return Err(ABIError::MultipleStorages);
                 }
@@ -99,7 +100,7 @@ impl AbiBuilder {
                 ))));
             }
             // Forbid a struct named Event.
-            if struct_name == "Event" {
+            if struct_name == EVENT_TYPE_NAME {
                 return Err(ABIError::EventMustBeEnum);
             }
         }
@@ -163,7 +164,7 @@ impl AbiBuilder {
         // Add events to ABI.
         for enum_id in enums {
             let enm_name = enum_id.name(db.upcast());
-            if enm_name == "Event"
+            if enm_name == EVENT_TYPE_NAME
                 && enum_id
                     .has_attr(db.upcast(), EVENT_ATTR)
                     .map_err(|_| ABIError::CompilationError)?
