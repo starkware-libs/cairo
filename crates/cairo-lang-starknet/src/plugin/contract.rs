@@ -6,9 +6,7 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
-use cairo_lang_syntax::node::ast::{
-    Attribute, MaybeModuleBody, OptionArgListParenthesized, OptionWrappedGenericParamList,
-};
+use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -21,7 +19,7 @@ use super::consts::{
     EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
     L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
-use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
+use super::entry_point::{generate_entry_point_wrapper, has_external_attribute, EntryPointKind};
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -234,7 +232,9 @@ pub fn handle_contract_by_storage(
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function) => {
-                let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(db, item_function) else {
+                let Some(entry_point_kind) =
+                    EntryPointKind::try_from_function_with_body(db, &mut diagnostics, item_function)
+                else {
                     continue;
                 };
                 let function_name = RewriteNode::new_trimmed(
@@ -250,16 +250,9 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
+                if !has_external_attribute(db, &mut diagnostics, &item) {
                     continue;
-                };
-                if !is_arg_v0(db, &attr) {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "Only #[external(v0)] is supported.".to_string(),
-                        stable_ptr: attr.stable_ptr().untyped(),
-                    });
                 }
-
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
@@ -387,17 +380,6 @@ pub fn handle_contract_by_storage(
         diagnostics,
         remove_original_item: true,
     })
-}
-
-/// Checks if the only arg of the given attribute is "v0".
-fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
-    match attr.arguments(db) {
-        OptionArgListParenthesized::ArgListParenthesized(y) => {
-            matches!(&y.args(db).elements(db)[..],
-            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
-        }
-        OptionArgListParenthesized::Empty(_) => false,
-    }
 }
 
 fn forbid_attribute_in_external_impl(
