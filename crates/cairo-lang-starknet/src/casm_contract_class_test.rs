@@ -29,9 +29,8 @@ fn test_casm_contract_from_contract_class(example_file_name: &str) {
     );
 }
 
-// TODO(yuval): add case for "new_syntax_test_contract" once the json is fully populated for the new
-// syntax.
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 fn test_casm_contract_from_contract_class_failure(example_file_name: &str) {
     let f = std::fs::File::open(get_example_file_path(&format!("{example_file_name}.sierra.json")))
         .unwrap();
