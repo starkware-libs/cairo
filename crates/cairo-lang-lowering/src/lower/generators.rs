@@ -9,7 +9,7 @@ use num_bigint::BigInt;
 
 use super::context::VarRequest;
 use super::VariableId;
-use crate::ids::ObjectOriginId;
+use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
@@ -31,7 +31,7 @@ impl StatementsBuilder {
 /// Generator for [StatementLiteral].
 pub struct Literal {
     pub value: BigInt,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
     pub ty: semantic::TypeId,
 }
 impl Literal {
@@ -58,7 +58,7 @@ pub struct Call {
     /// Types for the returns of the function. An output variable will be introduced for each.
     pub ret_tys: Vec<semantic::TypeId>,
     /// Location associated with this statement.
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl Call {
     /// Adds a call statement to the builder.
@@ -101,7 +101,7 @@ pub struct CallResult {
 pub struct EnumConstruct {
     pub input: VariableId,
     pub variant: ConcreteVariant,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl EnumConstruct {
     pub fn add(
@@ -125,7 +125,7 @@ impl EnumConstruct {
 /// Generator for [StatementSnapshot].
 pub struct Snapshot {
     pub input: VariableId,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl Snapshot {
     pub fn add(
@@ -149,7 +149,7 @@ impl Snapshot {
 /// Generator for [StatementDesnap].
 pub struct Desnap {
     pub input: VariableId,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl Desnap {
     pub fn add(
@@ -194,7 +194,7 @@ pub struct StructMemberAccess {
     pub input: VariableId,
     pub member_tys: Vec<semantic::TypeId>,
     pub member_idx: usize,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl StructMemberAccess {
     pub fn add(
@@ -219,7 +219,7 @@ impl StructMemberAccess {
 pub struct StructConstruct {
     pub inputs: Vec<VariableId>,
     pub ty: semantic::TypeId,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl StructConstruct {
     pub fn add(

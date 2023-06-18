@@ -25,7 +25,7 @@ use crate::blocks::FlatBlocksBuilder;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnostics;
 use crate::ids::{
-    ConcreteFunctionWithBodyId, FunctionWithBodyId, ObjectOriginId, SemanticFunctionIdEx, Signature,
+    ConcreteFunctionWithBodyId, FunctionWithBodyId, LocationId, SemanticFunctionIdEx, Signature,
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
@@ -82,9 +82,9 @@ impl<'db> VariableAllocator<'db> {
         })
     }
 
-    /// Retrieves the ObjectOriginId of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> ObjectOriginId {
-        ObjectOriginId::from_stable_location(
+    /// Retrieves the LocationId of a stable syntax pointer in the current function file.
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
+        LocationId::from_stable_location(
             self.db,
             StableLocation::new(self.module_file_id, stable_ptr),
         )
@@ -197,8 +197,8 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         self.variables.new_var(req)
     }
 
-    /// Retrieves the ObjectOriginId of a stable syntax pointer in the current function file.
-    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> ObjectOriginId {
+    /// Retrieves the LocationId of a stable syntax pointer in the current function file.
+    pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
         self.variables.get_location(stable_ptr)
     }
 }
@@ -206,7 +206,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
 /// Request for a lowered variable allocation.
 pub struct VarRequest {
     pub ty: semantic::TypeId,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 
 /// Representation of the value of a computed expression.
@@ -217,14 +217,14 @@ pub enum LoweredExpr {
     /// The expression value is a tuple.
     Tuple {
         exprs: Vec<LoweredExpr>,
-        location: ObjectOriginId,
+        location: LocationId,
     },
     /// The expression value is an enum result from an extern call.
     ExternEnum(LoweredExprExternEnum),
-    Member(ExprVarMemberPath, ObjectOriginId),
+    Member(ExprVarMemberPath, LocationId),
     Snapshot {
         expr: Box<LoweredExpr>,
-        location: ObjectOriginId,
+        location: LocationId,
     },
 }
 impl LoweredExpr {
@@ -287,7 +287,7 @@ pub struct LoweredExprExternEnum {
     pub concrete_enum_id: semantic::ConcreteEnumId,
     pub inputs: Vec<VariableId>,
     pub member_paths: Vec<semantic::ExprVarMemberPath>,
-    pub location: ObjectOriginId,
+    pub location: LocationId,
 }
 impl LoweredExprExternEnum {
     pub fn var(
@@ -370,7 +370,7 @@ pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
     Panic(VariableId),
-    Return(VariableId, ObjectOriginId),
+    Return(VariableId, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),

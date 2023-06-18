@@ -9,7 +9,7 @@ use semantic::ExprFunctionCallArg;
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
 use super::{lower_expr, lowered_expr_to_block_scope_end};
-use crate::ids::{ObjectOriginId, SemanticFunctionIdEx};
+use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::{create_subscope_with_bound_refs, generators, lower_block};
 use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
@@ -202,7 +202,7 @@ fn lower_optional_else_block(
     ctx: &mut LoweringContext<'_, '_>,
     mut builder: BlockBuilder,
     else_expr_opt: Option<semantic::ExprId>,
-    if_location: ObjectOriginId,
+    if_location: LocationId,
 ) -> Maybe<SealedBlockBuilder> {
     log::trace!("Started lowering of an optional else block.");
     match else_expr_opt {

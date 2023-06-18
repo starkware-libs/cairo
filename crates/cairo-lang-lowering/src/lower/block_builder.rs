@@ -13,7 +13,7 @@ use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
 use super::usage::MemberPath;
 use crate::diagnostic::LoweringDiagnosticKind;
-use crate::ids::ObjectOriginId;
+use crate::ids::LocationId;
 use crate::{BlockId, FlatBlock, FlatBlockEnd, MatchInfo, Statement, VarRemapping, VariableId};
 
 /// FlatBlock builder, describing its current state.
@@ -98,7 +98,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         semantic_var_id: semantic::VarId,
-        location: ObjectOriginId,
+        location: LocationId,
     ) -> VariableId {
         self.semantics
             .get(
@@ -134,7 +134,7 @@ impl BlockBuilder {
         mut self,
         ctx: &mut LoweringContext<'_, '_>,
         expr: VariableId,
-        location: ObjectOriginId,
+        location: LocationId,
     ) -> Maybe<()> {
         let ref_vars = ctx
             .signature
@@ -172,7 +172,7 @@ impl BlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         match_info: MatchInfo,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: ObjectOriginId,
+        location: LocationId,
     ) -> LoweringResult<LoweredExpr> {
         let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
             return Err(LoweringFlowError::Match(match_info));
@@ -192,7 +192,7 @@ impl BlockBuilder {
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         sealed_blocks: Vec<SealedBlockBuilder>,
-        location: ObjectOriginId,
+        location: LocationId,
     ) -> Option<(LoweredExpr, BlockId)> {
         // TODO(spapini): When adding Gotos, include the callsite target in the required information
         // to merge.
@@ -276,7 +276,7 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-        location: ObjectOriginId,
+        location: LocationId,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
@@ -308,7 +308,7 @@ impl SealedBlockBuilder {
 struct BlockStructRecomposer<'a, 'b, 'c> {
     statements: &'a mut StatementsBuilder,
     ctx: &'a mut LoweringContext<'b, 'c>,
-    location: ObjectOriginId,
+    location: LocationId,
 }
 impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
     fn deconstruct(
