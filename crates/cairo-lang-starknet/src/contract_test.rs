@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use indoc::indoc;
 use itertools::Itertools;
@@ -18,7 +21,7 @@ fn test_contract_resolving() {
         .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
         .build()
         .unwrap();
-    let _crate_id = setup_test_crate(
+    let crate_module_id = ModuleId::CrateRoot(setup_test_crate(
         db,
         indoc! {"
             mod NotAContract {}
@@ -38,7 +41,7 @@ fn test_contract_resolving() {
                 fn ep2(ref self: ContractState) {}
             }
         "},
-    );
+    ));
 
     let contracts = find_contracts(db, &db.crates());
     assert_eq!(contracts.len(), 1);
@@ -51,6 +54,16 @@ fn test_contract_resolving() {
             .collect_vec(),
         vec!["ep1", "ep2"]
     );
+
+    // Assert no semantic diagnostics
+    for submodule in db.module_submodules_ids(crate_module_id).unwrap() {
+        db.module_semantic_diagnostics(ModuleId::Submodule(submodule))
+            .unwrap()
+            .expect_with_db(db, "Unexpected semantic diagnostics");
+    }
+    db.module_semantic_diagnostics(crate_module_id)
+        .unwrap()
+        .expect_with_db(db, "Unexpected semantic diagnostics");
 }
 
 #[test]
