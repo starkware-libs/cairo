@@ -30,59 +30,59 @@ mod TestContract {
         large_mapping: LegacyMap::<u256, u256>,
     }
 
-    #[external]
+    #[external(v0)]
     fn get_plus_2(self: @ContractState, a: felt252) -> felt252 {
         a + 2
     }
 
-    #[external]
+    #[external(v0)]
     fn spend_all_gas(self: @ContractState) {
         spend_all_gas(self);
     }
 
-    #[external]
+    #[external(v0)]
     fn get_appended_array(self: @ContractState, mut arr: Array<felt252>) -> Array<felt252> {
         let elem = arr.len().into();
         arr.append(elem);
         arr
     }
 
-    #[external]
+    #[external(v0)]
     fn set_value(ref self: ContractState, a: felt252) {
         self.value.write(a);
     }
 
-    #[external]
+    #[external(v0)]
     fn get_value(self: @ContractState, ) -> felt252 {
         self.value.read()
     }
 
-    #[external]
+    #[external(v0)]
     fn insert(ref self: ContractState, key: u128) {
         self.mapping.write(key, true)
     }
 
-    #[external]
+    #[external(v0)]
     fn remove(ref self: ContractState, key: u128) {
         self.mapping.write(key, false)
     }
 
-    #[external]
+    #[external(v0)]
     fn contains(self: @ContractState, key: u128) -> bool {
         self.mapping.read(key)
     }
 
-    #[external]
+    #[external(v0)]
     fn set_large(ref self: ContractState, key: u256, value: u256) {
         self.large_mapping.write(key, value)
     }
 
-    #[external]
+    #[external(v0)]
     fn get_large(self: @ContractState, key: u256) -> u256 {
         self.large_mapping.read(key)
     }
 
-    #[external]
+    #[external(v0)]
     fn test_storage_address(
         self: @ContractState, storage_address: StorageAddress
     ) -> StorageAddress {

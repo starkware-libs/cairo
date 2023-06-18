@@ -10,13 +10,13 @@ mod HelloStarknet {
     struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
-    #[external]
+    #[external(v0)]
     fn increase_balance(ref self: ContractState, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
-    #[external]
+    #[external(v0)]
     fn get_balance(self: @ContractState) -> felt252 {
         self.balance.read()
     }
@@ -31,13 +31,13 @@ mod HelloStarknet {
     struct Storage { balance: felt252, }
 
     // Increases the balance by the given amount.
-    #[external]
+    #[external(v0)]
     fn increase_balance(ref self: ContractState, amount: felt252) {
         self.balance.write(self.balance.read() + amount);
     }
 
     // Returns the current balance.
-    #[external]
+    #[external(v0)]
     fn get_balance(self: @ContractState) -> felt252 {
         self.balance.read()
     }
@@ -49,7 +49,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1497905547283796345028171189586039523695589234393994974564547326236831577928;
+const TEST_CLASS_HASH: felt252 = 1601010881861231008477297663414424217411948115109752938040170845939822336344;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {

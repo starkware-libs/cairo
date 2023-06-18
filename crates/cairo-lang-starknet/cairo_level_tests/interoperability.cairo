@@ -27,7 +27,7 @@ mod ContractA {
         self.value.write(value_);
     }
 
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, a: u128) -> u128 {
         let value = self.value.read();
         self.value.write(a);
@@ -162,7 +162,7 @@ mod ContractFailedEntrypoint {
     #[storage]
     struct Storage {}
 
-    #[external]
+    #[external(v0)]
     fn foo(ref self: ContractState, value_: u128) {
         panic_with_felt252('Failure');
     }
