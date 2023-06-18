@@ -7,7 +7,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
-use crate::ObjectOrigin;
+use crate::Location;
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
@@ -26,13 +26,13 @@ impl LoweringDiagnostics {
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
         self.report_by_location(
-            ObjectOrigin::new(StableLocation::new(self.module_file_id, stable_ptr)),
+            Location::new(StableLocation::new(self.module_file_id, stable_ptr)),
             kind,
         )
     }
     pub fn report_by_location(
         &mut self,
-        location: ObjectOrigin,
+        location: Location,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
         self.diagnostics.add(LoweringDiagnostic { location, kind })
@@ -41,7 +41,7 @@ impl LoweringDiagnostics {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct LoweringDiagnostic {
-    pub location: ObjectOrigin,
+    pub location: Location,
     pub kind: LoweringDiagnosticKind,
 }
 impl DiagnosticEntry for LoweringDiagnostic {

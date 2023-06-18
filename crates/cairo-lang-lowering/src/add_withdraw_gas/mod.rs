@@ -7,7 +7,7 @@ use cairo_lang_semantic::{GenericArgumentId, TypeLongId};
 use num_bigint::{BigInt, Sign};
 
 use crate::db::LoweringGroup;
-use crate::ids::{ConcreteFunctionWithBodyId, ObjectOriginId, SemanticFunctionIdEx};
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchExternInfo, MatchInfo, Statement,
@@ -37,7 +37,7 @@ fn add_withdraw_gas_to_function(
     lowered: &mut FlatLowered,
 ) -> Maybe<()> {
     // TODO(ilya): Add metadata
-    let location = ObjectOriginId::from_stable_location(db, function.stable_location(db)?);
+    let location = LocationId::from_stable_location(db, function.stable_location(db)?);
     let panic_block = create_panic_block(db, function, lowered, location)?;
 
     let old_root_block = lowered.blocks.root_block()?.clone();
@@ -117,7 +117,7 @@ fn create_panic_block(
     db: &dyn LoweringGroup,
     function: ConcreteFunctionWithBodyId,
     lowered: &mut FlatLowered,
-    location: ObjectOriginId,
+    location: LocationId,
 ) -> Maybe<FlatBlock> {
     let mut variables = VariableAllocator::new(
         db,
