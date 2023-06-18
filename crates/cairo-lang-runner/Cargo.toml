@@ -13,14 +13,15 @@ ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm" }
+cairo-lang-casm = { path = "../cairo-lang-casm", features = ["std"] }
 cairo-lang-sierra = { path = "../cairo-lang-sierra" }
 cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change" }
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet" }
-cairo-lang-utils = { path = "../cairo-lang-utils" }
+cairo-lang-utils = { path = "../cairo-lang-utils", features = ["std"] }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size" }
+cairo-lang-vm-utils = { path = "../cairo-lang-vm-utils", features = ["std", "execute_core_hints"] }
 
 cairo-vm.workspace = true
 itertools.workspace = true

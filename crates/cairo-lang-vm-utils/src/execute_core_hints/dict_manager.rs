@@ -1,4 +1,10 @@
+#[cfg(feature = "std")]
 use std::collections::HashMap;
+
+#[cfg(not(feature = "std"))]
+use alloc::{vec::Vec};
+#[cfg(not(feature = "std"))]
+use hashbrown::HashMap;
 
 use cairo_felt::Felt252;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};

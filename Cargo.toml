@@ -28,6 +28,7 @@ members = [
     "crates/cairo-lang-syntax-codegen",
     "crates/cairo-lang-test-runner",
     "crates/cairo-lang-utils",
+    "crates/cairo-lang-vm-utils",
     "crates/bin/cairo-language-server",
     "crates/bin/cairo-compile",
     "crates/bin/cairo-format",
@@ -51,14 +52,14 @@ license-file = "LICENSE"
 
 [workspace.dependencies]
 anyhow = "1.0.66"
-ark-ff = "0.4.0-alpha.7"
+ark-std = { version = "0.3.0", default-features = false }
+ark-ff = { version = "0.4.0-alpha.7", default-features = false }
 ark-secp256k1 = "0.4.0"
 ark-secp256r1 = "0.4.0"
-ark-std = "0.3.0"
 assert_matches = "1.5"
 bimap = "0.6.2"
-cairo-felt = { version = "0.5.2", default-features = false }
-cairo-vm = "0.5.2"
+cairo-felt = { git = "https://github.com/lambdaclass/cairo-rs", rev = "e876253276a4eca882f45e68b990f10a360404f2", default-features = false }
+cairo-vm = {  git = "https://github.com/lambdaclass/cairo-rs", rev = "e876253276a4eca882f45e68b990f10a360404f2", default-features = false }
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"

@@ -1,18 +1,12 @@
 #[cfg(not(feature = "std"))]
-use no_std_imports::*;
+use alloc::{borrow::ToOwned};
 #[cfg(not(feature = "std"))]
-mod no_std_imports {
-    pub use alloc::borrow::ToOwned;
-    pub use alloc::string::String;
-    pub use alloc::vec;
-    pub use alloc::vec::Vec;
-
-    pub use hashbrown::hash_map::Entry;
-    pub use hashbrown::HashMap;
-}
+use alloc::{string::String, vec, vec::Vec};
+#[cfg(not(feature = "std"))]
+use hashbrown::{HashMap, hash_map::Entry};
 
 #[cfg(feature = "std")]
-use std::borrow::ToOwned;
+pub use std::borrow::ToOwned;
 #[cfg(feature = "std")]
 use std::collections::{hash_map::Entry, HashMap};
 
