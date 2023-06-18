@@ -37,10 +37,12 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     pub fn apply_remapping<V: Into<Var>, T: DemandReporter<Var, Aux>>(
         &mut self,
         reporter: &mut T,
-        remapping: impl Iterator<Item = (V, V)>,
+        remapping: impl Iterator<Item = (V, V)>
+        + std::iter::DoubleEndedIterator
+        + std::iter::ExactSizeIterator,
         position: T::UsePosition,
     ) {
-        for (var_index, (dst, src)) in remapping.enumerate() {
+        for (var_index, (dst, src)) in remapping.enumerate().rev() {
             let src = src.into();
             let dst = dst.into();
             if self.vars.swap_remove(&dst) {
