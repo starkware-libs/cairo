@@ -8,18 +8,18 @@ description = "Cairo compiler."
 
 [dependencies]
 anyhow.workspace = true
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc2" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc2" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc2" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.0.0-rc2" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.0.0-rc2" }
-cairo-lang-project = { path = "../cairo-lang-project", version = "2.0.0-rc2" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc2" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc2" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc2" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc3" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc3" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc3" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.0.0-rc3" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.0.0-rc3" }
+cairo-lang-project = { path = "../cairo-lang-project", version = "2.0.0-rc3" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc3" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc3" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc3" }
 log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true

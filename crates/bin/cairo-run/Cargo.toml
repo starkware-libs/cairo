@@ -10,12 +10,12 @@ description = "Runner executable for the Cairo programming language"
 anyhow.workspace = true
 clap.workspace = true
 
-cairo-lang-runner = { path = "../../cairo-lang-runner", version = "2.0.0-rc2" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc2" }
-cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics", version = "2.0.0-rc2" }
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc2" }
-cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "2.0.0-rc2" }
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc2", features = [
+cairo-lang-runner = { path = "../../cairo-lang-runner", version = "2.0.0-rc3" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc3" }
+cairo-lang-diagnostics = { path = "../../cairo-lang-diagnostics", version = "2.0.0-rc3" }
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc3" }
+cairo-lang-sierra-generator = { path = "../../cairo-lang-sierra-generator", version = "2.0.0-rc3" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc3", features = [
     "env_logger",
 ] }
