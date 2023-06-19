@@ -7,8 +7,8 @@ license-file.workspace = true
 description = "Cairo project specification. For example, crates and flags used for compilation."
 
 [dependencies]
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc3" }
 serde.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
