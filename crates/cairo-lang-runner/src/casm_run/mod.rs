@@ -4,12 +4,14 @@ use std::collections::{HashMap, VecDeque};
 use std::ops::{Deref, Shl};
 
 use ark_ff::{BigInteger, PrimeField};
-use cairo_felt::{Felt252};
+use cairo_felt::Felt252;
 use cairo_lang_casm::hints::{Hint, StarknetHint};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::ResOperand;
 use cairo_lang_sierra::ids::FunctionId;
-use cairo_lang_vm_utils::{execute_core_hint_base, extract_buffer, get_ptr, get_val, insert_value_to_cellref};
+use cairo_lang_vm_utils::{
+    execute_core_hint_base, extract_buffer, get_ptr, get_val, insert_value_to_cellref,
+};
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
@@ -21,14 +23,14 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::CairoRunner;
+use cairo_vm::vm::runners::cairo_runner::{CairoRunner, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
-use crate::{Arg, RunResultValue, SierraCasmRunner, build_hints_dict};
+use crate::{build_hints_dict, Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -162,6 +164,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
+        _run_resources: &mut RunResources,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -1141,7 +1144,6 @@ fn get_secp256r1_exec_scope(
     exec_scopes.get_mut_ref::<Secp256r1ExecutionScope>(NAME)
 }
 
-
 /// Reads the result of a function call that returns `Array<felt252>`.
 fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Vec<Felt252> {
     // TODO(spapini): Handle failures.
@@ -1241,7 +1243,12 @@ where
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
-        .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
+        .run_until_pc(
+            end,
+            &mut RunResources::default(),
+            &mut vm,
+            hint_processor as &mut dyn HintProcessor,
+        )
         .map_err(CairoRunError::from)?;
     runner
         .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
