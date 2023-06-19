@@ -38,7 +38,7 @@ pub mod short_string;
 
 #[derive(Debug, Error)]
 pub enum RunnerError {
-    #[error("Not enough gas to call function.")]
+    #[error("Not enough gas to call function .")]
     NotEnoughGasToCall,
     #[error("GasBuiltin is required while `available_gas` value is provided.")]
     GasBuiltinRequired,
