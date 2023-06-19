@@ -7,14 +7,14 @@ license-file.workspace = true
 description = "Sierra gas computation."
 
 [dependencies]
-cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.0.0-rc2" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
+cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.0.0-rc3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc3" }
 itertools.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc2" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc3" }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

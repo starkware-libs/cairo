@@ -9,22 +9,22 @@ description = "Starknet capabilities and utilities on top of Cairo."
 [dependencies]
 anyhow.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.0.0-rc2" }
-cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.0.0-rc2" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc2" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc2" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc2" }
-cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc2" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.0.0-rc2" }
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.0.0-rc2" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc2" }
-cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc2" }
-cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.0.0-rc2" }
-cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.0.0-rc2" }
-cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc2" }
-cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.0.0-rc2" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc2" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.0.0-rc3" }
+cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.0.0-rc3" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.0.0-rc3" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc3" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.0.0-rc3" }
+cairo-lang-lowering = { path = "../cairo-lang-lowering", version = "2.0.0-rc3" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.0.0-rc3" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.0.0-rc3" }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.0.0-rc3" }
+cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.0.0-rc3" }
+cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version = "2.0.0-rc3" }
+cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.0.0-rc3" }
+cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.0.0-rc3" }
+cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.0.0-rc3" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.0.0-rc3" }
 convert_case.workspace = true
 genco.workspace = true
 indoc.workspace = true
@@ -41,11 +41,11 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc3" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
     "testing",
 ] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc2" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc3" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true

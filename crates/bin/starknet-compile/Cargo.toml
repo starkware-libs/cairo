@@ -10,5 +10,5 @@ description = "Compiler executable for the Cairo programming language with the S
 anyhow.workspace = true
 clap.workspace = true
 
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc2" }
-cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc2" }
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc3" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.0.0-rc3" }

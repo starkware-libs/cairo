@@ -10,4 +10,4 @@ description = "Test runner for the Cairo programming language"
 anyhow.workspace = true
 clap.workspace = true
 
-cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "2.0.0-rc2" }
+cairo-lang-test-runner = { path = "../../cairo-lang-test-runner", version = "2.0.0-rc3" }

@@ -12,8 +12,8 @@ log.workspace = true
 clap.workspace = true
 indoc.workspace = true
 
-cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc2" }
-cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc2", features = [
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.0.0-rc3" }
+cairo-lang-sierra-to-casm = { path = "../../cairo-lang-sierra-to-casm", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc3", features = [
     "env_logger",
 ] }
