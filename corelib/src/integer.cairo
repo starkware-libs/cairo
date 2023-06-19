@@ -445,6 +445,28 @@ impl U8BitNot of BitNot<u8> {
         BoundedInt::max() - a
     }
 }
+extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
+impl U8BitAnd of BitAnd<u8> {
+    #[inline(always)]
+    fn bitand(lhs: u8, rhs: u8) -> u8 {
+        let (v, _, _) = u8_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U8BitXor of BitXor<u8> {
+    #[inline(always)]
+    fn bitxor(lhs: u8, rhs: u8) -> u8 {
+        let (_, v, _) = u8_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U8BitOr of BitOr<u8> {
+    #[inline(always)]
+    fn bitor(lhs: u8, rhs: u8) -> u8 {
+        let (_, _, v) = u8_bitwise(lhs, rhs);
+        v
+    }
+}
 
 #[derive(Copy, Drop)]
 extern type u16;
@@ -619,6 +641,28 @@ impl U16DivRem of DivRem<u16> {
 impl U16BitNot of BitNot<u16> {
     fn bitnot(a: u16) -> u16 {
         BoundedInt::max() - a
+    }
+}
+extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
+impl U16BitAnd of BitAnd<u16> {
+    #[inline(always)]
+    fn bitand(lhs: u16, rhs: u16) -> u16 {
+        let (v, _, _) = u16_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U16BitXor of BitXor<u16> {
+    #[inline(always)]
+    fn bitxor(lhs: u16, rhs: u16) -> u16 {
+        let (_, v, _) = u16_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U16BitOr of BitOr<u16> {
+    #[inline(always)]
+    fn bitor(lhs: u16, rhs: u16) -> u16 {
+        let (_, _, v) = u16_bitwise(lhs, rhs);
+        v
     }
 }
 
@@ -797,6 +841,28 @@ impl U32BitNot of BitNot<u32> {
         BoundedInt::max() - a
     }
 }
+extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
+impl U32BitAnd of BitAnd<u32> {
+    #[inline(always)]
+    fn bitand(lhs: u32, rhs: u32) -> u32 {
+        let (v, _, _) = u32_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U32BitXor of BitXor<u32> {
+    #[inline(always)]
+    fn bitxor(lhs: u32, rhs: u32) -> u32 {
+        let (_, v, _) = u32_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U32BitOr of BitOr<u32> {
+    #[inline(always)]
+    fn bitor(lhs: u32, rhs: u32) -> u32 {
+        let (_, _, v) = u32_bitwise(lhs, rhs);
+        v
+    }
+}
 
 #[derive(Copy, Drop)]
 extern type u64;
@@ -971,6 +1037,28 @@ impl U64DivRem of DivRem<u64> {
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
         BoundedInt::max() - a
+    }
+}
+extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
+impl U64BitAnd of BitAnd<u64> {
+    #[inline(always)]
+    fn bitand(lhs: u64, rhs: u64) -> u64 {
+        let (v, _, _) = u64_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U64BitXor of BitXor<u64> {
+    #[inline(always)]
+    fn bitxor(lhs: u64, rhs: u64) -> u64 {
+        let (_, v, _) = u64_bitwise(lhs, rhs);
+        v
+    }
+}
+impl U64BitOr of BitOr<u64> {
+    #[inline(always)]
+    fn bitor(lhs: u64, rhs: u64) -> u64 {
+        let (_, _, v) = u64_bitwise(lhs, rhs);
+        v
     }
 }
 

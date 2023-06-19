@@ -80,7 +80,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(if info_provider.type_size(&libfunc.ty) == 1 { 0 } else { 1 })]
             }
         },
-        CoreConcreteLibfunc::Bitwise(_) => vec![ApChange::Known(0)],
         CoreConcreteLibfunc::BranchAlign(_) => vec![ApChange::FromMetadata],
         CoreConcreteLibfunc::Bool(libfunc) => match libfunc {
             BoolConcreteLibfunc::And(_) => vec![ApChange::Known(0)],
@@ -163,6 +162,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
+            Uint128Concrete::Bitwise(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
@@ -283,5 +283,6 @@ fn uint_ap_change<TUintTraits: UintMulTraits + IsZeroTraits>(
         UintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         UintConcrete::Divmod(_) => vec![ApChange::Known(5)],
         UintConcrete::WideMul(_) => vec![ApChange::Known(0)],
+        UintConcrete::Bitwise(_) => vec![ApChange::Known(0)],
     }
 }

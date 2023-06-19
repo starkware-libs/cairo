@@ -6,7 +6,7 @@ use num_bigint::BigInt;
 use num_traits::One;
 
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
@@ -30,6 +30,7 @@ pub fn build(
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
         Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
+        Uint128Concrete::Bitwise(_) => bitwise::build(builder),
     }
 }
 

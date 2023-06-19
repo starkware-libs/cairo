@@ -126,12 +126,6 @@ pub fn core_libfunc_cost(
                 function: function.clone(),
             }]
         }
-        Bitwise(_) => {
-            vec![BranchCost::Regular {
-                const_cost: ConstCost::steps(2),
-                pre_cost: PreCost::builtin(CostTokenType::Bitwise),
-            }]
-        }
         Bool(libfunc) => match libfunc {
             BoolConcreteLibfunc::And(_) => vec![ConstCost::steps(0).into()],
             BoolConcreteLibfunc::Not(_) => vec![ConstCost::steps(1).into()],
@@ -514,6 +508,12 @@ fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
         UintConcrete::Divmod(_) => {
             vec![BranchCost::from(ConstCost { steps: 7, holes: 0, range_checks: 3 })]
         }
+        UintConcrete::Bitwise(_) => {
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(2),
+                pre_cost: PreCost::builtin(CostTokenType::Bitwise),
+            }]
+        }
     }
 }
 
@@ -554,6 +554,12 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
         }
         Uint128Concrete::SquareRoot(_) => {
             vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }.into()]
+        }
+        Uint128Concrete::Bitwise(_) => {
+            vec![BranchCost::Regular {
+                const_cost: ConstCost::steps(2),
+                pre_cost: PreCost::builtin(CostTokenType::Bitwise),
+            }]
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
             const_cost: ConstCost::steps(25),
