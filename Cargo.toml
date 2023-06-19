@@ -2,6 +2,7 @@
 
 members = [
     "crates/cairo-lang-casm",
+    "crates/cairo-lang-casm-contract-class",
     "crates/cairo-lang-compiler",
     "crates/cairo-lang-debug",
     "crates/cairo-lang-defs",

@@ -21,10 +21,10 @@ use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
-use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contracts_info, get_module_functions, ContractInfo,
 };
+use cairo_lang_starknet::contract_class_into_casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;

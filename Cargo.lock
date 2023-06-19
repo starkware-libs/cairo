@@ -374,6 +374,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-lang-casm-contract-class"
+version = "2.0.0-rc2"
+dependencies = [
+ "cairo-lang-casm",
+ "cairo-lang-utils",
+ "num-bigint",
+ "serde",
+]
+
+[[package]]
 name = "cairo-lang-compiler"
 version = "2.0.0-rc2"
 dependencies = [
@@ -818,6 +828,7 @@ dependencies = [
  "anyhow",
  "cairo-felt",
  "cairo-lang-casm",
+ "cairo-lang-casm-contract-class",
  "cairo-lang-compiler",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",

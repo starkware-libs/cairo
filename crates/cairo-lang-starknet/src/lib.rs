@@ -6,10 +6,10 @@
 //! Learn more at [starkware.io](http://starknet.io/).
 pub mod abi;
 pub mod allowed_libfuncs;
-pub mod casm_contract_class;
 mod compiler_version;
 pub mod contract;
 pub mod contract_class;
+pub mod contract_class_into_casm_contract_class;
 mod felt252_serde;
 mod felt252_vec_compression;
 pub mod plugin;

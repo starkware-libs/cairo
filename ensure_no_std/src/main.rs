@@ -18,4 +18,4 @@ pub extern "C" fn _start() -> ! {
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[allow(unused_imports)]
-use {cairo_lang_casm, cairo_lang_utils, cairo_lang_vm_utils};
+use {cairo_lang_casm, cairo_lang_casm_contract_class, cairo_lang_utils, cairo_lang_vm_utils};
