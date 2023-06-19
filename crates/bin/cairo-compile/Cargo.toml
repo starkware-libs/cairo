@@ -11,7 +11,7 @@ anyhow.workspace = true
 clap.workspace = true
 log.workspace = true
 
-cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc2" }
-cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc2", features = [
+cairo-lang-compiler = { path = "../../cairo-lang-compiler", version = "2.0.0-rc3" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc3", features = [
     "env_logger",
 ] }
