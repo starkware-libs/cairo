@@ -1508,9 +1508,19 @@ impl U256TryIntoFelt252 of TryInto<u256, felt252> {
         )
     }
 }
+impl Felt252TryIntoI8 of TryInto<felt252, i8> {
+    fn try_into(self: felt252) -> Option<i8> {
+        i8_try_from_felt252(self)
+    }
+}
 impl I8IntoFelt252 of Into<i8, felt252> {
     fn into(self: i8) -> felt252 {
         i8_to_felt252(self)
+    }
+}
+impl Felt252TryIntoI16 of TryInto<felt252, i16> {
+    fn try_into(self: felt252) -> Option<i16> {
+        i16_try_from_felt252(self)
     }
 }
 impl I16IntoFelt252 of Into<i16, felt252> {
@@ -1518,14 +1528,29 @@ impl I16IntoFelt252 of Into<i16, felt252> {
         i16_to_felt252(self)
     }
 }
+impl Felt252TryIntoI32 of TryInto<felt252, i32> {
+    fn try_into(self: felt252) -> Option<i32> {
+        i32_try_from_felt252(self)
+    }
+}
 impl I32IntoFelt252 of Into<i32, felt252> {
     fn into(self: i32) -> felt252 {
         i32_to_felt252(self)
     }
 }
+impl Felt252TryIntoI64 of TryInto<felt252, i64> {
+    fn try_into(self: felt252) -> Option<i64> {
+        i64_try_from_felt252(self)
+    }
+}
 impl I64IntoFelt252 of Into<i64, felt252> {
     fn into(self: i64) -> felt252 {
         i64_to_felt252(self)
+    }
+}
+impl Felt252TryIntoI128 of TryInto<felt252, i128> {
+    fn try_into(self: felt252) -> Option<i128> {
+        i128_try_from_felt252(self)
     }
 }
 impl I128IntoFelt252 of Into<i128, felt252> {
@@ -1923,6 +1948,7 @@ impl U256Zeroable of Zeroable<u256> {
 extern type i8;
 impl NumericLiterali8 of NumericLiteral<i8>;
 extern fn i8_const<value>() -> i8 nopanic;
+extern fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
 extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
@@ -1943,6 +1969,7 @@ impl I8PartialEq of PartialEq<i8> {
 extern type i16;
 impl NumericLiterali16 of NumericLiteral<i16>;
 extern fn i16_const<value>() -> i16 nopanic;
+extern fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
 extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
@@ -1963,6 +1990,7 @@ impl I16PartialEq of PartialEq<i16> {
 extern type i32;
 impl NumericLiterali32 of NumericLiteral<i32>;
 extern fn i32_const<value>() -> i32 nopanic;
+extern fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
 extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
 
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
@@ -1983,6 +2011,7 @@ impl I32PartialEq of PartialEq<i32> {
 extern type i64;
 impl NumericLiterali64 of NumericLiteral<i64>;
 extern fn i64_const<value>() -> i64 nopanic;
+extern fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
 extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
 
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
@@ -2003,6 +2032,7 @@ impl I64PartialEq of PartialEq<i64> {
 extern type i128;
 impl NumericLiterali128 of NumericLiteral<i128>;
 extern fn i128_const<value>() -> i128 nopanic;
+extern fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
 extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
