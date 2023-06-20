@@ -18,6 +18,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
+use crate::items::visibilities::compute_visibility;
 
 #[cfg(test)]
 #[path = "structure_test.rs"]
@@ -120,6 +121,8 @@ pub struct StructDefinitionData {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
+    #[dont_rewrite]
+    pub vis: semantic::Visibility,
     pub ty: semantic::TypeId,
 }
 
@@ -155,8 +158,13 @@ pub fn priv_struct_definition_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
+        let vis = compute_visibility(
+            db,
+            &module_file_id.0,
+            &member.visibility(syntax_db)
+        )?;
         let member_name = member.name(syntax_db).text(syntax_db);
-        if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
+        if let Some(_other_member) = members.insert(member_name.clone(), Member { id, vis, ty }) {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
     }
