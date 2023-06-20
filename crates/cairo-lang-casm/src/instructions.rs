@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::vec;
 
-use crate::hints::Hint;
+use crate::hints::{Hint, PythonicHint};
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
 
 #[cfg(test)]
@@ -60,7 +60,7 @@ impl Instruction {
 impl Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for hint in &self.hints {
-            let hint_str = hint.to_string();
+            let hint_str = hint.get_pythonic_hint();
             // Skip leading and trailing space if hint starts with `\n`.
             if hint_str.starts_with('\n') {
                 writeln!(f, "%{{{hint_str}%}}")

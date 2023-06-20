@@ -57,7 +57,7 @@ type Fq = Fp256<MontBackend<FqConfig, 4>>;
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
-        code: hint.to_string(),
+        code: hint.representing_string(),
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
@@ -110,7 +110,7 @@ impl<'a> CairoHintProcessor<'a> {
             if !instruction.hints.is_empty() {
                 // Register hint with string for the hint processor.
                 for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.to_string(), hint.clone());
+                    string_to_hint.insert(hint.representing_string(), hint.clone());
                 }
                 // Add hint, associated with the instruction offset.
                 hints_dict.insert(
