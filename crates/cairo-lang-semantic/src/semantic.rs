@@ -1,5 +1,5 @@
 use cairo_lang_defs::db::DefsGroup;
-use cairo_lang_defs::ids::LocalVarId;
+use cairo_lang_defs::ids::{LocalVarId, ModuleId};
 // Reexport objects
 pub use cairo_lang_defs::ids::{ParamId, VarId};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -64,6 +64,13 @@ pub enum Mutability {
     /// Only relevant for a parameter.
     /// The parameter is an in-out parameter and a change in it affects the outer scope.
     Reference,
+}
+
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum Visibility {
+    Public,
+    SubModule(ModuleId),
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]

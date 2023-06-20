@@ -597,6 +597,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
+            SemanticDiagnosticKind::StructMemberNotVisible {
+                struct_id,
+                member_name
+            } => {
+                format!(r#"Struct "{}" member "{member_name}" is not visible"#,
+                        struct_id.full_path(db.upcast()))
+            }
         }
     }
 
@@ -879,6 +886,10 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    StructMemberNotVisible {
+        struct_id: StructId,
+        member_name: SmolStr,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

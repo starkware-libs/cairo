@@ -96,6 +96,10 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
+    // Visibility
+    #[salsa::invoke(items::visibilities::is_visible_in)]
+    fn is_visible_in(&self, visibility: semantic::Visibility, module_id: ModuleId) -> Maybe<bool>;
+
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
