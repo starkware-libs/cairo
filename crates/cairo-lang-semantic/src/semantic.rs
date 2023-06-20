@@ -66,6 +66,13 @@ pub enum Mutability {
     Reference,
 }
 
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum Visibility {
+    Public,
+    SubModule,
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum Variable {

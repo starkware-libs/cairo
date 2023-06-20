@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
-};
+use cairo_lang_defs::ids::{ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, ModuleId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId, TypeAliasId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -597,6 +594,40 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
+            SemanticDiagnosticKind::StructMemberNotVisible {
+                struct_id,
+                member_name
+            } => {
+                format!(r#"Struct "{}" member "{member_name}" is not visible"#,
+                        struct_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::ConstantNotVisible { constant_id } => {
+                format!(r#"Constant "{}" is not visible"#, constant_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::ModuleNotVisible { module_id } => {
+                format!(r#"Module "{}" is not visible"#, module_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::ExternFunctionNotVisible { extern_function_id } => {
+                format!(r#"Extern function "{}" is not visible"#, extern_function_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::FreeFunctionNotVisible { free_function_id } => {
+                format!(r#"Free function "{}" is not visible"#, free_function_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::EnumNotVisible { enum_id } => {
+                format!(r#"Enum "{}" is not visible"#, enum_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::StructNotVisible { struct_id } => {
+                format!(r#"Struct "{}" is not visible"#, struct_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::ExternTypeNotVisible { extern_type_id } => {
+                format!(r#"Extern type "{}" is not visible"#, extern_type_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::TypeAliasNotVisible { type_alias_id } => {
+                format!(r#"Type alias "{}" is not visible"#, type_alias_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::TraitNotVisible { trait_id } => {
+                format!(r#"Trait "{}" is not visible"#, trait_id.full_path(db.upcast()))
+            }
         }
     }
 
@@ -879,6 +910,37 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    StructMemberNotVisible {
+        struct_id: StructId,
+        member_name: SmolStr,
+    },
+    ConstantNotVisible {
+        constant_id: ConstantId
+    },
+    ModuleNotVisible {
+        module_id: ModuleId
+    },
+    ExternFunctionNotVisible {
+        extern_function_id: ExternFunctionId
+    },
+    FreeFunctionNotVisible {
+        free_function_id: FreeFunctionId
+    },
+    EnumNotVisible {
+        enum_id: EnumId
+    },
+    StructNotVisible {
+        struct_id: StructId
+    },
+    ExternTypeNotVisible {
+        extern_type_id: ExternTypeId
+    },
+    TypeAliasNotVisible {
+        type_alias_id: TypeAliasId
+    },
+    TraitNotVisible {
+        trait_id: TraitId
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

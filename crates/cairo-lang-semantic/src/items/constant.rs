@@ -13,7 +13,8 @@ use crate::expr::inference::conform::InferenceConform;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{Expr, SemanticDiagnostic};
+use crate::{Expr, semantic, SemanticDiagnostic};
+use crate::items::visibilities;
 
 #[cfg(test)]
 #[path = "constant_test.rs"]
@@ -22,6 +23,8 @@ mod test;
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Constant {
+    #[dont_rewrite]
+    pub visibility: semantic::Visibility,
     pub value: Expr,
 }
 
@@ -50,6 +53,8 @@ pub fn priv_constant_semantic_data(
     let const_ast = module_constants.get(&const_id).to_maybe()?;
     let syntax_db = db.upcast();
 
+    let visibility = visibilities::semantic_visibility(&const_ast.visibility(syntax_db));
+
     let mut resolver = Resolver::new(db, module_file_id);
 
     let const_type = resolve_type(
@@ -74,7 +79,7 @@ pub fn priv_constant_semantic_data(
         );
     };
 
-    let constant = Constant { value: value.expr };
+    let constant = Constant { visibility, value: value.expr };
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = ctx.resolver.inference().finalize() {

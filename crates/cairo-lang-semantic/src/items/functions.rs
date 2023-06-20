@@ -712,6 +712,7 @@ fn ast_param_to_semantic(
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FunctionDeclarationData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
+    pub visibility: semantic::Visibility,
     pub signature: semantic::Signature,
     /// The environment induced by the function's signature.
     pub environment: Environment,

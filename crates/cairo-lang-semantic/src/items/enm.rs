@@ -19,6 +19,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{semantic, ConcreteEnumId, SemanticDiagnostic};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "enm_test.rs"]
@@ -31,6 +32,7 @@ pub struct EnumDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
     attributes: Vec<Attribute>,
+    visibility: semantic::Visibility,
     resolver_data: Arc<ResolverData>,
 }
 
@@ -47,6 +49,7 @@ pub fn priv_enum_declaration_data(
     let module_enums = db.module_enums(module_file_id.0)?;
     let enum_ast = module_enums.get(&enum_id).to_maybe()?;
     let syntax_db = db.upcast();
+    let visibility = semantic_visibility(&enum_ast.visibility(syntax_db));
 
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
@@ -73,6 +76,7 @@ pub fn priv_enum_declaration_data(
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
+        visibility,
         resolver_data,
     })
 }
@@ -96,6 +100,11 @@ pub fn enum_generic_params(
 /// Query implementation of [crate::db::SemanticGroup::enum_attributes].
 pub fn enum_attributes(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<Attribute>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
+}
+
+/// Query implementation of [SemanticGroup::enum_visibility].
+pub fn enum_visibility(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<semantic::Visibility> {
+    Ok(db.priv_enum_declaration_data(enum_id)?.visibility)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].

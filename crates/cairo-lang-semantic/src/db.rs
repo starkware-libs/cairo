@@ -32,10 +32,7 @@ use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
-use crate::{
-    corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
-    SemanticDiagnostic, TypeId,
-};
+use crate::{corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId, Visibility};
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
 /// SemanticGroup.
@@ -96,6 +93,28 @@ pub trait SemanticGroup:
     #[salsa::interned]
     fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
+    // Visibility
+    #[salsa::invoke(items::visibilities::constant_visible_in)]
+    fn constant_visible_in(&self, constant_id: ConstantId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::module_visible_in)]
+    fn module_visible_in(&self, source_module_id: ModuleId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::extern_function_visible_in)]
+    fn extern_function_visible_in(&self, extern_function_id: ExternFunctionId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::free_function_visible_in)]
+    fn free_function_visible_in(&self, free_function_id: FreeFunctionId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::enum_visible_in)]
+    fn enum_visible_in(&self, enum_id: EnumId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::struct_visible_in)]
+    fn struct_visible_in(&self, struct_id: StructId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::extern_type_visible_in)]
+    fn extern_type_visible_in(&self, extern_type_id: ExternTypeId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::type_alias_visible_in)]
+    fn type_alias_visible_in(&self, type_alias_id: TypeAliasId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::trait_visible_in)]
+    fn trait_visible_in(&self, trait_id: TraitId, module_id: ModuleId) -> Maybe<bool>;
+    #[salsa::invoke(items::visibilities::struct_member_visible_in)]
+    fn struct_member_visible_in(&self, struct_id: StructId, member_name: SmolStr, module_id: ModuleId) -> Maybe<bool>;
+
     // Const.
     // ====
     /// Private query to compute data about a constant definition.
@@ -152,6 +171,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::module::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
+    /// Returns the visibility of a module.
+    #[salsa::invoke(items::module::module_visibility)]
+    fn module_visibility(&self, module_id: ModuleId) -> Maybe<Visibility>;
+
     // Struct.
     // =======
     /// Private query to compute data about a struct declaration.
@@ -169,6 +192,9 @@ pub trait SemanticGroup:
     /// Returns the attributes of a struct.
     #[salsa::invoke(items::structure::struct_attributes)]
     fn struct_attributes(&self, struct_id: StructId) -> Maybe<Vec<Attribute>>;
+    /// Returns the visibility of a struct.
+    #[salsa::invoke(items::structure::struct_visibility)]
+    fn struct_visibility(&self, struct_id: StructId) -> Maybe<Visibility>;
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParam>>;
@@ -211,6 +237,9 @@ pub trait SemanticGroup:
     /// Returns the attributes attached to an enum.
     #[salsa::invoke(items::enm::enum_attributes)]
     fn enum_attributes(&self, enum_id: EnumId) -> Maybe<Vec<Attribute>>;
+    /// Returns the visibility of enum.
+    #[salsa::invoke(items::enm::enum_visibility)]
+    fn enum_visibility(&self, enum_id: EnumId) -> Maybe<Visibility>;
     /// Returns the resolution resolved_items of an enum declaration.
     #[salsa::invoke(items::enm::enum_declaration_resolver_data)]
     fn enum_declaration_resolver_data(&self, enum_id: EnumId) -> Maybe<Arc<ResolverData>>;
@@ -246,6 +275,9 @@ pub trait SemanticGroup:
         &self,
         type_alias_id: TypeAliasId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the visibility of a type alias.
+    #[salsa::invoke(items::type_alias::type_alias_visibility)]
+    fn type_alias_visibility(&self, type_alias_id: TypeAliasId) -> Maybe<Visibility>;
     /// Returns the resolved type of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_resolved_type)]
     fn type_alias_resolved_type(&self, type_alias_id: TypeAliasId) -> Maybe<TypeId>;
@@ -295,6 +327,9 @@ pub trait SemanticGroup:
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
+    /// Returns the visibility of a trait.
+    #[salsa::invoke(items::trt::trait_visibility)]
+    fn trait_visibility(&self, trait_id: TraitId) -> Maybe<Visibility>;
     /// Returns the resolution resolved_items of a trait.
     #[salsa::invoke(items::trt::trait_resolver_data)]
     fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
@@ -630,6 +665,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<InlineConfiguration>;
+    /// Returns the visibility of a free function.
+    #[salsa::invoke(items::free_function::free_function_visibility)]
+    fn free_function_visibility(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<Visibility>;
     /// Private query to compute data about a free function declaration - its signature excluding
     /// its body.
     #[salsa::invoke(items::free_function::priv_free_function_declaration_data)]
@@ -731,6 +772,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns visibility of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_visibility)]
+    fn extern_function_visibility(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Maybe<Visibility>;
     /// Returns the signature of an extern function.
     #[salsa::invoke(items::extern_function::extern_function_signature)]
     fn extern_function_signature(
@@ -784,6 +831,12 @@ pub trait SemanticGroup:
         &self,
         extern_type_id: ExternTypeId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the visibility of an extern type.
+    #[salsa::invoke(items::extern_type::extern_type_visibility)]
+    fn extern_type_visibility(
+        &self,
+        extern_type_id: ExternTypeId,
+    ) -> Maybe<Visibility>;
 
     // Function Signature.
     // =================
