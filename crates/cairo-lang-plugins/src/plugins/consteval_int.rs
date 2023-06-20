@@ -136,7 +136,7 @@ fn compute_constant_expr(
                     });
                     None
                 }
-            },
+            }
             ast::BinaryOperator::And(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     & compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
