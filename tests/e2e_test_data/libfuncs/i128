@@ -30,6 +30,89 @@ test::foo@0([0]: i128) -> (felt252);
 
 //! > ==========================================================================
 
+//! > i128_try_from_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(v: felt252) -> Option<i128> {
+    integer::i128_try_from_felt252(v)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 170141183460469231731687303715884105728) % PRIME < 340282366920938463463374607431768211456 %}
+jmp rel 20 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 170141183460469231731687303715884105728, ap++;
+%{
+(value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134079)
+x = min(value // scalar, 340282366920938463463374607431768211454)
+y = value - x * scalar
+memory[ap + 0] = x
+memory[ap + 1] = y
+%}
+[ap + 2] = [ap + 0] * 10633823966279327296825105735305134079, ap++;
+[ap + -2] = [ap + 1] + [ap + 0], ap++;
+[ap + -1] = [[fp + -4] + 0], ap++;
+[ap + 0] = [ap + -2] + 319014718988379808869724395961157943297, ap++;
+[ap + -1] = [[fp + -4] + 1], ap++;
+[ap + -5] = [[fp + -4] + 2];
+[ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
+jmp rel 18 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+jmp rel 14;
+[ap + 0] = [fp + -3] + 170141183460469231731687303715884105728, ap++;
+[ap + -1] = [[fp + -4] + 0];
+ap += 5;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 3, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1710})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type felt252 = felt252;
+type i128 = i128;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::i128> = Enum<ut@core::option::Option::<core::integer::i128>, i128, Unit>;
+
+libfunc i128_try_from_felt252 = i128_try_from_felt252;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::i128>, 0> = enum_init<core::option::Option::<core::integer::i128>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::i128>> = store_temp<core::option::Option::<core::integer::i128>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::i128>, 1> = enum_init<core::option::Option::<core::integer::i128>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::i128>> = rename<core::option::Option::<core::integer::i128>>;
+
+i128_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i128>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i128>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::i128>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i128>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::i128>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::i128>);
+
+//! > ==========================================================================
+
 //! > i128_eq libfunc (a deref, b deref)
 
 //! > test_runner_name
