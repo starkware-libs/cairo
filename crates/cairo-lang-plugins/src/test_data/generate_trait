@@ -56,7 +56,7 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-trait SomeTrait<T>  {
+pub trait SomeTrait<T>  {
     fn by_val(self: T)-> T ;
 
     fn by_snap(self: @T)-> T ;
@@ -92,7 +92,7 @@ impl OtherImpl<T> of TraitWithAttrs<T>;
 impl OtherImpl<T> of TraitWithAttrs<T>;
 #[some(attr)]
 #[other(attr2)]
-trait TraitWithAttrs<T>  {
+pub trait TraitWithAttrs<T>  {
 }
 
 //! > expected_diagnostics
@@ -121,7 +121,7 @@ impl SomeImpl of SomeTrait {
         a
     }
 }
-trait SomeTrait {
+pub trait SomeTrait {
     fn foo();
 
     fn bar(a: usize)-> usize ;
@@ -170,12 +170,12 @@ impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
 impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
 }
 
-trait TraitNotMAtchingGenerics<T>  {
+pub trait TraitNotMAtchingGenerics<T>  {
 }
 
 
 #[generate_trait]
 impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 }
-trait OtherTrait<T>  {
+pub trait OtherTrait<T>  {
 }

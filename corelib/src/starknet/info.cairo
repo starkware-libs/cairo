@@ -5,7 +5,7 @@ use starknet::{
 use box::BoxTrait;
 
 #[derive(Copy, Drop)]
-struct ExecutionInfo {
+pub struct ExecutionInfo {
     block_info: Box<BlockInfo>,
     tx_info: Box<TxInfo>,
     caller_address: ContractAddress,
@@ -14,14 +14,14 @@ struct ExecutionInfo {
 }
 
 #[derive(Copy, Drop)]
-struct BlockInfo {
+pub struct BlockInfo {
     block_number: u64,
     block_timestamp: u64,
     sequencer_address: ContractAddress,
 }
 
 #[derive(Copy, Drop)]
-struct TxInfo {
+pub struct TxInfo {
     // The version of the transaction. It is fixed (currently, 1) in the OS, and should be
     // signed by the account contract.
     // This field allows invalidating old transactions, whenever the meaning of the other
@@ -42,30 +42,30 @@ struct TxInfo {
     nonce: felt252,
 }
 
-fn get_execution_info() -> Box<ExecutionInfo> {
+pub fn get_execution_info() -> Box<ExecutionInfo> {
     get_execution_info_syscall().unwrap_syscall()
 }
 
-fn get_caller_address() -> ContractAddress {
+pub fn get_caller_address() -> ContractAddress {
     get_execution_info().unbox().caller_address
 }
 
-fn get_contract_address() -> ContractAddress {
+pub fn get_contract_address() -> ContractAddress {
     get_execution_info().unbox().contract_address
 }
 
-fn get_block_info() -> Box<BlockInfo> {
+pub fn get_block_info() -> Box<BlockInfo> {
     get_execution_info().unbox().block_info
 }
 
-fn get_tx_info() -> Box<TxInfo> {
+pub fn get_tx_info() -> Box<TxInfo> {
     get_execution_info().unbox().tx_info
 }
 
-fn get_block_timestamp() -> u64 {
+pub fn get_block_timestamp() -> u64 {
     get_block_info().unbox().block_timestamp
 }
 
-fn get_block_number() -> u64 {
+pub fn get_block_number() -> u64 {
     get_block_info().unbox().block_number
 }

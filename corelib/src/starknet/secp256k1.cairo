@@ -7,7 +7,7 @@ use starknet::{
 };
 
 #[derive(Copy, Drop)]
-extern type Secp256k1Point;
+pub extern type Secp256k1Point;
 
 impl Secp256k1Impl of Secp256Trait<Secp256k1Point> {
     // TODO(yuval): change to constant once u256 constants are supported.
@@ -48,26 +48,26 @@ impl Secp256k1PointImpl of Secp256PointTrait<Secp256k1Point> {
 
 /// Creates a secp256k1 EC point from the given x and y coordinates.
 /// Returns None if the given coordinates do not correspond to a point on the curve.
-extern fn secp256k1_new_syscall(
+pub extern fn secp256k1_new_syscall(
     x: u256, y: u256
 ) -> SyscallResult<Option<Secp256k1Point>> implicits(GasBuiltin, System) nopanic;
 
 /// Computes the addition of secp256k1 EC points `p0 + p1`.
-extern fn secp256k1_add_syscall(
+pub extern fn secp256k1_add_syscall(
     p0: Secp256k1Point, p1: Secp256k1Point
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
 /// Computes the product of a secp256k1 EC point `p` by the given scalar `m`.
-extern fn secp256k1_mul_syscall(
+pub extern fn secp256k1_mul_syscall(
     p: Secp256k1Point, m: u256
 ) -> SyscallResult<Secp256k1Point> implicits(GasBuiltin, System) nopanic;
 
 /// Computes the point on the secp256k1 curve that matches the given `x` coordinate, if such exists.
 /// Out of the two possible y's, chooses according to `y_parity`.
-extern fn secp256k1_get_point_from_x_syscall(
+pub extern fn secp256k1_get_point_from_x_syscall(
     x: u256, y_parity: bool
 ) -> SyscallResult<Option<Secp256k1Point>> implicits(GasBuiltin, System) nopanic;
 
 /// Returns the coordinates of a point on the secp256k1 curve.
-extern fn secp256k1_get_xy_syscall(
+pub extern fn secp256k1_get_xy_syscall(
     p: Secp256k1Point
 ) -> SyscallResult<(u256, u256)> implicits(GasBuiltin, System) nopanic;

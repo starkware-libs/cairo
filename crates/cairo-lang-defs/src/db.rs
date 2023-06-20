@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
+use smol_str::SmolStr;
 
 use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
@@ -8,8 +9,9 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
@@ -138,6 +140,17 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternFunctionId>>;
+    fn module_visibility(&self, submodule_id: SubmoduleId) -> Maybe<ast::Visibility>;
+    fn constant_visibility(&self, constant_id: ConstantId) -> Maybe<ast::Visibility>;
+    fn free_function_visibility(&self, free_function_id: FreeFunctionId) -> Maybe<ast::Visibility>;
+    fn enum_visibility(&self, enum_id: EnumId) -> Maybe<ast::Visibility>;
+    fn struct_visibility(&self, struct_id: StructId) -> Maybe<ast::Visibility>;
+    fn extern_function_visibility(&self, extern_function_id: ExternFunctionId) -> Maybe<ast::Visibility>;
+    fn extern_type_visibility(&self, extern_type_id: ExternTypeId) -> Maybe<ast::Visibility>;
+    fn type_alias_visibility(&self, type_alias_id: TypeAliasId) -> Maybe<ast::Visibility>;
+    fn trait_visibility(&self, trait_id: TraitId) -> Maybe<ast::Visibility>;
+    fn struct_member_visibility(&self, struct_id: StructId, member_name: SmolStr) -> Maybe<Option<ast::Visibility>>;
+    fn module_ancestors(&self, module_id: ModuleId) -> OrderedHashSet<ModuleId>;
     fn module_generated_file_infos(
         &self,
         module_id: ModuleId,
@@ -596,6 +609,83 @@ pub fn module_extern_functions_ids(
     module_id: ModuleId,
 ) -> Maybe<Vec<ExternFunctionId>> {
     Ok(db.module_extern_functions(module_id)?.keys().copied().collect())
+}
+
+pub fn module_visibility(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> Maybe<ast::Visibility> {
+    let parent_module_id = submodule_id.parent_module(db);
+    let module_ast = &db.module_submodules(parent_module_id)?[submodule_id];
+    Ok(module_ast.visibility(db.upcast()))
+}
+
+pub fn constant_visibility(db: &dyn DefsGroup, constant_id: ConstantId) -> Maybe<ast::Visibility> {
+    let parent_module_id = constant_id.parent_module(db);
+    let constant_ast = &db.module_constants(parent_module_id)?[constant_id];
+    Ok(constant_ast.visibility(db.upcast()))
+}
+
+pub fn free_function_visibility(db: &dyn DefsGroup, free_function_id: FreeFunctionId) -> Maybe<ast::Visibility> {
+    let parent_module_id = free_function_id.parent_module(db);
+    let function_ast = &db.module_free_functions(parent_module_id)?[free_function_id];
+    Ok(function_ast.declaration(db.upcast()).visibility(db.upcast()))
+}
+
+pub fn enum_visibility(db: &dyn DefsGroup, enum_id: EnumId) -> Maybe<ast::Visibility> {
+    let parent_module_id = enum_id.parent_module(db);
+    let enum_ast = &db.module_enums(parent_module_id)?[enum_id];
+    Ok(enum_ast.visibility(db.upcast()))
+}
+
+pub fn struct_visibility(db: &dyn DefsGroup, struct_id: StructId) -> Maybe<ast::Visibility> {
+    let parent_module_id = struct_id.parent_module(db);
+    let struct_ast = &db.module_structs(parent_module_id)?[struct_id];
+    Ok(struct_ast.visibility(db.upcast()))
+}
+
+pub fn extern_function_visibility(db: &dyn DefsGroup, extern_function_id: ExternFunctionId) -> Maybe<ast::Visibility> {
+    let parent_module_id = extern_function_id.parent_module(db);
+    let extern_function_ast = &db.module_extern_functions(parent_module_id)?[extern_function_id];
+    Ok(extern_function_ast.visibility(db.upcast()))
+}
+
+pub fn extern_type_visibility(db: &dyn DefsGroup, extern_type_id: ExternTypeId) -> Maybe<ast::Visibility> {
+    let parent_module_id = extern_type_id.parent_module(db);
+    let extern_type_ast = &db.module_extern_types(parent_module_id)?[extern_type_id];
+    Ok(extern_type_ast.visibility(db.upcast()))
+}
+
+pub fn type_alias_visibility(db: &dyn DefsGroup, type_alias_id: TypeAliasId) -> Maybe<ast::Visibility> {
+    let parent_module_id = type_alias_id.parent_module(db);
+    let type_alias_ast = &db.module_type_aliases(parent_module_id)?[type_alias_id];
+    Ok(type_alias_ast.visibility(db.upcast()))
+}
+
+pub fn trait_visibility(db: &dyn DefsGroup, trait_id: TraitId) -> Maybe<ast::Visibility> {
+    let parent_module_id = trait_id.parent_module(db);
+    let trait_ast = &db.module_traits(parent_module_id)?[trait_id];
+    Ok(trait_ast.visibility(db.upcast()))
+}
+
+pub fn struct_member_visibility(db: &dyn DefsGroup, struct_id: StructId, member_name: SmolStr) -> Maybe<Option<ast::Visibility>> {
+    let parent_module_id = struct_id.parent_module(db);
+    let struct_ast = &db.module_structs(parent_module_id)?[struct_id];
+    let syntax_db = db.upcast();
+    for member in struct_ast.members(syntax_db).elements(syntax_db) {
+        if member.name(syntax_db).text(syntax_db) == member_name {
+            return Ok(Some(member.visibility(syntax_db)))
+        }
+    }
+    Ok(None)
+}
+
+pub fn module_ancestors(db: &dyn DefsGroup, module_id: ModuleId) -> OrderedHashSet<ModuleId> {
+    let mut current = module_id;
+    let mut ancestors = OrderedHashSet::new();
+    while let ModuleId::Submodule(submodule_id) = current {
+        let parent = submodule_id.parent_module(db);
+        ancestors.insert(parent);
+        current = parent
+    }
+    ancestors
 }
 
 /// Returns the generated_file_infos of the given module.

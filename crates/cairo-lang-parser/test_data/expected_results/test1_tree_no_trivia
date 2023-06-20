@@ -2,6 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── module_kw (kind: TokenModule): 'mod'
     │   │   ├── name (kind: TokenIdentifier): 'submod'
     │   │   └── body (kind: TokenSemicolon): ';'
@@ -20,6 +21,7 @@
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -390,6 +392,7 @@
     │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'bar'
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -418,6 +421,7 @@
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #4 (kind: ItemExternType)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'S'
@@ -428,8 +432,10 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TokenExtern): 'extern'
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'glee'
     │   │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -476,6 +482,7 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #6 (kind: ItemStruct)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── struct_kw (kind: TokenStruct): 'struct'
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -491,6 +498,7 @@
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
     │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   │   ├── name (kind: TokenIdentifier): 'member'
     │   │   │   │   └── type_clause (kind: TypeClause)
     │   │   │   │       ├── colon (kind: TokenColon): ':'
@@ -517,6 +525,7 @@
     │   │   │       │       │   │                   └── ident (kind: TokenIdentifier): 'a'
     │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
     │   │   │       │       └── rbrack (kind: TokenRBrack): ']'
+    │   │   │       ├── visibility (kind: VisibilityDefault) []
     │   │   │       ├── name (kind: TokenIdentifier): 'member2'
     │   │   │       └── type_clause (kind: TypeClause)
     │   │   │           ├── colon (kind: TokenColon): ':'
@@ -539,6 +548,7 @@
     │   │   └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #7 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Renamed'
     │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -555,6 +565,7 @@
     │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   ├── child #8 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Generic'
     │   │   ├── generic_params (kind: WrappedGenericParamList)

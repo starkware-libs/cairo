@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
-};
+use cairo_lang_defs::ids::{EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, ModuleItemId, StructId, TopLevelLanguageElementId, TraitFunctionId, TraitId};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -597,6 +594,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
+            SemanticDiagnosticKind::StructMemberNotVisible {
+                struct_id,
+                member_name
+            } => {
+                format!(r#"Struct "{}" member "{member_name}" is not visible"#,
+                        struct_id.full_path(db.upcast()))
+            }
+            SemanticDiagnosticKind::ModuleItemNotVisible { module_item_id } => {
+                format!(r#"Item "{}" is not visible"#, module_item_id.full_path(db.upcast()))
+            }
         }
     }
 
@@ -879,6 +886,13 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    StructMemberNotVisible {
+        struct_id: StructId,
+        member_name: SmolStr,
+    },
+    ModuleItemNotVisible {
+        module_item_id: ModuleItemId
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

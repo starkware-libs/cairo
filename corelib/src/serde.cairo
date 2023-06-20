@@ -3,7 +3,7 @@ use array::SpanTrait;
 use traits::Into;
 use traits::TryInto;
 
-trait Serde<T> {
+pub trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
     fn deserialize(ref serialized: Span<felt252>) -> Option<T>;
 }

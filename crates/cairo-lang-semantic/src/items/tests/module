@@ -15,7 +15,7 @@ fn abc() {}
 fn abc(a : felt252) {}
 
 mod inner {
-   struct abc {}
+   pub struct abc {}
 }
 use inner::abc;
 

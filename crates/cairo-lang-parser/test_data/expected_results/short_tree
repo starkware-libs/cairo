@@ -15,6 +15,7 @@
     │   └── child #1 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── visibility (kind: VisibilityDefault) []
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'foo'
     │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

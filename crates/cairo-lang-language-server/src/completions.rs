@@ -8,7 +8,7 @@ use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
-use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
+use cairo_lang_semantic::lookup_item::{ItemEx, LookupItemEx};
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};

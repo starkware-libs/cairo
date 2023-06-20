@@ -61,7 +61,7 @@ fn keccak_add_u256_be(ref keccak_input: Array::<u64>, v: u256) {
 // Computes the keccak256 of multiple u256 values.
 // The input values are interpreted as big-endian.
 // The 32-byte result is represented as a little-endian u256.
-fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
+pub fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
     let mut keccak_input: Array::<u64> = Default::default();
 
     loop {

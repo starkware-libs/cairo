@@ -6,7 +6,7 @@ use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, Sysca
 use traits::{Into, TryInto};
 use integer::U256TryIntoNonZero;
 
-trait Secp256Trait<Secp256Point> {
+pub trait Secp256Trait<Secp256Point> {
     fn get_curve_size() -> u256;
     fn get_generator_point() -> Secp256Point;
 
@@ -16,7 +16,7 @@ trait Secp256Trait<Secp256Point> {
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
-trait Secp256PointTrait<Secp256Point> {
+pub trait Secp256PointTrait<Secp256Point> {
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
@@ -28,7 +28,7 @@ trait Secp256PointTrait<Secp256Point> {
 /// Note:
 ///   Some places use non boolean values for v.
 ///   In that case, `recover_public_key_u32` may be a better match.
-fn recover_public_key<
+pub fn recover_public_key<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
@@ -59,7 +59,7 @@ fn recover_public_key<
 
 /// Same as `recover_public_key` but receives `v` of type `u32` instead of `y_parity`.
 /// Uses the parity of `v` as `y_parity`.
-fn recover_public_key_u32<
+pub fn recover_public_key_u32<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
@@ -72,7 +72,7 @@ fn recover_public_key_u32<
 }
 
 /// Computes the negation of a scalar modulo N (the size of the curve).
-fn secp256_ec_negate_scalar<
+pub fn secp256_ec_negate_scalar<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>
@@ -85,7 +85,7 @@ fn secp256_ec_negate_scalar<
 
 /// Verifies a Secp256 ECDSA signature.
 /// Also verifies that r and s are in the range (0, N), where N is the size of the curve.
-fn verify_eth_signature<
+pub fn verify_eth_signature<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
@@ -104,7 +104,7 @@ fn verify_eth_signature<
 
 /// Same as `verify_eth_signature` but receives `v` of type `u32` instead of `y_parity`.
 /// Uses the parity of `v` as `y_parity`.
-fn verify_eth_signature_u32<
+pub fn verify_eth_signature_u32<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
@@ -117,7 +117,7 @@ fn verify_eth_signature_u32<
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
-fn is_signature_entry_valid<
+pub fn is_signature_entry_valid<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>
@@ -128,7 +128,7 @@ fn is_signature_entry_valid<
 }
 
 /// Converts a public key point to the corresponding Ethereum address.
-fn public_key_point_to_eth_address<
+pub fn public_key_point_to_eth_address<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,

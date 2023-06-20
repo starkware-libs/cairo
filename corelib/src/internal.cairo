@@ -1,1 +1,1 @@
-extern fn revoke_ap_tracking() implicits() nopanic;
+pub extern fn revoke_ap_tracking() implicits() nopanic;
