@@ -135,6 +135,8 @@ pub struct CasmBuilder {
     /// Is the current state reachable.
     /// Example for unreachable state is after a unconditional jump, before any label is stated.
     reachable: bool,
+     /// Auxiliary information gathered for verification.
+     pub aux_info: Option<CasmBuilderAuxiliaryInfo>,
 }
 impl CasmBuilder {
     /// Finalizes the builder, with the requested labels as the returning branches.
@@ -684,6 +686,10 @@ impl CasmBuilder {
         core::mem::swap(&mut hints, &mut self.current_hints);
         Instruction { body, inc_ap, hints }
     }
+
+    pub fn move_aux_info(&mut self) -> Option<CasmBuilderAuxiliaryInfo> {
+        std::mem::replace(&mut self.aux_info, None)
+    }
 }
 
 impl Default for CasmBuilder {
@@ -696,6 +702,232 @@ impl Default for CasmBuilder {
             current_hints: Default::default(),
             var_count: Default::default(),
             reachable: true,
+            aux_info: Some(Default::default()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ExprDesc {
+    expr: String,
+    var_a: Var,
+    op: String,
+    var_b: Option<Var>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct VarDesc {
+    name: String,
+    var_id: Var,
+    var_expr: CellExpression,
+    expr: Option<ExprDesc>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct AssertDesc {
+    lhs: String,
+    var_id: Var,
+    expr: ExprDesc,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct ConstDesc {
+    name: String,
+    var_id: Var,
+    expr: String,
+    value: CellExpression,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct JumpDesc {
+    target: String,
+    cond_var: Option<(String, Var)>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct RetExprDesc {
+    pub names: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct RetBranchDesc {
+    pub name: String,
+    pub exprs: Vec<RetExprDesc>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum StatementDesc {
+    TempVar(VarDesc),
+    LocalVar(VarDesc),
+    Let(AssertDesc),
+    Assert(AssertDesc),
+    ApPlus(usize),
+    Jump(JumpDesc),
+    Label(String),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct CasmBuilderAuxiliaryInfo {
+    pub var_names: HashMap<Var, String>,
+    pub consts: Vec<ConstDesc>,
+    pub args: Vec<(Var, CellExpression)>,
+    pub statements: Vec<StatementDesc>,
+    pub return_args: Vec<RetBranchDesc>,
+}
+
+impl CasmBuilderAuxiliaryInfo {
+    pub fn not_empty(&self) -> bool {
+        0 < self.statements.len()
+    }
+
+    pub fn add_arg(&mut self, var_name: &str, var: Var, cell_expr: CellExpression) {
+        self.var_names.insert(var, String::from(var_name));
+        self.args.push((var, cell_expr));
+    }
+
+    pub fn add_return_branch(&mut self, branch_name: &str, vars: &[&[Var]]) {
+        self.return_args.push(RetBranchDesc {
+            name: String::from(branch_name),
+            exprs: vars.iter().map(|v| RetExprDesc {
+                names: v.iter().map(|var| self.var_names.get(var).unwrap().clone()).collect(),
+            }).collect(),
+        });
+    }
+
+    pub fn add_tempvar(&mut self, var_name: &str, var: Var, var_expr: CellExpression) {
+        self.var_names.insert(var, String::from(var_name));
+        self.statements.push(StatementDesc::TempVar(
+            VarDesc {
+                name: String::from(var_name),
+                var_id: var,
+                var_expr: var_expr,
+                expr: None,
+            }
+        ));
+    }
+
+    pub fn add_localvar(&mut self, var_name: &str, var: Var, var_expr: CellExpression) {
+        self.var_names.insert(var, String::from(var_name));
+        self.statements.push(StatementDesc::LocalVar(
+            VarDesc {
+                name: String::from(var_name),
+                var_id: var,
+                var_expr: var_expr,
+                expr: None,
+            }
+        ));
+    }
+
+    pub fn add_const(&mut self, var_name: &str, var: Var, expr: &str, value: CellExpression) {
+        self.var_names.insert(var, String::from(var_name));
+        self.consts.push(ConstDesc {
+            name: String::from(var_name),
+            var_id: var,
+            expr: String::from(expr),
+            value: value,
+        });
+    }
+
+    pub fn add_let(
+        &mut self,
+        var_name: &str,
+        var: Var,
+        expr: &str,
+        var_a: Var,
+        op: &str,
+        var_b: Option<Var>,
+    ) {
+        self.var_names.insert(var, String::from(var_name));
+        self.statements.push(StatementDesc::Let(
+            AssertDesc {
+                lhs: String::from(var_name),
+                var_id: var,
+                expr: ExprDesc {
+                    expr: String::from(expr),
+                    var_a: var_a,
+                    op: String::from(op),
+                    var_b: var_b,
+                }
+            }
+        ));
+    }
+
+    pub fn add_ap_plus(&mut self, step_size: usize) {
+        self.statements.push(StatementDesc::ApPlus(step_size));
+    }
+
+    pub fn add_assert(&mut self, lhs: &str, var: Var, rhs: &str, var_a: Var, op: &str, var_b: Option<Var>) {
+        if match self.statements.last_mut() {
+                Some(StatementDesc::TempVar(tv)) =>  {
+                    if tv.name == lhs {
+                        tv.expr = Some(ExprDesc {
+                            expr: String::from(rhs),
+                            var_a: var_a,
+                            op: String::from(op),
+                            var_b: var_b,
+                        });
+                        false
+                    } else {
+                        true
+                    }
+                },
+                Some(StatementDesc::LocalVar(lv)) => {
+                    if lv.name == lhs {
+                        lv.expr = Some(ExprDesc {
+                            expr: String::from(rhs),
+                            var_a: var_a,
+                            op: String::from(op),
+                            var_b: var_b,
+                        });
+                        false
+                    } else {
+                        true
+                    }
+                },
+                _ => true }
+        {
+            self.statements.push(StatementDesc::Assert(
+                AssertDesc {
+                    lhs: String::from(lhs),
+                    var_id: var,
+                    expr: ExprDesc {
+                        expr: String::from(rhs),
+                        var_a: var_a,
+                        op: String::from(op),
+                        var_b: var_b,
+                    }
+                }));
+        }
+    }
+
+    pub fn add_jump(&mut self, label: &str) {
+        self.statements.push(StatementDesc::Jump(JumpDesc {
+            target: String::from(label),
+            cond_var: None,
+        }));
+    }
+
+    pub fn add_jump_nz(&mut self, label: &str, cond_var_name: &str, cond_var: Var) {
+        self.statements.push(StatementDesc::Jump(JumpDesc {
+            target: String::from(label),
+            cond_var: Some((String::from(cond_var_name), cond_var)),
+        }));
+    }
+
+    pub fn add_label(&mut self, label: &str) {
+        self.statements.push(StatementDesc::Label(String::from(label)));
+    }
+
+}
+
+impl Default for CasmBuilderAuxiliaryInfo {
+    fn default() -> Self {
+        Self {
+            var_names: Default::default(),
+            consts: Default::default(),
+            args: Default::default(),
+            statements: Default::default(),
+            return_args: Default::default(),
         }
     }
 }
@@ -705,27 +937,52 @@ macro_rules! casm_build_extend {
     ($builder:ident,) => {};
     ($builder:ident, tempvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var(false);
+        {
+            let var_expr = $builder.get_value($var, false);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_tempvar(stringify!($var), $var, var_expr);
+            }
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, localvar $var:ident; $($tok:tt)*) => {
         let $var = $builder.alloc_var(true);
+        {
+            let var_expr = $builder.get_value($var, false);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_localvar(stringify!($var), $var, var_expr);
+            }
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, ap += $value:expr; $($tok:tt)*) => {
         $builder.add_ap($value);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_ap_plus($value);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, const $imm:ident = $value:expr; $($tok:tt)*) => {
         let $imm = $builder.add_var($crate::cell_expression::CellExpression::Immediate(($value).into()));
+        let value = $builder.get_value($imm, false);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_const(stringify!($imm), $imm, stringify!($value), value);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $res:ident; $($tok:tt)*) => {
         $builder.assert_vars_eq($dst, $res);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_assert(stringify!($dst), $dst, stringify!($res), $res, "", None);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         {
             let __sum = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(stringify!($dst), $dst, stringify!($a + $b), $a, "+", Some($b));
+            }
             $builder.assert_vars_eq($dst, __sum);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -733,6 +990,9 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         {
             let __product = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(stringify!($dst), $dst, stringify!($a * $b), $a, "*", Some($b));
+            }
             $builder.assert_vars_eq($dst, __product);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -740,6 +1000,9 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         {
             let __diff = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(stringify!($dst), $dst, stringify!($a - $b), $a, "-", Some($b));
+            }
             $builder.assert_vars_eq($dst, __diff);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -747,6 +1010,9 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         {
             let __division = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(stringify!($dst), $dst, stringify!($a / $b), $a, "/", Some($b));
+            }
             $builder.assert_vars_eq($dst, __division);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -754,6 +1020,16 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, $offset);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(
+                    stringify!($dst),
+                    $dst,
+                    &format!("mem ({} + ({}))", stringify!($buffer), stringify!($offset)),
+                    $buffer,
+                    "*(+)",
+                    None,
+                );
+            }
             $builder.assert_vars_eq($dst, __deref);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -761,12 +1037,44 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $dst:ident = * $buffer:ident; $($tok:tt)*) => {
         {
             let __deref = $builder.double_deref($buffer, 0);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_assert(
+                    stringify!($dst),
+                    $dst,
+                    &format!("mem {}", stringify!($buffer)),
+                    $buffer,
+                    "*()",
+                    None,
+                );
+            }
             $builder.assert_vars_eq($dst, __deref);
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
+        {
+            let var_expr = $builder.get_value($value, false);
+            if let Some(aux_info) = &mut $builder.aux_info {
+                aux_info.add_tempvar(stringify!($value), $value, var_expr);
+                aux_info.add_assert(
+                    stringify!($value),
+                    $value,
+                    &format!("mem {}", stringify!($buffer)),
+                    $buffer,
+                    "*()",
+                    None,
+                );
+                aux_info.add_assert(
+                    stringify!($buffer),
+                    $buffer,
+                    &format!("{} + 1", stringify!($buffer)),
+                    $buffer,
+                    "++",
+                    None,
+                );
+            }
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, tempvar $var:ident = $value:ident; $($tok:tt)*) => {
@@ -851,42 +1159,86 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, let $dst:ident = $a:ident + $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Add, $a, $b);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, stringify!($a + $b), $a, "+", Some($b));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $a:ident * $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Mul, $a, $b);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, stringify!($a * $b), $a, "*", Some($b));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $a:ident - $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Sub, $a, $b);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, stringify!($a - $b), $a, "-", Some($b));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $a:ident / $b:ident; $($tok:tt)*) => {
         let $dst = $builder.bin_op($crate::cell_expression::CellOperator::Div, $a, $b);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, stringify!($a / $b), $a, "/", Some($b));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         let $dst = $builder.get_ref_and_inc($buffer);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, &format!("mem {}", stringify!($buffer)), $buffer, "*()", None);
+            aux_info.add_assert(
+                stringify!($buffer),
+                $buffer,
+                &format!("{} + 1", stringify!($buffer)),
+                $buffer,
+                "++",
+                None,
+            );
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $buffer:ident [ $offset:expr ] ; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, $offset);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let_unary(
+                stringify!($dst),
+                $dst,
+                &format!("mem ({} + ({}))", stringify!($buffer), stringify!($offset)),
+                $buffer,
+                "*(+)",
+            );
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = *$buffer:ident; $($tok:tt)*) => {
         let $dst = $builder.double_deref($buffer, 0);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, &format!("mem {}", stringify!($buffer)), $buffer, "*()", None);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let $dst:ident = $src:ident; $($tok:tt)*) => {
         let $dst = $builder.duplicate_var($src);
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_let(stringify!($dst), $dst, stringify!($src), $src, "", None);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident; $($tok:tt)*) => {
         $builder.jump($crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_jump(stringify!($target));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, jump $target:ident if $condition:ident != 0; $($tok:tt)*) => {
         $builder.jump_nz($condition, $crate::builder::ToOwned::to_owned(core::stringify!($target)));
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_jump_nz(stringify!($target), stringify!($condition), $condition);
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, let ($($var_name:ident),*) = call $target:ident; $($tok:tt)*) => {
@@ -909,6 +1261,9 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, $label:ident: $($tok:tt)*) => {
         $builder.label($crate::builder::ToOwned::to_owned(core::stringify!($label)));
+        if let Some(aux_info) = &mut $builder.aux_info {
+            aux_info.add_label(stringify!($label));
+        }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, fail; $($tok:tt)*) => {
