@@ -49,21 +49,21 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1497905547283796345028171189586039523695589234393994974564547326236831577928;
+pub const TEST_CLASS_HASH: felt252 = 1497905547283796345028171189586039523695589234393994974564547326236831577928;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
-        balance: balance::ContractState,
+    pub struct ContractState {
+        pub balance: balance::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             balance: balance::ContractState{},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -83,7 +83,7 @@ use starknet::event::EventEmitter;
     }
 
     use balance::InternalContractStateTrait as balanceContractStateTrait;
-    mod balance {
+    pub mod balance {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -94,8 +94,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> felt252;
             fn write(ref self: ContractState, value: felt252);
@@ -128,7 +128,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn increase_balance(ref self: ContractState, amount: felt252);
         #[external]
@@ -137,7 +137,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -145,7 +145,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -168,7 +168,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -193,7 +193,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -203,7 +203,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;

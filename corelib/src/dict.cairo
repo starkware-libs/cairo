@@ -1,17 +1,17 @@
 use traits::{Index, Default};
 
-extern type Felt252Dict<T>;
-extern type SquashedFelt252Dict<T>;
-extern type Felt252DictEntry<T>;
+pub extern type Felt252Dict<T>;
+pub extern type SquashedFelt252Dict<T>;
+pub extern type Felt252DictEntry<T>;
 impl SquashedFelt252DictDrop<T, impl TDrop: Drop<T>> of Drop<SquashedFelt252Dict<T>>;
 
-extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
+pub extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
-extern fn felt252_dict_entry_get<T>(
+pub extern fn felt252_dict_entry_get<T>(
     dict: Felt252Dict<T>, key: felt252
 ) -> (Felt252DictEntry<T>, T) nopanic;
 
-extern fn felt252_dict_entry_finalize<T>(
+pub extern fn felt252_dict_entry_finalize<T>(
     dict_entry: Felt252DictEntry<T>, new_value: T
 ) -> Felt252Dict<T> nopanic;
 
@@ -20,11 +20,11 @@ extern fn felt252_dict_entry_finalize<T>(
 /// NOTE: Never use this libfunc directly. Use Felt252DictTrait::squash() instead. Using this
 /// libfunc directly will result in multiple unnecessary copies of the libfunc in the compiled CASM
 /// code.
-extern fn felt252_dict_squash<T>(
+pub extern fn felt252_dict_squash<T>(
     dict: Felt252Dict<T>
 ) -> SquashedFelt252Dict<T> implicits(RangeCheck, GasBuiltin, SegmentArena) nopanic;
 
-trait Felt252DictTrait<T> {
+pub trait Felt252DictTrait<T> {
     /// Inserts the given value for the given key.
     ///
     /// Requires the `Destruct` trait, as the previous value is dropped.
@@ -62,7 +62,7 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     }
 }
 
-trait Felt252DictEntryTrait<T> {
+pub trait Felt252DictEntryTrait<T> {
     fn finalize(self: Felt252DictEntry<T>, new_value: T) -> Felt252Dict<T>;
 }
 

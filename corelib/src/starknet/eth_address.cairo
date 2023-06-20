@@ -7,7 +7,7 @@ use zeroable::Zeroable;
 
 // An Ethereum address (160 bits).
 #[derive(Copy, Drop, storage_access::StorageAccess)]
-struct EthAddress {
+pub struct EthAddress {
     address: felt252, 
 }
 impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {

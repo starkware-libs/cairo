@@ -5,21 +5,21 @@ use gas::withdraw_gas;
 use option::OptionTrait;
 use serde::Serde;
 
-extern type Array<T>;
-extern fn array_new<T>() -> Array<T> nopanic;
-extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
-extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
-extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
-extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
-extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
+pub extern type Array<T>;
+pub extern fn array_new<T>() -> Array<T> nopanic;
+pub extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
+pub extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
+pub extern fn array_pop_front_consume<T>(arr: Array<T>) -> Option<(Array<T>, Box<T>)> nopanic;
+pub extern fn array_snapshot_pop_front<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
+pub extern fn array_snapshot_pop_back<T>(ref arr: @Array<T>) -> Option<Box<@T>> nopanic;
 #[panic_with('Index out of bounds', array_at)]
-extern fn array_get<T>(
+pub extern fn array_get<T>(
     arr: @Array<T>, index: usize
 ) -> Option<Box<@T>> implicits(RangeCheck) nopanic;
-extern fn array_slice<T>(
+pub extern fn array_slice<T>(
     arr: @Array<T>, start: usize, length: usize
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
-extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
+pub extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
 #[generate_trait]
 impl ArrayImpl<T> of ArrayTrait<T> {
@@ -117,7 +117,7 @@ fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
 impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
 
 // Span.
-struct Span<T> {
+pub struct Span<T> {
     snapshot: @Array<T>
 }
 

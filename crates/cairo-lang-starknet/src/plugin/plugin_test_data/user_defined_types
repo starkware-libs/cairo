@@ -113,15 +113,15 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1406712675341655973569057151004659905207406513053522188099790886884464153584;
+pub const TEST_CLASS_HASH: felt252 = 1406712675341655973569057151004659905207406513053522188099790886884464153584;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
-        var: var::ContractState,
-        mapping: mapping::ContractState,
+    pub struct ContractState {
+        pub var: var::ContractState,
+        pub mapping: mapping::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             var: var::ContractState{},
             mapping: mapping::ContractState{},
@@ -129,7 +129,7 @@ use starknet::event::EventEmitter;
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -149,7 +149,7 @@ use starknet::event::EventEmitter;
     }
 
     use var::InternalContractStateTrait as varContractStateTrait;
-    mod var {
+    pub mod var {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
@@ -166,8 +166,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> WrappedFelt252;
             fn write(ref self: ContractState, value: WrappedFelt252);
@@ -197,7 +197,7 @@ use starknet::event::EventEmitter;
         }
     }
     use mapping::InternalContractStateTrait as mappingContractStateTrait;
-    mod mapping {
+    pub mod mapping {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
@@ -214,8 +214,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252;
             fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252);
@@ -249,12 +249,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
@@ -270,7 +270,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
@@ -286,7 +286,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;

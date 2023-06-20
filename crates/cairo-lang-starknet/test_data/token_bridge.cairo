@@ -4,7 +4,7 @@ use traits::Into;
 use zeroable::Zeroable;
 
 #[starknet::interface]
-trait IMintableToken<T> {
+pub trait IMintableToken<T> {
     fn permissioned_mint(ref self: T, account: ContractAddress, amount: u256);
     fn permissioned_burn(ref self: T, account: ContractAddress, amount: u256);
 }

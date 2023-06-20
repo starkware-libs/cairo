@@ -32,10 +32,7 @@ use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::{DynPluginAuxData, SemanticPlugin};
 use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
-use crate::{
-    corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
-    SemanticDiagnostic, TypeId,
-};
+use crate::{corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter, SemanticDiagnostic, TypeId};
 
 /// Helper trait to make sure we can always get a `dyn SemanticGroup + 'static` from a
 /// SemanticGroup.

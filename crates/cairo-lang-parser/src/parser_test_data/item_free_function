@@ -64,6 +64,7 @@ FunctionSignature
     │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
     │       └── rbrack (kind: TokenRBrack): ']'
     ├── declaration (kind: FunctionDeclaration)
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -96,6 +97,7 @@ fn foo() -> Aaaaa  Bbb + Cc  {
 └── Top level kind: FunctionWithBody
     ├── attributes (kind: AttributeList) []
     ├── declaration (kind: FunctionDeclaration)
+    │   ├── visibility (kind: VisibilityDefault) []
     │   ├── function_kw (kind: TokenFunction): 'fn'
     │   ├── name (kind: TokenIdentifier): 'foo'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

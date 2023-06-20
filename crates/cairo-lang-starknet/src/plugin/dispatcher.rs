@@ -168,13 +168,13 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_name}<T> {{
+            "pub trait {dispatcher_name}<T> {{
             $dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
-            struct {contract_caller_name} {{
-                contract_address: starknet::ContractAddress,
+            pub struct {contract_caller_name} {{
+                pub contract_address: starknet::ContractAddress,
             }}
 
             impl {contract_caller_name}Impl of {dispatcher_name}<{contract_caller_name}> {{
@@ -182,8 +182,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
 
             #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
-            struct {library_caller_name} {{
-                class_hash: starknet::ClassHash,
+            pub struct {library_caller_name} {{
+                pub class_hash: starknet::ClassHash,
             }}
 
             impl {library_caller_name}Impl of {dispatcher_name}<{library_caller_name}> {{

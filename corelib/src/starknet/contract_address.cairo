@@ -2,13 +2,13 @@ use zeroable::Zeroable;
 use serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type ContractAddress;
+pub extern type ContractAddress;
 
 
-extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
-extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
+pub extern fn contract_address_const<const address: felt252>() -> ContractAddress nopanic;
+pub extern fn contract_address_to_felt252(address: ContractAddress) -> felt252 nopanic;
 
-extern fn contract_address_try_from_felt252(
+pub extern fn contract_address_try_from_felt252(
     address: felt252
 ) -> Option<ContractAddress> implicits(RangeCheck) nopanic;
 

@@ -57,21 +57,21 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1341682109668993677560518930855711196908916948134858721445948442570067905693;
+pub const TEST_CLASS_HASH: felt252 = 1341682109668993677560518930855711196908916948134858721445948442570067905693;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
-        mapping: mapping::ContractState,
+    pub struct ContractState {
+        pub mapping: mapping::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             mapping: mapping::ContractState{},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -94,12 +94,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -109,7 +109,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -119,7 +119,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -214,19 +214,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1460312078797661331777634083655921544238599930096957524306884986783950739842;
+pub const TEST_CLASS_HASH: felt252 = 1460312078797661331777634083655921544238599930096957524306884986783950739842;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -249,14 +249,14 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, x: (felt252, felt252));
         
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -264,7 +264,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -289,7 +289,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -299,7 +299,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -375,19 +375,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1085681203938695457350905679214019253602052240602183085516661084732923084593;
+pub const TEST_CLASS_HASH: felt252 = 1085681203938695457350905679214019253602052240602183085516661084732923084593;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -410,14 +410,14 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState) -> (felt252, felt252);
         
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -425,7 +425,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -450,7 +450,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -460,7 +460,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -540,19 +540,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 986680701890279147065748532178080828207279458327175386486245847124129097172;
+pub const TEST_CLASS_HASH: felt252 = 986680701890279147065748532178080828207279458327175386486245847124129097172;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -575,14 +575,14 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo<T>(ref self: ContractState, x: T);
         
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -590,7 +590,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -615,7 +615,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -625,7 +625,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -720,19 +720,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 347376211869286392247638345228494664456994337665073734689856581643720590414;
+pub const TEST_CLASS_HASH: felt252 = 347376211869286392247638345228494664456994337665073734689856581643720590414;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -755,14 +755,14 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -770,7 +770,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -800,7 +800,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -810,7 +810,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -900,19 +900,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1634753115141814283796594638234959991248210536627122676485228671802081386262;
+pub const TEST_CLASS_HASH: felt252 = 1634753115141814283796594638234959991248210536627122676485228671802081386262;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -935,7 +935,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn __validate__(ref self: ContractState);
         #[external]
@@ -948,7 +948,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -956,7 +956,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -977,7 +977,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -998,7 +998,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -1019,7 +1019,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -1042,7 +1042,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1052,7 +1052,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1176,19 +1176,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1339255375740182838173000168531687646915489118170655670928431587424555758987;
+pub const TEST_CLASS_HASH: felt252 = 1339255375740182838173000168531687646915489118170655670928431587424555758987;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -1211,7 +1211,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, ref a: felt252, ref b: felt252);
         #[external]
@@ -1226,7 +1226,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1237,7 +1237,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1248,7 +1248,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1363,21 +1363,21 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 740643162547049089477684638892724514387240513222624188091347173391995815741;
+pub const TEST_CLASS_HASH: felt252 = 740643162547049089477684638892724514387240513222624188091347173391995815741;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
-        same_name: same_name::ContractState,
+    pub struct ContractState {
+        pub same_name: same_name::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             same_name: same_name::ContractState{},
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -1397,7 +1397,7 @@ use starknet::event::EventEmitter;
     }
 
     use same_name::InternalContractStateTrait as same_nameContractStateTrait;
-    mod same_name {
+    pub mod same_name {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1408,8 +1408,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> felt252;
             fn write(ref self: ContractState, value: felt252);
@@ -1442,12 +1442,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1457,7 +1457,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1467,7 +1467,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -1625,19 +1625,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 421416711325618464026129086548833816049770041305674853614145850831686865933;
+pub const TEST_CLASS_HASH: felt252 = 421416711325618464026129086548833816049770041305674853614145850831686865933;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -1660,12 +1660,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use super::AImpl;
         use super::BImpl;
         use starknet::class_hash::ClassHashSerde;
@@ -1677,7 +1677,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::AImpl;
         use super::BImpl;
         use starknet::class_hash::ClassHashSerde;
@@ -1689,7 +1689,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::AImpl;
         use super::BImpl;
         use starknet::class_hash::ClassHashSerde;
@@ -1704,13 +1704,13 @@ mod __constructor {
 
 generate_trait:
 
-trait ATrait {
+pub trait ATrait {
 }
 
 
 generate_trait:
 
-trait BTrait {
+pub trait BTrait {
 }
 
 
@@ -1843,19 +1843,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 963300983981179617199812266398042899520458873776324561789509750269407080949;
+pub const TEST_CLASS_HASH: felt252 = 963300983981179617199812266398042899520458873776324561789509750269407080949;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -1878,7 +1878,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn foo_external(ref self: ContractState);
         #[external]
@@ -1889,7 +1889,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use super::AImpl;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1898,7 +1898,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -1919,7 +1919,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -1940,7 +1940,7 @@ mod __external {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -1963,7 +1963,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::AImpl;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1974,7 +1974,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::AImpl;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1988,7 +1988,7 @@ mod __constructor {
 
 generate_trait:
 
-trait ATrait {
+pub trait ATrait {
     fn foo_external(ref self: ContractState);
 
     fn foo_l1_handler(ref self: ContractState);
@@ -2080,19 +2080,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 630648468733378027508723437737677651831264605311973040547153568922485258761;
+pub const TEST_CLASS_HASH: felt252 = 630648468733378027508723437737677651831264605311973040547153568922485258761;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -2114,12 +2114,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use super::Event;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -2130,7 +2130,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::Event;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -2141,7 +2141,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::Event;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -2228,19 +2228,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1582029945692481340710966191082993519925188868684819773595331942685503258042;
+pub const TEST_CLASS_HASH: felt252 = 1582029945692481340710966191082993519925188868684819773595331942685503258042;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -2263,12 +2263,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use super::MyEvent;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -2279,7 +2279,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::MyEvent;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -2290,7 +2290,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::MyEvent;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;

@@ -9,7 +9,7 @@ use starknet::SyscallResultTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
 
 #[starknet::interface]
-trait IContract<T> {
+pub trait IContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 

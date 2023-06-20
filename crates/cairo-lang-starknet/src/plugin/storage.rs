@@ -25,7 +25,7 @@ pub fn handle_storage_struct(
         let name = member.name(db).text(db);
         members_code.push(RewriteNode::interpolate_patched(
             "
-        $name$: $name$::ContractState,",
+        pub $name$: $name$::ContractState,",
             UnorderedHashMap::from([(
                 "name".to_string(),
                 RewriteNode::new_trimmed(name_node.clone()),
@@ -92,16 +92,16 @@ pub fn handle_storage_struct(
             "
             use starknet::event::EventEmitter;
             #[derive(Drop)]
-                struct ContractState {{$members_code$
+                pub struct ContractState {{$members_code$
                 }}
                 #[inline(always)]
-                fn unsafe_new_contract_state() -> ContractState {{
+                pub fn unsafe_new_contract_state() -> ContractState {{
                     ContractState {{$member_init_code$
                     }}
                 }}
                 #[cfg(test)]
                 #[inline(always)]
-                fn contract_state_for_testing() -> ContractState {{
+                pub fn contract_state_for_testing() -> ContractState {{
                     unsafe_new_contract_state()
                 }}
 
@@ -171,14 +171,14 @@ fn handle_simple_storage_var(address: &str) -> String {
     format!(
         "
     use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
-    mod $storage_var_name$ {{$extra_uses$
+    pub mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {{}}
-        trait InternalContractStateTrait {{
+        pub struct ContractState {{}}
+        pub trait InternalContractStateTrait {{
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> $type_name$;
             fn write(ref self: ContractState, value: $type_name$);
@@ -215,14 +215,14 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
     format!(
         "
     use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
-    mod $storage_var_name$ {{$extra_uses$
+    pub mod $storage_var_name$ {{$extra_uses$
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {{}}
-        trait InternalContractStateTrait {{
+        pub struct ContractState {{}}
+        pub trait InternalContractStateTrait {{
             fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState, key: $key_type$) -> $value_type$;
             fn write(ref self: ContractState, key: $key_type$, value: $value_type$);
