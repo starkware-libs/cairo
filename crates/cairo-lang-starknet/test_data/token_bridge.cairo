@@ -110,7 +110,7 @@ mod TokenBridge {
             assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
 
             self.l1_bridge.write(l1_bridge_address.into());
-            self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
+            self.emit(L1BridgeSet { l1_bridge_address });
         }
 
         fn set_l2_token(ref self: ContractState, l2_token_address: ContractAddress) {
@@ -121,7 +121,7 @@ mod TokenBridge {
             assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
 
             self.l2_token.write(l2_token_address);
-            self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
+            self.emit(L2TokenSet { l2_token_address });
         }
 
         fn initiate_withdraw(ref self: ContractState, l1_recipient: EthAddress, amount: u256) {
@@ -141,12 +141,7 @@ mod TokenBridge {
             send_message_to_l1_syscall(
                 to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
             );
-            self
-                .emit(
-                    Event::WithdrawInitiated(
-                        WithdrawInitiated { l1_recipient, amount, caller_address }
-                    )
-                );
+            self.emit(WithdrawInitiated { l1_recipient, amount, caller_address });
         }
     }
 
@@ -161,7 +156,7 @@ mod TokenBridge {
             contract_address: self.read_initialized_l2_token()
         }.permissioned_mint(:account, :amount);
 
-        self.emit(Event::DepositHandled(DepositHandled { account, amount }));
+        self.emit(DepositHandled { account, amount });
     }
 
     /// Helpers (internal functions)

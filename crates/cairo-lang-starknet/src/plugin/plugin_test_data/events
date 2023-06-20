@@ -202,5 +202,44 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         Option::None(())
     }
 }
+impl MyEventEnumAIntoEvent of Into<A, Event> {
+    fn into(self: A) -> Event {
+        Event::A(self)
+    }
+}
+impl MyEventEnumBIntoEvent of Into<B, Event> {
+    fn into(self: B) -> Event {
+        Event::B(self)
+    }
+}
 
 //! > expected_diagnostics
+error: Type not found.
+ --> event_impl:40:39
+impl MyEventEnumAIntoEvent of Into<A, Event> {
+                                      ^***^
+
+error: Type not found.
+ --> event_impl:41:25
+    fn into(self: A) -> Event {
+                        ^***^
+
+error: Identifier not found.
+ --> event_impl:42:9
+        Event::A(self)
+        ^***^
+
+error: Type not found.
+ --> event_impl:45:39
+impl MyEventEnumBIntoEvent of Into<B, Event> {
+                                      ^***^
+
+error: Type not found.
+ --> event_impl:46:25
+    fn into(self: B) -> Event {
+                        ^***^
+
+error: Identifier not found.
+ --> event_impl:47:9
+        Event::B(self)
+        ^***^
