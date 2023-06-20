@@ -1,5 +1,7 @@
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
+use num_bigint::BigInt;
 
+use super::signed::build_sint_from_felt252;
 use super::{build_const, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
 use crate::invocations::misc;
 
@@ -11,7 +13,9 @@ pub fn build(
     match libfunc {
         Sint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Sint128Concrete::Const(libfunc) => build_const(libfunc, builder),
-        Sint128Concrete::FromFelt252(_) => todo!(),
+        Sint128Concrete::FromFelt252(_) => {
+            build_sint_from_felt252(builder, i128::MIN.into(), BigInt::from(2).pow(128))
+        }
         Sint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Sint128Concrete::Equal(_) => misc::build_cell_eq(builder),
     }
