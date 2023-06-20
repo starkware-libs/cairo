@@ -62,6 +62,13 @@ macro_rules! eq {
 }
 pub(crate) use eq;
 
+macro_rules! visibility {
+    () => {
+        SyntaxKind::TerminalPub
+    };
+}
+pub(crate) use visibility;
+
 macro_rules! top_level {
     () => {
         SyntaxKind::TerminalConst

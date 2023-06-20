@@ -8,7 +8,7 @@ use test::test_utils::assert_eq;
 use starknet::class_hash::ClassHash;
 
 #[starknet::interface]
-trait IWithReplace<TContractState> {
+pub trait IWithReplace<TContractState> {
     fn replace(ref self: TContractState, class_hash: ClassHash);
 }
 
@@ -38,7 +38,7 @@ mod ContractA {
 }
 
 #[starknet::interface]
-trait IWithFoo<TContractState> {
+pub trait IWithFoo<TContractState> {
     fn foo(ref self: TContractState) -> u128;
 }
 

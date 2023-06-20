@@ -2,7 +2,7 @@ use array::Span;
 use array::SpanTrait;
 use option::OptionTrait;
 
-extern type Poseidon;
+pub extern type Poseidon;
 
 extern fn hades_permutation(
     s0: felt252, s1: felt252, s2: felt252

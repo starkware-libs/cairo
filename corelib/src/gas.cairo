@@ -1,9 +1,9 @@
 #[derive(Copy, Drop)]
-extern type BuiltinCosts;
-extern type GasBuiltin;
+pub extern type BuiltinCosts;
+pub extern type GasBuiltin;
 
-extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
-extern fn withdraw_gas_all(
+pub extern fn withdraw_gas() -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
+pub extern fn withdraw_gas_all(
     costs: BuiltinCosts
 ) -> Option<()> implicits(RangeCheck, GasBuiltin) nopanic;
-extern fn get_builtin_costs() -> BuiltinCosts nopanic;
+pub extern fn get_builtin_costs() -> BuiltinCosts nopanic;

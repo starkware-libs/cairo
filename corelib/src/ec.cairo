@@ -5,7 +5,7 @@ use array::ArrayTrait;
 use zeroable::IsZeroResult;
 use traits::Into;
 
-mod StarkCurve {
+pub mod StarkCurve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
     const ALPHA: felt252 = 1;
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
@@ -18,10 +18,10 @@ mod StarkCurve {
     const GEN_Y: felt252 = 0x5668060aa49730b7be4801df46ec62de53ecd11abe43a32873000c36e8dc1f;
 }
 
-extern type EcOp;
+pub extern type EcOp;
 #[derive(Copy, Drop)]
-extern type EcPoint;
-type NonZeroEcPoint = NonZero<EcPoint>;
+pub extern type EcPoint;
+pub type NonZeroEcPoint = NonZero<EcPoint>;
 
 /// Returns the zero point of the curve ("the point at infinity").
 extern fn ec_point_zero() -> EcPoint nopanic;
@@ -72,17 +72,17 @@ fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
 
 // TODO(lior): Allow explicit clone() for EcState, since we don't allow implicit dup (Copy).
 #[derive(Drop)]
-extern type EcState;
+pub extern type EcState;
 
 /// Initializes an EC computation with the zero point.
-extern fn ec_state_init() -> EcState nopanic;
+pub extern fn ec_state_init() -> EcState nopanic;
 /// Adds a point to the computation.
-extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
+pub extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
 /// Finalizes the EC computation and returns the result (returns `None` if the result is the
 /// zero point).
-extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic;
+pub extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic;
 /// Adds the product p * m to the state.
-extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implicits(EcOp) nopanic;
+pub extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implicits(EcOp) nopanic;
 
 /// Finalizes the EC computation and returns the result.
 #[inline(always)]

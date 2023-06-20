@@ -1,4 +1,4 @@
 #[starknet::interface]
-trait IProxy<T> {
+pub trait IProxy<T> {
     fn initialize(ref self: T, world_address: starknet::ContractAddress);
 }

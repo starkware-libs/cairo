@@ -27,10 +27,7 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::{
-    semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId,
-};
+use crate::{semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId};
 
 #[cfg(test)]
 #[path = "trt_test.rs"]

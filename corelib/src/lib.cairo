@@ -1,4 +1,4 @@
-mod traits;
+pub mod traits;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
@@ -206,15 +206,15 @@ extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
 // Boxes.
-mod box;
+pub mod box;
 use box::{Box, BoxTrait};
 
 // Nullable
-mod nullable;
+pub mod nullable;
 use nullable::{Nullable, match_nullable, null, nullable_from_box};
 
 // Arrays.
-mod array;
+pub mod array;
 use array::{Array, ArrayTrait};
 type usize = u32;
 
@@ -223,31 +223,31 @@ use array::Span;
 
 
 // Dictionary.
-mod dict;
+pub mod dict;
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
 // Result.
-mod result;
+pub mod result;
 use result::Result;
 
 // Option.
-mod option;
+pub mod option;
 use option::Option;
 
 // Clone.
-mod clone;
+pub mod clone;
 use clone::Clone;
 
 // EC.
-mod ec;
+pub mod ec;
 use ec::{EcOp, EcPoint, EcState};
 
-mod ecdsa;
+pub mod ecdsa;
 
 // Integer.
-mod integer;
+pub mod integer;
 use integer::{
     i8, i8_const, I8IntoFelt252, i16, i16_const, I16IntoFelt252, i32, i32_const, I32IntoFelt252,
     i64, i64_const, I64IntoFelt252, i128, i128_const, I128IntoFelt252, NumericLiteral, u128,
@@ -259,18 +259,18 @@ use integer::{
 };
 
 // Math.
-mod math;
+pub mod math;
 
 // Cmp.
-mod cmp;
+pub mod cmp;
 
 // Gas.
-mod gas;
+pub mod gas;
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
-mod panics;
+pub mod panics;
 use panics::{panic, Panic, PanicResult};
 
 enum never {}
@@ -290,30 +290,30 @@ fn assert(cond: bool, err_code: felt252) {
 }
 
 // Serialization and Deserialization.
-mod serde;
+pub mod serde;
 
 // Hash functions.
-mod hash;
+pub mod hash;
 use hash::{pedersen, Pedersen};
 
-mod keccak;
+pub mod keccak;
 
 // Poseidon
-mod poseidon;
+pub mod poseidon;
 use poseidon::Poseidon;
 
 // Debug.
-mod debug;
+pub mod debug;
 
 // Starknet
-mod starknet;
+pub mod starknet;
 use starknet::System;
 
 // Internals.
 mod internal;
 
 // Zeroable.
-mod zeroable;
+pub mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
 #[cfg(test)]

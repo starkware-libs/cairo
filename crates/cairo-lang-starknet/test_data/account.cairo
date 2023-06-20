@@ -19,7 +19,7 @@ mod Account {
         self.public_key.write(public_key_);
     }
 
-    trait StorageTrait {
+    pub trait StorageTrait {
         fn validate_transaction(self: @ContractState) -> felt252;
     }
     impl StorageImpl of StorageTrait {

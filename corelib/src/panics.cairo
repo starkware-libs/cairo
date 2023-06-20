@@ -1,10 +1,10 @@
 use array::Array;
 
-struct Panic {}
+pub struct Panic {}
 
-enum PanicResult<T> {
+pub enum PanicResult<T> {
     Ok: T,
     Err: (Panic, Array<felt252>),
 }
 
-extern fn panic(data: Array<felt252>) -> never;
+pub extern fn panic(data: Array<felt252>) -> never;

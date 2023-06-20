@@ -1,9 +1,9 @@
 use array::ArrayTrait;
-enum Result<T, E> {
+pub enum Result<T, E> {
     Ok: T,
     Err: E,
 }
-trait ResultTrait<T, E> {
+pub trait ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect<impl EDrop: Drop<E>>(self: Result<T, E>, err: felt252) -> T;
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics.
