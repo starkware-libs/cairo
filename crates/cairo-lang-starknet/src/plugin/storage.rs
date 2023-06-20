@@ -108,7 +108,9 @@ pub fn handle_storage_struct(
 
                 $empty_event_code$
                 impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {{
-                    fn emit(ref self: ContractState, event: Event) {{
+                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, \
+             event: S) {{
+                        let event: Event = traits::Into::into(event);
                         let mut keys = Default::<array::Array>::default();
                         let mut data = Default::<array::Array>::default();
                         starknet::Event::append_keys_and_data(@event, ref keys, ref data);
