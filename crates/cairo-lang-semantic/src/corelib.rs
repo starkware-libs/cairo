@@ -8,7 +8,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::Terminal;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionFrom};
 use num_bigint::BigInt;
-use num_traits::{Num, Signed};
+use num_traits::{Num, Signed, ToPrimitive};
 use smol_str::SmolStr;
 
 use crate::db::SemanticGroup;
@@ -639,6 +639,16 @@ pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> Str
         "u64_const".into()
     } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
         "u128_const".into()
+    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
+        "i8_const".into()
+    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
+        "i16_const".into()
+    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
+        "i32_const".into()
+    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
+        "i64_const".into()
+    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
+        "i128_const".into()
     } else {
         panic!("No const libfunc for type {}.", ty.format(db))
     }
@@ -660,17 +670,27 @@ pub fn validate_literal(
                 )
                 .unwrap()
     } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
-        value.is_negative() || value.bits() > 8
+        value.to_u8().is_none()
     } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
-        value.is_negative() || value.bits() > 16
+        value.to_u16().is_none()
     } else if ty == get_core_ty_by_name(db, "u32".into(), vec![]) {
-        value.is_negative() || value.bits() > 32
+        value.to_u32().is_none()
     } else if ty == get_core_ty_by_name(db, "u64".into(), vec![]) {
-        value.is_negative() || value.bits() > 64
+        value.to_u64().is_none()
     } else if ty == get_core_ty_by_name(db, "u128".into(), vec![]) {
-        value.is_negative() || value.bits() > 128
+        value.to_u128().is_none()
     } else if ty == get_core_ty_by_name(db, "u256".into(), vec![]) {
         value.is_negative() || value.bits() > 256
+    } else if ty == get_core_ty_by_name(db, "i8".into(), vec![]) {
+        value.to_i8().is_none()
+    } else if ty == get_core_ty_by_name(db, "i16".into(), vec![]) {
+        value.to_i16().is_none()
+    } else if ty == get_core_ty_by_name(db, "i32".into(), vec![]) {
+        value.to_i32().is_none()
+    } else if ty == get_core_ty_by_name(db, "i64".into(), vec![]) {
+        value.to_i64().is_none()
+    } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
+        value.to_i128().is_none()
     } else {
         return Err(SemanticDiagnosticKind::NoLiteralFunctionFound);
     };

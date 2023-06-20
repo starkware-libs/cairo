@@ -15,6 +15,8 @@ use crate::extensions::{
 use crate::ids::GenericTypeId;
 use crate::program::GenericArg;
 
+pub mod signed;
+pub mod signed128;
 pub mod unsigned;
 pub mod unsigned128;
 pub mod unsigned256;
