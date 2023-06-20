@@ -12,3 +12,6 @@ extern fn set_transaction_hash(hash: felt252) implicits() nopanic;
 extern fn set_chain_id(chain_id: felt252) implicits() nopanic;
 extern fn set_nonce(nonce: felt252) implicits() nopanic;
 extern fn set_signature(signature: Span<felt252>) implicits() nopanic;
+extern fn pop_log(
+    address: ContractAddress
+) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
