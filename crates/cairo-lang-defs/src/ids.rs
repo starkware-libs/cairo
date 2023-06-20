@@ -275,6 +275,7 @@ pub struct FileIndex(pub usize);
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
 
 define_language_element_id_as_enum! {
+    #[toplevel]
     /// Id for direct children of a module.
     pub enum ModuleItemId {
         Constant(ConstantId),

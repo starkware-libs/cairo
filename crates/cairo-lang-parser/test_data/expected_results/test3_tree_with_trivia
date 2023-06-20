@@ -3,6 +3,7 @@
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   │   ├── token (kind: TokenFunction): 'fn'
@@ -124,6 +125,7 @@
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   ├── child #0 (kind: TokenNewline).
@@ -473,6 +475,7 @@
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
     │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── visibility (kind: VisibilityDefault) []
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia)
     │       │   │   │   └── child #0 (kind: TokenNewline).

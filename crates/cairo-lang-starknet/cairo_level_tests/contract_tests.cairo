@@ -14,7 +14,7 @@ use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
 #[starknet::interface]
-trait ITestContract {}
+pub trait ITestContract {}
 
 #[starknet::contract]
 mod TestContract {

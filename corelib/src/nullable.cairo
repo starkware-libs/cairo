@@ -2,18 +2,18 @@ use box::BoxTrait;
 use traits::Default;
 use traits::Felt252DictValue;
 
-extern type Nullable<T>;
+pub extern type Nullable<T>;
 
-enum FromNullableResult<T> {
+pub enum FromNullableResult<T> {
     Null: (),
     NotNull: Box<T>,
 }
 
-extern fn null<T>() -> Nullable<T> nopanic;
-extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
-extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
+pub extern fn null<T>() -> Nullable<T> nopanic;
+pub extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
+pub extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
 
-trait NullableTrait<T> {
+pub trait NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T;
 }
 

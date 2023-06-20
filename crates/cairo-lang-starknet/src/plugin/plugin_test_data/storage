@@ -49,23 +49,23 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 32322719094342763308093097348692218613210228506568356660875427442154507179;
+pub const TEST_CLASS_HASH: felt252 = 32322719094342763308093097348692218613210228506568356660875427442154507179;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
-        var_felt252: var_felt252::ContractState,
-        var_u8: var_u8::ContractState,
-        var_u16: var_u16::ContractState,
-        var_u32: var_u32::ContractState,
-        var_u64: var_u64::ContractState,
-        var_u128: var_u128::ContractState,
-        var_bool: var_bool::ContractState,
-        felt252_to_u128: felt252_to_u128::ContractState,
-        u128_to_bool: u128_to_bool::ContractState,
-        bool_to_felt252: bool_to_felt252::ContractState,
+    pub struct ContractState {
+        pub var_felt252: var_felt252::ContractState,
+        pub var_u8: var_u8::ContractState,
+        pub var_u16: var_u16::ContractState,
+        pub var_u32: var_u32::ContractState,
+        pub var_u64: var_u64::ContractState,
+        pub var_u128: var_u128::ContractState,
+        pub var_bool: var_bool::ContractState,
+        pub felt252_to_u128: felt252_to_u128::ContractState,
+        pub u128_to_bool: u128_to_bool::ContractState,
+        pub bool_to_felt252: bool_to_felt252::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             var_felt252: var_felt252::ContractState{},
             var_u8: var_u8::ContractState{},
@@ -81,7 +81,7 @@ use starknet::event::EventEmitter;
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -101,7 +101,7 @@ use starknet::event::EventEmitter;
     }
 
     use var_felt252::InternalContractStateTrait as var_felt252ContractStateTrait;
-    mod var_felt252 {
+    pub mod var_felt252 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -112,8 +112,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> felt252;
             fn write(ref self: ContractState, value: felt252);
@@ -143,7 +143,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_u8::InternalContractStateTrait as var_u8ContractStateTrait;
-    mod var_u8 {
+    pub mod var_u8 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -154,8 +154,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> u8;
             fn write(ref self: ContractState, value: u8);
@@ -185,7 +185,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_u16::InternalContractStateTrait as var_u16ContractStateTrait;
-    mod var_u16 {
+    pub mod var_u16 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -196,8 +196,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> u16;
             fn write(ref self: ContractState, value: u16);
@@ -227,7 +227,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_u32::InternalContractStateTrait as var_u32ContractStateTrait;
-    mod var_u32 {
+    pub mod var_u32 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -238,8 +238,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> u32;
             fn write(ref self: ContractState, value: u32);
@@ -269,7 +269,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_u64::InternalContractStateTrait as var_u64ContractStateTrait;
-    mod var_u64 {
+    pub mod var_u64 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -280,8 +280,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> u64;
             fn write(ref self: ContractState, value: u64);
@@ -311,7 +311,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_u128::InternalContractStateTrait as var_u128ContractStateTrait;
-    mod var_u128 {
+    pub mod var_u128 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -322,8 +322,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> u128;
             fn write(ref self: ContractState, value: u128);
@@ -353,7 +353,7 @@ use starknet::event::EventEmitter;
         }
     }
     use var_bool::InternalContractStateTrait as var_boolContractStateTrait;
-    mod var_bool {
+    pub mod var_bool {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -364,8 +364,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState) -> bool;
             fn write(ref self: ContractState, value: bool);
@@ -395,7 +395,7 @@ use starknet::event::EventEmitter;
         }
     }
     use felt252_to_u128::InternalContractStateTrait as felt252_to_u128ContractStateTrait;
-    mod felt252_to_u128 {
+    pub mod felt252_to_u128 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -406,8 +406,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState, key: felt252) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState, key: felt252) -> u128;
             fn write(ref self: ContractState, key: felt252, value: u128);
@@ -438,7 +438,7 @@ use starknet::event::EventEmitter;
         }
     }
     use u128_to_bool::InternalContractStateTrait as u128_to_boolContractStateTrait;
-    mod u128_to_bool {
+    pub mod u128_to_bool {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -449,8 +449,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState, key: u128) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState, key: u128) -> bool;
             fn write(ref self: ContractState, key: u128, value: bool);
@@ -481,7 +481,7 @@ use starknet::event::EventEmitter;
         }
     }
     use bool_to_felt252::InternalContractStateTrait as bool_to_felt252ContractStateTrait;
-    mod bool_to_felt252 {
+    pub mod bool_to_felt252 {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -492,8 +492,8 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
+        pub struct ContractState {}
+        pub trait InternalContractStateTrait {
             fn address(self: @ContractState, key: bool) -> starknet::StorageBaseAddress;
             fn read(self: @ContractState, key: bool) -> felt252;
             fn write(ref self: ContractState, key: bool, value: felt252);
@@ -527,12 +527,12 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -542,7 +542,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -552,7 +552,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;

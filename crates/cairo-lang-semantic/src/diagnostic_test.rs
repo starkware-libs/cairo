@@ -215,8 +215,8 @@ fn test_inline_inline_module_diagnostics() {
                 }
             }
             mod b {
-                mod c {
-                    fn bad_c() -> u128 {
+                pub mod c {
+                    pub fn bad_c() -> u128 {
                         return 2_felt252;
                     }
                 }

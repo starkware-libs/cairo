@@ -24,6 +24,7 @@ FunctionWithBody
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemTrait)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │   │   ├── name (kind: TokenIdentifier): 'Foo'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -88,6 +89,7 @@ SyntaxFile
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemTrait)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │   │   ├── name (kind: TokenIdentifier): 'Foo'
     │   │   ├── generic_params (kind: WrappedGenericParamList)
@@ -102,6 +104,7 @@ SyntaxFile
     │   │       │   └── child #0 (kind: TraitItemFunction)
     │   │       │       ├── attributes (kind: AttributeList) []
     │   │       │       ├── declaration (kind: FunctionDeclaration)
+    │   │       │       │   ├── visibility (kind: VisibilityDefault) []
     │   │       │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │       │       │   ├── name (kind: TokenIdentifier): 'foo'
     │   │       │       │   ├── generic_params (kind: WrappedGenericParamList)
@@ -194,6 +197,7 @@ ItemStruct
     ├── items (kind: ItemList)
     │   └── child #0 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── module_kw (kind: TokenModule): 'mod'
     │       ├── name (kind: TokenIdentifier): 'X'
     │       └── body (kind: ModuleBody)
@@ -201,6 +205,7 @@ ItemStruct
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: ItemTrait)
     │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── trait_kw (kind: TokenTrait): 'trait'
     │           │   │   ├── name (kind: TokenIdentifier): 'A'
     │           │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []

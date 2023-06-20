@@ -16,6 +16,7 @@ ItemConstant
 //! > expected_tree
 └── Top level kind: ItemConstant
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── const_kw (kind: TokenConst): 'const'
     ├── name (kind: TokenIdentifier): 'X'
     ├── type_clause (kind: TypeClause)
@@ -60,6 +61,7 @@ const X = 0x1234;
 //! > expected_tree
 └── Top level kind: ItemConstant
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── const_kw (kind: TokenConst): 'const'
     ├── name (kind: TokenIdentifier): 'X'
     ├── type_clause (kind: TypeClause)

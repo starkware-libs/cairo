@@ -5,7 +5,7 @@ struct Node {
 }
 
 #[starknet::interface]
-trait ITree<TContractState> {
+pub trait ITree<TContractState> {
     fn sorted_list(ref self: TContractState, root: u128);
 }
 

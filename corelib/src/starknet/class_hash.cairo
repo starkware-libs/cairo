@@ -2,13 +2,13 @@ use zeroable::Zeroable;
 use serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type ClassHash;
+pub extern type ClassHash;
 
 
-extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
-extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
+pub extern fn class_hash_const<const address: felt252>() -> ClassHash nopanic;
+pub extern fn class_hash_to_felt252(address: ClassHash) -> felt252 nopanic;
 
-extern fn class_hash_try_from_felt252(
+pub extern fn class_hash_try_from_felt252(
     address: felt252
 ) -> Option<ClassHash> implicits(RangeCheck) nopanic;
 

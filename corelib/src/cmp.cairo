@@ -1,4 +1,4 @@
-fn min<T, impl TPartialOrd: PartialOrd<T>, impl DropT: Drop<T>, impl CopyT: Copy<T>>(
+pub fn min<T, impl TPartialOrd: PartialOrd<T>, impl DropT: Drop<T>, impl CopyT: Copy<T>>(
     a: T, b: T
 ) -> T {
     if a > b {
@@ -7,7 +7,7 @@ fn min<T, impl TPartialOrd: PartialOrd<T>, impl DropT: Drop<T>, impl CopyT: Copy
     a
 }
 
-fn max<T, impl TPartialOrd: PartialOrd<T>, impl DropT: Drop<T>, impl CopyT: Copy<T>>(
+pub fn max<T, impl TPartialOrd: PartialOrd<T>, impl DropT: Drop<T>, impl CopyT: Copy<T>>(
     a: T, b: T
 ) -> T {
     if a > b {

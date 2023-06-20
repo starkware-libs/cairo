@@ -3,6 +3,7 @@
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'foo'
     │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -137,6 +138,7 @@
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #1 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── module_kw (kind: TokenModule): 'mod'
     │       ├── name (kind: TokenIdentifier): 'my_mod'
     │       └── body (kind: ModuleBody)
@@ -145,6 +147,7 @@
     │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
+    │           │   │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │           │   │   │   ├── name (kind: TokenIdentifier): 'bar'
     │           │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -229,6 +232,7 @@
     │           │   │       └── rbrace (kind: TokenRBrace): '}'
     │           │   └── child #1 (kind: ItemStruct)
     │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── visibility (kind: VisibilityDefault) []
     │           │       ├── struct_kw (kind: TokenStruct): 'struct'
     │           │       ├── name (kind: TokenIdentifier): 'A'
     │           │       ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -236,6 +240,7 @@
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
     │           │       │   │   ├── attributes (kind: AttributeList) []
+    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
     │           │       │   │   ├── name (kind: TokenIdentifier): 'x'
     │           │       │   │   └── type_clause (kind: TypeClause)
     │           │       │   │       ├── colon (kind: TokenColon): ':'
@@ -245,6 +250,7 @@
     │           │       │   ├── separator #0 (kind: TokenComma): ','
     │           │       │   └── item #1 (kind: Member)
     │           │       │       ├── attributes (kind: AttributeList) []
+    │           │       │       ├── visibility (kind: VisibilityDefault) []
     │           │       │       ├── name (kind: TokenIdentifier): 'y'
     │           │       │       └── type_clause (kind: TypeClause)
     │           │       │           ├── colon (kind: TokenColon): ':'

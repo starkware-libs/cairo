@@ -1,4 +1,4 @@
-trait ATrait {}
+pub trait ATrait {}
 
 struct B<T, G, impl GImpl: ATrait> {
     t: T,

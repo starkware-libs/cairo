@@ -2,16 +2,16 @@ use array::Span;
 use array::SpanTrait;
 use option::OptionTrait;
 
-extern type Poseidon;
+pub extern type Poseidon;
 
-extern fn hades_permutation(
+pub extern fn hades_permutation(
     s0: felt252, s1: felt252, s2: felt252
 ) -> (felt252, felt252, felt252) implicits(Poseidon) nopanic;
 
 
 // Represents a Poseidon state.
 #[derive(Copy, Drop)]
-struct PoseidonBuiltinState {
+pub struct PoseidonBuiltinState {
     s0: felt252,
     s1: felt252,
     s2: felt252,
@@ -24,7 +24,7 @@ struct PoseidonBuiltinState {
 /// To distinguish between use cases, the capacity element is initialized to 0.
 /// To distinguish between different input sizes always pads with 1, and possibly with another 0 to
 /// complete to an even-sized input.
-fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
+pub fn poseidon_hash_span(mut span: Span<felt252>) -> felt252 {
     let builtin_costs = get_builtin_costs();
     _poseidon_hash_span_inner(builtin_costs, PoseidonBuiltinState { s0: 0, s1: 0, s2: 0 }, ref span)
 }

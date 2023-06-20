@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait IAnotherContract<T> {
+pub trait IAnotherContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 

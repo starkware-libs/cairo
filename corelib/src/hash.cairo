@@ -1,11 +1,11 @@
 use traits::Into;
 use starknet::ContractAddress;
 
-extern type Pedersen;
+pub extern type Pedersen;
 
-extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
+pub extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
 
-trait LegacyHash<T> {
+pub trait LegacyHash<T> {
     fn hash(state: felt252, value: T) -> felt252;
 }
 

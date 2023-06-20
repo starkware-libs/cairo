@@ -24,7 +24,7 @@ use ec::{
 // Returns:
 //   `true` if the signature is valid and `false` otherwise.
 // TODO(lior): Make this function nopanic once possible.
-fn check_ecdsa_signature(
+pub fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
     // TODO(lior): Change to || once short circuiting is supported.
