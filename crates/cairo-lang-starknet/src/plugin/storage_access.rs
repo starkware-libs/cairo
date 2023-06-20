@@ -296,8 +296,6 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     let diagnostics = vec![];
 
-    println!("{}", sa_impl);
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
