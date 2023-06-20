@@ -7,7 +7,7 @@ use ark_ff::fields::{Fp256, MontBackend, MontConfig};
 use ark_ff::{BigInteger, Field, PrimeField};
 use ark_std::UniformRand;
 use cairo_felt::{felt_str as felt252_str, Felt252};
-use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, StarknetHint};
+use cairo_lang_casm::hints::{CoreHint, DeprecatedHint, Hint, PythonicHint, StarknetHint};
 use cairo_lang_casm::instructions::Instruction;
 use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
@@ -57,7 +57,7 @@ type Fq = Fp256<MontBackend<FqConfig, 4>>;
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
-        code: hint.to_string(),
+        code: hint.get_pythonic_hint(),
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
@@ -110,7 +110,7 @@ impl<'a> CairoHintProcessor<'a> {
             if !instruction.hints.is_empty() {
                 // Register hint with string for the hint processor.
                 for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.to_string(), hint.clone());
+                    string_to_hint.insert(hint.get_pythonic_hint(), hint.clone());
                 }
                 // Add hint, associated with the instruction offset.
                 hints_dict.insert(
