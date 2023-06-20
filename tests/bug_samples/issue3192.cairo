@@ -1,4 +1,4 @@
 #[starknet::interface]
-trait IContract<TContractState> {
+pub trait IContract<TContractState> {
     fn foo(self: @TContractState, calldata: felt252);
 }

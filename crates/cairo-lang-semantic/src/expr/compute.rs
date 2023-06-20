@@ -6,7 +6,9 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 use ast::PathSegment;
-use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
+use cairo_lang_defs::ids::{
+    FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, ModuleId, StructId, TraitId,
+};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -46,6 +48,7 @@ use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::us::SemanticUseEx;
+use crate::items::visibilities;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
@@ -1246,6 +1249,9 @@ fn struct_ctor_expr(
             ctx.diagnostics.report(&arg_identifier, UnknownMember);
             continue;
         };
+        let module_id = ctx.resolver.module_file_id.0;
+        let struct_id = concrete_struct_id.struct_id(ctx.db);
+        check_struct_member_is_visible(ctx, &arg, struct_id, arg_name.clone(), module_id)?;
 
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
@@ -1561,10 +1567,21 @@ fn member_access_expr(
                         &rhs_syntax,
                         NoSuchMember {
                             struct_id: concrete_struct_id.struct_id(ctx.db),
-                            member_name,
+                            member_name: member_name.clone(),
                         },
                     )
                 })?;
+
+                let module_id = ctx.resolver.module_file_id.0;
+                let struct_id = concrete_struct_id.struct_id(ctx.db);
+                check_struct_member_is_visible(
+                    ctx,
+                    &rhs_syntax,
+                    struct_id,
+                    member_name,
+                    module_id,
+                )?;
+
                 let member_path = if n_snapshots == 0 {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
@@ -1940,4 +1957,21 @@ pub fn compute_statement_semantic(
         ast::Statement::Missing(_) => todo!(),
     };
     Ok(ctx.statements.alloc(statement))
+}
+
+fn check_struct_member_is_visible<TNode: TypedSyntaxNode>(
+    ctx: &mut ComputationContext<'_>,
+    node: &TNode,
+    struct_id: StructId,
+    member_name: SmolStr,
+    module_id: ModuleId,
+) -> Maybe<()> {
+    let source_module_id = struct_id.parent_module(ctx.db.upcast());
+    let Some(visibility) = ctx.db.struct_member_visibility(struct_id, member_name.clone())? else {
+        return Ok(())
+    };
+    if !visibilities::peek_visible_in(ctx.db, &visibility, source_module_id, module_id) {
+        ctx.diagnostics.report(node, StructMemberNotVisible { struct_id, member_name });
+    }
+    Ok(())
 }

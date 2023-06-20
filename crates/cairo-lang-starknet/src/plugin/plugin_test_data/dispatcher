@@ -31,14 +31,14 @@ trait IContract<T> {
 
 IContractDispatcherTrait:
 
-trait IContractDispatcherTrait<T> {
+pub trait IContractDispatcherTrait<T> {
     fn get_something(self: T, arg: felt252, num: felt252) -> felt252;
     fn empty(self: T, );
 }
 
 #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
-struct IContractDispatcher {
-    contract_address: starknet::ContractAddress,
+pub struct IContractDispatcher {
+    pub contract_address: starknet::ContractAddress,
 }
 
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
@@ -77,8 +77,8 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 }
 
 #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
-struct IContractLibraryDispatcher {
-    class_hash: starknet::ClassHash,
+pub struct IContractLibraryDispatcher {
+    pub class_hash: starknet::ClassHash,
 }
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {

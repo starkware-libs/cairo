@@ -30,6 +30,7 @@ error: Unexpected token, expected ':' followed by a type.
 //! > expected_tree
 └── Top level kind: ItemEnum
     ├── attributes (kind: AttributeList) []
+    ├── visibility (kind: VisibilityDefault) []
     ├── enum_kw (kind: TokenEnum): 'enum'
     ├── name (kind: TokenIdentifier): 'MyEnum'
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
@@ -37,6 +38,7 @@ error: Unexpected token, expected ':' followed by a type.
     ├── variants (kind: MemberList)
     │   ├── item #0 (kind: Member)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
@@ -46,6 +48,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   ├── separator #0 (kind: TokenComma): ','
     │   ├── item #1 (kind: Member)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── name (kind: TokenIdentifier): 'B'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon: Missing
@@ -53,6 +56,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Member)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── name (kind: TokenIdentifier): 'C'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
@@ -62,6 +66,7 @@ error: Unexpected token, expected ':' followed by a type.
     │   ├── separator #2 (kind: TokenComma): ','
     │   └── item #3 (kind: Member)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── name (kind: TokenIdentifier): 'MissingComma'
     │       └── type_clause (kind: TypeClause)
     │           ├── colon: Missing

@@ -73,7 +73,7 @@ fn test_resolve_path_super() {
         struct OuterStruct {}
     "},
     );
-    set_file_content(db, "src/inner1.cairo", "struct InnerStruct1 {}");
+    set_file_content(db, "src/inner1.cairo", "pub struct InnerStruct1 {}");
     set_file_content(
         db,
         "src/inner2.cairo",

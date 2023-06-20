@@ -2,6 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: ItemModule)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── module_kw (kind: TerminalModule)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenModule): 'mod'
@@ -47,6 +48,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #2 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -1070,6 +1072,7 @@
     │   │           └── trailing_trivia (kind: Trivia) []
     │   ├── child #3 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -1146,6 +1149,7 @@
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #4 (kind: ItemExternType)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -1178,6 +1182,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #5 (kind: ItemExternFunction)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── extern_kw (kind: TerminalExtern)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenExtern): 'extern'
@@ -1303,6 +1308,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #6 (kind: ItemStruct)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── struct_kw (kind: TerminalStruct)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -1347,6 +1353,7 @@
     │   │   ├── members (kind: MemberList)
     │   │   │   ├── item #0 (kind: Member)
     │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   │   │   ├── name (kind: TerminalIdentifier)
     │   │   │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -1411,6 +1418,7 @@
     │   │   │       │           ├── token (kind: TokenRBrack): ']'
     │   │   │       │           └── trailing_trivia (kind: Trivia)
     │   │   │       │               └── child #0 (kind: TokenNewline).
+    │   │   │       ├── visibility (kind: VisibilityDefault) []
     │   │   │       ├── name (kind: TerminalIdentifier)
     │   │   │       │   ├── leading_trivia (kind: Trivia)
     │   │   │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -1472,6 +1480,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #7 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TerminalType)
     │   │   │   ├── leading_trivia (kind: Trivia)
     │   │   │   │   └── child #0 (kind: TokenNewline).
@@ -1520,6 +1529,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #8 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── type_kw (kind: TerminalType)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenType): 'type'

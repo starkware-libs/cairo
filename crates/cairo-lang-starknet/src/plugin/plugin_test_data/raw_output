@@ -53,19 +53,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 496467993860656971014768480101995430067197153434631914833246400084882928457;
+pub const TEST_CLASS_HASH: felt252 = 496467993860656971014768480101995430067197153434631914833246400084882928457;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -88,7 +88,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[external]
         fn test_raw_output(ref self: ContractState) -> Span::<felt252>;
         #[external]
@@ -97,7 +97,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -106,7 +106,7 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -123,7 +123,7 @@ mod __external {
             super::test_raw_output(ref storage, )
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -142,7 +142,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -153,7 +153,7 @@ mod __l1_handler {
     
 }
 
-mod __constructor {
+pub mod __constructor {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;

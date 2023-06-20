@@ -44,7 +44,7 @@ trait MyTrait {
     fn foo() -> usize;
 }
 mod other_mod {
-    mod other_other_mod {
+    pub mod other_other_mod {
         impl MyImpl of super::super::MyTrait {
             fn foo() -> usize {
                 0
@@ -76,7 +76,7 @@ trait MyTrait<T> {
     fn foo(x: T) -> usize;
 }
 mod other_mod {
-    mod other_other_mod {
+    pub mod other_other_mod {
         impl MyImpl<T> of super::super::MyTrait<Option<T>> {
             fn foo(x: Option<T>) -> usize {
                 0_usize
@@ -108,7 +108,7 @@ trait MyTrait<T> {
     fn foo(x: T) -> usize;
 }
 mod other_mod {
-    mod other_other_mod {
+    pub mod other_other_mod {
         impl MyImpl<T> of super::super::MyTrait<Option<T>> {
             fn foo(x: Option<T>) -> usize {
                 0_usize

@@ -2,7 +2,7 @@ use std::iter::Peekable;
 use std::ops::{Deref, DerefMut, Neg};
 
 use cairo_lang_defs::ids::{
-    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
+    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -32,6 +32,7 @@ use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
 use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, ConcreteTraitLongId};
 use crate::literals::LiteralLongId;
+use crate::lookup_item::ItemEx;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
 use crate::{
@@ -410,6 +411,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                self.check_module_item_is_visible(diagnostics, identifier, module_item)?;
                 let generic_item = ResolvedGenericItem::from_module_item(self.db, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
@@ -423,6 +425,11 @@ impl<'db> Resolver<'db> {
                     self.db.lookup_intern_type(*ty)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
+                    self.check_module_item_is_visible(
+                        diagnostics,
+                        identifier,
+                        ModuleItemId::Enum(enum_id),
+                    )?;
                     let variants = self
                         .db
                         .enum_variants(enum_id)
@@ -443,6 +450,11 @@ impl<'db> Resolver<'db> {
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
+                self.check_module_item_is_visible(
+                    diagnostics,
+                    identifier,
+                    ModuleItemId::Trait(trait_id),
+                )?;
                 let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
@@ -602,9 +614,15 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                self.check_module_item_is_visible(diagnostics, identifier, module_item)?;
                 ResolvedGenericItem::from_module_item(self.db, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
+                self.check_module_item_is_visible(
+                    diagnostics,
+                    identifier,
+                    ModuleItemId::Enum(*enum_id),
+                )?;
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
@@ -884,5 +902,17 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Impl(resolved_impl)
             }
         })
+    }
+
+    fn check_module_item_is_visible(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        identifier: &ast::TerminalIdentifier,
+        module_item_id: ModuleItemId,
+    ) -> Maybe<()> {
+        if !module_item_id.peek_visible_in(self.db, self.module_file_id.0)? {
+            diagnostics.report(identifier, ModuleItemNotVisible { module_item_id });
+        }
+        Ok(())
     }
 }

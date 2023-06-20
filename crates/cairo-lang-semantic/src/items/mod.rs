@@ -14,6 +14,7 @@ pub mod structure;
 pub mod trt;
 pub mod type_alias;
 pub mod us;
+pub mod visibilities;
 
 #[cfg(test)]
 mod test;

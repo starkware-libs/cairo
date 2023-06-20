@@ -26,7 +26,7 @@ fn print_felt252(message: felt252) {
     print(arr);
 }
 
-trait PrintTrait<T> {
+pub trait PrintTrait<T> {
     fn print(self: T);
 }
 

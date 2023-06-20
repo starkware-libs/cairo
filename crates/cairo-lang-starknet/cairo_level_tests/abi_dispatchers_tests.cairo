@@ -7,7 +7,7 @@ use super::utils::serialized_element;
 use super::utils::single_deserialize;
 
 #[starknet::interface]
-trait IAnotherContract<T> {}
+pub trait IAnotherContract<T> {}
 
 #[starknet::contract]
 mod TestContract {

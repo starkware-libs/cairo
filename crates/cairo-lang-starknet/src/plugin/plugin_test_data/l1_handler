@@ -55,19 +55,19 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 163010207270130705852809562941790435675492496513793075754021342799706585500;
+pub const TEST_CLASS_HASH: felt252 = 163010207270130705852809562941790435675492496513793075754021342799706585500;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct ContractState {
+    pub struct ContractState {
     }
     #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
+    pub fn unsafe_new_contract_state() -> ContractState {
         ContractState {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
+    pub fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
 
@@ -90,7 +90,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
+pub trait __abi<ContractState> {
     #[l1_handler]
         fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252);
         #[l1_handler]
@@ -105,7 +105,7 @@ trait __abi<ContractState> {
     
 }
 
-mod __external {
+pub mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -115,7 +115,7 @@ mod __external {
     
 }
 
-mod __l1_handler {
+pub mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -123,7 +123,7 @@ mod __l1_handler {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -149,7 +149,7 @@ mod __l1_handler {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -175,7 +175,7 @@ mod __l1_handler {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -196,7 +196,7 @@ mod __l1_handler {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -219,7 +219,7 @@ mod __l1_handler {
             array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -244,7 +244,7 @@ mod __l1_handler {
         
 }
 
-mod __constructor {
+pub mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
