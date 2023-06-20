@@ -5,9 +5,11 @@ use cairo_lang_semantic::plugin::TrivialPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
+
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+
 use indoc::formatdoc;
 
 /// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
@@ -153,6 +155,162 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     );
 
     let diagnostics = vec![];
+
+    PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "storage_access_impl".into(),
+            content: sa_impl,
+            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+        }),
+        diagnostics,
+        remove_original_item: false,
+    }
+}
+
+
+/// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
+pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
+    let enum_name = enum_ast.name(db).as_syntax_node().get_text_without_trivia(db);
+    let mut match_idx = Vec::new();
+    let mut match_idx_at_offset = Vec::new();
+
+    let mut match_value = Vec::new();
+    let mut match_value_at_offset = Vec::new();
+
+    let mut match_size = Vec::new();
+
+    for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
+        let variant_name = variant.name(db).text(db);
+        let variant_type = variant.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
+
+        if variant_type == "()" {
+            match_idx.push(format!(
+                "if idx == {i} {{ \
+                    starknet::SyscallResult::Ok(\
+                        {enum_name}::{variant_name}(())\
+                    ) \
+                }}",
+            ));
+            match_idx_at_offset.push(format!(
+                "if idx == {i} {{ \
+                    starknet::SyscallResult::Ok(\
+                        {enum_name}::{variant_name}(())\
+                    ) \
+                }}",
+            ));
+            match_value.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    starknet::StorageAccess::write(address_domain, base, {i})?; \
+                }}"
+            ));
+            match_value_at_offset.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, {i})?; \
+                }}"
+            ));
+            match_size.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    1_u8 \
+                }}"
+            ));
+        } else {
+            match_idx.push(format!(
+                "if idx == {i} {{ \
+                    starknet::SyscallResult::Ok(\
+                        {enum_name}::{variant_name}(\
+                            starknet::StorageAccess::read_at_offset_internal(address_domain, base, 1_u8)?\
+                        )\
+                    ) \
+                }}",
+            ));
+            match_idx_at_offset.push(format!(
+                "if idx == {i} {{ \
+                    starknet::SyscallResult::Ok(\
+                        {enum_name}::{variant_name}(\
+                            starknet::StorageAccess::read_at_offset_internal(address_domain, base, offset + 1_u8)?\
+                        )\
+                    ) \
+                }}",
+            ));
+            match_value.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    starknet::StorageAccess::write(address_domain, base, {i})?; \
+                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, 1_u8, x)?; \
+                }}"
+            ));
+            match_value_at_offset.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, {i})?; \
+                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset + 1_u8, x)?; \
+                }}"
+            ));
+
+            match_size.push(format!(
+                "{enum_name}::{variant_name}(x) => {{ \
+                    1_u8 + starknet::StorageAccess::size_internal(x) \
+                }}"
+            ));
+        }
+    }
+
+    let sa_impl = formatdoc!(
+        "
+        impl StorageAccess{enum_name} of starknet::StorageAccess::<{enum_name}> {{
+            fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
+         starknet::SyscallResult<{enum_name}> {{
+                let idx = starknet::StorageAccess::<felt252>::read(address_domain, base)?;
+                {match_idx}
+                else {{
+                    let mut message = Default::default();
+                    message.append('Incorrect index:');
+                    message.append(idx);
+                    starknet::SyscallResult::Err(message)
+                }}
+            }}
+            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
+         {enum_name}) -> starknet::SyscallResult<()> {{
+                match value {{
+                    {match_value}
+                }};
+                starknet::SyscallResult::Ok(())
+            }}
+            fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, \
+         offset: u8) -> starknet::SyscallResult<{enum_name}> {{
+                let idx = starknet::StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)?;
+                {match_idx_at_offset}
+                else {{
+                    let mut message = Default::default();
+                    message.append('Incorrect index:');
+                    message.append(idx);
+                    starknet::SyscallResult::Err(message)
+                }}
+            }}
+            #[inline(always)]
+            fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, \
+         offset: u8, value: {enum_name}) -> starknet::SyscallResult<()> {{
+                match value {{
+                    {match_value_at_offset}
+                }};
+                starknet::SyscallResult::Ok(())
+            }}
+            #[inline(always)]
+            fn size_internal(value: {enum_name}) -> u8 {{
+                match value {{
+                    {match_size}
+                }}
+            }}
+        }}",
+        enum_name = enum_name,
+        match_idx = match_idx.join("\n        else "),
+        match_idx_at_offset = match_idx_at_offset.join("\n        else "),
+        match_value = match_value.join(",\n            "),
+        match_value_at_offset = match_value_at_offset.join(",\n            "),
+        match_size = match_size.join(",\n            ")
+    );
+
+    let diagnostics = vec![];
+
+    println!("{}", sa_impl);
 
     PluginResult {
         code: Some(PluginGeneratedFile {

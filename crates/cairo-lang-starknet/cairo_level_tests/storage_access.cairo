@@ -27,6 +27,13 @@ struct Abc {
 }
 
 #[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+enum Efg {
+    E: (),
+    F: (),
+    G: u256
+}
+
+#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
 struct AbcEtc {
     a: u8,
     b: u16,
@@ -40,6 +47,8 @@ struct AbcEtc {
     j: bool,
     k: EthAddress,
     abc: Abc,
+    efg1: Efg,
+    efg2: Efg,
 }
 
 
@@ -49,7 +58,7 @@ mod TestContract {
 
     #[storage]
     struct Storage {
-        data: AbcEtc, 
+        data: AbcEtc,
     }
 
     #[external(v0)]
@@ -64,7 +73,7 @@ mod TestContract {
 }
 
 #[test]
-#[available_gas(900000)]
+#[available_gas(10000000)]
 fn write_read_struct() {
     let x = AbcEtc {
         a: 1_u8,
@@ -79,8 +88,10 @@ fn write_read_struct() {
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc {
-            a: 1_u8, b: 2_u16, c: 3_u32, 
-        }
+            a: 1_u8, b: 2_u16, c: 3_u32,
+        },
+        efg1: Efg::E(()),
+        efg2: Efg::G(123_u256)
     };
 
     assert(TestContract::__external::set_data(serialized_element(*@x)).is_empty(), 'Not empty');
