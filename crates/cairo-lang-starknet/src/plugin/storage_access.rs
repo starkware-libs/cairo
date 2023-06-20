@@ -5,11 +5,9 @@ use cairo_lang_semantic::plugin::TrivialPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-
 use indoc::formatdoc;
 
 /// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
@@ -167,7 +165,6 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-
 /// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
     let enum_name = enum_ast.name(db).as_syntax_node().get_text_without_trivia(db);
@@ -181,38 +178,26 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
         let variant_name = variant.name(db).text(db);
-        let variant_type = variant.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
+        let variant_type =
+            variant.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
 
         if variant_type == "()" {
             match_idx.push(format!(
-                "if idx == {i} {{ \
-                    starknet::SyscallResult::Ok(\
-                        {enum_name}::{variant_name}(())\
-                    ) \
-                }}",
+                "if idx == {i} {{ starknet::SyscallResult::Ok({enum_name}::{variant_name}(())) }}",
             ));
             match_idx_at_offset.push(format!(
-                "if idx == {i} {{ \
-                    starknet::SyscallResult::Ok(\
-                        {enum_name}::{variant_name}(())\
-                    ) \
-                }}",
+                "if idx == {i} {{ starknet::SyscallResult::Ok({enum_name}::{variant_name}(())) }}",
             ));
             match_value.push(format!(
                 "{enum_name}::{variant_name}(x) => {{ \
-                    starknet::StorageAccess::write(address_domain, base, {i})?; \
-                }}"
+                 starknet::StorageAccess::write(address_domain, base, {i})?; }}"
             ));
             match_value_at_offset.push(format!(
                 "{enum_name}::{variant_name}(x) => {{ \
-                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, {i})?; \
-                }}"
+                 starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, \
+                 {i})?; }}"
             ));
-            match_size.push(format!(
-                "{enum_name}::{variant_name}(x) => {{ \
-                    1_u8 \
-                }}"
-            ));
+            match_size.push(format!("{enum_name}::{variant_name}(x) => {{ 1_u8 }}"));
         } else {
             match_idx.push(format!(
                 "if idx == {i} {{ \
@@ -234,21 +219,20 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             ));
             match_value.push(format!(
                 "{enum_name}::{variant_name}(x) => {{ \
-                    starknet::StorageAccess::write(address_domain, base, {i})?; \
-                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, 1_u8, x)?; \
-                }}"
+                 starknet::StorageAccess::write(address_domain, base, {i})?; \
+                 starknet::StorageAccess::write_at_offset_internal(address_domain, base, 1_u8, \
+                 x)?; }}"
             ));
             match_value_at_offset.push(format!(
                 "{enum_name}::{variant_name}(x) => {{ \
-                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, {i})?; \
-                    starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset + 1_u8, x)?; \
-                }}"
+                 starknet::StorageAccess::write_at_offset_internal(address_domain, base, offset, \
+                 {i})?; starknet::StorageAccess::write_at_offset_internal(address_domain, base, \
+                 offset + 1_u8, x)?; }}"
             ));
 
             match_size.push(format!(
-                "{enum_name}::{variant_name}(x) => {{ \
-                    1_u8 + starknet::StorageAccess::size_internal(x) \
-                }}"
+                "{enum_name}::{variant_name}(x) => {{ 1_u8 + \
+                 starknet::StorageAccess::size_internal(x) }}"
             ));
         }
     }
@@ -267,8 +251,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                     starknet::SyscallResult::Err(message)
                 }}
             }}
-            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
-         {enum_name}) -> starknet::SyscallResult<()> {{
+            fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {enum_name}) \
+         -> starknet::SyscallResult<()> {{
                 match value {{
                     {match_value}
                 }};
@@ -276,7 +260,9 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }}
             fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, \
          offset: u8) -> starknet::SyscallResult<{enum_name}> {{
-                let idx = starknet::StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, offset)?;
+                let idx = \
+         starknet::StorageAccess::<felt252>::read_at_offset_internal(address_domain, base, \
+         offset)?;
                 {match_idx_at_offset}
                 else {{
                     let mut message = Default::default();
