@@ -79,7 +79,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -234,7 +235,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -395,7 +397,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -560,7 +563,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -676,7 +680,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
                                        ^
 
 error: Type not found.
- --> contract:60:32
+ --> contract:61:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -740,7 +744,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -920,7 +925,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1196,7 +1202,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1385,7 +1392,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1645,7 +1653,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1863,7 +1872,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2099,7 +2109,8 @@ use starknet::event::EventEmitter;
 
     
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2177,6 +2188,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 
+
 impls:
 
 impl ContractStateDrop<> of Drop::<ContractState<>>;
@@ -2248,7 +2260,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2324,6 +2337,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
         Option::None(())
     }
 }
+
 
 
 impls:

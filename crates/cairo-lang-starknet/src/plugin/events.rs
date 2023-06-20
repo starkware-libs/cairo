@@ -177,7 +177,9 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     let mut append_variants = vec![];
     let mut deserialize_variants = vec![];
     let mut variants = vec![];
+    let mut event_into_impls = vec![];
     for variant in enum_ast.variants(db).elements(db) {
+        let ty = RewriteNode::new_trimmed(variant.type_clause(db).ty(db).as_syntax_node());
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
@@ -205,7 +207,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }",
             [
                 (String::from("enum_name"), enum_name.clone()),
-                (String::from("variant_name"), variant_name),
+                (String::from("variant_name"), variant_name.clone()),
                 (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
                 (String::from("deserialize_member"), deserialize_member),
             ]
@@ -213,6 +215,22 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         );
         append_variants.push(append_variant);
         deserialize_variants.push(deserialize_variant);
+        let into_impl = RewriteNode::interpolate_patched(
+            indoc! {"
+                impl $enum_name$$variant_name$IntoEvent of Into<$ty$, $enum_name$> {
+                    fn into(self: $ty$) -> $enum_name$ {
+                        $enum_name$::$variant_name$(self)
+                    }
+                }
+                "},
+            [
+                (String::from("enum_name"), enum_name.clone()),
+                (String::from("variant_name"), variant_name),
+                (String::from("ty"), ty),
+            ]
+            .into(),
+        );
+        event_into_impls.push(into_impl);
     }
     let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
@@ -237,11 +255,16 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                     Option::None(())
                 }
             }
+            $event_into_impls$
         "},
         [
             (String::from("enum_name"), enum_name),
             (String::from("append_variants"), append_variants),
             (String::from("deserialize_variants"), deserialize_variants),
+            (
+                String::from("event_into_impls"),
+                RewriteNode::Modified(ModifiedNode { children: Some(event_into_impls) }),
+            ),
         ]
         .into(),
     );
