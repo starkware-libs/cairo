@@ -111,6 +111,8 @@ pub enum SyntaxKind {
     GenericParamType,
     GenericParamConst,
     GenericParamImpl,
+    Visibility,
+    OptionVisibilityEmpty,
     TokenIdentifier,
     TerminalIdentifier,
     TokenLiteralNumber,
@@ -169,6 +171,8 @@ pub enum SyntaxKind {
     TerminalType,
     TokenUse,
     TerminalUse,
+    TokenPub,
+    TerminalPub,
     TokenAnd,
     TerminalAnd,
     TokenAndAnd,
@@ -297,6 +301,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenTrue
                 | SyntaxKind::TokenType
                 | SyntaxKind::TokenUse
+                | SyntaxKind::TokenPub
                 | SyntaxKind::TokenAnd
                 | SyntaxKind::TokenAndAnd
                 | SyntaxKind::TokenArrow
@@ -380,6 +385,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalTrue
                 | SyntaxKind::TerminalType
                 | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalPub
                 | SyntaxKind::TerminalAnd
                 | SyntaxKind::TerminalAndAnd
                 | SyntaxKind::TerminalArrow
@@ -455,6 +461,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenTrue
                 | SyntaxKind::TokenType
                 | SyntaxKind::TokenUse
+                | SyntaxKind::TokenPub
         )
     }
     pub fn is_keyword_terminal(&self) -> bool {
@@ -486,6 +493,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalTrue
                 | SyntaxKind::TerminalType
                 | SyntaxKind::TerminalUse
+                | SyntaxKind::TerminalPub
         )
     }
 }

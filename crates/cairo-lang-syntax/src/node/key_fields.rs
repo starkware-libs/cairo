@@ -184,7 +184,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![]
         }
         SyntaxKind::Member => {
-            vec![/* name */ children[1]]
+            vec![/* name */ children[2]]
         }
         SyntaxKind::MemberList => vec![],
         SyntaxKind::ItemList => vec![],
@@ -292,6 +292,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::GenericParamImpl => {
             vec![/* name */ children[1]]
+        }
+        SyntaxKind::Visibility => {
+            vec![]
+        }
+        SyntaxKind::OptionVisibilityEmpty => {
+            vec![]
         }
         SyntaxKind::TokenIdentifier => vec![],
         SyntaxKind::TerminalIdentifier => {
@@ -407,6 +413,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::TokenUse => vec![],
         SyntaxKind::TerminalUse => {
+            vec![]
+        }
+        SyntaxKind::TokenPub => vec![],
+        SyntaxKind::TerminalPub => {
             vec![]
         }
         SyntaxKind::TokenAnd => vec![],

@@ -462,6 +462,16 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Returns a optional GreenId of node with pub kind
+    fn parse_option_visibility(&mut self) -> OptionVisibilityGreen {
+        if self.peek().kind != SyntaxKind::TerminalPub {
+            OptionVisibilityEmpty::new_green(self.db).into()
+        } else {
+            let item = self.take::<TerminalPub>().into();
+            Visibility::new_green(self.db, item).into()
+        }
+    }
+
     /// Returns a GreenId of a node with an attribute list kind or None if an attribute list can't
     /// be parsed.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
@@ -1521,6 +1531,7 @@ impl<'a> Parser<'a> {
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let attributes =
             self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+        let visibility = self.parse_option_visibility();
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {
@@ -1531,7 +1542,7 @@ impl<'a> Parser<'a> {
         let type_clause = self.parse_type_clause(ErrorRecovery {
             should_stop: is_of_kind!(comma, rbrace, top_level),
         });
-        Some(Member::new_green(self.db, attributes, name, type_clause))
+        Some(Member::new_green(self.db, attributes, visibility, name, type_clause))
     }
 
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
