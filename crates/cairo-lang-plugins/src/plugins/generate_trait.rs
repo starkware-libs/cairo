@@ -162,7 +162,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
             content: formatdoc! {"
-            {trait_attrs}trait {trait_identifier}{impl_generic_params} {{
+            {trait_attrs}pub trait {trait_identifier}{impl_generic_params} {{
             {signatures}}}
         "},
             aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),

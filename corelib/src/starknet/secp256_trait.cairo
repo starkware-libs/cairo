@@ -6,7 +6,7 @@ use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, Sysca
 use traits::{Into, TryInto};
 use integer::U256TryIntoNonZero;
 
-trait Secp256Trait<Secp256Point> {
+pub trait Secp256Trait<Secp256Point> {
     fn get_curve_size() -> u256;
     fn get_generator_point() -> Secp256Point;
 
@@ -16,7 +16,7 @@ trait Secp256Trait<Secp256Point> {
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
-trait Secp256PointTrait<Secp256Point> {
+pub trait Secp256PointTrait<Secp256Point> {
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;

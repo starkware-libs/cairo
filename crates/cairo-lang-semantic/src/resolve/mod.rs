@@ -1,9 +1,7 @@
 use std::iter::Peekable;
 use std::ops::{Deref, DerefMut, Neg};
 
-use cairo_lang_defs::ids::{
-    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
-};
+use cairo_lang_defs::ids::{ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitId, TypeAliasId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -34,16 +32,31 @@ use crate::items::trt::{ConcreteTraitGenericFunctionLongId, ConcreteTraitId, Con
 use crate::literals::LiteralLongId;
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
-use crate::{
-    ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam,
-    TypeId, TypeLongId,
-};
+use crate::{ConcreteFunction, ConcreteTypeId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, TypeId, TypeLongId};
+use crate::lookup_item::HasResolverData;
 
 #[cfg(test)]
 mod test;
 
 mod item;
 pub mod scope;
+
+macro_rules! define_check_is_visible {
+    ($name:ident, $item_id:ident, $item_ty:ty, $kind:ident) => {
+        fn $name(
+            &mut self,
+            diagnostics: &mut SemanticDiagnostics,
+            identifier: &ast::TerminalIdentifier,
+            $item_id: $item_ty,
+        ) -> Maybe<()> {
+            if !$item_id.visible_in(self.db, self.module_file_id.0)? {
+                return Err(diagnostics.report(identifier, $kind { $item_id: $item_id.clone() }));
+            } else {
+                Ok(())
+            }
+        }
+    };
+}
 
 /// Lookback maps for item resolving. Can be used to quickly check what is the semantic resolution
 /// of any path segment.
@@ -410,6 +423,7 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                self.check_module_item_is_visible(diagnostics, &identifier, &module_item)?;
                 let generic_item = ResolvedGenericItem::from_module_item(self.db, module_item)?;
                 Ok(self.specialize_generic_module_item(
                     diagnostics,
@@ -423,6 +437,7 @@ impl<'db> Resolver<'db> {
                     self.db.lookup_intern_type(*ty)
                 {
                     let enum_id = concrete_enum_id.enum_id(self.db);
+                    self.check_enum_is_visible(diagnostics, &identifier, &enum_id)?;
                     let variants = self
                         .db
                         .enum_variants(enum_id)
@@ -443,6 +458,7 @@ impl<'db> Resolver<'db> {
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
+                self.check_trait_is_visible(diagnostics, &identifier, &trait_id)?;
                 let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)? else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
@@ -602,9 +618,11 @@ impl<'db> Resolver<'db> {
                     .db
                     .module_item_by_name(*module_id, ident)?
                     .ok_or_else(|| diagnostics.report(identifier, PathNotFound(item_type)))?;
+                self.check_module_item_is_visible(diagnostics, &identifier, &module_item)?;
                 ResolvedGenericItem::from_module_item(self.db, module_item)
             }
             ResolvedGenericItem::GenericType(GenericTypeId::Enum(enum_id)) => {
+                self.check_enum_is_visible(diagnostics, identifier, enum_id)?;
                 let variants = self.db.enum_variants(*enum_id)?;
                 let variant_id = variants.get(&ident).ok_or_else(|| {
                     diagnostics.report(
@@ -884,5 +902,62 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Impl(resolved_impl)
             }
         })
+    }
+
+    define_check_is_visible!(check_constant_is_visible, constant_id, &ConstantId, ConstantNotVisible);
+
+    define_check_is_visible!(check_submodule_is_visible, submodule_id, &SubmoduleId, SubmoduleNotVisible);
+
+    define_check_is_visible!(check_free_function_is_visible, free_function_id, &FreeFunctionId, FreeFunctionNotVisible);
+
+    define_check_is_visible!(check_extern_function_is_visible, extern_function_id, &ExternFunctionId, ExternFunctionNotVisible);
+
+    define_check_is_visible!(check_enum_is_visible, enum_id, &EnumId, EnumNotVisible);
+
+    define_check_is_visible!(check_struct_is_visible, struct_id, &StructId, StructNotVisible);
+
+    define_check_is_visible!(check_extern_type_is_visible, extern_type_id, &ExternTypeId, ExternTypeNotVisible);
+
+    define_check_is_visible!(check_type_alias_is_visible, type_alias_id, &TypeAliasId, TypeAliasNotVisible);
+
+    define_check_is_visible!(check_trait_is_visible, trait_id, &TraitId, TraitNotVisible);
+
+    fn check_module_item_is_visible(
+        &mut self,
+        diagnostics: &mut SemanticDiagnostics,
+        identifier: &ast::TerminalIdentifier,
+        module_item_id: &ModuleItemId,
+    ) -> Maybe<()> {
+        match module_item_id {
+            ModuleItemId::Constant(constant_id) => {
+                self.check_constant_is_visible(diagnostics, identifier, constant_id)
+            }
+            ModuleItemId::Submodule(submodule_id) => {
+                self.check_submodule_is_visible(diagnostics, identifier, submodule_id)
+            }
+            ModuleItemId::ExternFunction(extern_function_id) => {
+                self.check_extern_function_is_visible(diagnostics, identifier, extern_function_id)
+            }
+            ModuleItemId::FreeFunction(free_function_id) => {
+                self.check_free_function_is_visible(diagnostics, identifier, free_function_id)
+            }
+            ModuleItemId::Enum(enum_id) => {
+                self.check_enum_is_visible(diagnostics, identifier, enum_id)
+            }
+            ModuleItemId::Struct(struct_id) => {
+                self.check_struct_is_visible(diagnostics, identifier, struct_id)
+            }
+            ModuleItemId::ExternType(extern_type_id) => {
+                self.check_extern_type_is_visible(diagnostics, identifier, extern_type_id)
+            }
+            ModuleItemId::TypeAlias(type_alias_id) => {
+                self.check_type_alias_is_visible(diagnostics, identifier, type_alias_id)
+            }
+            ModuleItemId::Trait(trait_id) => {
+                self.check_trait_is_visible(diagnostics, identifier, trait_id)
+            }
+            // Use need some reexport logic, Impl and ImplAlias are more complex
+            ModuleItemId::Use(_) | ModuleItemId::Impl(_) | ModuleItemId::ImplAlias(_) => Ok(())
+        }
     }
 }

@@ -1,4 +1,4 @@
-extern type Box<T>;
+pub extern type Box<T>;
 impl BoxTCopy<T, impl TCopy: Copy<T>> of Copy<Box<T>>;
 impl BoxTDrop<T, impl TDrop: Drop<T>> of Drop<Box<T>>;
 

@@ -87,7 +87,7 @@ fn u256_div_mod_n(a: u256, b: NonZero<u256>, n: NonZero<u256>) -> Option<u256> {
 
 // === Oneable ===
 
-trait Oneable<T> {
+pub trait Oneable<T> {
     /// Returns the multiplicative identity element of Self, 1.
     fn one() -> T;
     /// Returns whether self is equal to 1, the multiplicative identity element.

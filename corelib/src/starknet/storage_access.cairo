@@ -52,7 +52,7 @@ impl StorageAddressSerde of serde::Serde<StorageAddress> {
     }
 }
 
-trait StorageAccess<T> {
+pub trait StorageAccess<T> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
     fn read_at_offset_internal(

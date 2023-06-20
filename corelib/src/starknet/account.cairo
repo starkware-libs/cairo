@@ -7,7 +7,7 @@ struct Call {
     calldata: Array<felt252>
 }
 
-trait AccountContract<TContractState> {
+pub trait AccountContract<TContractState> {
     fn __validate_declare__(self: @TContractState, class_hash: felt252) -> felt252;
     fn __validate__(
         ref self: TContractState,

@@ -1,4 +1,4 @@
-mod traits;
+pub mod traits;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
@@ -10,7 +10,7 @@ use serde::Serde;
 use array::SpanTrait;
 
 #[derive(Copy, Drop)]
-enum bool {
+pub enum bool {
     False: (),
     True: (),
 }
@@ -65,7 +65,7 @@ impl BoolBitXor of BitXor<bool> {
     }
 }
 
-extern fn bool_eq(lhs: bool, rhs: bool) -> bool implicits() nopanic;
+pub extern fn bool_eq(lhs: bool, rhs: bool) -> bool implicits() nopanic;
 impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(lhs: @bool, rhs: @bool) -> bool {
@@ -88,13 +88,13 @@ impl BoolFelt252DictValue of Felt252DictValue<bool> {
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
 
 // General purpose implicits.
-extern type RangeCheck;
-extern type SegmentArena;
+pub extern type RangeCheck;
+pub extern type SegmentArena;
 
 // felt252.
 #[derive(Copy, Drop)]
-extern type felt252;
-extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
+pub extern type felt252;
+pub extern fn felt252_const<const value: felt252>() -> felt252 nopanic;
 
 impl Felt252Serde of Serde<felt252> {
     fn serialize(self: @felt252, ref output: Array<felt252>) {
@@ -171,7 +171,7 @@ impl Felt252PartialEq of PartialEq<felt252> {
     }
 }
 
-extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
+pub extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopanic;
 
 impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     fn try_into(self: felt252) -> Option<NonZero<felt252>> {
@@ -201,48 +201,48 @@ extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
 // Boxes.
-mod box;
+pub mod box;
 use box::{Box, BoxTrait};
 
 // Nullable
-mod nullable;
+pub mod nullable;
 use nullable::{Nullable, match_nullable, null, nullable_from_box};
 
 // Arrays.
-mod array;
+pub mod array;
 use array::{Array, ArrayTrait};
-type usize = u32;
+pub type usize = u32;
 
 // Span.
 use array::Span;
 
 
 // Dictionary.
-mod dict;
+pub mod dict;
 use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
 // Result.
-mod result;
+pub mod result;
 use result::Result;
 
 // Option.
-mod option;
+pub mod option;
 use option::Option;
 
 // Clone.
-mod clone;
+pub mod clone;
 use clone::Clone;
 
 // EC.
-mod ec;
+pub mod ec;
 use ec::{EcOp, EcPoint, EcState};
 
-mod ecdsa;
+pub mod ecdsa;
 
 // Integer.
-mod integer;
+pub mod integer;
 use integer::{
     NumericLiteral, u128, u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32,
     u32_const, u64, u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16,
@@ -252,24 +252,24 @@ use integer::{
 };
 
 // Math.
-mod math;
+pub mod math;
 
 // Cmp.
-mod cmp;
+pub mod cmp;
 
 // Gas.
-mod gas;
+pub mod gas;
 use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
-struct Panic {}
-enum PanicResult<T> {
+pub struct Panic {}
+pub enum PanicResult<T> {
     Ok: T,
     Err: (Panic, Array<felt252>),
 }
-enum never {}
-extern fn panic(data: Array<felt252>) -> never;
+pub enum never {}
+pub extern fn panic(data: Array<felt252>) -> never;
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
@@ -286,30 +286,30 @@ fn assert(cond: bool, err_code: felt252) {
 }
 
 // Serialization and Deserialization.
-mod serde;
+pub mod serde;
 
 // Hash functions.
-mod hash;
+pub mod hash;
 use hash::{pedersen, Pedersen};
 
-mod keccak;
+pub mod keccak;
 
 // Poseidon
-mod poseidon;
+pub mod poseidon;
 use poseidon::Poseidon;
 
 // Debug.
-mod debug;
+pub mod debug;
 
 // Starknet
-mod starknet;
+pub mod starknet;
 use starknet::System;
 
 // Internals.
 mod internal;
 
 // Zeroable.
-mod zeroable;
+pub mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
 #[cfg(test)]
