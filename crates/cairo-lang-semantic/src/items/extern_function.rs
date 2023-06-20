@@ -19,7 +19,8 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
+use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId, Visibility};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "extern_function_test.rs"]
@@ -43,6 +44,13 @@ pub fn extern_function_declaration_diagnostics(
     db.priv_extern_function_declaration_data(extern_function_id)
         .map(|data| data.diagnostics)
         .unwrap_or_default()
+}
+/// Query implementation of [crate::db::SemanticGroup::extern_function_visibility].
+pub fn extern_function_visibility(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Maybe<Visibility> {
+    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.visibility)
 }
 /// Query implementation of [crate::db::SemanticGroup::extern_function_signature].
 pub fn extern_function_signature(
@@ -102,6 +110,8 @@ pub fn priv_extern_function_declaration_data(
     let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
     let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
     let declaration = function_syntax.declaration(syntax_db);
+
+    let visibility = semantic_visibility(&declaration.visibility(syntax_db));
 
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
@@ -173,6 +183,7 @@ pub fn priv_extern_function_declaration_data(
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
+        visibility,
         signature,
         environment,
         generic_params,

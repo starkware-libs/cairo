@@ -27,10 +27,8 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::{
-    semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability,
-    SemanticDiagnostic, TypeId,
-};
+use crate::{semantic, semantic_object_for_id, FunctionBody, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, Visibility};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "trt_test.rs"]
@@ -158,6 +156,7 @@ pub struct TraitDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParam>,
     attributes: Vec<Attribute>,
+    visibility: Visibility,
     resolver_data: Arc<ResolverData>,
 }
 
@@ -189,6 +188,11 @@ pub fn trait_attributes(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Vec<
     Ok(db.priv_trait_semantic_declaration_data(trait_id)?.attributes)
 }
 
+/// Query implementation of [SemanticGroup::trait_visibility].
+pub fn trait_visibility(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Visibility> {
+    Ok(db.priv_trait_semantic_declaration_data(trait_id)?.visibility)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::trait_resolver_data].
 pub fn trait_resolver_data(db: &dyn SemanticGroup, trait_id: TraitId) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_trait_semantic_declaration_data(trait_id)?.resolver_data)
@@ -209,6 +213,7 @@ pub fn priv_trait_semantic_declaration_data(
     // the item instead of all the module data.
     let module_traits = db.module_traits(module_file_id.0)?;
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
+    let visibility = semantic_visibility(&trait_ast.visibility(db.upcast()));
 
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
@@ -239,6 +244,7 @@ pub fn priv_trait_semantic_declaration_data(
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
+        visibility,
         resolver_data,
     })
 }
@@ -474,6 +480,7 @@ pub fn priv_trait_function_declaration_data(
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
     Ok(FunctionDeclarationData {
+        visibility: Visibility::Public,
         diagnostics: diagnostics.build(),
         signature,
         generic_params: function_generic_params,

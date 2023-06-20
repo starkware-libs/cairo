@@ -12,7 +12,8 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
 use crate::resolve::scope::Scope;
 use crate::resolve::ResolvedGenericItem;
-use crate::SemanticDiagnostic;
+use crate::{SemanticDiagnostic, Visibility};
+use crate::items::visibilities::semantic_visibility;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModuleSemanticData {
@@ -98,4 +99,17 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
             module_ast.attributes(syntax_db).structurize(syntax_db)
         }
     })
+}
+
+/// Query implementation of [SemanticGroup::module_visibility].
+pub fn module_visibility(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<Visibility> {
+    match module_id {
+        ModuleId::CrateRoot(_) => Ok(Visibility::Public),
+        ModuleId::Submodule(submodule_id) => {
+            let parent_module_id = submodule_id.parent_module(db.upcast());
+            let module_ast = &db.module_submodules(parent_module_id)?[submodule_id];
+            let visibility = semantic_visibility(&module_ast.visibility(db.upcast()));
+            Ok(visibility)
+        }
+    }
 }

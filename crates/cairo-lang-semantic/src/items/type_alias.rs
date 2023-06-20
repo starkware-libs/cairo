@@ -13,12 +13,14 @@ use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
-use crate::{GenericParam, SemanticDiagnostic, TypeId};
+use crate::{GenericParam, semantic, SemanticDiagnostic, TypeId};
+use crate::items::visibilities::semantic_visibility;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct TypeAliasData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
+    visibility: semantic::Visibility,
     resolved_type: Maybe<TypeId>,
     generic_params: Vec<GenericParam>,
     resolver_data: Arc<ResolverData>,
@@ -47,6 +49,7 @@ pub fn priv_type_alias_semantic_data(
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
+    let visibility = semantic_visibility(&type_alias_ast.visibility(syntax_db));
     let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
         db,
@@ -69,6 +72,7 @@ pub fn priv_type_alias_semantic_data(
     let resolver_data = Arc::new(resolver.data);
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),
+        visibility,
         resolved_type: Ok(ty),
         generic_params,
         resolver_data,
@@ -86,6 +90,7 @@ pub fn priv_type_alias_semantic_data_cycle(
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
+    let visibility = semantic_visibility(&type_alias_ast.visibility(syntax_db));
     let err = Err(diagnostics.report(&type_alias_ast.name(syntax_db), TypeAliasCycle));
     let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
@@ -98,6 +103,7 @@ pub fn priv_type_alias_semantic_data_cycle(
     )?;
     Ok(TypeAliasData {
         diagnostics: diagnostics.build(),
+        visibility,
         resolved_type: err,
         generic_params,
         resolver_data: Arc::new(ResolverData::new(module_file_id)),
@@ -110,6 +116,14 @@ pub fn type_alias_semantic_diagnostics(
     type_alias_id: TypeAliasId,
 ) -> Diagnostics<SemanticDiagnostic> {
     db.priv_type_alias_semantic_data(type_alias_id).map(|data| data.diagnostics).unwrap_or_default()
+}
+
+/// Query implementation of [SemanticGroup::type_alias_visibility].
+pub fn type_alias_visibility(
+    db: &dyn SemanticGroup,
+    type_alias_id: TypeAliasId,
+) -> Maybe<semantic::Visibility> {
+    Ok(db.priv_type_alias_semantic_data(type_alias_id)?.visibility)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::type_alias_resolved_type].

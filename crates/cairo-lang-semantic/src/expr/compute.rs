@@ -1558,10 +1558,22 @@ fn member_access_expr(
                         &rhs_syntax,
                         NoSuchMember {
                             struct_id: concrete_struct_id.struct_id(ctx.db),
-                            member_name,
+                            member_name: member_name.clone(),
                         },
                     )
                 })?;
+
+                let module_id = ctx.resolver.module_file_id.0;
+                let struct_id = concrete_struct_id.struct_id(ctx.db);
+                if !ctx.db.struct_member_visible_in(struct_id, member_name.clone(), module_id)? {
+                    ctx.diagnostics.report(
+                        &rhs_syntax,
+                        StructMemberNotVisible {
+                            struct_id: concrete_struct_id.struct_id(ctx.db),
+                            member_name,
+                        },
+                    );
+                }
                 let member_path = if n_snapshots == 0 {
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),

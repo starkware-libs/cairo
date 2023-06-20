@@ -46,11 +46,8 @@ use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
-use crate::{
-    semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId,
-    FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic,
-    TypeId, TypeLongId,
-};
+use crate::{semantic, semantic_object_for_id, ConcreteFunction, ConcreteTraitId, ConcreteTraitLongId, FunctionId, FunctionLongId, GenericArgumentId, GenericParam, Mutability, SemanticDiagnostic, TypeId, TypeLongId};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "imp_test.rs"]
@@ -1067,6 +1064,7 @@ pub fn priv_impl_function_declaration_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
+    let visibility = semantic_visibility(&declaration.visibility(syntax_db));
     let mut resolver = Resolver::new(db, module_file_id);
     let impl_def_generic_params = db.impl_def_generic_params(impl_def_id)?;
     for generic_param in impl_def_generic_params {
@@ -1127,6 +1125,7 @@ pub fn priv_impl_function_declaration_data(
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {
             diagnostics: diagnostics.build(),
+            visibility,
             signature,
             generic_params: function_generic_params,
             environment,
