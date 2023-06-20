@@ -18,6 +18,7 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "structure_test.rs"]
@@ -32,6 +33,7 @@ pub struct StructDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<semantic::GenericParam>,
     attributes: Vec<Attribute>,
+    visibility: semantic::Visibility,
     resolver_data: Arc<ResolverData>,
 }
 
@@ -49,6 +51,7 @@ pub fn priv_struct_declaration_data(
     let module_structs = db.module_structs(module_file_id.0)?;
     let struct_ast = module_structs.get(&struct_id).to_maybe()?;
     let syntax_db = db.upcast();
+    let visibility = semantic_visibility(&struct_ast.visibility(syntax_db));
 
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
@@ -75,6 +78,7 @@ pub fn priv_struct_declaration_data(
         diagnostics: diagnostics.build(),
         generic_params,
         attributes,
+        visibility,
         resolver_data,
     })
 }
@@ -100,6 +104,11 @@ pub fn struct_attributes(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<V
     Ok(db.priv_struct_declaration_data(struct_id)?.attributes)
 }
 
+/// Query implementation of [SemanticGroup::struct_visibility].
+pub fn struct_visibility(db: &dyn SemanticGroup, struct_id: StructId) -> Maybe<semantic::Visibility> {
+    Ok(db.priv_struct_declaration_data(struct_id)?.visibility)
+}
+
 /// Query implementation of [crate::db::SemanticGroup::struct_declaration_resolver_data].
 pub fn struct_declaration_resolver_data(
     db: &dyn SemanticGroup,
@@ -120,6 +129,8 @@ pub struct StructDefinitionData {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
+    #[dont_rewrite]
+    pub vis: semantic::Visibility,
     pub ty: semantic::TypeId,
 }
 
@@ -155,8 +166,9 @@ pub fn priv_struct_definition_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
+        let vis = semantic_visibility(&member.visibility(syntax_db));
         let member_name = member.name(syntax_db).text(syntax_db);
-        if let Some(_other_member) = members.insert(member_name.clone(), Member { id, ty }) {
+        if let Some(_other_member) = members.insert(member_name.clone(), Member { id, vis, ty }) {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
         }
     }

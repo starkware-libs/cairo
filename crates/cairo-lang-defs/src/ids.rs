@@ -67,8 +67,8 @@ pub trait TopLevelLanguageElementId: LanguageElementId {
 /// Gets an optional parameter `name`. If specified, implements the Named trait using a key_field
 /// with this name. See the documentation of 'define_short_id' and `stable_ptr.rs` for more details.
 macro_rules! define_language_element_id {
-    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(, $name:ident)?) => {
-        define_language_element_id_partial!($short_id, $long_id, $ast_ty, $lookup $(, $name)?);
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident $(, $visibility:ty)?)?) => {
+        define_language_element_id_partial!($short_id, $long_id, $ast_ty, $lookup $(, $name $(, $visibility)?)?);
         impl_top_level_language_element_id!($short_id, $lookup $(, $name)?);
     };
 }
@@ -80,9 +80,9 @@ macro_rules! define_language_element_id {
 /// Note: prefer to use `define_language_element_id`, unless you need to overwrite the behavior of
 /// TopLevelLanguageElementId for the type.
 macro_rules! define_language_element_id_partial {
-    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident)?) => {
+    ($short_id:ident, $long_id:ident, $ast_ty:ty, $lookup:ident $(,$name:ident $(, $visibility:ty)?)?) => {
         #[derive(Clone, PartialEq, Eq, Hash, Debug)]
-        pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr);
+        pub struct $long_id(pub ModuleFileId, pub <$ast_ty as TypedSyntaxNode>::StablePtr, $($(pub $visibility)?)?);
         $(
             impl $long_id {
                 pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
@@ -96,12 +96,14 @@ macro_rules! define_language_element_id_partial {
             {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
                     let db: &(dyn DefsGroup + 'a) = db.upcast();
-                    let $long_id(module_file_id, _stable_ptr) = self;
+                    let vis = String::new();
+                    $(let vis = <$visibility>::wrap_string(self.2) + &vis;)?
                     write!(
                         f,
-                        "{}({}::{})",
+                        "{}{}({}::{})",
+                        vis,
                         stringify!($short_id),
-                        module_file_id.0.full_path(db),
+                        self.0.0.full_path(db),
                         self.name(db)
                     )
                 }
@@ -117,6 +119,13 @@ macro_rules! define_language_element_id_partial {
                     db.$lookup(*self).name(db)
                 }
             )?
+            $(
+                $(
+                    pub fn visibility(&self, db: &dyn DefsGroup) -> $visibility {
+                        db.$lookup(*self).2
+                    }
+                )?
+            )?
         }
         impl LanguageElementId for $short_id {
             fn module_file_id(&self, db: &dyn DefsGroup) -> ModuleFileId {
@@ -126,8 +135,8 @@ macro_rules! define_language_element_id_partial {
                 self.stable_ptr(db).untyped()
             }
             fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
-                let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
-                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
+                let long_id = db.$lookup(*self);
+                StableLocation { module_file_id: long_id.0, stable_ptr: long_id.1.untyped() }
             }
         }
     };
@@ -288,6 +297,29 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum Visibility {
+    Public,
+    Default,
+}
+
+impl Visibility {
+    pub fn wrap_string(vis: Self) -> String {
+        match vis {
+            Self::Public => "pub ".to_string(),
+            Self::Default => String::new(),
+        }
+    }
+}
+
+impl From<ast::Visibility> for Visibility {
+    fn from(value: ast::Visibility) -> Self {
+        match value {
+            ast::Visibility::Public(_) => Visibility::Public,
+            ast::Visibility::Default(_) => Visibility::Default,
+        }
+    }
+}
 
 define_language_element_id_as_enum! {
     /// Id for direct children of a module.
@@ -311,7 +343,8 @@ define_language_element_id!(
     SubmoduleLongId,
     ast::ItemModule,
     lookup_intern_submodule,
-    name
+    name,
+    Visibility
 );
 impl UnstableSalsaId for SubmoduleId {
     fn get_internal_id(&self) -> &salsa::InternId {
@@ -324,7 +357,8 @@ define_language_element_id!(
     ConstantLongId,
     ast::ItemConstant,
     lookup_intern_constant,
-    name
+    name,
+    Visibility
 );
 define_language_element_id!(UseId, UseLongId, ast::UsePathLeaf, lookup_intern_use, name);
 define_language_element_id!(

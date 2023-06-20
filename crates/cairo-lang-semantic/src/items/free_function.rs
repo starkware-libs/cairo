@@ -19,7 +19,8 @@ use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
-use crate::{semantic, SemanticDiagnostic, TypeId};
+use crate::{semantic, SemanticDiagnostic, TypeId, Visibility};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "free_function_test.rs"]
@@ -87,6 +88,14 @@ pub fn free_function_declaration_inline_config(
     Ok(db.priv_free_function_declaration_data(free_function_id)?.inline_config)
 }
 
+/// Query implementation of [crate::db::SemanticGroup::free_function_visibility].
+pub fn free_function_visibility(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<Visibility> {
+    Ok(db.priv_free_function_declaration_data(free_function_id)?.visibility)
+}
+
 // --- Computation ---
 
 /// Query implementation of [crate::db::SemanticGroup::priv_free_function_declaration_data].
@@ -100,6 +109,8 @@ pub fn priv_free_function_declaration_data(
     let module_free_functions = db.module_free_functions(module_file_id.0)?;
     let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?;
     let declaration = function_syntax.declaration(syntax_db);
+
+    let visibility = semantic_visibility(&declaration.visibility(syntax_db));
 
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
@@ -142,6 +153,7 @@ pub fn priv_free_function_declaration_data(
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
+        visibility,
         signature,
         environment,
         generic_params,

@@ -10,7 +10,8 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::Resolver;
 use crate::substitution::SemanticRewriter;
-use crate::{GenericParam, SemanticDiagnostic};
+use crate::{GenericParam, semantic, SemanticDiagnostic};
+use crate::items::visibilities::semantic_visibility;
 
 #[cfg(test)]
 #[path = "extern_type_test.rs"]
@@ -22,6 +23,7 @@ mod test;
 pub struct ExternTypeDeclarationData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     generic_params: Vec<GenericParam>,
+    visibility: semantic::Visibility,
 }
 
 // Selectors.
@@ -42,6 +44,14 @@ pub fn extern_type_declaration_generic_params(
     Ok(db.priv_extern_type_declaration_data(extern_type_id)?.generic_params)
 }
 
+/// Query implementation of [SemanticGroup::extern_type_visibility].
+pub fn extern_type_visibility(
+    db: &dyn SemanticGroup,
+    extern_type_id: ExternTypeId,
+) -> Maybe<semantic::Visibility> {
+    Ok(db.priv_extern_type_declaration_data(extern_type_id)?.visibility)
+}
+
 // Computation.
 /// Query implementation of [crate::db::SemanticGroup::priv_extern_type_declaration_data].
 pub fn priv_extern_type_declaration_data(
@@ -52,6 +62,7 @@ pub fn priv_extern_type_declaration_data(
     let mut diagnostics = SemanticDiagnostics::new(module_file_id);
     let module_extern_types = db.module_extern_types(module_file_id.0)?;
     let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
+    let visibility = semantic_visibility(&type_syntax.visibility(db.upcast()));
 
     let mut resolver = Resolver::new(db, module_file_id);
     let generic_params = semantic_generic_params(
@@ -76,5 +87,5 @@ pub fn priv_extern_type_declaration_data(
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
-    Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params })
+    Ok(ExternTypeDeclarationData { diagnostics: diagnostics.build(), generic_params, visibility })
 }

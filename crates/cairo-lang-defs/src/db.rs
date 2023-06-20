@@ -342,13 +342,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             match item_ast {
                 ast::Item::Constant(constant) => {
                     let item_id =
-                        db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr()));
+                        db.intern_constant(ConstantLongId(module_file_id, constant.stable_ptr(), constant.visibility(syntax_db).into()));
                     res.constants.insert(item_id, constant);
                     items.push(ModuleItemId::Constant(item_id));
                 }
                 ast::Item::Module(module) => {
                     let item_id =
-                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr()));
+                        db.intern_submodule(SubmoduleLongId(module_file_id, module.stable_ptr(), module.visibility(syntax_db).into()));
                     res.submodules.insert(item_id, module);
                     items.push(ModuleItemId::Submodule(item_id));
                 }
