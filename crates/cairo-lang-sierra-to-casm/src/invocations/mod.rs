@@ -591,10 +591,24 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
         CoreConcreteLibfunc::Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
         CoreConcreteLibfunc::Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
-        CoreConcreteLibfunc::Sint8(libfunc) => int::signed::build_sint(libfunc, builder),
-        CoreConcreteLibfunc::Sint16(libfunc) => int::signed::build_sint(libfunc, builder),
-        CoreConcreteLibfunc::Sint32(libfunc) => int::signed::build_sint(libfunc, builder),
-        CoreConcreteLibfunc::Sint64(libfunc) => int::signed::build_sint(libfunc, builder),
+        CoreConcreteLibfunc::Sint8(libfunc) => {
+            int::signed::build_sint::<_, { i8::MIN as i128 }, { i8::MAX as i128 }>(libfunc, builder)
+        }
+        CoreConcreteLibfunc::Sint16(libfunc) => {
+            int::signed::build_sint::<_, { i16::MIN as i128 }, { i16::MAX as i128 }>(
+                libfunc, builder,
+            )
+        }
+        CoreConcreteLibfunc::Sint32(libfunc) => {
+            int::signed::build_sint::<_, { i32::MIN as i128 }, { i32::MAX as i128 }>(
+                libfunc, builder,
+            )
+        }
+        CoreConcreteLibfunc::Sint64(libfunc) => {
+            int::signed::build_sint::<_, { i64::MIN as i128 }, { i64::MAX as i128 }>(
+                libfunc, builder,
+            )
+        }
         CoreConcreteLibfunc::Sint128(libfunc) => int::signed128::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
