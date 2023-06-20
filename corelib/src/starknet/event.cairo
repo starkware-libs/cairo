@@ -1,4 +1,5 @@
 use serde::Serde;
+use traits::Into;
 
 trait Event<T> {
     fn append_keys_and_data(self: @T, ref keys: Array<felt252>, ref data: Array<felt252>);
@@ -6,5 +7,5 @@ trait Event<T> {
 }
 
 trait EventEmitter<T, TEvent> {
-    fn emit(ref self: T, event: TEvent);
+    fn emit<S, impl IntoImp: Into<S, TEvent>>(ref self: T, event: S);
 }
