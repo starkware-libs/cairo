@@ -27,10 +27,16 @@ impl GenericTypeArgGenericType for ArrayTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { storable, droppable, size, .. }: TypeInfo,
+        TypeInfo { storable, droppable, zero_sized, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
-        if storable && size > 0 {
-            Ok(TypeInfo { long_id, duplicatable: false, droppable, storable: true, size: 2 })
+        if storable && !zero_sized {
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable,
+                storable: true,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
@@ -43,6 +49,7 @@ define_libfunc_hierarchy! {
         New(ArrayNewLibfunc),
         Append(ArrayAppendLibfunc),
         PopFront(ArrayPopFrontLibfunc),
+        PopFrontConsume(ArrayPopFrontConsumeLibfunc),
         Get(ArrayGetLibfunc),
         Slice(ArraySliceLibfunc),
         Len(ArrayLenLibfunc),
@@ -67,7 +74,7 @@ impl SignatureOnlyGenericLibfunc for ArrayNewLibfunc {
             vec![],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(ArrayType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                ref_info: OutputVarReferenceInfo::SimpleDerefs,
             }],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -112,12 +119,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayAppendLibfuncWrapped {
         let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: arr_ty.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(arr_ty.clone()).with_allow_add_const(),
                 ParamSignature::new(ty),
             ],
             vec![OutputVarInfo {
@@ -178,6 +180,50 @@ impl SignatureAndTypeGenericLibfunc for ArrayPopFrontLibfuncWrapped {
 }
 pub type ArrayPopFrontLibfunc = WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontLibfuncWrapped>;
 
+/// Libfunc for popping the first value from the beginning of an array.
+#[derive(Default)]
+pub struct ArrayPopFrontConsumeLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for ArrayPopFrontConsumeLibfuncWrapped {
+    const STR_ID: &'static str = "array_pop_front_consume";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let arr_ty = context.get_wrapped_concrete_type(ArrayType::id(), ty.clone())?;
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(arr_ty.clone())],
+            branch_signatures: vec![
+                // Non-empty.
+                BranchSignature {
+                    vars: vec![
+                        OutputVarInfo {
+                            ty: arr_ty,
+                            ref_info: OutputVarReferenceInfo::Deferred(
+                                DeferredOutputKind::AddConst { param_idx: 0 },
+                            ),
+                        },
+                        OutputVarInfo {
+                            ty: boxed_ty(context, ty)?,
+                            ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // Empty.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type ArrayPopFrontConsumeLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<ArrayPopFrontConsumeLibfuncWrapped>;
+
 /// Libfunc for fetching a value from a specific array index.
 #[derive(Default)]
 pub struct ArrayGetLibfuncWrapped {}
@@ -193,21 +239,17 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(snapshot_ty(context, arr_type)?),
             ParamSignature::new(index_type),
         ];
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and element; failure branch does not return
             // an element.
             BranchSignature {
                 vars: vec![
-                    OutputVarInfo {
-                        ty: range_check_type.clone(),
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
+                    rc_output_info.clone(),
                     OutputVarInfo {
                         ty: boxed_ty(context, snapshot_ty(context, ty)?)?,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -216,12 +258,7 @@ impl SignatureAndTypeGenericLibfunc for ArrayGetLibfuncWrapped {
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
             BranchSignature {
-                vars: vec![OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                }],
+                vars: vec![rc_output_info],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
         ];
@@ -246,24 +283,20 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let index_type = context.get_concrete_type(ArrayIndexType::id(), &[])?;
         let param_signatures = vec![
-            ParamSignature::new(range_check_type.clone()),
+            ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
             ParamSignature::new(arr_snapshot_type.clone()),
             // Start
             ParamSignature::new(index_type.clone()),
             // Length
             ParamSignature::new(index_type),
         ];
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
             // First (success) branch returns rc, array and the slice snapshot; failure branch does
             // not return an element.
             BranchSignature {
                 vars: vec![
-                    OutputVarInfo {
-                        ty: range_check_type.clone(),
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
+                    rc_output_info.clone(),
                     OutputVarInfo {
                         ty: arr_snapshot_type,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -272,12 +305,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
             BranchSignature {
-                vars: vec![OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                }],
+                vars: vec![rc_output_info],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
         ];

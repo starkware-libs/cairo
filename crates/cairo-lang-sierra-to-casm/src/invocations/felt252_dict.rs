@@ -24,8 +24,6 @@ pub fn build_dict(
 ) -> Result<CompiledInvocation, InvocationError> {
     match libfunc {
         Felt252DictConcreteLibfunc::New(_) => build_felt252_dict_new(builder),
-        Felt252DictConcreteLibfunc::Read(_) => build_felt252_dict_read(builder),
-        Felt252DictConcreteLibfunc::Write(_) => build_felt252_dict_write(builder),
         Felt252DictConcreteLibfunc::Squash(_) => build_felt252_dict_squash(builder),
     }
 }
@@ -61,64 +59,6 @@ fn build_felt252_dict_new(
             range_check_info: None,
             // The segment arena finalization cost.
             extra_costs: Some([SEGMENT_ARENA_ALLOCATION_COST.cost()]),
-        },
-    ))
-}
-
-/// Handles instruction for reading from a single cell dict.
-fn build_felt252_dict_read(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [dict_ptr, key] = builder.try_get_single_cells()?;
-
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(2) dict_ptr;
-        deref key;
-    };
-    casm_build_extend! {casm_builder,
-        tempvar value;
-        hint Felt252DictRead {dict_ptr: dict_ptr, key: key} into {value_dst: value};
-        // Write the new dict access.
-        assert key = *(dict_ptr++);
-        assert value = *(dict_ptr++);
-        assert value = *(dict_ptr++);
-    }
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[&[dict_ptr], &[value]], None)],
-        CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
-        },
-    ))
-}
-
-/// Handles instruction for writing to a single cell dict.
-fn build_felt252_dict_write(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [dict_ptr, key, value] = builder.try_get_single_cells()?;
-
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        buffer(2) dict_ptr;
-        deref key;
-        deref value;
-    };
-    casm_build_extend! {casm_builder,
-        hint Felt252DictWrite {dict_ptr: dict_ptr, key: key, value: value} into {};
-        // Write the new dict access.
-        assert key = *(dict_ptr++);
-        let _prev_value = *(dict_ptr++);
-        assert value = *(dict_ptr++);
-    }
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[&[dict_ptr]], None)],
-        CostValidationInfo {
-            range_check_info: None,
-            extra_costs: Some([DICT_SQUASH_UNIQUE_KEY_COST.cost()]),
         },
     ))
 }
@@ -523,14 +463,12 @@ fn build_squash_dict_inner(
         let last_loop_locals_access_ptr = prev_loop_locals_access_ptr;
         let last_loop_locals_value = prev_loop_locals_value;
         let last_loop_locals_range_check_ptr = prev_loop_locals_range_check_ptr;
-        hint AssertCurrentAccessIndicesIsEmpty {} into {};
         tempvar dict_slack =
             squash_dict_inner_arg_dict_accesses_end_minus1 - last_loop_locals_access_ptr;
         // Range check use, once per unique key.
         assert dict_slack = *last_loop_locals_range_check_ptr;
         tempvar n_used_accesses =
             last_loop_locals_range_check_ptr - squash_dict_inner_arg_range_check_ptr;
-        hint AssertAllAccessesUsed {} into {n_used_accesses: n_used_accesses};
         assert last_loop_locals_value = dict_diff[2];
         const one = 1;
         let arg_range_check_ptr = last_loop_locals_range_check_ptr + one;
@@ -538,7 +476,6 @@ fn build_squash_dict_inner(
             squash_dict_inner_arg_remaining_accesses - n_used_accesses;
         #{ unique_key_steps += steps; steps = 0; }
         jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
-        hint AssertAllKeysUsed {} into {};
         // Return from squash_dict_inner, push values to the stack and return;
         tempvar retuened_range_check_ptr = arg_range_check_ptr;
         const dict_access_size = DICT_ACCESS_SIZE;
@@ -756,7 +693,6 @@ fn validate_felt252_le(casm_builder: &mut CasmBuilder, range_check: Var, a: Var,
         jump EndOfFelt252Le;
         AssertLeFelt252SkipExcludeBMinusA:
         tempvar _padding;
-        hint AssertLeAssertThirdArcExcluded {} into {};
         // Exclude "b -> PRIME - 1".
         // The two arcs are (a - 0 = a) and (b - a).
         // Thus the sum is b and the product is a * (b - a).

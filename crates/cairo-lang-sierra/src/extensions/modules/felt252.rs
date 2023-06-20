@@ -24,7 +24,7 @@ impl NoGenericArgsGenericType for Felt252Type {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
@@ -102,7 +102,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
         let ty = context.get_concrete_type(Felt252Type::id(), &[])?;
         let (second_param_type, output_ref_info) =
             if matches!(self.operator, Felt252BinaryOperator::Div) {
-                (nonzero_ty(context, &ty)?, OutputVarReferenceInfo::NewTempVar { idx: Some(0) })
+                (nonzero_ty(context, &ty)?, OutputVarReferenceInfo::NewTempVar { idx: 0 })
             } else {
                 (ty.clone(), OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic))
             };
@@ -110,12 +110,7 @@ impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
             [] => Ok(LibfuncSignature::new_non_branch_ex(
                 vec![
                     ParamSignature::new(ty.clone()),
-                    ParamSignature {
-                        ty: second_param_type,
-                        allow_deferred: false,
-                        allow_add_const: false,
-                        allow_const: true,
-                    },
+                    ParamSignature::new(second_param_type).with_allow_const(),
                 ],
                 vec![OutputVarInfo { ty, ref_info: output_ref_info }],
                 SierraApChange::Known { new_vars_only: true },

@@ -1,3 +1,6 @@
 = Operator expressions
 
-TODO
+This section is a work in progress.
+
+You are very welcome to contribute to this documentation by
+link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].

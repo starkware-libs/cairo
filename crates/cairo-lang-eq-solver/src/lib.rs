@@ -4,6 +4,7 @@ pub mod expr;
 use std::fmt::Debug;
 use std::hash::Hash;
 
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 pub use expr::Expr;
 use good_lp::{default_solver, variable, variables, Expression, Solution, SolverModel};
@@ -20,17 +21,41 @@ pub fn try_solve_equations<Var: Clone + Debug + PartialEq + Eq + Hash>(
     mut equations: Vec<Expr<Var>>,
     minimization_vars: Vec<Vec<Var>>,
 ) -> Option<OrderedHashMap<Var, i64>> {
+    let mut accumulated_solution: OrderedHashMap<Var, i64> = Default::default();
     let (final_iter, high_rank_iters) = minimization_vars.split_last()?;
     // Iterating over the non-last minimization var layers.
     for target_vars in high_rank_iters {
         let layer_solution = try_solve_equations_iteration(&equations, target_vars)?;
-        // Add constraints for the solution that we found for the target variables.
-        for v in target_vars {
-            let value = *layer_solution.get(v).unwrap();
-            equations.push(Expr::from_const(value.try_into().unwrap()) - Expr::from_var(v.clone()));
-        }
+        let target_vars_solution = target_vars
+            .iter()
+            .map(|v| (v.clone(), *layer_solution.get(v).unwrap()))
+            .collect::<OrderedHashMap<_, _>>();
+        equations = equations
+            .into_iter()
+            .filter_map(|eq| {
+                let const_term = eq
+                    .var_to_coef
+                    .iter()
+                    .filter_map(|(var, coef)| Some(target_vars_solution.get(var)? * coef))
+                    .sum::<i64>()
+                    + eq.const_term as i64;
+                let var_to_coef: OrderedHashMap<_, _> = eq
+                    .var_to_coef
+                    .into_iter()
+                    .filter(|(var, _coef)| !target_vars_solution.contains_key(var))
+                    .collect();
+                if var_to_coef.is_empty() {
+                    assert_eq!(const_term, 0, "Zeroed out equations should be zeroed out.");
+                    return None;
+                }
+                Some(Expr { var_to_coef, const_term: const_term.into_or_panic::<i32>() })
+            })
+            .collect();
+        accumulated_solution.extend(target_vars_solution);
     }
-    try_solve_equations_iteration(&equations, final_iter)
+    let final_layer_solution = try_solve_equations_iteration(&equations, final_iter)?;
+    accumulated_solution.extend(final_layer_solution);
+    Some(accumulated_solution)
 }
 
 /// Solving a set of equations and returning the values of the symbols contained in them.

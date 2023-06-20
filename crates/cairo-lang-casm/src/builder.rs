@@ -1,6 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use num_bigint::BigInt;
 use num_traits::One;
@@ -54,8 +55,11 @@ impl State {
     /// Validates that the state is valid, as it had enough ap change.
     fn validate_finality(&self) {
         assert!(
-            self.ap_change >= self.allocated as usize,
-            "Not enough commands to update ap, add `add_ap` calls."
+            self.ap_change >= self.allocated.into_or_panic(),
+            "Not enough instructions to update ap. Add an `ap += *` instruction. ap_change: {}, \
+             allocated: {}",
+            self.ap_change,
+            self.allocated,
         );
     }
 
@@ -352,6 +356,12 @@ impl CasmBuilder {
         );
         self.statements.push(Statement::Final(instruction));
         self.main_state.ap_change += size;
+    }
+
+    /// Increases the AP change by `size`, without adding an instruction.
+    pub fn increase_ap_change(&mut self, amount: usize) {
+        self.main_state.ap_change += amount;
+        self.main_state.allocated += amount.into_or_panic::<i16>();
     }
 
     /// Returns a variable that is the `op` of `lhs` and `rhs`.
@@ -801,13 +811,13 @@ macro_rules! casm_build_extend {
         $builder.fail();
         $crate::casm_build_extend!($builder, $($tok)*)
     };
-    ($builder:ident, hint $hint_name:ident {
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)+ {
             $($input_name:ident : $input_value:ident),*
         } into {
             $($output_name:ident : $output_value:ident),*
         }; $($tok:tt)*) => {
         $builder.add_hint(
-            |[$($input_name),*], [$($output_name),*]| $crate::hints::CoreHint::$hint_name {
+            |[$($input_name),*], [$($output_name),*]| $hint_head$(::$hint_tail)+ {
                 $($input_name,)* $($output_name,)*
             },
             [$($input_value,)*],
@@ -816,22 +826,22 @@ macro_rules! casm_build_extend {
         $crate::casm_build_extend!($builder, $($tok)*)
     };
     ($builder:ident, hint $hint_name:ident {
-        $buffer_name:ident : $buffer_value:ident
-    }; $($tok:tt)*) => {
-        $builder.add_hint(
-            |[$buffer_name], []| $crate::hints::CoreHint::$hint_name { $buffer_name },
-            [$buffer_value], []
-        );
-        $crate::casm_build_extend!($builder, $($tok)*)
+            $($input_name:ident : $input_value:ident),*
+        } into {
+            $($output_name:ident : $output_value:ident),*
+        }; $($tok:tt)*) => {
+        $crate::casm_build_extend!($builder, hint $crate::hints::CoreHint::$hint_name {
+            $($input_name : $input_value),*
+        } into {
+            $($output_name : $output_value),*
+        }; $($tok)*)
     };
-    ($builder:ident, hint $hint_lead:ident::$hint_name:ident {
-        $buffer_name:ident : $buffer_value:ident
+    ($builder:ident, hint $hint_head:ident$(::$hint_tail:ident)* {
+        $($arg_name:ident : $arg_value:ident),*
     }; $($tok:tt)*) => {
-        $builder.add_hint(
-            |[$buffer_name], []| $hint_lead::$hint_name { $buffer_name },
-            [$buffer_value], []
-        );
-        $crate::casm_build_extend!($builder, $($tok)*)
+        $crate::casm_build_extend!($builder, hint $hint_head$(::$hint_tail)* {
+            $($arg_name : $arg_value),*
+        } into {}; $($tok)*)
     };
     ($builder:ident, rescope { $($new_var:ident = $value_var:ident),* }; $($tok:tt)*) => {
         $builder.rescope([$(($new_var, $value_var)),*]);

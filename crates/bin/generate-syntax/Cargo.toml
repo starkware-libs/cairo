@@ -1,0 +1,14 @@
+[package]
+name = "generate-syntax"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+
+[dependencies]
+log.workspace = true
+
+cairo-lang-utils = { path = "../../cairo-lang-utils", features = [
+    "env_logger",
+] }
+cairo-lang-syntax-codegen = { path = "../../cairo-lang-syntax-codegen" }

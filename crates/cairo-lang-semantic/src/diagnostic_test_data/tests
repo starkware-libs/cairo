@@ -15,27 +15,27 @@ test_expr_diagnostics
 //! > function_body
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> lib.cairo:1:1
 3 + 4 +;
 ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> lib.cairo:1:3
 3 + 4 +;
   ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> lib.cairo:1:5
 3 + 4 +;
     ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> lib.cairo:1:7
 3 + 4 +;
       ^
 
-error: Skipped tokens. Expected: Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> lib.cairo:1:8
 3 + 4 +;
        ^
@@ -180,15 +180,15 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
- --> lib.cairo:7:13
-    let b = 123_NonZero;
-            ^*********^
-
 error: Unknown type.
  --> lib.cairo:8:13
     let b = 123_u129;
             ^******^
+
+error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
+ --> lib.cairo:7:13
+    let b = 123_NonZero;
+            ^*********^
 
 //! > ==========================================================================
 

@@ -3,9 +3,10 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
+use num_traits::One;
 
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
@@ -20,15 +21,16 @@ pub fn build(
             IntOperator::OverflowingSub => build_u128_overflowing_sub(builder),
         },
         Uint128Concrete::Divmod(_) => build_u128_divmod(builder),
-        Uint128Concrete::WideMul(_) => build_u128_widemul(builder),
+        Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
+        Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
         Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
-        Uint128Concrete::LessThan(_) => super::unsigned::build_less_than(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
-        Uint128Concrete::LessThanOrEqual(_) => super::unsigned::build_less_than_or_equal(builder),
+        Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
+        Uint128Concrete::Bitwise(_) => bitwise::build(builder),
     }
 }
 
@@ -86,12 +88,12 @@ fn build_u128_overflowing_sub(
     };
     casm_build_extend! {casm_builder,
             let orig_range_check = range_check;
-            tempvar no_overflow;
+            tempvar a_ge_b;
             tempvar a_minus_b = a - b;
             const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-            hint TestLessThan {lhs: a_minus_b, rhs: u128_limit} into {dst: no_overflow};
-            jump NoOverflow if no_overflow != 0;
-            // Underflow:
+            hint TestLessThanOrEqual {lhs: b, rhs: a} into {dst: a_ge_b};
+            jump NoOverflow if a_ge_b != 0;
+            // Overflow (negative):
             // Here we know that 0 - (2**128 - 1) <= a - b < 0.
             tempvar wrapping_a_minus_b = a_minus_b + u128_limit;
             assert wrapping_a_minus_b = *(range_check++);
@@ -181,16 +183,47 @@ fn build_u128_divmod(
     ))
 }
 
-/// Handles a u128 overflowing widemul operation.
-fn build_u128_widemul(
+/// Builds the `u128_guarantee_mul` libfunc.
+fn build_u128_guarantee_mul(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let [range_check, a, b] = builder.try_get_single_cells()?;
+    let [a, b] = builder.try_get_single_cells()?;
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref a;
+        deref b;
+    };
+    casm_build_extend! {casm_builder,
+        tempvar res_high;
+        tempvar res_low;
+        hint WideMul128 { lhs: a, rhs: b } into { high: res_high, low: res_low };
+        ap += 2;
+    };
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[res_high], &[res_low], &[a, b, res_high, res_low]], None)],
+        Default::default(),
+    ))
+}
+
+/// Builds the `u128_mul_guarantee_verify` libfunc.
+fn build_u128_mul_guarantee_verify(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    // The inputs are 4 u128 numbers `a, b, res_high, res_low` for which we need to
+    // verify that:
+    //   `a * b = 2**128 * res_high + res_low`.
+    let [range_check_ref, guarantee] = builder.try_get_refs()?;
+    let [range_check] = range_check_ref.try_unpack()?;
+    let [a, b, res_high, res_low] = guarantee.try_unpack()?;
+
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(8) range_check;
         deref a;
         deref b;
+        deref res_high;
+        deref res_low;
     };
     casm_build_extend! {casm_builder,
         let orig_range_check = range_check;
@@ -219,16 +252,16 @@ fn build_u128_widemul(
         tempvar a1_b = a1 * b;
         // An overview of the calculation to follow:
         // The final 256 bits result should equal a1_b * 2 ** 64 + a0_b, where the lower 128
-        // bits are packed into `lower_uint128` and the higher bits go into `upper_uint128`.
+        // bits are packed into `res_low` and the higher bits go into `res_high`.
         //
         // Since a0_b, a1_b are comprised of verified u64 * u128 => each fits within 192 bits.
-        // * The lower 128 bits of a0_b should go into the resulting `lower_uint128` and the
-        // upper 64 bits must carry over to the resulting `upper_uint128`.
+        // * The lower 128 bits of a0_b should go into the resulting `res_low` and the
+        // upper 64 bits must carry over to the resulting `res_high`.
         // * Let's mark `b = b1 * 2**64 + b0` (same split as in `a`). Then
         // a1_b = a1 * (b1 * 2**64 + b0) = a1b1 * (2**64) + a1b0. The bottom 64 bits of a1b0
         // (which are also the lower 64 bits of a1_b) should be summed into the 64-msbs of
-        // `lower_uint128` and the remaining bits of a1b0 (which is u64*u64=>u128) as well
-        // as a1b1*(2**64) should fit into `upper_uint128`.
+        // `res_low` and the remaining bits of a1b0 (which is u64*u64=>u128) as well
+        // as a1b1*(2**64) should fit into `res_high`.
 
         tempvar partial_upper_word;
         tempvar a1_b0_bottom;
@@ -254,9 +287,6 @@ fn build_u128_widemul(
         tempvar shifted_carry;
         tempvar lower_uint128_with_carry;
 
-        tempvar upper_uint128;
-        tempvar lower_uint128;
-
         // Lower uint128 word:
         assert lower_uint128_with_carry = a0_b + shifted_a1_b0_bottom;
         // Note that `lower_uint128_with_carry` is bounded by 193 bits, as `a0_b` is capped
@@ -266,27 +296,27 @@ fn build_u128_widemul(
         hint DivMod {
             lhs: lower_uint128_with_carry,
             rhs: u128_limit
-        } into { quotient: carry, remainder: lower_uint128 };
+        } into { quotient: carry, remainder: res_low };
 
-        // Verify that `carry` is in [0, 2**65) and `lower_uint128` is in [0, 2**128).
+        // Verify that `carry` is in [0, 2**65) and `res_low` is in [0, 2**128).
         const carry_range_fixer = u128::MAX - (2u128.pow(65) - 1);
         assert fixed_carry = carry + carry_range_fixer;
         assert fixed_carry = *(range_check++);
         assert carry = *(range_check++);
-        assert lower_uint128 = *(range_check++);
-        // Verify the outputted `lower_uint128` and `carry` from the DivMod hint.
+        assert res_low = *(range_check++);
+        // Verify the outputted `res_low` and `carry` from the DivMod hint.
         assert shifted_carry = carry * u128_limit;
-        assert lower_uint128_with_carry = shifted_carry + lower_uint128;
+        assert lower_uint128_with_carry = shifted_carry + res_low;
         // Note that reconstruction of the felt252 `lower_uint128_with_carry` is performed
         // with no wrap-around: `carry` was capped at 65 bits and then shifted 128 bits.
-        // `lower_uint128` is range-checked for 128 bits. Overall, within 193 bits range.
+        // `res_low` is range-checked for 128 bits. Overall, within 193 bits range.
 
         // Upper uint128 word:
-        assert upper_uint128 = partial_upper_word + carry;
+        assert res_high = partial_upper_word + carry;
     };
     Ok(builder.build_from_casm_builder(
         casm_builder,
-        [("Fallthrough", &[&[range_check], &[upper_uint128], &[lower_uint128]], None)],
+        [("Fallthrough", &[&[range_check]], None)],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
@@ -366,5 +396,86 @@ fn build_u128_from_felt252(
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
         },
+    ))
+}
+/// Handles instruction for reverseing the bytes of a u128.
+pub fn build_u128_byte_reverse(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [bitwise, input] = builder.try_get_single_cells()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        deref input;
+        buffer(20) bitwise;
+    };
+
+    let masks = [
+        0x00ff00ff00ff00ff00ff00ff00ff00ff_u128,
+        0x00ffff0000ffff0000ffff0000ffff00_u128,
+        0x00ffffffff00000000ffffffff000000_u128,
+        0x00ffffffffffffffff00000000000000_u128,
+    ];
+
+    // The algorithm works in steps. Generally speaking, on the i-th step,
+    // we switch between every two consecutive sequences of 2 ** i bytes.
+    // To illustrate how it works, here are the steps when running
+    // on a 64-bit word = [b0, b1, b2, b3, b4, b5, b6, b7].
+    //
+    // step 1:
+    // [b0, b1, b2, b3, b4, b5, b6, b7] -
+    // [b0, 0,  b2, 0,  b4, 0,  b6, 0 ] +
+    // [0,  0,  b0, 0,  b2, 0,  b4, 0,  b6] =
+    // [0,  b1, b0, b3, b2, b5, b4, b7, b6]
+    //
+    // step 2:
+    // [0, b1, b0, b3, b2, b5, b4, b7, b6] -
+    // [0, b1, b0, 0,  0,  b5, b4, 0,  0 ] +
+    // [0, 0,  0,  0,  0,  b1, b0, 0,  0,  b5, b4] =
+    // [0, 0,  0,  b3, b2, b1, b0, b7, b6, b5, b4]
+    //
+    // step 3:
+    // [0, 0, 0, b3, b2, b1, b0, b7, b6, b5, b4] -
+    // [0, 0, 0, b3, b2, b1, b0, 0,  0,  0,  0 ] +
+    // [0, 0, 0, 0,  0,  0,  0,  0,  0,  0,  0,  b3, b2, b1, b0] =
+    // [0, 0, 0, 0,  0,  0,  0,  b7, b6, b5, b4, b3, b2, b1, b0]
+    //
+    // Next, we divide by 2 ** (8 + 16 + 32) and get [b7, b6, b5, b4, b3, b2, b1, b0].
+    let mut temp = input;
+    let mut shift = BigInt::from(1 << 16);
+    for mask_imm in masks.into_iter() {
+        let shift_imm = &shift - BigInt::one();
+        casm_build_extend! {casm_builder,
+            assert temp = *(bitwise++);
+            const mask_imm = mask_imm;
+            const shift_imm = shift_imm;
+            tempvar mask = mask_imm;
+            assert mask = *(bitwise++);
+            tempvar and = *(bitwise++);
+            let _xor = *(bitwise++);
+            let _or = *(bitwise++);
+
+            tempvar shifted_var = and * shift_imm;
+            tempvar x = temp + shifted_var;
+        };
+
+        shift = &shift * &shift;
+        temp = x;
+    }
+
+    // Now rather than swapping the high and low 64 bits, we split them into
+    // two 64-bit words.
+
+    // Right align the value.
+    let shift = 1_u128 << (8 + 16 + 32 + 64);
+    casm_build_extend! {casm_builder,
+        const shift_imm = shift;
+        tempvar result = temp / shift_imm;
+    }
+
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [("Fallthrough", &[&[bitwise], &[result]], None)],
+        Default::default(),
     ))
 }

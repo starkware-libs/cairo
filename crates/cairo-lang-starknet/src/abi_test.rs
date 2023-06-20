@@ -23,20 +23,17 @@ fn test_abi() {
               b: MyStruct::<S>
             }
 
-            trait MyAbi {
-                fn foo(a: felt252, b: u128) -> Option::<()>;
+            trait MyAbi<T> {
+                fn foo(ref self: T, a: felt252, b: u128) -> Option::<()>;
 
                 #[external]
-                fn foo_external(a: felt252, b: u128) -> MyStruct::<u256>;
-
-                #[view]
-                fn foo_view(a: felt252, b: u128) -> MyEnum::<u128>;
+                fn foo_external(ref self: T, a: felt252, b: u128) -> MyStruct::<u256>;
 
                 #[external]
-                fn empty();
+                fn foo_view(self: @T, a: felt252, b: u128) -> MyEnum::<u128>;
 
-                #[event]
-                fn foo_event(a: felt252, b: u128);
+                #[external]
+                fn empty(ref self: T);
             }
         "},
     )
@@ -48,12 +45,26 @@ fn test_abi() {
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait
     );
-    let abi = AbiBuilder::from_trait(db, trait_id).unwrap();
+    let abi = AbiBuilder::trait_as_interface_abi(db, trait_id).unwrap();
     let actual_serialization = serde_json::to_string_pretty(&abi).unwrap();
     assert_eq!(
         actual_serialization,
         indoc! {
         r#"[
+            {
+              "type": "enum",
+              "name": "core::option::Option::<()>",
+              "variants": [
+                {
+                  "name": "Some",
+                  "type": "()"
+                },
+                {
+                  "name": "None",
+                  "type": "()"
+                }
+              ]
+            },
             {
               "type": "function",
               "name": "foo",
@@ -73,6 +84,20 @@ fn test_abi() {
                 }
               ],
               "state_mutability": "external"
+            },
+            {
+              "type": "struct",
+              "name": "core::integer::u256",
+              "members": [
+                {
+                  "name": "low",
+                  "type": "core::integer::u128"
+                },
+                {
+                  "name": "high",
+                  "type": "core::integer::u128"
+                }
+              ]
             },
             {
               "type": "struct",
@@ -148,20 +173,6 @@ fn test_abi() {
               "inputs": [],
               "outputs": [],
               "state_mutability": "external"
-            },
-            {
-              "type": "event",
-              "name": "foo_event",
-              "inputs": [
-                {
-                  "name": "a",
-                  "type": "core::felt252"
-                },
-                {
-                  "name": "b",
-                  "type": "core::integer::u128"
-                }
-              ]
             }
           ]"#}
     );

@@ -54,7 +54,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: true,
-                size: 1,
+                zero_sized: false,
             })
         } else if id == "ArrayFelt252".into() || id == "ArrayU128".into() {
             Some(TypeInfo {
@@ -62,7 +62,7 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: true,
                 droppable: true,
                 duplicatable: false,
-                size: 2,
+                zero_sized: false,
             })
         } else if id == "UninitializedFelt252".into() || id == "UninitializedU128".into() {
             Some(TypeInfo {
@@ -70,39 +70,28 @@ impl TypeSpecializationContext for MockSpecializationContext {
                 storable: false,
                 droppable: true,
                 duplicatable: false,
-                size: 0,
+                zero_sized: true,
             })
-        } else if id == "GasBuiltin".into() || id == "System".into() || id == "RangeCheck".into() {
+        } else if id == "GasBuiltin".into()
+            || id == "System".into()
+            || id == "RangeCheck".into()
+            || id == "NonDupEnum".into()
+            || id == "NonDupStruct".into()
+        {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
                 droppable: false,
                 duplicatable: false,
-                size: 1,
+                zero_sized: false,
             })
-        } else if id == "NonDupEnum".into() || id == "NonDupStruct".into() {
-            Some(TypeInfo {
-                long_id: self.mapping.get_by_left(&id)?.clone(),
-                storable: true,
-                droppable: false,
-                duplicatable: false,
-                size: 2,
-            })
-        } else if id == "SnapshotRangeCheck".into() {
+        } else if id == "SnapshotRangeCheck".into() || id == "SnapshotArrayU128".into() {
             Some(TypeInfo {
                 long_id: self.mapping.get_by_left(&id)?.clone(),
                 storable: true,
                 droppable: true,
                 duplicatable: true,
-                size: 1,
-            })
-        } else if id == "SnapshotArrayU128".into() {
-            Some(TypeInfo {
-                long_id: self.mapping.get_by_left(&id)?.clone(),
-                storable: true,
-                droppable: true,
-                duplicatable: true,
-                size: 2,
+                zero_sized: false,
             })
         } else {
             None

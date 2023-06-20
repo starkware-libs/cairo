@@ -62,7 +62,6 @@ End:
 
 blk3:
 Statements:
-  (v14: core::felt252, v15: core::felt252) <- struct_destructure(v13)
   (v16: (core::felt252, core::felt252)) <- struct_construct(v2, v3)
   (v17: test::MyEnum) <- MyEnum::C(v16)
 End:
@@ -75,9 +74,8 @@ End:
 
 //! > last_use
 v3: ((BlockId(4), 0), 0)
-v16: ((BlockId(3), 2), 0)
-v2: ((BlockId(3), 1), 0)
-v13: ((BlockId(3), 0), 0)
+v16: ((BlockId(3), 1), 0)
+v2: ((BlockId(3), 0), 0)
 v20: ((BlockId(2), 2), 0)
 v2: ((BlockId(2), 1), 1)
 v19: ((BlockId(2), 1), 0)
@@ -88,10 +86,9 @@ v5: ((BlockId(1), 1), 0)
 v0: ((BlockId(0), 0), 0)
 
 //! > drops
-PostStatement((BlockId(3), 2)): v17
-PostStatement((BlockId(3), 0)): v14, v15
+PostStatement((BlockId(3), 1)): v17
 PostStatement((BlockId(2), 2)): v12
 PostStatement((BlockId(1), 3)): v8
 PostStatement((BlockId(1), 1)): v6
 BeginningOfBlock(BlockId(1)): v4, v2, v1
-BeginningOfBlock(BlockId(3)): v1
+BeginningOfBlock(BlockId(3)): v13, v1

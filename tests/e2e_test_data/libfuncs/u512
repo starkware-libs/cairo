@@ -1,0 +1,217 @@
+//! > u512_safe_divmod_by_u256 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use integer::u512;
+fn foo(a: u512, b: NonZero<u256>) -> (u512, u256) {
+    integer::u512_safe_div_rem_by_u256(a, b)
+}
+
+//! > casm
+%{
+dividend = memory[fp + -8] + memory[fp + -7] * 2**128 + memory[fp + -6] * 2**256 + memory[fp + -5] * 2**384
+divisor = memory[fp + -4] + memory[fp + -3] * 2**128
+quotient, remainder = divmod(dividend, divisor)
+memory[ap + 0] = quotient & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 1] = (quotient >> 128) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 2] = (quotient >> 256) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 3] = quotient >> 384
+memory[ap + 4] = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+memory[ap + 5] = remainder >> 128
+%}
+[ap + 0] = [[fp + -9] + 0], ap++;
+[ap + 0] = [[fp + -9] + 1], ap++;
+[ap + 0] = [[fp + -9] + 2], ap++;
+[ap + 0] = [[fp + -9] + 3], ap++;
+[ap + 0] = [[fp + -9] + 4], ap++;
+[ap + 0] = [[fp + -9] + 5], ap++;
+[fp + -3] = [ap + 0] + [ap + -1], ap++;
+[fp + -4] = [ap + 0] + [ap + -3], ap++;
+[ap + -1] = [ap + 0] + 1, ap++;
+jmp rel 5 if [ap + -3] != 0;
+[ap + -1] = [[fp + -9] + 6];
+jmp rel 3;
+[ap + -3] = [[fp + -9] + 6];
+ap += 10;
+%{ (memory[ap + -9], memory[ap + -10]) = divmod(memory[ap + -19] * memory[fp + -4], 2**128) %}
+%{ (memory[ap + -7], memory[ap + -8]) = divmod(memory[ap + -18] * memory[fp + -4], 2**128) %}
+%{ (memory[ap + -5], memory[ap + -6]) = divmod(memory[ap + -19] * memory[fp + -3], 2**128) %}
+%{ (memory[ap + -3], memory[ap + -4]) = divmod(memory[ap + -18] * memory[fp + -3], 2**128) %}
+%{ (memory[ap + -1], memory[ap + -2]) = divmod(memory[ap + -17] * memory[fp + -4], 2**128) %}
+[ap + 0] = [ap + -10] + [ap + -15], ap++;
+[ap + -1] = [ap + 0] + [fp + -8], ap++;
+[ap + -1] = [ap + 0] * 340282366920938463463374607431768211456, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -9] + 7];
+[ap + -2] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -9] + 8];
+[ap + 0] = [ap + -3] + [ap + -14], ap++;
+[ap + 0] = [ap + -1] + [ap + -14], ap++;
+[ap + 0] = [ap + -1] + [ap + -13], ap++;
+[ap + 0] = [ap + -1] + [ap + -22], ap++;
+[ap + -1] = [ap + 0] + [fp + -7], ap++;
+[ap + -1] = [ap + 0] * 340282366920938463463374607431768211456, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -9] + 9];
+[ap + -2] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -9] + 10];
+[ap + 0] = [ap + -3] + [ap + -20], ap++;
+[ap + 0] = [ap + -1] + [ap + -19], ap++;
+[ap + 0] = [ap + -1] + [ap + -19], ap++;
+[ap + 0] = [ap + -1] + [ap + -18], ap++;
+[ap + -1] = [ap + 0] + [fp + -6], ap++;
+[ap + -1] = [ap + 0] * 340282366920938463463374607431768211456, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -9] + 11];
+[ap + -2] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -9] + 12];
+jmp rel 12 if [ap + -37] != 0, ap++;
+%{ memory[ap + 1] = memory[ap + -39] < memory[fp + -3] %}
+jmp rel 6 if [ap + 1] != 0, ap++;
+[ap + -2] = [fp + -3], ap++;
+[ap + -2] = [ap + -41];
+jmp rel 16;
+[ap + -2] = [ap + -40], ap++;
+[ap + -2] = [fp + -3];
+jmp rel 12;
+[fp + -3] = 0, ap++;
+%{ memory[ap + 0] = memory[ap + -39] < memory[fp + -4] %}
+jmp rel 6 if [ap + 0] != 0, ap++;
+[ap + -3] = [fp + -4];
+[ap + -2] = [ap + -40];
+jmp rel 4;
+[ap + -3] = [ap + -40];
+[ap + -2] = [fp + -4];
+[ap + 0] = [ap + -3] + 340282366920938463444927863358058659840, ap++;
+[ap + -1] = [[fp + -9] + 13];
+[ap + 0] = [ap + -4] * [ap + -3], ap++;
+[ap + 0] = [ap + -8] + [ap + -27], ap++;
+[ap + 0] = [ap + -1] + [ap + -30], ap++;
+[fp + -5] = [ap + -1] + [ap + -3];
+[ap + 0] = [fp + -9] + 14, ap++;
+[ap + 0] = [ap + -46], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -32], ap++;
+[ap + 0] = [ap + -34], ap++;
+call rel 38;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -70], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -57], ap++;
+[ap + 0] = [ap + -59], ap++;
+call rel 31;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -93], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -84], ap++;
+[ap + 0] = [ap + -86], ap++;
+call rel 24;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -117], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -105], ap++;
+[ap + 0] = [ap + -107], ap++;
+call rel 17;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -140], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -132], ap++;
+[ap + 0] = [ap + -134], ap++;
+call rel 10;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -163], ap++;
+[ap + 0] = [ap + -163], ap++;
+[ap + 0] = [ap + -163], ap++;
+[ap + 0] = [ap + -163], ap++;
+[ap + 0] = [ap + -163], ap++;
+[ap + 0] = [ap + -163], ap++;
+ret;
+%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -6], 18446744073709551616) %}
+[ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [[fp + -7] + 0], ap++;
+[ap + -2] = [[fp + -7] + 1], ap++;
+[ap + -2] = [[fp + -7] + 2];
+[ap + 0] = [ap + -2] * 18446744073709551616, ap++;
+[fp + -6] = [ap + -1] + [ap + -4];
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+%{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + -1], 18446744073709551616) %}
+[ap + 2] = [ap + 1] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [[fp + -7] + 3], ap++;
+[ap + -1] = [[fp + -7] + 4], ap++;
+[ap + -3] = [[fp + -7] + 5];
+[ap + 0] = [ap + -3] * 18446744073709551616, ap++;
+[ap + -5] = [ap + -1] + [ap + -3];
+[ap + 0] = [ap + -3] * 18446744073709551616, ap++;
+[ap + 3] = [ap + -7] + [ap + -1], ap++;
+%{ (memory[ap + -1], memory[fp + -3]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
+[ap + 0] = [ap + -1] + 340282366920938463426481119284349108224, ap++;
+[ap + -1] = [[fp + -7] + 6], ap++;
+[ap + -3] = [[fp + -7] + 7], ap++;
+[fp + -3] = [[fp + -7] + 8];
+[ap + -2] = [ap + -4] * 340282366920938463463374607431768211456;
+[ap + -1] = [ap + -2] + [fp + -3];
+[fp + -4] = [ap + -9] + [ap + -4];
+[ap + 0] = [fp + -7] + 9, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 25530})
+core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+type core::integer::u512 = Struct<ut@core::integer::u512, u128, u128, u128, u128>;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
+type U128MulGuarantee = U128MulGuarantee;
+type Unit = Struct<ut@Tuple>;
+type Tuple<core::integer::u512, core::integer::u256> = Struct<ut@Tuple, core::integer::u512, core::integer::u256>;
+
+libfunc u512_safe_divmod_by_u256 = u512_safe_divmod_by_u256;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<U128MulGuarantee> = store_temp<U128MulGuarantee>;
+libfunc function_call<user@core::integer::U128MulGuaranteeDestruct::destruct> = function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc struct_construct<Tuple<core::integer::u512, core::integer::u256>> = struct_construct<Tuple<core::integer::u512, core::integer::u256>>;
+libfunc store_temp<Tuple<core::integer::u512, core::integer::u256>> = store_temp<Tuple<core::integer::u512, core::integer::u256>>;
+libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+
+u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]);
+store_temp<RangeCheck>([3]) -> ([13]);
+store_temp<U128MulGuarantee>([10]) -> ([14]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([13], [14]) -> ([11], [12]);
+drop<Unit>([12]) -> ();
+store_temp<RangeCheck>([11]) -> ([17]);
+store_temp<U128MulGuarantee>([9]) -> ([18]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([17], [18]) -> ([15], [16]);
+drop<Unit>([16]) -> ();
+store_temp<RangeCheck>([15]) -> ([21]);
+store_temp<U128MulGuarantee>([8]) -> ([22]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([21], [22]) -> ([19], [20]);
+drop<Unit>([20]) -> ();
+store_temp<RangeCheck>([19]) -> ([25]);
+store_temp<U128MulGuarantee>([7]) -> ([26]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([25], [26]) -> ([23], [24]);
+drop<Unit>([24]) -> ();
+store_temp<RangeCheck>([23]) -> ([29]);
+store_temp<U128MulGuarantee>([6]) -> ([30]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([29], [30]) -> ([27], [28]);
+drop<Unit>([28]) -> ();
+struct_construct<Tuple<core::integer::u512, core::integer::u256>>([4], [5]) -> ([31]);
+store_temp<RangeCheck>([27]) -> ([32]);
+store_temp<Tuple<core::integer::u512, core::integer::u256>>([31]) -> ([33]);
+return([32], [33]);
+u128_mul_guarantee_verify([0], [1]) -> ([2]);
+struct_construct<Unit>() -> ([3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<Unit>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: core::integer::u512, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u512, core::integer::u256>);
+core::integer::U128MulGuaranteeDestruct::destruct@25([0]: RangeCheck, [1]: U128MulGuarantee) -> (RangeCheck, Unit);

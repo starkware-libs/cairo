@@ -1,8 +1,8 @@
-use super::unsigned128::Uint128Type;
+use super::unsigned128::{U128MulGuaranteeType, Uint128Type};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
 use crate::extensions::non_zero::nonzero_ty;
@@ -62,31 +62,24 @@ impl NoGenericArgsGenericLibfunc for Uint256DivmodLibfunc {
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        let ty = get_u256_type(context)?;
+        let u256_type = get_u256_type(context)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let simple_deref_u256_output_info =
+            OutputVarInfo { ty: u256_type.clone(), ref_info: OutputVarReferenceInfo::SimpleDerefs };
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
-                ParamSignature::new(ty.clone()),
-                ParamSignature::new(nonzero_ty(context, &ty)?),
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
+                ParamSignature::new(u256_type.clone()),
+                ParamSignature::new(nonzero_ty(context, &u256_type)?),
             ],
             vec![
+                OutputVarInfo::new_builtin(range_check_type, 0),
+                simple_deref_u256_output_info.clone(),
+                simple_deref_u256_output_info,
                 OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
+                    ty: context.get_concrete_type(U128MulGuaranteeType::id(), &[])?,
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
-                OutputVarInfo {
-                    ty: ty.clone(),
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
-                },
-                OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: None } },
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
@@ -106,24 +99,14 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
-                ParamSignature {
-                    ty: range_check_type.clone(),
-                    allow_deferred: false,
-                    allow_add_const: true,
-                    allow_const: false,
-                },
+                ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
                 ParamSignature::new(get_u256_type(context)?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 OutputVarInfo {
                     ty: context.get_concrete_type(Uint128Type::id(), &[])?,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: None },
+                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
                 },
             ],
             SierraApChange::Known { new_vars_only: false },

@@ -1,11 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ExternFunctionId, FreeFunctionId, FunctionTitleId, FunctionWithBodyId, ImplFunctionId,
-    ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId, UnstableSalsaId,
+    LanguageElementId, ModuleItemId, ParamLongId, TopLevelLanguageElementId, TraitFunctionId,
 };
 use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe};
+use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::attribute::structured::Attribute;
@@ -26,7 +28,7 @@ use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRew
 use crate::types::resolve_type;
 use crate::{
     semantic, semantic_object_for_id, ConcreteImplId, ConcreteImplLongId, GenericArgumentId,
-    GenericParam, SemanticDiagnostic,
+    GenericParam, SemanticDiagnostic, TypeId,
 };
 
 /// A generic function of an impl.
@@ -189,12 +191,6 @@ impl FunctionId {
         try_extract_matches!(self.get_concrete(db).generic_function, GenericFunctionId::Extern)
     }
 
-    /// Returns the [ConcreteFunctionWithBodyId] if this is a function with body, otherwise returns
-    /// None.
-    pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        self.get_concrete(db).body(db)
-    }
-
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         format!("{:?}", self.get_concrete(db)).into()
     }
@@ -241,6 +237,16 @@ impl GenericFunctionWithBodyId {
             GenericFunctionWithBodyId::Impl(imp) => {
                 format!("{}::{}", imp.concrete_impl_id.name(db), imp.function.name(db.upcast()))
                     .into()
+            }
+        }
+    }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        match self {
+            GenericFunctionWithBodyId::Free(free_function) => {
+                free_function.stable_location(db.upcast())
+            }
+            GenericFunctionWithBodyId::Impl(impl_function) => {
+                impl_function.function.stable_location(db.upcast())
             }
         }
     }
@@ -348,7 +354,7 @@ fn generic_params_to_args(
             GenericParam::Type(param) => Ok(GenericArgumentId::Type(
                 db.intern_type(crate::TypeLongId::GenericParameter(param.id)),
             )),
-            GenericParam::Const(_) => Err(skip_diagnostic()),
+            GenericParam::Const(_) => todo!("Support const generic arguments"),
             GenericParam::Impl(param) => {
                 Ok(GenericArgumentId::Impl(ImplId::GenericParameter(param.id)))
             }
@@ -424,6 +430,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.get(db).name(db)
+    }
+    pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
+        self.get(db).generic_function.stable_location(db)
     }
 }
 
@@ -690,6 +699,10 @@ pub struct FunctionDeclarationData {
     pub attributes: Vec<Attribute>,
     pub resolver_data: Arc<ResolverData>,
     pub inline_config: InlineConfiguration,
+    /// Order of implicits to follow by this function.
+    ///
+    /// For example, this can be used to enforce ABI compatibility with Starknet OS.
+    pub implicit_precedence: ImplicitPrecedence,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -697,6 +710,7 @@ pub enum InlineConfiguration {
     /// The user did not specify any inlining preferences.
     None,
     Always(Attribute),
+    Should(Attribute),
     Never(Attribute),
 }
 
@@ -715,5 +729,51 @@ pub fn forbid_inline_always_with_impl_generic_param(
             );
         }
         _ => {}
+    }
+}
+
+/// Extra information about sorting of implicit arguments of the function.
+///
+/// In most of the user written code, the implicits are not stated explicitly, but instead are
+/// inferred by the compiler. The order on how these implicit arguments are laid out on Sierra level
+/// is unspecified though for the users. Currently, the compiler sorts them alphabetically by name
+/// for reproducibility, but it can equally just randomize the order on each compilation.
+///
+/// Some compilation targets tend to expect that particular functions accept particular implicit
+/// arguments at fixed positions. For example, the Starknet OS has such assumptions. By reading the
+/// implicit precedence information attached to functions, the compiler can now reliably generate
+/// compatible code.
+///
+/// To set, add the `#[implicit_precedence(...)]` attribute to function declaration. Only free or
+/// impl functions can have this information defined. For extern functions, the compiler raises an
+/// error. It is recommended to always create this attribute from compiler plugins, and not force
+/// users to write it manually.
+///
+/// Use [ImplicitPrecedence::UNSPECIFIED] to represent lack of information.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ImplicitPrecedence(Vec<TypeId>);
+
+impl ImplicitPrecedence {
+    /// A precedence that does not actually prefer any implicit.
+    ///
+    /// When applied to a sequence of implicits, they will just be reordered alphabetically.
+    pub const UNSPECIFIED: Self = Self(Vec::new());
+
+    /// Sort implicits according to this precedence: first the ones with precedence
+    /// (according to it), then the others by their name.
+    pub fn apply(&self, implicits: &mut [TypeId], db: &dyn SemanticGroup) {
+        implicits.sort_by_cached_key(|implicit| {
+            if let Some(idx) = self.0.iter().position(|item| item == implicit) {
+                return (idx, "".to_string());
+            }
+
+            (self.0.len(), implicit.format(db))
+        });
+    }
+}
+
+impl FromIterator<TypeId> for ImplicitPrecedence {
+    fn from_iter<T: IntoIterator<Item = TypeId>>(iter: T) -> Self {
+        Self(Vec::from_iter(iter))
     }
 }

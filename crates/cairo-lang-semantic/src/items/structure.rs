@@ -13,6 +13,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
@@ -57,18 +58,17 @@ pub fn priv_struct_declaration_data(
         &mut resolver,
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
+        false,
     )?;
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
@@ -163,13 +163,11 @@ pub fn priv_struct_definition_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()));
     }
     for (_, member) in members.iter_mut() {
-        member.ty = resolver
-            .inference()
-            .rewrite(member.ty)
-            .map_err(|err| err.report(&mut diagnostics, struct_ast.stable_ptr().untyped()))?;
+        member.ty = resolver.inference().rewrite(member.ty).no_err();
     }
 
     let resolver_data = Arc::new(resolver.data);

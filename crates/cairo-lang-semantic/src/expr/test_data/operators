@@ -31,7 +31,7 @@ test_function_diagnostics
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
     // Valid.
     a + a * a - a;
-    b & b | b & (a == a | a > a)
+    (b & b) | (b & ((a == a) | (a > a)))
     & (a<a) & (a<=a) & (a>=a);
     // Errors.
     a>a>a;

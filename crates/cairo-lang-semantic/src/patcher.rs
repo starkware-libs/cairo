@@ -1,10 +1,9 @@
-use std::collections::HashMap;
-
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,7 +119,10 @@ impl RewriteNode {
     /// Creates a new Rewrite node by interpolating a string with patches.
     /// Each substring of the form `$<name>$` is replaced with syntax nodes from `patches`.
     /// A `$$` substring is replaced with `$`.
-    pub fn interpolate_patched(code: &str, patches: HashMap<String, RewriteNode>) -> RewriteNode {
+    pub fn interpolate_patched(
+        code: &str,
+        patches: UnorderedHashMap<String, RewriteNode>,
+    ) -> RewriteNode {
         let mut chars = code.chars().peekable();
         let mut pending_text = String::new();
         let mut children = Vec::new();

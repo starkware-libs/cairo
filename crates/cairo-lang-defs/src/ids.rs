@@ -23,6 +23,7 @@
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::ids::CrateId;
+pub use cairo_lang_filesystem::ids::UnstableSalsaId;
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
@@ -35,6 +36,7 @@ use salsa;
 use smol_str::SmolStr;
 
 use crate::db::DefsGroup;
+use crate::diagnostic_utils::StableLocation;
 
 // A trait for an id for a language element.
 pub trait LanguageElementId {
@@ -47,6 +49,8 @@ pub trait LanguageElementId {
     fn file_index(&self, db: &dyn DefsGroup) -> FileIndex {
         self.module_file_id(db).1
     }
+
+    fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation;
 }
 pub trait TopLevelLanguageElementId: LanguageElementId {
     fn name(&self, db: &dyn DefsGroup) -> SmolStr;
@@ -120,6 +124,10 @@ macro_rules! define_language_element_id_partial {
             }
             fn untyped_stable_ptr(&self, db: &dyn DefsGroup) -> SyntaxStablePtrId {
                 self.stable_ptr(db).untyped()
+            }
+            fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+                let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
+                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
             }
         }
     };
@@ -204,6 +212,14 @@ macro_rules! define_language_element_id_as_enum {
                     )*
                 }
             }
+            fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
+                 match self {
+                    $(
+                        $enum_name::$variant(id) => id.stable_location(db),
+                    )*
+                }
+            }
+
         }
 
         // Conversion from enum to its child.
@@ -238,13 +254,6 @@ macro_rules! toplevel_enum {
         }
 
     }
-}
-
-/// A trait for getting the internal salsa::InternId of a short id object.
-/// This id is unstable across runs and should not be used to anything that is externally visible.
-/// This is currently used to pick representative for strongly connected components.
-pub trait UnstableSalsaId {
-    fn get_internal_id(&self) -> &salsa::InternId;
 }
 
 /// Id for a module. Either the root module of a crate, or a submodule.
@@ -304,6 +313,11 @@ define_language_element_id!(
     lookup_intern_submodule,
     name
 );
+impl UnstableSalsaId for SubmoduleId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
 
 define_language_element_id!(
     ConstantId,
@@ -554,6 +568,7 @@ define_language_element_id_as_enum! {
         Enum(EnumId),
         ExternType(ExternTypeId),
         TypeAlias(TypeAliasId),
+        ImplAlias(ImplAliasId),
     }
 }
 impl GenericItemId {
@@ -629,6 +644,9 @@ impl GenericItemId {
             )),
             SyntaxKind::ItemTypeAlias => GenericItemId::TypeAlias(db.intern_type_alias(
                 TypeAliasLongId(module_file, ast::ItemTypeAliasPtr(stable_ptr)),
+            )),
+            SyntaxKind::ItemImplAlias => GenericItemId::ImplAlias(db.intern_impl_alias(
+                ImplAliasLongId(module_file, ast::ItemImplAliasPtr(stable_ptr)),
             )),
             _ => panic!(),
         }

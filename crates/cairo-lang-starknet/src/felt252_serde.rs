@@ -1,4 +1,7 @@
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
+use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
+use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256k1;
+use cairo_lang_sierra::extensions::starknet::secp256r1::Secp256r1;
 use cairo_lang_sierra::extensions::starknet::storage::{
     StorageAddressFromBaseAndOffsetLibfunc, StorageAddressTryFromFelt252Trait,
     StorageBaseAddressFromFelt252Libfunc,
@@ -23,8 +26,9 @@ use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 use thiserror::Error;
 
+use crate::compiler_version::VersionId;
 use crate::contract::starknet_keccak;
-use crate::sierra_version::VersionId;
+use crate::felt252_vec_compression::{compress, decompress};
 
 #[cfg(test)]
 #[path = "felt252_serde_test.rs"]
@@ -54,23 +58,35 @@ pub enum Felt252SerdeError {
     VersionIdTooLongForSerialization,
 }
 
-/// Serializes a Sierra program into a vector of felt252s.
+/// Serializes a Sierra program and the current compiler and Sierra versions into a vector of
+/// felt252s.
 pub fn sierra_to_felt252s(
     sierra_version: VersionId,
+    compiler_version: VersionId,
     program: &Program,
 ) -> Result<Vec<BigUintAsHex>, Felt252SerdeError> {
+    let mut serialized_program = vec![];
+    program.serialize(&mut serialized_program)?;
     let mut serialized = vec![];
     sierra_version.serialize(&mut serialized)?;
-    program.serialize(&mut serialized)?;
+    compiler_version.serialize(&mut serialized)?;
+    compress(&serialized_program, &mut serialized);
     Ok(serialized)
 }
 
 /// Deserializes a Sierra program from a slice of felt252s.
+///
+/// Returns (sierra_version_id, compiler_version_id, program).
+/// See [crate::compiler_version].
 pub fn sierra_from_felt252s(
     felts: &[BigUintAsHex],
-) -> Result<(VersionId, Program), Felt252SerdeError> {
-    let (version_id, program_part) = VersionId::deserialize(felts)?;
-    Ok((version_id, Program::deserialize(program_part)?.0))
+) -> Result<(VersionId, VersionId, Program), Felt252SerdeError> {
+    let (sierra_version_id, remaining) = VersionId::deserialize(felts)?;
+    let (compiler_version_id, remaining) = VersionId::deserialize(remaining)?;
+    let mut program_felts = vec![];
+    decompress(remaining, &mut program_felts)
+        .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
+    Ok((sierra_version_id, compiler_version_id, Program::deserialize(&program_felts)?.0))
 }
 
 /// Trait for serializing and deserializing into a felt252 vector.
@@ -168,6 +184,8 @@ static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(
             ContractAddressTryFromFelt252Libfunc::STR_ID,
             StorageBaseAddressFromFelt252Libfunc::STR_ID,
             StorageAddressTryFromFelt252Trait::STR_ID,
+            Secp256GetPointFromXLibfunc::<Secp256k1>::STR_ID,
+            Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
         ]
         .into_iter(),
     )
@@ -427,6 +445,8 @@ struct_serde! {
     }
 }
 
+struct_serde!(VersionId { major: usize, minor: usize, patch: usize });
+
 // Impls for enums.
 
 macro_rules! enum_serialize_impl {
@@ -510,27 +530,5 @@ impl Felt252Serde for BranchTarget {
             if idx == usize::MAX { Self::Fallthrough } else { Self::Statement(StatementIdx(idx)) },
             input,
         ))
-    }
-}
-
-impl Felt252Serde for VersionId {
-    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
-        if self.version.len() < SHORT_STRING_BOUND {
-            output.push(BigUintAsHex { value: BigUint::from_bytes_be(self.version.as_bytes()) });
-            Ok(())
-        } else {
-            Err(Felt252SerdeError::VersionIdTooLongForSerialization)
-        }
-    }
-    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
-        let head = input
-            .first()
-            .and_then(|id| {
-                std::str::from_utf8(&id.value.to_bytes_be())
-                    .ok()
-                    .map(|s| Self { version: s.into() })
-            })
-            .ok_or(Felt252SerdeError::InvalidInputForDeserialization)?;
-        Ok((head, &input[1..]))
     }
 }

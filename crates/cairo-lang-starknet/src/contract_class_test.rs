@@ -5,11 +5,11 @@ use pretty_assertions::assert_eq;
 use test_case::test_case;
 
 use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
+use crate::compiler_version;
 use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
 };
 use crate::felt252_serde::sierra_from_felt252s;
-use crate::sierra_version;
 use crate::test_utils::{get_example_file_path, get_test_contract};
 
 #[test]
@@ -56,6 +56,7 @@ fn test_serialization() {
 }
 
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 fn test_full_contract_deserialization(example_file_name: &str) {
@@ -68,6 +69,7 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 /// that the resulted json is the same as in <test_case>.json.
 #[test_case("account")]
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
@@ -75,7 +77,7 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 
-    let list_selector = ListSelector::ListName("experimental_v0.1.0".to_string());
+    let list_selector = ListSelector::ListName("all".to_string());
     validate_compatible_sierra_version(&contract, list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
@@ -83,11 +85,17 @@ fn test_compile_path(example_file_name: &str) {
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
-    let (version_id, mut sierra_program) = sierra_from_felt252s(&contract.sierra_program).unwrap();
+    let (sierra_version_id, compiler_version_id, mut sierra_program) =
+        sierra_from_felt252s(&contract.sierra_program).unwrap();
     assert_eq!(
-        version_id,
-        sierra_version::VersionId::current_version_id(),
+        sierra_version_id,
+        compiler_version::current_sierra_version_id(),
         "Serialized Sierra version should be the current version."
+    );
+    assert_eq!(
+        compiler_version_id,
+        compiler_version::current_compiler_version_id(),
+        "Serialized compiler version should be the current version."
     );
     contract.sierra_program_debug_info.unwrap().populate(&mut sierra_program);
 

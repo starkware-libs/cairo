@@ -50,8 +50,6 @@ End:
 //! > local_variables
 v9, v13
 
-//! > block_infos
-
 //! > ==========================================================================
 
 //! > Partial param local variable
@@ -89,5 +87,3 @@ End:
 
 //! > local_variables
 v2
-
-//! > block_infos

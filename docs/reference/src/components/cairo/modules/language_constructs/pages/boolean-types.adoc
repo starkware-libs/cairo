@@ -19,7 +19,7 @@ The following operators are defined for the boolean type:
 |===
 
 == Examples ==
-[source, cairo]
+[source,rust]
 ----
 fn main() {
     let x: bool = true;

@@ -166,6 +166,37 @@ Parameters:
 
 //! > ==========================================================================
 
+//! > Test unsupported match non felt252 value.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  match 5_u32 {
+      0 => 7,
+      _ => 8,
+  };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported matched value. Currently, only matches on enums and felt252s are supported.
+ --> lib.cairo:2:3
+  match 5_u32 {
+  ^***********^
+
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
 //! > Test empty enum match.
 
 //! > test_runner_name

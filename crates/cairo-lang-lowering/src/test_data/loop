@@ -26,3 +26,35 @@ Statements:
   (v0: core::bool) <- foo[expr2]()
 End:
   Return(v0)
+
+//! > ==========================================================================
+
+//! > Test loop with break; only.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  loop {
+    break;
+  }; 
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- foo[expr0]()
+  (v1: ()) <- struct_construct()
+End:
+  Return(v1)

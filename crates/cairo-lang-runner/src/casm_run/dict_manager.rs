@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use cairo_felt::Felt252;
-use cairo_vm::types::relocatable::Relocatable;
+use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::vm_core::VirtualMachine;
 
 /// Stores the data of a specific dictionary.
 pub struct DictTrackerExecScope {
     /// The data of the dictionary.
-    data: HashMap<Felt252, Felt252>,
+    data: HashMap<Felt252, MaybeRelocatable>,
     /// The index of the dictionary in the dict_infos segment.
     #[allow(dead_code)]
     idx: usize,
@@ -63,13 +63,22 @@ impl DictManagerExecScope {
     }
 
     /// Inserts a value to the dict tracker corresponding to a given pointer to a dict segment.
-    pub fn insert_to_tracker(&mut self, dict_end: Relocatable, key: Felt252, value: Felt252) {
+    pub fn insert_to_tracker(
+        &mut self,
+        dict_end: Relocatable,
+        key: Felt252,
+        value: MaybeRelocatable,
+    ) {
         self.get_dict_tracker_mut(dict_end).data.insert(key, value);
     }
 
     /// Gets a value from the dict tracker corresponding to a given pointer to a dict segment.
     /// None if the key does not exist in the tracker data.
-    pub fn get_from_tracker(&self, dict_end: Relocatable, key: &Felt252) -> Option<Felt252> {
+    pub fn get_from_tracker(
+        &self,
+        dict_end: Relocatable,
+        key: &Felt252,
+    ) -> Option<MaybeRelocatable> {
         self.get_dict_tracker(dict_end).data.get(key).cloned()
     }
 }

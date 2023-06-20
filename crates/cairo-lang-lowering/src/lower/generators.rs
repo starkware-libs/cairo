@@ -1,7 +1,6 @@
 //! Statement generators. Add statements to BlockBuilder while respecting variable liveness and
 //! ownership of OwnedVariable.
 
-use cairo_lang_defs::diagnostic_utils::StableLocationOption;
 use cairo_lang_semantic as semantic;
 use cairo_lang_semantic::ConcreteVariant;
 use cairo_lang_utils::extract_matches;
@@ -10,10 +9,11 @@ use num_bigint::BigInt;
 
 use super::context::VarRequest;
 use super::VariableId;
+use crate::ids::LocationId;
 use crate::lower::context::LoweringContext;
 use crate::objects::{
     Statement, StatementCall, StatementLiteral, StatementStructConstruct,
-    StatementStructDestructure,
+    StatementStructDestructure, VarUsage,
 };
 use crate::{StatementDesnap, StatementEnumConstruct, StatementSnapshot};
 
@@ -31,7 +31,7 @@ impl StatementsBuilder {
 /// Generator for [StatementLiteral].
 pub struct Literal {
     pub value: BigInt,
-    pub location: StableLocationOption,
+    pub location: LocationId,
     pub ty: semantic::TypeId,
 }
 impl Literal {
@@ -52,13 +52,13 @@ pub struct Call {
     /// Called function.
     pub function: crate::ids::FunctionId,
     /// Inputs to function.
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     /// Types for `ref` parameters of the function. An output variable will be introduced for each.
     pub extra_ret_tys: Vec<semantic::TypeId>,
     /// Types for the returns of the function. An output variable will be introduced for each.
     pub ret_tys: Vec<semantic::TypeId>,
     /// Location associated with this statement.
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl Call {
     /// Adds a call statement to the builder.
@@ -81,7 +81,7 @@ impl Call {
 
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
-            inputs: self.inputs,
+            inputs: self.inputs.into_iter().map(|var_usage| var_usage.var_id).collect(),
             outputs,
             location: self.location,
         }));
@@ -101,7 +101,7 @@ pub struct CallResult {
 pub struct EnumConstruct {
     pub input: VariableId,
     pub variant: ConcreteVariant,
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl EnumConstruct {
     pub fn add(
@@ -125,7 +125,7 @@ impl EnumConstruct {
 /// Generator for [StatementSnapshot].
 pub struct Snapshot {
     pub input: VariableId,
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl Snapshot {
     pub fn add(
@@ -149,7 +149,7 @@ impl Snapshot {
 /// Generator for [StatementDesnap].
 pub struct Desnap {
     pub input: VariableId,
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl Desnap {
     pub fn add(
@@ -194,7 +194,7 @@ pub struct StructMemberAccess {
     pub input: VariableId,
     pub member_tys: Vec<semantic::TypeId>,
     pub member_idx: usize,
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl StructMemberAccess {
     pub fn add(
@@ -219,7 +219,7 @@ impl StructMemberAccess {
 pub struct StructConstruct {
     pub inputs: Vec<VariableId>,
     pub ty: semantic::TypeId,
-    pub location: StableLocationOption,
+    pub location: LocationId,
 }
 impl StructConstruct {
     pub fn add(

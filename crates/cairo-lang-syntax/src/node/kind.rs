@@ -56,6 +56,9 @@ pub enum SyntaxKind {
     StatementLet,
     OptionTerminalSemicolonEmpty,
     StatementExpr,
+    StatementContinue,
+    ExprClause,
+    OptionExprClauseEmpty,
     StatementReturn,
     StatementBreak,
     Param,
@@ -69,6 +72,7 @@ pub enum SyntaxKind {
     Member,
     MemberList,
     ItemList,
+    ItemMissing,
     Attribute,
     AttributeList,
     ItemModule,
@@ -81,9 +85,12 @@ pub enum SyntaxKind {
     ItemTrait,
     TraitBody,
     TraitItemList,
+    TraitItemMissing,
     TraitItemFunction,
     ItemImpl,
     ImplBody,
+    ImplItemList,
+    ImplItemMissing,
     ItemImplAlias,
     ItemStruct,
     ItemEnum,
@@ -146,6 +153,8 @@ pub enum SyntaxKind {
     TerminalOf,
     TokenRef,
     TerminalRef,
+    TokenContinue,
+    TerminalContinue,
     TokenReturn,
     TerminalReturn,
     TokenBreak,
@@ -224,6 +233,8 @@ pub enum SyntaxKind {
     TerminalNeq,
     TokenNot,
     TerminalNot,
+    TokenBitNot,
+    TerminalBitNot,
     TokenOr,
     TerminalOr,
     TokenOrOr,
@@ -278,6 +289,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
+                | SyntaxKind::TokenContinue
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
@@ -317,6 +329,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenMulEq
                 | SyntaxKind::TokenNeq
                 | SyntaxKind::TokenNot
+                | SyntaxKind::TokenBitNot
                 | SyntaxKind::TokenOr
                 | SyntaxKind::TokenOrOr
                 | SyntaxKind::TokenPlus
@@ -359,6 +372,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalContinue
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct
@@ -398,6 +412,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalMulEq
                 | SyntaxKind::TerminalNeq
                 | SyntaxKind::TerminalNot
+                | SyntaxKind::TerminalBitNot
                 | SyntaxKind::TerminalOr
                 | SyntaxKind::TerminalOrOr
                 | SyntaxKind::TerminalPlus
@@ -432,6 +447,7 @@ impl SyntaxKind {
                 | SyntaxKind::TokenNoPanic
                 | SyntaxKind::TokenOf
                 | SyntaxKind::TokenRef
+                | SyntaxKind::TokenContinue
                 | SyntaxKind::TokenReturn
                 | SyntaxKind::TokenBreak
                 | SyntaxKind::TokenStruct
@@ -462,6 +478,7 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalNoPanic
                 | SyntaxKind::TerminalOf
                 | SyntaxKind::TerminalRef
+                | SyntaxKind::TerminalContinue
                 | SyntaxKind::TerminalReturn
                 | SyntaxKind::TerminalBreak
                 | SyntaxKind::TerminalStruct

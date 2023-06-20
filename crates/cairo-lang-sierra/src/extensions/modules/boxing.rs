@@ -22,7 +22,7 @@ impl GenericTypeArgGenericType for BoxTypeWrapped {
         TypeInfo { storable, droppable, duplicatable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         if storable {
-            Ok(TypeInfo { long_id, size: 1, storable, droppable, duplicatable })
+            Ok(TypeInfo { long_id, zero_sized: false, storable, droppable, duplicatable })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
@@ -52,7 +52,7 @@ impl SignatureAndTypeGenericLibfunc for IntoBoxLibfuncWrapped {
             vec![ty.clone()],
             vec![OutputVarInfo {
                 ty: context.get_wrapped_concrete_type(BoxType::id(), ty)?,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
+                ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))

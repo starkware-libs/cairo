@@ -51,6 +51,7 @@ fn foo() -> Option::<felt252> {
     x.is_some();
     let y = Option::Some(true);
     y.is_bar();
+    y.SomeOtherPrefix::is_bar();
     x
 }
 
@@ -100,7 +101,12 @@ error: Ambiguous method call. More than one applicable trait function with a sui
     y.is_bar();
     ^********^
 
-error: Trait `test::OptionTrait::<core::felt252>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
+error: Invalid member expression.
+ --> lib.cairo:37:7
+    y.SomeOtherPrefix::is_bar();
+      ^***********************^
+
+error: Candidate impl test::AnotherOptionTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:34:7
     x.is_some();
       ^*****^

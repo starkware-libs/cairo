@@ -41,6 +41,7 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
+    Continue(StatementContinue),
     Return(StatementReturn),
     Break(StatementBreak),
 }
@@ -49,6 +50,7 @@ impl Statement {
         match self {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
+            Statement::Continue(stmt) => stmt.stable_ptr,
             Statement::Return(stmt) => stmt.stable_ptr,
             Statement::Break(stmt) => stmt.stable_ptr,
         }
@@ -76,8 +78,16 @@ pub struct StatementLet {
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
+pub struct StatementContinue {
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::StatementPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
 pub struct StatementReturn {
-    pub expr: ExprId,
+    pub expr_option: Option<ExprId>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
@@ -86,7 +96,7 @@ pub struct StatementReturn {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct StatementBreak {
-    pub expr: ExprId,
+    pub expr_option: Option<ExprId>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
@@ -100,6 +110,7 @@ pub enum Expr {
     Snapshot(ExprSnapshot),
     Desnap(ExprDesnap),
     Assignment(ExprAssignment),
+    LogicalOperator(ExprLogicalOperator),
     Block(ExprBlock),
     Loop(ExprLoop),
     FunctionCall(ExprFunctionCall),
@@ -121,6 +132,7 @@ impl Expr {
             Expr::Tuple(expr) => expr.ty,
             Expr::Snapshot(expr) => expr.ty,
             Expr::Desnap(expr) => expr.ty,
+            Expr::LogicalOperator(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
             Expr::Loop(expr) => expr.ty,
             Expr::FunctionCall(expr) => expr.ty,
@@ -142,6 +154,7 @@ impl Expr {
             Expr::Tuple(expr) => expr.stable_ptr,
             Expr::Snapshot(expr) => expr.stable_ptr,
             Expr::Desnap(expr) => expr.stable_ptr,
+            Expr::LogicalOperator(expr) => expr.stable_ptr,
             Expr::Block(expr) => expr.stable_ptr,
             Expr::Loop(expr) => expr.stable_ptr,
             Expr::FunctionCall(expr) => expr.stable_ptr,
@@ -321,6 +334,26 @@ pub struct ExprAssignment {
     pub ref_arg: ExprVarMemberPath,
     pub rhs: semantic::ExprId,
     // ExprAssignment is always of unit type.
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum LogicalOperator {
+    AndAnd,
+    OrOr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprLogicalOperator {
+    pub lhs: semantic::ExprId,
+    #[dont_rewrite]
+    pub op: LogicalOperator,
+    pub rhs: semantic::ExprId,
+    // ExprLogicalOperator is always of bool type.
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

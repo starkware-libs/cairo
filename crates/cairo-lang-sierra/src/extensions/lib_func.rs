@@ -302,6 +302,7 @@ impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
 }
 
 /// Information regarding a parameter of the libfunc.
+#[derive(Clone)]
 pub struct ParamSignature {
     /// The type of the parameter.
     pub ty: ConcreteTypeId,
@@ -318,6 +319,32 @@ impl ParamSignature {
     pub fn new(ty: ConcreteTypeId) -> Self {
         Self { ty, allow_add_const: false, allow_deferred: false, allow_const: false }
     }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_deferred` flag set.
+    pub fn with_allow_deferred(mut self) -> Self {
+        self.allow_deferred = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_add_const` flag set.
+    pub fn with_allow_add_const(mut self) -> Self {
+        self.allow_add_const = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with the `allow_const` flag set.
+    pub fn with_allow_const(mut self) -> Self {
+        self.allow_const = true;
+        self
+    }
+
+    /// Returns a modified version of [ParamSignature], with all attributes set.
+    pub fn with_allow_all(mut self) -> Self {
+        self.allow_add_const = true;
+        self.allow_deferred = true;
+        self.allow_const = true;
+        self
+    }
 }
 impl From<ConcreteTypeId> for ParamSignature {
     fn from(ty: ConcreteTypeId) -> Self {
@@ -328,7 +355,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
@@ -338,15 +365,20 @@ pub enum OutputVarReferenceInfo {
     /// Information, such as whether the parameter was a temporary or local variable, will be
     /// copied to the output variable.
     PartialParam { param_idx: usize },
-    /// The output was allocated as a temporary variable.
-    /// For the outputs that are at the top of the stack (contiguously), contains the index of the
-    /// temporary variable in the stack (0 is the lowest variable).
-    NewTempVar { idx: Option<usize> },
+    /// The output was allocated as a temporary variable and it is at the top of the stack
+    /// (contiguously).
+    NewTempVar {
+        /// The index of the temporary variable in the stack (0 is the variable with the lowest
+        /// memory address).
+        idx: usize,
+    },
     /// The output was allocated as a local variable.
     NewLocalVar,
     /// The output is the result of a computation. For example `[ap] + [fp]`,
     /// `[ap + 1] * [fp - 3]`, `[ap] + 3`, `7`.
     Deferred(DeferredOutputKind),
+    /// All the output cells are of the form `[ap/fp + const]`. For example, `([ap + 1], [fp])`.
+    SimpleDerefs,
 }
 
 /// The type of a deferred output.
@@ -362,10 +394,19 @@ pub enum DeferredOutputKind {
 }
 
 /// Contains information regarding an output variable in a single branch.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
+}
+impl OutputVarInfo {
+    /// Convenience function to get the common OutputVarInfo for builtins.
+    pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
+        Self {
+            ty: builtin,
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+        }
+    }
 }
 
 /// Contains information on the variables returned in a single libfunc branch
@@ -393,7 +434,7 @@ pub enum SierraApChange {
         new_vars_only: bool,
     },
     /// The lib func is `branch_align`.
-    /// The `ap` change is know during compilation.
+    /// The `ap` change is known during compilation.
     BranchAlign,
 }
 /// Trait for a specialized library function.

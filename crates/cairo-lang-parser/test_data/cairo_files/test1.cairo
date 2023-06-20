@@ -42,3 +42,5 @@ struct A<A, B> {
 
 type Renamed = submod::inner::Other;
 type Generic<T> = super::other::OtherGeneric::<T>;
+
+#[attribute_without_item]

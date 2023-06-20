@@ -8,11 +8,7 @@ impl BoxTDrop<T, impl TDrop: Drop<T>> of Drop<Box<T>>;
 extern fn into_box<T>(value: T) -> Box<T> nopanic;
 extern fn unbox<T>(box: Box<T>) -> T nopanic;
 
-trait BoxTrait<T> {
-    fn new(value: T) -> Box<T> nopanic;
-    fn unbox(self: Box<T>) -> T nopanic;
-}
-
+#[generate_trait]
 impl BoxImpl<T> of BoxTrait<T> {
     #[inline(always)]
     fn new(value: T) -> Box<T> nopanic {

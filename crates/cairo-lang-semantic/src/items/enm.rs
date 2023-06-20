@@ -14,6 +14,7 @@ use super::generics::semantic_generic_params;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -55,18 +56,17 @@ pub fn priv_enum_declaration_data(
         &mut resolver,
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
+        false,
     )?;
 
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, enum_ast.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(EnumDeclarationData {
@@ -91,6 +91,11 @@ pub fn enum_generic_params(
     enum_id: EnumId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
     Ok(db.priv_enum_declaration_data(enum_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::enum_attributes].
+pub fn enum_attributes(db: &dyn SemanticGroup, enum_id: EnumId) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_enum_declaration_data(enum_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::enum_declaration_resolver_data].
@@ -173,13 +178,11 @@ pub fn priv_enum_definition_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
     }
     for (_, variant) in variant_semantic.iter_mut() {
-        variant.ty = resolver
-            .inference()
-            .rewrite(variant.ty)
-            .map_err(|err| err.report(&mut diagnostics, enum_ast.stable_ptr().untyped()))?;
+        variant.ty = resolver.inference().rewrite(variant.ty).no_err();
     }
 
     let resolver_data = Arc::new(resolver.data);

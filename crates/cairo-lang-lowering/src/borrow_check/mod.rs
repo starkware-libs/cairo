@@ -4,7 +4,7 @@ use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
 pub use self::demand::Demand;
-use self::demand::DemandReporter;
+use self::demand::{AuxCombine, DemandReporter};
 use crate::blocks::Blocks;
 use crate::borrow_check::analysis::BackAnalysis;
 use crate::db::LoweringGroup;
@@ -15,7 +15,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId
 pub mod analysis;
 pub mod demand;
 
-pub type LoweredDemand = Demand<VariableId>;
+pub type LoweredDemand = Demand<VariableId, PanicState>;
 pub struct BorrowChecker<'a> {
     db: &'a dyn LoweringGroup,
     diagnostics: &'a mut LoweringDiagnostics,
@@ -23,17 +23,42 @@ pub struct BorrowChecker<'a> {
     success: Maybe<()>,
 }
 
-impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
+/// A state saved for each position in the back analysis.
+/// Used to determine if this flow is guaranteed to end in a panic.
+#[derive(Copy, Clone, Default)]
+pub enum PanicState {
+    EndsWithPanic,
+    #[default]
+    Otherwise,
+}
+impl AuxCombine for PanicState {
+    fn merge<'a, I: Iterator<Item = &'a Self>>(mut iter: I) -> Self
+    where
+        Self: 'a,
+    {
+        if iter.all(|x| matches!(x, Self::EndsWithPanic)) {
+            Self::EndsWithPanic
+        } else {
+            Self::Otherwise
+        }
+    }
+}
+
+impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
     type IntroducePosition = ();
     type UsePosition = ();
 
-    fn drop(&mut self, _position: (), var_id: VariableId) {
+    fn drop_aux(&mut self, _position: (), var_id: VariableId, panic_state: PanicState) {
         let var = &self.lowered.variables[var_id];
         let Err(drop_err) = var.droppable.clone() else { return; };
         let Err(destruct_err) = var.destruct_impl.clone() else { return; };
-        self.success = Err(self
-            .diagnostics
-            .report_by_location(var.location, VariableNotDropped { drop_err, destruct_err }));
+        if matches!(panic_state, PanicState::EndsWithPanic) {
+            let Err(_panic_destruct_err) = var.panic_destruct_impl.clone() else { return; };
+        }
+        self.success = Err(self.diagnostics.report_by_location(
+            var.location.get(self.db),
+            VariableNotDropped { drop_err, destruct_err },
+        ));
     }
 
     fn dup(&mut self, _position: (), var: VariableId) {
@@ -41,7 +66,7 @@ impl<'a> DemandReporter<VariableId> for BorrowChecker<'a> {
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self
                 .diagnostics
-                .report_by_location(var.location, VariableMoved { inference_error }));
+                .report_by_location(var.location.get(self.db), VariableMoved { inference_error }));
         }
     }
 }
@@ -61,7 +86,8 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 if let Ok(signature) = stmt.function.signature(self.db) {
                     if signature.panicable {
                         // Be prepared to panic here.
-                        let panic_demand = LoweredDemand::default();
+                        let panic_demand =
+                            LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
                         *info = LoweredDemand::merge_demands(
                             &[(panic_demand, ()), (info.clone(), ())],
                             self,
@@ -73,7 +99,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.duplicatable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location,
+                        var.location.get(self.db),
                         DesnappingANonCopyableType { inference_error },
                     ));
                 }
@@ -126,7 +152,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         data: &VariableId,
     ) -> Self::Info {
-        let mut info = LoweredDemand::default();
+        let mut info = LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
         info.variables_used(self, &[*data], ());
         info
     }

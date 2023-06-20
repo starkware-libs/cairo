@@ -14,6 +14,18 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 pub struct CrateLongId(pub SmolStr);
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
 
+/// A trait for getting the internal salsa::InternId of a short id object.
+/// This id is unstable across runs and should not be used to anything that is externally visible.
+/// This is currently used to pick representative for strongly connected components.
+pub trait UnstableSalsaId {
+    fn get_internal_id(&self) -> &salsa::InternId;
+}
+impl UnstableSalsaId for CrateId {
+    fn get_internal_id(&self) -> &salsa::InternId {
+        &self.0
+    }
+}
+
 /// The long ID for a compilation flag.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct FlagLongId(pub SmolStr);

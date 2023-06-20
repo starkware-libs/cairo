@@ -2,10 +2,10 @@
 #[cfg(test)]
 mod test;
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use cairo_lang_filesystem::ids::Directory;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -32,7 +32,7 @@ pub struct ProjectConfig {
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
-    pub crate_roots: HashMap<SmolStr, PathBuf>,
+    pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
 }
 
 impl ProjectConfig {

@@ -1,6 +1,20 @@
 = Tuple types
 
-This section is a work in progress.
+A tuple type is a parenthesized, comma-separated list of types.
+1-ary tuples require a comma after their element type to be disambiguated with a parenthesized type.
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+A tuple type has a number of fields equal to the length of the list of types. This number of fields determines the arity of the tuple. A tuple with n fields is called an n-ary tuple. For example, a tuple with 2 fields is a 2-ary tuple.
+
+The tuple type with no fields `()` is also called the xref:unit-type.adoc[Unit type]
+
+Examples:
+[source, cairo]
+---
+() // Unit type.
+(bool,)
+(u32, u256)
+(felt252, u16, Option<u8>)
+---
+
+Values of this type are constructed using a xref:tuple-expressions.adoc[tuple expressions].
+Tuples can be deconstructed using xref:patterns.adoc[patterns].

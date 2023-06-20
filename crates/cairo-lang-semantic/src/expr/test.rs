@@ -30,6 +30,7 @@ cairo_lang_test_utils::test_file_test!(
         inference: "inference",
         let_statement: "let_statement",
         literal: "literal",
+        logical_operator: "logical_operator",
         loop_: "loop",
         match_: "match",
         method: "method",
@@ -52,6 +53,11 @@ cairo_lang_test_utils::test_file_test!(
 #[test_case("'hello world'_u128", 0x68656c6c6f20776f726c64, "u128")]
 #[test_case(r"'\''", 39, "felt252")]
 #[test_case(r"'\x12\x34'_u128", 0x1234, "u128")]
+#[test_case("86_400_u128", 86400, "u128")]
+#[test_case("8_6_4_0_0_u128", 86400, "u128")]
+#[test_case("86_400", 86400, "felt252")]
+#[test_case("8_6_4_0_0", 86400, "felt252")]
+#[test_case("0x1_f32", 0x1f32, "felt252")]
 fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     let mut db_val = SemanticDatabaseForTesting::default();
     let test_expr = setup_test_expr(&mut db_val, expr, "", "").unwrap();
@@ -113,14 +119,15 @@ fn test_expr_operator() {
         format!("{:?}", expr.debug(&expr_formatter)),
         "FunctionCall(ExprFunctionCall { function: core::BoolNot::not, args: \
          [Value(FunctionCall(ExprFunctionCall { function: core::Felt252PartialEq::eq, args: \
-         [Value(FunctionCall(ExprFunctionCall { function: core::Felt252Add::add, args: \
-         [Value(FunctionCall(ExprFunctionCall { function: core::Felt252Neg::neg, args: \
-         [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 }))], ty: core::felt252 })), \
-         Value(FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
-         [Value(Literal(ExprLiteral { value: 9, ty: core::felt252 })), Value(Literal(ExprLiteral \
-         { value: 3, ty: core::felt252 }))], ty: core::felt252 }))], ty: core::felt252 })), \
-         Value(Literal(ExprLiteral { value: 0, ty: core::felt252 }))], ty: core::bool }))], ty: \
-         core::bool })"
+         [Value(Snapshot(ExprSnapshot { inner: FunctionCall(ExprFunctionCall { function: \
+         core::Felt252Add::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
+         core::Felt252Neg::neg, args: [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 \
+         }))], ty: core::felt252 })), Value(FunctionCall(ExprFunctionCall { function: \
+         core::Felt252Mul::mul, args: [Value(Literal(ExprLiteral { value: 9, ty: core::felt252 \
+         })), Value(Literal(ExprLiteral { value: 3, ty: core::felt252 }))], ty: core::felt252 \
+         }))], ty: core::felt252 }), ty: @core::felt252 })), Value(Snapshot(ExprSnapshot { inner: \
+         Literal(ExprLiteral { value: 0, ty: core::felt252 }), ty: @core::felt252 }))], ty: \
+         core::bool }))], ty: core::bool })"
     );
 }
 

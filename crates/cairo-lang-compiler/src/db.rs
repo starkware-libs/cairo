@@ -10,7 +10,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::CrateLongId;
-use cairo_lang_lowering::db::{init_lowering_group, LoweringDatabase, LoweringGroup};
+use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
@@ -19,7 +19,6 @@ use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
-use smol_str::SmolStr;
 
 use crate::project::update_crate_roots_from_project_config;
 
@@ -36,21 +35,25 @@ pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
 }
 impl salsa::Database for RootDatabase {}
+impl salsa::ParallelDatabase for RootDatabase {
+    fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
+        salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
+    }
+}
 impl RootDatabase {
-    pub fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
+    fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        init_lowering_group(&mut res);
         res.set_semantic_plugins(plugins);
         res
     }
 
     pub fn empty() -> Self {
-        Self::new(Vec::new())
+        Self::builder().clear_plugins().build().unwrap()
     }
 
     pub fn builder() -> RootDatabaseBuilder {
-        RootDatabaseBuilder::default()
+        RootDatabaseBuilder::new()
     }
 
     /// Snapshots the db for read only.
@@ -61,27 +64,35 @@ impl RootDatabase {
 
 impl Default for RootDatabase {
     fn default() -> Self {
-        // TODO(spapini): Consider taking from config.
-        Self::new(get_default_plugins())
+        Self::builder().build().unwrap()
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
-    plugins: Option<Vec<Arc<dyn SemanticPlugin>>>,
+    plugins: Vec<Arc<dyn SemanticPlugin>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
-    implicit_precedence: Option<Vec<String>>,
     cfg_set: Option<CfgSet>,
 }
 
 impl RootDatabaseBuilder {
-    pub fn empty() -> Self {
-        Default::default()
+    fn new() -> Self {
+        Self {
+            plugins: get_default_plugins(),
+            detect_corelib: false,
+            project_config: None,
+            cfg_set: None,
+        }
     }
 
-    pub fn with_plugins(&mut self, plugins: Vec<Arc<dyn SemanticPlugin>>) -> &mut Self {
-        self.plugins = Some(plugins);
+    pub fn with_semantic_plugin(&mut self, plugin: Arc<dyn SemanticPlugin>) -> &mut Self {
+        self.plugins.push(plugin);
+        self
+    }
+
+    pub fn clear_plugins(&mut self) -> &mut Self {
+        self.plugins.clear();
         self
     }
 
@@ -95,11 +106,6 @@ impl RootDatabaseBuilder {
         self
     }
 
-    pub fn with_implicit_precedence(&mut self, precedence: &[impl ToString]) -> &mut Self {
-        self.implicit_precedence = Some(precedence.iter().map(ToString::to_string).collect());
-        self
-    }
-
     pub fn with_cfg(&mut self, cfg_set: impl Into<CfgSet>) -> &mut Self {
         self.cfg_set = Some(cfg_set.into());
         self
@@ -110,7 +116,7 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::default();
+        let mut db = RootDatabase::new(self.plugins.clone());
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
@@ -129,16 +135,6 @@ impl RootDatabaseBuilder {
                 let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
-        }
-
-        if let Some(precedence) = self.implicit_precedence.clone() {
-            db.set_implicit_precedence(Arc::new(
-                precedence.into_iter().map(SmolStr::from).collect::<Vec<_>>(),
-            ));
-        }
-
-        if let Some(plugins) = self.plugins.clone() {
-            db.set_semantic_plugins(plugins);
         }
 
         Ok(db)

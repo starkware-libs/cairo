@@ -148,6 +148,9 @@ fn emit_fields_debug(
 /// crate, it needs to be referred to as `crate` and no `debug`.
 fn debug_crate() -> syn::Ident {
     let crate_name = std::env::var("CARGO_PKG_NAME").unwrap();
-    let res = if crate_name == "cairo-lang-debug" { "crate" } else { "cairo_lang_debug" };
+    let res = match crate_name.as_str() {
+        "cairo-lang-debug" | "cairo_lang_debug" => "crate",
+        _ => "cairo_lang_debug",
+    };
     syn::Ident::new(res, Span::call_site())
 }

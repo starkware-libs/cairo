@@ -1,7 +1,7 @@
-use starknet::SyscallResult;
-use starknet::storage_access::StorageAddress;
-use starknet::class_hash::ClassHash;
-use starknet::contract_address::ContractAddress;
+use starknet::{
+    SyscallResult, storage_access::StorageAddress, class_hash::ClassHash,
+    contract_address::ContractAddress
+};
 
 // Calls a given contract.
 // `address` - The address of the called contract.
@@ -30,6 +30,11 @@ extern fn deploy_syscall(
 extern fn emit_event_syscall(
     keys: Span<felt252>, data: Span<felt252>
 ) -> SyscallResult<()> implicits(GasBuiltin, System) nopanic;
+
+// Gets the block hash of the block with the given number.
+extern fn get_block_hash_syscall(
+    block_number: u64
+) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 // Gets information about the current execution.
 extern fn get_execution_info_syscall() -> SyscallResult<Box<starknet::info::ExecutionInfo>> implicits(

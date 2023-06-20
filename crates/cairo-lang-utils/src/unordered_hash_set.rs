@@ -17,6 +17,14 @@ impl<Key: Hash + Eq> UnorderedHashSet<Key> {
         self.0.insert(key)
     }
 
+    /// Removes a value from the set. Returns whether the value was present in the set.
+    pub fn remove<Q: ?Sized + Hash + Eq>(&mut self, value: &Q) -> bool
+    where
+        Key: Borrow<Q>,
+    {
+        self.0.remove(value)
+    }
+
     /// Extends the set with the content of the given iterator.
     pub fn extend<I: IntoIterator<Item = Key>>(&mut self, iter: I) {
         self.0.extend(iter)

@@ -2,4 +2,4 @@
 * Getting Started
 ** xref:prerequisits.adoc[Prerequisites]
 ** xref:compiling-and-running-cairo-files.adoc[Compiling & running Cairo files]
-** xref:compiling-starknet-contracts.adoc[Compiling StarkNet contracts]
+** xref:compiling-starknet-contracts.adoc[Compiling Starknet contracts]

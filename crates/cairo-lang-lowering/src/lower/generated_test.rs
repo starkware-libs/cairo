@@ -1,6 +1,7 @@
 use std::fmt::Write;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
@@ -8,6 +9,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
+use crate::ids::{ConcreteFunctionWithBodyLongId, GeneratedFunction};
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
@@ -46,8 +48,24 @@ fn test_generated_function(
         )
         .unwrap();
 
-        for (_, lowering) in multi_lowering.generated_lowerings.iter() {
-            writeln!(&mut writer, "Generated:").unwrap();
+        for (expr_id, lowering) in multi_lowering.generated_lowerings.iter() {
+            let generated_id = db.intern_lowering_concrete_function_with_body(
+                ConcreteFunctionWithBodyLongId::Generated(GeneratedFunction {
+                    parent: test_function.concrete_function_id,
+                    element: *expr_id,
+                }),
+            );
+
+            writeln!(
+                &mut writer,
+                "Generated lowering for source location:\n{}\n",
+                get_location_marks(
+                    db,
+                    &generated_id.stable_location(db).unwrap().diagnostic_location(db)
+                )
+            )
+            .unwrap();
+
             writeln!(
                 &mut writer,
                 "{:?}",

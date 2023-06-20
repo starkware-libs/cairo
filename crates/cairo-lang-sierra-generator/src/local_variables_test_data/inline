@@ -61,9 +61,6 @@ End:
 //! > local_variables
 v9
 
-//! > block_infos
-blk1: known_ap_change: true.
-
 //! > ==========================================================================
 
 //! > inlining of a function with a revoking goto.
@@ -132,9 +129,6 @@ End:
 //! > local_variables
 v12
 
-//! > block_infos
-blk1: known_ap_change: true.
-
 //! > ==========================================================================
 
 //! > Remapping - fallthrough without incoming gotos
@@ -175,5 +169,3 @@ End:
 
 //! > local_variables
 v5
-
-//! > block_infos

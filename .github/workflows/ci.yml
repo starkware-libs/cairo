@@ -8,29 +8,67 @@ on:
     types: [checks_requested]
 
 jobs:
-  test:
+  parallel-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cmd:
+          - nextest run -p cairo-lang-casm
+          - nextest run -p cairo-lang-compiler
+          - nextest run -p cairo-lang-debug
+          - nextest run -p cairo-lang-defs
+          - nextest run -p cairo-lang-diagnostics
+          - nextest run -p cairo-lang-eq-solver
+          - nextest run -p cairo-lang-filesystem
+          - nextest run -p cairo-lang-formatter
+          - nextest run -p cairo-lang-language-server
+          - nextest run -p cairo-lang-lowering
+          - nextest run -p cairo-lang-parser
+          - nextest run -p cairo-lang-plugins
+          - nextest run -p cairo-lang-proc-macros
+          - nextest run -p cairo-lang-project
+          - nextest run -p cairo-lang-runner
+          - nextest run -p cairo-lang-semantic
+          - nextest run -p cairo-lang-sierra
+          - nextest run -p cairo-lang-sierra-ap-change
+          - nextest run -p cairo-lang-sierra-gas
+          - nextest run -p cairo-lang-sierra-generator
+          - nextest run -p cairo-lang-sierra-to-casm
+          - nextest run -p cairo-lang-sierra-type-size
+          - test -p cairo-lang-starknet
+          - nextest run -p cairo-lang-syntax
+          - nextest run -p cairo-lang-syntax-codegen
+          - nextest run -p cairo-lang-test-runner
+          - nextest run -p cairo-lang-test-utils
+          - nextest run -p cairo-lang-utils
+          - test -p tests
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
           toolchain: nightly-2022-11-03
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
       - run: |
-          cargo test
-
+          cargo ${{ matrix.cmd }}
+  test:
+    if: ${{ always() }}
+    needs: parallel-tests
+    runs-on: ubuntu-latest
+    steps:
+      - if: needs.parallel-tests.result == 'success'
+        run: exit 0
+      - if: needs.parallel-tests.result != 'success'
+        run: exit 1
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           components: rustfmt
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
@@ -40,11 +78,8 @@ jobs:
   cairofmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_fmt.sh --check
 
@@ -52,11 +87,8 @@ jobs:
   cairotest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: scripts/cairo_test.sh
       - run: scripts/starknet_test.sh
@@ -65,11 +97,10 @@ jobs:
   udeps:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
         name: "Rust Toolchain Setup"
         with:
-          profile: minimal
           toolchain: nightly-2022-11-03
       - uses: Swatinem/rust-cache@v2
       - name: "Download and run cargo-udeps"
@@ -82,11 +113,10 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-          toolchain: stable
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
@@ -94,10 +124,17 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/docs.sh
+
+  sierra-updated-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - run: >
+          scripts/sierra_update_check.sh origin/$GITHUB_BASE_REF origin/$GITHUB_HEAD_REF

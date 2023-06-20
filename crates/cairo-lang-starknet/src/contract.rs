@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use anyhow::Context;
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
-    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId, TraitId,
+    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
@@ -14,13 +12,13 @@ use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
-use crate::plugin::consts::ABI_TRAIT;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -67,7 +65,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
             // created by the plugin, so we skip generated_file_infos[0].
             // For example if we have
             // mod A {
-            //    #[contract]
+            //    #[starknet::contract]
             //    mod B {
             //    }
             // }
@@ -81,9 +79,7 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
                 ).downcast_ref::<StarkNetContractAuxData>() else { continue; };
 
                 for contract_name in &aux_data.contracts {
-                    if let Ok(Some(ModuleItemId::Submodule(submodule_id))) =
-                        db.module_item_by_name(*module_id, contract_name.clone())
-                    {
+                    if let ModuleId::Submodule(submodule_id) = *module_id {
                         contracts.push(ContractDeclaration { submodule_id });
                     } else {
                         panic!("Contract `{contract_name}` was not found.");
@@ -115,22 +111,6 @@ pub fn get_module_functions(
     }
 }
 
-/// Returns the ABI trait of the given contract.
-pub fn get_abi(
-    db: &(dyn SemanticGroup + 'static),
-    contract: &ContractDeclaration,
-) -> anyhow::Result<TraitId> {
-    let generated_module_id = get_generated_contract_module(db, contract)?;
-    match db
-        .module_item_by_name(generated_module_id, ABI_TRAIT.into())
-        .to_option()
-        .with_context(|| "Failed to initiate a lookup in the generated module.")?
-    {
-        Some(ModuleItemId::Trait(trait_id)) => Ok(trait_id),
-        _ => anyhow::bail!("Failed to get the ABI trait."),
-    }
-}
-
 /// Returns the generated contract module.
 fn get_generated_contract_module(
     db: &dyn SemanticGroup,
@@ -156,9 +136,9 @@ pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
     /// Sierra functions of the external functions.
-    pub externals: HashMap<Felt252, FunctionId>,
+    pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
-    pub l1_handlers: HashMap<Felt252, FunctionId>,
+    pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 
 /// Returns the list of functions in a given module.
@@ -166,9 +146,9 @@ pub fn get_contracts_info<T: SierraIdReplacer>(
     db: &dyn SierraGenGroup,
     main_crate_ids: Vec<CrateId>,
     replacer: &T,
-) -> Result<HashMap<Felt252, ContractInfo>, anyhow::Error> {
+) -> Result<OrderedHashMap<Felt252, ContractInfo>, anyhow::Error> {
     let contracts = find_contracts(db.upcast(), &main_crate_ids);
-    let mut contracts_info = HashMap::new();
+    let mut contracts_info = OrderedHashMap::default();
     for contract in contracts {
         let (class_hash, contract_info) = analyze_contract(db, &contract, replacer)?;
         contracts_info.insert(class_hash, contract_info);

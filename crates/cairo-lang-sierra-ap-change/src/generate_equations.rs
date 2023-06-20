@@ -169,10 +169,10 @@ impl EquationGenerator {
             if other.past_locals != info.past_locals {
                 return Err(ApChangeError::BadMergeAllocatedLocalsMismatch(*idx));
             }
-            if other.base != info.base {
-                return Err(ApChangeError::BadMergeBaseMismatch(*idx));
-            }
             if let (Some(a), Some(b)) = (&other.past_ap_change, info.past_ap_change) {
+                if other.base != info.base {
+                    return Err(ApChangeError::BadMergeBaseMismatch(*idx));
+                }
                 self.equations.push(a.clone() - b);
             }
         } else {

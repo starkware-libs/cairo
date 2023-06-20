@@ -18,7 +18,7 @@ Otherwise, if the last statement is a xref:never-type.adoc[never type] emitting 
 return, break) the block's type is the xref:never-type.adoc[never type], otherwise it is the
 xref:unit-type.adoc[unit type].
 
-[source,cairo]
+[source,rust]
 ----
 // Evaluated to unit-type.
 let _: () = {

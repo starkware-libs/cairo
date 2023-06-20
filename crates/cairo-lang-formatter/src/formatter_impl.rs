@@ -61,6 +61,9 @@ pub struct BreakLinePointProperties {
     pub is_optional: bool,
     /// Indicates to put a space instead of the break line point if it were not broken.
     pub space_if_not_broken: bool,
+    /// Indicates that in a group of such breakpoints, only one should be broken, specifically the
+    /// last one which fits in the line length.
+    pub is_single_breakpoint: bool,
 }
 impl Ord for BreakLinePointProperties {
     fn cmp(&self, other: &Self) -> Ordering {
@@ -91,6 +94,7 @@ impl BreakLinePointProperties {
             is_optional,
             space_if_not_broken,
             is_empty_line_breakpoint: false,
+            is_single_breakpoint: false,
         }
     }
     pub fn new_empty_line() -> Self {
@@ -100,7 +104,11 @@ impl BreakLinePointProperties {
             is_optional: false,
             space_if_not_broken: false,
             is_empty_line_breakpoint: true,
+            is_single_breakpoint: false,
         }
+    }
+    pub fn set_single_breakpoint(&mut self) {
+        self.is_single_breakpoint = true;
     }
 }
 
@@ -346,6 +354,24 @@ impl LineBuilder {
         };
         let mut breaking_positions =
             self.get_break_point_indices_by_precedence(break_line_point_properties.precedence);
+        if break_line_point_properties.is_single_breakpoint {
+            // If the break line point is a single breakpoint, search for the last one which fits
+            // in the line, and remove all the others.
+            let mut last_break_point_index = breaking_positions.len() - 1;
+            let mut first_break_point_index = 0;
+            while first_break_point_index < last_break_point_index {
+                let middle_break_point_index =
+                    (first_break_point_index + last_break_point_index + 1) / 2;
+                let middle_break_point = breaking_positions[middle_break_point_index];
+                let middle_break_point_width = self.width_between(0, middle_break_point);
+                if middle_break_point_width <= max_line_width {
+                    first_break_point_index = middle_break_point_index;
+                } else {
+                    last_break_point_index = middle_break_point_index - 1;
+                }
+            }
+            breaking_positions = vec![breaking_positions[first_break_point_index]];
+        }
         if self.width() <= max_line_width && break_line_point_properties.is_optional {
             return vec![self.remove_all_optional_break_line_points()];
         }

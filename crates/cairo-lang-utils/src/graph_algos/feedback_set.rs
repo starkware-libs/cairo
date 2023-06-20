@@ -7,11 +7,11 @@
 //! so here we implement some straight-forward algorithm that guarantees to cover all the cycles in
 //! the graph, but doesn't necessarily produce the minimum size of such a set.
 
-use std::collections::HashSet;
-
 use super::graph_node::GraphNode;
 use super::scc_graph_node::SccGraphNode;
 use super::strongly_connected_components::ComputeScc;
+use crate::ordered_hash_set::OrderedHashSet;
+use crate::unordered_hash_set::UnorderedHashSet;
 
 #[cfg(test)]
 #[path = "feedback_set_test.rs"]
@@ -21,16 +21,16 @@ mod feedback_set_test;
 struct FeedbackSetAlgoContext<Node: GraphNode> {
     /// The accumulated feedback set so far in the process of the algorithm. In the end of the
     /// algorithm, this is also the result.
-    pub feedback_set: HashSet<Node::NodeId>,
+    pub feedback_set: OrderedHashSet<Node::NodeId>,
     /// Nodes that are currently during the recursion call on them. That is - if one of these is
     /// reached, it indicates it's in some cycle that was not "resolved" yet.
-    pub in_flight: HashSet<Node::NodeId>,
+    pub in_flight: UnorderedHashSet<Node::NodeId>,
 }
 impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
     fn new() -> Self {
         FeedbackSetAlgoContext {
-            feedback_set: HashSet::<Node::NodeId>::new(),
-            in_flight: HashSet::<Node::NodeId>::new(),
+            feedback_set: OrderedHashSet::default(),
+            in_flight: UnorderedHashSet::default(),
         }
     }
 }
@@ -38,7 +38,7 @@ impl<Node: GraphNode> FeedbackSetAlgoContext<Node> {
 /// Calculates the feedback set of an SCC.
 pub fn calc_feedback_set<Node: GraphNode + ComputeScc>(
     node: &SccGraphNode<Node>,
-) -> HashSet<Node::NodeId> {
+) -> OrderedHashSet<Node::NodeId> {
     let mut ctx = FeedbackSetAlgoContext::<Node>::new();
     calc_feedback_set_recursive(node, &mut ctx);
     ctx.feedback_set

@@ -8,7 +8,7 @@ foo()
 
 //! > module_code
 fn foo() {
-    let mut x = 3;
+    let mut x:felt252 = 3;
     x += 4;
 }
 

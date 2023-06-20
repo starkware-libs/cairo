@@ -16,6 +16,10 @@ trait ResultTrait<T, E> {
     fn is_ok(self: @Result<T, E>) -> bool;
     /// Returns `true` if the `Result` is `Result::Err`.
     fn is_err(self: @Result<T, E>) -> bool;
+    /// Returns `true` if the `Result` is `Result::Ok`, and consumes the value.
+    fn into_is_err<impl TDrop: Drop<T>, impl EDrop: Drop<E>>(self: Result<T, E>) -> bool;
+    /// Returns `true` if the `Result` is `Result::Err`, and consumes the value.
+    fn into_is_ok<impl TDrop: Drop<T>, impl EDrop: Drop<E>>(self: Result<T, E>) -> bool;
 }
 impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn expect<impl EDrop: Drop<E>>(self: Result<T, E>, err: felt252) -> T {
@@ -36,16 +40,32 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
     fn unwrap_err<impl TDrop: Drop<T>>(self: Result<T, E>) -> E {
         self.expect_err('Result::unwrap_err failed.')
     }
+    #[inline]
     fn is_ok(self: @Result<T, E>) -> bool {
         match self {
             Result::Ok(_) => true,
             Result::Err(_) => false,
         }
     }
+    #[inline]
     fn is_err(self: @Result<T, E>) -> bool {
         match self {
             Result::Ok(_) => false,
             Result::Err(_) => true,
+        }
+    }
+    #[inline]
+    fn into_is_err<impl TDrop: Drop<T>, impl EDrop: Drop<E>>(self: Result<T, E>) -> bool {
+        match self {
+            Result::Ok(_) => false,
+            Result::Err(_) => true,
+        }
+    }
+    #[inline]
+    fn into_is_ok<impl TDrop: Drop<T>, impl EDrop: Drop<E>>(self: Result<T, E>) -> bool {
+        match self {
+            Result::Ok(_) => true,
+            Result::Err(_) => false,
         }
     }
 }

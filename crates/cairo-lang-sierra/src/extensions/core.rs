@@ -1,6 +1,6 @@
 use super::ap_tracking::ApTrackingLibfunc;
 use super::array::{ArrayLibfunc, ArrayType};
-use super::bitwise::{BitwiseLibfunc, BitwiseType};
+use super::bitwise::BitwiseType;
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
 use super::casts::CastLibfunc;
@@ -17,8 +17,9 @@ use super::int::unsigned::{
     Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
     Uint8Type,
 };
-use super::int::unsigned128::{Uint128Libfunc, Uint128Type};
+use super::int::unsigned128::{U128MulGuaranteeType, Uint128Libfunc, Uint128Type};
 use super::int::unsigned256::Uint256Libfunc;
+use super::int::unsigned512::Uint512Libfunc;
 use super::modules::boxing::{BoxLibfunc, BoxType};
 use super::modules::felt252::{Felt252Libfunc, Felt252Type};
 use super::modules::function_call::FunctionCallLibfunc;
@@ -32,6 +33,7 @@ use super::poseidon::{PoseidonLibfunc, PoseidonType};
 use super::range_check::RangeCheckType;
 use super::segment_arena::SegmentArenaType;
 use super::snapshot::{SnapshotTakeLibfunc, SnapshotType};
+use super::span::SpanType;
 use super::squashed_felt252_dict::SquashedFelt252DictType;
 use super::starknet::{StarkNetLibfunc, StarkNetType};
 use super::structure::{StructLibfunc, StructType};
@@ -54,6 +56,7 @@ define_type_hierarchy! {
         Uint32(Uint32Type),
         Uint64(Uint64Type),
         Uint128(Uint128Type),
+        Uint128MulGuarantee(U128MulGuaranteeType),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -65,6 +68,7 @@ define_type_hierarchy! {
         SquashedFelt252Dict(SquashedFelt252DictType),
         Pedersen(PedersenType),
         Poseidon(PoseidonType),
+        Span(SpanType),
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
@@ -75,7 +79,6 @@ define_libfunc_hierarchy! {
     pub enum CoreLibfunc {
         ApTracking(ApTrackingLibfunc),
         Array(ArrayLibfunc),
-        Bitwise(BitwiseLibfunc),
         BranchAlign(BranchAlignLibfunc),
         Bool(BoolLibfunc),
         Box(BoxLibfunc),
@@ -92,6 +95,7 @@ define_libfunc_hierarchy! {
         Uint64(Uint64Libfunc),
         Uint128(Uint128Libfunc),
         Uint256(Uint256Libfunc),
+        Uint512(Uint512Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),

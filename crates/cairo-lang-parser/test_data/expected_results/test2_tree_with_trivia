@@ -320,23 +320,24 @@
     │   │       │   │   │   ├── token (kind: TokenReturn): 'return'
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   ├── expr (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: ExprPath)
-    │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │   │       └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'df'
-    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   ├── op (kind: TerminalEqEq)
-    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   ├── token (kind: TokenEqEq): '=='
-    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── token (kind: TokenLiteralNumber): '6'
-    │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   ├── expr_clause (kind: ExprClause)
+    │   │       │   │   │   └── expr (kind: ExprBinary)
+    │   │       │   │   │       ├── lhs (kind: ExprPath)
+    │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │           ├── token (kind: TokenIdentifier): 'df'
+    │   │       │   │   │       │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │       ├── op (kind: TerminalEqEq)
+    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │   ├── token (kind: TokenEqEq): '=='
+    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │       └── rhs (kind: TerminalLiteralNumber)
+    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── token (kind: TokenLiteralNumber): '6'
+    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'

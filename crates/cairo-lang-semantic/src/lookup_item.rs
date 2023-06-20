@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionWithBodyId,
-    ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId, ModuleItemId,
-    StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
+    ConstantId, EnumId, ExternFunctionId, ExternTypeId, FileIndex, FreeFunctionId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LookupItemId,
+    ModuleFileId, ModuleId, ModuleItemId, StructId, SubmoduleId, TraitId, TypeAliasId, UseId,
 };
 use cairo_lang_diagnostics::Maybe;
 
@@ -66,8 +66,10 @@ impl HasResolverData for ConstantId {
     }
 }
 impl HasResolverData for SubmoduleId {
-    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()))))
+    fn resolver_data(&self, _db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        let module_id = ModuleId::Submodule(*self);
+        let module_file_id = ModuleFileId(module_id, FileIndex(0));
+        Ok(Arc::new(ResolverData::new(module_file_id)))
     }
 }
 impl HasResolverData for UseId {

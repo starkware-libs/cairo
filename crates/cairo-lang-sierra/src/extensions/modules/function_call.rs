@@ -29,7 +29,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
                         .enumerate()
                         .map(|(i, ty)| OutputVarInfo {
                             ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(i) },
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: i },
                         })
                         .collect(),
                     ap_change,

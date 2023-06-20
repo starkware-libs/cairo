@@ -1,0 +1,19 @@
+[package]
+name = "cairo-format"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Cairo formatter executable for the Cairo programming language"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+log.workspace = true
+colored.workspace = true
+ignore.workspace = true
+
+cairo-lang-formatter = { path = "../../cairo-lang-formatter", version = "2.0.0-rc2" }
+cairo-lang-utils = { path = "../../cairo-lang-utils", version = "2.0.0-rc2", features = [
+    "env_logger",
+] }

@@ -12,7 +12,7 @@ use option::Option;
 //
 // get_caller_address().print();
 //
-// let mut arr = ArrayTrait::new();
+// let mut arr = Default::default();
 // arr.append('1234567890123456789012345678901');
 // arr.append('Sca');
 // arr.append('SomeVeryLongMessage');
@@ -21,7 +21,7 @@ use option::Option;
 extern fn print(message: Array<felt252>) nopanic;
 
 fn print_felt252(message: felt252) {
-    let mut arr = ArrayTrait::new();
+    let mut arr = Default::default();
     arr.append(message);
     print(arr);
 }
@@ -84,8 +84,8 @@ impl U128PrintImpl of PrintTrait<u128> {
 
 impl U256PrintImpl of PrintTrait<u256> {
     fn print(self: u256) {
-        self.low.into().print();
-        self.high.into().print();
+        Into::<u128, felt252>::into(self.low).print();
+        Into::<u128, felt252>::into(self.high).print();
     }
 }
 

@@ -117,6 +117,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
+            SemanticDiagnosticKind::LogicalOperatorsNotSupported => {
+                "Logical operators are not supported yet.".into()
+            }
             SemanticDiagnosticKind::NoLiteralFunctionFound => {
                 "A literal with this type cannot be created.".into()
             }
@@ -362,6 +365,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     function_title_id.full_path(db.upcast())
                 )
             }
+            SemanticDiagnosticKind::IfConditionNotBool { condition_ty } => {
+                format!(r#"If condition has type "{}", expected bool."#, condition_ty.format(db))
+            }
             SemanticDiagnosticKind::IncompatibleMatchArms { match_ty, arm_ty } => format!(
                 r#"Match arms have incompatible types: "{}" and "{}""#,
                 match_ty.format(db),
@@ -464,10 +470,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     .to_string()
             }
             SemanticDiagnosticKind::InvalidCopyTraitImpl { inference_error } => {
-                format!("Invalid copy trait implementation, {}", inference_error.format(db))
+                format!("Invalid copy trait implementation, {}.", inference_error.format(db))
             }
             SemanticDiagnosticKind::InvalidDropTraitImpl { inference_error } => {
-                format!("Invalid drop trait implementation, {}", inference_error.format(db))
+                format!("Invalid drop trait implementation, {}.", inference_error.format(db))
             }
             SemanticDiagnosticKind::InvalidImplItem { item_kw } => {
                 format!("`{item_kw}` is not allowed inside impl.")
@@ -570,11 +576,26 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
                 "Tail expression not allow in a `loop` block.".into()
             }
+            SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
+                "Continue only allowed inside a `loop`.".into()
+            }
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
                 "Break only allowed inside a `loop`.".into()
             }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
+            }
+            SemanticDiagnosticKind::ConstGenericParamSupported => {
+                "Const generic args are not allowed in this context.".into()
+            }
+            SemanticDiagnosticKind::ImplicitPrecedenceAttrForExternFunctionNotAllowed => {
+                "`implicit_precedence` attribute is not allowed for extern functions.".into()
+            }
+            SemanticDiagnosticKind::RedundantImplicitPrecedenceAttribute => {
+                "Redundant `implicit_precedence` attribute.".into()
+            }
+            SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
+                "Unsupported `implicit_precedence` arguments.".into()
             }
         }
     }
@@ -735,6 +756,9 @@ pub enum SemanticDiagnosticKind {
         function_title_id: FunctionTitleId,
         param_name: SmolStr,
     },
+    IfConditionNotBool {
+        condition_ty: semantic::TypeId,
+    },
     IncompatibleMatchArms {
         match_ty: semantic::TypeId,
         arm_ty: semantic::TypeId,
@@ -770,6 +794,7 @@ pub enum SemanticDiagnosticKind {
     ErrorPropagateOnNonErrorType {
         ty: semantic::TypeId,
     },
+    ConstGenericParamSupported,
     RefArgNotAVariable,
     RefArgNotMutable,
     RefArgNotExplicit,
@@ -841,14 +866,19 @@ pub enum SemanticDiagnosticKind {
     InternalInferenceError(InferenceError),
     NoImplementationOfIndexOperator(semantic::TypeId),
     MultipleImplementationOfIndexOperator(semantic::TypeId),
+    LogicalOperatorsNotSupported,
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
     InlineWithoutArgumentNotSupported,
     InlineAttrForExternFunctionNotAllowed,
     InlineAlwaysWithImplGenericArgNotAllowed,
     TailExpressionNotAllowedInLoop,
+    ContinueOnlyAllowedInsideALoop,
     BreakOnlyAllowedInsideALoop,
     ReturnNotAllowedInsideALoop,
+    ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+    RedundantImplicitPrecedenceAttribute,
+    UnsupportedImplicitPrecedenceArguments,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

@@ -14,6 +14,9 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::items::function_with_body::get_implicit_precedence;
+use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{semantic, Mutability, Parameter, SemanticDiagnostic, TypeId};
@@ -108,6 +111,7 @@ pub fn priv_extern_function_declaration_data(
         &mut resolver,
         module_file_id,
         &declaration.generic_params(syntax_db),
+        true,
     )?;
     if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
         diagnostics.report_by_ptr(
@@ -142,24 +146,30 @@ pub fn priv_extern_function_declaration_data(
 
     match &inline_config {
         InlineConfiguration::None => {}
-        InlineConfiguration::Always(attr) | InlineConfiguration::Never(attr) => {
+        InlineConfiguration::Always(attr)
+        | InlineConfiguration::Never(attr)
+        | InlineConfiguration::Should(attr) => {
             diagnostics
                 .report_by_ptr(attr.stable_ptr.untyped(), InlineAttrForExternFunctionNotAllowed);
         }
     }
 
+    let (_, implicit_precedence_attr) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
+    if let Some(attr) = implicit_precedence_attr {
+        diagnostics.report_by_ptr(
+            attr.stable_ptr.untyped(),
+            ImplicitPrecedenceAttrForExternFunctionNotAllowed,
+        );
+    }
+
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
-    let signature = resolver
-        .inference()
-        .rewrite(signature)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+
+    let signature = resolver.inference().rewrite(signature).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
@@ -169,5 +179,6 @@ pub fn priv_extern_function_declaration_data(
         attributes,
         resolver_data: Arc::new(resolver.data),
         inline_config,
+        implicit_precedence: ImplicitPrecedence::UNSPECIFIED,
     })
 }

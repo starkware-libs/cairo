@@ -7,6 +7,8 @@ use cairo_lang_semantic::plugin::{
 };
 use cairo_lang_semantic::SemanticDiagnostic;
 
+use super::events::EventData;
+
 /// Contract related auxiliary data of the Starknet plugin.
 #[derive(Debug, PartialEq, Eq)]
 pub struct StarkNetContractAuxData {
@@ -69,6 +71,40 @@ impl PluginAuxData for StarkNetABIAuxData {
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
         let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let span = self
+            .patches
+            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
+        Some(PluginMappedDiagnostic { span, message: diag.format(db) })
+    }
+}
+
+/// Contract related auxiliary data of the Starknet plugin.
+#[derive(Debug, PartialEq, Eq)]
+pub struct StarkNetEventAuxData {
+    /// Patches of code that need translation in case they have diagnostics.
+    pub patches: Patches,
+    pub event_data: EventData,
+}
+impl GeneratedFileAuxData for StarkNetEventAuxData {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
+    }
+}
+impl AsDynGeneratedFileAuxData for StarkNetEventAuxData {
+    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
+        self
+    }
+}
+impl PluginAuxData for StarkNetEventAuxData {
+    fn map_diag(
+        &self,
+        db: &(dyn SemanticGroup + 'static),
+        diag: &dyn std::any::Any,
+    ) -> Option<PluginMappedDiagnostic> {
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else { return None; };
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;

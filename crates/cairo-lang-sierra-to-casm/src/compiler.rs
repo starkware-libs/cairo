@@ -7,6 +7,7 @@ use cairo_lang_sierra::extensions::ConcreteLibfunc;
 use cairo_lang_sierra::ids::VarId;
 use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, StatementIdx};
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
+use cairo_lang_sierra_type_size::get_type_size_map;
 use itertools::zip_eq;
 use thiserror::Error;
 
@@ -17,7 +18,6 @@ use crate::invocations::{
 use crate::metadata::Metadata;
 use crate::references::{check_types_match, ReferencesError};
 use crate::relocations::{relocate_instructions, RelocationEntry};
-use crate::type_sizes::get_type_size_map;
 
 #[cfg(test)]
 #[path = "compiler_test.rs"]
@@ -27,7 +27,7 @@ mod test;
 pub enum CompilationError {
     #[error("Failed building type information")]
     FailedBuildingTypeInformation,
-    #[error("Error from program registry")]
+    #[error("Error from program registry: {0}")]
     ProgramRegistryError(Box<ProgramRegistryError>),
     #[error(transparent)]
     AnnotationError(#[from] AnnotationError),
@@ -41,7 +41,6 @@ pub enum CompilationError {
     LibfuncInvocationMismatch { statement_idx: StatementIdx },
     #[error("{var_id} is dangling at #{statement_idx}.")]
     DanglingReferences { statement_idx: StatementIdx, var_id: VarId },
-
     #[error("#{source_statement_idx}->#{destination_statement_idx}: Expected branch align")]
     ExpectedBranchAlign {
         source_statement_idx: StatementIdx,
@@ -114,7 +113,7 @@ pub fn compile(
     // contains the final offset (the size of the program code segment).
     let mut statement_offsets = Vec::with_capacity(program.statements.len());
 
-    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::with_ap_change(
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new_with_ap_change(
         program,
         metadata.ap_change_info.function_ap_change.clone(),
     )
@@ -140,6 +139,7 @@ pub fn compile(
                 let (annotations, return_refs) = program_annotations
                     .get_annotations_after_take_args(statement_idx, ref_ids.iter())
                     .map_err(|err| Box::new(err.into()))?;
+                return_refs.iter().for_each(|r| r.validate(&type_sizes));
 
                 if let Some(var_id) = annotations.refs.keys().next() {
                     return Err(Box::new(CompilationError::DanglingReferences {
@@ -186,6 +186,7 @@ pub fn compile(
                 check_types_match(&invoke_refs, &param_types).map_err(|error| {
                     Box::new(AnnotationError::ReferencesError { statement_idx, error }.into())
                 })?;
+                invoke_refs.iter().for_each(|r| r.validate(&type_sizes));
                 let compiled_invocation = compile_invocation(
                     ProgramInfo { metadata, type_sizes: &type_sizes },
                     invocation,

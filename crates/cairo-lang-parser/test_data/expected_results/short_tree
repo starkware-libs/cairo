@@ -42,9 +42,10 @@
     │           ├── statements (kind: StatementList)
     │           │   └── child #0 (kind: StatementReturn)
     │           │       ├── return_kw (kind: TokenReturn): 'return'
-    │           │       ├── expr (kind: ExprPath)
-    │           │       │   └── item #0 (kind: PathSegmentSimple)
-    │           │       │       └── ident (kind: TokenIdentifier): 'a'
+    │           │       ├── expr_clause (kind: ExprClause)
+    │           │       │   └── expr (kind: ExprPath)
+    │           │       │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │           └── ident (kind: TokenIdentifier): 'a'
     │           │       └── semicolon (kind: TokenSemicolon): ';'
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).

@@ -19,7 +19,7 @@ The `usize` type is an alias to `u32`, and is used for array indexing.
 == Integer Creation
 
 All integer types except `u256` can be created as literals using the appropriate suffix. The `u256` type is only supported by construction from other types.
-[source, cairo]
+[source,rust]
 ----
 fn main() {
     let x: u8 = 10_u8;

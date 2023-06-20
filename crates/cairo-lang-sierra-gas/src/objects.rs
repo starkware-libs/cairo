@@ -15,6 +15,15 @@ impl ConstCost {
     pub const fn cost(&self) -> i32 {
         self.steps * 100 + self.holes * 10 + self.range_checks * 70
     }
+    pub const fn steps(value: i32) -> Self {
+        Self { steps: value, holes: 0, range_checks: 0 }
+    }
+    pub const fn holes(value: i32) -> Self {
+        Self { holes: value, steps: 0, range_checks: 0 }
+    }
+    pub const fn range_checks(value: i32) -> Self {
+        Self { range_checks: value, steps: 0, holes: 0 }
+    }
 }
 
 /// Adds two [ConstCost] instances.
@@ -40,6 +49,11 @@ impl std::ops::Add for ConstCost {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct PreCost(pub OrderedHashMap<CostTokenType, i32>);
+impl PreCost {
+    pub fn builtin(token_type: CostTokenType) -> Self {
+        Self(OrderedHashMap::from_iter(([(token_type, 1)]).into_iter()))
+    }
+}
 
 /// Adds two [ConstCost] instances.
 impl std::ops::Add for PreCost {

@@ -15,8 +15,6 @@
 //! match_option(none_id) {1000(some), 2000(none)};
 //! ```
 
-use std::cmp;
-
 use cairo_lang_utils::try_extract_matches;
 use num_bigint::ToBigInt;
 use num_traits::Signed;
@@ -70,7 +68,6 @@ impl EnumConcreteType {
         let mut duplicatable = true;
         let mut droppable = true;
         let mut variants: Vec<ConcreteTypeId> = Vec::new();
-        let mut variant_max_size = 0;
         for arg in args_iter {
             let ty = try_extract_matches!(arg, GenericArg::Type)
                 .ok_or(SpecializationError::UnsupportedGenericArg)?
@@ -86,7 +83,6 @@ impl EnumConcreteType {
                 droppable = false;
             }
             variants.push(ty);
-            variant_max_size = cmp::max(variant_max_size, info.size);
         }
         Ok(EnumConcreteType {
             info: TypeInfo {
@@ -97,7 +93,7 @@ impl EnumConcreteType {
                 duplicatable,
                 droppable,
                 storable: true,
-                size: 1 + variant_max_size,
+                zero_sized: false,
             },
             variants,
         })

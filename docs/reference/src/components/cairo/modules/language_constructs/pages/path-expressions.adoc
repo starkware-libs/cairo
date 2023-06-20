@@ -1,6 +1,9 @@
 = Path expressions
 
-This section is a work in progress.
+A path expression is a standalone xref:path.adoc[concrete path].
+It resolves to one of these items:
 
-You are very welcome to contribute to this documentation by
-link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
+* A local variable. In this case the path is a single identifier.
+* A xref:constant-items.adoc[constant item].
+* A generic const parameter. In this case the path is a single identifier.
+  These are still unsupported.

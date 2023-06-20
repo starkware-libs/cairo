@@ -23,6 +23,15 @@ static SHARED_DB: Lazy<Mutex<RootDatabase>> =
     Lazy::new(|| Mutex::new(RootDatabase::builder().detect_corelib().build().unwrap()));
 
 cairo_lang_test_utils::test_file_test_with_runner!(
+    general_e2e,
+    "e2e_test_data",
+    {
+        cmp: "cmp",
+    },
+    SmallE2ETestRunner
+);
+
+cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e,
     "e2e_test_data/libfuncs",
     {
@@ -35,17 +44,18 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         ec: "ec",
         enum_: "enum",
         enum_snapshot: "enum_snapshot",
-        felt252: "felt252",
         felt252_dict: "felt252_dict",
+        felt252: "felt252",
         nullable: "nullable",
         poseidon: "poseidon",
         snapshot: "snapshot",
-        u8: "u8",
-        u16: "u16",
-        u32: "u32",
-        u64: "u64",
         u128: "u128",
+        u16: "u16",
         u256: "u256",
+        u32: "u32",
+        u512: "u512",
+        u64: "u64",
+        u8: "u8",
     },
     SmallE2ETestRunner
 );
@@ -54,7 +64,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e_skip_add_gas,
     "e2e_test_data/libfuncs",
     {
-        withdraw_gas_all: "withdraw_gas_all",
+        gas: "gas",
     },
     SmallE2ETestRunnerSkipAddGas
 );
@@ -66,6 +76,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         class_hash: "class_hash",
         contract_address: "contract_address",
         secp256k1: "secp256k1",
+        secp256r1: "secp256r1",
         storage_address: "storage_address",
         syscalls: "syscalls",
     },

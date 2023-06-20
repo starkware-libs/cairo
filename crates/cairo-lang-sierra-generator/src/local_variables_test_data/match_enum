@@ -89,8 +89,6 @@ End:
 //! > local_variables
 v9, v2, v3
 
-//! > block_infos
-
 //! > ==========================================================================
 
 //! > Match enum early return
@@ -191,5 +189,3 @@ End:
   Return(v21)
 
 //! > local_variables
-
-//! > block_infos

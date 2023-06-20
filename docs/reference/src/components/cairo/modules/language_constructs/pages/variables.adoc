@@ -26,7 +26,7 @@ let x = 5_u32;
 
 Variables are immutable unless declared otherwise.
 A variable can be declared as mutable using the `mut` keyword.
-A mutable variable can be link:assignment-statement.adoc[assigned] a diffrent value after the initialization.
+A mutable variable can be link:assignment-statement.adoc[assigned] a different value after the initialization.
 
 For example:
 [source]
@@ -37,7 +37,7 @@ x = x + 3;
 
 == Function parameters
 
-Every function parameter introduces a variable that is accessiable in the body of a function.
+Every function parameter introduces a variable that is accessible in the body of a function.
 
 For example:
 [source]
@@ -62,7 +62,7 @@ in the caller.
 A function parameter may also have the `ref` modifier which means that the variable is an input and
 an output. In this case, the caller must pass a mutable variable and use the `ref` keyword.
 Changing the variable in the called function also changes it in the caller.
-Note that `ref` paramaters are mutable. Using both modifiers on the same parameter is not
+Note that `ref` parameters are mutable. Using both modifiers on the same parameter is not
 allowed.
 
 For example:
@@ -83,7 +83,7 @@ fn test() {
 
 A variable can be introduced inside a match arm.
 
-for exmaple:
+for example:
 [source]
 ----
 match opt {
@@ -97,10 +97,10 @@ match opt {
 == Shadowing
 
 A variable name can be reused in an inner scope (or the same scope).
-In this case, the variable shadows the variable in the outer scope, 
+In this case, the variable shadows the variable in the outer scope,
 but it does not change the variable in the outer scope.
 
-for exmaple:
+for example:
 [source]
 ----
 let x = 5;

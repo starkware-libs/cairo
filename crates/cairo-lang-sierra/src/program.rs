@@ -42,7 +42,7 @@ pub struct DeclaredTypeInfo {
     /// Can the type be (trivially) duplicated.
     pub duplicatable: bool,
     /// The size of an element of this type.
-    pub size: i16,
+    pub zero_sized: bool,
 }
 
 /// A concrete type (the generic parent type and the generic arguments).

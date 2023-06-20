@@ -38,7 +38,12 @@ Some tests should now be fixed.
 
 ## Issues and feature requests
 
-You've found a bug in the source code, a mistake in the documentation or maybe you'd like a new feature?Take a look at [GitHub Discussions](https://github.com/starkware-libs-cairo/discussions) to see if it's already being discussed.  You can help us by [submitting an issue on GitHub](https://github.com/starkware-libs-cairo/issues). Before you create an issue, make sure to search the issue archive -- your issue may have already been addressed!
+You've found a bug in the source code, a mistake in the documentation or maybe you'd like a new
+feature? Take a look at [GitHub Discussions](https://github.com/starkware-libs-cairo/discussions)
+to see if it's already being discussed. You can help us by
+[submitting an issue on GitHub](https://github.com/starkware-libs-cairo/issues).
+Before you create an issue, make sure to search the issue archive -- your issue may have already
+been addressed!
 
 Please try to create bug reports that are:
 
@@ -60,4 +65,19 @@ Please try to create bug reports that are:
 5. Run the code formatter for Rust and Cairo (`scripts/rust_fmt.sh && scripts/cairo_fmt.sh`)
 6. Commit your changes (`git commit -m 'feat: Add amazing_feature'`)
 7. Push to the branch (`git push origin feat/amazing_feature`)
-8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare)
+8. [Open a Pull Request](https://github.com/starkware-libs/cairo/compare) to one of the following
+branches:
+    * [main](https://github.com/starkware-libs/cairo/tree/main) -
+    If the change does not break any existing Cairo code (**Cairo backward-compatible**), and does
+    not affect Sierra to CASM compilation.
+    * [cairo-major-update](https://github.com/starkware-libs/cairo/tree/cairo-major-update) -
+    If the change breaks existing high level code (**Cairo non-backward-compatible**), and does not
+    affect Sierra to CASM compilation.
+    * [sierra-minor-update](https://github.com/starkware-libs/cairo/tree/sierra-minor-update) -
+    If Sierra to CASM compilation changed in a **backward-compatible** manner - meaning existing
+    Sierra code will compile to the same CASM. For example, addition of a new libfunc.
+    * [sierra-major-update](https://github.com/starkware-libs/cairo/tree/sierra-major-update) -
+    If Sierra to CASM compilation changed in a **non-backward-compatible** manner - meaning
+    existing Sierra code will compile to different CASM. For example, editing the CASM
+    implementation of a an existing libfunc. This may also include no longer accepting some old
+    Sierra code.

@@ -23,7 +23,7 @@ This documentation site is a work in progress. You are very welcome to contribut
 documentation by link:https://github.com/starkware-libs/cairo/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22[submitting a pull request].
 
 Please see xref:how-to-contribute.adoc[here] for a list of missing content and learn more about
-how to contribute by reading the xref:appendicies:contribution-guidelines.adoc[Contribution guidelines] of this
+how to contribute by reading the xref:appendices:contribution-guidelines.adoc[Contribution guidelines] of this
 site.
 
 |===

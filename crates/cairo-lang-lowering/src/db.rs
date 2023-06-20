@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use cairo_lang_defs as defs;
@@ -10,7 +9,6 @@ use cairo_lang_semantic::TypeId;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
-use smol_str::SmolStr;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::borrow_check::borrow_check;
@@ -25,7 +23,7 @@ use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
-use crate::{ids, FlatBlockEnd, FlatLowered, MatchInfo, Statement};
+use crate::{ids, FlatBlockEnd, FlatLowered, Location, MatchInfo, Statement};
 
 // Salsa database interface.
 #[salsa::query_group(LoweringDatabase)]
@@ -42,6 +40,9 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         id: ids::FunctionWithBodyLongId,
     ) -> ids::FunctionWithBodyId;
+
+    #[salsa::interned]
+    fn intern_location(&self, id: Location) -> ids::LocationId;
 
     // Reports inlining diagnostics.
     #[salsa::invoke(crate::inline::priv_inline_data)]
@@ -142,10 +143,6 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns all the implicitis used by a strongly connected component of functions.
     #[salsa::invoke(crate::implicits::scc_implicits)]
     fn scc_implicits(&self, function: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>>;
-
-    /// An array that sets the precedence of implicit types.
-    #[salsa::input]
-    fn implicit_precedence(&self) -> Arc<Vec<SmolStr>>;
 
     // ### Queries related to panics ###
 
@@ -251,7 +248,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn function_with_body_feedback_set(
         &self,
         function: ids::ConcreteFunctionWithBodyId,
-    ) -> Maybe<HashSet<ids::ConcreteFunctionWithBodyId>>;
+    ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 
     /// Returns whether the given function needs an additional withdraw_gas call.
     #[salsa::invoke(crate::graph_algorithms::feedback_set::needs_withdraw_gas)]
@@ -263,12 +260,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     fn priv_function_with_body_feedback_set_of_representative(
         &self,
         function: ConcreteSCCRepresentative,
-    ) -> Maybe<HashSet<ids::ConcreteFunctionWithBodyId>>;
-}
-
-pub fn init_lowering_group(db: &mut (dyn LoweringGroup + 'static)) {
-    // Initialize inputs.
-    db.set_implicit_precedence(Arc::new(vec![]));
+    ) -> Maybe<OrderedHashSet<ids::ConcreteFunctionWithBodyId>>;
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
@@ -348,7 +340,6 @@ fn concrete_function_with_body_postpanic_lowered(
 // * Optimizes matches.
 // * Optimizes remappings again.
 // * Reorganizes blocks (topological sort).
-// * Replaces `withdraw_gas` calls with `withdraw_gas_all` where necessary.
 fn concrete_function_with_body_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,

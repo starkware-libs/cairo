@@ -30,19 +30,16 @@ felt252_is_zero([1]) { fallthrough() label1([2]) }
 branch_align() -> ()
 dup<felt252>([0]) -> ([0], [3])
 struct_construct<Tuple<felt252, felt252>>([3], [0]) -> ([4])
-store_temp<Tuple<felt252, felt252>>([4]) -> ([5])
+drop<Tuple<felt252, felt252>>([4]) -> ()
 jump() { label3() }
 label1:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
-dup<felt252>([0]) -> ([0], [6])
-struct_construct<Tuple<felt252, felt252>>([6], [0]) -> ([7])
-store_temp<Tuple<felt252, felt252>>([7]) -> ([5])
+dup<felt252>([0]) -> ([0], [5])
+struct_construct<Tuple<felt252, felt252>>([5], [0]) -> ([6])
+drop<Tuple<felt252, felt252>>([6]) -> ()
 label3:
-struct_deconstruct<Tuple<felt252, felt252>>([5]) -> ([8], [9])
-drop<felt252>([8]) -> ()
-drop<felt252>([9]) -> ()
-struct_construct<Unit>() -> ([10])
-store_temp<Unit>([10]) -> ([11])
-return([11])
+struct_construct<Unit>() -> ([7])
+store_temp<Unit>([7]) -> ([8])
+return([8])
 label2:

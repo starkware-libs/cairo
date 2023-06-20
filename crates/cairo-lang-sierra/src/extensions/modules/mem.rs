@@ -1,4 +1,5 @@
 use super::uninitialized::UninitializedType;
+use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
@@ -33,7 +34,9 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        context.as_type_specialization_context().get_type_info(ty.clone())?;
+        if !context.as_type_specialization_context().get_type_info(ty.clone())?.storable {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature {
                 ty: ty.clone(),
@@ -41,10 +44,7 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
                 allow_add_const: true,
                 allow_const: true,
             }],
-            vec![OutputVarInfo {
-                ty,
-                ref_info: OutputVarReferenceInfo::NewTempVar { idx: Some(0) },
-            }],
+            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }
@@ -64,6 +64,9 @@ impl SignatureAndTypeGenericLibfunc for StoreLocalLibfuncWrapped {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let uninitialized_type =
             context.get_wrapped_concrete_type(UninitializedType::id(), ty.clone())?;
+        if !context.as_type_specialization_context().get_type_info(ty.clone())?.storable {
+            return Err(SpecializationError::UnsupportedGenericArg);
+        }
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(uninitialized_type),
@@ -134,13 +137,6 @@ impl SignatureOnlyGenericLibfunc for RenameLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let ty = args_as_single_type(args)?;
-        Ok(LibfuncSignature::new_non_branch(
-            vec![ty.clone()],
-            vec![OutputVarInfo {
-                ty,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
-        ))
+        Ok(reinterpret_cast_signature(ty.clone(), ty))
     }
 }

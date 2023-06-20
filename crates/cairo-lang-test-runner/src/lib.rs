@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -13,7 +12,6 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_semantic::db::SemanticGroup;
@@ -39,7 +37,7 @@ use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
 
-mod plugin;
+pub mod plugin;
 mod test_config;
 
 pub struct TestRunner {
@@ -68,16 +66,18 @@ impl TestRunner {
         ignored: bool,
         starknet: bool,
     ) -> Result<Self> {
-        let mut plugins = get_default_plugins();
-        plugins.push(Arc::new(TestPlugin::default()));
-        if starknet {
-            plugins.push(Arc::new(StarkNetPlugin::default()));
-        }
-        let db = &mut RootDatabase::builder()
-            .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
-            .with_plugins(plugins)
-            .detect_corelib()
-            .build()?;
+        let db = &mut {
+            let mut b = RootDatabase::builder();
+            b.detect_corelib();
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_semantic_plugin(Arc::new(TestPlugin::default()));
+
+            if starknet {
+                b.with_semantic_plugin(Arc::new(StarkNetPlugin::default()));
+            }
+
+            b.build()?
+        };
 
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 
@@ -227,11 +227,11 @@ pub struct TestsSummary {
 }
 
 /// Runs the tests and process the results for a summary.
-fn run_tests(
+pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: cairo_lang_sierra::program::Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: HashMap<Felt252, ContractInfo>,
+    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 ) -> anyhow::Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program,
@@ -253,7 +253,7 @@ fn run_tests(
                 return Ok((name, TestStatus::Ignore));
             }
             let result = runner
-                .run_function(
+                .run_function_with_starknet_context(
                     runner.find_function(name.as_str())?,
                     &[],
                     test.available_gas,

@@ -1,7 +1,9 @@
 use std::ops::Neg;
+use std::str::FromStr;
 
 use num_bigint::BigInt;
 use num_traits::Num;
+use parity_scale_codec::{Decode, Encode};
 use test_case::test_case;
 
 use crate::bigint::BigIntAsHex;
@@ -19,4 +21,17 @@ fn test_bigint_serde(s: &str, is_negative: bool) {
     assert_eq!(serialized, format!("\"{}0x{}\"", if is_negative { "-" } else { "" }, s));
 
     assert_eq!(num, serde_json::from_str(&serialized).unwrap())
+}
+
+#[test]
+fn encode_bigint() {
+    let bigint = BigIntAsHex {
+        value: num_bigint::BigInt::from_str(
+            "3618502788666131106986593281521497120414687020801267626233049500247285301248",
+        )
+        .unwrap(),
+    };
+    let encoding = bigint.encode();
+    let decoded = BigIntAsHex::decode(&mut encoding.as_slice()).unwrap();
+    assert_eq!(bigint, decoded);
 }

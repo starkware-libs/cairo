@@ -5,7 +5,7 @@ multiple operators.
 
 An example of a parenthesized expression:
 
-[source,cairo]
+[source,rust]
 ----
  2 + 2  * 2 // == 6
 (2 + 2) * 2 // == 8

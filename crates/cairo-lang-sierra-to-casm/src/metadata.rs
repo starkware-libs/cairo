@@ -52,7 +52,6 @@ pub fn calc_metadata(
         .collect();
     let pre_gas_info = calc_gas_precost_info(program, pre_function_set_costs)?;
     let pre_gas_info2 = compute_precost_info(program)?;
-
     pre_gas_info.assert_eq(&pre_gas_info2);
 
     let ap_change_info = calc_ap_changes(program, |idx, token_type| {

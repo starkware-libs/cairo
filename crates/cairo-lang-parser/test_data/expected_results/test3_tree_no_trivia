@@ -124,7 +124,18 @@
     │   │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   └── op (kind: TokenQuestionMark): '?'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   └── child #1 (kind: StatementExpr)
+    │   │       │   ├── child #1 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprInlineMacro)
+    │   │       │   │   │   ├── path (kind: ExprPath)
+    │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'some_macro'
+    │   │       │   │   │   ├── bang (kind: TokenNot): '!'
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │       ├── args (kind: ArgList) []
+    │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   └── child #2 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprMatch)
     │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
     │   │       │       │   ├── expr (kind: ExprPath)
