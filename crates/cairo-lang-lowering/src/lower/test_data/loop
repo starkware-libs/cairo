@@ -33,7 +33,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr16](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[expr16](v0)
 End:
   Return(v1)
 
@@ -69,7 +69,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr16](v2)
+  (v9: core::felt252, v8: core::bool) <- test::foo[expr16](v2)
 End:
   Return(v9, v8)
 
@@ -109,7 +109,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr15](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[expr15](v0)
 End:
   Return(v1)
 
@@ -145,7 +145,7 @@ End:
 
 blk3:
 Statements:
-  (v9: core::felt252, v8: core::bool) <- foo[expr15](v2)
+  (v9: core::felt252, v8: core::bool) <- test::foo[expr15](v2)
 End:
   Return(v9, v8)
 
@@ -201,7 +201,7 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 5u
   (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
-  (v6: core::integer::u32, v7: test::A, v5: test::A) <- foo[expr25](v2, v3, v1)
+  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[expr25](v2, v3, v1)
   (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
   (v10: ()) <- struct_construct()
 End:
@@ -244,7 +244,7 @@ End:
 blk3:
 Statements:
   (v17: test::B) <- struct_construct(v0, v5)
-  (v19: core::integer::u32, v20: test::A, v18: test::A) <- foo[expr25](v0, v17, v2)
+  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[expr25](v0, v17, v2)
   (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
 End:
   Return(v19, v20, v18)
@@ -289,7 +289,7 @@ Parameters:
 blk0 (root):
 Statements:
   (v0: core::felt252) <- 5u
-  (v2: core::felt252, v1: core::bool) <- foo[expr23](v0)
+  (v2: core::felt252, v1: core::bool) <- test::foo[expr23](v0)
 End:
   Return(v1)
 
@@ -313,7 +313,7 @@ End:
 
 blk1:
 Statements:
-  (v6: core::felt252, v5: core::bool) <- foo[expr23](v2)
+  (v6: core::felt252, v5: core::bool) <- test::foo[expr23](v2)
 End:
   Return(v6, v5)
 
@@ -346,7 +346,7 @@ End:
 
 blk6:
 Statements:
-  (v14: core::felt252, v13: core::bool) <- foo[expr23](v2)
+  (v14: core::felt252, v13: core::bool) <- test::foo[expr23](v2)
 End:
   Return(v14, v13)
 
@@ -381,7 +381,7 @@ Main:
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- foo[expr0]()
+  (v0: ()) <- test::foo[expr0]()
 End:
   Return(v0)
 

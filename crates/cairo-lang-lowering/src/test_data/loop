@@ -23,7 +23,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::bool) <- foo[expr2]()
+  (v0: core::bool) <- test::foo[expr2]()
 End:
   Return(v0)
 
@@ -54,7 +54,7 @@ foo
 Parameters:
 blk0 (root):
 Statements:
-  (v0: ()) <- foo[expr0]()
+  (v0: ()) <- test::foo[expr0]()
   (v1: ()) <- struct_construct()
 End:
   Return(v1)

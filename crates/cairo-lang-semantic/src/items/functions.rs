@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
@@ -240,6 +241,18 @@ impl GenericFunctionWithBodyId {
             }
         }
     }
+
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        let defs_db = db.upcast();
+        match self {
+            GenericFunctionWithBodyId::Free(free) => free.full_path(defs_db),
+            GenericFunctionWithBodyId::Impl(imp) => format!(
+                "{}::{}",
+                imp.concrete_impl_id.impl_def_id(db).full_path(defs_db),
+                imp.function.name(defs_db)
+            ),
+        }
+    }
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
         match self {
             GenericFunctionWithBodyId::Free(free_function) => {
@@ -341,6 +354,9 @@ impl ConcreteFunctionWithBody {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.function_with_body_id().name(db.upcast())
     }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        self.generic_function.full_path(db)
+    }
 }
 
 /// Converts each generic param to a generic argument that passes the same generic param.
@@ -368,7 +384,7 @@ impl DebugWithDb<dyn SemanticGroup> for ConcreteFunctionWithBody {
         f: &mut std::fmt::Formatter<'_>,
         db: &(dyn SemanticGroup + 'static),
     ) -> std::fmt::Result {
-        write!(f, "{}", self.generic_function.name(db.upcast()))?;
+        write!(f, "{:?}", self.generic_function.name(db.upcast()))?;
         if !self.generic_args.is_empty() {
             write!(f, "::<")?;
             for (i, arg) in self.generic_args.iter().enumerate() {
@@ -431,6 +447,10 @@ impl ConcreteFunctionWithBodyId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         self.get(db).name(db)
     }
+    pub fn full_path(&self, db: &dyn SemanticGroup) -> String {
+        self.get(db).full_path(db)
+    }
+
     pub fn stable_location(&self, db: &dyn SemanticGroup) -> StableLocation {
         self.get(db).generic_function.stable_location(db)
     }
