@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VariantId,
+    ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VariantId, VisibilityId
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_utils::extract_matches;
@@ -184,6 +184,7 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, VisibilityId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);

@@ -1,7 +1,7 @@
 use cairo_lang_defs::ids::{
     EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, LocalVarId, MemberId, ParamId, StructId, TraitFunctionId, TraitId, VarId,
-    VariantId,
+    VariantId, VisibilityId
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 

@@ -340,7 +340,7 @@ pub fn get_spec() -> Vec<Node> {
     // Struct member and enum variant have the same structure.
     .add_struct(StructBuilder::new("Member")
         .node("attributes" ,"AttributeList")
-        .node("visibility", "OptionVisibility")
+        .node("visibility", "Visibility")
         .key_node("name", "TerminalIdentifier")
         .node("type_clause", "TypeClause")
     )
@@ -605,13 +605,17 @@ pub fn get_spec() -> Vec<Node> {
         .node("trait_path", "ExprPath")
     )
     // Visibility
+    .add_struct(StructBuilder::new("VisibilityDefault"))
+    .add_struct(StructBuilder::new("VisibilityPublic")
+        .node("pub_kw", "TerminalPub")
+    )
     .add_enum(EnumBuilder::new("VisibilityItem")
-        .node_with_explicit_kind("Pub", "TerminalPub")
+        .node_with_explicit_kind("Default", "VisibilityDefault")
+        .node_with_explicit_kind("Public", "VisibilityPublic")
     )
     .add_struct(StructBuilder::new("Visibility").
         node("item", "VisibilityItem")
     )
-    .add_option("Visibility")
     // --- Tokens + Terminals ---
     .add_token_and_terminal("Identifier")
     .add_token_and_terminal("LiteralNumber")

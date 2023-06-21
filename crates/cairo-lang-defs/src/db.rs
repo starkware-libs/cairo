@@ -27,6 +27,8 @@ pub trait DefsGroup:
     + HasMacroPlugins
 {
     #[salsa::interned]
+    fn intern_visibility(&self, id: VisibilityLongId) -> VisibilityId;
+    #[salsa::interned]
     fn intern_constant(&self, id: ConstantLongId) -> ConstantId;
     #[salsa::interned]
     fn intern_submodule(&self, id: SubmoduleLongId) -> SubmoduleId;

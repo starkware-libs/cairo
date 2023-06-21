@@ -293,10 +293,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::GenericParamImpl => {
             vec![/* name */ children[1]]
         }
-        SyntaxKind::Visibility => {
+        SyntaxKind::VisibilityDefault => {
             vec![]
         }
-        SyntaxKind::OptionVisibilityEmpty => {
+        SyntaxKind::VisibilityPublic => {
+            vec![]
+        }
+        SyntaxKind::Visibility => {
             vec![]
         }
         SyntaxKind::TokenIdentifier => vec![],

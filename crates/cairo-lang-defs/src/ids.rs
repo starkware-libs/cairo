@@ -411,6 +411,13 @@ impl TopLevelLanguageElementId for FunctionWithBodyId {
 }
 
 define_language_element_id!(
+    VisibilityId,
+    VisibilityLongId,
+    ast::Visibility,
+    lookup_intern_visibility
+);
+
+define_language_element_id!(
     ExternFunctionId,
     ExternFunctionLongId,
     ast::ItemExternFunction,

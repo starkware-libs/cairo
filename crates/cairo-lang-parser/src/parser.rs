@@ -463,13 +463,14 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a optional GreenId of node with pub kind
-    fn parse_option_visibility(&mut self) -> OptionVisibilityGreen {
-        if self.peek().kind != SyntaxKind::TerminalPub {
-            OptionVisibilityEmpty::new_green(self.db).into()
+    fn parse_visibility(&mut self) -> VisibilityGreen {
+        let item: VisibilityItemGreen = if self.peek().kind != SyntaxKind::TerminalPub {
+            VisibilityDefault::new_green(self.db).into()
         } else {
-            let item = self.take::<TerminalPub>().into();
-            Visibility::new_green(self.db, item).into()
-        }
+            let pub_kw = self.take::<TerminalPub>();
+            VisibilityPublic::new_green(self.db, pub_kw).into()
+        };
+        Visibility::new_green(self.db, item)
     }
 
     /// Returns a GreenId of a node with an attribute list kind or None if an attribute list can't
@@ -1531,7 +1532,7 @@ impl<'a> Parser<'a> {
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let attributes =
             self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
-        let visibility = self.parse_option_visibility();
+        let visibility = self.parse_visibility();
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
+use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId, VisibilityId, VisibilityLongId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -18,8 +18,6 @@ use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
 use crate::{semantic, SemanticDiagnostic};
-use crate::items::visibilities;
-use crate::items::visibilities::Visibility;
 
 #[cfg(test)]
 #[path = "structure_test.rs"]
@@ -122,8 +120,7 @@ pub struct StructDefinitionData {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct Member {
     pub id: MemberId,
-    #[dont_rewrite]
-    pub vis: Visibility,
+    pub vis: VisibilityId,
     pub ty: semantic::TypeId,
 }
 
@@ -159,7 +156,12 @@ pub fn priv_struct_definition_data(
             &mut resolver,
             &member.type_clause(syntax_db).ty(syntax_db),
         );
-        let vis = visibilities::priv_visibility(db, member.visibility(syntax_db));
+        let vis = db.intern_visibility(
+            VisibilityLongId(
+                module_file_id,
+                member.visibility(syntax_db).stable_ptr()
+            )
+        );
         let member_name = member.name(syntax_db).text(syntax_db);
         if let Some(_other_member) = members.insert(member_name.clone(), Member { id, vis, ty }) {
             diagnostics.report(&member, StructMemberRedefinition { struct_id, member_name });
