@@ -47,13 +47,14 @@ impl<'db> VariableAllocator<'db> {
         variables: Arena<Variable>,
     ) -> Maybe<Self> {
         let generic_params = db.function_with_body_generic_params(function_id)?;
+        let generic_param_ids = generic_params.iter().map(|p| p.id()).collect_vec();
         Ok(Self {
             db,
             variables,
             module_file_id: function_id.module_file_id(db.upcast()),
             lookup_context: ImplLookupContext::new(
                 function_id.parent_module(db.upcast()),
-                generic_params,
+                generic_param_ids,
             ),
         })
     }
