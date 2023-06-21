@@ -330,6 +330,10 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalShortString => {
             vec![]
         }
+        SyntaxKind::TokenString => vec![],
+        SyntaxKind::TerminalString => {
+            vec![]
+        }
         SyntaxKind::TokenAs => vec![],
         SyntaxKind::TerminalAs => {
             vec![]
