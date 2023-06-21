@@ -263,9 +263,12 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
         match self {
             FunctionLongId::Semantic(semantic) => semantic.fmt(f, db),
             FunctionLongId::Generated(generated) => {
-                // TODO(spapini): Differentiate between the generated functions according to
-                // `element`.
-                write!(f, "{:?}[expr{}]", generated.parent.debug(db), generated.element.index())
+                write!(
+                    f,
+                    "{}[expr{}]",
+                    generated.parent.full_path(db.upcast()),
+                    generated.element.index()
+                )
             }
         }
     }

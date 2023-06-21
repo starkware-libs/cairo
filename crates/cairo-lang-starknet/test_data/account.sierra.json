@@ -2395,7 +2395,7 @@
       ],
       [
         144,
-        "function_call<user@AccountContractImpl::__execute__[expr33]>"
+        "function_call<user@account::account::Account::AccountContractImpl::__execute__[expr33]>"
       ],
       [
         145,
@@ -3209,7 +3209,7 @@
       ],
       [
         20,
-        "AccountContractImpl::__execute__[expr33]"
+        "account::account::Account::AccountContractImpl::__execute__[expr33]"
       ],
       [
         21,
