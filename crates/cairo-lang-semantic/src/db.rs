@@ -820,6 +820,8 @@ pub trait SemanticGroup:
     // ==============
     #[salsa::invoke(items::generics::generic_param_semantic)]
     fn generic_param_semantic(&self, generic_param: GenericParamId) -> Maybe<GenericParam>;
+    #[salsa::invoke(items::generics::generic_impl_param_trait)]
+    fn generic_impl_param_trait(&self, generic_param_id: GenericParamId) -> Maybe<TraitId>;
 
     // Concrete type.
     // ==============

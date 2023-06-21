@@ -4,8 +4,9 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId, ImplFunctionLongId,
-    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FunctionTitleId, GenericKind, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId,
+    ImplFunctionLongId, LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -452,7 +453,9 @@ pub fn priv_impl_definition_data(
     let module_impls = db.module_impls(module_file_id.0)?;
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
 
-    let lookup_context = ImplLookupContext::new(module_file_id.0, generic_params);
+    let generic_params_ids =
+        generic_params.iter().map(|generic_param| generic_param.id()).collect();
+    let lookup_context = ImplLookupContext::new(module_file_id.0, generic_params_ids);
     check_special_impls(
         db,
         &mut diagnostics,
@@ -767,10 +770,10 @@ impl PartialOrd for ModuleIdById {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplLookupContext {
     pub modules: BTreeSet<ModuleIdById>,
-    pub generic_params: Vec<semantic::GenericParam>,
+    pub generic_params: Vec<GenericParamId>,
 }
 impl ImplLookupContext {
-    pub fn new(module_id: ModuleId, generic_params: Vec<GenericParam>) -> ImplLookupContext {
+    pub fn new(module_id: ModuleId, generic_params: Vec<GenericParamId>) -> ImplLookupContext {
         Self { modules: [ModuleIdById(module_id)].into(), generic_params }
     }
 
@@ -847,13 +850,21 @@ pub fn find_candidates_at_context(
     filter: TraitFilter,
 ) -> Maybe<OrderedHashSet<UninferredImpl>> {
     let mut res = OrderedHashSet::default();
-    for generic_param in &lookup_context.generic_params {
-        let GenericParam::Impl(param) = generic_param else {continue};
+    for generic_param_id in &lookup_context.generic_params {
+        if !matches!(generic_param_id.kind(db.upcast()), GenericKind::Impl) {
+            continue;
+        };
+        let trait_id = db.generic_impl_param_trait(*generic_param_id)?;
+        if filter.trait_id != trait_id {
+            continue;
+        }
+        let param =
+            extract_matches!(db.generic_param_semantic(*generic_param_id)?, GenericParam::Impl);
         let Ok(imp_concrete_trait_id) = param.concrete_trait else {continue};
         if !concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)? {
             continue;
         }
-        res.insert(UninferredImpl::GenericParam(generic_param.id()));
+        res.insert(UninferredImpl::GenericParam(*generic_param_id));
     }
     let core_module = core_module(db);
     for module_id in chain!(lookup_context.modules.iter().map(|x| &x.0), [&core_module]) {
