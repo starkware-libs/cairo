@@ -32,7 +32,9 @@ ExprBinary
     │   ├── lbrace (kind: TokenLBrace): '{'
     │   ├── statements (kind: StatementList)
     │   │   └── child #0 (kind: StatementExpr)
-    │   │       ├── expr (kind: TokenLiteralNumber): '3'
+    │   │       ├── expr (kind: LiteralNumber)
+    │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   └── number (kind: TokenNumber): '3'
     │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   └── rbrace (kind: TokenRBrace): '}'
     └── else_clause (kind: ElseClause)
@@ -44,7 +46,9 @@ ExprBinary
             │   ├── lbrace (kind: TokenLBrace): '{'
             │   ├── statements (kind: StatementList)
             │   │   └── child #0 (kind: StatementExpr)
-            │   │       ├── expr (kind: TokenLiteralNumber): '6'
+            │   │       ├── expr (kind: LiteralNumber)
+            │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+            │   │       │   └── number (kind: TokenNumber): '6'
             │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
             │   └── rbrace (kind: TokenRBrace): '}'
             └── else_clause (kind: ElseClause)
@@ -56,7 +60,9 @@ ExprBinary
                     │   ├── lbrace (kind: TokenLBrace): '{'
                     │   ├── statements (kind: StatementList)
                     │   │   └── child #0 (kind: StatementExpr)
-                    │   │       ├── expr (kind: TokenLiteralNumber): '9'
+                    │   │       ├── expr (kind: LiteralNumber)
+                    │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+                    │   │       │   └── number (kind: TokenNumber): '9'
                     │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
                     │   └── rbrace (kind: TokenRBrace): '}'
                     └── else_clause (kind: ElseClause)
@@ -65,6 +71,8 @@ ExprBinary
                             ├── lbrace (kind: TokenLBrace): '{'
                             ├── statements (kind: StatementList)
                             │   └── child #0 (kind: StatementExpr)
-                            │       ├── expr (kind: TokenLiteralNumber): '10'
+                            │       ├── expr (kind: LiteralNumber)
+                            │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+                            │       │   └── number (kind: TokenNumber): '10'
                             │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
                             └── rbrace (kind: TokenRBrace): '}'
