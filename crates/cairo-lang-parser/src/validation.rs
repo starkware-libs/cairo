@@ -30,8 +30,8 @@ pub fn validate(
 ) -> Maybe<()> {
     root.descendants(db).fold(Ok(()), |result, node| {
         result.and(match node.kind(db) {
-            SyntaxKind::TerminalLiteralNumber => {
-                let node = ast::TerminalLiteralNumber::from_syntax_node(db, node);
+            SyntaxKind::TerminalNumber => {
+                let node = ast::TerminalNumber::from_syntax_node(db, node);
                 validate_literal_number(node, db, diagnostics, file_id)
             }
 
@@ -53,7 +53,7 @@ pub fn validate(
 /// 1. Is parseable according to its radix.
 /// 2. Has properly formatted suffix.
 fn validate_literal_number(
-    node: ast::TerminalLiteralNumber,
+    node: ast::TerminalNumber,
     db: &dyn SyntaxGroup,
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
     file_id: FileId,

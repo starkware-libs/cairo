@@ -7,7 +7,7 @@ use num_traits::Num;
 use smol_str::SmolStr;
 use unescaper::unescape;
 
-use super::{TerminalFalse, TerminalLiteralNumber, TerminalShortString, TerminalTrue};
+use super::{LiteralNumber, OptionTerminalMinus, TerminalFalse, TerminalShortString, TerminalTrue};
 use crate::node::db::SyntaxGroup;
 use crate::node::Terminal;
 
@@ -25,7 +25,7 @@ impl TerminalFalse {
     }
 }
 
-impl TerminalLiteralNumber {
+impl LiteralNumber {
     /// Interpret this terminal as a [`BigInt`] number.
     pub fn numeric_value(&self, db: &dyn SyntaxGroup) -> Option<BigInt> {
         self.numeric_value_and_suffix(db).map(|(value, _suffix)| value)
@@ -36,7 +36,8 @@ impl TerminalLiteralNumber {
         &self,
         db: &dyn SyntaxGroup,
     ) -> Option<(BigInt, Option<SmolStr>)> {
-        let text = self.text(db);
+        let text = self.number(db).text(db);
+        let negative = matches!(self.sign(db), OptionTerminalMinus::TerminalMinus(_));
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)
@@ -51,8 +52,8 @@ impl TerminalLiteralNumber {
         // Catch an edge case, where literal seems to have a suffix that is valid numeric part
         // according to the radix. Interpret this as an untyped numer.
         // Example: 0x1_f32 is interpreted as 0x1F32 without suffix.
-        if let Ok(value) = BigInt::from_str_radix(text, radix) {
-            Some((value, None))
+        let (value, suffix) = if let Ok(value) = BigInt::from_str_radix(text, radix) {
+            (value, None)
         } else {
             let (text, suffix) = match text.rsplit_once('_') {
                 Some((text, suffix)) => {
@@ -61,11 +62,9 @@ impl TerminalLiteralNumber {
                 }
                 None => (text, None),
             };
-
-            let value = BigInt::from_str_radix(text, radix).ok()?;
-            let suffix = suffix.map(SmolStr::new);
-            Some((value, suffix))
-        }
+            (BigInt::from_str_radix(text, radix).ok()?, suffix.map(SmolStr::new))
+        };
+        Some((if negative { -value } else { value }, suffix))
     }
 }
 
