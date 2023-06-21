@@ -662,13 +662,12 @@ pub fn validate_literal(
     value: BigInt,
 ) -> Result<(), SemanticDiagnosticKind> {
     let is_out_of_range = if ty == core_felt252_ty(db) {
-        value.is_negative()
-            || value
-                > BigInt::from_str_radix(
-                    "800000000000011000000000000000000000000000000000000000000000000",
-                    16,
-                )
-                .unwrap()
+        value.abs()
+            > BigInt::from_str_radix(
+                "800000000000011000000000000000000000000000000000000000000000000",
+                16,
+            )
+            .unwrap()
     } else if ty == get_core_ty_by_name(db, "u8".into(), vec![]) {
         value.to_u8().is_none()
     } else if ty == get_core_ty_by_name(db, "u16".into(), vec![]) {
