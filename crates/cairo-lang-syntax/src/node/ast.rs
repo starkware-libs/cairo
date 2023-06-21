@@ -8311,6 +8311,204 @@ impl TypedSyntaxNode for ItemModule {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct VisibilityDefault {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl VisibilityDefault {
+    pub fn new_green(db: &dyn SyntaxGroup) -> VisibilityDefaultGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        VisibilityDefaultGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VisibilityDefault,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl VisibilityDefault {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityDefaultPtr(pub SyntaxStablePtrId);
+impl VisibilityDefaultPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityDefaultGreen(pub GreenId);
+impl TypedSyntaxNode for VisibilityDefault {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityDefault);
+    type StablePtr = VisibilityDefaultPtr;
+    type Green = VisibilityDefaultGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VisibilityDefaultGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VisibilityDefault,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::VisibilityDefault,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::VisibilityDefault
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VisibilityDefaultPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct VisibilityPublic {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl VisibilityPublic {
+    pub const INDEX_PUB_KW: usize = 0;
+    pub fn new_green(db: &dyn SyntaxGroup, pub_kw: TerminalPubGreen) -> VisibilityPublicGreen {
+        let children: Vec<GreenId> = vec![pub_kw.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        VisibilityPublicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VisibilityPublic,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl VisibilityPublic {
+    pub fn pub_kw(&self, db: &dyn SyntaxGroup) -> TerminalPub {
+        TerminalPub::from_syntax_node(db, self.children[0].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityPublicPtr(pub SyntaxStablePtrId);
+impl VisibilityPublicPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityPublicGreen(pub GreenId);
+impl TypedSyntaxNode for VisibilityPublic {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityPublic);
+    type StablePtr = VisibilityPublicPtr;
+    type Green = VisibilityPublicGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VisibilityPublicGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VisibilityPublic,
+            details: GreenNodeDetails::Node {
+                children: vec![TerminalPub::missing(db).0],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::VisibilityPublic,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::VisibilityPublic
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VisibilityPublicPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum Visibility {
+    Default(VisibilityDefault),
+    Public(VisibilityPublic),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityPtr(pub SyntaxStablePtrId);
+impl VisibilityPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<VisibilityDefaultPtr> for VisibilityPtr {
+    fn from(value: VisibilityDefaultPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<VisibilityPublicPtr> for VisibilityPtr {
+    fn from(value: VisibilityPublicPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<VisibilityDefaultGreen> for VisibilityGreen {
+    fn from(value: VisibilityDefaultGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<VisibilityPublicGreen> for VisibilityGreen {
+    fn from(value: VisibilityPublicGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VisibilityGreen(pub GreenId);
+impl TypedSyntaxNode for Visibility {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = VisibilityPtr;
+    type Green = VisibilityGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::VisibilityDefault => {
+                Visibility::Default(VisibilityDefault::from_syntax_node(db, node))
+            }
+            SyntaxKind::VisibilityPublic => {
+                Visibility::Public(VisibilityPublic::from_syntax_node(db, node))
+            }
+            _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Visibility"),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            Visibility::Default(x) => x.as_syntax_node(),
+            Visibility::Public(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VisibilityPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl Visibility {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::VisibilityDefault => true,
+            SyntaxKind::VisibilityPublic => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum MaybeModuleBody {
     Some(ModuleBody),
     None(TerminalSemicolon),
@@ -12442,271 +12640,6 @@ impl TypedSyntaxNode for GenericParamImpl {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         GenericParamImplPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct VisibilityDefault {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl VisibilityDefault {
-    pub fn new_green(db: &dyn SyntaxGroup) -> VisibilityDefaultGreen {
-        let children: Vec<GreenId> = vec![];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        VisibilityDefaultGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::VisibilityDefault,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl VisibilityDefault {}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityDefaultPtr(pub SyntaxStablePtrId);
-impl VisibilityDefaultPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityDefaultGreen(pub GreenId);
-impl TypedSyntaxNode for VisibilityDefault {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityDefault);
-    type StablePtr = VisibilityDefaultPtr;
-    type Green = VisibilityDefaultGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        VisibilityDefaultGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::VisibilityDefault,
-            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::VisibilityDefault,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::VisibilityDefault
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityDefaultPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct VisibilityPublic {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl VisibilityPublic {
-    pub const INDEX_PUB_KW: usize = 0;
-    pub fn new_green(db: &dyn SyntaxGroup, pub_kw: TerminalPubGreen) -> VisibilityPublicGreen {
-        let children: Vec<GreenId> = vec![pub_kw.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        VisibilityPublicGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::VisibilityPublic,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl VisibilityPublic {
-    pub fn pub_kw(&self, db: &dyn SyntaxGroup) -> TerminalPub {
-        TerminalPub::from_syntax_node(db, self.children[0].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityPublicPtr(pub SyntaxStablePtrId);
-impl VisibilityPublicPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityPublicGreen(pub GreenId);
-impl TypedSyntaxNode for VisibilityPublic {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VisibilityPublic);
-    type StablePtr = VisibilityPublicPtr;
-    type Green = VisibilityPublicGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        VisibilityPublicGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::VisibilityPublic,
-            details: GreenNodeDetails::Node {
-                children: vec![TerminalPub::missing(db).0],
-                width: TextWidth::default(),
-            },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::VisibilityPublic,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::VisibilityPublic
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityPublicPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum VisibilityItem {
-    Default(VisibilityDefault),
-    Public(VisibilityPublic),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityItemPtr(pub SyntaxStablePtrId);
-impl VisibilityItemPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-impl From<VisibilityDefaultPtr> for VisibilityItemPtr {
-    fn from(value: VisibilityDefaultPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<VisibilityPublicPtr> for VisibilityItemPtr {
-    fn from(value: VisibilityPublicPtr) -> Self {
-        Self(value.0)
-    }
-}
-impl From<VisibilityDefaultGreen> for VisibilityItemGreen {
-    fn from(value: VisibilityDefaultGreen) -> Self {
-        Self(value.0)
-    }
-}
-impl From<VisibilityPublicGreen> for VisibilityItemGreen {
-    fn from(value: VisibilityPublicGreen) -> Self {
-        Self(value.0)
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityItemGreen(pub GreenId);
-impl TypedSyntaxNode for VisibilityItem {
-    const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = VisibilityItemPtr;
-    type Green = VisibilityItemGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        match kind {
-            SyntaxKind::VisibilityDefault => {
-                VisibilityItem::Default(VisibilityDefault::from_syntax_node(db, node))
-            }
-            SyntaxKind::VisibilityPublic => {
-                VisibilityItem::Public(VisibilityPublic::from_syntax_node(db, node))
-            }
-            _ => {
-                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "VisibilityItem")
-            }
-        }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        match self {
-            VisibilityItem::Default(x) => x.as_syntax_node(),
-            VisibilityItem::Public(x) => x.as_syntax_node(),
-        }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityItemPtr(self.as_syntax_node().0.stable_ptr)
-    }
-}
-impl VisibilityItem {
-    #[allow(clippy::match_like_matches_macro)]
-    pub fn is_variant(kind: SyntaxKind) -> bool {
-        match kind {
-            SyntaxKind::VisibilityDefault => true,
-            SyntaxKind::VisibilityPublic => true,
-            _ => false,
-        }
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Visibility {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl Visibility {
-    pub const INDEX_ITEM: usize = 0;
-    pub fn new_green(db: &dyn SyntaxGroup, item: VisibilityItemGreen) -> VisibilityGreen {
-        let children: Vec<GreenId> = vec![item.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        VisibilityGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::Visibility,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl Visibility {
-    pub fn item(&self, db: &dyn SyntaxGroup) -> VisibilityItem {
-        VisibilityItem::from_syntax_node(db, self.children[0].clone())
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityPtr(pub SyntaxStablePtrId);
-impl VisibilityPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct VisibilityGreen(pub GreenId);
-impl TypedSyntaxNode for Visibility {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Visibility);
-    type StablePtr = VisibilityPtr;
-    type Green = VisibilityGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        VisibilityGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::Visibility,
-            details: GreenNodeDetails::Node {
-                children: vec![VisibilityItem::missing(db).0],
-                width: TextWidth::default(),
-            },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::Visibility,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::Visibility
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        VisibilityPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

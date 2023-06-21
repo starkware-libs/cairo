@@ -476,13 +476,12 @@ impl<'a> Parser<'a> {
 
     /// Returns a optional GreenId of node with pub kind
     fn parse_visibility(&mut self) -> VisibilityGreen {
-        let item: VisibilityItemGreen = if self.peek().kind != SyntaxKind::TerminalPub {
+        if self.peek().kind != SyntaxKind::TerminalPub {
             VisibilityDefault::new_green(self.db).into()
         } else {
             let pub_kw = self.take::<TerminalPub>();
             VisibilityPublic::new_green(self.db, pub_kw).into()
-        };
-        Visibility::new_green(self.db, item)
+        }
     }
 
     /// Returns a GreenId of a node with an attribute list kind or None if an attribute list can't
