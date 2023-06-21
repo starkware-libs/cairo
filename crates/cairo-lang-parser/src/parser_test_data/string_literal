@@ -1,0 +1,35 @@
+//! > Test a syntax tree with string literals
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn f() {
+    let a = "";
+    let b = "abc";
+}
+
+//! > top_level_kind
+StatementList
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementList
+    ├── child #0 (kind: StatementLet)
+    │   ├── let_kw (kind: TokenLet): 'let'
+    │   ├── pattern (kind: ExprPath) <ignored>
+    │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   ├── eq (kind: TokenEq): '='
+    │   ├── rhs (kind: TokenString): '""'
+    │   └── semicolon (kind: TokenSemicolon): ';'
+    └── child #1 (kind: StatementLet)
+        ├── let_kw (kind: TokenLet): 'let'
+        ├── pattern (kind: ExprPath) <ignored>
+        ├── type_clause (kind: OptionTypeClauseEmpty) []
+        ├── eq (kind: TokenEq): '='
+        ├── rhs (kind: TokenString): '"abc"'
+        └── semicolon (kind: TokenSemicolon): ';'

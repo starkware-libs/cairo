@@ -583,3 +583,26 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test no default type for string literals.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   let x = "hello";
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:2:12
+   let x = "hello";
+           ^*****^

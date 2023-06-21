@@ -897,6 +897,7 @@ impl<'a> Parser<'a> {
                 .into(),
             ),
             SyntaxKind::TerminalShortString => Some(self.take::<TerminalShortString>().into()),
+            SyntaxKind::TerminalString => Some(self.take::<TerminalString>().into()),
             SyntaxKind::TerminalLParen => {
                 // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
                 // [LbraceAllowed::Forbid].
