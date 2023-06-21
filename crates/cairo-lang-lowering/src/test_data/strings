@@ -1,0 +1,224 @@
+//! > Test strings.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    let x = "hello";
+    x
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::felt252) <- 448378203247u
+  (v2: core::integer::u32) <- 5u
+  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test string of length exactly 31.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    "This is a string of length 31!!"
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::bytes_31::bytes31) <- 149135777980097582634002139252429040475994949483886278789328970947115426081u
+  (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v0, v1)
+  (v3: core::felt252) <- 0u
+  (v4: core::integer::u32) <- 0u
+  (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test string longer than 31.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    "This is a string longer than 31 characters."
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::bytes_31::bytes31) <- 149135777980097582634002139252429040475994889373844716668334467060223456049u
+  (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v0, v1)
+  (v3: core::felt252) <- 10023696894115262225051710254u
+  (v4: core::integer::u32) <- 12u
+  (v5: core::byte_array::ByteArray) <- struct_construct(v2, v3, v4)
+End:
+  Return(v5)
+
+//! > ==========================================================================
+
+//! > Test string longer than 62.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    "This is a very very long string. It is longer than 62 characters!"
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::bytes_31::bytes31) <- 149135777980097582634002143551300458181193150334766401759981576101506412135u
+  (v2: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v0, v1)
+  (v3: core::bytes_31::bytes31) <- 81497801168569000366308429866993893991598961463881166117681206773816718437u
+  (v4: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_append::<core::bytes_31::bytes31>(v2, v3)
+  (v5: core::felt252) <- 7500577u
+  (v6: core::integer::u32) <- 3u
+  (v7: core::byte_array::ByteArray) <- struct_construct(v4, v5, v6)
+End:
+  Return(v7)
+
+//! > ==========================================================================
+
+//! > Test empty string.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    let y = "";
+    y
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::felt252) <- 0u
+  (v2: core::integer::u32) <- 0u
+  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
+End:
+  Return(v3)
+
+//! > ==========================================================================
+
+//! > Test string literal in an expression.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() -> ByteArray {
+    let x = "hello";
+    ByteArrayTrait::concat(@x, @" world")
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering_flat
+Parameters: v20: core::RangeCheck, v21: core::gas::GasBuiltin
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v6: core::array::Array::<core::bytes_31::bytes31>) <- core::array::array_new::<core::bytes_31::bytes31>()
+  (v1: core::felt252) <- 448378203247u
+  (v2: core::integer::u32) <- 5u
+  (v3: core::byte_array::ByteArray) <- struct_construct(v0, v1, v2)
+  (v4: core::byte_array::ByteArray, v5: @core::byte_array::ByteArray) <- snapshot(v3)
+  (v7: core::felt252) <- 35697342966884u
+  (v8: core::integer::u32) <- 6u
+  (v9: core::byte_array::ByteArray) <- struct_construct(v6, v7, v8)
+  (v10: core::byte_array::ByteArray, v11: @core::byte_array::ByteArray) <- snapshot(v9)
+  (v22: core::RangeCheck, v23: core::gas::GasBuiltin, v13: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- core::byte_array::ByteArrayImpl::concat(v20, v21, v5, v11)
+End:
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk1,
+    PanicResult::Err(v16) => blk2,
+  })
+
+blk1:
+Statements:
+  (v15: core::byte_array::ByteArray) <- struct_destructure(v14)
+  (v17: (core::byte_array::ByteArray,)) <- struct_construct(v15)
+  (v18: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Ok(v17)
+End:
+  Return(v22, v23, v18)
+
+blk2:
+Statements:
+  (v19: core::panics::PanicResult::<(core::byte_array::ByteArray,)>) <- PanicResult::Err(v16)
+End:
+  Return(v22, v23, v19)

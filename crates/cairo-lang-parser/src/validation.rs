@@ -40,6 +40,11 @@ pub fn validate(
                 validate_short_string(node, db, diagnostics, file_id)
             }
 
+            SyntaxKind::TerminalString => {
+                let node = ast::TerminalString::from_syntax_node(db, node);
+                validate_string(node, db, diagnostics, file_id)
+            }
+
             _ => Ok(()),
         })
     })
@@ -116,8 +121,6 @@ fn validate_short_string(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
     file_id: FileId,
 ) -> Maybe<()> {
-    let mut result = Ok(());
-
     let text = node.text(db);
     let mut text = text.as_str();
 
@@ -126,48 +129,103 @@ fn validate_short_string(
     } else {
         // NOTE: This is a very paranoid case, but let's try to recover anyway here instead of
         //   panicking.
-        result = Err(diagnostics.add(ParserDiagnostic {
+        return Err(diagnostics.add(ParserDiagnostic {
             file_id,
             span: node.as_syntax_node().span(db),
-            kind: ParserDiagnosticKind::UnterminatedString,
+            kind: ParserDiagnosticKind::UnterminatedShortString,
         }));
     }
 
     let (body, _suffix) = match text.rsplit_once('\'') {
         Some((body, suffix)) => (body, (!suffix.is_empty()).then_some(suffix)),
         None => {
-            result = Err(diagnostics.add(ParserDiagnostic {
+            return Err(diagnostics.add(ParserDiagnostic {
                 file_id,
                 span: node.as_syntax_node().span(db),
-                kind: ParserDiagnosticKind::UnterminatedString,
+                kind: ParserDiagnosticKind::UnterminatedShortString,
             }));
-
-            (text, None)
         }
     };
 
+    validate_string_body(
+        db,
+        diagnostics,
+        body,
+        file_id,
+        node.as_syntax_node(),
+        ParserDiagnosticKind::ShortStringMustBeAscii,
+    )
+}
+
+/// Validate that the string literal is valid, after it is consumed by the parser.
+///
+/// Cairo parser tries to consume even not proper tokens in order to support code editions in IDEs.
+/// This means that it omits some crucial details in the literals that make the code uncompilable.
+/// This function validates that the literal:
+/// 1. Has double quotes on both sides (parser accepts unterminated literals).
+/// 2. Has all escape sequences valid.
+/// 3. Is entirely ASCII.
+fn validate_string(
+    node: ast::TerminalString,
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    file_id: FileId,
+) -> Maybe<()> {
+    let text = node.text(db);
+    let mut text = text.as_str();
+
+    let body = if text.starts_with('"') && text.ends_with('"') {
+        (_, text) = text.split_once('"').unwrap();
+        (text, _) = text.rsplit_once('"').unwrap();
+        text
+    } else {
+        // NOTE: This is a very paranoid case, but let's try to recover anyway here instead of
+        //   panicking.
+        return Err(diagnostics.add(ParserDiagnostic {
+            file_id,
+            span: node.as_syntax_node().span(db),
+            kind: ParserDiagnosticKind::UnterminatedString,
+        }));
+    };
+
+    validate_string_body(
+        db,
+        diagnostics,
+        body,
+        file_id,
+        node.as_syntax_node(),
+        ParserDiagnosticKind::StringMustBeAscii,
+    )
+}
+
+fn validate_string_body(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+    body: &str,
+    file_id: FileId,
+    node: SyntaxNode,
+    ascii_only_diagnostic_kind: ParserDiagnosticKind,
+) -> Result<(), cairo_lang_diagnostics::DiagnosticAdded> {
     let body = match unescape(body) {
         Ok(body) => body,
         Err(_) => {
             // TODO(mkaput): Try to always provide full position for entire escape sequence.
-            result = Err(diagnostics.add(ParserDiagnostic {
+            return Err(diagnostics.add(ParserDiagnostic {
                 file_id,
-                span: node.as_syntax_node().span(db),
+                span: node.span(db),
                 kind: ParserDiagnosticKind::IllegalStringEscaping,
             }));
-
-            String::new()
         }
     };
 
     if !body.is_ascii() {
         // TODO(mkaput): Try to always provide position of culprit character/escape sequence.
-        result = Err(diagnostics.add(ParserDiagnostic {
+        return Err(diagnostics.add(ParserDiagnostic {
             file_id,
-            span: node.as_syntax_node().span(db),
-            kind: ParserDiagnosticKind::ShortStringMustBeAscii,
+            span: node.span(db),
+            kind: ascii_only_diagnostic_kind,
         }));
     }
 
-    result
+    Ok(())
 }

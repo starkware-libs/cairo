@@ -26,6 +26,8 @@ pub enum ParserDiagnosticKind {
     InvalidNumericLiteralValue,
     IllegalStringEscaping,
     ShortStringMustBeAscii,
+    StringMustBeAscii,
+    UnterminatedShortString,
     UnterminatedString,
     AttributesWithoutItem,
     AttributesWithoutTraitItem,
@@ -67,6 +69,12 @@ impl DiagnosticEntry for ParserDiagnostic {
             ParserDiagnosticKind::IllegalStringEscaping => "Invalid string escaping.".to_string(),
             ParserDiagnosticKind::ShortStringMustBeAscii => {
                 "Short strings can only include ASCII characters.".into()
+            }
+            ParserDiagnosticKind::StringMustBeAscii => {
+                "Strings can only include ASCII characters.".into()
+            }
+            ParserDiagnosticKind::UnterminatedShortString => {
+                "Unterminated short string literal.".into()
             }
             ParserDiagnosticKind::UnterminatedString => "Unterminated string literal.".into(),
             ParserDiagnosticKind::AttributesWithoutItem => {

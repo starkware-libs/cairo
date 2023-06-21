@@ -128,6 +128,7 @@ pub enum Expr {
     If(ExprIf),
     Var(ExprVar),
     Literal(ExprLiteral),
+    StringLiteral(ExprStringLiteral),
     MemberAccess(ExprMemberAccess),
     StructCtor(ExprStructCtor),
     EnumVariantCtor(ExprEnumVariantCtor),
@@ -150,6 +151,7 @@ impl Expr {
             Expr::If(expr) => expr.ty,
             Expr::Var(expr) => expr.ty,
             Expr::Literal(expr) => expr.ty,
+            Expr::StringLiteral(expr) => expr.ty,
             Expr::MemberAccess(expr) => expr.ty,
             Expr::StructCtor(expr) => expr.ty,
             Expr::EnumVariantCtor(expr) => expr.ty,
@@ -172,6 +174,7 @@ impl Expr {
             Expr::If(expr) => expr.stable_ptr,
             Expr::Var(expr) => expr.stable_ptr,
             Expr::Literal(expr) => expr.stable_ptr,
+            Expr::StringLiteral(expr) => expr.stable_ptr,
             Expr::MemberAccess(expr) => expr.stable_ptr,
             Expr::StructCtor(expr) => expr.stable_ptr,
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
@@ -383,6 +386,7 @@ impl<'a> DebugWithDb<ExprFormatter<'a>> for ExprVar {
     }
 }
 
+// TODO(yuval): rename to ExprNumericLiteral.
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct ExprLiteral {
@@ -390,6 +394,17 @@ pub struct ExprLiteral {
     pub value: BigInt,
     #[hide_field_debug_with_db]
     pub numeric_impl: ImplId,
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprStringLiteral {
+    #[dont_rewrite]
+    pub value: String,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

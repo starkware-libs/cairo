@@ -86,6 +86,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "
                 .into()
             }
+            LoweringDiagnosticKind::UnsupportedString => "Strings are not yet supported.".into(),
         }
     }
 
@@ -125,4 +126,6 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
+    // TODO(yuval): Remove once supported.
+    UnsupportedString,
 }
