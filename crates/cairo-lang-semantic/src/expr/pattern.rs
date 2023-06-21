@@ -6,7 +6,7 @@ use id_arena::Arena;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
-use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable, PatternId};
+use crate::{semantic, ConcreteStructId, ExprLiteral, ExprStringLiteral, LocalVariable, PatternId};
 
 /// Semantic representation of a Pattern.
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
@@ -19,6 +19,7 @@ use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable, PatternId};
 #[debug_db(ExprFormatter<'a>)]
 pub enum Pattern {
     Literal(PatternLiteral),
+    StringLiteral(PatternStringLiteral),
     Variable(PatternVariable),
     Struct(PatternStruct),
     Tuple(PatternTuple),
@@ -30,6 +31,7 @@ impl Pattern {
     pub fn ty(&self) -> semantic::TypeId {
         match self {
             Pattern::Literal(literal) => literal.literal.ty,
+            Pattern::StringLiteral(string_literal) => string_literal.string_literal.ty,
             Pattern::Variable(variable) => variable.var.ty,
             Pattern::Struct(pattern_struct) => pattern_struct.ty,
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
@@ -58,13 +60,17 @@ impl Pattern {
                     None => vec![],
                 }
             }
-            Pattern::Literal(_) | Pattern::Otherwise(_) | Pattern::Missing(_) => vec![],
+            Pattern::Literal(_)
+            | Pattern::StringLiteral(_)
+            | Pattern::Otherwise(_)
+            | Pattern::Missing(_) => vec![],
         }
     }
 
     pub fn stable_ptr(&self) -> ast::PatternPtr {
         match self {
             Pattern::Literal(pattern) => pattern.stable_ptr,
+            Pattern::StringLiteral(pattern) => pattern.stable_ptr,
             Pattern::Variable(pattern) => pattern.stable_ptr,
             Pattern::Struct(pattern) => pattern.stable_ptr.into(),
             Pattern::Tuple(pattern) => pattern.stable_ptr.into(),
@@ -79,6 +85,15 @@ impl Pattern {
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternLiteral {
     pub literal: ExprLiteral,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct PatternStringLiteral {
+    pub string_literal: ExprStringLiteral,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::PatternPtr,
