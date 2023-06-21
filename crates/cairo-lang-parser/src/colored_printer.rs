@@ -68,7 +68,8 @@ fn set_color(text: SmolStr, kind: SyntaxKind) -> ColoredString {
         SyntaxKind::TokenLiteralNumber
         | SyntaxKind::TokenFalse
         | SyntaxKind::TokenTrue
-        | SyntaxKind::TokenShortString => text.bright_cyan(),
+        | SyntaxKind::TokenShortString
+        | SyntaxKind::TokenString => text.bright_cyan(),
         SyntaxKind::TokenExtern
         | SyntaxKind::TokenType
         | SyntaxKind::TokenFunction

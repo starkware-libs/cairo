@@ -64,7 +64,9 @@ impl SemanticTokenKind {
             | SyntaxKind::TokenDiv
             | SyntaxKind::TokenMod => return Some(SemanticTokenKind::Operator),
             SyntaxKind::TokenSingleLineComment => return Some(SemanticTokenKind::Comment),
-            SyntaxKind::TokenShortString => return Some(SemanticTokenKind::String),
+            SyntaxKind::TokenShortString | SyntaxKind::TokenString => {
+                return Some(SemanticTokenKind::String);
+            }
             _ => return None,
         };
         node = node.parent().unwrap();
