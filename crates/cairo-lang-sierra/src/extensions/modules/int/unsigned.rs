@@ -2,8 +2,9 @@ use std::marker::PhantomData;
 
 use super::unsigned128::Uint128Type;
 use super::{
-    IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits, IntOperator,
-    IntToFelt252Libfunc, IntTraits, IntType, IntWideMulLibfunc,
+    IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits,
+    IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits, IntType,
+    IntWideMulLibfunc,
 };
 use crate::define_libfunc_hierarchy;
 use crate::extensions::bitwise::BitwiseType;
@@ -16,7 +17,7 @@ use crate::extensions::non_zero::nonzero_ty;
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
     GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    SpecializationError,
 };
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
@@ -37,16 +38,6 @@ pub trait UintTraits: IntTraits {
     const BITWISE: &'static str;
 }
 
-pub struct UintOperationConcreteLibfunc {
-    pub operator: IntOperator,
-    pub signature: LibfuncSignature,
-}
-impl SignatureBasedConcreteLibfunc for UintOperationConcreteLibfunc {
-    fn signature(&self) -> &LibfuncSignature {
-        &self.signature
-    }
-}
-
 /// Libfunc for integer operations.
 pub struct UintOperationLibfunc<TUintTraits: UintTraits> {
     pub operator: IntOperator,
@@ -60,7 +51,7 @@ impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
     }
 }
 impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTraits> {
-    type Concrete = UintOperationConcreteLibfunc;
+    type Concrete = IntOperationConcreteLibfunc;
 
     fn supported_ids() -> Vec<GenericLibfuncId> {
         vec![
@@ -133,7 +124,7 @@ impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTrait
         context: &dyn SpecializationContext,
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
-        Ok(UintOperationConcreteLibfunc {
+        Ok(IntOperationConcreteLibfunc {
             operator: self.operator,
             signature: self.specialize_signature(context.upcast(), args)?,
         })

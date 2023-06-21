@@ -228,6 +228,166 @@ test::foo@0() -> (core::bool);
 
 //! > ==========================================================================
 
+//! > i8_overflowing_add libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i8, b: i8) -> integer::SignedIntResult<i8> {
+    integer::i8_overflowing_add(a, b)
+}
+
+//! > casm
+[ap + 2] = [fp + -4] + [fp + -3], ap++;
+%{ memory[ap + -1] = memory[ap + 1] + 128 < 256 %}
+jmp rel 14 if [ap + -1] != 0, ap++;
+%{ memory[ap + 1] = memory[ap + 0] < 256 %}
+jmp rel 7 if [ap + 1] != 0, ap++;
+[ap + -2] = [ap + -1] + 340282366920938463463374607431768211584, ap++;
+[ap + -3] = [[fp + -5] + 0];
+jmp rel 19;
+[ap + -1] = [ap + -2] + 127, ap++;
+[ap + -3] = [[fp + -5] + 0];
+jmp rel 22;
+[ap + -1] = [ap + 0] + 128, ap++;
+[ap + -2] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 5, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 16;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 3, ap++;
+[ap + 0] = [ap + -4] + 256, ap++;
+jmp rel 8;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -4] = [ap + 0] + 256, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1070})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i8 = i8;
+type core::integer::SignedIntResult::<core::integer::i8> = Enum<ut@core::integer::SignedIntResult::<core::integer::i8>, i8, i8, i8>;
+
+libfunc i8_overflowing_add = i8_overflowing_add;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::integer::SignedIntResult::<core::integer::i8>> = store_temp<core::integer::SignedIntResult::<core::integer::i8>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1>;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::integer::SignedIntResult::<core::integer::i8>> = rename<core::integer::SignedIntResult::<core::integer::i8>>;
+
+i8_overflowing_add([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0>([4]) -> ([9]);
+store_temp<RangeCheck>([3]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([9]) -> ([11]);
+jump() { 15() };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1>([6]) -> ([12]);
+store_temp<RangeCheck>([5]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([12]) -> ([11]);
+jump() { 15() };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2>([8]) -> ([13]);
+store_temp<RangeCheck>([7]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([13]) -> ([11]);
+rename<RangeCheck>([10]) -> ([14]);
+rename<core::integer::SignedIntResult::<core::integer::i8>>([11]) -> ([15]);
+return([14], [15]);
+
+test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::SignedIntResult::<core::integer::i8>);
+
+//! > ==========================================================================
+
+//! > i8_overflowing_sub libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i8, b: i8) -> integer::SignedIntResult<i8> {
+    integer::i8_overflowing_sub(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 2] + [fp + -3], ap++;
+%{ memory[ap + -1] = memory[ap + 1] + 128 < 256 %}
+jmp rel 14 if [ap + -1] != 0, ap++;
+%{ memory[ap + 1] = memory[ap + 0] < 256 %}
+jmp rel 7 if [ap + 1] != 0, ap++;
+[ap + -2] = [ap + -1] + 340282366920938463463374607431768211584, ap++;
+[ap + -3] = [[fp + -5] + 0];
+jmp rel 19;
+[ap + -1] = [ap + -2] + 127, ap++;
+[ap + -3] = [[fp + -5] + 0];
+jmp rel 22;
+[ap + -1] = [ap + 0] + 128, ap++;
+[ap + -2] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 5, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 16;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 3, ap++;
+[ap + 0] = [ap + -4] + 256, ap++;
+jmp rel 8;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + -4] = [ap + 0] + 256, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1070})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i8 = i8;
+type core::integer::SignedIntResult::<core::integer::i8> = Enum<ut@core::integer::SignedIntResult::<core::integer::i8>, i8, i8, i8>;
+
+libfunc i8_overflowing_sub = i8_overflowing_sub;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::integer::SignedIntResult::<core::integer::i8>> = store_temp<core::integer::SignedIntResult::<core::integer::i8>>;
+libfunc jump = jump;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1>;
+libfunc enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2> = enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::integer::SignedIntResult::<core::integer::i8>> = rename<core::integer::SignedIntResult::<core::integer::i8>>;
+
+i8_overflowing_sub([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) 11([7], [8]) };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 0>([4]) -> ([9]);
+store_temp<RangeCheck>([3]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([9]) -> ([11]);
+jump() { 15() };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 1>([6]) -> ([12]);
+store_temp<RangeCheck>([5]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([12]) -> ([11]);
+jump() { 15() };
+branch_align() -> ();
+enum_init<core::integer::SignedIntResult::<core::integer::i8>, 2>([8]) -> ([13]);
+store_temp<RangeCheck>([7]) -> ([10]);
+store_temp<core::integer::SignedIntResult::<core::integer::i8>>([13]) -> ([11]);
+rename<RangeCheck>([10]) -> ([14]);
+rename<core::integer::SignedIntResult::<core::integer::i8>>([11]) -> ([15]);
+return([14], [15]);
+
+test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::integer::SignedIntResult::<core::integer::i8>);
+
+//! > ==========================================================================
+
 //! > i8_is_zero libfunc
 
 //! > test_runner_name

@@ -1131,8 +1131,51 @@ fn test_i8_operators() {
     assert_eq(@-0x80_felt252.try_into().unwrap(), @-0x80_i8, '-0x80 is not i8');
     let v: Option<i8> = -0x81_felt252.try_into();
     assert(v.is_none(), '-0x81 is i8');
+    assert_eq(@(1_i8 + 3_i8), @4_i8, '1 + 3 == 4');
+    assert_eq(@(3_i8 + 6_i8), @9_i8, '3 + 6 == 9');
+    assert_eq(@(3_i8 - 1_i8), @2_i8, '3 - 1 == 2');
+    assert_eq(@(121_i8 - 21_i8), @100_i8, '121-21=100');
+    assert_eq(@(-1_i8 + -3_i8), @-4_i8, '-1 + -3 == -4');
+    assert_eq(@(-3_i8 + -6_i8), @-9_i8, '-3 + -6 == -9');
+    assert_eq(@(-3_i8 - -1_i8), @-2_i8, '-3 - -1 == -2');
+    assert_eq(@(-121_i8 - -21_i8), @-100_i8, '-121--21=-100');
 }
 
+#[test]
+#[should_panic]
+fn test_i8_sub_overflow_1() {
+    -0x80_i8 - 1_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_sub_overflow_2() {
+    -0x80_i8 - 3_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_sub_overflow_3() {
+    -0x7f_i8 - 3_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_sub_overflow_4() {
+    -50_i8 - 125_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_add_overflow_1() {
+    64_i8 + 64_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_add_overflow_2() {
+    100_i8 + 30_i8;
+}
 
 #[test]
 fn test_i16_operators() {
@@ -1144,6 +1187,14 @@ fn test_i16_operators() {
     assert_eq(@-0x8000_felt252.try_into().unwrap(), @-0x8000_i16, '-0x8000 is not i16');
     let v: Option<i16> = -0x8001_felt252.try_into();
     assert(v.is_none(), '-0x8001 is i16');
+    assert_eq(@(1_i16 + 3_i16), @4_i16, '1 + 3 == 4');
+    assert_eq(@(3_i16 + 6_i16), @9_i16, '3 + 6 == 9');
+    assert_eq(@(3_i16 - 1_i16), @2_i16, '3 - 1 == 2');
+    assert_eq(@(231_i16 - 131_i16), @100_i16, '231-131=100');
+    assert_eq(@(-1_i16 + -3_i16), @-4_i16, '-1 + -3 == -4');
+    assert_eq(@(-3_i16 + -6_i16), @-9_i16, '-3 + -6 == -9');
+    assert_eq(@(-3_i16 - -1_i16), @-2_i16, '-3 - -1 == -2');
+    assert_eq(@(-231_i16 - -131_i16), @-100_i16, '-231--131=-100');
 }
 
 
@@ -1157,6 +1208,14 @@ fn test_i32_operators() {
     assert_eq(@-0x80000000_felt252.try_into().unwrap(), @-0x80000000_i32, '-0x8000 is not i32');
     let v: Option<i32> = -0x80000001_felt252.try_into();
     assert(v.is_none(), '-0x80000001 is i32');
+    assert_eq(@(1_i32 + 3_i32), @4_i32, '1 + 3 == 4');
+    assert_eq(@(3_i32 + 6_i32), @9_i32, '3 + 6 == 9');
+    assert_eq(@(3_i32 - 1_i32), @2_i32, '3 - 1 == 2');
+    assert_eq(@(231_i32 - 131_i32), @100_i32, '231-131=100');
+    assert_eq(@(-1_i32 + -3_i32), @-4_i32, '-1 + -3 == -4');
+    assert_eq(@(-3_i32 + -6_i32), @-9_i32, '-3 + -6 == -9');
+    assert_eq(@(-3_i32 - -1_i32), @-2_i32, '-3 - -1 == -2');
+    assert_eq(@(-231_i32 - -131_i32), @-100_i32, '-231--131=-100');
 }
 
 
@@ -1178,6 +1237,14 @@ fn test_i64_operators() {
     );
     let v: Option<i64> = (-0x8000000000000001_felt252).try_into();
     assert(v.is_none(), '-0x8000000000000001 is i64');
+    assert_eq(@(1_i64 + 3_i64), @4_i64, '1 + 3 == 4');
+    assert_eq(@(3_i64 + 6_i64), @9_i64, '3 + 6 == 9');
+    assert_eq(@(3_i64 - 1_i64), @2_i64, '3 - 1 == 2');
+    assert_eq(@(231_i64 - 131_i64), @100_i64, '231-131=100');
+    assert_eq(@(-1_i64 + -3_i64), @-4_i64, '-1 + -3 == -4');
+    assert_eq(@(-3_i64 + -6_i64), @-9_i64, '-3 + -6 == -9');
+    assert_eq(@(-3_i64 - -1_i64), @-2_i64, '-3 - -1 == -2');
+    assert_eq(@(-231_i64 - -131_i64), @-100_i64, '-231--131=-100');
 }
 
 
@@ -1199,4 +1266,12 @@ fn test_i128_operators() {
     );
     let v: Option<i128> = (-0x80000000000000000000000000000001_felt252).try_into();
     assert(v.is_none(), '-0x80..01 is i128');
+    assert_eq(@(1_i128 + 3_i128), @4_i128, '1 + 3 == 4');
+    assert_eq(@(3_i128 + 6_i128), @9_i128, '3 + 6 == 9');
+    assert_eq(@(3_i128 - 1_i128), @2_i128, '3 - 1 == 2');
+    assert_eq(@(231_i128 - 131_i128), @100_i128, '231-131=100');
+    assert_eq(@(-1_i128 + -3_i128), @-4_i128, '-1 + -3 == -4');
+    assert_eq(@(-3_i128 + -6_i128), @-9_i128, '-3 + -6 == -9');
+    assert_eq(@(-3_i128 - -1_i128), @-2_i128, '-3 - -1 == -2');
+    assert_eq(@(-231_i128 - -131_i128), @-100_i128, '-231--131=-100');
 }
