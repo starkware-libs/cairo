@@ -29,6 +29,16 @@ pub enum IntOperator {
     OverflowingSub,
 }
 
+pub struct IntOperationConcreteLibfunc {
+    pub operator: IntOperator,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for IntOperationConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
+}
+
 /// Trait for implementing integers.
 pub trait IntTraits: Default {
     /// The rust matching type to this type.
