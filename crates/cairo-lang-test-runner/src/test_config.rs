@@ -151,6 +151,7 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
             ast::Expr::ShortString(literal) => {
                 Some(literal.numeric_value(db).unwrap_or_default().into())
             }
+            // TODO(yuval): support string panics.
             _ => None,
         })
         .collect::<Option<Vec<_>>>()

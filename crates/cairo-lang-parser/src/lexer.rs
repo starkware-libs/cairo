@@ -144,6 +144,22 @@ impl<'a> Lexer<'a> {
 
     /// Takes a short string.
     fn take_token_short_string(&mut self) -> TokenKind {
+        self.take_token_string_helper('\'');
+
+        // Parse _type suffix.
+        if self.peek() == Some('_') {
+            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
+        }
+        TokenKind::ShortString
+    }
+
+    /// Takes a string.
+    fn take_token_string(&mut self) -> TokenKind {
+        self.take_token_string_helper('"');
+        TokenKind::String
+    }
+
+    fn take_token_string_helper(&mut self, delimiter: char) {
         self.take();
         let mut escaped = false;
         while let Some(token) = self.peek() {
@@ -151,18 +167,12 @@ impl<'a> Lexer<'a> {
             match token {
                 _ if escaped => escaped = false,
                 '\\' => escaped = true,
-                '\'' => {
+                _ if token == delimiter => {
                     break;
                 }
                 _ => {}
             };
         }
-
-        // Parse _type suffix.
-        if self.peek() == Some('_') {
-            self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
-        }
-        TokenKind::ShortString
     }
 
     /// Assumes the next character is [a-zA-Z_].
@@ -231,6 +241,7 @@ impl<'a> Lexer<'a> {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
                 '\'' => self.take_token_short_string(),
+                '"' => self.take_token_string(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '?' => self.take_token_of_kind(TokenKind::QuestionMark),
@@ -328,6 +339,7 @@ enum TokenKind {
     // Literals.
     Number,
     ShortString,
+    String,
 
     // Keywords.
     As,
@@ -416,6 +428,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::Number => SyntaxKind::TerminalNumber,
         TokenKind::ShortString => SyntaxKind::TerminalShortString,
+        TokenKind::String => SyntaxKind::TerminalString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,
         TokenKind::Extern => SyntaxKind::TerminalExtern,

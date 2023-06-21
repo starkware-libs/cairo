@@ -342,6 +342,7 @@ cairo_lang_test_utils::test_file_test!(
         if_else: "if_else",
         impl_alias: "impl_alias",
         literal: "literal",
+        string_literal: "string_literal",
         logical_operator: "logical_operator",
         attribute_errors: "attribute_errors",
         module: "module",

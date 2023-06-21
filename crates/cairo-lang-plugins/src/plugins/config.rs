@@ -204,15 +204,17 @@ fn parse_predicate_item(
             None
         }
         AttributeArgVariant::Named { name, value, value_stable_ptr, .. } => {
-            let ast::Expr::ShortString(terminal) = value else {
-                diagnostics.push(PluginDiagnostic {
-                    stable_ptr: value_stable_ptr.untyped(),
-                    message: "Expected short string.".into(),
-                });
-                return None;
+            let value = match value {
+                ast::Expr::ShortString(terminal) => terminal.string_value(db).unwrap_or_default(),
+                ast::Expr::String(terminal) => terminal.string_value(db).unwrap_or_default(),
+                _ => {
+                    diagnostics.push(PluginDiagnostic {
+                        stable_ptr: value_stable_ptr.untyped(),
+                        message: "Expected a string/short-string literal.".into(),
+                    });
+                    return None;
+                }
             };
-
-            let value = terminal.string_value(db).unwrap_or_default();
 
             Some(Cfg::kv(name, value))
         }
