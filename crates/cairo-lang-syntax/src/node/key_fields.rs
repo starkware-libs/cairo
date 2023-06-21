@@ -196,28 +196,28 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::AttributeList => vec![],
         SyntaxKind::ItemModule => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ModuleBody => {
             vec![]
         }
         SyntaxKind::FunctionDeclaration => {
-            vec![/* name */ children[1]]
+            vec![/* name */ children[2]]
         }
         SyntaxKind::ItemConstant => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::FunctionWithBody => {
             vec![/* declaration */ children[1]]
         }
         SyntaxKind::ItemExternFunction => {
-            vec![/* declaration */ children[2]]
+            vec![/* declaration */ children[3]]
         }
         SyntaxKind::ItemExternType => {
-            vec![/* name */ children[3]]
+            vec![/* name */ children[4]]
         }
         SyntaxKind::ItemTrait => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::TraitBody => {
             vec![]
@@ -243,13 +243,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
             vec![/* name */ children[2]]
         }
         SyntaxKind::ItemStruct => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemEnum => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemTypeAlias => {
-            vec![/* name */ children[2]]
+            vec![/* name */ children[3]]
         }
         SyntaxKind::ItemUse => {
             vec![/* use_path */ children[2]]
