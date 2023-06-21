@@ -225,7 +225,6 @@ use array::{Array, ArrayTrait};
 // Span.
 use array::{Span, SpanTrait};
 
-
 // Dictionary.
 mod dict;
 use dict::{
