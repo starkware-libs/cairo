@@ -9,8 +9,8 @@ use smol_str::SmolStr;
 pub use super::expr::objects::*;
 use crate::db::SemanticGroup;
 pub use crate::expr::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternStruct, PatternTuple,
-    PatternVariable,
+    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternStringLiteral,
+    PatternStruct, PatternTuple, PatternVariable,
 };
 pub use crate::items::enm::{ConcreteVariant, Variant};
 pub use crate::items::function_with_body::FunctionBody;

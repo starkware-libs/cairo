@@ -1,4 +1,4 @@
-//! > Test missing token
+//! > Test missing closing short string token
 
 //! > test_runner_name
 get_diagnostics
@@ -19,7 +19,35 @@ error: Missing token TerminalRBrace.
 }
  ^
 
-error: Unterminated string literal.
+error: Unterminated short string literal.
  --> dummy_file.cairo:2:27
    let unterminated_str = 'abc;
+                          ^***^
+
+//! > ==========================================================================
+
+//! > Test missing closing string token
+
+//! > test_runner_name
+get_diagnostics
+
+//! > cairo_code
+fn f() {
+   let unterminated_str = "abc;
+}
+
+//! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+error: Missing token TerminalRBrace.
+ --> dummy_file.cairo:3:2
+}
+ ^
+
+error: Unterminated string literal.
+ --> dummy_file.cairo:2:27
+   let unterminated_str = "abc;
                           ^***^

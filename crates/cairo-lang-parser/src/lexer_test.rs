@@ -30,6 +30,15 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalShortString => {
             vec!["''", "'a'", "'abc'", "'1234567890123456789012345678901'"]
         }
+        SyntaxKind::TerminalString => {
+            vec![
+                "\"\"",
+                "\"a\"",
+                "\"abc\"",
+                "\"1234567890123456789012345678901\"",
+                "\"12345678901234567890123456789012\"",
+            ]
+        }
         SyntaxKind::TerminalFalse => vec!["false"],
         SyntaxKind::TerminalExtern => vec!["extern"],
         SyntaxKind::TerminalType => vec!["type"],
@@ -169,6 +178,7 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalMatchArrow,
         SyntaxKind::TerminalEndOfFile,
         SyntaxKind::TerminalShortString,
+        SyntaxKind::TerminalString,
     ]
 }
 
@@ -188,6 +198,11 @@ fn need_separator(
         return true;
     }
     if kind0 == SyntaxKind::TerminalNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
+        return true;
+    }
+    if kind0 == SyntaxKind::TerminalShortString
+        && matches!(kind1, SyntaxKind::TerminalIdentifier | SyntaxKind::TerminalUnderscore)
+    {
         return true;
     }
     if kind0 == SyntaxKind::TerminalShortString

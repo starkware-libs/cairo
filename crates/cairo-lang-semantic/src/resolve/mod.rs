@@ -843,6 +843,7 @@ impl<'db> Resolver<'db> {
                         literal.numeric_value(self.db.upcast()).unwrap_or_default()
                     }
 
+                    // TODO(yuval): support string const generic arguments?
                     Expr::Unary(unary) => {
                         if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
                             return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));

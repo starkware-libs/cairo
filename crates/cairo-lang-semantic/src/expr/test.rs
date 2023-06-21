@@ -81,11 +81,35 @@ fn test_expr_literal(expr: &str, value: i128, ty_name: &str) {
     );
 
     // Check expr.
-    let semantic::ExprLiteral { value, ty, stable_ptr: _, .. } =
+    let semantic::ExprLiteral { value, ty, .. } =
         extract_matches!(expr, crate::Expr::Literal, "Expected a literal.");
 
     assert_eq!(value, value.to_bigint().unwrap());
     assert_eq!(ty, get_core_ty_by_name(db, ty_name.into(), vec![]));
+}
+
+#[test_case("\"hello\"")]
+fn test_expr_string_literal(expr_text: &str) {
+    let mut db_val = SemanticDatabaseForTesting::default();
+    let test_expr = setup_test_expr(&mut db_val, expr_text, "", "").unwrap();
+    let db = &db_val;
+    let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
+    let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
+
+    assert_eq!(
+        format!("{:?}", expr.debug(&expr_formatter)),
+        format!(
+            "StringLiteral(ExprStringLiteral {{ value: {expr_text}, ty: \
+             core::byte_array::ByteArray }})"
+        )
+    );
+
+    // Check expr.
+    let semantic::ExprStringLiteral { value, ty, .. } =
+        extract_matches!(expr, crate::Expr::StringLiteral, "Expected a string literal.");
+
+    assert_eq!(format!("\"{}\"", value), expr_text);
+    assert_eq!(ty, get_core_ty_by_name(db, "ByteArray".into(), vec![]));
 }
 
 #[test]
