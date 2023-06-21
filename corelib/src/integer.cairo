@@ -2009,6 +2009,19 @@ impl I8SubEq of SubEq<i8> {
     }
 }
 
+extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
+impl I8Mul of Mul<i8> {
+    fn mul(lhs: i8, rhs: i8) -> i8 {
+        i8_try_from_felt252(i16_to_felt252(i8_wide_mul(lhs, rhs))).expect('i8_mul Overflow')
+    }
+}
+impl I8MulEq of MulEq<i8> {
+    #[inline(always)]
+    fn mul_eq(ref self: i8, other: i8) {
+        self = Mul::mul(self, other);
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i16;
 impl NumericLiterali16 of NumericLiteral<i16>;
@@ -2064,6 +2077,19 @@ impl I16SubEq of SubEq<i16> {
     #[inline(always)]
     fn sub_eq(ref self: i16, other: i16) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
+impl I16Mul of Mul<i16> {
+    fn mul(lhs: i16, rhs: i16) -> i16 {
+        i16_try_from_felt252(i32_to_felt252(i16_wide_mul(lhs, rhs))).expect('i16_mul Overflow')
+    }
+}
+impl I16MulEq of MulEq<i16> {
+    #[inline(always)]
+    fn mul_eq(ref self: i16, other: i16) {
+        self = Mul::mul(self, other);
     }
 }
 
@@ -2125,6 +2151,19 @@ impl I32SubEq of SubEq<i32> {
     }
 }
 
+extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
+impl I32Mul of Mul<i32> {
+    fn mul(lhs: i32, rhs: i32) -> i32 {
+        i32_try_from_felt252(i64_to_felt252(i32_wide_mul(lhs, rhs))).expect('i32_mul Overflow')
+    }
+}
+impl I32MulEq of MulEq<i32> {
+    #[inline(always)]
+    fn mul_eq(ref self: i32, other: i32) {
+        self = Mul::mul(self, other);
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i64;
 impl NumericLiterali64 of NumericLiteral<i64>;
@@ -2180,6 +2219,19 @@ impl I64SubEq of SubEq<i64> {
     #[inline(always)]
     fn sub_eq(ref self: i64, other: i64) {
         self = Sub::sub(self, other);
+    }
+}
+
+extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
+impl I64Mul of Mul<i64> {
+    fn mul(lhs: i64, rhs: i64) -> i64 {
+        i64_try_from_felt252(i128_to_felt252(i64_wide_mul(lhs, rhs))).expect('i64_mul Overflow')
+    }
+}
+impl I64MulEq of MulEq<i64> {
+    #[inline(always)]
+    fn mul_eq(ref self: i64, other: i64) {
+        self = Mul::mul(self, other);
     }
 }
 

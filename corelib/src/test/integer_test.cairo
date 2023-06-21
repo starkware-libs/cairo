@@ -1139,6 +1139,14 @@ fn test_i8_operators() {
     assert_eq(@(-3_i8 + -6_i8), @-9_i8, '-3 + -6 == -9');
     assert_eq(@(-3_i8 - -1_i8), @-2_i8, '-3 - -1 == -2');
     assert_eq(@(-121_i8 - -21_i8), @-100_i8, '-121--21=-100');
+    assert_eq(@(1_i8 * 3_i8), @3_i8, '1 * 3 == 3');
+    assert_eq(@(2_i8 * 4_i8), @8_i8, '2 * 4 == 8');
+    assert_eq(@(-1_i8 * 3_i8), @-3_i8, '-1 * 3 == 3');
+    assert_eq(@(-2_i8 * 4_i8), @-8_i8, '-2 * 4 == 8');
+    assert_eq(@(1_i8 * -3_i8), @-3_i8, '1 * -3 == -3');
+    assert_eq(@(2_i8 * -4_i8), @-8_i8, '2 * -4 == -8');
+    assert_eq(@(-1_i8 * -3_i8), @3_i8, '-1 * -3 == 3');
+    assert_eq(@(-2_i8 * -4_i8), @8_i8, '-2 * -4 == 8');
 }
 
 #[test]
@@ -1178,6 +1186,24 @@ fn test_i8_add_overflow_2() {
 }
 
 #[test]
+#[should_panic]
+fn test_i8_mul_overflow_1() {
+    0x10_i8 * 0x10_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_mul_overflow_2() {
+    0x11_i8 * 0x10_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_mul_overflow_3() {
+    2_i8 * 0x40_i8;
+}
+
+#[test]
 fn test_i16_operators() {
     assert_eq(@1_i16, @1_i16, '1 == 1');
     assert_ne(@1_i16, @2_i16, '1 != 2');
@@ -1195,6 +1221,14 @@ fn test_i16_operators() {
     assert_eq(@(-3_i16 + -6_i16), @-9_i16, '-3 + -6 == -9');
     assert_eq(@(-3_i16 - -1_i16), @-2_i16, '-3 - -1 == -2');
     assert_eq(@(-231_i16 - -131_i16), @-100_i16, '-231--131=-100');
+    assert_eq(@(1_i16 * 3_i16), @3_i16, '1 * 3 == 3');
+    assert_eq(@(2_i16 * 4_i16), @8_i16, '2 * 4 == 8');
+    assert_eq(@(-1_i16 * 3_i16), @-3_i16, '-1 * 3 == 3');
+    assert_eq(@(-2_i16 * 4_i16), @-8_i16, '-2 * 4 == 8');
+    assert_eq(@(1_i16 * -3_i16), @-3_i16, '1 * -3 == -3');
+    assert_eq(@(2_i16 * -4_i16), @-8_i16, '2 * -4 == -8');
+    assert_eq(@(-1_i16 * -3_i16), @3_i16, '-1 * -3 == 3');
+    assert_eq(@(-2_i16 * -4_i16), @8_i16, '-2 * -4 == 8');
 }
 
 #[test]
@@ -1234,6 +1268,24 @@ fn test_i16_add_overflow_2() {
 }
 
 #[test]
+#[should_panic]
+fn test_i16_mul_overflow_1() {
+    0x1000_i16 * 0x1000_i16;
+}
+
+#[test]
+#[should_panic]
+fn test_i16_mul_overflow_2() {
+    0x1100_i16 * 0x1000_i16;
+}
+
+#[test]
+#[should_panic]
+fn test_i16_mul_overflow_3() {
+    2_i16 * 0x4000_i16;
+}
+
+#[test]
 fn test_i32_operators() {
     assert_eq(@1_i32, @1_i32, '1 == 1');
     assert_ne(@1_i32, @2_i32, '1 != 2');
@@ -1251,6 +1303,14 @@ fn test_i32_operators() {
     assert_eq(@(-3_i32 + -6_i32), @-9_i32, '-3 + -6 == -9');
     assert_eq(@(-3_i32 - -1_i32), @-2_i32, '-3 - -1 == -2');
     assert_eq(@(-231_i32 - -131_i32), @-100_i32, '-231--131=-100');
+    assert_eq(@(1_i32 * 3_i32), @3_i32, '1 * 3 == 3');
+    assert_eq(@(2_i32 * 4_i32), @8_i32, '2 * 4 == 8');
+    assert_eq(@(-1_i32 * 3_i32), @-3_i32, '-1 * 3 == 3');
+    assert_eq(@(-2_i32 * 4_i32), @-8_i32, '-2 * 4 == 8');
+    assert_eq(@(1_i32 * -3_i32), @-3_i32, '1 * -3 == -3');
+    assert_eq(@(2_i32 * -4_i32), @-8_i32, '2 * -4 == -8');
+    assert_eq(@(-1_i32 * -3_i32), @3_i32, '-1 * -3 == 3');
+    assert_eq(@(-2_i32 * -4_i32), @8_i32, '-2 * -4 == 8');
 }
 
 #[test]
@@ -1289,6 +1349,23 @@ fn test_i32_add_overflow_2() {
     0x64000000_i32 + 0x1e000000_i32;
 }
 
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_1() {
+    0x10000000_i32 * 0x10000000_i32;
+}
+
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_2() {
+    0x11000000_i32 * 0x10000000_i32;
+}
+
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_3() {
+    2_i32 * 0x40000000_i32;
+}
 
 #[test]
 fn test_i64_operators() {
@@ -1316,6 +1393,14 @@ fn test_i64_operators() {
     assert_eq(@(-3_i64 + -6_i64), @-9_i64, '-3 + -6 == -9');
     assert_eq(@(-3_i64 - -1_i64), @-2_i64, '-3 - -1 == -2');
     assert_eq(@(-231_i64 - -131_i64), @-100_i64, '-231--131=-100');
+    assert_eq(@(1_i64 * 3_i64), @3_i64, '1 * 3 == 3');
+    assert_eq(@(2_i64 * 4_i64), @8_i64, '2 * 4 == 8');
+    assert_eq(@(-1_i64 * 3_i64), @-3_i64, '-1 * 3 == 3');
+    assert_eq(@(-2_i64 * 4_i64), @-8_i64, '-2 * 4 == 8');
+    assert_eq(@(1_i64 * -3_i64), @-3_i64, '1 * -3 == -3');
+    assert_eq(@(2_i64 * -4_i64), @-8_i64, '2 * -4 == -8');
+    assert_eq(@(-1_i64 * -3_i64), @3_i64, '-1 * -3 == 3');
+    assert_eq(@(-2_i64 * -4_i64), @8_i64, '-2 * -4 == 8');
 }
 
 #[test]
@@ -1354,6 +1439,23 @@ fn test_i64_add_overflow_2() {
     0x6400000000000000_i64 + 0x1e00000000000000_i64;
 }
 
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_1() {
+    0x1000000000000000_i64 * 0x1000000000000000_i64;
+}
+
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_2() {
+    0x1100000000000000_i64 * 0x1000000000000000_i64;
+}
+
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_3() {
+    2_i64 * 0x4000000000000000_i64;
+}
 
 #[test]
 fn test_i128_operators() {
