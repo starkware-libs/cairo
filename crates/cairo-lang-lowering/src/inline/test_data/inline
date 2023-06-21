@@ -37,7 +37,7 @@ End:
 
 blk2:
 Statements:
-  (v2: core::felt252) <- core::felt252_const::<LiteralLongId { value: -1 }>()
+  (v2: core::felt252) <- -1u
 End:
   Goto(blk4, {})
 

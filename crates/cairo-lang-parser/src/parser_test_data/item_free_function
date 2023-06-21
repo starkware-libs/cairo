@@ -151,6 +151,8 @@ fn foo() -> Aaaaa  Bbb + Cc; let x = 0; }
         │       │       └── ident (kind: TokenIdentifier): 'x'
         │       ├── type_clause (kind: OptionTypeClauseEmpty) []
         │       ├── eq (kind: TokenEq): '='
-        │       ├── rhs (kind: TokenLiteralNumber): '0'
+        │       ├── rhs (kind: LiteralNumber)
+        │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+        │       │   └── number (kind: TokenNumber): '0'
         │       └── semicolon (kind: TokenSemicolon): ';'
         └── rbrace (kind: TokenRBrace): '}'
