@@ -126,6 +126,8 @@ pub enum SyntaxKind {
     TerminalNumber,
     TokenShortString,
     TerminalShortString,
+    TokenString,
+    TerminalString,
     TokenAs,
     TerminalAs,
     TokenConst,
@@ -280,6 +282,7 @@ impl SyntaxKind {
             SyntaxKind::TokenIdentifier
                 | SyntaxKind::TokenNumber
                 | SyntaxKind::TokenShortString
+                | SyntaxKind::TokenString
                 | SyntaxKind::TokenAs
                 | SyntaxKind::TokenConst
                 | SyntaxKind::TokenElse
@@ -363,6 +366,7 @@ impl SyntaxKind {
             SyntaxKind::TerminalIdentifier
                 | SyntaxKind::TerminalNumber
                 | SyntaxKind::TerminalShortString
+                | SyntaxKind::TerminalString
                 | SyntaxKind::TerminalAs
                 | SyntaxKind::TerminalConst
                 | SyntaxKind::TerminalElse

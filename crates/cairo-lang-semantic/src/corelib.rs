@@ -609,6 +609,8 @@ pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> Str
         "i64_const".into()
     } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
         "i128_const".into()
+    } else if ty == get_core_ty_by_name(db, "bytes31".into(), vec![]) {
+        "bytes31_const".into()
     } else {
         panic!("No const libfunc for type {}.", ty.format(db))
     }

@@ -7,7 +7,10 @@ use num_traits::Num;
 use smol_str::SmolStr;
 use unescaper::unescape;
 
-use super::{LiteralNumber, OptionTerminalMinus, TerminalFalse, TerminalShortString, TerminalTrue};
+use super::{
+    LiteralNumber, OptionTerminalMinus, TerminalFalse, TerminalShortString, TerminalString,
+    TerminalTrue,
+};
 use crate::node::db::SyntaxGroup;
 use crate::node::Terminal;
 
@@ -73,19 +76,7 @@ impl TerminalShortString {
     pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
         let text = self.text(db);
 
-        let mut text = text.as_str();
-        if text.starts_with('\'') {
-            (_, text) = text.split_once('\'').unwrap();
-        }
-        if let Some((body, _suffix)) = text.rsplit_once('\'') {
-            text = body;
-        }
-
-        let text = unescape(text).ok()?;
-
-        if !text.is_ascii() {
-            return None;
-        }
+        let (text, _suffix) = string_value(&text, '\'')?;
 
         Some(text)
     }
@@ -107,4 +98,39 @@ impl TerminalShortString {
         }
         Some(suffix.into())
     }
+}
+
+impl TerminalString {
+    /// Interpret this token/terminal as a string.
+    pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
+        let text = self.text(db);
+        let (text, suffix) = string_value(&text, '"')?;
+        if !suffix.is_empty() {
+            unreachable!();
+        }
+
+        Some(text)
+    }
+}
+
+/// Interpret the given text as a string with the given delimiter. Returns the text and the suffix.
+fn string_value(text: &str, delimiter: char) -> Option<(String, &str)> {
+    let Some((prefix, text)) = text.split_once(delimiter) else {
+        return None;
+    };
+    if !prefix.is_empty() {
+        unreachable!();
+    }
+
+    let Some((text, suffix)) = text.rsplit_once(delimiter) else {
+        return None;
+    };
+
+    let text = unescape(text).ok()?;
+
+    if !text.is_ascii() {
+        return None;
+    }
+
+    Some((text, suffix))
 }
