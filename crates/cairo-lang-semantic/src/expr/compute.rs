@@ -1304,7 +1304,7 @@ fn get_tail_expression(
 /// Creates the semantic model of a literal expression from its AST.
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
-    literal_syntax: &ast::TerminalLiteralNumber,
+    literal_syntax: &ast::LiteralNumber,
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();

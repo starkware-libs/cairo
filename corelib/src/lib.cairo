@@ -156,7 +156,7 @@ extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
     fn neg(a: felt252) -> felt252 {
-        a * felt252_const::<-1>()
+        a * -1
     }
 }
 
