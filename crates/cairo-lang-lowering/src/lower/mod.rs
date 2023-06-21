@@ -5,17 +5,19 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::{chain, zip_eq, Itertools};
-use num_bigint::BigInt;
+use num_bigint::{BigInt, Sign};
 use num_traits::Zero;
 use semantic::corelib::{
-    core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, get_core_function_id,
-    get_core_ty_by_name, jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty, unit_ty,
+    core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, core_submodule, get_core_function_id,
+    get_core_ty_by_name, get_function_id, jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty,
+    unit_ty,
 };
 use semantic::items::enm::SemanticEnumEx;
 use semantic::items::structure::SemanticStructEx;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
-    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, TypeLongId,
+    ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
+    TypeLongId,
 };
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
@@ -359,7 +361,7 @@ fn lower_single_pattern(
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
     match pattern {
-        semantic::Pattern::Literal(_) => unreachable!(),
+        semantic::Pattern::Literal(_) | semantic::Pattern::StringLiteral(_) => unreachable!(),
         semantic::Pattern::Variable(semantic::PatternVariable {
             name: _,
             var: sem_var,
@@ -503,6 +505,7 @@ fn lower_expr(
             Ok(LoweredExpr::Member(member_path, ctx.get_location(expr.stable_ptr.untyped())))
         }
         semantic::Expr::Literal(expr) => lower_expr_literal(ctx, expr, builder),
+        semantic::Expr::StringLiteral(expr) => lower_expr_string_literal(ctx, expr, builder),
         semantic::Expr::MemberAccess(expr) => lower_expr_member_access(ctx, expr, builder),
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
@@ -550,6 +553,144 @@ fn lower_expr_literal(
         generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
             .add(ctx, &mut builder.statements),
     ))
+}
+
+fn lower_expr_string_literal(
+    ctx: &mut LoweringContext<'_, '_>,
+    expr: &semantic::ExprStringLiteral,
+    builder: &mut BlockBuilder,
+) -> LoweringResult<LoweredExpr> {
+    log::trace!("Lowering a string literal: {:?}", expr.debug(&ctx.expr_formatter));
+    let semantic_db = ctx.db.upcast();
+
+    // Get all the relevant types from the corelib
+    let bytes31_ty = get_core_ty_by_name(semantic_db, "bytes31".into(), vec![]);
+    let data_array_ty =
+        get_core_ty_by_name(semantic_db, "Array".into(), vec![GenericArgumentId::Type(bytes31_ty)]);
+    let byte_array_ty = get_core_ty_by_name(semantic_db, "ByteArray".into(), vec![]);
+
+    let array_submodule = core_submodule(semantic_db, "array");
+    let data_array_new_function =
+        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
+            semantic_db,
+            array_submodule,
+            "array_new".into(),
+            vec![GenericArgumentId::Type(bytes31_ty)],
+        )));
+    let data_array_append_function =
+        ctx.db.intern_lowering_function(FunctionLongId::Semantic(get_function_id(
+            semantic_db,
+            array_submodule,
+            "array_append".into(),
+            vec![GenericArgumentId::Type(bytes31_ty)],
+        )));
+
+    // Build an empty data array
+    let mut data_array_usage =
+        build_empty_data_array(ctx, builder, expr, data_array_new_function, data_array_ty);
+
+    // Add all chunks to the data array.
+    add_chunks_to_data_array(
+        ctx,
+        builder,
+        expr,
+        bytes31_ty,
+        &mut data_array_usage,
+        data_array_append_function,
+        data_array_ty,
+    );
+
+    // Add pending word.
+    let (pending_word_usage, pending_word_len_usage) = add_pending_word(ctx, builder, expr);
+
+    // Create the ByteArray struct
+    let byte_array_usage = generators::StructConstruct {
+        inputs: vec![data_array_usage, pending_word_usage, pending_word_len_usage],
+        ty: byte_array_ty,
+        location: ctx.get_location(expr.stable_ptr.untyped()),
+    }
+    .add(ctx, &mut builder.statements);
+
+    Ok(LoweredExpr::AtVariable(byte_array_usage))
+}
+
+/// Helper function to emit lowering statements to build an empty data array.
+fn build_empty_data_array(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: &semantic::ExprStringLiteral,
+    data_array_new_function: crate::ids::FunctionId,
+    data_array_ty: semantic::TypeId,
+) -> VarUsage {
+    generators::Call {
+        function: data_array_new_function,
+        inputs: vec![],
+        extra_ret_tys: vec![],
+        ret_tys: vec![data_array_ty],
+        location: ctx.get_location(expr.stable_ptr.untyped()),
+    }
+    .add(ctx, &mut builder.statements)
+    .returns[0]
+}
+
+/// Helper function to emit lowering statements to add 31-byte words to the given data array.
+fn add_chunks_to_data_array(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: &semantic::ExprStringLiteral,
+    bytes31_ty: semantic::TypeId,
+    data_array_usage: &mut VarUsage,
+    data_array_append_function: crate::ids::FunctionId,
+    data_array_ty: semantic::TypeId,
+) {
+    for chunk in expr.value.as_bytes().chunks_exact(31) {
+        let chunk_usage = generators::Literal {
+            value: BigInt::from_bytes_be(Sign::Plus, chunk),
+            ty: bytes31_ty,
+            location: ctx.get_location(expr.stable_ptr.untyped()),
+        }
+        .add(ctx, &mut builder.statements);
+
+        *data_array_usage = generators::Call {
+            function: data_array_append_function,
+            inputs: vec![*data_array_usage, chunk_usage],
+            extra_ret_tys: vec![data_array_ty],
+            ret_tys: vec![],
+            location: ctx.get_location(expr.stable_ptr.untyped()),
+        }
+        .add(ctx, &mut builder.statements)
+        .extra_outputs[0];
+    }
+}
+
+/// Helper function to emit lowering statements to set variables for the pending word of the
+/// ByteArray.
+fn add_pending_word(
+    ctx: &mut LoweringContext<'_, '_>,
+    builder: &mut BlockBuilder,
+    expr: &semantic::ExprStringLiteral,
+) -> (VarUsage, VarUsage) {
+    let u32_ty = get_core_ty_by_name(ctx.db.upcast(), "u32".into(), vec![]);
+    let felt252_ty = core_felt252_ty(ctx.db.upcast());
+
+    let expr_len = expr.value.len();
+    let pending_word_len = expr_len % 31;
+    let pending_word_index = expr_len - pending_word_len;
+    let pending_word = expr.value.get(pending_word_index..expr_len).unwrap();
+    let pending_word_usage = generators::Literal {
+        value: BigInt::from_bytes_be(Sign::Plus, pending_word.as_bytes()),
+        ty: felt252_ty,
+        location: ctx.get_location(expr.stable_ptr.untyped()),
+    }
+    .add(ctx, &mut builder.statements);
+
+    let pending_word_len_usage = generators::Literal {
+        value: pending_word_len.into(),
+        ty: u32_ty,
+        location: ctx.get_location(expr.stable_ptr.untyped()),
+    }
+    .add(ctx, &mut builder.statements);
+    (pending_word_usage, pending_word_len_usage)
 }
 
 fn lower_expr_constant(
