@@ -225,7 +225,6 @@ type usize = u32;
 // Span.
 use array::Span;
 
-
 // Dictionary.
 mod dict;
 use dict::{

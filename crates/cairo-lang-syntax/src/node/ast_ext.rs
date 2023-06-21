@@ -7,7 +7,10 @@ use num_traits::Num;
 use smol_str::SmolStr;
 use unescaper::unescape;
 
-use super::{LiteralNumber, OptionTerminalMinus, TerminalFalse, TerminalShortString, TerminalTrue};
+use super::{
+    LiteralNumber, OptionTerminalMinus, TerminalFalse, TerminalShortString, TerminalString,
+    TerminalTrue,
+};
 use crate::node::db::SyntaxGroup;
 use crate::node::Terminal;
 
@@ -106,5 +109,29 @@ impl TerminalShortString {
             suffix = &suffix[1..];
         }
         Some(suffix.into())
+    }
+}
+
+impl TerminalString {
+    /// Interpret this token/terminal as a string.
+    pub fn string_value(&self, db: &dyn SyntaxGroup) -> Option<String> {
+        let text = self.text(db);
+
+        let text = text.as_str();
+        let text = if text.starts_with('"') && text.ends_with('"') {
+            let (_, text) = text.split_once('"').unwrap();
+            let (text, _) = text.rsplit_once('"').unwrap();
+            text
+        } else {
+            unreachable!();
+        };
+
+        let text = unescape(text).ok()?;
+
+        if !text.is_ascii() {
+            return None;
+        }
+
+        Some(text)
     }
 }

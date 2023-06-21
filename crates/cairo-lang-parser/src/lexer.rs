@@ -165,6 +165,25 @@ impl<'a> Lexer<'a> {
         TokenKind::ShortString
     }
 
+    /// Takes a string.
+    fn take_token_string(&mut self) -> TokenKind {
+        self.take();
+        let mut escaped = false;
+        while let Some(token) = self.peek() {
+            self.take();
+            match token {
+                _ if escaped => escaped = false,
+                '\\' => escaped = true,
+                '"' => {
+                    break;
+                }
+                _ => {}
+            };
+        }
+
+        TokenKind::String
+    }
+
     /// Assumes the next character is [a-zA-Z_].
     fn take_token_identifier(&mut self) -> TokenKind {
         // TODO(spapini): Support or explicitly report general unicode characters.
@@ -231,6 +250,7 @@ impl<'a> Lexer<'a> {
             match current {
                 '0'..='9' => self.take_token_literal_number(),
                 '\'' => self.take_token_short_string(),
+                '"' => self.take_token_string(),
                 ',' => self.take_token_of_kind(TokenKind::Comma),
                 ';' => self.take_token_of_kind(TokenKind::Semicolon),
                 '?' => self.take_token_of_kind(TokenKind::QuestionMark),
@@ -328,6 +348,7 @@ enum TokenKind {
     // Literals.
     Number,
     ShortString,
+    String,
 
     // Keywords.
     As,
@@ -416,6 +437,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
         TokenKind::Number => SyntaxKind::TerminalNumber,
         TokenKind::ShortString => SyntaxKind::TerminalShortString,
+        TokenKind::String => SyntaxKind::TerminalString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,
         TokenKind::Extern => SyntaxKind::TerminalExtern,
