@@ -185,6 +185,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Sint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+            Sint128Concrete::Operation(_) => {
+                vec![ApChange::Known(3), ApChange::Known(4), ApChange::Known(4)]
+            }
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
@@ -311,5 +314,8 @@ fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
         SintConcrete::FromFelt252(_) => vec![ApChange::Known(3), ApChange::Known(7)],
         SintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         SintConcrete::WideMul(_) => vec![ApChange::Known(0)],
+        SintConcrete::Operation(_) => {
+            vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]
+        }
     }
 }
