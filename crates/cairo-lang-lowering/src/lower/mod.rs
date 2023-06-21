@@ -124,15 +124,15 @@ pub fn lower_function(
             match block_sealed {
                 SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                     // Convert to a return.
+                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                     let var = expr.unwrap_or_else(|| {
                         generators::StructConstruct {
                             inputs: vec![],
                             ty: unit_ty(ctx.db.upcast()),
-                            location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                            location,
                         }
                         .add(&mut ctx, &mut builder.statements)
                     });
-                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                     builder.ret(&mut ctx, var, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
