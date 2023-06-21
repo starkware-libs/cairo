@@ -85,14 +85,14 @@
     │   │       │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   ├── rhs (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: ExprUnary)
-    │   │       │   │   │   │   ├── op (kind: TerminalMinus)
+    │   │       │   │   │   ├── lhs (kind: LiteralNumber)
+    │   │       │   │   │   │   ├── sign (kind: TerminalMinus)
     │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │   └── expr (kind: TerminalLiteralNumber)
+    │   │       │   │   │   │   └── number (kind: TerminalNumber)
     │   │       │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │   │       ├── token (kind: TokenNumber): '5'
     │   │       │   │   │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   ├── op (kind: TerminalPlus)
@@ -100,10 +100,12 @@
     │   │       │   │   │   │   ├── token (kind: TokenPlus): '+'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── token (kind: TokenLiteralNumber): '3'
-    │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   └── rhs (kind: LiteralNumber)
+    │   │       │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │       └── number (kind: TerminalNumber)
+    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── token (kind: TokenNumber): '3'
+    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
@@ -153,29 +155,35 @@
     │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   │   ├── token (kind: TokenMul): '*'
     │   │       │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │   └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       ├── token (kind: TokenLiteralNumber): '2'
-    │   │       │   │   │   │       └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   └── rhs (kind: LiteralNumber)
+    │   │       │   │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │       └── number (kind: TerminalNumber)
+    │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           ├── token (kind: TokenNumber): '2'
+    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   ├── op (kind: TerminalPlus)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenPlus): '+'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   └── rhs (kind: ExprBinary)
-    │   │       │   │   │       ├── lhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenLiteralNumber): '3'
-    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       ├── lhs (kind: LiteralNumber)
+    │   │       │   │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │       │   └── number (kind: TerminalNumber)
+    │   │       │   │   │       │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       │       ├── token (kind: TokenNumber): '3'
+    │   │       │   │   │       │       └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       ├── op (kind: TerminalMul)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   ├── token (kind: TokenMul): '*'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           ├── token (kind: TokenLiteralNumber): '5'
-    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       └── rhs (kind: LiteralNumber)
+    │   │       │   │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │           └── number (kind: TerminalNumber)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenNumber): '5'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
@@ -211,12 +219,14 @@
     │   │       │   │           └── child #0 (kind: TokenNewline).
     │   │       │   ├── child #3 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   │   ├── token (kind: TokenLiteralNumber): '5'
-    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── lhs (kind: LiteralNumber)
+    │   │       │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   └── number (kind: TerminalNumber)
+    │   │       │   │   │   │       ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │       │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       ├── token (kind: TokenNumber): '5'
+    │   │       │   │   │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │           └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   ├── op (kind: TerminalPlus)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenPlus): '+'
@@ -246,10 +256,12 @@
     │   │       │   │   │           │   │       │   ├── token (kind: TokenColon): ':'
     │   │       │   │   │           │   │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │           │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │           │   │       └── expr (kind: TerminalLiteralNumber)
-    │   │       │   │   │           │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           │   │           ├── token (kind: TokenLiteralNumber): '5'
-    │   │       │   │   │           │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │           │   │       └── expr (kind: LiteralNumber)
+    │   │       │   │   │           │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │           │   │           └── number (kind: TerminalNumber)
+    │   │       │   │   │           │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │   │               ├── token (kind: TokenNumber): '5'
+    │   │       │   │   │           │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │           │   ├── separator #0 (kind: TerminalComma)
     │   │       │   │   │           │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │   │   ├── token (kind: TokenComma): ','
@@ -334,10 +346,12 @@
     │   │       │   │   │       │   ├── token (kind: TokenEqEq): '=='
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           ├── token (kind: TokenLiteralNumber): '6'
-    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │       └── rhs (kind: LiteralNumber)
+    │   │       │   │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │           └── number (kind: TerminalNumber)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenNumber): '6'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
@@ -561,10 +575,12 @@
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
     │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │           │   │       │       │               │   │       └── value (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │   │           ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │   │           ├── token (kind: TokenLiteralNumber): '1'
-    │           │   │       │       │               │   │           └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               │   │       └── value (kind: LiteralNumber)
+    │           │   │       │       │               │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │           │   │       │       │               │   │           └── number (kind: TerminalNumber)
+    │           │   │       │       │               │   │               ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │   │               ├── token (kind: TokenNumber): '1'
+    │           │   │       │       │               │   │               └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               │   ├── separator #0 (kind: TerminalComma)
     │           │   │       │       │               │   │   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │               │   │   ├── token (kind: TokenComma): ','
@@ -572,10 +588,12 @@
     │           │   │       │       │               │   └── item #1 (kind: Arg)
     │           │   │       │       │               │       ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │       └── arg_clause (kind: ArgClauseUnnamed)
-    │           │   │       │       │               │           └── value (kind: TerminalLiteralNumber)
-    │           │   │       │       │               │               ├── leading_trivia (kind: Trivia) []
-    │           │   │       │       │               │               ├── token (kind: TokenLiteralNumber): '3'
-    │           │   │       │       │               │               └── trailing_trivia (kind: Trivia) []
+    │           │   │       │       │               │           └── value (kind: LiteralNumber)
+    │           │   │       │       │               │               ├── sign (kind: OptionTerminalMinusEmpty) []
+    │           │   │       │       │               │               └── number (kind: TerminalNumber)
+    │           │   │       │       │               │                   ├── leading_trivia (kind: Trivia) []
+    │           │   │       │       │               │                   ├── token (kind: TokenNumber): '3'
+    │           │   │       │       │               │                   └── trailing_trivia (kind: Trivia) []
     │           │   │       │       │               └── rparen (kind: TerminalRParen)
     │           │   │       │       │                   ├── leading_trivia (kind: Trivia) []
     │           │   │       │       │                   ├── token (kind: TokenRParen): ')'

@@ -66,9 +66,9 @@
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: ExprUnary)
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
-    │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TokenMinus): '-'
-    │   │       │   │   │       └── expr (kind: TokenLiteralNumber): '7'
+    │   │       │   │   │   └── expr (kind: LiteralNumber)
+    │   │       │   │   │       ├── sign (kind: TokenMinus): '-'
+    │   │       │   │   │       └── number (kind: TokenNumber): '7'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
@@ -85,7 +85,9 @@
     │   │       │   │   │           ├── op (kind: TokenMinus): '-'
     │   │       │   │   │           └── expr (kind: ExprUnary)
     │   │       │   │   │               ├── op (kind: TokenNot): '!'
-    │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
+    │   │       │   │   │               └── expr (kind: LiteralNumber)
+    │   │       │   │   │                   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │                   └── number (kind: TokenNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
@@ -94,7 +96,9 @@
     │   │       │   │   │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: TokenEq): '='
-    │   │       │   │   ├── rhs (kind: TokenLiteralNumber): '1'
+    │   │       │   │   ├── rhs (kind: LiteralNumber)
+    │   │       │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   └── number (kind: TokenNumber): '1'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #3 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
@@ -111,20 +115,26 @@
     │   │       │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   ├── arms (kind: MatchArms)
     │   │       │   │   │   │   ├── item #0 (kind: MatchArm)
-    │   │       │   │   │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── pattern (kind: LiteralNumber)
+    │   │       │   │   │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │   │   └── number (kind: TokenNumber): '0'
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │   │   └── expression (kind: ExprBlock)
     │   │       │   │   │   │   │       ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │       ├── statements (kind: StatementList)
     │   │       │   │   │   │   │       │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │   │   │       │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │       │   │   │   │   │       │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │   │   │       │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │       │       │   └── number (kind: TokenNumber): '1'
     │   │       │   │   │   │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │   ├── item #1 (kind: MatchArm)
     │   │       │   │   │   │   │   ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
-    │   │       │   │   │   │   │   └── expression (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   └── expression (kind: LiteralNumber)
+    │   │       │   │   │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │       └── number (kind: TokenNumber): '0'
     │   │       │   │   │   │   └── separator #1 (kind: TokenComma): ','
     │   │       │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -139,7 +149,9 @@
     │   │       │   │   │   ├── if_kw (kind: TokenIf): 'if'
     │   │       │   │   │   ├── condition (kind: ExprBinary)
     │   │       │   │   │   │   ├── lhs (kind: ExprBinary)
-    │   │       │   │   │   │   │   ├── lhs (kind: TokenLiteralNumber): '0'
+    │   │       │   │   │   │   │   ├── lhs (kind: LiteralNumber)
+    │   │       │   │   │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │   │   └── number (kind: TokenNumber): '0'
     │   │       │   │   │   │   │   ├── op (kind: TokenPlus): '+'
     │   │       │   │   │   │   │   └── rhs (kind: ExprPath)
     │   │       │   │   │   │   │       └── item #0 (kind: PathSegmentSimple)
@@ -152,7 +164,9 @@
     │   │       │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │       │   │   │   │   │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │   │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │       │   └── number (kind: TokenNumber): '1'
     │   │       │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   └── else_clause (kind: ElseClause)
@@ -161,7 +175,9 @@
     │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           ├── statements (kind: StatementList)
     │   │       │   │   │           │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │           │       ├── expr (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │           │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │           │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │           │       │   └── number (kind: TokenNumber): '2'
     │   │       │   │   │           │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -178,7 +194,9 @@
     │   │       │   │   │   │   │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │   │   │   ├── statements (kind: StatementList)
     │   │       │   │   │   │   │   │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │   │   │   │       ├── expr (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │   │   │   │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │   │   │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │   │   │       │   └── number (kind: TokenNumber): '5'
     │   │       │   │   │   │   │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │   │   │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   │   ├── op (kind: TokenPlus): '+'
@@ -201,7 +219,9 @@
     │   │       │   │   │   │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │   │   │   └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
-    │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
+    │   │       │   │   │   │       │   │   └── expression (kind: LiteralNumber)
+    │   │       │   │   │   │       │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │       │   │       └── number (kind: TokenNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │   │       │   └── item #1 (kind: MatchArm)
     │   │       │   │   │   │       │       ├── pattern (kind: PatternEnum)
@@ -215,7 +235,9 @@
     │   │       │   │   │   │       │       │   ├── pattern (kind: TokenUnderscore): '_'
     │   │       │   │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
-    │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
+    │   │       │   │   │   │       │       └── expression (kind: LiteralNumber)
+    │   │       │   │   │   │       │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │   │       │           └── number (kind: TokenNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
     │   │       │   │   │   └── rhs (kind: ExprIf)
@@ -227,7 +249,9 @@
     │   │       │   │   │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │       │   ├── statements (kind: StatementList)
     │   │       │   │   │       │   │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │       │   │       ├── expr (kind: TokenLiteralNumber): '32'
+    │   │       │   │   │       │   │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │       │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │       │   │       │   └── number (kind: TokenNumber): '32'
     │   │       │   │   │       │   │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │       │   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │       └── else_clause (kind: ElseClause)
@@ -236,7 +260,9 @@
     │   │       │   │   │               ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │               ├── statements (kind: StatementList)
     │   │       │   │   │               │   └── child #0 (kind: StatementExpr)
-    │   │       │   │   │               │       ├── expr (kind: TokenLiteralNumber): '1'
+    │   │       │   │   │               │       ├── expr (kind: LiteralNumber)
+    │   │       │   │   │               │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │               │       │   └── number (kind: TokenNumber): '1'
     │   │       │   │   │               │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       │   │   │               └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
@@ -336,7 +362,9 @@
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'z'
     │   │       │   │   │   ├── op (kind: TokenEq): '='
-    │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '5'
+    │   │       │   │   │   └── rhs (kind: LiteralNumber)
+    │   │       │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       │   │   │       └── number (kind: TokenNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #11 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprFunctionCall)
