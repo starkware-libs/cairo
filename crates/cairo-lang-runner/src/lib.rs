@@ -138,7 +138,7 @@ pub struct SierraCasmRunner {
     /// Program registry for the Sierra program.
     type_sizes: TypeSizeMap,
     /// The casm program matching the Sierra code.
-    casm_program: CairoProgram,
+    pub casm_program: CairoProgram,
     #[allow(dead_code)]
     // Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
@@ -344,7 +344,7 @@ impl SierraCasmRunner {
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
-    fn create_entry_code(
+    pub fn create_entry_code(
         &self,
         func: &Function,
         args: &[Arg],
@@ -473,7 +473,7 @@ impl SierraCasmRunner {
 
     /// Returns the initial value for the gas counter.
     /// If available_gas is None returns 0.
-    fn get_initial_available_gas(
+    pub fn get_initial_available_gas(
         &self,
         func: &Function,
         available_gas: Option<usize>,
