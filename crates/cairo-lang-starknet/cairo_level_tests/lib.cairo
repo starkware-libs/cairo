@@ -5,3 +5,5 @@ mod interoperability;
 mod replace_class_test;
 mod storage_access;
 mod utils;
+#[cfg(test)]
+mod cheatcode_tests;

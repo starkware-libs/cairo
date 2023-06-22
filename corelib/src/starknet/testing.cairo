@@ -15,3 +15,6 @@ extern fn set_signature(signature: Span<felt252>) implicits() nopanic;
 extern fn pop_log(
     address: ContractAddress
 ) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
+extern fn cheatcode<const selector: felt252>(
+    input: Span<felt252>
+) -> Span<felt252> implicits() nopanic;
