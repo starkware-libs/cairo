@@ -8,7 +8,7 @@ use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use num_bigint::{BigInt, ToBigInt};
 
-use super::build_const;
+use super::{build_const, build_small_wide_mul};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
@@ -281,28 +281,6 @@ pub fn build_sqrt(
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
         },
-    ))
-}
-
-/// Handles a small uint wide multiplication.
-pub fn build_small_wide_mul(
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    let [a, b] = builder.try_get_single_cells()?;
-    let mut casm_builder = CasmBuilder::default();
-    add_input_variables! {casm_builder,
-        deref a;
-        deref_or_immediate b;
-    };
-
-    casm_build_extend! {casm_builder,
-        let res = a * b;
-    };
-
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[&[res]], None)],
-        CostValidationInfo::default(),
     ))
 }
 

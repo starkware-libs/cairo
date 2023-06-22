@@ -18,6 +18,8 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
+use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
+use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
@@ -251,6 +253,11 @@ pub fn core_libfunc_cost(
         Uint128(libfunc) => u128_libfunc_cost(libfunc),
         Uint256(libfunc) => u256_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Uint512(libfunc) => u512_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint8(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint16(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint32(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint64(libfunc) => sint_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
+        Sint128(libfunc) => s128_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect(),
         Felt252(libfunc) => {
             felt252_libfunc_cost(libfunc).into_iter().map(BranchCost::from).collect()
         }
@@ -586,6 +593,49 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
 fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
     match libfunc {
         Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 52, holes: 0, range_checks: 14 }],
+    }
+}
+
+/// Returns costs for i64/i32/i16/i8 libfuncs.
+fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
+    libfunc: &SintConcrete<TSintTraits>,
+) -> Vec<BranchCost> {
+    match libfunc {
+        SintConcrete::Const(_) | SintConcrete::ToFelt252(_) | SintConcrete::WideMul(_) => {
+            vec![ConstCost::steps(0).into()]
+        }
+        SintConcrete::Equal(_) => {
+            vec![ConstCost::steps(2).into(), ConstCost::steps(3).into()]
+        }
+        SintConcrete::FromFelt252(_) => {
+            vec![
+                ConstCost { steps: 4, holes: 0, range_checks: 2 }.into(),
+                ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+            ]
+        }
+        SintConcrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
+    }
+}
+
+/// Returns costs for i128 libfuncs.
+fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
+    let steps = |value| ConstCost { steps: value, ..Default::default() };
+    match libfunc {
+        Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
+            vec![ConstCost::default().into()]
+        }
+        Sint128Concrete::FromFelt252(_) => {
+            vec![
+                ConstCost { steps: 2, holes: 0, range_checks: 1 }.into(),
+                ConstCost { steps: 11, holes: 0, range_checks: 3 }.into(),
+            ]
+        }
+        Sint128Concrete::IsZero(_) => {
+            vec![steps(1).into(), steps(1).into()]
+        }
+        Sint128Concrete::Equal(_) => {
+            vec![steps(2).into(), steps(3).into()]
+        }
     }
 }
 

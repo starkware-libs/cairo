@@ -249,11 +249,13 @@ mod ecdsa;
 // Integer.
 mod integer;
 use integer::{
-    NumericLiteral, u128, u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32,
-    u32_const, u64, u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16,
-    U16IntoFelt252, Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252,
-    Felt252TryIntoU128, U128IntoFelt252, U16TryIntoU8, U32TryIntoU16, U64TryIntoU32, U128TryIntoU64,
-    Felt252IntoU256, Bitwise
+    i8, i8_const, I8IntoFelt252, i16, i16_const, I16IntoFelt252, i32, i32_const, I32IntoFelt252,
+    i64, i64_const, I64IntoFelt252, i128, i128_const, I128IntoFelt252, NumericLiteral, u128,
+    u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
+    u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
+    Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
+    U128IntoFelt252, U16TryIntoU8, U32TryIntoU16, U64TryIntoU32, U128TryIntoU64, Felt252IntoU256,
+    Bitwise
 };
 
 // Math.
