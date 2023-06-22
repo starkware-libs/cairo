@@ -9,7 +9,7 @@ fn foo(a: u32, b: u32) -> Result::<u32, u32> {
 }
 
 //! > casm
-%{ memory[ap + 0] = memory[fp + -4] + memory[fp + -3] < 4294967296 %}
+%{ memory[ap + 0] = (memory[fp + -4] + memory[fp + -3]) % PRIME < 4294967296 %}
 jmp rel 8 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + -4] + [fp + -3], ap++;
 [ap + -1] = [ap + 0] + 4294967296, ap++;
