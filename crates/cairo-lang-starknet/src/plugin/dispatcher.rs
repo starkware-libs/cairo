@@ -61,7 +61,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let library_caller_name = format!("{base_name}LibraryDispatcher");
 
     // TODO
-    let todo = some_fnt(trait_ast, db);
+    some_fnt(trait_ast, db);
 
     for item_ast in body.items(db).elements(db) {
         match item_ast {
@@ -286,7 +286,7 @@ fn dispatcher_signature(
 }
 
 // TODO Ongoing
-fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) -> bool {
+fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
     let response = match trait_ast.generic_params(db) {
         OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
             .generic_params(db)
@@ -296,6 +296,8 @@ fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) -> bool {
             .collect(),
         OptionWrappedGenericParamList::Empty(_) => vec![],
     };
-    response.into_iter().for_each(|e| println!("${:#?}", e));
-    true
+
+    for item_impl in response {
+        println!("${:#?}", item_impl);
+    }
 }
