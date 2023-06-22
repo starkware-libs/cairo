@@ -2560,18 +2560,15 @@
       1282,
       [
         {
-          "TestLessThanOrEqual": {
+          "TestLessThan": {
             "lhs": {
               "Deref": {
-                "register": "FP",
-                "offset": -3
+                "register": "AP",
+                "offset": 0
               }
             },
             "rhs": {
-              "Deref": {
-                "register": "FP",
-                "offset": -4
-              }
+              "Immediate": "0x100000000000000000000000000000000"
             },
             "dst": {
               "register": "AP",
@@ -3037,7 +3034,7 @@
     [
       1282,
       [
-        "memory[ap + -1] = memory[fp + -3] <= memory[fp + -4]"
+        "memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456"
       ]
     ],
     [

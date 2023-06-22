@@ -1,7 +1,9 @@
 use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 
 use super::signed::{build_sint_from_felt252, build_sint_overflowing_operation};
-use super::{build_const, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use super::{
+    build_128bit_diff, build_const, CompiledInvocation, CompiledInvocationBuilder, InvocationError,
+};
 use crate::invocations::misc;
 
 /// Builds instructions for Sierra s128 operations.
@@ -18,5 +20,6 @@ pub fn build(
         Sint128Concrete::Operation(libfunc) => {
             build_sint_overflowing_operation(builder, i128::MIN, i128::MAX, libfunc.operator)
         }
+        Sint128Concrete::Diff(_) => build_128bit_diff(builder),
     }
 }

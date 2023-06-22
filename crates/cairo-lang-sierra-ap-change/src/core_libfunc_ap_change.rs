@@ -189,6 +189,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Sint128Concrete::Operation(_) => {
                 vec![ApChange::Known(3), ApChange::Known(4), ApChange::Known(4)]
             }
+            Sint128Concrete::Diff(_) => vec![ApChange::Known(2), ApChange::Known(3)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
@@ -325,5 +326,6 @@ fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
         SintConcrete::Operation(_) => {
             vec![ApChange::Known(4), ApChange::Known(4), ApChange::Known(4)]
         }
+        SintConcrete::Diff(_) => vec![ApChange::Known(2), ApChange::Known(3)],
     }
 }

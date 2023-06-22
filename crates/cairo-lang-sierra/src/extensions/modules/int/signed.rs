@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use super::signed128::Sint128Type;
+use super::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::{
     IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntMulTraits,
     IntOperationConcreteLibfunc, IntOperator, IntToFelt252Libfunc, IntTraits, IntType,
@@ -13,7 +14,10 @@ use crate::extensions::lib_func::{
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
-use crate::extensions::{GenericLibfunc, NamedType, OutputVarReferenceInfo, SpecializationError};
+use crate::extensions::{
+    GenericLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
+    SpecializationError,
+};
 use crate::ids::{GenericLibfuncId, GenericTypeId};
 use crate::program::GenericArg;
 
@@ -23,6 +27,11 @@ pub trait SintTraits: IntTraits {
     const OVERFLOWING_ADD: &'static str;
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
+    /// The generic libfunc id for difference of signed integers, logically equivalent to
+    /// substraction of unsigned integers.
+    const DIFF: &'static str;
+    /// The generic type id of the equivalent unsigned integer type.
+    const UNSIGNED_INT_TYPE: GenericTypeId;
 }
 
 define_libfunc_hierarchy! {
@@ -32,6 +41,7 @@ define_libfunc_hierarchy! {
         ToFelt252(IntToFelt252Libfunc<TSintTraits>),
         FromFelt252(IntFromFelt252Libfunc<TSintTraits>),
         Operation(SintOperationLibfunc<TSintTraits>),
+        Diff(SintDiffLibfunc<TSintTraits>),
         IsZero(IsZeroLibfunc<TSintTraits>),
         WideMul(IntWideMulLibfunc<TSintTraits>),
     }, SintConcrete
@@ -123,12 +133,67 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
     }
 }
 
+/// Libfunc for integer difference calculation.
+#[derive(Default)]
+pub struct SintDiffLibfunc<TSintTraits: SintTraits> {
+    _phantom: PhantomData<TSintTraits>,
+}
+impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TSintTraits> {
+    const STR_ID: &'static str = TSintTraits::DIFF;
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let signed_ty = context.get_concrete_type(TSintTraits::GENERIC_TYPE_ID, &[])?;
+        let unsigned_ty = context.get_concrete_type(TSintTraits::UNSIGNED_INT_TYPE, &[])?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+
+        let signed_ty_param = ParamSignature::new(signed_ty);
+        let rc_output_info = OutputVarInfo::new_builtin(range_check_type.clone(), 0);
+        let wrapping_result_ref_info = if TSintTraits::IS_SMALL {
+            OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+        } else {
+            OutputVarReferenceInfo::NewTempVar { idx: 0 }
+        };
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                ParamSignature::new(range_check_type).with_allow_add_const(),
+                signed_ty_param.clone(),
+                signed_ty_param,
+            ],
+            branch_signatures: vec![
+                BranchSignature {
+                    vars: vec![
+                        rc_output_info.clone(),
+                        OutputVarInfo {
+                            ty: unsigned_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                BranchSignature {
+                    vars: vec![
+                        rc_output_info,
+                        OutputVarInfo { ty: unsigned_ty, ref_info: wrapping_result_ref_info },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
 #[derive(Default)]
 pub struct Sint8Traits;
 
 impl SintTraits for Sint8Traits {
     const OVERFLOWING_ADD: &'static str = "i8_overflowing_add_impl";
     const OVERFLOWING_SUB: &'static str = "i8_overflowing_sub_impl";
+    const DIFF: &'static str = "i8_diff";
+    const UNSIGNED_INT_TYPE: GenericTypeId = <Uint8Type as NamedType>::ID;
 }
 
 impl IntTraits for Sint8Traits {
@@ -162,6 +227,8 @@ pub struct Sint16Traits;
 impl SintTraits for Sint16Traits {
     const OVERFLOWING_ADD: &'static str = "i16_overflowing_add_impl";
     const OVERFLOWING_SUB: &'static str = "i16_overflowing_sub_impl";
+    const DIFF: &'static str = "i16_diff";
+    const UNSIGNED_INT_TYPE: GenericTypeId = <Uint16Type as NamedType>::ID;
 }
 
 impl IntTraits for Sint16Traits {
@@ -195,6 +262,8 @@ pub struct Sint32Traits;
 impl SintTraits for Sint32Traits {
     const OVERFLOWING_ADD: &'static str = "i32_overflowing_add_impl";
     const OVERFLOWING_SUB: &'static str = "i32_overflowing_sub_impl";
+    const DIFF: &'static str = "i32_diff";
+    const UNSIGNED_INT_TYPE: GenericTypeId = <Uint32Type as NamedType>::ID;
 }
 
 impl IntTraits for Sint32Traits {
@@ -228,6 +297,8 @@ pub struct Sint64Traits;
 impl SintTraits for Sint64Traits {
     const OVERFLOWING_ADD: &'static str = "i64_overflowing_add_impl";
     const OVERFLOWING_SUB: &'static str = "i64_overflowing_sub_impl";
+    const DIFF: &'static str = "i64_diff";
+    const UNSIGNED_INT_TYPE: GenericTypeId = <Uint64Type as NamedType>::ID;
 }
 
 impl IntTraits for Sint64Traits {
