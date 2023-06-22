@@ -263,9 +263,12 @@ impl<'a> DebugWithDb<dyn LoweringGroup + 'a> for FunctionLongId {
         match self {
             FunctionLongId::Semantic(semantic) => semantic.fmt(f, db),
             FunctionLongId::Generated(generated) => {
-                // TODO(spapini): Differentiate between the generated functions according to
-                // `element`.
-                write!(f, "{:?}[expr{}]", generated.parent.debug(db), generated.element.index())
+                write!(
+                    f,
+                    "{}[expr{}]",
+                    generated.parent.full_path(db.upcast()),
+                    generated.element.index()
+                )
             }
         }
     }
@@ -338,5 +341,19 @@ impl LocationId {
 
     pub fn get(&self, db: &dyn LoweringGroup) -> Location {
         db.lookup_intern_location(*self)
+    }
+
+    // Adds a note to the location.
+    pub fn with_note(&self, db: &dyn LoweringGroup, note: String) -> LocationId {
+        db.intern_location(self.get(db).with_note(note))
+    }
+
+    // Adds a note that this location was generated while compiling an auto-generated function.
+    pub fn with_auto_generation_note(
+        &self,
+        db: &dyn LoweringGroup,
+        logic_name: String,
+    ) -> LocationId {
+        self.with_note(db, format!("while compiling auto-generated {logic_name}"))
     }
 }

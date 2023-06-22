@@ -1,19 +1,22 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::{
-    GenericItemId, GenericKind, GenericParamId, GenericParamLongId, ModuleFileId,
+    GenericItemId, GenericKind, GenericParamId, GenericParamLongId, LanguageElementId,
+    ModuleFileId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::{extract_matches, try_extract_matches};
+use syntax::node::stable_ptr::SyntaxStablePtr;
 
 use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
-use crate::diagnostic::{NotFoundItemType, SemanticDiagnosticKind, SemanticDiagnostics};
+use crate::diagnostic::SemanticDiagnosticKind::{self, *};
+use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::literals::LiteralId;
-use crate::resolve::{ResolvedConcreteItem, Resolver};
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::types::{resolve_type, TypeHead};
 use crate::{ConcreteTraitId, TypeId};
 
@@ -136,6 +139,69 @@ pub fn generic_param_semantic(
     let generic_item = generic_param_id.generic_item(db.upcast());
     let generic_params = generic_item_generic_params(db, generic_item)?;
     Ok(*generic_params.iter().find(|generic_param| generic_param.id() == generic_param_id).unwrap())
+}
+
+fn generic_param_generic_params_list(
+    db: &dyn SemanticGroup,
+    generic_param_id: GenericParamId,
+) -> Maybe<ast::OptionWrappedGenericParamList> {
+    let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
+
+    // Traverse up the tree to the generic params list ptr.
+    let SyntaxStablePtr::Child { parent, .. } =
+        db.lookup_intern_stable_ptr(generic_param_long_id.1.0) else { panic!() };
+    let SyntaxStablePtr::Child { parent, .. } =
+        db.lookup_intern_stable_ptr(parent) else { panic!() };
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
+
+    let file_id = db.module_file(module_file_id)?;
+    let root = db.file_syntax(file_id)?;
+
+    let generic_param_list = ast::OptionWrappedGenericParamList::from_ptr(
+        db.upcast(),
+        &root,
+        ast::OptionWrappedGenericParamListPtr(parent),
+    );
+    Ok(generic_param_list)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::generic_impl_param_trait].
+pub fn generic_impl_param_trait(
+    db: &dyn SemanticGroup,
+    generic_param_id: GenericParamId,
+) -> Maybe<TraitId> {
+    let syntax_db = db.upcast();
+    let module_file_id = generic_param_id.module_file_id(db.upcast());
+    let option_generic_params_syntax = generic_param_generic_params_list(db, generic_param_id)?;
+    let generic_params_syntax = extract_matches!(
+        option_generic_params_syntax,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList
+    );
+    let generic_param_syntax = generic_params_syntax
+        .generic_params(syntax_db)
+        .elements(syntax_db)
+        .into_iter()
+        .find(|param_syntax| {
+            db.intern_generic_param(GenericParamLongId(module_file_id, param_syntax.stable_ptr()))
+                == generic_param_id
+        })
+        .unwrap();
+
+    let syntax = extract_matches!(generic_param_syntax, ast::GenericParam::Impl);
+    let trait_path_syntax = syntax.trait_path(syntax_db);
+
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id);
+
+    resolver
+        .resolve_generic_path_with_args(
+            &mut diagnostics,
+            &trait_path_syntax,
+            NotFoundItemType::Trait,
+        )
+        .ok()
+        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
+        .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
 }
 
 fn generic_item_generic_params(

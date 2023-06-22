@@ -18,11 +18,11 @@ use cairo_lang_sierra::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
-use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
-use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
@@ -471,7 +471,7 @@ fn statement_vars_cost<'a, Ops: CostOperations, TokenTypes: Iterator<Item = &'a 
 }
 
 /// Returns costs for u64/u32/u16/u8 libfuncs.
-fn uint_libfunc_cost<TUintTraits: IsZeroTraits + UintMulTraits>(
+fn uint_libfunc_cost<TUintTraits: UintTraits + IsZeroTraits + IntMulTraits>(
     libfunc: &UintConcrete<TUintTraits>,
 ) -> Vec<BranchCost> {
     match libfunc {

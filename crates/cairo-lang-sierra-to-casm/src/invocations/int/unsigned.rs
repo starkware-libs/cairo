@@ -3,30 +3,17 @@ use std::ops::Shl;
 use cairo_felt::Felt252;
 use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
-use cairo_lang_casm::cell_expression::CellExpression;
-use cairo_lang_sierra::extensions::int::unsigned::{
-    UintConcrete, UintConstConcreteLibfunc, UintMulTraits, UintTraits,
-};
-use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
+use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use num_bigint::{BigInt, ToBigInt};
 
+use super::build_const;
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
-use crate::references::ReferenceExpression;
-
-/// Builds invocations for uint const values.
-pub fn build_const<TUintTraits: UintTraits>(
-    libfunc: &UintConstConcreteLibfunc<TUintTraits>,
-    builder: CompiledInvocationBuilder<'_>,
-) -> Result<CompiledInvocation, InvocationError> {
-    Ok(builder.build_only_reference_changes(
-        [ReferenceExpression::from_cell(CellExpression::Immediate(libfunc.c.into()))].into_iter(),
-    ))
-}
 
 /// Handles a small uint overflowing add operation.
 /// All parameters values are smaller than `limit`.
@@ -320,7 +307,7 @@ pub fn build_small_wide_mul(
 }
 
 /// Builds instructions for Sierra u8/u16/u32/u64 operations.
-pub fn build_uint<TUintTraits: UintMulTraits + IsZeroTraits, const LIMIT: u128>(
+pub fn build_uint<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits, const LIMIT: u128>(
     libfunc: &UintConcrete<TUintTraits>,
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

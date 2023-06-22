@@ -760,7 +760,7 @@ impl<'db> Resolver<'db> {
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
         ImplLookupContext::new(
             self.module_file_id.0,
-            self.generic_params.values().copied().collect(),
+            self.generic_params.values().map(|p| p.id()).collect(),
         )
     }
 
