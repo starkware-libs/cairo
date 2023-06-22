@@ -287,6 +287,7 @@ fn dispatcher_signature(
 
 // TODO Ongoing
 fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
+    // Need to collect GenericParamImpl not GenericParam
     let response = match trait_ast.generic_params(db) {
         OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
             .generic_params(db)
