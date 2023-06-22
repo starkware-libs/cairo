@@ -7,7 +7,7 @@ use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::program::{BranchInfo, BranchTarget};
 use num_bigint::{BigInt, ToBigInt};
 
-use super::{add_input_variables, build_const, build_small_wide_mul};
+use super::{add_input_variables, build_const, build_small_diff, build_small_wide_mul};
 use crate::invocations::misc::validate_under_limit;
 use crate::invocations::{
     get_non_fallthrough_statement_id, misc, CompiledInvocation, CompiledInvocationBuilder,
@@ -191,6 +191,9 @@ pub fn build_sint<
         SintConcrete::WideMul(_) => build_small_wide_mul(builder),
         SintConcrete::Operation(libfunc) => {
             build_sint_overflowing_operation(builder, MIN_VALUE, MAX_VALUE, libfunc.operator)
+        }
+        SintConcrete::Diff(_) => {
+            build_small_diff(builder, BigInt::from(MAX_VALUE) + 1 - BigInt::from(MIN_VALUE))
         }
     }
 }

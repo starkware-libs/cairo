@@ -10,7 +10,7 @@ fn foo(a: u128, b: u128) -> bool {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
+%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -79,7 +79,7 @@ fn foo(a: u32, b: u32) -> bool {
 
 //! > casm
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -148,7 +148,7 @@ fn foo(a: u128, b: u128) -> bool {
 
 //! > casm
 [fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = memory[fp + -4] <= memory[fp + -3] %}
+%{ memory[ap + -1] = memory[ap + 0] < 340282366920938463463374607431768211456 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
@@ -217,7 +217,7 @@ fn foo(a: u32, b: u32) -> bool {
 
 //! > casm
 [fp + -3] = [ap + 1] + [fp + -4], ap++;
-%{ memory[ap + -1] = memory[fp + -4] <= memory[fp + -3] %}
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
