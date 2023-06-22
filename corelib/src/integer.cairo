@@ -381,7 +381,7 @@ extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
 impl U8Mul of Mul<u8> {
     fn mul(lhs: u8, rhs: u8) -> u8 {
-        u8_try_from_felt252(u16_to_felt252(u8_wide_mul(lhs, rhs))).expect('u8_mul Overflow')
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
     }
 }
 impl U8MulEq of MulEq<u8> {
@@ -578,8 +578,7 @@ extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 
 impl U16Mul of Mul<u16> {
     fn mul(lhs: u16, rhs: u16) -> u16 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u16_try_from_felt252(u32_to_felt252(u16_wide_mul(lhs, rhs))).expect('u16_mul Overflow')
+        u16_wide_mul(lhs, rhs).try_into().expect('u16_mul Overflow')
     }
 }
 impl U16MulEq of MulEq<u16> {
@@ -776,8 +775,7 @@ extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
 impl U32Mul of Mul<u32> {
     fn mul(lhs: u32, rhs: u32) -> u32 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u32_try_from_felt252(u64_to_felt252(u32_wide_mul(lhs, rhs))).expect('u32_mul Overflow')
+        u32_wide_mul(lhs, rhs).try_into().expect('u32_mul Overflow')
     }
 }
 impl U32MulEq of MulEq<u32> {
@@ -974,8 +972,7 @@ extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 
 impl U64Mul of Mul<u64> {
     fn mul(lhs: u64, rhs: u64) -> u64 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u64_try_from_felt252(u128_to_felt252(u64_wide_mul(lhs, rhs))).expect('u64_mul Overflow')
+        u64_wide_mul(lhs, rhs).try_into().expect('u64_mul Overflow')
     }
 }
 impl U64MulEq of MulEq<u64> {
