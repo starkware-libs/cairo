@@ -3,6 +3,11 @@ trait IAnotherContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 
+#[starknet::interface]
+trait TestTrait<TContractState, impl Y: IAnotherContract<TContractState>> {
+    fn something_else(self: @TContractState) -> felt252;
+}
+
 
 #[starknet::contract]
 mod TestContract {
