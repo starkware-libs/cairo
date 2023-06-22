@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
 
 use super::aux_data::StarkNetABIAuxData;
@@ -287,17 +288,15 @@ fn dispatcher_signature(
 
 // TODO Ongoing
 fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
-    // Need to collect GenericParamImpl not GenericParam
     let response = match trait_ast.generic_params(db) {
         OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
             .generic_params(db)
             .elements(db)
             .into_iter()
-            .filter(|member| matches!(member, ast::GenericParam::Impl(_)))
+            .map(|param| extract_matches!(param, ast::GenericParam::Impl))
             .collect(),
         OptionWrappedGenericParamList::Empty(_) => vec![],
     };
-
     for item_impl in response {
         println!("${:#?}", item_impl);
     }
