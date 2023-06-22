@@ -1,5 +1,3 @@
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
@@ -23,38 +21,19 @@ define_libfunc_hierarchy! {
     }, CastConcreteLibfunc
 }
 
-/// Returns a map from (concrete) integer type to the number of bits in the type.
-fn get_type_to_nbits_map(
+/// Returns a number of bits in a concrete integer type.
+fn get_nbits(
     context: &dyn SignatureSpecializationContext,
-) -> UnorderedHashMap<ConcreteTypeId, usize> {
-    vec![
-        (Uint8Type::ID, 8),
-        (Uint16Type::ID, 16),
-        (Uint32Type::ID, 32),
-        (Uint64Type::ID, 64),
-        (Uint128Type::ID, 128),
-    ]
-    .into_iter()
-    .filter_map(|(generic_type, n_bits)| {
-        Some((context.get_concrete_type(generic_type, &[]).ok()?, n_bits))
-    })
-    .collect()
-}
-
-/// Returns the number of bits for the given types.
-// TODO(lior): Convert to a generic function that can take arbitrary number of arguments once
-//   `try_map` is a stable feature.
-fn get_n_bits(
-    context: &dyn SignatureSpecializationContext,
-    from_type: &ConcreteTypeId,
-    to_type: &ConcreteTypeId,
-) -> Result<(usize, usize), SpecializationError> {
-    let type_to_n_bits = get_type_to_nbits_map(context);
-    let from_nbits =
-        *type_to_n_bits.get(from_type).ok_or(SpecializationError::UnsupportedGenericArg)?;
-    let to_nbits =
-        *type_to_n_bits.get(to_type).ok_or(SpecializationError::UnsupportedGenericArg)?;
-    Ok((from_nbits, to_nbits))
+    ty: ConcreteTypeId,
+) -> Result<usize, SpecializationError> {
+    match context.get_type_info(ty)?.long_id.generic_id {
+        id if id == Uint8Type::ID => Ok(8),
+        id if id == Uint16Type::ID => Ok(16),
+        id if id == Uint32Type::ID => Ok(32),
+        id if id == Uint64Type::ID => Ok(64),
+        id if id == Uint128Type::ID => Ok(128),
+        _ => Err(SpecializationError::UnsupportedGenericArg),
+    }
 }
 
 /// Libfunc for casting from one type to another where any input value can fit into the destination
@@ -70,9 +49,8 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let (from_nbits, to_nbits) = get_n_bits(context, &from_ty, &to_ty)?;
 
-        let is_valid = from_nbits <= to_nbits;
+        let is_valid = get_nbits(context, from_ty.clone())? <= get_nbits(context, to_ty.clone())?;
         if !is_valid {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -109,9 +87,8 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let (from_nbits, to_nbits) = get_n_bits(context, &from_ty, &to_ty)?;
 
-        let is_valid = from_nbits >= to_nbits;
+        let is_valid = get_nbits(context, from_ty.clone())? >= get_nbits(context, to_ty.clone())?;
         if !is_valid {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
@@ -151,14 +128,12 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<Self::Concrete, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-        let (from_nbits, to_nbits) = get_n_bits(context.upcast(), &from_ty, &to_ty)?;
-
         Ok(DowncastConcreteLibfunc {
             signature: self.specialize_signature(context.upcast(), args)?,
-            from_ty,
-            from_nbits,
-            to_ty,
-            to_nbits,
+            from_ty: from_ty.clone(),
+            from_nbits: get_nbits(context.upcast(), from_ty)?,
+            to_ty: to_ty.clone(),
+            to_nbits: get_nbits(context.upcast(), to_ty)?,
         })
     }
 }
