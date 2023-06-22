@@ -400,7 +400,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     HintError::CustomHint(Box::from("failed to parse selector".to_string()))
                 })?;
                 match selector {
-                    "print" => {
+                    "set_block_number" => {
                         let as_relocatable = |vm, value| {
                             let (base, offset) = extract_buffer(value);
                             get_ptr(vm, base, &offset)
@@ -408,19 +408,21 @@ impl HintProcessor for CairoHintProcessor<'_> {
 
                         let mut curr = as_relocatable(vm, input_start)?;
                         let end = as_relocatable(vm, input_end)?;
-
+                        let mut input: Vec<Felt252> = vec![];
                         while curr != end {
                             let value = vm.get_integer(curr)?;
-                            if let Some(short_string) = as_cairo_short_string(&value) {
-                                println!(
-                                    "original value: [{}], converted to a string: [{}]",
-                                    value, short_string
-                                );
-                            } else {
-                                println!("original value: [{}]", value);
-                            }
+                            input.push(value.into_owned());
                             curr += 1;
                         }
+
+                        if input.len() != 1 {
+                            Err(HintError::CustomHint(Box::from(
+                                "set_block_number cheatcode invalid args: pass span of an array \
+                                 with exactly one element",
+                            )))?;
+                        }
+
+                        self.starknet_state.exec_info.block_info.block_number = input[0].clone();
                     }
                     _ => Err(HintError::CustomHint(Box::from("Unknown hint")))?,
                 }
