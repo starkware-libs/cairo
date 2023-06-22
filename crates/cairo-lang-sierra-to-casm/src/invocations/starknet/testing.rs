@@ -2,6 +2,7 @@ use cairo_lang_casm::builder::{CasmBuilder, Var};
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
+use cairo_lang_utils::bigint::BigIntAsHex;
 
 use crate::invocations::{
     add_input_variables, get_non_fallthrough_statement_id, CompiledInvocation,
@@ -99,6 +100,49 @@ pub fn build(
                     ("Fallthrough", &[&[keys_start, keys_end], &[data_start, data_end]], None),
                     ("None", &[], Some(none_variant_id)),
                 ],
+                CostValidationInfo::default(),
+            ));
+        }
+        TestingConcreteLibfunc::Cheatcode(c) => {
+            let [input] = builder.try_get_refs()?;
+            let [input_start, input_end] = input.try_unpack()?;
+
+            let output_start = casm_builder.alloc_var(false);
+            let output_end = casm_builder.alloc_var(false);
+
+            add_input_variables! {casm_builder,
+                deref input_start;
+                deref input_end;
+            }
+            casm_builder.add_hint(
+                |[input_start, input_end], [output_start, output_end]| StarknetHint::Cheatcode {
+                    selector: BigIntAsHex { value: c.selector.clone() },
+                    input_start,
+                    input_end,
+                    output_start,
+                    output_end,
+                },
+                [input_start, input_end],
+                [output_start, output_end],
+            );
+            casm_build_extend! {casm_builder, ap += 2; }
+            // casm_build_extend! {casm_builder,
+            //     tempvar output_start;
+            //     tempvar output_end;
+            //     hint StarknetHint::Cheatcode {
+            //         selector: selector,
+            //         input_start: input_start,
+            //         input_end: input_end
+            //     } into {
+            //         output_start: output_start,
+            //         output_end: output_end
+            //     };
+            //     ap += 2;
+            // };
+
+            return Ok(builder.build_from_casm_builder(
+                casm_builder,
+                [("Fallthrough", &[&[output_start, output_end]], None)],
                 CostValidationInfo::default(),
             ));
         }

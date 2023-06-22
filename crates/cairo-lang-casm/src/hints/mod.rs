@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::writedoc;
 use parity_scale_codec_derive::{Decode, Encode};
 use schemars::JsonSchema;
@@ -79,6 +80,14 @@ pub enum StarknetHint {
         keys_end: CellRef,
         data_start: CellRef,
         data_end: CellRef,
+    },
+    #[codec(index = 14)]
+    Cheatcode {
+        selector: BigIntAsHex,
+        input_start: ResOperand,
+        input_end: ResOperand,
+        output_start: CellRef,
+        output_end: CellRef,
     },
 }
 
@@ -696,6 +705,9 @@ impl Display for CoreHint {
 impl Display for StarknetHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            StarknetHint::Cheatcode { .. } => {
+                write!(f, "general_cheatcode")
+            }
             StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }

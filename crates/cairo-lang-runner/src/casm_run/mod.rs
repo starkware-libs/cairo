@@ -388,6 +388,43 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     insert_value_to_cellref!(vm, opt_variant, 1)?;
                 }
             }
+            StarknetHint::Cheatcode {
+                selector,
+                input_start,
+                input_end,
+                output_start: _,
+                output_end: _,
+            } => {
+                let selector = &selector.value.to_bytes_be().1;
+                let selector = std::str::from_utf8(selector).map_err(|_| {
+                    HintError::CustomHint(Box::from("failed to parse selector".to_string()))
+                })?;
+                match selector {
+                    "print" => {
+                        let as_relocatable = |vm, value| {
+                            let (base, offset) = extract_buffer(value);
+                            get_ptr(vm, base, &offset)
+                        };
+
+                        let mut curr = as_relocatable(vm, input_start)?;
+                        let end = as_relocatable(vm, input_end)?;
+
+                        while curr != end {
+                            let value = vm.get_integer(curr)?;
+                            if let Some(short_string) = as_cairo_short_string(&value) {
+                                println!(
+                                    "original value: [{}], converted to a string: [{}]",
+                                    value, short_string
+                                );
+                            } else {
+                                println!("original value: [{}]", value);
+                            }
+                            curr += 1;
+                        }
+                    }
+                    _ => Err(HintError::CustomHint(Box::from("Unknown hint")))?,
+                }
+            }
         };
         Ok(())
     }
