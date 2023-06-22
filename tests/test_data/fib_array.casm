@@ -51,7 +51,7 @@ ret;
 ret;
 [fp + -3] = [ap + 0] + [fp + -4], ap++;
 [ap + -1] = [ap + 1] + [fp + -5], ap++;
-%{ memory[ap + -1] = memory[fp + -5] <= memory[ap + -2] %}
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -6] + 0];
@@ -123,7 +123,7 @@ ret;
 [ap + 0] = [ap + -4], ap++;
 ret;
 [fp + -4] = [ap + 1] + [fp + -3], ap++;
-%{ memory[ap + -1] = memory[fp + -3] <= memory[fp + -4] %}
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
 jmp rel 7 if [ap + -1] != 0, ap++;
 [ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
