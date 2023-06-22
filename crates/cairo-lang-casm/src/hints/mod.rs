@@ -706,7 +706,7 @@ impl Display for StarknetHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             StarknetHint::Cheatcode { .. } => {
-                write!(f, "general_cheatcode")
+                write!(f, "cheatcode")
             }
             StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))

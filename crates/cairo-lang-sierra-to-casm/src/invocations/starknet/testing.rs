@@ -107,13 +107,16 @@ pub fn build(
             let [input] = builder.try_get_refs()?;
             let [input_start, input_end] = input.try_unpack()?;
 
-            let output_start = casm_builder.alloc_var(false);
-            let output_end = casm_builder.alloc_var(false);
-
             add_input_variables! {casm_builder,
                 deref input_start;
                 deref input_end;
             }
+
+            casm_build_extend! {casm_builder,
+                tempvar output_start;
+                tempvar output_end;
+            }
+
             casm_builder.add_hint(
                 |[input_start, input_end], [output_start, output_end]| StarknetHint::Cheatcode {
                     selector: BigIntAsHex { value: c.selector.clone() },
@@ -125,20 +128,8 @@ pub fn build(
                 [input_start, input_end],
                 [output_start, output_end],
             );
+
             casm_build_extend! {casm_builder, ap += 2; }
-            // casm_build_extend! {casm_builder,
-            //     tempvar output_start;
-            //     tempvar output_end;
-            //     hint StarknetHint::Cheatcode {
-            //         selector: selector,
-            //         input_start: input_start,
-            //         input_end: input_end
-            //     } into {
-            //         output_start: output_start,
-            //         output_end: output_end
-            //     };
-            //     ap += 2;
-            // };
 
             return Ok(builder.build_from_casm_builder(
                 casm_builder,
