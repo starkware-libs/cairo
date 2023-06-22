@@ -288,13 +288,35 @@ impl<'a> Display for DerefOrImmediateFormatter<'a> {
     }
 }
 
-struct ResOperandFormatter<'a>(&'a ResOperand);
-impl<'a> Display for ResOperandFormatter<'a> {
+struct ResOperandAsIntegerFormatter<'a>(&'a ResOperand);
+impl<'a> Display for ResOperandAsIntegerFormatter<'a> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             ResOperand::Deref(d) => write!(f, "memory{d}"),
             ResOperand::DoubleDeref(d, i) => write!(f, "memory[memory{d} + {i}]"),
             ResOperand::Immediate(i) => write!(f, "{}", i.value),
+            ResOperand::BinOp(bin_op) => {
+                write!(
+                    f,
+                    "(memory{} {} {}) % PRIME",
+                    bin_op.a,
+                    bin_op.op,
+                    DerefOrImmediateFormatter(&bin_op.b)
+                )
+            }
+        }
+    }
+}
+
+struct ResOperandAsAddressFormatter<'a>(&'a ResOperand);
+impl<'a> Display for ResOperandAsAddressFormatter<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            ResOperand::Deref(d) => write!(f, "memory{d}"),
+            ResOperand::DoubleDeref(d, i) => write!(f, "memory[memory{d} + {i}]"),
+            ResOperand::Immediate(i) => {
+                unreachable!("Address cannot be an immediate: {}.", i.value)
+            }
             ResOperand::BinOp(bin_op) => {
                 write!(
                     f,
@@ -313,7 +335,7 @@ impl Display for CoreHint {
         match self {
             CoreHint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
             CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
-                let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
+                let segment_arena_ptr = ResOperandAsAddressFormatter(segment_arena_ptr);
                 writedoc!(
                     f,
                     "
@@ -346,7 +368,8 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
-                let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
+                let (dict_ptr, key) =
+                    (ResOperandAsAddressFormatter(dict_ptr), ResOperandAsIntegerFormatter(key));
                 writedoc!(
                     f,
                     "
@@ -358,7 +381,8 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::Felt252DictEntryUpdate { dict_ptr, value } => {
-                let (dict_ptr, value) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(value));
+                let (dict_ptr, value) =
+                    (ResOperandAsAddressFormatter(dict_ptr), ResOperandAsIntegerFormatter(value));
                 writedoc!(
                     f,
                     "
@@ -371,26 +395,26 @@ impl Display for CoreHint {
             CoreHint::TestLessThan { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} < {}",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs)
+                ResOperandAsIntegerFormatter(lhs),
+                ResOperandAsIntegerFormatter(rhs)
             ),
             CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
                 f,
                 "memory{dst} = {} <= {}",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs)
+                ResOperandAsIntegerFormatter(lhs),
+                ResOperandAsIntegerFormatter(rhs)
             ),
             CoreHint::WideMul128 { lhs, rhs, high, low } => write!(
                 f,
                 "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs)
+                ResOperandAsIntegerFormatter(lhs),
+                ResOperandAsIntegerFormatter(rhs)
             ),
             CoreHint::DivMod { lhs, rhs, quotient, remainder } => write!(
                 f,
                 "(memory{quotient}, memory{remainder}) = divmod({}, {})",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs)
+                ResOperandAsIntegerFormatter(lhs),
+                ResOperandAsIntegerFormatter(rhs)
             ),
             CoreHint::Uint256DivMod {
                 dividend0,
@@ -403,10 +427,10 @@ impl Display for CoreHint {
                 remainder1,
             } => {
                 let (dividend0, dividend1, divisor0, divisor1) = (
-                    ResOperandFormatter(dividend0),
-                    ResOperandFormatter(dividend1),
-                    ResOperandFormatter(divisor0),
-                    ResOperandFormatter(divisor1),
+                    ResOperandAsIntegerFormatter(dividend0),
+                    ResOperandAsIntegerFormatter(dividend1),
+                    ResOperandAsIntegerFormatter(divisor0),
+                    ResOperandAsIntegerFormatter(divisor1),
                 );
                 writedoc!(
                     f,
@@ -439,7 +463,7 @@ impl Display for CoreHint {
             } => {
                 let [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1] =
                     [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1]
-                        .map(ResOperandFormatter);
+                        .map(ResOperandAsIntegerFormatter);
                 writedoc!(
                     f,
                     "
@@ -465,7 +489,7 @@ impl Display for CoreHint {
                         import math
                         memory{dst} = math.isqrt({})
                     ",
-                    ResOperandFormatter(value)
+                    ResOperandAsIntegerFormatter(value)
                 )
             }
             CoreHint::Uint256SquareRoot {
@@ -477,8 +501,10 @@ impl Display for CoreHint {
                 remainder_high,
                 sqrt_mul_2_minus_remainder_ge_u128,
             } => {
-                let (value_low, value_high) =
-                    (ResOperandFormatter(value_low), ResOperandFormatter(value_high));
+                let (value_low, value_high) = (
+                    ResOperandAsIntegerFormatter(value_low),
+                    ResOperandAsIntegerFormatter(value_high),
+                );
                 writedoc!(
                     f,
                     "
@@ -498,9 +524,9 @@ impl Display for CoreHint {
             }
             CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
-                    ResOperandFormatter(value),
-                    ResOperandFormatter(scalar),
-                    ResOperandFormatter(max_x),
+                    ResOperandAsIntegerFormatter(value),
+                    ResOperandAsIntegerFormatter(scalar),
+                    ResOperandAsIntegerFormatter(max_x),
                 );
                 writedoc!(
                     f,
@@ -539,7 +565,7 @@ impl Display for CoreHint {
                         else:
                             memory{sqrt} = sqrt(val * 3, FIELD_PRIME)
                         ",
-                    ResOperandFormatter(val)
+                    ResOperandAsIntegerFormatter(val)
                 )
             }
             CoreHint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
@@ -550,7 +576,7 @@ impl Display for CoreHint {
                     current_access_index = current_access_indices.pop()
                     memory[{}] = current_access_index
                 ",
-                ResOperandFormatter(range_check_ptr)
+                ResOperandAsAddressFormatter(range_check_ptr)
             ),
             CoreHint::ShouldSkipSquashLoop { should_skip_loop } => {
                 write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
@@ -575,7 +601,7 @@ impl Display for CoreHint {
                 "
             ),
             CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
-                let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
+                let dict_end_ptr = ResOperandAsAddressFormatter(dict_end_ptr);
                 writedoc!(
                     f,
                     "
@@ -594,9 +620,9 @@ impl Display for CoreHint {
                 first_key,
             } => {
                 let (dict_accesses, ptr_diff, n_accesses) = (
-                    ResOperandFormatter(dict_accesses),
-                    ResOperandFormatter(ptr_diff),
-                    ResOperandFormatter(n_accesses),
+                    ResOperandAsAddressFormatter(dict_accesses),
+                    ResOperandAsIntegerFormatter(ptr_diff),
+                    ResOperandAsIntegerFormatter(n_accesses),
                 );
                 writedoc!(
                     f,
@@ -626,9 +652,9 @@ impl Display for CoreHint {
             }
             CoreHint::AssertLeFindSmallArcs { range_check_ptr, a, b } => {
                 let (range_check_ptr, a, b) = (
-                    ResOperandFormatter(range_check_ptr),
-                    ResOperandFormatter(a),
-                    ResOperandFormatter(b),
+                    ResOperandAsAddressFormatter(range_check_ptr),
+                    ResOperandAsIntegerFormatter(a),
+                    ResOperandAsIntegerFormatter(b),
                 );
                 writedoc!(
                     f,
@@ -673,8 +699,8 @@ impl Display for CoreHint {
                         print(hex(memory[curr]))
                         curr += 1
                 ",
-                ResOperandFormatter(start),
-                ResOperandFormatter(end),
+                ResOperandAsAddressFormatter(start),
+                ResOperandAsAddressFormatter(end),
             ),
             CoreHint::AllocConstantSize { size, dst } => {
                 writedoc!(
@@ -686,7 +712,7 @@ impl Display for CoreHint {
                         memory{dst} = __boxed_segment
                         __boxed_segment += {}
                     ",
-                    ResOperandFormatter(size)
+                    ResOperandAsIntegerFormatter(size)
                 )
             }
         }
@@ -697,55 +723,87 @@ impl Display for StarknetHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             StarknetHint::SystemCall { system } => {
-                write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
+                write!(
+                    f,
+                    "syscall_handler.syscall(syscall_ptr={})",
+                    ResOperandAsAddressFormatter(system)
+                )
             }
             StarknetHint::SetBlockNumber { value } => {
-                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
+                write!(f, "syscall_handler.block_number = {}", ResOperandAsIntegerFormatter(value))
             }
             StarknetHint::SetBlockTimestamp { value } => {
-                write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.block_timestamp = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetCallerAddress { value } => {
-                write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.caller_address = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetContractAddress { value } => {
-                write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.contract_address = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetSequencerAddress { value } => {
-                write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.sequencer_address = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetVersion { value } => {
-                write!(f, "syscall_handler.tx_info.version = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.tx_info.version = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetAccountContractAddress { value } => {
                 write!(
                     f,
                     "syscall_handler.tx_info.account_contract_address = {}",
-                    ResOperandFormatter(value)
+                    ResOperandAsIntegerFormatter(value)
                 )
             }
             StarknetHint::SetMaxFee { value } => {
-                write!(f, "syscall_handler.tx_info.max_fee = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.tx_info.max_fee = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetTransactionHash { value } => {
                 write!(
                     f,
                     "syscall_handler.tx_info.transaction_hash = {}",
-                    ResOperandFormatter(value)
+                    ResOperandAsIntegerFormatter(value)
                 )
             }
             StarknetHint::SetChainId { value } => {
-                write!(f, "syscall_handler.tx_info.chain_id = {}", ResOperandFormatter(value))
+                write!(
+                    f,
+                    "syscall_handler.tx_info.chain_id = {}",
+                    ResOperandAsIntegerFormatter(value)
+                )
             }
             StarknetHint::SetNonce { value } => {
-                write!(f, "syscall_handler.tx_info.nonce = {}", ResOperandFormatter(value))
+                write!(f, "syscall_handler.tx_info.nonce = {}", ResOperandAsIntegerFormatter(value))
             }
             StarknetHint::SetSignature { start, end } => {
                 write!(
                     f,
                     "syscall_handler.tx_info.signature = [memory[i] for i in range({}, {})]",
-                    ResOperandFormatter(start),
-                    ResOperandFormatter(end)
+                    ResOperandAsAddressFormatter(start),
+                    ResOperandAsAddressFormatter(end)
                 )
             }
             StarknetHint::PopLog {
