@@ -25,10 +25,10 @@ use crate::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use crate::extensions::int::unsigned::{
-    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
 };
 use crate::extensions::int::unsigned128::Uint128Concrete;
-use crate::extensions::int::IntOperator;
+use crate::extensions::int::{IntConstConcreteLibfunc, IntOperator};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -428,7 +428,7 @@ fn simulate_u128_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint128Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint128Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint128(*c)], 0))
             } else {
@@ -536,7 +536,7 @@ fn simulate_u8_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint8Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint8Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint8(*c)], 0))
             } else {
@@ -605,7 +605,7 @@ fn simulate_u16_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint16Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint16Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint16(*c)], 0))
             } else {
@@ -674,7 +674,7 @@ fn simulate_u32_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint32Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint32Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint32(*c)], 0))
             } else {
@@ -743,7 +743,7 @@ fn simulate_u64_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint64Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint64Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint64(*c)], 0))
             } else {

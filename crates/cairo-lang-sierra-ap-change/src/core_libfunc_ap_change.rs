@@ -15,11 +15,11 @@ use cairo_lang_sierra::extensions::felt252_dict::{
 use cairo_lang_sierra::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, CostTokenType, GasConcreteLibfunc,
 };
-use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintMulTraits};
+use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
 use cairo_lang_sierra::extensions::int::unsigned512::Uint512Concrete;
-use cairo_lang_sierra::extensions::int::IntOperator;
+use cairo_lang_sierra::extensions::int::{IntMulTraits, IntOperator};
 use cairo_lang_sierra::extensions::is_zero::IsZeroTraits;
 use cairo_lang_sierra::extensions::mem::MemConcreteLibfunc;
 use cairo_lang_sierra::extensions::nullable::NullableConcreteLibfunc;
@@ -264,7 +264,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
 }
 
 /// Returns the ap changes for u8/u16/u32/u64 libfuncs.
-fn uint_ap_change<TUintTraits: UintMulTraits + IsZeroTraits>(
+fn uint_ap_change<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits>(
     libfunc: &UintConcrete<TUintTraits>,
 ) -> Vec<ApChange> {
     match libfunc {
