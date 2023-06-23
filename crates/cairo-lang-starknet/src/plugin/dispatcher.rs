@@ -61,7 +61,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let contract_caller_name = format!("{base_name}Dispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
 
-    // TODO
     some_fnt(trait_ast, db);
 
     for item_ast in body.items(db).elements(db) {
@@ -297,7 +296,12 @@ fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
             .collect(),
         OptionWrappedGenericParamList::Empty(_) => vec![],
     };
+    // response.into_iter().map(|e| e.)
+    // TODO Check trait exist
     for item_impl in response {
+        let path_syntax = item_impl.trait_path(db);
+        // TODO Need to extract all fn from the trait
+        // Return that and append to "dispatcher_signatures"
         println!("${:#?}", item_impl);
     }
 }
