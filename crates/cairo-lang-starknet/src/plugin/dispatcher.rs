@@ -289,18 +289,15 @@ fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
     let mut some_vec = vec![];
     match trait_ast.generic_params(db) {
         OptionWrappedGenericParamList::WrappedGenericParamList(gens) => {
-            gens.generic_params(db).elements(db).into_iter().for_each(|e| match e {
-                GenericParam::Impl(a) => {
+            gens.generic_params(db).elements(db).into_iter().for_each(|e| 
+                if let GenericParam::Impl(a) = e {
                     some_vec.push(a);
-                }
-                _ => {}
-            })
+                })
         }
         // .map(|param| extract_matches!(param, ast::GenericParam::Impl))
         // .collect(),
         OptionWrappedGenericParamList::Empty(_) => {}
     };
-    // response.into_iter().map(|e| e.)
     // TODO Check trait exist
     for item_impl in some_vec {
         // let _path_syntax = item_impl.trait_path(db);
