@@ -74,7 +74,6 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
         SyntaxKind::TerminalMinusEq => vec!["-="],
         SyntaxKind::TerminalMul => vec!["*"],
         SyntaxKind::TerminalMulEq => vec!["*="],
-        SyntaxKind::TerminalPow => vec!["**"],
         SyntaxKind::TerminalNeq => vec!["!="],
         SyntaxKind::TerminalNot => vec!["!"],
         SyntaxKind::TerminalBitNot => vec!["~"],
@@ -149,7 +148,6 @@ fn terminal_kinds() -> Vec<SyntaxKind> {
         SyntaxKind::TerminalMulEq,
         SyntaxKind::TerminalDiv,
         SyntaxKind::TerminalDivEq,
-        SyntaxKind::TerminalPow,
         SyntaxKind::TerminalMod,
         SyntaxKind::TerminalModEq,
         SyntaxKind::TerminalColon,
@@ -206,7 +204,6 @@ fn need_separator(
         || (text0 == ":" && text1.starts_with(':'))
         || (text0 == "." && text1.starts_with('.'))
         || (text0 == "-" && (text1.starts_with('>') || text1.starts_with('=')))
-        || (text0 == "*" && text1.starts_with('*'))
         || ((text0 == "+" || text0 == "*" || text0 == "/" || text0 == "%")
             && text1.starts_with('='))
         || (kind0 == SyntaxKind::TerminalLiteralNumber && kind0 == kind1)
