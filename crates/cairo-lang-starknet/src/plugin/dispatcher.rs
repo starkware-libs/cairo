@@ -4,13 +4,12 @@ use cairo_lang_defs::plugin::{
 use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{
-    self, ItemTrait, MaybeTraitBody, OptionReturnTypeClause,
+    self, GenericParam, ItemTrait, MaybeTraitBody, OptionReturnTypeClause,
     OptionWrappedGenericParamList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use cairo_lang_utils::extract_matches;
 use indoc::formatdoc;
 
 use super::aux_data::StarkNetABIAuxData;
@@ -286,19 +285,25 @@ fn dispatcher_signature(
 
 // TODO Ongoing
 fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
-    let response = match trait_ast.generic_params(db) {
-        OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
-            .generic_params(db)
-            .elements(db)
-            .into_iter()
-            .map(|param| extract_matches!(param, ast::GenericParam::Impl))
-            .collect(),
-        OptionWrappedGenericParamList::Empty(_) => vec![],
+    // TODO There must be a better way to extract only GenericParam::Impl...
+    let mut some_vec = vec![];
+    match trait_ast.generic_params(db) {
+        OptionWrappedGenericParamList::WrappedGenericParamList(gens) => {
+            gens.generic_params(db).elements(db).into_iter().for_each(|e| match e {
+                GenericParam::Impl(a) => {
+                    some_vec.push(a);
+                }
+                _ => {}
+            })
+        }
+        // .map(|param| extract_matches!(param, ast::GenericParam::Impl))
+        // .collect(),
+        OptionWrappedGenericParamList::Empty(_) => {}
     };
     // response.into_iter().map(|e| e.)
     // TODO Check trait exist
-    for item_impl in response {
-        let path_syntax = item_impl.trait_path(db);
+    for item_impl in some_vec {
+        // let _path_syntax = item_impl.trait_path(db);
         // TODO Need to extract all fn from the trait
         // Return that and append to "dispatcher_signatures"
         println!("${:#?}", item_impl);
