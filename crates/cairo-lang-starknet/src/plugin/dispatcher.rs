@@ -3,9 +3,8 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
-use cairo_lang_semantic::GenericParam;
 use cairo_lang_syntax::node::ast::{
-    self, AttributeList, ItemTrait, MaybeTraitBody, OptionReturnTypeClause,
+    self, ItemTrait, MaybeTraitBody, OptionReturnTypeClause,
     OptionWrappedGenericParamList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
