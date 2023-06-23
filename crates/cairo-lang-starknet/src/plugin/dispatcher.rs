@@ -1,5 +1,3 @@
-use std::vec;
-
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -287,7 +285,6 @@ fn dispatcher_signature(
 
 // TODO Ongoing
 fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
-    // TODO There must be a better way to extract only GenericParam::Impl...
     let some_vec = if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) =
         trait_ast.generic_params(db)
     {
