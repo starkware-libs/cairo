@@ -171,6 +171,10 @@ impl SierraCasmRunner {
         })
     }
 
+    pub fn get_casm_program(&self) -> &CairoProgram {
+        &self.casm_program
+    }
+
     /// Runs the vm starting from a function in the context of a given starknet state.
     pub fn run_function_with_starknet_context(
         &self,
@@ -344,7 +348,7 @@ impl SierraCasmRunner {
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
-    fn create_entry_code(
+    pub fn create_entry_code(
         &self,
         func: &Function,
         args: &[Arg],
@@ -473,7 +477,7 @@ impl SierraCasmRunner {
 
     /// Returns the initial value for the gas counter.
     /// If available_gas is None returns 0.
-    fn get_initial_available_gas(
+    pub fn get_initial_available_gas(
         &self,
         func: &Function,
         available_gas: Option<usize>,
