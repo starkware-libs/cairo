@@ -302,16 +302,14 @@ fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
     } else {
         vec![]
     };
-    // .map(|param| extract_matches!(param, ast::GenericParam::Impl))
-    // .collect(),
-    // TODO Check trait exist
     for item_impl in some_vec {
-        let path_syntax = item_impl.trait_path(db).elements(db).into_iter().for_each(|e| {
+        // TODO Need to resolve the trait AND         
+        // 1: Check trait exist
+        item_impl.trait_path(db).elements(db).into_iter().for_each(|e| {
             todo!();
         });
-        path_syntax;
-        // TODO Need to extract all fn from the trait
-        // Return that and append to "dispatcher_signatures"
+        // 2: Need to extract all fn from the trait
         println!("${:#?}", item_impl);
     }
+    // Return some_vec and append to "dispatcher_signatures"
 }
