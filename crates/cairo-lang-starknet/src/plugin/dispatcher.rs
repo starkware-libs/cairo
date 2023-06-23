@@ -306,7 +306,10 @@ fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
     // .collect(),
     // TODO Check trait exist
     for item_impl in some_vec {
-        // let _path_syntax = item_impl.trait_path(db);
+        let path_syntax = item_impl.trait_path(db).elements(db).into_iter().for_each(|e| {
+            todo!();
+        });
+        path_syntax;
         // TODO Need to extract all fn from the trait
         // Return that and append to "dispatcher_signatures"
         println!("${:#?}", item_impl);
