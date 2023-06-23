@@ -41,8 +41,11 @@ fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> Pl
             return PluginResult::default();
         }
         let mut diagnostics = vec![];
-        let constant_expression =
-            extract_consteval_macro_expression(db, &inline_macro, &mut diagnostics);
+        let constant_expression = extract_expression_from_argument_list(
+            db,
+            &inline_macro.arguments(db),
+            &mut diagnostics,
+        );
         if constant_expression.is_none() {
             return PluginResult { diagnostics, ..Default::default() };
         }
@@ -69,16 +72,16 @@ fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> Pl
 }
 
 /// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
-fn extract_consteval_macro_expression(
+fn extract_expression_from_argument_list(
     db: &dyn SyntaxGroup,
-    macro_ast: &ast::ExprInlineMacro,
+    arguments: &ast::ArgListParenthesized,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<ast::Expr> {
-    let args = macro_ast.arguments(db).args(db).elements(db);
+    let args = arguments.args(db).elements(db);
     if args.len() != 1 {
         diagnostics.push(PluginDiagnostic {
-            stable_ptr: macro_ast.stable_ptr().untyped(),
-            message: "consteval_int macro must have a single unnamed argument.".to_string(),
+            stable_ptr: arguments.stable_ptr().untyped(),
+            message: "Only a single unnamed argument is allowed.".to_string(),
         });
         return None;
     }
@@ -86,8 +89,8 @@ fn extract_consteval_macro_expression(
         ast::ArgClause::Unnamed(arg) => Some(arg.value(db)),
         _ => {
             diagnostics.push(PluginDiagnostic {
-                stable_ptr: macro_ast.stable_ptr().untyped(),
-                message: "consteval_int macro must have a single unnamed argument.".to_string(),
+                stable_ptr: arguments.stable_ptr().untyped(),
+                message: "Only a single unnamed argument is allowed.".to_string(),
             });
             None
         }
@@ -124,19 +127,6 @@ fn compute_constant_expr(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     % compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
-            ast::BinaryOperator::Pow(_) => {
-                let lhs = compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?;
-                let rhs = compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?.try_into();
-                if let Ok(power) = rhs {
-                    Some(lhs.pow(power))
-                } else {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: value.stable_ptr().untyped(),
-                        message: "Invalid power expression".into(),
-                    });
-                    None
-                }
-            }
             ast::BinaryOperator::And(_) => Some(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     & compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
@@ -149,6 +139,40 @@ fn compute_constant_expr(
                 compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?
                     ^ compute_constant_expr(db, &bin_expr.rhs(db), diagnostics)?,
             ),
+            ast::BinaryOperator::Dot(_) => {
+                if let ast::Expr::FunctionCall(fn_call) = bin_expr.rhs(db) {
+                    let fn_name = (*fn_call.path(db).elements(db).get(0)?).clone();
+                    if fn_name.as_syntax_node().get_text(db) != "pow" {
+                        diagnostics.push(PluginDiagnostic {
+                            stable_ptr: fn_name.stable_ptr().untyped(),
+                            message: "Unsupported function in consteval_int macro".into(),
+                        });
+                        return None;
+                    }
+                    let lhs = compute_constant_expr(db, &bin_expr.lhs(db), diagnostics)?;
+                    let rhs_expr = extract_expression_from_argument_list(
+                        db,
+                        &fn_call.arguments(db),
+                        diagnostics,
+                    )?;
+                    let rhs = compute_constant_expr(db, &rhs_expr, diagnostics)?.try_into();
+                    if let Ok(power) = rhs {
+                        Some(lhs.pow(power))
+                    } else {
+                        diagnostics.push(PluginDiagnostic {
+                            stable_ptr: value.stable_ptr().untyped(),
+                            message: "Invalid power expression".into(),
+                        });
+                        None
+                    }
+                } else {
+                    diagnostics.push(PluginDiagnostic {
+                        stable_ptr: bin_expr.stable_ptr().untyped(),
+                        message: "Unsupported binary operator in consteval_int macro".to_string(),
+                    });
+                    None
+                }
+            }
             _ => {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: bin_expr.stable_ptr().untyped(),
