@@ -1,3 +1,5 @@
+use std::vec;
+
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
@@ -286,18 +288,25 @@ fn dispatcher_signature(
 // TODO Ongoing
 fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
     // TODO There must be a better way to extract only GenericParam::Impl...
-    let mut some_vec = vec![];
-    match trait_ast.generic_params(db) {
-        OptionWrappedGenericParamList::WrappedGenericParamList(gens) => {
-            gens.generic_params(db).elements(db).into_iter().for_each(|e| 
-                if let GenericParam::Impl(a) = e {
-                    some_vec.push(a);
-                })
-        }
-        // .map(|param| extract_matches!(param, ast::GenericParam::Impl))
-        // .collect(),
-        OptionWrappedGenericParamList::Empty(_) => {}
+    let some_vec = if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) =
+        trait_ast.generic_params(db)
+    {
+        gens.generic_params(db)
+            .elements(db)
+            .into_iter()
+            .filter_map(|generic_param| {
+                if let GenericParam::Impl(param_impl) = generic_param {
+                    Some(param_impl)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    } else {
+        vec![]
     };
+    // .map(|param| extract_matches!(param, ast::GenericParam::Impl))
+    // .collect(),
     // TODO Check trait exist
     for item_impl in some_vec {
         // let _path_syntax = item_impl.trait_path(db);
