@@ -243,8 +243,6 @@ pub enum SyntaxKind {
     TerminalPlus,
     TokenPlusEq,
     TerminalPlusEq,
-    TokenPow,
-    TerminalPow,
     TokenQuestionMark,
     TerminalQuestionMark,
     TokenRBrace,
@@ -336,7 +334,6 @@ impl SyntaxKind {
                 | SyntaxKind::TokenOrOr
                 | SyntaxKind::TokenPlus
                 | SyntaxKind::TokenPlusEq
-                | SyntaxKind::TokenPow
                 | SyntaxKind::TokenQuestionMark
                 | SyntaxKind::TokenRBrace
                 | SyntaxKind::TokenRBrack
@@ -420,7 +417,6 @@ impl SyntaxKind {
                 | SyntaxKind::TerminalOrOr
                 | SyntaxKind::TerminalPlus
                 | SyntaxKind::TerminalPlusEq
-                | SyntaxKind::TerminalPow
                 | SyntaxKind::TerminalQuestionMark
                 | SyntaxKind::TerminalRBrace
                 | SyntaxKind::TerminalRBrack
