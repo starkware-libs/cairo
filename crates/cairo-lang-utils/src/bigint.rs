@@ -3,11 +3,7 @@
 mod test;
 
 #[cfg(not(feature = "std"))]
-use alloc::{
-    format,
-    string::{String},
-    vec::Vec,
-};
+use alloc::{format, string::String, vec::Vec};
 use core::ops::Neg;
 
 use num_bigint::{BigInt, BigUint, ToBigInt};

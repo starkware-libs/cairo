@@ -101,7 +101,10 @@ pub fn get_double_deref_maybe(
 }
 
 /// Fetches the value of `res_operand` from the vm.
-pub fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, VirtualMachineError> {
+pub fn get_val(
+    vm: &VirtualMachine,
+    res_operand: &ResOperand,
+) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),

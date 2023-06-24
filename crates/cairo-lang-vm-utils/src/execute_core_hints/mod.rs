@@ -2,7 +2,6 @@ mod dict_manager;
 
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, vec};
-
 use core::ops::Shl;
 
 use ark_ff::{Field, Fp256, MontBackend, MontConfig, PrimeField};
@@ -17,10 +16,9 @@ use dict_manager::{DictManagerExecScope, DictSquashExecScope};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{FromPrimitive, ToPrimitive};
-use crate::insert_value_to_cellref;
 
 use crate::{
-    extract_buffer, get_double_deref_val, get_maybe, get_ptr, get_val,
+    extract_buffer, get_double_deref_val, get_maybe, get_ptr, get_val, insert_value_to_cellref,
 };
 
 // TODO(orizi): This def is duplicated.
@@ -487,22 +485,24 @@ pub fn execute_core_hint(
         }
         #[cfg(feature = "std")]
         CoreHint::DebugPrint { start, end } => {
-                let as_relocatable = |vm, value| {
-                    let (base, offset) = extract_buffer(value);
-                    get_ptr(vm, base, &offset)
-                };
-                let mut curr = as_relocatable(vm, start)?;
-                let end = as_relocatable(vm, end)?;
-                while curr != end {
-                    let value = vm.get_integer(curr)?;
-                    if let Some(shortstring) = cairo_lang_utils::short_string::as_cairo_short_string(&value) {
-                        println!("[DEBUG]\t{shortstring: <31}\t(raw: {:#x}", value.to_bigint());
-                    } else {
-                        println!("[DEBUG]\t{:<31}\t(raw: {:#x} ", ' ', value.to_bigint());
-                    }
-                    curr += 1;
+            let as_relocatable = |vm, value| {
+                let (base, offset) = extract_buffer(value);
+                get_ptr(vm, base, &offset)
+            };
+            let mut curr = as_relocatable(vm, start)?;
+            let end = as_relocatable(vm, end)?;
+            while curr != end {
+                let value = vm.get_integer(curr)?;
+                if let Some(shortstring) =
+                    cairo_lang_utils::short_string::as_cairo_short_string(&value)
+                {
+                    println!("[DEBUG]\t{shortstring: <31}\t(raw: {:#x}", value.to_bigint());
+                } else {
+                    println!("[DEBUG]\t{:<31}\t(raw: {:#x} ", ' ', value.to_bigint());
                 }
-                println!();
+                curr += 1;
+            }
+            println!();
         }
         #[cfg(not(feature = "std"))]
         CoreHint::DebugPrint { .. } => {}
