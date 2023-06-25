@@ -3,7 +3,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
-use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
+use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -96,7 +96,24 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Cast(libfunc) => match libfunc {
-            CastConcreteLibfunc::Downcast(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            CastConcreteLibfunc::Downcast(libfunc) => {
+                match libfunc.from_info.cast_type(&libfunc.to_info) {
+                    CastType::Upcast => vec![ApChange::Known(0), ApChange::Known(0)],
+                    CastType::UpcastBackwardsCompat | CastType::DowncastOverflowOnly => {
+                        vec![ApChange::Known(2), ApChange::Known(2)]
+                    }
+                    // Underflow test is more expensive for casting into signed types.
+                    CastType::DowncastUnderflowOnly => vec![
+                        ApChange::Known(1 + usize::from(libfunc.to_info.signed)),
+                        ApChange::Known(2),
+                    ],
+                    // Underflow test is more expensive for casting into signed types.
+                    CastType::DowncastBoth => vec![
+                        ApChange::Known(2 + usize::from(libfunc.to_info.signed)),
+                        ApChange::Known(3),
+                    ],
+                }
+            }
             CastConcreteLibfunc::Upcast(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
