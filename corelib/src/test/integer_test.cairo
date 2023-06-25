@@ -935,7 +935,33 @@ fn test_u256_try_into_felt252() {
     assert(f.is_none(), 'prime+2**128 is not felt252');
 }
 
-fn cast_must_pass<
+/// Checks if `b` is out of range of `A`.
+fn is_out_of_range<A, B, impl DropA: Drop<A>, impl IBA: TryInto<B, A>>(b: B) -> bool {
+    let no_a: Option<A> = b.try_into();
+    no_a.is_none()
+}
+
+/// Checks if `a` is trivially castable to `B` and that `b` is castable to `A`, with the same value.
+fn cast_subtype_valid<
+    SubType,
+    SuperType,
+    impl DropSubType: Drop<SubType>,
+    impl DropSuperType: Drop<SuperType>,
+    impl CopySubType: Copy<SubType>,
+    impl CopySuperType: Copy<SuperType>,
+    impl SubTypePartialEq: PartialEq<SubType>,
+    impl BPartialEq: PartialEq<SuperType>,
+    impl SubTypeIntoSuperType: Into<SubType, SuperType>,
+    impl SuperTypeTryIntoSubType: TryInto<SuperType, SubType>
+>(
+    a: SubType, b: SuperType
+) -> bool {
+    a.into() == b && b.try_into().unwrap() == a
+}
+
+/// Check that casting between two types is valid.
+/// Typically the most extreme possible values are provided for the test.
+fn cast_valid<
     A,
     B,
     impl DropA: Drop<A>,
@@ -944,30 +970,183 @@ fn cast_must_pass<
     impl CopyA: Copy<A>,
     impl APartialEq: PartialEq<A>,
     impl BPartialEq: PartialEq<B>,
-    impl BIA: BoundedInt<A>,
-    impl BIB: BoundedInt<B>,
-    impl IAB: Into<A, B>,
-    impl IBA: TryInto<B, A>
+    impl ATryIntoB: TryInto<A, B>,
+    impl BTryIntoA: TryInto<B, A>
 >(
-    ui: A, uj: B
+    a_min: A, b_min: B, a_max: A, b_max: B,
 ) -> bool {
-    uj == ui.into()
-        && ui == uj.try_into().unwrap()
-        && BoundedInt::<B>::min() == BoundedInt::<A>::min().into()
-        && BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap()
+    a_min.try_into().unwrap() == b_min
+        && b_min.try_into().unwrap() == a_min
+        && a_max.try_into().unwrap() == b_max
+        && b_max.try_into().unwrap() == a_max
 }
+
 #[test]
 fn proper_cast() {
-    assert(cast_must_pass(0xFF_u8, 0xFF_u16), 'u8 to_and_fro u16');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u32), 'u8 to_and_fro u32');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u64), 'u8 to_and_fro u64');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u128), 'u8 to_and_fro u128');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u32), 'u16 to_and_fro u32');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u64), 'u16 to_and_fro u64');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u128), 'u16 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64), 'u32 to_and_fro u64');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
+    assert(cast_subtype_valid::<u8, u16>(0xff, 0xff), 'u8 to_and_fro u16');
+    assert(is_out_of_range::<u8, u16>(0x100), 'large u16 in u8 range');
+    assert(cast_subtype_valid::<u8, u32>(0xff, 0xff), 'u8 to_and_fro u32');
+    assert(is_out_of_range::<u8, u32>(0x100), 'large u32 in u8 range');
+    assert(cast_subtype_valid::<u8, u64>(0xff, 0xff), 'u8 to_and_fro u64');
+    assert(is_out_of_range::<u8, u64>(0x100), 'large u64 in u8 range');
+    assert(cast_subtype_valid::<u8, u128>(0xff, 0xff), 'u8 to_and_fro u128');
+    assert(is_out_of_range::<u8, u128>(0x100), 'large u128 in u8 range');
+
+    assert(cast_subtype_valid::<u16, u32>(0xffff, 0xffff), 'u16 to_and_fro u32');
+    assert(is_out_of_range::<u16, u32>(0x10000), 'large u32 in u16 range');
+    assert(cast_subtype_valid::<u16, u64>(0xffff, 0xffff), 'u16 to_and_fro u64');
+    assert(is_out_of_range::<u16, u64>(0x10000), 'large u64 in u16 range');
+    assert(cast_subtype_valid::<u16, u128>(0xffff, 0xffff), 'u16 to_and_fro u128');
+    assert(is_out_of_range::<u16, u128>(0x10000), 'large u128 in u16 range');
+
+    assert(cast_subtype_valid::<u32, u64>(0xffffffff, 0xffffffff), 'u32 to_and_fro u64');
+    assert(is_out_of_range::<u32, u64>(0x100000000), 'large u64 in u32 range');
+    assert(cast_subtype_valid::<u32, u128>(0xffffffff, 0xffffffff), 'u32 to_and_fro u128');
+    assert(is_out_of_range::<u32, u128>(0x100000000), 'large u128 in u32 range');
+
+    assert(
+        cast_subtype_valid::<u64, u128>(0xffffffffffffffff, 0xffffffffffffffff),
+        'u64 to_and_fro u128'
+    );
+    assert(is_out_of_range::<u64, u128>(0x10000000000000000), 'large u128 in u64 range');
+
+    assert(cast_subtype_valid::<i8, i16>(0x7f, 0x7f), 'i8 to_and_fro i16');
+    assert(cast_subtype_valid::<i8, i16>(-0x80, -0x80), 'i8 to_and_fro i16');
+    assert(is_out_of_range::<i8, i16>(0x80), 'large i16 in i8 range');
+    assert(is_out_of_range::<i8, i16>(-0x81), 'small i16 in i8 range');
+    assert(cast_subtype_valid::<i8, i32>(0x7f, 0x7f), 'i8 to_and_fro i32');
+    assert(cast_subtype_valid::<i8, i32>(-0x80, -0x80), 'i8 to_and_fro i32');
+    assert(is_out_of_range::<i8, i32>(0x80), 'large i32 in i8 range');
+    assert(is_out_of_range::<i8, i32>(-0x81), 'small i32 in i8 range');
+    assert(cast_subtype_valid::<i8, i64>(0x7f, 0x7f), 'i8 to_and_fro i64');
+    assert(cast_subtype_valid::<i8, i64>(-0x80, -0x80), 'i8 to_and_fro i64');
+    assert(is_out_of_range::<i8, i64>(0x80), 'large i64 in i8 range');
+    assert(is_out_of_range::<i8, i64>(-0x81), 'small i64 in i8 range');
+    assert(cast_subtype_valid::<i8, i128>(0x7f, 0x7f), 'i8 to_and_fro i128');
+    assert(cast_subtype_valid::<i8, i128>(-0x80, -0x80), 'i8 to_and_fro i128');
+    assert(is_out_of_range::<i8, i128>(0x80), 'large i128 in i8 range');
+    assert(is_out_of_range::<i8, i128>(-0x81), 'small i128 in i8 range');
+
+    assert(cast_subtype_valid::<i16, i32>(0x7fff, 0x7fff), 'i16 to_and_fro i32');
+    assert(cast_subtype_valid::<i16, i32>(-0x8000, -0x8000), 'i16 to_and_fro i32');
+    assert(is_out_of_range::<i16, i32>(0x8000), 'large i32 in i16 range');
+    assert(is_out_of_range::<i16, i32>(-0x8001), 'small i32 in i16 range');
+    assert(cast_subtype_valid::<i16, i64>(0x7fff, 0x7fff), 'i16 to_and_fro i64');
+    assert(cast_subtype_valid::<i16, i64>(-0x8000, -0x8000), 'i16 to_and_fro i64');
+    assert(is_out_of_range::<i16, i64>(0x8000), 'large i64 in i16 range');
+    assert(is_out_of_range::<i16, i64>(-0x8001), 'small i64 in i16 range');
+    assert(cast_subtype_valid::<i16, i128>(0x7fff, 0x7fff), 'i16 to_and_fro i128');
+    assert(cast_subtype_valid::<i16, i128>(-0x8000, -0x8000), 'i16 to_and_fro i128');
+    assert(is_out_of_range::<i16, i128>(0x8000), 'large i128 in i16 range');
+    assert(is_out_of_range::<i16, i128>(-0x8001), 'small i128 in i16 range');
+
+    assert(cast_subtype_valid::<i32, i64>(0x7fffffff, 0x7fffffff), 'i32 to_and_fro i64');
+    assert(cast_subtype_valid::<i32, i64>(-0x80000000, -0x80000000), 'i32 to_and_fro i64');
+    assert(is_out_of_range::<i32, i64>(0x80000000), 'large i64 in i32 range');
+    assert(is_out_of_range::<i32, i64>(-0x80000001), 'small i64 in i32 range');
+    assert(cast_subtype_valid::<i32, i128>(0x7fffffff, 0x7fffffff), 'i32 to_and_fro i128');
+    assert(cast_subtype_valid::<i32, i128>(-0x80000000, -0x80000000), 'i32 to_and_fro i128');
+    assert(is_out_of_range::<i32, i128>(0x80000000), 'large i128 in i32 range');
+    assert(is_out_of_range::<i32, i128>(-0x80000001), 'small i128 in i32 range');
+
+    assert(
+        cast_subtype_valid::<i64, i128>(0x7fffffffffffffff, 0x7fffffffffffffff),
+        'i64 to_and_fro i128'
+    );
+    assert(
+        cast_subtype_valid::<i64, i128>(-0x8000000000000000, -0x8000000000000000),
+        'i64 to_and_fro i128'
+    );
+    assert(is_out_of_range::<i64, i128>(0x8000000000000000), 'large i128 in i64 range');
+    assert(is_out_of_range::<i64, i128>(-0x8000000000000001), 'small i128 in i64 range');
+
+    assert(cast_subtype_valid::<u8, i16>(0xff, 0xff), 'u8 to_and_fro i16');
+    assert(is_out_of_range::<u8, i16>(0x100), 'large i16 in u8 range');
+    assert(cast_subtype_valid::<u8, i32>(0xff, 0xff), 'u8 to_and_fro i32');
+    assert(is_out_of_range::<u8, i32>(0x100), 'large i32 in u8 range');
+    assert(cast_subtype_valid::<u8, i64>(0xff, 0xff), 'u8 to_and_fro i64');
+    assert(is_out_of_range::<u8, i64>(0x100), 'large i64 in u8 range');
+    assert(cast_subtype_valid::<u8, i128>(0xff, 0xff), 'u8 to_and_fro i128');
+    assert(is_out_of_range::<u8, i128>(0x100), 'large i128 in u8 range');
+
+    assert(cast_subtype_valid::<u16, i32>(0xffff, 0xffff), 'u16 to_and_fro i32');
+    assert(is_out_of_range::<u16, i32>(0x10000), 'large i32 in u16 range');
+    assert(cast_subtype_valid::<u16, i64>(0xffff, 0xffff), 'u16 to_and_fro i64');
+    assert(is_out_of_range::<u16, i64>(0x10000), 'large i64 in u16 range');
+    assert(cast_subtype_valid::<u16, i128>(0xffff, 0xffff), 'u16 to_and_fro i128');
+    assert(is_out_of_range::<u16, i128>(0x10000), 'large i128 in u16 range');
+
+    assert(cast_subtype_valid::<u32, i64>(0xffffffff, 0xffffffff), 'u32 to_and_fro i64');
+    assert(is_out_of_range::<u32, i64>(0x100000000), 'large i64 in u32 range');
+    assert(cast_subtype_valid::<u32, i128>(0xffffffff, 0xffffffff), 'u32 to_and_fro i128');
+    assert(is_out_of_range::<u32, i128>(0x100000000), 'large i128 in u32 range');
+
+    assert(
+        cast_subtype_valid::<u64, i128>(0xffffffffffffffff, 0xffffffffffffffff),
+        'u64 to_and_fro i128'
+    );
+    assert(is_out_of_range::<u64, i128>(0x10000000000000000), 'large i128 in u64 range');
+
+    assert(cast_valid::<i8, u8>(0, 0, 0x7f, 0x7f), 'i8 to_and_fro u8');
+    assert(is_out_of_range::<i8, u8>(0x80), 'large u8 in i8 range');
+    assert(is_out_of_range::<u8, i8>(-1), 'small i8 in u8 range');
+    assert(cast_valid::<i8, u16>(0, 0, 0x7f, 0x7f), 'i8 to_and_fro u16');
+    assert(is_out_of_range::<i8, u16>(0x80), 'large u16 in i8 range');
+    assert(is_out_of_range::<u16, i8>(-1), 'small i8 in u16 range');
+    assert(cast_valid::<i8, u32>(0, 0, 0x7f, 0x7f), 'i8 to_and_fro u32');
+    assert(is_out_of_range::<i8, u32>(0x80), 'large u32 in i8 range');
+    assert(is_out_of_range::<u32, i8>(-1), 'small i8 in u32 range');
+    assert(cast_valid::<i8, u64>(0, 0, 0x7f, 0x7f), 'i8 to_and_fro u64');
+    assert(is_out_of_range::<i8, u64>(0x80), 'large u64 in i8 range');
+    assert(is_out_of_range::<u64, i8>(-1), 'small i8 in u64 range');
+    assert(cast_valid::<i8, u128>(0, 0, 0x7f, 0x7f), 'i8 to_and_fro u128');
+    assert(is_out_of_range::<i8, u128>(0x80), 'large u128 in i8 range');
+    assert(is_out_of_range::<u128, i8>(-1), 'small i8 in u128 range');
+
+    assert(cast_valid::<i16, u16>(0, 0, 0x7fff, 0x7fff), 'i16 to_and_fro u16');
+    assert(is_out_of_range::<i16, u16>(0x8000), 'large u16 in i16 range');
+    assert(is_out_of_range::<u16, i16>(-1), 'small i16 in u16 range');
+    assert(cast_valid::<i16, u32>(0, 0, 0x7fff, 0x7fff), 'i16 to_and_fro u32');
+    assert(is_out_of_range::<i16, u32>(0x8000), 'large u32 in i16 range');
+    assert(is_out_of_range::<u32, i16>(-1), 'small i16 in u32 range');
+    assert(cast_valid::<i16, u64>(0, 0, 0x7fff, 0x7fff), 'i16 to_and_fro u64');
+    assert(is_out_of_range::<i16, u64>(0x8000), 'large u64 in i16 range');
+    assert(is_out_of_range::<u64, i16>(-1), 'small i16 in u64 range');
+    assert(cast_valid::<i16, u128>(0, 0, 0x7fff, 0x7fff), 'i16 to_and_fro u128');
+    assert(is_out_of_range::<i16, u128>(0x8000), 'large u128 in i16 range');
+    assert(is_out_of_range::<u128, i16>(-1), 'small i16 in u128 range');
+
+    assert(cast_valid::<i32, u32>(0, 0, 0x7fffffff, 0x7fffffff), 'i32 to_and_fro u32');
+    assert(is_out_of_range::<i32, u32>(0x80000000), 'large u32 in i32 range');
+    assert(is_out_of_range::<u32, i32>(-1), 'small i32 in u32 range');
+    assert(cast_valid::<i32, u64>(0, 0, 0x7fffffff, 0x7fffffff), 'i32 to_and_fro u64');
+    assert(is_out_of_range::<i32, u64>(0x80000000), 'large u64 in i32 range');
+    assert(is_out_of_range::<u64, i32>(-1), 'small i32 in u64 range');
+    assert(cast_valid::<i32, u128>(0, 0, 0x7fffffff, 0x7fffffff), 'i32 to_and_fro u128');
+    assert(is_out_of_range::<i32, u128>(0x80000000), 'large u128 in i32 range');
+    assert(is_out_of_range::<u128, i32>(-1), 'small i32 in u128 range');
+
+    assert(
+        cast_valid::<i64, u64>(0, 0, 0x7fffffffffffffff, 0x7fffffffffffffff), 'i64 to_and_fro u64'
+    );
+    assert(is_out_of_range::<i64, u64>(0x8000000000000000), 'large u64 in i64 range');
+    assert(is_out_of_range::<u64, i64>(-1), 'small i64 in u64 range');
+    assert(
+        cast_valid::<i64, u128>(0, 0, 0x7fffffffffffffff, 0x7fffffffffffffff), 'i64 to_and_fro u128'
+    );
+    assert(is_out_of_range::<i64, u128>(0x8000000000000000), 'large u128 in i64 range');
+    assert(is_out_of_range::<u128, i64>(-1), 'small i64 in u128 range');
+
+    assert(
+        cast_valid::<i128,
+        u128>(0, 0, 0x7fffffffffffffffffffffffffffffff, 0x7fffffffffffffffffffffffffffffff),
+        'i128 to_and_fro u128'
+    );
+    assert(
+        is_out_of_range::<i128, u128>(0x80000000000000000000000000000000),
+        'large u128 in i128 range'
+    );
+    assert(is_out_of_range::<u128, i128>(-1), 'small i128 in u128 range');
 }
 
 #[test]

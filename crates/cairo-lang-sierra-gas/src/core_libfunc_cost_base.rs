@@ -137,11 +137,31 @@ pub fn core_libfunc_cost(
             BoolConcreteLibfunc::ToFelt252(_) => vec![ConstCost::steps(0).into()],
         },
         Cast(libfunc) => match libfunc {
-            CastConcreteLibfunc::Downcast(_) => {
-                vec![
-                    (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
-                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
-                ]
+            CastConcreteLibfunc::Downcast(libfunc) => {
+                let can_underflow = libfunc.from_info.signed;
+                if !can_underflow {
+                    vec![
+                        (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                        (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    ]
+                } else {
+                    let can_overflow = libfunc.from_info.nbits > libfunc.to_info.nbits
+                        || (libfunc.from_info.nbits == libfunc.to_info.nbits
+                            && libfunc.to_info.signed);
+                    // Underflow test is more expensive for casting into signed types.
+                    let mut success_cost = if can_overflow {
+                        ConstCost::steps(4) + ConstCost::range_checks(2)
+                    } else {
+                        ConstCost::steps(2) + ConstCost::range_checks(1)
+                    };
+                    if libfunc.to_info.signed {
+                        success_cost = success_cost + ConstCost::steps(1);
+                    }
+                    // If overflow is possible, an additional non-deterministic jump is required.
+                    let failure_cost = ConstCost::steps(if can_overflow { 5 } else { 4 })
+                        + ConstCost::range_checks(1);
+                    vec![success_cost.into(), failure_cost.into()]
+                }
             }
             CastConcreteLibfunc::Upcast(_) => vec![ConstCost::default().into()],
         },
