@@ -4,7 +4,7 @@ use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
 use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
-use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
+use cairo_lang_sierra::extensions::casts::{CastConcreteLibfunc, CastType};
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
 use cairo_lang_sierra::extensions::enm::EnumConcreteLibfunc;
@@ -137,11 +137,30 @@ pub fn core_libfunc_cost(
             BoolConcreteLibfunc::ToFelt252(_) => vec![ConstCost::steps(0).into()],
         },
         Cast(libfunc) => match libfunc {
-            CastConcreteLibfunc::Downcast(_) => {
-                vec![
-                    (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
-                    (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
-                ]
+            CastConcreteLibfunc::Downcast(libfunc) => {
+                match libfunc.from_info.cast_type(&libfunc.to_info) {
+                    CastType { overflow_above: false, overflow_below: false } => {
+                        vec![ConstCost::steps(0).into(), ConstCost::steps(0).into()]
+                    }
+                    CastType { overflow_above: true, overflow_below: false } => vec![
+                        (ConstCost::steps(3) + ConstCost::range_checks(1)).into(),
+                        (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    ],
+                    CastType { overflow_above: false, overflow_below: true } => vec![
+                        // Overflow below test is more expensive for casting into signed types.
+                        (ConstCost::steps(2 + i32::from(libfunc.to_info.signed))
+                            + ConstCost::range_checks(1))
+                        .into(),
+                        (ConstCost::steps(4) + ConstCost::range_checks(1)).into(),
+                    ],
+                    CastType { overflow_above: true, overflow_below: true } => vec![
+                        // Overflow below test is more expensive for casting into signed types.
+                        (ConstCost::steps(4 + i32::from(libfunc.to_info.signed))
+                            + ConstCost::range_checks(2))
+                        .into(),
+                        (ConstCost::steps(5) + ConstCost::range_checks(1)).into(),
+                    ],
+                }
             }
             CastConcreteLibfunc::Upcast(_) => vec![ConstCost::default().into()],
         },

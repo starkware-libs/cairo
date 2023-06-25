@@ -1,3 +1,5 @@
+use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
+use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
@@ -21,19 +23,76 @@ define_libfunc_hierarchy! {
     }, CastConcreteLibfunc
 }
 
+/// The type of casting between two integer types.
+#[derive(PartialEq, Eq)]
+pub struct CastType {
+    /// Does the source type have values above the destination type possible values.
+    pub overflow_above: bool,
+    /// Does the source type have values below the destination type possible values.
+    pub overflow_below: bool,
+}
+
+pub struct IntTypeInfo {
+    pub nbits: usize,
+    pub signed: bool,
+}
+impl IntTypeInfo {
+    /// Returns the cast type.
+    pub fn cast_type(&self, to: &IntTypeInfo) -> CastType {
+        match (self.signed, to.signed) {
+            // The cast is trivial, but requires special handling due to backwards compatibility,
+            // handled as if it can overflow above.
+            (false, false) if self.nbits == to.nbits => {
+                CastType { overflow_above: true, overflow_below: false }
+            }
+            // If both has the same sign support, if the destination is at least as large, no
+            // overflow is possible.
+            (false, false) | (true, true) if self.nbits <= to.nbits => {
+                CastType { overflow_above: false, overflow_below: false }
+            }
+            // If the type is unsigned and the other is signed, if the destination is strictly
+            // larger, no overflow is possible.
+            (false, true) if self.nbits < to.nbits => {
+                CastType { overflow_above: false, overflow_below: false }
+            }
+            // Signed to same size or larger unsigned may only overflow below.
+            (true, false) if self.nbits <= to.nbits => {
+                CastType { overflow_above: false, overflow_below: true }
+            }
+            // Unsigned to smaller unsigned or signed that is smaller may only overflow above.
+            (false, _) => CastType { overflow_above: true, overflow_below: false },
+            // Signed to same size or smaller unsigned or strictly smaller signed may overflow to
+            // both directions.
+            (true, _) => CastType { overflow_above: true, overflow_below: true },
+        }
+    }
+
+    /// Returns true if this type can be participate in downcasts.
+    fn downcastable(&self) -> bool {
+        // We don't support downcasting larger than 128-bit integers, as this would not reduce the
+        // need for range checks.
+        self.nbits <= 128
+    }
+}
+
 /// Returns a number of bits in a concrete integer type.
-fn get_nbits(
+fn get_int_info(
     context: &dyn SignatureSpecializationContext,
     ty: ConcreteTypeId,
-) -> Result<usize, SpecializationError> {
-    match context.get_type_info(ty)?.long_id.generic_id {
-        id if id == Uint8Type::ID => Ok(8),
-        id if id == Uint16Type::ID => Ok(16),
-        id if id == Uint32Type::ID => Ok(32),
-        id if id == Uint64Type::ID => Ok(64),
-        id if id == Uint128Type::ID => Ok(128),
-        _ => Err(SpecializationError::UnsupportedGenericArg),
-    }
+) -> Result<IntTypeInfo, SpecializationError> {
+    Ok(match context.get_type_info(ty)?.long_id.generic_id {
+        id if id == Uint8Type::ID => IntTypeInfo { nbits: 8, signed: false },
+        id if id == Sint8Type::ID => IntTypeInfo { nbits: 8, signed: true },
+        id if id == Uint16Type::ID => IntTypeInfo { nbits: 16, signed: false },
+        id if id == Sint16Type::ID => IntTypeInfo { nbits: 16, signed: true },
+        id if id == Uint32Type::ID => IntTypeInfo { nbits: 32, signed: false },
+        id if id == Sint32Type::ID => IntTypeInfo { nbits: 32, signed: true },
+        id if id == Uint64Type::ID => IntTypeInfo { nbits: 64, signed: false },
+        id if id == Sint64Type::ID => IntTypeInfo { nbits: 64, signed: true },
+        id if id == Uint128Type::ID => IntTypeInfo { nbits: 128, signed: false },
+        id if id == Sint128Type::ID => IntTypeInfo { nbits: 128, signed: true },
+        _ => return Err(SpecializationError::UnsupportedGenericArg),
+    })
 }
 
 /// Libfunc for casting from one type to another where any input value can fit into the destination
@@ -49,9 +108,10 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-
-        let is_valid = get_nbits(context, from_ty.clone())? <= get_nbits(context, to_ty.clone())?;
-        if !is_valid {
+        let from_info = get_int_info(context, from_ty.clone())?;
+        let to_info = get_int_info(context, to_ty.clone())?;
+        let cast_type = from_info.cast_type(&to_info);
+        if cast_type.overflow_above || cast_type.overflow_below {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
@@ -63,9 +123,9 @@ impl SignatureOnlyGenericLibfunc for UpcastLibfunc {
 pub struct DowncastConcreteLibfunc {
     pub signature: LibfuncSignature,
     pub from_ty: ConcreteTypeId,
-    pub from_nbits: usize,
+    pub from_info: IntTypeInfo,
     pub to_ty: ConcreteTypeId,
-    pub to_nbits: usize,
+    pub to_info: IntTypeInfo,
 }
 impl SignatureBasedConcreteLibfunc for DowncastConcreteLibfunc {
     fn signature(&self) -> &LibfuncSignature {
@@ -87,9 +147,9 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
-
-        let is_valid = get_nbits(context, from_ty.clone())? >= get_nbits(context, to_ty.clone())?;
-        if !is_valid {
+        let from_info = get_int_info(context, from_ty.clone())?;
+        let to_info = get_int_info(context, to_ty.clone())?;
+        if !from_info.downcastable() || !to_info.downcastable() {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
 
@@ -130,9 +190,9 @@ impl NamedLibfunc for DowncastLibfunc {
         let (from_ty, to_ty) = args_as_two_types(args)?;
         Ok(DowncastConcreteLibfunc {
             signature: self.specialize_signature(context.upcast(), args)?,
-            from_nbits: get_nbits(context.upcast(), from_ty.clone())?,
+            from_info: get_int_info(context.upcast(), from_ty.clone())?,
             from_ty,
-            to_nbits: get_nbits(context.upcast(), to_ty.clone())?,
+            to_info: get_int_info(context.upcast(), to_ty.clone())?,
             to_ty,
         })
     }
