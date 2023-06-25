@@ -1,9 +1,11 @@
 use starknet::ContractAddress;
+use array::ArrayTrait;
+use array::SpanTrait;
+use traits::Into;
 
 extern fn set_caller_address(address: ContractAddress) implicits() nopanic;
 extern fn set_contract_address(address: ContractAddress) implicits() nopanic;
 extern fn set_sequencer_address(address: ContractAddress) implicits() nopanic;
-extern fn set_block_number(block_number: u64) implicits() nopanic;
 extern fn set_block_timestamp(block_timestamp: u64) implicits() nopanic;
 extern fn set_version(version: felt252) implicits() nopanic;
 extern fn set_account_contract_address(address: ContractAddress) implicits() nopanic;
@@ -18,3 +20,10 @@ extern fn pop_log(
 extern fn cheatcode<const selector: felt252>(
     input: Span<felt252>
 ) -> Span<felt252> implicits() nopanic;
+
+fn set_block_number(block_number: u64) {
+    let mut data = ArrayTrait::new();
+    data.append(block_number.into());
+
+    cheatcode::<'set_block_number'>(data.span());
+}

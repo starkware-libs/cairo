@@ -324,9 +324,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SystemCall { system } => {
                 self.execute_syscall(system, vm, exec_scopes)?;
             }
-            StarknetHint::SetBlockNumber { value } => {
-                self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
-            }
             StarknetHint::SetSequencerAddress { value } => {
                 self.starknet_state.exec_info.block_info.sequencer_address = get_val(vm, value)?;
             }

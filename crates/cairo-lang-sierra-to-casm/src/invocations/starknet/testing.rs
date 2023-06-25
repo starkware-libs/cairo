@@ -21,10 +21,6 @@ pub fn build(
         Ok(value)
     };
     match libfunc {
-        TestingConcreteLibfunc::SetBlockNumber(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetBlockNumber {value: value}; };
-        }
         TestingConcreteLibfunc::SetBlockTimestamp(_) => {
             let value = declare_single_value()?;
             casm_build_extend! {casm_builder, hint StarknetHint::SetBlockTimestamp {value: value}; };
