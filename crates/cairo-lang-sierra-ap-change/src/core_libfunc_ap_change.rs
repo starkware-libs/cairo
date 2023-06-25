@@ -96,7 +96,22 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             BoxConcreteLibfunc::Unbox(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Cast(libfunc) => match libfunc {
-            CastConcreteLibfunc::Downcast(_) => vec![ApChange::Known(2), ApChange::Known(2)],
+            CastConcreteLibfunc::Downcast(libfunc) => {
+                let can_underflow = libfunc.from_info.signed;
+                if !can_underflow {
+                    vec![ApChange::Known(2), ApChange::Known(2)]
+                } else {
+                    let can_overflow = libfunc.from_info.nbits > libfunc.to_info.nbits
+                        || (libfunc.from_info.nbits == libfunc.to_info.nbits
+                            && libfunc.to_info.signed);
+                    // Underflow test is more expensive for casting into signed types.
+                    let mut success_ap_change = if libfunc.to_info.signed { 2 } else { 1 };
+                    success_ap_change += if can_overflow { 1 } else { 0 };
+                    // If overflow is possible, an additional non-deterministic jump is required.
+                    let failure_ap_change = if can_overflow { 3 } else { 2 };
+                    vec![ApChange::Known(success_ap_change), ApChange::Known(failure_ap_change)]
+                }
+            }
             CastConcreteLibfunc::Upcast(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Ec(libfunc) => match libfunc {
