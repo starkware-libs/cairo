@@ -1,75 +1,37 @@
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
+use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
 
-#[derive(Debug, Default)]
-#[non_exhaustive]
-pub struct ConstevalIntMacroPlugin;
+use crate::plugins::{InlineMacro, MacroExpanderData};
 
-impl AsDynMacroPlugin for ConstevalIntMacroPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for ConstevalIntMacroPlugin {}
+pub struct ConstevalIntMacro;
 
-impl MacroPlugin for ConstevalIntMacroPlugin {
-    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        match item_ast {
-            ast::Item::Constant(constant_ast) => handle_constant(db, &constant_ast),
-            _ => PluginResult::default(),
-        }
-    }
-}
-
-/// Rewrite a constant declaration that contains a consteval_int macro
-/// into a constant declaration with the computed value,
-/// e.g. `const a: felt252 = consteval_int!(2 * 2 * 2);` into `const a: felt252 = 8;`.
-fn handle_constant(db: &dyn SyntaxGroup, constant_ast: &ast::ItemConstant) -> PluginResult {
-    let constant_value = constant_ast.value(db);
-    if let ast::Expr::InlineMacro(inline_macro) = constant_value {
-        if inline_macro.path(db).as_syntax_node().get_text(db) != "consteval_int" {
-            return PluginResult::default();
-        }
-        let mut diagnostics = vec![];
+impl InlineMacro for ConstevalIntMacro {
+    fn append_macro_code(
+        &self,
+        macro_expander_data: &mut MacroExpanderData,
+        db: &dyn SyntaxGroup,
+        macro_ast: &ast::ExprInlineMacro,
+    ) {
         let constant_expression =
-            extract_consteval_macro_expression(db, &inline_macro, &mut diagnostics);
+            extract_consteval_macro_expression(db, macro_ast, &mut macro_expander_data.diagnostics);
         if constant_expression.is_none() {
-            return PluginResult { diagnostics, ..Default::default() };
+            return;
         }
-        let new_value = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
-        if new_value.is_none() {
-            return PluginResult { diagnostics, ..Default::default() };
+        if let Some(new_value) = compute_constant_expr(
+            db,
+            &constant_expression.unwrap(),
+            &mut macro_expander_data.diagnostics,
+        ) {
+            macro_expander_data.result_code.push_str(&new_value.to_string());
+            macro_expander_data.code_changed = true;
         }
-        return PluginResult {
-            code: Some(PluginGeneratedFile {
-                name: "computed_constants".into(),
-                content: format!(
-                    "const {}{}= {};",
-                    constant_ast.name(db).text(db),
-                    constant_ast.type_clause(db).as_syntax_node().get_text(db),
-                    new_value.unwrap()
-                ),
-                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
-            }),
-            diagnostics,
-            remove_original_item: true,
-        };
     }
-    PluginResult::default()
 }
 
 /// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
-fn extract_consteval_macro_expression(
+pub fn extract_consteval_macro_expression(
     db: &dyn SyntaxGroup,
     macro_ast: &ast::ExprInlineMacro,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -96,7 +58,7 @@ fn extract_consteval_macro_expression(
 
 /// Compute the actual value of an integer expression, or fail with diagnostics.
 /// This computation handles arbitrary integers, unlike regular Cairo math.
-fn compute_constant_expr(
+pub fn compute_constant_expr(
     db: &dyn SyntaxGroup,
     value: &ast::Expr,
     diagnostics: &mut Vec<PluginDiagnostic>,
