@@ -94,3 +94,419 @@ rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]);
 return([10], [11]);
 
 test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+
+//! > ==========================================================================
+
+//! > i64 to u16 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i64) -> Option::<u16> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 65536 %}
+jmp rel 14 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = memory[fp + -3] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 20;
+[fp + -3] = [ap + 0] + 65536, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 15;
+[fp + -3] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768145920, ap++;
+[ap + -1] = [[fp + -4] + 1];
+ap += 1;
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1050})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i64 = i64;
+type u16 = u16;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit>;
+
+libfunc downcast<i64, u16> = downcast<i64, u16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::u16>, 0> = enum_init<core::option::Option::<core::integer::u16>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core::option::Option::<core::integer::u16>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
+
+downcast<i64, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::u16>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u16>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+
+//! > ==========================================================================
+
+//! > u64 to i16 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u64) -> Option::<i16> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = memory[fp + -3] < 32768 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 32768, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 12;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 770})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u64 = u64;
+type i16 = i16;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::i16> = Enum<ut@core::option::Option::<core::integer::i16>, i16, Unit>;
+
+libfunc downcast<u64, i16> = downcast<u64, i16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 0> = enum_init<core::option::Option::<core::integer::i16>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core::option::Option::<core::integer::i16>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
+
+downcast<u64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: u64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
+
+//! > ==========================================================================
+
+//! > i64 to i16 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i64) -> Option::<i16> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 32768) % PRIME < 65536 %}
+jmp rel 14 if [ap + 0] != 0, ap++;
+%{ memory[ap + 0] = memory[fp + -3] < 340282366920938463463374607431768211456 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768244224, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 20;
+[fp + -3] = [ap + 0] + 32768, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 15;
+[fp + -3] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -4] + 1];
+[ap + 0] = [fp + -4] + 2, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 1040})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i64 = i64;
+type i16 = i16;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::i16> = Enum<ut@core::option::Option::<core::integer::i16>, i16, Unit>;
+
+libfunc downcast<i64, i16> = downcast<i64, i16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 0> = enum_init<core::option::Option::<core::integer::i16>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core::option::Option::<core::integer::i16>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
+
+downcast<i64, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: i64) -> (RangeCheck, core::option::Option::<core::integer::i16>);
+
+//! > ==========================================================================
+
+//! > i16 to u64 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i16) -> Option::<u64> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 18446744073709551616 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 12;
+[fp + -3] = [[fp + -4] + 0];
+ap += 1;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 780})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i16 = i16;
+type u64 = u64;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit>;
+
+libfunc downcast<i16, u64> = downcast<i16, u64>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::u64>, 0> = enum_init<core::option::Option::<core::integer::u64>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::u64>> = store_temp<core::option::Option::<core::integer::u64>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::u64>, 1> = enum_init<core::option::Option::<core::integer::u64>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::u64>> = rename<core::option::Option::<core::integer::u64>>;
+
+downcast<i16, u64>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u64>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u64>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::u64>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u64>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::u64>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u64>);
+
+//! > ==========================================================================
+
+//! > i16 to u16 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i16) -> Option::<u16> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = (memory[fp + -3] + 0) % PRIME < 65536 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 12;
+[fp + -3] = [[fp + -4] + 0];
+ap += 1;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 780})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i16 = i16;
+type u16 = u16;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit>;
+
+libfunc downcast<i16, u16> = downcast<i16, u16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::u16>, 0> = enum_init<core::option::Option::<core::integer::u16>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::u16>> = store_temp<core::option::Option::<core::integer::u16>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::u16>, 1> = enum_init<core::option::Option::<core::integer::u16>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::u16>> = rename<core::option::Option::<core::integer::u16>>;
+
+downcast<i16, u16>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::u16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u16>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::u16>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::u16>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::u16>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: i16) -> (RangeCheck, core::option::Option::<core::integer::u16>);
+
+//! > ==========================================================================
+
+//! > u16 to i16 downcast
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: u16) -> Option::<i16> {
+    integer::downcast(a)
+}
+
+//! > casm
+%{ memory[ap + 0] = memory[fp + -3] < 32768 %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[fp + -3] = [ap + 0] + 32768, ap++;
+[ap + -1] = [[fp + -4] + 0];
+jmp rel 12;
+[ap + 0] = [fp + -3] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -4] + 0];
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [fp + -3], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -4] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 770})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u16 = u16;
+type i16 = i16;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::integer::i16> = Enum<ut@core::option::Option::<core::integer::i16>, i16, Unit>;
+
+libfunc downcast<u16, i16> = downcast<u16, i16>;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 0> = enum_init<core::option::Option::<core::integer::i16>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::option::Option::<core::integer::i16>> = store_temp<core::option::Option::<core::integer::i16>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::integer::i16>, 1> = enum_init<core::option::Option::<core::integer::i16>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::integer::i16>> = rename<core::option::Option::<core::integer::i16>>;
+
+downcast<u16, i16>([0], [1]) { fallthrough([2], [3]) 6([4]) };
+branch_align() -> ();
+enum_init<core::option::Option::<core::integer::i16>, 0>([3]) -> ([5]);
+store_temp<RangeCheck>([2]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([5]) -> ([7]);
+jump() { 11() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([8]);
+enum_init<core::option::Option::<core::integer::i16>, 1>([8]) -> ([9]);
+store_temp<RangeCheck>([4]) -> ([6]);
+store_temp<core::option::Option::<core::integer::i16>>([9]) -> ([7]);
+rename<RangeCheck>([6]) -> ([10]);
+rename<core::option::Option::<core::integer::i16>>([7]) -> ([11]);
+return([10], [11]);
+
+test::foo@0([0]: RangeCheck, [1]: u16) -> (RangeCheck, core::option::Option::<core::integer::i16>);
