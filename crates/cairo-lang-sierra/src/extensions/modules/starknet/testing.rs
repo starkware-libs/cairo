@@ -69,13 +69,6 @@ impl<TTestSetterTraits: TestSetterTraits> NoGenericArgsGenericLibfunc
 }
 
 #[derive(Default)]
-pub struct SetBlockNumberTrait {}
-impl BasicTypeTestSetterTraits for SetBlockNumberTrait {
-    const STR_ID: &'static str = "set_block_number";
-    type ValueType = Uint64Type;
-}
-
-#[derive(Default)]
 pub struct SetBlockTimestampTrait {}
 impl BasicTypeTestSetterTraits for SetBlockTimestampTrait {
     const STR_ID: &'static str = "set_block_timestamp";
@@ -264,7 +257,6 @@ impl SignatureBasedConcreteLibfunc for CheatcodeConcreteLibfunc {
 
 define_libfunc_hierarchy! {
     pub enum TestingLibfunc {
-         SetBlockNumber(TestSetterLibfunc<SetBlockNumberTrait>),
          SetBlockTimestamp(TestSetterLibfunc<SetBlockTimestampTrait>),
          SetCallerAddress(TestSetterLibfunc<SetCallerAddressTrait>),
          SetContractAddress(TestSetterLibfunc<SetContractAddressTrait>),
