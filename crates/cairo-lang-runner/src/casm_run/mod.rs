@@ -420,8 +420,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             }
                             _ => {
                                 return Err(HintError::CustomHint(Box::from(
-                                    "set_block_number cheatcode invalid args: pass span of an array \
-                                    with exactly one element",
+                                    "set_block_number cheatcode invalid args: pass span of an \
+                                     array with exactly one element",
                                 )));
                             }
                         }
