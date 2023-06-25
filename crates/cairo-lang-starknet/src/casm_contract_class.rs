@@ -151,9 +151,9 @@ impl TypeResolver<'_> {
             return false;
         }
 
-        // If the error type is Span<felt252>, it's a good error type, using the old panic
+        // If the error type is Array<felt252>, it's a good error type, using the old panic
         // mechanism.
-        if self.is_felt252_span(err_ty) {
+        if self.is_felt252_array(err_ty) {
             return true;
         }
 
