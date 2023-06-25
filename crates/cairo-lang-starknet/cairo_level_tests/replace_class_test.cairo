@@ -59,12 +59,10 @@ mod ContractB {
 #[available_gas(30000000)]
 fn test_replace_flow() {
     // Deploy ContractA with 100 in the storage.
-    let mut calldata = Default::default();
-    calldata.append(100);
     let (address0, _) = deploy_syscall(
         class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap(),
         contract_address_salt: 0,
-        calldata: calldata.span(),
+        calldata: array![100].span(),
         deploy_from_zero: false
     )
         .unwrap();
