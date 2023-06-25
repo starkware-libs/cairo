@@ -183,3 +183,52 @@ error: Unknown inline macro: foo
  --> dummy_file.cairo:2:13
     let x = foo!(0);
             ^*****^
+
+//! > ==========================================================================
+
+//! > Test array macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let arr = array!(1,2,3);
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let arr = {
+                let mut _temp_array = ArrayTrait::new();
+               _temp_array.append(1);
+                           _temp_array.append(2);
+                           _temp_array.append(3);
+                        
+                _temp_array
+            };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array macro empty
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let arr = array!();
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let arr = {
+                let mut _temp_array = ArrayTrait::new();
+            
+                _temp_array
+            };
+}
+
+//! > expected_diagnostics
