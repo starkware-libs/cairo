@@ -101,7 +101,7 @@ impl InlineMacroExpanderData {
 
     /// Expand a single inline macro.
     fn handle_macro(&mut self, db: &dyn SyntaxGroup, inline_macro: &ast::ExprInlineMacro) {
-        let macro_name = inline_macro.path(db).as_syntax_node().get_text(db);
+        let macro_name = inline_macro.path(db).as_syntax_node().get_text(db).trim().to_string();
         let macro_plugin = get_inline_macro_plugin(&macro_name);
         if let Some(macro_plugin) = macro_plugin {
             if let Some(macro_arguments) =
