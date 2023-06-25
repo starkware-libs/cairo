@@ -225,3 +225,29 @@ fn foo() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array macro with method call
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    array![10, 11, 12].span();
+}
+
+//! > generated_cairo_code
+fn foo() {
+{
+                let mut __array_builder_macro_result__ = ArrayTrait::new();
+               __array_builder_macro_result__.append(10);
+                           __array_builder_macro_result__.append(11);
+                           __array_builder_macro_result__.append(12);
+                        
+                __array_builder_macro_result__
+            }.span();
+}
+
+//! > expected_diagnostics
