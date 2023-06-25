@@ -33,6 +33,7 @@ pub trait InlineMacro {
 /// Returns the inline macro plugin for the given macro name, or None if no such plugin exists.
 fn get_inline_macro_plugin(macro_name: &str) -> Option<Box<dyn InlineMacro>> {
     match macro_name {
+        "array" => Some(Box::new(inline_macros::array::ArrayMacro)),
         "consteval_int" => Some(Box::new(ConstevalIntMacro)),
         "identity" => Some(Box::new(inline_macros::identity::IdentityMacro)),
         _ => None,
