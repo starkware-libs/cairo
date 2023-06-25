@@ -1,3 +1,6 @@
+[profile.release]
+overflow-checks = true     # Enable integer overflow checks.
+
 [workspace]
 
 members = [
