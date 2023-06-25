@@ -931,39 +931,179 @@ fn test_u256_try_into_felt252() {
     assert(f.is_none(), 'prime+2**128 is not felt252');
 }
 
-fn cast_must_pass<
+/// Checks if `b` is out of range of `A`.
+fn is_out_of_range<A, B, +Drop<A>, +TryInto<B, A>>(b: B) -> bool {
+    let no_a: Option<A> = b.try_into();
+    no_a.is_none()
+}
+
+/// Checks if `a` is trivially castable to `B` and that `b` is castable to `A`, with the same value.
+fn cast_subtype_valid<
+    SubType,
+    SuperType,
+    +Drop<SubType>,
+    +Drop<SuperType>,
+    +Copy<SubType>,
+    +Copy<SuperType>,
+    +BoundedInt<SubType>,
+    +PartialEq<SubType>,
+    +PartialEq<SuperType>,
+    +Into<SubType, SuperType>,
+    +TryInto<SuperType, SubType>
+>() -> bool {
+    let max_sub: SubType = BoundedInt::max();
+    let max_sub_as_super: SuperType = max_sub.into();
+    let min_sub: SubType = BoundedInt::min();
+    let min_sub_as_super: SuperType = min_sub.into();
+    min_sub_as_super.try_into().unwrap() == min_sub
+        && max_sub_as_super.try_into().unwrap() == max_sub
+}
+
+#[derive(Drop)]
+enum EdgeConfig {
+    OfBoth,
+    OfAOnly,
+    OfBOnly,
+}
+
+/// Checks that casting from `A` to `B` are valid around the bounds.
+fn validate_cast_bounds<
     A,
     B,
     +Drop<A>,
     +Drop<B>,
-    +Copy<B>,
     +Copy<A>,
-    +PartialEq<A>,
-    +PartialEq<B>,
+    +Copy<B>,
     +BoundedInt<A>,
     +BoundedInt<B>,
-    +Into<A, B>,
-    +TryInto<B, A>
+    +Add<A>,
+    +Add<B>,
+    +Sub<A>,
+    +Sub<B>,
+    +PartialEq<A>,
+    +PartialEq<B>,
+    +TryInto<A, B>,
+    +TryInto<B, A>,
+    +TryInto<felt252, A>,
+    +TryInto<felt252, B>,
 >(
-    ui: A, uj: B
-) -> bool {
-    uj == ui.into()
-        && ui == uj.try_into().unwrap()
-        && BoundedInt::<B>::min() == BoundedInt::<A>::min().into()
-        && BoundedInt::<A>::min() == BoundedInt::<B>::min().try_into().unwrap()
+    min_cfg: EdgeConfig, max_cfg: EdgeConfig, err: felt252,
+) {
+    let one_as_a: A = 1.try_into().unwrap();
+    let one_as_b: B = 1.try_into().unwrap();
+    let min_a: A = BoundedInt::min();
+    let min_b: B = BoundedInt::min();
+    let max_a: A = BoundedInt::max();
+    let max_b: B = BoundedInt::max();
+    match min_cfg {
+        EdgeConfig::OfBoth => {
+            assert(Option::Some(min_a) == min_b.try_into(), err);
+            assert(Option::Some(min_b) == min_a.try_into(), err);
+        },
+        EdgeConfig::OfAOnly => {
+            let min_a_as_b: B = min_a.try_into().expect(err);
+            assert(Option::Some(min_a) == min_a_as_b.try_into(), err);
+            assert(is_out_of_range::<A>(min_a_as_b - one_as_b), err);
+        },
+        EdgeConfig::OfBOnly => {
+            let min_b: B = BoundedInt::min();
+            let min_b_as_a: A = min_b.try_into().expect(err);
+            assert(Option::Some(min_b) == min_b_as_a.try_into(), err);
+            assert(is_out_of_range::<B>(min_b_as_a - one_as_a), err);
+        },
+    }
+    match max_cfg {
+        EdgeConfig::OfBoth => {
+            assert(Option::Some(max_a) == max_b.try_into(), err);
+            assert(Option::Some(max_b) == max_a.try_into(), err);
+        },
+        EdgeConfig::OfAOnly => {
+            let max_a_as_b: B = max_a.try_into().expect(err);
+            assert(Option::Some(max_a) == max_a_as_b.try_into(), err);
+            assert(is_out_of_range::<A>(max_a_as_b + one_as_b), err);
+        },
+        EdgeConfig::OfBOnly => {
+            let max_b_as_a: A = max_b.try_into().expect(err);
+            assert(Option::Some(max_b) == max_b_as_a.try_into(), err);
+            assert(is_out_of_range::<B>(max_b_as_a + one_as_a), err);
+        },
+    }
 }
+
 #[test]
 fn proper_cast() {
-    assert(cast_must_pass(0xFF_u8, 0xFF_u16), 'u8 to_and_fro u16');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u32), 'u8 to_and_fro u32');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u64), 'u8 to_and_fro u64');
-    assert(cast_must_pass(0xFF_u8, 0xFF_u128), 'u8 to_and_fro u128');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u32), 'u16 to_and_fro u32');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u64), 'u16 to_and_fro u64');
-    assert(cast_must_pass(0xFFFF_u16, 0xFFFF_u128), 'u16 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u64), 'u32 to_and_fro u64');
-    assert(cast_must_pass(0xFFFFFFFF_u32, 0xFFFFFFFF_u128), 'u32 to_and_fro u128');
-    assert(cast_must_pass(0xFFFFFFFFFFFFFFFF_u64, 0xFFFFFFFFFFFFFFFF_u128), 'u64 to_and_fro u128');
+    assert(cast_subtype_valid::<u8, u16>(), 'u8 as u16 subtype');
+    assert(cast_subtype_valid::<u8, u32>(), 'u8 as u32 subtype');
+    assert(cast_subtype_valid::<u8, u64>(), 'u8 as u64 subtype');
+    assert(cast_subtype_valid::<u8, u128>(), 'u8 as u128 subtype');
+    assert(cast_subtype_valid::<u8, i16>(), 'u8 as i16 subtype');
+    assert(cast_subtype_valid::<u8, i32>(), 'u8 as i32 subtype');
+    assert(cast_subtype_valid::<u8, i64>(), 'u8 as i64 subtype');
+    assert(cast_subtype_valid::<u8, i128>(), 'u8 as i128 subtype');
+    assert(cast_subtype_valid::<i8, i16>(), 'i8 as i16 subtype');
+    assert(cast_subtype_valid::<i8, i32>(), 'i8 as i32 subtype');
+    assert(cast_subtype_valid::<i8, i64>(), 'i8 as i64 subtype');
+    assert(cast_subtype_valid::<i8, i128>(), 'i8 as i128 subtype');
+
+    assert(cast_subtype_valid::<u16, u32>(), 'u16 as u32 subtype');
+    assert(cast_subtype_valid::<u16, u64>(), 'u16 as u64 subtype');
+    assert(cast_subtype_valid::<u16, u128>(), 'u16 as u128 subtype');
+    assert(cast_subtype_valid::<u16, i32>(), 'u16 as i32 subtype');
+    assert(cast_subtype_valid::<u16, i64>(), 'u16 as i64 subtype');
+    assert(cast_subtype_valid::<u16, i128>(), 'u16 as i128 subtype');
+    assert(cast_subtype_valid::<i16, i32>(), 'i16 as i32 subtype');
+    assert(cast_subtype_valid::<i16, i64>(), 'i16 as i64 subtype');
+    assert(cast_subtype_valid::<i16, i128>(), 'i16 as i128 subtype');
+
+    assert(cast_subtype_valid::<u32, u64>(), 'u32 as u64 subtype');
+    assert(cast_subtype_valid::<u32, u128>(), 'u32 as u128 subtype');
+    assert(cast_subtype_valid::<u32, i64>(), 'u32 as i64 subtype');
+    assert(cast_subtype_valid::<u32, i128>(), 'u32 as i128 subtype');
+    assert(cast_subtype_valid::<i32, i64>(), 'i32 as i64 subtype');
+    assert(cast_subtype_valid::<i32, i128>(), 'i32 as i128 subtype');
+
+    assert(cast_subtype_valid::<u64, u128>(), 'u64 as u128 subtype');
+    assert(cast_subtype_valid::<u64, i128>(), 'u64 as i128 subtype');
+    assert(cast_subtype_valid::<i64, i128>(), 'i64 as i128 subtype');
+
+    validate_cast_bounds::<u8, u16>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u8 u16 cast');
+    validate_cast_bounds::<u8, u32>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u8 u32 cast');
+    validate_cast_bounds::<u8, u64>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u8 u64 cast');
+    validate_cast_bounds::<u8, u128>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u8 u128 cast');
+    validate_cast_bounds::<u16, u32>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u16 u32 cast');
+    validate_cast_bounds::<u16, u64>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u16 u64 cast');
+    validate_cast_bounds::<u16, u128>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u16 u128 cast');
+    validate_cast_bounds::<u32, u64>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u32 u64 cast');
+    validate_cast_bounds::<u32, u128>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u32 u128 cast');
+    validate_cast_bounds::<u64, u128>(EdgeConfig::OfBoth, EdgeConfig::OfAOnly, 'u64 u128 cast');
+
+    validate_cast_bounds::<i8, i16>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i8 i16 cast');
+    validate_cast_bounds::<i8, i32>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i8 i32 cast');
+    validate_cast_bounds::<i8, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i8 i64 cast');
+    validate_cast_bounds::<i8, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i8 i128 cast');
+    validate_cast_bounds::<i16, i32>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i16 i32 cast');
+    validate_cast_bounds::<i16, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i16 i64 cast');
+    validate_cast_bounds::<i16, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i16 i128 cast');
+    validate_cast_bounds::<i32, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i32 i64 cast');
+    validate_cast_bounds::<i32, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i32 i128 cast');
+    validate_cast_bounds::<i64, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'i64 i128 cast');
+
+    validate_cast_bounds::<u8, i16>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u8 i16 cast');
+    validate_cast_bounds::<u8, i32>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u8 i32 cast');
+    validate_cast_bounds::<u8, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u8 i64 cast');
+    validate_cast_bounds::<u8, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u8 i128 cast');
+    validate_cast_bounds::<u16, i32>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u16 i32 cast');
+    validate_cast_bounds::<u16, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u16 i64 cast');
+    validate_cast_bounds::<u16, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u16 i128 cast');
+    validate_cast_bounds::<u32, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u32 i64 cast');
+    validate_cast_bounds::<u32, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u32 i128 cast');
+    validate_cast_bounds::<u64, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfAOnly, 'u64 i128 cast');
+
+    validate_cast_bounds::<u8, i8>(EdgeConfig::OfAOnly, EdgeConfig::OfBOnly, 'u8 i8 cast');
+    validate_cast_bounds::<u16, i16>(EdgeConfig::OfAOnly, EdgeConfig::OfBOnly, 'u16 i16 cast');
+    validate_cast_bounds::<u32, i32>(EdgeConfig::OfAOnly, EdgeConfig::OfBOnly, 'u32 i32 cast');
+    validate_cast_bounds::<u64, i64>(EdgeConfig::OfAOnly, EdgeConfig::OfBOnly, 'u64 i64 cast');
+    validate_cast_bounds::<u128, i128>(EdgeConfig::OfAOnly, EdgeConfig::OfBOnly, 'u128 i128 cast');
 }
 
 #[test]
