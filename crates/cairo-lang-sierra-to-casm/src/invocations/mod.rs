@@ -442,12 +442,17 @@ impl CompiledInvocationBuilder<'_> {
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
-        itertools::assert_equal(
-            core_libfunc_ap_change(self.libfunc, &self),
-            branches
-                .iter()
-                .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
-        );
+        let expected_ap_changes = core_libfunc_ap_change(self.libfunc, &self);
+        let actual_ap_changes = branches
+            .iter()
+            .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change));
+        if !itertools::equal(expected_ap_changes.iter().cloned(), actual_ap_changes.clone()) {
+            panic!(
+                "Wrong ap changes for {}. Expected: {expected_ap_changes:?}, actual: \
+                 {actual_ap_changes:?}.",
+                self.invocation
+            );
+        }
         let gas_changes =
             core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
                 .into_iter()
