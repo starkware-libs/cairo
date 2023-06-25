@@ -6,24 +6,7 @@ use test::test_utils::{assert_eq, assert_ne};
 #[test]
 #[available_gas(100000)]
 fn test_keccak_syscall() {
-    let mut input = Default::default();
-    input.append(1);
-    input.append(2);
-    input.append(3);
-    input.append(4);
-    input.append(5);
-    input.append(6);
-    input.append(7);
-    input.append(8);
-    input.append(9);
-    input.append(10);
-    input.append(11);
-    input.append(12);
-    input.append(13);
-    input.append(14);
-    input.append(15);
-    input.append(16);
-    input.append(17);
+    let mut input = array!(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
     assert_eq(
         @starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall(),
         @u256 { low: 0xec687be9c50d2218388da73622e8fdd5, high: 0xd2eb808dfba4703c528d145dfe6571af },
@@ -34,8 +17,7 @@ fn test_keccak_syscall() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_hash() {
-    let mut input = Default::default();
-    input.append(u256 { low: 1, high: 0 });
+    let mut input = array!(u256 { low: 1, high: 0 });
 
     let res = keccak::keccak_u256s_le_inputs(input.span());
 

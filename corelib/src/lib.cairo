@@ -277,8 +277,7 @@ enum never {}
 
 #[inline(always)]
 fn panic_with_felt252(err_code: felt252) -> never {
-    let mut data = Default::default();
-    data.append(err_code);
+    let mut data = array!(err_code);
     panic(data)
 }
 

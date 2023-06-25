@@ -33,10 +33,7 @@ fn test_poseidon_hades_permutation() {
 #[test]
 #[available_gas(300000)]
 fn test_poseidon_hash_span() {
-    let mut input = Default::default();
-    input.append(1);
-    input.append(2);
-    input.append(3);
+    let mut input = array!(1, 2, 3);
 
     // Test odd number of inputs.
     assert_eq(

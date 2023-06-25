@@ -21,8 +21,7 @@ use option::Option;
 extern fn print(message: Array<felt252>) nopanic;
 
 fn print_felt252(message: felt252) {
-    let mut arr = Default::default();
-    arr.append(message);
+    let mut arr = array!(message);
     print(arr);
 }
 

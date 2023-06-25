@@ -54,8 +54,7 @@ fn test_internal_func() {
 #[available_gas(30000000)]
 fn test_flow() {
     // Set up.
-    let mut calldata = Default::default();
-    calldata.append(100);
+    let mut calldata = array!(100);
     let (address0, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
@@ -87,8 +86,7 @@ fn test_flow() {
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED', ))]
 fn test_flow_out_of_gas() {
     // Set up.
-    let mut calldata = Default::default();
-    calldata.append(100);
+    let mut calldata = array!(100);
     let (address0, _) = deploy_syscall(
         ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
@@ -118,8 +116,7 @@ fn test_flow_out_of_gas() {
 #[test]
 #[available_gas(30000000)]
 fn test_class_hash_not_found() {
-    let mut calldata = Default::default();
-    calldata.append(100);
+    let mut calldata = array!(100);
     let mut err = deploy_syscall(5.try_into().unwrap(), 0, calldata.span(), false).unwrap_err();
     assert_eq(@err.pop_front().unwrap(), @'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
 }
@@ -172,8 +169,7 @@ mod ContractFailedEntrypoint {
 #[available_gas(30000000)]
 #[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED', ))]
 fn test_entrypoint_failed() {
-    let mut calldata = Default::default();
-    calldata.append(100);
+    let mut calldata = array!(100);
     let (address0, _) = deploy_syscall(
         ContractFailedEntrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
     )
