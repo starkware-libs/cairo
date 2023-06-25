@@ -9,6 +9,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
+use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
 /// The result of expanding an inline macro.
@@ -32,6 +33,7 @@ pub trait InlineMacro {
 /// Returns the inline macro plugin for the given macro name, or None if no such plugin exists.
 fn get_inline_macro_plugin(macro_name: &str) -> Option<Box<dyn InlineMacro>> {
     match macro_name {
+        "array" => Some(Box::new(ArrayMacro)),
         "consteval_int" => Some(Box::new(ConstevalIntMacro)),
         _ => None,
     }
