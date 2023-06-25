@@ -36,13 +36,7 @@ fn index_of_min<
 #[test]
 #[available_gas(100000)]
 fn issue_3119() {
-    let mut array = ArrayTrait::new();
-    array.append(5_usize);
-    array.append(4_usize);
-    array.append(1_usize);
-    array.append(2_usize);
-    array.append(3_usize);
-    let min_index = index_of_min(array.span());
+    let min_index = index_of_min(array![5_usize, 4, 1, 2, 3].span());
 }
 
 fn foo(mut y: felt252, mut z: felt252) {

@@ -7,24 +7,7 @@ use test::test_utils::{assert_eq, assert_ne};
 #[test]
 #[available_gas(100000)]
 fn test_keccak_syscall() {
-    let mut input = Default::default();
-    input.append(1);
-    input.append(2);
-    input.append(3);
-    input.append(4);
-    input.append(5);
-    input.append(6);
-    input.append(7);
-    input.append(8);
-    input.append(9);
-    input.append(10);
-    input.append(11);
-    input.append(12);
-    input.append(13);
-    input.append(14);
-    input.append(15);
-    input.append(16);
-    input.append(17);
+    let input = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
     assert_eq(
         @starknet::syscalls::keccak_syscall(input.span()).unwrap_syscall(),
         @u256 { low: 0xec687be9c50d2218388da73622e8fdd5, high: 0xd2eb808dfba4703c528d145dfe6571af },
@@ -35,28 +18,19 @@ fn test_keccak_syscall() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_hash() {
-    let mut input = Default::default();
-    input.append(u256 { low: 1, high: 0 });
-
-    let res = keccak::keccak_u256s_le_inputs(input.span());
-
+    let res = keccak::keccak_u256s_le_inputs(array![1].span());
     assert_eq(@res.low, @0x587f7cc3722e9654ea3963d5fe8c0748, 'Wrong hash low 1');
     assert_eq(@res.high, @0xa5963aa610cb75ba273817bce5f8c48f, 'Wrong hash high 1');
 
-    let res = keccak::keccak_u256s_be_inputs(input.span());
-
+    let res = keccak::keccak_u256s_be_inputs(array![1].span());
     assert_eq(@res.low, @0x326a7e71fdcdee263b071276522d0eb1, 'Wrong hash low 2');
     assert_eq(@res.high, @0xf60cfab7e2cb9f2d73b0c2fa4a4bf40c, 'Wrong hash high 2');
 
-    input.append(u256 { low: 2, high: 0 });
-    input.append(u256 { low: 3, high: 0 });
-    input.append(u256 { low: 4, high: 0 });
-
-    let res = keccak::keccak_u256s_le_inputs(input.span());
+    let res = keccak::keccak_u256s_le_inputs(array![1, 2, 3, 4].span());
     assert_eq(@res.low, @0x845f8e9f5191367fb5181e74f6eb550d, 'Wrong hash low 3');
     assert_eq(@res.high, @0x17a2126cf7391a26b41c36a687090cc5, 'Wrong hash high 3');
 
-    let res = keccak::keccak_u256s_be_inputs(input.span());
+    let res = keccak::keccak_u256s_be_inputs(array![1, 2, 3, 4].span());
     assert_eq(@res.low, @0x6510e6fd534f267a01086462df912739, 'Wrong hash low 4');
     assert_eq(@res.high, @0x2d9982dfaf468a9ddf7101b6323aa9d5, 'Wrong hash high 4');
 }
@@ -65,11 +39,7 @@ fn test_keccak_hash() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000000);
-    input.append(0x0000000000000000);
-    input.append(0x0000000000000000);
+    let mut input = array![0x0000000000000001, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000];
 
     let res = keccak::cairo_keccak(ref input, 0, 0);
 
@@ -80,24 +50,24 @@ fn test_keccak_u64() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64_full_block() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000002);
-    input.append(0x0000000000000003);
-    input.append(0x0000000000000004);
-    input.append(0x0000000000000005);
-    input.append(0x0000000000000006);
-    input.append(0x0000000000000007);
-    input.append(0x0000000000000008);
-    input.append(0x0000000000000009);
-    input.append(0x000000000000000a);
-    input.append(0x000000000000000b);
-    input.append(0x000000000000000c);
-    input.append(0x000000000000000d);
-    input.append(0x000000000000000e);
-    input.append(0x000000000000000f);
-    input.append(0x0000000000000010);
-    input.append(0x0000000000000011);
+    let mut input = array![
+    0x0000000000000001,
+    0x0000000000000002,
+    0x0000000000000003,
+    0x0000000000000004,
+    0x0000000000000005,
+    0x0000000000000006,
+    0x0000000000000007,
+    0x0000000000000008,
+    0x0000000000000009,
+    0x000000000000000a,
+    0x000000000000000b,
+    0x000000000000000c,
+    0x000000000000000d,
+    0x000000000000000e,
+    0x000000000000000f,
+    0x0000000000000010,
+    0x0000000000000011];
 
     let res = keccak::cairo_keccak(ref input, 0, 0);
 
@@ -108,23 +78,24 @@ fn test_keccak_u64_full_block() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64_full_block_minus_byte() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000002);
-    input.append(0x0000000000000003);
-    input.append(0x0000000000000004);
-    input.append(0x0000000000000005);
-    input.append(0x0000000000000006);
-    input.append(0x0000000000000007);
-    input.append(0x0000000000000008);
-    input.append(0x0000000000000009);
-    input.append(0x000000000000000a);
-    input.append(0x000000000000000b);
-    input.append(0x000000000000000c);
-    input.append(0x000000000000000d);
-    input.append(0x000000000000000e);
-    input.append(0x000000000000000f);
-    input.append(0x0000000000000010);
+    let mut input = array![
+    0x0000000000000001,
+    0x0000000000000002,
+    0x0000000000000003,
+    0x0000000000000004,
+    0x0000000000000005,
+    0x0000000000000006,
+    0x0000000000000007,
+    0x0000000000000008,
+    0x0000000000000009,
+    0x000000000000000a,
+    0x000000000000000b,
+    0x000000000000000c,
+    0x000000000000000d,
+    0x000000000000000e,
+    0x000000000000000f,
+    0x0000000000000010,
+    ];
 
     // We must clone the array to be used in the second part, as it's modified by `cairo_keccak`.
     let mut orig_array = input.clone();
@@ -144,23 +115,24 @@ fn test_keccak_u64_full_block_minus_byte() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64_full_block_minus_word() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000002);
-    input.append(0x0000000000000003);
-    input.append(0x0000000000000004);
-    input.append(0x0000000000000005);
-    input.append(0x0000000000000006);
-    input.append(0x0000000000000007);
-    input.append(0x0000000000000008);
-    input.append(0x0000000000000009);
-    input.append(0x000000000000000a);
-    input.append(0x000000000000000b);
-    input.append(0x000000000000000c);
-    input.append(0x000000000000000d);
-    input.append(0x000000000000000e);
-    input.append(0x000000000000000f);
-    input.append(0x0000000000000010);
+    let mut input = array![
+    0x0000000000000001,
+    0x0000000000000002,
+    0x0000000000000003,
+    0x0000000000000004,
+    0x0000000000000005,
+    0x0000000000000006,
+    0x0000000000000007,
+    0x0000000000000008,
+    0x0000000000000009,
+    0x000000000000000a,
+    0x000000000000000b,
+    0x000000000000000c,
+    0x000000000000000d,
+    0x000000000000000e,
+    0x000000000000000f,
+    0x0000000000000010,
+    ];
 
     let res = keccak::cairo_keccak(ref input, 0, 0);
 
@@ -171,22 +143,24 @@ fn test_keccak_u64_full_block_minus_word() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64_full_block_minus_word_minus_byte() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000002);
-    input.append(0x0000000000000003);
-    input.append(0x0000000000000004);
-    input.append(0x0000000000000005);
-    input.append(0x0000000000000006);
-    input.append(0x0000000000000007);
-    input.append(0x0000000000000008);
-    input.append(0x0000000000000009);
-    input.append(0x000000000000000a);
-    input.append(0x000000000000000b);
-    input.append(0x000000000000000c);
-    input.append(0x000000000000000d);
-    input.append(0x000000000000000e);
-    input.append(0x000000000000000f);
+    let mut input = array![
+    0x0000000000000001,
+    0x0000000000000002,
+    0x0000000000000003,
+    0x0000000000000004,
+    0x0000000000000005,
+    0x0000000000000006,
+    0x0000000000000007,
+    0x0000000000000008,
+    0x0000000000000009,
+    0x000000000000000a,
+    0x000000000000000b,
+    0x000000000000000c,
+    0x000000000000000d,
+    0x000000000000000e,
+    0x000000000000000f,
+    
+    ];
 
     // We must clone the array to be used in the second part, as it's modified by `cairo_keccak`.
     let mut orig_array = input.clone();
@@ -206,20 +180,20 @@ fn test_keccak_u64_full_block_minus_word_minus_byte() {
 #[test]
 #[available_gas(10000000)]
 fn test_keccak_u64_full_block_minus_3_words_minus_4_bytes() {
-    let mut input = Default::default();
-    input.append(0x0000000000000001);
-    input.append(0x0000000000000002);
-    input.append(0x0000000000000003);
-    input.append(0x0000000000000004);
-    input.append(0x0000000000000005);
-    input.append(0x0000000000000006);
-    input.append(0x0000000000000007);
-    input.append(0x0000000000000008);
-    input.append(0x0000000000000009);
-    input.append(0x000000000000000a);
-    input.append(0x000000000000000b);
-    input.append(0x000000000000000c);
-    input.append(0x000000000000000d);
+    let mut input = array![
+    0x0000000000000001,
+    0x0000000000000002,
+    0x0000000000000003,
+    0x0000000000000004,
+    0x0000000000000005,
+    0x0000000000000006,
+    0x0000000000000007,
+    0x0000000000000008,
+    0x0000000000000009,
+    0x000000000000000a,
+    0x000000000000000b,
+    0x000000000000000c,
+    0x000000000000000d];
 
     // We must clone the array to be used in the second part, as it's modified by `cairo_keccak`.
     let mut orig_array = input.clone();
@@ -233,4 +207,3 @@ fn test_keccak_u64_full_block_minus_3_words_minus_4_bytes() {
     assert_eq(@res.low, @0x43ccdbe17ae03b02b308ebe4a23c4cc9, 'Wrong hash low 2');
     assert_eq(@res.high, @0xf3cc56e9bd860f83e3e3bc69919b176a, 'Wrong hash high 2');
 }
-
