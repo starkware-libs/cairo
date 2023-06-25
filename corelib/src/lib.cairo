@@ -254,8 +254,7 @@ use integer::{
     u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
     u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
     Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
-    U128IntoFelt252, U16TryIntoU8, U32TryIntoU16, U64TryIntoU32, U128TryIntoU64, Felt252IntoU256,
-    Bitwise
+    U128IntoFelt252, Felt252IntoU256, Bitwise
 };
 
 // Math.
