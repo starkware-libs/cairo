@@ -138,9 +138,7 @@ fn public_key_point_to_eth_address<
 ) -> EthAddress {
     let (x, y) = public_key_point.get_coordinates().unwrap_syscall();
 
-    let mut keccak_input = Default::default();
-    keccak_input.append(x);
-    keccak_input.append(y);
+    let mut keccak_input = array![x, y];
     // Keccak output is little endian.
     let point_hash_le = keccak_u256s_be_inputs(keccak_input.span());
     let point_hash = u256 {
