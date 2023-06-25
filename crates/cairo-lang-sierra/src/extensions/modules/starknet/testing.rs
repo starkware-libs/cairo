@@ -193,7 +193,7 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
     }
 }
 
-/// Libfunc for creating a constant felt252.
+/// Libfunc for creating a general cheatcode.
 #[derive(Default)]
 pub struct CheatcodeLibfunc {}
 impl NamedLibfunc for CheatcodeLibfunc {

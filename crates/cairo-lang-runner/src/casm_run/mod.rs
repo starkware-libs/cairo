@@ -385,13 +385,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     insert_value_to_cellref!(vm, opt_variant, 1)?;
                 }
             }
-            StarknetHint::Cheatcode {
-                selector,
-                input_start,
-                input_end,
-                output_start: _,
-                output_end: _,
-            } => {
+            StarknetHint::Cheatcode { selector, input_start, input_end, .. } => {
                 let selector = &selector.value.to_bytes_be().1;
                 let selector = std::str::from_utf8(selector).map_err(|_| {
                     HintError::CustomHint(Box::from("failed to parse selector".to_string()))
@@ -412,16 +406,22 @@ impl HintProcessor for CairoHintProcessor<'_> {
                             curr += 1;
                         }
 
-                        if input.len() != 1 {
-                            Err(HintError::CustomHint(Box::from(
-                                "set_block_number cheatcode invalid args: pass span of an array \
-                                 with exactly one element",
-                            )))?;
+                        match &input[..] {
+                            [input] => {
+                                self.starknet_state.exec_info.block_info.block_number =
+                                    input.clone();
+                            }
+                            _ => {
+                                return Err(HintError::CustomHint(Box::from(
+                                    "set_block_number cheatcode invalid args: pass span of an array \
+                                    with exactly one element",
+                                )));
+                            }
                         }
-
-                        self.starknet_state.exec_info.block_info.block_number = input[0].clone();
                     }
-                    _ => Err(HintError::CustomHint(Box::from("Unknown hint")))?,
+                    _ => Err(HintError::CustomHint(Box::from(format!(
+                        "Unknown cheatcode selector: {selector}"
+                    ))))?,
                 }
             }
         };
