@@ -1136,7 +1136,7 @@ fn lower_expr_enum_ctor(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::EnumConstruct {
-            input: lower_expr(ctx, builder, expr.value_expr)?.var(ctx, builder)?,
+            input: lower_expr_to_var_usage(ctx, builder, expr.value_expr)?,
             variant: expr.variant.clone(),
             location,
         }
@@ -1170,7 +1170,7 @@ fn lower_expr_member_access(
     }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
-            input: lower_expr(ctx, builder, expr.expr)?.var(ctx, builder)?,
+            input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
             member_tys: members
                 .into_iter()
                 .map(|(_, member)| wrap_in_snapshots(ctx.db.upcast(), member.ty, expr.n_snapshots))
@@ -1246,9 +1246,12 @@ fn lower_expr_error_propagate(
     let mut subscope_err = create_subscope_with_bound_refs(ctx, builder);
     let block_err_id = subscope_err.block_id;
     let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
-    let err_res =
-        generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
-            .add(ctx, &mut subscope_err.statements);
+    let err_res = generators::EnumConstruct {
+        input: VarUsage { var_id: err_value, location },
+        variant: func_err_variant.clone(),
+        location,
+    }
+    .add(ctx, &mut subscope_err.statements);
     subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
@@ -1312,7 +1315,7 @@ fn lower_optimized_extern_error_propagate(
 
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
-    let input = expr.var(ctx, &mut subscope_err)?;
+    let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
     subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;

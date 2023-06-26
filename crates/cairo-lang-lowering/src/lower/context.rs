@@ -350,7 +350,7 @@ impl LoweredExprExternEnum {
                     }
                 };
                 let result = generators::EnumConstruct {
-                    input,
+                    input: VarUsage { var_id: input, location: self.location },
                     variant: concrete_variant,
                     location: self.location,
                 }
