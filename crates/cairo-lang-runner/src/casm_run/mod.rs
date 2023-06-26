@@ -93,7 +93,7 @@ pub struct CairoHintProcessor<'a> {
     pub starknet_state: StarknetState,
 }
 
-fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
+pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
     let base = match cell_ref.register {
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
@@ -102,6 +102,7 @@ fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatab
 }
 
 /// Inserts a value into the vm memory cell represented by the cellref.
+#[macro_export]
 macro_rules! insert_value_to_cellref {
     ($vm:ident, $cell_ref:ident, $value:expr) => {
         $vm.insert_value(cell_ref_to_relocatable($cell_ref, $vm), $value)
@@ -190,7 +191,7 @@ fn get_cell_maybe(
 }
 
 /// Fetches the value of a cell plus an offset from the vm, useful for pointers.
-fn get_ptr(
+pub fn get_ptr(
     vm: &VirtualMachine,
     cell: &CellRef,
     offset: &Felt252,
@@ -227,7 +228,10 @@ fn extract_relocatable(
 }
 
 /// Fetches the value of `res_operand` from the vm.
-fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, VirtualMachineError> {
+pub fn get_val(
+    vm: &VirtualMachine,
+    res_operand: &ResOperand,
+) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
