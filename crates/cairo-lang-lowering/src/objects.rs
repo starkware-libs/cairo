@@ -65,6 +65,7 @@ pub type VariableId = Id<Variable>;
 ///
 /// The tail expression `1 + a`  is also going to be assinged a variable and a VarUsage.
 /// in that case, the location of both the variable and the usage will be the same.
+#[derive(Clone, Debug)]
 pub struct VarUsage {
     pub var_id: VariableId,
     pub location: LocationId,
