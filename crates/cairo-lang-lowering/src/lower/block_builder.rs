@@ -249,7 +249,7 @@ impl BlockBuilder {
         }
 
         let expr = match semantic_remapping.expr {
-            Some(var) => LoweredExpr::AtVariable(var),
+            Some(var_id) => LoweredExpr::AtVariable(VarUsage { var_id, location }),
             None => LoweredExpr::Tuple { exprs: vec![], location },
         };
         Some((expr, following_block))
@@ -343,6 +343,7 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
             .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
         generators::StructConstruct { inputs: members, ty, location: self.location }
             .add(self.ctx, self.statements)
+            .var_id
     }
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {
