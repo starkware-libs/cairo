@@ -94,7 +94,7 @@ fn bar() -> (felt252) {
     ├── rparen (kind: TokenRParen): ')'
     ├── ret_ty (kind: ReturnTypeClause)
     │   ├── arrow (kind: TokenArrow): '->'
-    │   └── ty (kind: ExprTuple)
+    │   └── ty (kind: ExprListParenthesized)
     │       ├── lparen (kind: TokenLParen): '('
     │       ├── expressions (kind: ExprList)
     │       │   └── item #0 (kind: ExprPath)

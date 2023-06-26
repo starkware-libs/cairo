@@ -74,24 +74,24 @@ fn extract_consteval_macro_expression(
     macro_ast: &ast::ExprInlineMacro,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<ast::Expr> {
-    let args = macro_ast.arguments(db).args(db).elements(db);
-    if args.len() != 1 {
+    let wrapped_args = macro_ast.arguments(db);
+    let exprs = match wrapped_args {
+        ast::WrappedExprList::BracketedExprList(args_list) => {
+            args_list.expressions(db).elements(db)
+        }
+        ast::WrappedExprList::ParenthesizedExprList(args_list) => {
+            args_list.expressions(db).elements(db)
+        }
+        ast::WrappedExprList::BracedExprList(args_list) => args_list.expressions(db).elements(db),
+    };
+    if exprs.len() != 1 {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: macro_ast.stable_ptr().untyped(),
             message: "consteval_int macro must have a single unnamed argument.".to_string(),
         });
         return None;
     }
-    match args[0].arg_clause(db) {
-        ast::ArgClause::Unnamed(arg) => Some(arg.value(db)),
-        _ => {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: macro_ast.stable_ptr().untyped(),
-                message: "consteval_int macro must have a single unnamed argument.".to_string(),
-            });
-            None
-        }
-    }
+    Some(exprs[0].clone())
 }
 
 /// Compute the actual value of an integer expression, or fail with diagnostics.

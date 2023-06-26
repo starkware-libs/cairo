@@ -21,11 +21,8 @@ ExprInlineMacro
     │   └── item #0 (kind: PathSegmentSimple)
     │       └── ident (kind: TokenIdentifier): 'println'
     ├── bang (kind: TokenNot): '!'
-    └── arguments (kind: ArgListParenthesized)
+    └── arguments (kind: ExprListParenthesized)
         ├── lparen (kind: TokenLParen): '('
-        ├── args (kind: ArgList)
-        │   └── item #0 (kind: Arg)
-        │       ├── modifiers (kind: ModifierList) []
-        │       └── arg_clause (kind: ArgClauseUnnamed)
-        │           └── value (kind: TokenShortString): ''foo''
+        ├── expressions (kind: ExprList)
+        │   └── item #0 (kind: TokenShortString): ''foo''
         └── rparen (kind: TokenRParen): ')'

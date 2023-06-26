@@ -130,9 +130,9 @@
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'some_macro'
     │   │       │   │   │   ├── bang (kind: TokenNot): '!'
-    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │       ├── args (kind: ArgList) []
+    │   │       │   │   │       ├── expressions (kind: ExprList) []
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #2 (kind: StatementExpr)
@@ -245,7 +245,7 @@
     │       │       ├── rparen (kind: TokenRParen): ')'
     │       │       ├── ret_ty (kind: ReturnTypeClause)
     │       │       │   ├── arrow (kind: TokenArrow): '->'
-    │       │       │   └── ty (kind: ExprTuple)
+    │       │       │   └── ty (kind: ExprListParenthesized)
     │       │       │       ├── lparen (kind: TokenLParen): '('
     │       │       │       ├── expressions (kind: ExprList)
     │       │       │       │   ├── item #0 (kind: ExprPath)
@@ -305,7 +305,7 @@
     │           │       │   │   ├── item #0 (kind: MatchArm)
     │           │       │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
-    │           │       │   │   │   └── expression (kind: ExprTuple)
+    │           │       │   │   │   └── expression (kind: ExprListParenthesized)
     │           │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │           │       │   │   │       ├── expressions (kind: ExprList)
     │           │       │   │   │       │   ├── item #0 (kind: ExprFunctionCall)

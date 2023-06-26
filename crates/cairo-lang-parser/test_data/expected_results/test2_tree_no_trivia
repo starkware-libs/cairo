@@ -107,7 +107,7 @@
     │   │       │   │   │           │                   │       ├── identifier (kind: TokenIdentifier): '_gg'
     │   │       │   │   │           │                   │       └── arg_expr (kind: StructArgExpr)
     │   │       │   │   │           │                   │           ├── colon (kind: TokenColon): ':'
-    │   │       │   │   │           │                   │           └── expr (kind: ExprTuple)
+    │   │       │   │   │           │                   │           └── expr (kind: ExprListParenthesized)
     │   │       │   │   │           │                   │               ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │           │                   │               ├── expressions (kind: ExprList) []
     │   │       │   │   │           │                   │               └── rparen (kind: TokenRParen): ')'

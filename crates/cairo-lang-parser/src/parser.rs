@@ -927,13 +927,79 @@ impl<'a> Parser<'a> {
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
     }
 
-    /// Assumes the current token is LParen.
-    /// Expected pattern: `<ArgListParenthesized>`
+    /// Assumes the current token is TerminalNot.
+    /// Expected pattern: `!<WrappedArgList>`
     fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
         let bang = self.take::<TerminalNot>();
         let macro_name = path;
-        let parenthesized_args = self.expect_parenthesized_argument_list();
-        ExprInlineMacro::new_green(self.db, macro_name, bang, parenthesized_args)
+        let wrapped_expr_list = self.parse_wrapped_expr_list();
+        ExprInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list)
+    }
+
+    /// Returns a GreenId of a node with an ExprTuple|ExprListBracketed kind or None if such an
+    /// argument list can't be parsed.
+    fn parse_wrapped_expr_list(&mut self) -> WrappedExprListGreen {
+        let current_token = self.peek().kind;
+        match current_token {
+            SyntaxKind::TerminalLParen => self.expect_parenthesized_expr_list().into(),
+            SyntaxKind::TerminalLBrack => self.expect_bracketed_expr_list().into(),
+            SyntaxKind::TerminalLBrace => self.expect_braced_expr_list().into(),
+            _ => self.create_and_report_missing::<WrappedExprList>(
+                ParserDiagnosticKind::MissingExpression,
+            ),
+        }
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\((<expr>,)*<expr>?\)`
+    /// Returns a GreenId of a node with kind ExprListParenthesized.
+    fn expect_parenthesized_expr_list(&mut self) -> ExprListParenthesizedGreen {
+        let lparen = self.take::<TerminalLParen>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rparen, rbrace, rbrack, block, top_level),
+                "expression",
+            );
+        let rparen = self.parse_token::<TerminalRParen>();
+        ExprListParenthesized::new_green(
+            self.db,
+            lparen,
+            ExprList::new_green(self.db, exprs),
+            rparen,
+        )
+    }
+
+    /// Assumes the current token is LBrack.
+    /// Expected pattern: `\[(<expr>,)*<expr>?\]`
+    /// Returns a GreenId of a node with kind ExprListBracketed.
+    fn expect_bracketed_expr_list(&mut self) -> ExprListBracketedGreen {
+        let lbrack = self.take::<TerminalLBrack>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rparen, rbrace, rbrack, block, top_level),
+                "expression",
+            );
+        let rbrack = self.parse_token::<TerminalRBrack>();
+
+        ExprListBracketed::new_green(self.db, lbrack, ExprList::new_green(self.db, exprs), rbrack)
+    }
+
+    /// Assumes the current token is LBrace.
+    /// Expected pattern: `\{(<expr>,)*<expr>?\}`
+    /// Returns a GreenId of a node with kind ExprListBraced.
+    fn expect_braced_expr_list(&mut self) -> ExprListBracedGreen {
+        let lbrace = self.take::<TerminalLBrace>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rparen, rbrace, rbrack, block, top_level),
+                "expression",
+            );
+        let rbrace = self.parse_token::<TerminalRBrace>();
+
+        ExprListBraced::new_green(self.db, lbrace, ExprList::new_green(self.db, exprs), rbrace)
     }
 
     /// Assumes the current token is LParen.
@@ -1075,8 +1141,13 @@ impl<'a> Parser<'a> {
             // We have exactly one item and no separator --> This is not a tuple.
             ExprParenthesized::new_green(self.db, lparen, *expr, rparen).into()
         } else {
-            ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen)
-                .into()
+            ExprListParenthesized::new_green(
+                self.db,
+                lparen,
+                ExprList::new_green(self.db, exprs),
+                rparen,
+            )
+            .into()
         }
     }
 
@@ -1099,7 +1170,13 @@ impl<'a> Parser<'a> {
                 span: TextSpan { start: self.offset, end: self.offset },
             });
         }
-        ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen).into()
+        ExprListParenthesized::new_green(
+            self.db,
+            lparen,
+            ExprList::new_green(self.db, exprs),
+            rparen,
+        )
+        .into()
     }
 
     /// Assumes the current token is DotDot.

@@ -1422,7 +1422,7 @@
     │   │   │           │   ├── token (kind: TokenColon): ':'
     │   │   │           │   └── trailing_trivia (kind: Trivia)
     │   │   │           │       └── child #0 (kind: TokenWhitespace).
-    │   │   │           └── ty (kind: ExprTuple)
+    │   │   │           └── ty (kind: ExprListParenthesized)
     │   │   │               ├── lparen (kind: TerminalLParen)
     │   │   │               │   ├── leading_trivia (kind: Trivia) []
     │   │   │               │   ├── token (kind: TokenLParen): '('
@@ -1450,7 +1450,7 @@
     │   │   │               │   │   ├── token (kind: TokenComma): ','
     │   │   │               │   │   └── trailing_trivia (kind: Trivia)
     │   │   │               │   │       └── child #0 (kind: TokenWhitespace).
-    │   │   │               │   └── item #2 (kind: ExprTuple)
+    │   │   │               │   └── item #2 (kind: ExprListParenthesized)
     │   │   │               │       ├── lparen (kind: TerminalLParen)
     │   │   │               │       │   ├── leading_trivia (kind: Trivia) []
     │   │   │               │       │   ├── token (kind: TokenLParen): '('
