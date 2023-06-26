@@ -46,7 +46,7 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ExprBinary => {
             vec![]
         }
-        SyntaxKind::ExprTuple => {
+        SyntaxKind::ExprListParenthesized => {
             vec![]
         }
         SyntaxKind::ExprFunctionCall => {
@@ -106,6 +106,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         }
         SyntaxKind::StructArgList => vec![],
         SyntaxKind::ArgListBraced => {
+            vec![]
+        }
+        SyntaxKind::ExprListBracketed => {
+            vec![]
+        }
+        SyntaxKind::ExprListBraced => {
             vec![]
         }
         SyntaxKind::PatternIdentifier => {
