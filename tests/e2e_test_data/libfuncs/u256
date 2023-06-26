@@ -25,54 +25,52 @@ memory[ap + 3] = remainder >> 128
 [ap + 0] = [[fp + -7] + 2], ap++;
 [ap + 0] = [[fp + -7] + 3], ap++;
 [fp + -3] = [ap + 0] + [ap + -1], ap++;
+jmp rel 8 if [ap + -1] != 0;
 [fp + -4] = [ap + 0] + [ap + -3], ap++;
 [ap + -1] = [ap + 0] + 1, ap++;
-jmp rel 5 if [ap + -3] != 0;
 [ap + -1] = [[fp + -7] + 4];
-jmp rel 3;
+jmp rel 5;
+ap += 2;
 [ap + -3] = [[fp + -7] + 4];
 %{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[ap + -7] * memory[fp + -4], 2**128) %}
 [ap + 2] = [ap + 0] + [ap + -5], ap++;
 [ap + 1] = [ap + 2] + [fp + -6], ap++;
 [ap + 1] = [ap + 2] * 340282366920938463463374607431768211456, ap++;
-[ap + 2] = [ap + 1] + 340282366920938463463374607431768178688, ap++;
-[ap + 1] = [[fp + -7] + 5], ap++;
-[ap + -1] = [ap + 1] + -32768, ap++;
-[ap + 0] = [[fp + -7] + 6], ap++;
-jmp rel 12 if [ap + -13] != 0, ap++;
-%{ memory[ap + 1] = memory[ap + -15] < memory[fp + -3] %}
-jmp rel 6 if [ap + 1] != 0, ap++;
-[ap + -2] = [fp + -3], ap++;
-[ap + -2] = [ap + -17];
+[ap + 1] = [ap + 1] * [ap + 1], ap++;
+jmp rel 12 if [ap + -10] != 0, ap++;
+%{ memory[ap + 2] = memory[ap + -12] < memory[fp + -3] %}
+jmp rel 6 if [ap + 2] != 0, ap++;
+[ap + -1] = [fp + -3], ap++;
+[ap + -1] = [ap + -14], ap++;
 jmp rel 16;
-[ap + -2] = [ap + -16], ap++;
-[ap + -2] = [fp + -3];
+[ap + -1] = [ap + -13], ap++;
+[ap + -1] = [fp + -3], ap++;
 jmp rel 12;
 [fp + -3] = 0, ap++;
-%{ memory[ap + 0] = memory[ap + -15] < memory[fp + -4] %}
-jmp rel 6 if [ap + 0] != 0, ap++;
-[ap + -3] = [fp + -4];
-[ap + -2] = [ap + -16];
+%{ memory[ap + 1] = memory[ap + -12] < memory[fp + -4] %}
+jmp rel 6 if [ap + 1] != 0, ap++;
+[ap + -2] = [fp + -4], ap++;
+[ap + -2] = [ap + -14];
 jmp rel 4;
-[ap + -3] = [ap + -16];
+[ap + -2] = [ap + -13], ap++;
 [ap + -2] = [fp + -4];
 [ap + 0] = [ap + -3] + 340282366920938463444927863358058659840, ap++;
-[ap + -1] = [[fp + -7] + 7];
+[ap + -1] = [[fp + -7] + 5];
 [ap + 0] = [ap + -4] * [ap + -3], ap++;
-[ap + 0] = [ap + -8] + [ap + -11], ap++;
-[ap + 0] = [ap + -1] + [ap + -17], ap++;
+[ap + 0] = [ap + -6] + [ap + -9], ap++;
+[ap + 0] = [ap + -1] + [ap + -15], ap++;
 [fp + -5] = [ap + -1] + [ap + -3];
-[ap + 0] = [fp + -7] + 8, ap++;
-[ap + 0] = [ap + -22], ap++;
+[ap + 0] = [fp + -7] + 6, ap++;
+[ap + 0] = [ap + -20], ap++;
 [ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -14], ap++;
 [ap + 0] = [ap + -16], ap++;
-[ap + 0] = [ap + -18], ap++;
 call rel 8;
 [ap + 0] = [ap + -1], ap++;
-[ap + 0] = [ap + -45], ap++;
-[ap + 0] = [ap + -45], ap++;
-[ap + 0] = [ap + -45], ap++;
-[ap + 0] = [ap + -45], ap++;
+[ap + 0] = [ap + -43], ap++;
+[ap + 0] = [ap + -43], ap++;
+[ap + 0] = [ap + -43], ap++;
+[ap + 0] = [ap + -43], ap++;
 ret;
 %{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -6], 18446744073709551616) %}
 [ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
@@ -104,7 +102,7 @@ ret;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 7690})
+test::foo: OrderedHashMap({Const: 7250})
 core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
