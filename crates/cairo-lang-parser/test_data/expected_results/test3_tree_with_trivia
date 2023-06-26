@@ -303,12 +303,12 @@
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenNot): '!'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
+    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TerminalLParen)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── args (kind: ArgList) []
+    │   │       │   │   │       ├── expressions (kind: ExprList) []
     │   │       │   │   │       └── rparen (kind: TerminalRParen)
     │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           ├── token (kind: TokenRParen): ')'
@@ -593,7 +593,7 @@
     │       │       │   │   ├── token (kind: TokenArrow): '->'
     │       │       │   │   └── trailing_trivia (kind: Trivia)
     │       │       │   │       └── child #0 (kind: TokenWhitespace).
-    │       │       │   └── ty (kind: ExprTuple)
+    │       │       │   └── ty (kind: ExprListParenthesized)
     │       │       │       ├── lparen (kind: TerminalLParen)
     │       │       │       │   ├── leading_trivia (kind: Trivia) []
     │       │       │       │   ├── token (kind: TokenLParen): '('
@@ -737,7 +737,7 @@
     │           │       │   │   │   │   ├── token (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   │   └── trailing_trivia (kind: Trivia)
     │           │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
-    │           │       │   │   │   └── expression (kind: ExprTuple)
+    │           │       │   │   │   └── expression (kind: ExprListParenthesized)
     │           │       │   │   │       ├── lparen (kind: TerminalLParen)
     │           │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │           │       │   │   │       │   ├── token (kind: TokenLParen): '('

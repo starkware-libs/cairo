@@ -466,7 +466,7 @@ fn call_core_binary_op(
 
 fn compute_expr_tuple_semantic(
     ctx: &mut ComputationContext<'_>,
-    syntax: &ast::ExprTuple,
+    syntax: &ast::ExprListParenthesized,
 ) -> Maybe<Expr> {
     let db = ctx.db;
     let syntax_db = db.upcast();
