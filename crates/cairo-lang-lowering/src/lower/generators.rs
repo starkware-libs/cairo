@@ -204,17 +204,20 @@ impl StructMemberAccess {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> VariableId {
-        StructDestructure {
-            input: self.input,
-            var_reqs: self
-                .member_tys
-                .into_iter()
-                .map(|ty| VarRequest { ty, location: self.location })
-                .collect(),
+    ) -> VarUsage {
+        VarUsage {
+            var_id: StructDestructure {
+                input: self.input,
+                var_reqs: self
+                    .member_tys
+                    .into_iter()
+                    .map(|ty| VarRequest { ty, location: self.location })
+                    .collect(),
+            }
+            .add(ctx, builder)
+            .remove(self.member_idx),
+            location: self.location,
         }
-        .add(ctx, builder)
-        .remove(self.member_idx)
     }
 }
 
