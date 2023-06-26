@@ -217,6 +217,15 @@ fn get_double_deref_maybe(
     get_maybe_from_addr(vm, get_ptr(vm, cell, offset)?)
 }
 
+/// Extracts a parameter assumed to be a buffer, and converts it into a relocatable.
+fn extract_relocatable(
+    vm: &VirtualMachine,
+    buffer: &ResOperand,
+) -> Result<Relocatable, VirtualMachineError> {
+    let (base, offset) = extract_buffer(buffer);
+    get_ptr(vm, base, &offset)
+}
+
 /// Fetches the value of `res_operand` from the vm.
 fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
@@ -347,10 +356,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 self.starknet_state.exec_info.tx_info.nonce = get_val(vm, value)?;
             }
             StarknetHint::SetSignature { start, end } => {
-                let (cell, offset) = extract_buffer(start);
-                let start = get_ptr(vm, cell, &offset)?;
-                let (cell, offset) = extract_buffer(end);
-                let end = get_ptr(vm, cell, &offset)?;
+                let start = extract_relocatable(vm, start)?;
+                let end = extract_relocatable(vm, end)?;
                 self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
             }
             StarknetHint::PopLog {
@@ -585,8 +592,7 @@ impl<'a> CairoHintProcessor<'a> {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
     ) -> Result<(), HintError> {
-        let (cell, offset) = extract_buffer(system);
-        let system_ptr = get_ptr(vm, cell, &offset)?;
+        let system_ptr = extract_relocatable(vm, system)?;
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
         let selector = system_buffer.next_felt252()?.to_bytes_be();
         let mut gas_counter = system_buffer.next_usize()?;
@@ -1342,8 +1348,7 @@ pub fn execute_deprecated_hint(
 ) -> Result<(), HintError> {
     match deprecated_hint {
         DeprecatedHint::Felt252DictRead { dict_ptr, key, value_dst } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -1354,8 +1359,7 @@ pub fn execute_deprecated_hint(
             insert_value_to_cellref!(vm, value_dst, value)?;
         }
         DeprecatedHint::Felt252DictWrite { dict_ptr, key, value } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let value = get_maybe(vm, value)?;
             let dict_manager_exec_scope = exec_scopes
@@ -1561,8 +1565,7 @@ pub fn execute_core_hint(
             })?;
         }
         CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
-            let (cell, base_offset) = extract_buffer(segment_arena_ptr);
-            let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
+            let dict_manager_address = extract_relocatable(vm, segment_arena_ptr)?;
             let n_dicts = vm
                 .get_integer((dict_manager_address - 2)?)?
                 .into_owned()
@@ -1586,8 +1589,7 @@ pub fn execute_core_hint(
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
         }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -1608,8 +1610,7 @@ pub fn execute_core_hint(
             dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
         }
         CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_end_ptr)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to read from a dict while dict manager was not initialized.");
@@ -1626,8 +1627,7 @@ pub fn execute_core_hint(
             );
             let dict_squash_exec_scope =
                 exec_scopes.get_mut_ref::<DictSquashExecScope>("dict_squash_exec_scope")?;
-            let (dict_accesses_base, dict_accesses_offset) = extract_buffer(dict_accesses);
-            let dict_accesses_address = get_ptr(vm, dict_accesses_base, &dict_accesses_offset)?;
+            let dict_accesses_address = extract_relocatable(vm, dict_accesses)?;
             let n_accesses = get_val(vm, n_accesses)?
                 .to_usize()
                 .expect("Number of accesses is too large or negative.");
@@ -1663,8 +1663,7 @@ pub fn execute_core_hint(
         CoreHint::GetCurrentAccessIndex { range_check_ptr } => {
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
-            let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
-            let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
+            let range_check_ptr = extract_relocatable(vm, range_check_ptr)?;
             let current_access_index = dict_squash_exec_scope.current_access_index().unwrap();
             vm.insert_value(range_check_ptr, current_access_index)?;
         }
@@ -1729,8 +1728,7 @@ pub fn execute_core_hint(
             let prime_over_3_high = 3544607988759775765608368578435044694_u128;
             // ceil((PRIME / 2) / 2 ** 128).
             let prime_over_2_high = 5316911983139663648412552867652567041_u128;
-            let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
-            let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
+            let range_check_ptr = extract_relocatable(vm, range_check_ptr)?;
             vm.insert_value(
                 range_check_ptr,
                 Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
@@ -1765,12 +1763,8 @@ pub fn execute_core_hint(
             )?;
         }
         CoreHint::DebugPrint { start, end } => {
-            let as_relocatable = |vm, value| {
-                let (base, offset) = extract_buffer(value);
-                get_ptr(vm, base, &offset)
-            };
-            let mut curr = as_relocatable(vm, start)?;
-            let end = as_relocatable(vm, end)?;
+            let mut curr = extract_relocatable(vm, start)?;
+            let end = extract_relocatable(vm, end)?;
             while curr != end {
                 let value = vm.get_integer(curr)?;
                 if let Some(shortstring) = as_cairo_short_string(&value) {
