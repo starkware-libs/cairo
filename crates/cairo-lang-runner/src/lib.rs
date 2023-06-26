@@ -138,7 +138,7 @@ pub struct SierraCasmRunner {
     /// Program registry for the Sierra program.
     type_sizes: TypeSizeMap,
     /// The casm program matching the Sierra code.
-    pub casm_program: CairoProgram,
+    casm_program: CairoProgram,
     #[allow(dead_code)]
     // Mapping from class_hash to contract info.
     starknet_contracts_info: OrderedHashMap<Felt252, ContractInfo>,
@@ -510,6 +510,10 @@ impl SierraCasmRunner {
             ret;
         }
         .instructions
+    }
+
+    pub fn get_casm_program(&self) -> &CairoProgram {
+        &self.casm_program
     }
 }
 
