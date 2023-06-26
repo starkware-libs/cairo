@@ -120,8 +120,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::test_raw_output(ref storage, )
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::test_raw_output(ref contract_state, )
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -137,8 +137,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::test_raw_output_with_spaces(ref storage, )
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::test_raw_output_with_spaces(ref contract_state, )
         }
         
 }

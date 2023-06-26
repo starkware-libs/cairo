@@ -281,8 +281,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -441,9 +441,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, );
+            let res = super::foo(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -609,8 +609,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -793,9 +793,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, __arg_x, __arg_y);
+            let res = super::foo(ref contract_state, __arg_x, __arg_y);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -975,8 +975,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -996,8 +996,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_declare__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_declare__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1017,8 +1017,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_deploy__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_deploy__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1038,8 +1038,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__execute__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__execute__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1921,8 +1921,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_external(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_external(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1942,8 +1942,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_l1_handler(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_l1_handler(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1963,8 +1963,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_constructor(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_constructor(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.

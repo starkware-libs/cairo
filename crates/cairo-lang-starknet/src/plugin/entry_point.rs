@@ -145,12 +145,12 @@ pub fn generate_entry_point_wrapper(
         return Err(diagnostics);
     }
 
-    let storage_arg = if is_snapshot { "@storage" } else { "ref storage" };
+    let contract_state_arg = if is_snapshot { "@contract_state" } else { "ref contract_state" };
     let output_handling_string = if raw_output {
-        format!("$wrapped_name$({storage_arg}, {arg_names_str})")
+        format!("$wrapped_name$({contract_state_arg}, {arg_names_str})")
     } else {
         format!(
-            "{let_res}$wrapped_name$({storage_arg}, {arg_names_str});
+            "{let_res}$wrapped_name$({contract_state_arg}, {arg_names_str});
             let mut arr = array::array_new();
             // References.$ref_appends$
             // Result.{append_res}
@@ -188,7 +188,7 @@ pub fn generate_entry_point_wrapper(
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             $output_handling$
         }",
         [
