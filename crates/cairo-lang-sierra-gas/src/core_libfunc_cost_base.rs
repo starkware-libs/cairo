@@ -530,7 +530,7 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
             vec![ConstCost { steps: 9, holes: 0, range_checks: 4 }.into()]
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
-            const_cost: steps(25),
+            const_cost: steps(24),
             pre_cost: PreCost(OrderedHashMap::from_iter(
                 (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
             )),
