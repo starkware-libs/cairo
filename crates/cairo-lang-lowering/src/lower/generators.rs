@@ -99,7 +99,7 @@ pub struct CallResult {
 
 /// Generator for [StatementEnumConstruct].
 pub struct EnumConstruct {
-    pub input: VariableId,
+    pub input: VarUsage,
     pub variant: ConcreteVariant,
     pub location: LocationId,
 }
@@ -115,7 +115,7 @@ impl EnumConstruct {
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::EnumConstruct(StatementEnumConstruct {
             variant: self.variant,
-            input: self.input,
+            input: self.input.var_id,
             output,
         }));
         VarUsage { var_id: output, location: self.location }
@@ -194,7 +194,7 @@ impl StructDestructure {
 
 /// Generator for [StatementStructDestructure] as member access.
 pub struct StructMemberAccess {
-    pub input: VariableId,
+    pub input: VarUsage,
     pub member_tys: Vec<semantic::TypeId>,
     pub member_idx: usize,
     pub location: LocationId,
@@ -206,7 +206,7 @@ impl StructMemberAccess {
         builder: &mut StatementsBuilder,
     ) -> VariableId {
         StructDestructure {
-            input: self.input,
+            input: self.input.var_id,
             var_reqs: self
                 .member_tys
                 .into_iter()

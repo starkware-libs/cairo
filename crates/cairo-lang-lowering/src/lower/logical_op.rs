@@ -18,8 +18,7 @@ pub fn create_bool(
     let semantic_db = ctx.db.upcast();
 
     let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(semantic_db), location }
-        .add(ctx, &mut builder.statements)
-        .var_id;
+        .add(ctx, &mut builder.statements);
 
     generators::EnumConstruct { input: unit, variant, location }
         .add(ctx, &mut builder.statements)
