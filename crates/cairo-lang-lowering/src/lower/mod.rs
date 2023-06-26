@@ -124,15 +124,16 @@ pub fn lower_function(
             match block_sealed {
                 SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                     // Convert to a return.
+                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                     let var = expr.unwrap_or_else(|| {
                         generators::StructConstruct {
                             inputs: vec![],
                             ty: unit_ty(ctx.db.upcast()),
-                            location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                            location,
                         }
                         .add(&mut ctx, &mut builder.statements)
+                        .var_id
                     });
-                    let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                     builder.ret(&mut ctx, var, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
@@ -196,15 +197,16 @@ pub fn lower_loop_function(
         match block_sealed {
             SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                 // Convert to a return.
+                let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                 let var = expr.unwrap_or_else(|| {
                     generators::StructConstruct {
                         inputs: vec![],
                         ty: unit_ty(ctx.db.upcast()),
-                        location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                        location,
                     }
                     .add(&mut ctx, &mut builder.statements)
+                    .var_id
                 });
-                let location = ctx.get_location(semantic_block.stable_ptr.untyped());
                 builder.ret(&mut ctx, var, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
@@ -393,7 +395,7 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var, (_, member)) in
+            for (var_id, (_, member)) in
                 generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
@@ -401,7 +403,10 @@ fn lower_single_pattern(
                         ctx,
                         builder,
                         member_pattern,
-                        LoweredExpr::AtVariable(var),
+                        LoweredExpr::AtVariable(VarUsage {
+                            var_id,
+                            location: ctx.get_location(member_pattern.stable_ptr().untyped()),
+                        }),
                     )?;
                 }
             }
@@ -425,7 +430,7 @@ fn lower_single_pattern(
                 }
                 .add(ctx, &mut builder.statements)
                 .into_iter()
-                .map(LoweredExpr::AtVariable)
+                .map(|var_id| LoweredExpr::AtVariable(VarUsage { var_id, location }))
                 .collect()
             };
             for (var, pattern) in zip_eq(outputs, field_patterns) {
@@ -524,10 +529,11 @@ fn lower_expr_literal(
         ));
     }
 
-    Ok(LoweredExpr::AtVariable(
-        generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
+    Ok(LoweredExpr::AtVariable(VarUsage {
+        var_id: generators::Literal { value: expr.value.clone(), ty: expr.ty, location }
             .add(ctx, &mut builder.statements),
-    ))
+        location,
+    }))
 }
 
 fn lower_expr_constant(
@@ -586,9 +592,10 @@ fn lower_expr_desnap(
     }
     let input = expr.var(ctx, builder)?;
 
-    Ok(LoweredExpr::AtVariable(
-        generators::Desnap { input, location }.add(ctx, &mut builder.statements),
-    ))
+    Ok(LoweredExpr::AtVariable(VarUsage {
+        var_id: generators::Desnap { input, location }.add(ctx, &mut builder.statements),
+        location,
+    }))
 }
 
 /// Lowers an expression of type [semantic::ExprFunctionCall].
@@ -695,7 +702,14 @@ fn perform_function_call(
             })));
         }
 
-        let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
+        let res = LoweredExpr::AtVariable(
+            call_result
+                .returns
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location })
+                .next()
+                .unwrap(),
+        );
         return Ok((call_result.extra_outputs, res));
     };
 
@@ -785,7 +799,9 @@ fn call_loop_func(
         builder.update_ref(ctx, ref_arg, output_var);
     }
 
-    Ok(LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap()))
+    Ok(LoweredExpr::AtVariable(
+        call_result.returns.into_iter().map(|var_id| VarUsage { var_id, location }).next().unwrap(),
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
@@ -843,7 +859,8 @@ fn lower_expr_match(
                 location: pattern_location,
             });
             arm_var_ids.push(vec![var_id]);
-            let variant_expr = LoweredExpr::AtVariable(var_id);
+            let variant_expr =
+                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
             match lower_single_pattern(
                 ctx,
@@ -1232,7 +1249,7 @@ fn lower_expr_error_propagate(
     let err_res =
         generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
             .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
@@ -1298,7 +1315,7 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.var(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.

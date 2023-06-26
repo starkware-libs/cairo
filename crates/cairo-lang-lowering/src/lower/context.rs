@@ -29,7 +29,7 @@ use crate::ids::{
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VariableId};
+use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -213,7 +213,7 @@ pub struct VarRequest {
 #[derive(Clone, Debug)]
 pub enum LoweredExpr {
     /// The expression value lies in a variable.
-    AtVariable(VariableId),
+    AtVariable(VarUsage),
     /// The expression value is a tuple.
     Tuple {
         exprs: Vec<LoweredExpr>,
@@ -234,7 +234,7 @@ impl LoweredExpr {
         builder: &mut BlockBuilder,
     ) -> Result<VariableId, LoweringFlowError> {
         match self {
-            LoweredExpr::AtVariable(var_id) => Ok(var_id),
+            LoweredExpr::AtVariable(var_usage) => Ok(var_usage.var_id),
             LoweredExpr::Tuple { exprs, location } => {
                 let inputs: Vec<_> = exprs
                     .into_iter()
@@ -243,7 +243,8 @@ impl LoweredExpr {
                 let tys = inputs.iter().map(|var| ctx.variables[*var].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
                 Ok(generators::StructConstruct { inputs, ty, location }
-                    .add(ctx, &mut builder.statements))
+                    .add(ctx, &mut builder.statements)
+                    .var_id)
             }
             LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, builder),
             LoweredExpr::Member(member_path, _location) => {
@@ -263,7 +264,7 @@ impl LoweredExpr {
     }
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
-            LoweredExpr::AtVariable(var) => ctx.variables[*var].ty,
+            LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
             LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
                 exprs.iter().map(|expr| expr.ty(ctx)).collect(),
             )),
@@ -340,7 +341,8 @@ impl LoweredExprExternEnum {
                     variant: concrete_variant,
                     location: self.location,
                 }
-                .add(ctx, &mut subscope.statements);
+                .add(ctx, &mut subscope.statements)
+                .var_id;
                 Ok((subscope.goto_callsite(Some(result)), block_id))
             })
             .collect::<Result<Vec<_>, _>>()
@@ -409,7 +411,8 @@ pub fn lowering_flow_error_to_sealed_block(
                 ),
                 location: ctx.variables[data_var].location,
             }
-            .add(ctx, &mut builder.statements);
+            .add(ctx, &mut builder.statements)
+            .var_id;
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
@@ -418,7 +421,8 @@ pub fn lowering_flow_error_to_sealed_block(
                 ])),
                 location: ctx.variables[data_var].location,
             }
-            .add(ctx, &mut builder.statements);
+            .add(ctx, &mut builder.statements)
+            .var_id;
             builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {
