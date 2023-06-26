@@ -703,9 +703,6 @@ impl Display for CoreHint {
 impl Display for StarknetHint {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            StarknetHint::Cheatcode { .. } => {
-                write!(f, "raise NotImplementedError")
-            }
             StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
@@ -755,15 +752,11 @@ impl Display for StarknetHint {
                     ResOperandFormatter(end)
                 )
             }
-            StarknetHint::PopLog {
-                value: _,
-                opt_variant: _,
-                keys_start: _,
-                keys_end: _,
-                data_start: _,
-                data_end: _,
-            } => {
+            StarknetHint::PopLog { .. } => {
                 write!(f, "raise NotImplemented")
+            }
+            StarknetHint::Cheatcode { .. } => {
+                write!(f, "raise NotImplementedError")
             }
         }
     }

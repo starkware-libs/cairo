@@ -397,35 +397,23 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let selector = std::str::from_utf8(selector).map_err(|_| {
                     HintError::CustomHint(Box::from("failed to parse selector".to_string()))
                 })?;
+
+                let input_start = extract_relocatable(vm, input_start)?;
+                let input_end = extract_relocatable(vm, input_end)?;
+                let inputs = vm_get_range(vm, input_start, input_end)?;
+
                 match selector {
-                    "set_block_number" => {
-                        let as_relocatable = |vm, value| {
-                            let (base, offset) = extract_buffer(value);
-                            get_ptr(vm, base, &offset)
-                        };
-
-                        let mut curr = as_relocatable(vm, input_start)?;
-                        let end = as_relocatable(vm, input_end)?;
-                        let mut input: Vec<Felt252> = vec![];
-                        while curr != end {
-                            let value = vm.get_integer(curr)?;
-                            input.push(value.into_owned());
-                            curr += 1;
+                    "set_block_number" => match &inputs[..] {
+                        [input] => {
+                            self.starknet_state.exec_info.block_info.block_number = input.clone();
                         }
-
-                        match &input[..] {
-                            [input] => {
-                                self.starknet_state.exec_info.block_info.block_number =
-                                    input.clone();
-                            }
-                            _ => {
-                                return Err(HintError::CustomHint(Box::from(
-                                    "set_block_number cheatcode invalid args: pass span of an \
-                                     array with exactly one element",
-                                )));
-                            }
+                        _ => {
+                            return Err(HintError::CustomHint(Box::from(
+                                "set_block_number cheatcode invalid args: pass span of an array \
+                                 with exactly one element",
+                            )));
                         }
-                    }
+                    },
                     _ => Err(HintError::CustomHint(Box::from(format!(
                         "Unknown cheatcode selector: {selector}"
                     ))))?,
