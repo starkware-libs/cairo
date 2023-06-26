@@ -553,7 +553,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
 /// Returns costs for u512 libfuncs.
 fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
     match libfunc {
-        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 52, holes: 0, range_checks: 14 }],
+        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 47, holes: 0, range_checks: 12 }],
     }
 }
 

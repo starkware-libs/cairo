@@ -170,7 +170,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
         },
         CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
-            Uint512Concrete::DivModU256(_) => vec![ApChange::Known(47)],
+            Uint512Concrete::DivModU256(_) => vec![ApChange::Known(43)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
