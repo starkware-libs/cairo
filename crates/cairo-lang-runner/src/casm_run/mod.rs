@@ -714,11 +714,7 @@ impl<'a> CairoHintProcessor<'a> {
                 )
             }),
             "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.replace_class(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer,
-                )
+                self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
             _ => panic!("Unknown selector for system call!"),
         }
@@ -970,10 +966,8 @@ impl<'a> CairoHintProcessor<'a> {
         &mut self,
         gas_counter: &mut usize,
         new_class: Felt252,
-        _vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
-        // Prepare runner for running the call.
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))

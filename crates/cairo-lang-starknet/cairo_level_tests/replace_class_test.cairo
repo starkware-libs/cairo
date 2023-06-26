@@ -5,10 +5,11 @@ use array::ArrayTrait;
 use starknet::syscalls::{deploy_syscall, replace_class_syscall};
 use option::OptionTrait;
 use test::test_utils::assert_eq;
+use starknet::class_hash::ClassHash;
 
 #[starknet::interface]
 trait IWithReplace<TContractState> {
-    fn replace(ref self: TContractState);
+    fn replace(ref self: TContractState, class_hash: ClassHash);
 }
 
 #[starknet::contract]
@@ -16,6 +17,7 @@ mod ContractA {
     use core::traits::TryInto;
     use option::OptionTrait;
     use core::result::ResultTrait;
+    use starknet::class_hash::ClassHash;
 
     #[storage]
     struct Storage {
@@ -23,14 +25,15 @@ mod ContractA {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, value_: u128) {
-        self.value.write(value_);
+    fn constructor(ref self: ContractState, value: u128) {
+        self.value.write(value);
     }
 
     #[external(v0)]
-    fn replace(ref self: ContractState) {
-        starknet::replace_class_syscall(super::ContractB::TEST_CLASS_HASH.try_into().unwrap())
-            .unwrap();
+    impl IWithReplaceImpl of super::IWithReplace<ContractState> {
+        fn replace(ref self: ContractState, class_hash: ClassHash) {
+            starknet::replace_class_syscall(class_hash).unwrap();
+        }
     }
 }
 
@@ -59,15 +62,18 @@ fn test_replace_flow() {
     let mut calldata = Default::default();
     calldata.append(100);
     let (address0, _) = deploy_syscall(
-        ContractA::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+        class_hash: ContractA::TEST_CLASS_HASH.try_into().unwrap(),
+        contract_address_salt: 0,
+        calldata: calldata.span(),
+        deploy_from_zero: false
     )
         .unwrap();
 
     // Replace its class hash to Class B.
     let mut contract0 = IWithReplaceDispatcher { contract_address: address0 };
-    contract0.replace();
+    contract0.replace(ContractB::TEST_CLASS_HASH.try_into().unwrap());
 
     // Read the previously stored value.
     let mut contract1 = IWithFooDispatcher { contract_address: address0 };
-    assert_eq(@contract1.foo(), @100, 'contract1.foo() == 100');
+    assert_eq(@contract1.foo(), @100, 'contract1.foo() != 100');
 }
