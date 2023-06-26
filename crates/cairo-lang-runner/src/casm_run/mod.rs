@@ -324,9 +324,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SystemCall { system } => {
                 self.execute_syscall(system, vm, exec_scopes)?;
             }
-            StarknetHint::SetBlockNumber { value } => {
-                self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
-            }
             StarknetHint::SetSequencerAddress { value } => {
                 self.starknet_state.exec_info.block_info.sequencer_address = get_val(vm, value)?;
             }
@@ -393,6 +390,33 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 } else {
                     // Option::None variant
                     insert_value_to_cellref!(vm, opt_variant, 1)?;
+                }
+            }
+            StarknetHint::Cheatcode { selector, input_start, input_end, .. } => {
+                let selector = &selector.value.to_bytes_be().1;
+                let selector = std::str::from_utf8(selector).map_err(|_| {
+                    HintError::CustomHint(Box::from("failed to parse selector".to_string()))
+                })?;
+
+                let input_start = extract_relocatable(vm, input_start)?;
+                let input_end = extract_relocatable(vm, input_end)?;
+                let inputs = vm_get_range(vm, input_start, input_end)?;
+
+                match selector {
+                    "set_block_number" => match &inputs[..] {
+                        [input] => {
+                            self.starknet_state.exec_info.block_info.block_number = input.clone();
+                        }
+                        _ => {
+                            return Err(HintError::CustomHint(Box::from(
+                                "set_block_number cheatcode invalid args: pass span of an array \
+                                 with exactly one element",
+                            )));
+                        }
+                    },
+                    _ => Err(HintError::CustomHint(Box::from(format!(
+                        "Unknown cheatcode selector: {selector}"
+                    ))))?,
                 }
             }
         };
