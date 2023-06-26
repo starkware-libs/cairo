@@ -3,7 +3,7 @@ use cairo_lang_semantic as semantic;
 use super::context::LoweringContext;
 use super::LoweredExpr;
 use crate::ids::LocationId;
-use crate::VariableId;
+use crate::{VarUsage, VariableId};
 
 /// Given a return type of an external function, gets the real output variable types for that call.
 /// For example, an external function that returns a tuple, has an output variable for each tuple
@@ -31,12 +31,16 @@ pub fn extern_facade_expr(
 ) -> LoweredExpr {
     if let semantic::TypeLongId::Tuple(subtypes) = ctx.db.lookup_intern_type(ty) {
         assert_eq!(returns.len(), subtypes.len());
+        // TODO(ilya): Use tuple item location for each item.
         LoweredExpr::Tuple {
-            exprs: returns.into_iter().map(LoweredExpr::AtVariable).collect(),
+            exprs: returns
+                .into_iter()
+                .map(|var_id| LoweredExpr::AtVariable(VarUsage { var_id, location }))
+                .collect(),
             location,
         }
     } else {
         assert_eq!(returns.len(), 1);
-        LoweredExpr::AtVariable(returns.into_iter().next().unwrap())
+        LoweredExpr::AtVariable(VarUsage { var_id: returns.into_iter().next().unwrap(), location })
     }
 }

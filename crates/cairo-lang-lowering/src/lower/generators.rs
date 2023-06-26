@@ -39,10 +39,10 @@ impl Literal {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> VariableId {
+    ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         builder.push_statement(Statement::Literal(StatementLiteral { value: self.value, output }));
-        output
+        VarUsage { var_id: output, location: self.location }
     }
 }
 
@@ -108,7 +108,7 @@ impl EnumConstruct {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> VariableId {
+    ) -> VarUsage {
         let ty = ctx.db.intern_type(semantic::TypeLongId::Concrete(
             semantic::ConcreteTypeId::Enum(self.variant.concrete_enum_id),
         ));
@@ -118,7 +118,7 @@ impl EnumConstruct {
             input: self.input,
             output,
         }));
-        output
+        VarUsage { var_id: output, location: self.location }
     }
 }
 
@@ -156,18 +156,21 @@ impl Desnap {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> VariableId {
+    ) -> VarUsage {
         let ty = extract_matches!(
             ctx.db.lookup_intern_type(ctx.variables[self.input].ty),
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Desnap(StatementDesnap { input: self.input, output }));
-        output
+        VarUsage { var_id: output, location: self.location }
     }
 }
 
 /// Generator for [StatementStructDestructure].
+///
+/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the the caller typically
+/// has a more accurate location then the one we have in the var requests.
 pub struct StructDestructure {
     /// Variable that holds the struct value.
     pub input: VariableId,
@@ -226,12 +229,12 @@ impl StructConstruct {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> VariableId {
+    ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         builder.push_statement(Statement::StructConstruct(StatementStructConstruct {
             inputs: self.inputs,
             output,
         }));
-        output
+        VarUsage { var_id: output, location: self.location }
     }
 }
