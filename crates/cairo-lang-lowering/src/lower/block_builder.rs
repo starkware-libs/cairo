@@ -329,7 +329,10 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
             .collect();
         let member_values =
             generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
-        OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
+        OrderedHashMap::from_iter(zip_eq(
+            member_ids,
+            member_values.iter().map(|var_usage| var_usage.var_id),
+        ))
     }
 
     fn reconstruct(

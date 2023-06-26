@@ -168,9 +168,6 @@ impl Desnap {
 }
 
 /// Generator for [StatementStructDestructure].
-///
-/// Note that we return `Vec<VariableId>` rather then `Vec<VarUsage>` as the the caller typically
-/// has a more accurate location then the one we have in the var requests.
 pub struct StructDestructure {
     /// Variable that holds the struct value.
     pub input: VariableId,
@@ -182,11 +179,19 @@ impl StructDestructure {
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
-    ) -> Vec<VariableId> {
-        let outputs: Vec<_> = self.var_reqs.into_iter().map(|req| ctx.new_var(req)).collect();
+    ) -> Vec<VarUsage> {
+        let outputs: Vec<_> = self
+            .var_reqs
+            .into_iter()
+            .map(|req| {
+                let location = req.location;
+                VarUsage { var_id: ctx.new_var(req), location }
+            })
+            .collect();
+
         builder.push_statement(Statement::StructDestructure(StatementStructDestructure {
             input: self.input,
-            outputs: outputs.clone(),
+            outputs: outputs.iter().map(|var_usage| var_usage.var_id).collect(),
         }));
         outputs
     }
@@ -215,7 +220,9 @@ impl StructMemberAccess {
                     .collect(),
             }
             .add(ctx, builder)
-            .remove(self.member_idx),
+            .remove(self.member_idx)
+            .var_id,
+            // Note that we override the location here as it is more accurate.
             location: self.location,
         }
     }

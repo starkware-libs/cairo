@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
@@ -395,7 +397,7 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var_id, (_, member)) in
+            for (var_usage, (_, member)) in
                 generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
@@ -403,35 +405,30 @@ fn lower_single_pattern(
                         ctx,
                         builder,
                         member_pattern,
-                        LoweredExpr::AtVariable(VarUsage {
-                            var_id,
-                            location: ctx.get_location(member_pattern.stable_ptr().untyped()),
-                        }),
+                        LoweredExpr::AtVariable(var_usage),
                     )?;
                 }
             }
         }
-        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, stable_ptr }) => {
-            let location = ctx.get_location(stable_ptr.untyped());
+        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, .. }) => {
             let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
                 exprs
             } else {
                 let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), *ty);
-                let reqs = extract_matches!(long_type_id, TypeLongId::Tuple)
-                    .into_iter()
-                    .map(|ty| VarRequest {
-                        ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                        location,
-                    })
-                    .collect();
+                let reqs =
+                    zip_eq(field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
+                        .map(|(pattern, ty)| VarRequest {
+                            ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
+                            location: ctx.get_location(pattern.deref().stable_ptr().untyped()),
+                        })
+                        .collect();
                 generators::StructDestructure {
                     input: lowered_expr.var(ctx, builder)?,
                     var_reqs: reqs,
                 }
                 .add(ctx, &mut builder.statements)
                 .into_iter()
-                 // TODO(ilya): Use tuple item location for each item.
-                .map(|var_id| LoweredExpr::AtVariable(VarUsage { var_id, location }))
+                .map(LoweredExpr::AtVariable)
                 .collect()
             };
             for (var, pattern) in zip_eq(outputs, field_patterns) {
