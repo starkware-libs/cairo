@@ -203,8 +203,12 @@ impl NamedLibfunc for CheatcodeLibfunc {
     fn specialize_signature(
         &self,
         context: &dyn SignatureSpecializationContext,
-        _args: &[GenericArg],
+        args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
+        if args.len() != 1 {
+            return Err(SpecializationError::WrongNumberOfGenericArgs);
+        }
+
         let span_ty = felt252_span_ty(context)?;
         Ok(LibfuncSignature {
             param_signatures: vec![

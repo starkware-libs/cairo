@@ -18,14 +18,14 @@ extern fn pop_log(
     address: ContractAddress
 ) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
 
-// general cheatcode function used to simplify implementation of starknet testing functions
-// external users of the cairo crates can also implement their own cheatcodes
-// by injecting custom CairoHintProcessor
+// A general cheatcode function used to simplify implementation of Starknet testing functions.
+// External users of the cairo crates can also implement their own cheatcodes
+// by injecting custom `CairoHintProcessor`.
 extern fn cheatcode<const selector: felt252>(
     input: Span<felt252>
 ) -> Span<felt252> implicits() nopanic;
 
-// set_block_number high level implementation using general cheatcode function
+// Set the block number to the provided value.
 fn set_block_number(block_number: u64) {
     let mut data = ArrayTrait::new();
     data.append(block_number.into());
