@@ -130,19 +130,14 @@ pub type SierraDemand = Demand<SierraGenVar>;
 
 impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
     type IntroducePosition = DropLocation;
-    type UsePosition = StatementLocation;
+    type UsePosition = UseLocation;
 
     fn drop(&mut self, position: DropLocation, var: SierraGenVar) {
         self.res.add_drop(var, position)
     }
 
-    fn last_use(
-        &mut self,
-        statement_location: StatementLocation,
-        var_index: usize,
-        _var: SierraGenVar,
-    ) {
-        self.res.last_use.insert(UseLocation { statement_location, idx: var_index });
+    fn last_use(&mut self, use_location: UseLocation, _var: SierraGenVar) {
+        self.res.last_use.insert(use_location);
     }
 }
 
@@ -156,7 +151,13 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         stmt: &lowering::Statement,
     ) {
         self.introduce(info, &stmt.outputs(), DropLocation::PostStatement(statement_location));
-        info.variables_used(self, &stmt.inputs(), statement_location);
+        info.variables_used(
+            self,
+            stmt.inputs()
+                .iter()
+                .enumerate()
+                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+        );
     }
 
     fn visit_goto(
@@ -168,8 +169,10 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping.iter().map(|(dst, src)| (*dst, *src)),
-            statement_location,
+            remapping
+                .iter()
+                .enumerate()
+                .map(|(idx, (dst, src))| (dst, (src, UseLocation { statement_location, idx }))),
         );
         for (dst, _src) in remapping.iter() {
             if self.local_vars.contains(dst) {
@@ -199,7 +202,14 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
             })
             .collect_vec();
         let mut demand = SierraDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), statement_location);
+        demand.variables_used(
+            self,
+            match_info
+                .inputs()
+                .iter()
+                .enumerate()
+                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+        );
         demand
     }
 
@@ -209,7 +219,12 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
-        info.variables_used(self, vars, statement_location);
+        info.variables_used(
+            self,
+            vars.iter()
+                .enumerate()
+                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+        );
         info
     }
 
