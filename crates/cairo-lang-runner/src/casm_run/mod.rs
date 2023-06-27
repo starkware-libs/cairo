@@ -93,71 +93,7 @@ pub struct CairoHintProcessor<'a> {
     pub starknet_state: StarknetState,
 }
 
-<<<<<<< HEAD
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
-||||||| 9aeaf41c
-impl<'a> CairoHintProcessor<'a> {
-    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        runner: Option<&'a SierraCasmRunner>,
-        instructions: Instructions,
-        starknet_state: StarknetState,
-    ) -> Self {
-        let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
-        let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
-
-        let mut hint_offset = 0;
-
-        for instruction in instructions {
-            if !instruction.hints.is_empty() {
-                // Register hint with string for the hint processor.
-                for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.to_string(), hint.clone());
-                }
-                // Add hint, associated with the instruction offset.
-                hints_dict.insert(
-                    hint_offset,
-                    instruction.hints.iter().map(hint_to_hint_params).collect(),
-                );
-            }
-            hint_offset += instruction.body.op_size();
-        }
-        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
-    }
-}
-
-fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
-=======
-impl<'a> CairoHintProcessor<'a> {
-    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
-        runner: Option<&'a SierraCasmRunner>,
-        instructions: Instructions,
-        starknet_state: StarknetState,
-    ) -> Self {
-        let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
-        let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
-
-        let mut hint_offset = 0;
-
-        for instruction in instructions {
-            if !instruction.hints.is_empty() {
-                // Register hint with string for the hint processor.
-                for hint in instruction.hints.iter() {
-                    string_to_hint.insert(hint.representing_string(), hint.clone());
-                }
-                // Add hint, associated with the instruction offset.
-                hints_dict.insert(
-                    hint_offset,
-                    instruction.hints.iter().map(hint_to_hint_params).collect(),
-                );
-            }
-            hint_offset += instruction.body.op_size();
-        }
-        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
-    }
-}
-
-fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
->>>>>>> 496b6455^2
     let base = match cell_ref.register {
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
@@ -429,7 +365,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
                 let end = extract_relocatable(vm, end)?;
                 self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
             }
-<<<<<<< HEAD
             StarknetHint::PopLog {
                 value,
                 opt_variant,
@@ -489,41 +424,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     ))))?,
                 }
             }
-||||||| 9aeaf41c
-=======
-            StarknetHint::PopLog {
-                value,
-                opt_variant,
-                keys_start,
-                keys_end,
-                data_start,
-                data_end,
-            } => {
-                let contract_address = get_val(vm, value)?;
-                let mut res_segment = MemBuffer::new_segment(vm);
-                let logs = self.starknet_state.logs.entry(contract_address).or_default();
-
-                if let Some((keys, data)) = logs.pop_front() {
-                    let keys_start_ptr = res_segment.ptr;
-                    res_segment.write_data(keys.iter())?;
-                    let keys_end_ptr = res_segment.ptr;
-
-                    let data_start_ptr = res_segment.ptr;
-                    res_segment.write_data(data.iter())?;
-                    let data_end_ptr = res_segment.ptr;
-
-                    // Option::Some variant
-                    insert_value_to_cellref!(vm, opt_variant, 0)?;
-                    insert_value_to_cellref!(vm, keys_start, keys_start_ptr)?;
-                    insert_value_to_cellref!(vm, keys_end, keys_end_ptr)?;
-                    insert_value_to_cellref!(vm, data_start, data_start_ptr)?;
-                    insert_value_to_cellref!(vm, data_end, data_end_ptr)?;
-                } else {
-                    // Option::None variant
-                    insert_value_to_cellref!(vm, opt_variant, 1)?;
-                }
-            }
->>>>>>> 496b6455^2
         };
         Ok(())
     }
@@ -842,20 +742,9 @@ impl<'a> CairoHintProcessor<'a> {
                     system_buffer,
                 )
             }),
-<<<<<<< HEAD
             "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
-||||||| 9aeaf41c
-=======
-            "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.replace_class(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer,
-                )
-            }),
->>>>>>> 496b6455^2
             _ => panic!("Unknown selector for system call!"),
         }
     }
@@ -948,22 +837,6 @@ impl<'a> CairoHintProcessor<'a> {
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
-<<<<<<< HEAD
-    /// Executes the `emit_event_syscall` syscall.
-    fn emit_event(
-        &mut self,
-        gas_counter: &mut usize,
-        keys: Vec<Felt252>,
-        data: Vec<Felt252>,
-    ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
-        let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
-        Ok(SyscallResult::Success(vec![]))
-    }
-
-||||||| 9aeaf41c
-=======
     /// Executes the `emit_event_syscall` syscall.
     fn emit_event(
         &mut self,
@@ -977,7 +850,6 @@ impl<'a> CairoHintProcessor<'a> {
         Ok(SyscallResult::Success(vec![]))
     }
 
->>>>>>> 496b6455^2
     /// Executes the `deploy_syscall` syscall.
     fn deploy(
         &mut self,
@@ -1118,7 +990,6 @@ impl<'a> CairoHintProcessor<'a> {
         }
     }
 
-<<<<<<< HEAD
     /// Executes the `replace_class_syscall` syscall.
     fn replace_class(
         &mut self,
@@ -1131,23 +1002,6 @@ impl<'a> CairoHintProcessor<'a> {
         Ok(SyscallResult::Success(vec![]))
     }
 
-||||||| 9aeaf41c
-=======
-    /// Executes the `replace_class_syscall` syscall.
-    fn replace_class(
-        &mut self,
-        gas_counter: &mut usize,
-        new_class: Felt252,
-        _vm: &mut dyn VMWrapper,
-    ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
-        // Prepare runner for running the call.
-        let address = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.deployed_contracts.insert(address, new_class);
-        Ok(SyscallResult::Success(vec![]))
-    }
-
->>>>>>> 496b6455^2
     /// Executes the entry point with the given calldata.
     fn call_entry_point(
         &mut self,
@@ -2040,16 +1894,7 @@ where
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
-<<<<<<< HEAD
-        .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
-        .map_err(CairoRunError::from)?;
-    runner
-        .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
-||||||| 9aeaf41c
-        .run_until_pc(end, &mut None, &mut vm, &mut hint_processor)
-=======
-        .run_until_pc(end, &mut RunResources::default(), &mut vm, &mut hint_processor)
->>>>>>> 496b6455^2
+        .run_until_pc(end, &mut RunResources::default(), &mut vm, hint_processor)
         .map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))

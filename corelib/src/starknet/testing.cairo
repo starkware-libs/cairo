@@ -14,7 +14,6 @@ extern fn set_transaction_hash(hash: felt252) implicits() nopanic;
 extern fn set_chain_id(chain_id: felt252) implicits() nopanic;
 extern fn set_nonce(nonce: felt252) implicits() nopanic;
 extern fn set_signature(signature: Span<felt252>) implicits() nopanic;
-<<<<<<< HEAD
 extern fn pop_log(
     address: ContractAddress
 ) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
@@ -33,9 +32,3 @@ fn set_block_number(block_number: u64) {
 
     cheatcode::<'set_block_number'>(data.span());
 }
-||||||| 9aeaf41c
-=======
-extern fn pop_log(
-    address: ContractAddress
-) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
->>>>>>> 496b6455^2

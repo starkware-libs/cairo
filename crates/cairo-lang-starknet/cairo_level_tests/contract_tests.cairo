@@ -306,25 +306,6 @@ fn test_get_signature() {
 }
 
 #[test]
-<<<<<<< HEAD
-#[available_gas(300000)]
-fn test_pop_log() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::set_contract_address(contract_address);
-    let mut keys = Default::default();
-    let mut data = Default::default();
-    keys.append(1234);
-    data.append(2345);
-    starknet::emit_event_syscall(keys.span(), data.span());
-    let (keys, data) = starknet::testing::pop_log(contract_address).unwrap();
-
-    assert_eq(@keys.len(), @1, 'unexpected keys size');
-    assert_eq(@data.len(), @1, 'unexpected data size');
-    assert_eq(keys.at(0), @1234, 'unexpected key');
-    assert_eq(data.at(0), @2345, 'unexpected data');
-}
-
-#[test]
 #[available_gas(300000)]
 #[should_panic]
 fn test_pop_log_empty_logs() {
@@ -333,17 +314,6 @@ fn test_pop_log_empty_logs() {
 }
 
 #[test]
-||||||| 9aeaf41c
-=======
-#[available_gas(300000)]
-#[should_panic]
-fn test_pop_log_empty_logs() {
-    let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::pop_log(contract_address).unwrap();
-}
-
-#[test]
->>>>>>> 496b6455^2
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {
     starknet::storage_address_try_from_felt252(-1).unwrap()
