@@ -124,7 +124,7 @@ impl EnumConstruct {
 
 /// Generator for [StatementSnapshot].
 pub struct Snapshot {
-    pub input: VariableId,
+    pub input: VarUsage,
     pub location: LocationId,
 }
 impl Snapshot {
@@ -133,7 +133,7 @@ impl Snapshot {
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> (VariableId, VariableId) {
-        let input_var = &ctx.variables[self.input];
+        let input_var = &ctx.variables[self.input.var_id];
         let input_ty = input_var.ty;
         let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
 
@@ -142,7 +142,7 @@ impl Snapshot {
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Snapshot(StatementSnapshot {
-            input: self.input,
+            input: self.input.var_id,
             output_original,
             output_snapshot,
         }));
@@ -152,7 +152,7 @@ impl Snapshot {
 
 /// Generator for [StatementDesnap].
 pub struct Desnap {
-    pub input: VariableId,
+    pub input: VarUsage,
     pub location: LocationId,
 }
 impl Desnap {
@@ -162,11 +162,14 @@ impl Desnap {
         builder: &mut StatementsBuilder,
     ) -> VarUsage {
         let ty = extract_matches!(
-            ctx.db.lookup_intern_type(ctx.variables[self.input].ty),
+            ctx.db.lookup_intern_type(ctx.variables[self.input.var_id].ty),
             semantic::TypeLongId::Snapshot
         );
         let output = ctx.new_var(VarRequest { ty, location: self.location });
-        builder.push_statement(Statement::Desnap(StatementDesnap { input: self.input, output }));
+        builder.push_statement(Statement::Desnap(StatementDesnap {
+            input: self.input.var_id,
+            output,
+        }));
         VarUsage { var_id: output, location: self.location }
     }
 }
