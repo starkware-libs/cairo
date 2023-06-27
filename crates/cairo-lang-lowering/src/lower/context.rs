@@ -255,9 +255,9 @@ impl LoweredExpr {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
+                let input = expr.clone().as_var_usage(ctx, builder)?;
                 let (original, snapshot) =
-                    generators::Snapshot { input: expr.clone().var(ctx, builder)?, location }
-                        .add(ctx, &mut builder.statements);
+                    generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
                 if let LoweredExpr::Member(member_path, _location) = &*expr {
                     builder.update_ref(ctx, member_path, original);
                 }
@@ -341,16 +341,16 @@ impl LoweredExprExternEnum {
                 arm_var_ids.push(var_ids);
                 let maybe_input =
                     extern_facade_expr(ctx, concrete_variant.ty, variant_vars, self.location)
-                        .var(ctx, &mut subscope);
+                        .as_var_usage(ctx, &mut subscope);
                 let input = match maybe_input {
-                    Ok(var) => var,
+                    Ok(var_usage) => var_usage,
                     Err(err) => {
                         return lowering_flow_error_to_sealed_block(ctx, subscope, err)
                             .map(|sb| (sb, block_id));
                     }
                 };
                 let result = generators::EnumConstruct {
-                    input: VarUsage { var_id: input, location: self.location },
+                    input,
                     variant: concrete_variant,
                     location: self.location,
                 }

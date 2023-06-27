@@ -598,7 +598,7 @@ fn lower_expr_desnap(
     if let LoweredExpr::Snapshot { expr, .. } = &expr {
         return Ok(expr.as_ref().clone());
     }
-    let input = expr.var(ctx, builder)?;
+    let input = expr.as_var_usage(ctx, builder)?;
 
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
