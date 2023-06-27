@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_semantic::test_utils::{get_crate_semantic_diagnostics, setup_test_crate};
+use cairo_lang_semantic::test_utils::{
+    get_crate_semantic_diagnostics, setup_test_crate, setup_test_crate_by_name,
+};
 use indoc::indoc;
 use itertools::Itertools;
 use pretty_assertions::assert_eq;
@@ -54,6 +56,70 @@ fn test_contract_resolving() {
 
     // Assert no semantic diagnostics
     get_crate_semantic_diagnostics(db, crate_id)
+        .expect_with_db(db, "Unexpected semantic diagnostics");
+}
+
+#[test]
+fn test_imported_contract_resolving() {
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()
+        .unwrap();
+    let first_crate_id = setup_test_crate_by_name(
+        db,
+        indoc! {"
+            #[starknet::contract]
+            mod FirstContract {
+                #[storage]
+                struct Storage {}
+
+                #[external(v0)]
+                fn ep1(ref self: ContractState) {}
+            }
+
+            #[starknet::contract]
+            mod ThirdContract {
+                #[storage]
+                struct Storage {}
+
+                #[external(v0)]
+                fn ep1(ref self: ContractState) {}
+            }
+        "},
+        "first",
+        "first/src",
+    );
+    let second_crate_id = setup_test_crate_by_name(
+        db,
+        indoc! {"
+            use first::FirstContract;
+
+            #[starknet::contract]
+            mod SecondContract {
+                #[storage]
+                struct Storage {}
+                fn internal_func(ref system: System) -> felt252 {
+                    1
+                }
+
+                #[external(v0)]
+                fn ep1(ref self: ContractState) {}
+
+                #[external(v0)]
+                fn ep2(ref self: ContractState) {}
+            }
+        "},
+        "second",
+        "second/src",
+    );
+    let contracts = find_contracts(db, &[second_crate_id]);
+    assert_eq!(contracts.len(), 2);
+
+    // Assert no semantic diagnostics
+    get_crate_semantic_diagnostics(db, first_crate_id)
+        .expect_with_db(db, "Unexpected semantic diagnostics");
+    get_crate_semantic_diagnostics(db, second_crate_id)
         .expect_with_db(db, "Unexpected semantic diagnostics");
 }
 
