@@ -569,7 +569,13 @@ fn u128_libfunc_cost(libfunc: &Uint128Concrete) -> Vec<BranchCost> {
             }]
         }
         Uint128Concrete::ByteReverse(_) => vec![BranchCost::Regular {
+<<<<<<< HEAD
             const_cost: ConstCost::steps(25),
+||||||| 9aeaf41c
+            const_cost: steps(25),
+=======
+            const_cost: steps(24),
+>>>>>>> 496b6455^2
             pre_cost: PreCost(OrderedHashMap::from_iter(
                 (vec![(CostTokenType::Bitwise, 4)]).into_iter(),
             )),
@@ -584,15 +590,23 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::IsZero(_) => {
             vec![steps(2), steps(2)]
         }
+<<<<<<< HEAD
         Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 29, holes: 0, range_checks: 8 }],
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 33, holes: 0, range_checks: 8 }],
+||||||| 9aeaf41c
+        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 59, holes: 0, range_checks: 17 }],
+        Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 33, holes: 0, range_checks: 8 }],
+=======
+        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 59, holes: 0, range_checks: 17 }],
+        Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 30, holes: 0, range_checks: 7 }],
+>>>>>>> 496b6455^2
     }
 }
 
 /// Returns costs for u512 libfuncs.
 fn u512_libfunc_cost(libfunc: &Uint512Concrete) -> Vec<ConstCost> {
     match libfunc {
-        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 52, holes: 0, range_checks: 14 }],
+        Uint512Concrete::DivModU256(_) => vec![ConstCost { steps: 47, holes: 0, range_checks: 12 }],
     }
 }
 

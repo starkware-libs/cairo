@@ -9,12 +9,26 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
+<<<<<<< HEAD
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
+||||||| 9aeaf41c
+    LibfuncSignature, SierraApChange, SignatureSpecializationContext,
+=======
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
+>>>>>>> 496b6455^2
 };
 use crate::extensions::{
+<<<<<<< HEAD
     NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+||||||| 9aeaf41c
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, SpecializationError,
+=======
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
+>>>>>>> 496b6455^2
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
@@ -150,6 +164,7 @@ impl TestSetterTraits for SetSignatureTrait {
     }
 }
 
+<<<<<<< HEAD
 #[derive(Default)]
 pub struct PopLogLibfunc {}
 
@@ -259,6 +274,52 @@ impl SignatureBasedConcreteLibfunc for CheatcodeConcreteLibfunc {
     }
 }
 
+||||||| 9aeaf41c
+=======
+#[derive(Default)]
+pub struct PopLogLibfunc {}
+
+impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
+    const STR_ID: &'static str = "pop_log";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
+        let span_ty = felt252_span_ty(context)?;
+
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(contract_address_ty)],
+            branch_signatures: vec![
+                // Some variant branch.
+                BranchSignature {
+                    vars: vec![
+                        // keys
+                        OutputVarInfo {
+                            ty: span_ty.clone(),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                        // data
+                        OutputVarInfo {
+                            ty: span_ty,
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+                        },
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // None variant branch.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+
+>>>>>>> 496b6455^2
 define_libfunc_hierarchy! {
     pub enum TestingLibfunc {
          SetBlockTimestamp(TestSetterLibfunc<SetBlockTimestampTrait>),
@@ -272,7 +333,12 @@ define_libfunc_hierarchy! {
          SetChainId(TestSetterLibfunc<SetChainIdTrait>),
          SetNonce(TestSetterLibfunc<SetNonceTrait>),
          SetSignature(TestSetterLibfunc<SetSignatureTrait>),
+<<<<<<< HEAD
          PopLog(PopLogLibfunc),
          Cheatcode(CheatcodeLibfunc),
+||||||| 9aeaf41c
+=======
+         PopLog(PopLogLibfunc),
+>>>>>>> 496b6455^2
     }, TestingConcreteLibfunc
 }

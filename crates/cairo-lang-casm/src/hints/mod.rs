@@ -1,7 +1,13 @@
 use std::fmt::{Display, Formatter};
 
+<<<<<<< HEAD
 use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::writedoc;
+||||||| 9aeaf41c
+use indoc::writedoc;
+=======
+use indoc::formatdoc;
+>>>>>>> 496b6455^2
 use parity_scale_codec_derive::{Decode, Encode};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -23,6 +29,12 @@ pub enum Hint {
     Starknet(StarknetHint),
 }
 
+impl Hint {
+    pub fn representing_string(&self) -> String {
+        format!("{:?}", self)
+    }
+}
+
 impl From<CoreHint> for Hint {
     fn from(value: CoreHint) -> Self {
         Hint::Core(value.into())
@@ -34,11 +46,17 @@ impl From<StarknetHint> for Hint {
     }
 }
 
-impl Display for Hint {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+/// A trait for displaying the pythonic version of a hint.
+/// Should only be used from within the compiler.
+pub trait PythonicHint {
+    fn get_pythonic_hint(&self) -> String;
+}
+
+impl PythonicHint for Hint {
+    fn get_pythonic_hint(&self) -> String {
         match self {
-            Hint::Core(hint) => hint.fmt(f),
-            Hint::Starknet(hint) => hint.fmt(f),
+            Hint::Core(hint) => hint.get_pythonic_hint(),
+            Hint::Starknet(hint) => hint.get_pythonic_hint(),
         }
     }
 }
@@ -70,6 +88,7 @@ pub enum StarknetHint {
     SetNonce { value: ResOperand },
     #[codec(index = 11)]
     SetSignature { start: ResOperand, end: ResOperand },
+<<<<<<< HEAD
     #[codec(index = 12)]
     PopLog {
         value: ResOperand,
@@ -87,6 +106,18 @@ pub enum StarknetHint {
         output_start: CellRef,
         output_end: CellRef,
     },
+||||||| 9aeaf41c
+=======
+    #[codec(index = 13)]
+    PopLog {
+        value: ResOperand,
+        opt_variant: CellRef,
+        keys_start: CellRef,
+        keys_end: CellRef,
+        data_start: CellRef,
+        data_end: CellRef,
+    },
+>>>>>>> 496b6455^2
 }
 
 // Represents a cairo core hint.
@@ -107,17 +138,6 @@ impl From<CoreHint> for CoreHintBase {
 impl From<DeprecatedHint> for CoreHintBase {
     fn from(value: DeprecatedHint) -> Self {
         CoreHintBase::Deprecated(value)
-    }
-}
-
-impl Display for CoreHintBase {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            CoreHintBase::Core(hint) => hint.fmt(f),
-            CoreHintBase::Deprecated(_) => {
-                unreachable!("Deprecated hints do not have a pythonic version.")
-            }
-        }
     }
 }
 
@@ -315,14 +335,24 @@ impl<'a> Display for ResOperandFormatter<'a> {
     }
 }
 
-impl Display for CoreHint {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl PythonicHint for CoreHintBase {
+    fn get_pythonic_hint(&self) -> String {
         match self {
-            CoreHint::AllocSegment { dst } => write!(f, "memory{dst} = segments.add()"),
+            CoreHintBase::Core(hint) => hint.get_pythonic_hint(),
+            CoreHintBase::Deprecated(_) => {
+                unreachable!("Deprecated hints do not have a pythonic version.")
+            }
+        }
+    }
+}
+
+impl PythonicHint for CoreHint {
+    fn get_pythonic_hint(&self) -> String {
+        match self {
+            CoreHint::AllocSegment { dst } => format!("memory{dst} = segments.add()"),
             CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
                 let segment_arena_ptr = ResOperandFormatter(segment_arena_ptr);
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         if '__dict_manager' not in globals():
@@ -354,8 +384,7 @@ impl Display for CoreHint {
             }
             CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
                 let (dict_ptr, key) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(key));
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     dict_tracker = __dict_manager.get_tracker({dict_ptr})
@@ -366,8 +395,7 @@ impl Display for CoreHint {
             }
             CoreHint::Felt252DictEntryUpdate { dict_ptr, value } => {
                 let (dict_ptr, value) = (ResOperandFormatter(dict_ptr), ResOperandFormatter(value));
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     dict_tracker = __dict_manager.get_tracker({dict_ptr})
@@ -375,26 +403,20 @@ impl Display for CoreHint {
                     "
                 )
             }
-            CoreHint::TestLessThan { lhs, rhs, dst } => write!(
-                f,
-                "memory{dst} = {} < {}",
-                ResOperandFormatter(lhs),
-                ResOperandFormatter(rhs)
-            ),
-            CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => write!(
-                f,
+            CoreHint::TestLessThan { lhs, rhs, dst } => {
+                format!("memory{dst} = {} < {}", ResOperandFormatter(lhs), ResOperandFormatter(rhs))
+            }
+            CoreHint::TestLessThanOrEqual { lhs, rhs, dst } => format!(
                 "memory{dst} = {} <= {}",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            CoreHint::WideMul128 { lhs, rhs, high, low } => write!(
-                f,
+            CoreHint::WideMul128 { lhs, rhs, high, low } => format!(
                 "(memory{high}, memory{low}) = divmod({} * {}, 2**128)",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
             ),
-            CoreHint::DivMod { lhs, rhs, quotient, remainder } => write!(
-                f,
+            CoreHint::DivMod { lhs, rhs, quotient, remainder } => format!(
                 "(memory{quotient}, memory{remainder}) = divmod({}, {})",
                 ResOperandFormatter(lhs),
                 ResOperandFormatter(rhs)
@@ -415,8 +437,7 @@ impl Display for CoreHint {
                     ResOperandFormatter(divisor0),
                     ResOperandFormatter(divisor1),
                 );
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         dividend = {dividend0} + {dividend1} * 2**128
@@ -427,8 +448,7 @@ impl Display for CoreHint {
                         memory{remainder0} = remainder & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
                         memory{remainder1} = remainder >> 128
                     "
-                )?;
-                Ok(())
+                )
             }
             CoreHint::Uint512DivModByUint256 {
                 dividend0,
@@ -447,8 +467,7 @@ impl Display for CoreHint {
                 let [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1] =
                     [dividend0, dividend1, dividend2, dividend3, divisor0, divisor1]
                         .map(ResOperandFormatter);
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     dividend = {dividend0} + {dividend1} * 2**128 + {dividend2} * 2**256 + \
@@ -465,8 +484,7 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::SquareRoot { value, dst } => {
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         import math
@@ -486,8 +504,7 @@ impl Display for CoreHint {
             } => {
                 let (value_low, value_high) =
                     (ResOperandFormatter(value_low), ResOperandFormatter(value_high));
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         import math;
@@ -500,8 +517,7 @@ impl Display for CoreHint {
                         memory{remainder_high} = remainder >> 128
                         memory{sqrt_mul_2_minus_remainder_ge_u128} = root * 2 - remainder >= 2**128
                     "
-                )?;
-                Ok(())
+                )
             }
             CoreHint::LinearSplit { value, scalar, max_x, x, y } => {
                 let (value, scalar, max_x) = (
@@ -509,8 +525,7 @@ impl Display for CoreHint {
                     ResOperandFormatter(scalar),
                     ResOperandFormatter(max_x),
                 );
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         (value, scalar) = ({value}, {scalar})
@@ -522,8 +537,7 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::RandomEcPoint { x, y } => {
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         from starkware.crypto.signature.signature import ALPHA, BETA, FIELD_PRIME
@@ -533,8 +547,7 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::FieldSqrt { val, sqrt } => {
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         from starkware.crypto.signature.signature import FIELD_PRIME
@@ -549,8 +562,7 @@ impl Display for CoreHint {
                     ResOperandFormatter(val)
                 )
             }
-            CoreHint::GetCurrentAccessIndex { range_check_ptr } => writedoc!(
-                f,
+            CoreHint::GetCurrentAccessIndex { range_check_ptr } => formatdoc!(
                 "
 
                     current_access_indices = sorted(access_indices[key])[::-1]
@@ -560,10 +572,9 @@ impl Display for CoreHint {
                 ResOperandFormatter(range_check_ptr)
             ),
             CoreHint::ShouldSkipSquashLoop { should_skip_loop } => {
-                write!(f, "memory{should_skip_loop} = 0 if current_access_indices else 1")
+                format!("memory{should_skip_loop} = 0 if current_access_indices else 1")
             }
-            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => writedoc!(
-                f,
+            CoreHint::GetCurrentAccessDelta { index_delta_minus1 } => formatdoc!(
                 "
 
                     new_access_index = current_access_indices.pop()
@@ -572,10 +583,9 @@ impl Display for CoreHint {
                 "
             ),
             CoreHint::ShouldContinueSquashLoop { should_continue } => {
-                write!(f, "memory{should_continue} = 1 if current_access_indices else 0")
+                format!("memory{should_continue} = 1 if current_access_indices else 0")
             }
-            CoreHint::GetNextDictKey { next_key } => writedoc!(
-                f,
+            CoreHint::GetNextDictKey { next_key } => formatdoc!(
                 "
                     assert len(keys) > 0, 'No keys left but remaining_accesses > 0.'
                     memory{next_key} = key = keys.pop()
@@ -583,8 +593,7 @@ impl Display for CoreHint {
             ),
             CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index } => {
                 let dict_end_ptr = ResOperandFormatter(dict_end_ptr);
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     memory{dict_index} = __segment_index_to_arena_index[
@@ -605,8 +614,7 @@ impl Display for CoreHint {
                     ResOperandFormatter(ptr_diff),
                     ResOperandFormatter(n_accesses),
                 );
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     dict_access_size = 3
@@ -637,8 +645,7 @@ impl Display for CoreHint {
                     ResOperandFormatter(a),
                     ResOperandFormatter(b),
                 );
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                     import itertools
@@ -665,13 +672,12 @@ impl Display for CoreHint {
                 )
             }
             CoreHint::AssertLeIsFirstArcExcluded { skip_exclude_a_flag } => {
-                write!(f, "memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
+                format!("memory{skip_exclude_a_flag} = 1 if excluded != 0 else 0",)
             }
             CoreHint::AssertLeIsSecondArcExcluded { skip_exclude_b_minus_a } => {
-                write!(f, "memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
+                format!("memory{skip_exclude_b_minus_a} = 1 if excluded != 1 else 0",)
             }
-            CoreHint::DebugPrint { start, end } => writedoc!(
-                f,
+            CoreHint::DebugPrint { start, end } => formatdoc!(
                 "
 
                     curr = {}
@@ -684,8 +690,7 @@ impl Display for CoreHint {
                 ResOperandFormatter(end),
             ),
             CoreHint::AllocConstantSize { size, dst } => {
-                writedoc!(
-                    f,
+                formatdoc!(
                     "
 
                         if '__boxed_segment' not in globals():
@@ -700,64 +705,80 @@ impl Display for CoreHint {
     }
 }
 
-impl Display for StarknetHint {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+impl PythonicHint for StarknetHint {
+    fn get_pythonic_hint(&self) -> String {
         match self {
             StarknetHint::SystemCall { system } => {
-                write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
+                format!("syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
+<<<<<<< HEAD
+||||||| 9aeaf41c
+            StarknetHint::SetBlockNumber { value } => {
+                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
+            }
+=======
+            StarknetHint::SetBlockNumber { value } => {
+                format!("syscall_handler.block_number = {}", ResOperandFormatter(value))
+            }
+>>>>>>> 496b6455^2
             StarknetHint::SetBlockTimestamp { value } => {
-                write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
+                format!("syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetCallerAddress { value } => {
-                write!(f, "syscall_handler.caller_address = {}", ResOperandFormatter(value))
+                format!("syscall_handler.caller_address = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetContractAddress { value } => {
-                write!(f, "syscall_handler.contract_address = {}", ResOperandFormatter(value))
+                format!("syscall_handler.contract_address = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetSequencerAddress { value } => {
-                write!(f, "syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
+                format!("syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetVersion { value } => {
-                write!(f, "syscall_handler.tx_info.version = {}", ResOperandFormatter(value))
+                format!("syscall_handler.tx_info.version = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetAccountContractAddress { value } => {
-                write!(
-                    f,
+                format!(
                     "syscall_handler.tx_info.account_contract_address = {}",
                     ResOperandFormatter(value)
                 )
             }
             StarknetHint::SetMaxFee { value } => {
-                write!(f, "syscall_handler.tx_info.max_fee = {}", ResOperandFormatter(value))
+                format!("syscall_handler.tx_info.max_fee = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetTransactionHash { value } => {
-                write!(
-                    f,
-                    "syscall_handler.tx_info.transaction_hash = {}",
-                    ResOperandFormatter(value)
-                )
+                format!("syscall_handler.tx_info.transaction_hash = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetChainId { value } => {
-                write!(f, "syscall_handler.tx_info.chain_id = {}", ResOperandFormatter(value))
+                format!("syscall_handler.tx_info.chain_id = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetNonce { value } => {
-                write!(f, "syscall_handler.tx_info.nonce = {}", ResOperandFormatter(value))
+                format!("syscall_handler.tx_info.nonce = {}", ResOperandFormatter(value))
             }
             StarknetHint::SetSignature { start, end } => {
-                write!(
-                    f,
+                format!(
                     "syscall_handler.tx_info.signature = [memory[i] for i in range({}, {})]",
                     ResOperandFormatter(start),
                     ResOperandFormatter(end)
                 )
             }
+<<<<<<< HEAD
             StarknetHint::PopLog { .. } => {
                 write!(f, "raise NotImplemented")
             }
             StarknetHint::Cheatcode { .. } => {
                 write!(f, "raise NotImplementedError")
             }
+||||||| 9aeaf41c
+=======
+            StarknetHint::PopLog {
+                value: _,
+                opt_variant: _,
+                keys_start: _,
+                keys_end: _,
+                data_start: _,
+                data_end: _,
+            } => "raise NotImplemented".to_string(),
+>>>>>>> 496b6455^2
         }
     }
 }

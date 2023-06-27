@@ -292,11 +292,28 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
         ];
         let rc_output_info = OutputVarInfo::new_builtin(range_check_type, 0);
         let branch_signatures = vec![
-            // First (success) branch returns rc, array and the slice snapshot; failure branch does
-            // not return an element.
+            // Success.
             BranchSignature {
                 vars: vec![
+<<<<<<< HEAD
                     rc_output_info.clone(),
+||||||| 9aeaf41c
+                    OutputVarInfo {
+                        ty: range_check_type.clone(),
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+=======
+                    // Range check.
+                    OutputVarInfo {
+                        ty: range_check_type.clone(),
+                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                            param_idx: 0,
+                        }),
+                    },
+                    // Array slice snapshot.
+>>>>>>> 496b6455^2
                     OutputVarInfo {
                         ty: arr_snapshot_type,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -304,6 +321,7 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
                 ],
                 ap_change: SierraApChange::Known { new_vars_only: false },
             },
+            // Failure - returns only the range check buffer.
             BranchSignature {
                 vars: vec![rc_output_info],
                 ap_change: SierraApChange::Known { new_vars_only: false },

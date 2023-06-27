@@ -306,6 +306,7 @@ fn test_get_signature() {
 }
 
 #[test]
+<<<<<<< HEAD
 #[available_gas(300000)]
 fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
@@ -332,6 +333,17 @@ fn test_pop_log_empty_logs() {
 }
 
 #[test]
+||||||| 9aeaf41c
+=======
+#[available_gas(300000)]
+#[should_panic]
+fn test_pop_log_empty_logs() {
+    let contract_address = starknet::contract_address_const::<0x1234>();
+    starknet::testing::pop_log(contract_address).unwrap();
+}
+
+#[test]
+>>>>>>> 496b6455^2
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {
     starknet::storage_address_try_from_felt252(-1).unwrap()
