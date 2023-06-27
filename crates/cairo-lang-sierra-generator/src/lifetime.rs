@@ -110,12 +110,14 @@ pub fn find_variable_lifetime(
         BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: context };
 
     let mut root_demands = analysis.get_root_info();
-    analysis.analyzer.introduce(
-        &mut root_demands,
+
+    root_demands.variables_introduced(
+        &mut analysis.analyzer,
         &lowered_function.parameters,
         DropLocation::BeginningOfBlock(BlockId::root()),
     );
-    for var in root_demands.vars {
+
+    for var in root_demands.vars.keys() {
         match var {
             SierraGenVar::LoweringVar(var_id) => {
                 panic!("v{} is used before it is introduced.", var_id.index())
@@ -132,7 +134,7 @@ struct VariableLifetimeContext<'a> {
     res: VariableLifetimeResult,
 }
 
-pub type SierraDemand = Demand<SierraGenVar>;
+pub type SierraDemand = Demand<SierraGenVar, UseLocation>;
 
 impl<'a> DemandReporter<SierraGenVar> for VariableLifetimeContext<'a> {
     type IntroducePosition = DropLocation;
@@ -156,7 +158,12 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
         statement_location: StatementLocation,
         stmt: &lowering::Statement,
     ) {
-        self.introduce(info, &stmt.outputs(), DropLocation::PostStatement(statement_location));
+        self.introduce(
+            info,
+            &stmt.outputs(),
+            statement_location,
+            DropLocation::PostStatement(statement_location),
+        );
         info.variables_used(
             self,
             stmt.inputs()
@@ -180,10 +187,15 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
                 .enumerate()
                 .map(|(idx, (dst, src))| (dst, (src, UseLocation { statement_location, idx }))),
         );
-        for (dst, _src) in remapping.iter() {
+        for (idx, (dst, _src)) in remapping.iter().enumerate() {
             if self.local_vars.contains(dst) {
                 assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*dst)),
+                    info.vars
+                        .insert(
+                            SierraGenVar::UninitializedLocal(*dst),
+                            UseLocation { statement_location, idx }
+                        )
+                        .is_none(),
                     "Variable introduced multiple times."
                 );
             }
@@ -202,6 +214,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
                 self.introduce(
                     &mut demand,
                     &arm.var_ids,
+                    statement_location,
                     DropLocation::BeginningOfBlock(arm.block_id),
                 );
                 (demand, DropLocation::BeginningOfBlock(arm.block_id))
@@ -243,12 +256,23 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     }
 }
 impl<'a> VariableLifetimeContext<'a> {
-    fn introduce(&mut self, info: &mut SierraDemand, vars: &[VariableId], location: DropLocation) {
-        info.variables_introduced(self, vars, location);
-        for var_id in vars {
+    fn introduce(
+        &mut self,
+        info: &mut SierraDemand,
+        vars: &[VariableId],
+        statement_location: StatementLocation,
+        drop_location: DropLocation,
+    ) {
+        info.variables_introduced(self, vars, drop_location);
+        for (idx, var_id) in vars.iter().enumerate() {
             if self.local_vars.contains(var_id) {
                 assert!(
-                    info.vars.insert(SierraGenVar::UninitializedLocal(*var_id)),
+                    info.vars
+                        .insert(
+                            SierraGenVar::UninitializedLocal(*var_id),
+                            UseLocation { statement_location, idx }
+                        )
+                        .is_none(),
                     "Variable introduced multiple times."
                 );
             }

@@ -13,7 +13,7 @@ use crate::{
     StatementEnumConstruct, VarRemapping, VarUsage, VariableId,
 };
 
-pub type LoweredDemand = Demand<VariableId>;
+pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
 /// relevent match arm.
@@ -99,7 +99,7 @@ impl MatchOptimizerContext {
         let mut demand = candidate.arm_demands[arm_idx].clone();
 
         let mut remapping = VarRemapping::default();
-        if demand.vars.contains(var_id) {
+        if demand.vars.contains_key(var_id) {
             // The input to EnumConstruct should be available as `var_id`
             // in `arm.block_id`
             remapping.insert(*var_id, input.var_id);
@@ -136,13 +136,13 @@ struct OptimizationCandidate<'a> {
     match_arms: &'a [MatchArm],
 
     /// The demands at the arms.
-    arm_demands: Vec<LoweredDemand>,
+    arm_demands: Vec<MatchOptimizerDemand>,
 }
 
 #[derive(Clone)]
 pub struct AnalysisInfo<'a> {
     candidate: Option<OptimizationCandidate<'a>>,
-    demand: LoweredDemand,
+    demand: MatchOptimizerDemand,
 }
 impl<'a> Analyzer<'a> for MatchOptimizerContext {
     type Info = AnalysisInfo<'a>;
@@ -208,13 +208,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
                 (demand, ())
             })
             .collect_vec();
-        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
+        let mut demand = MatchOptimizerDemand::merge_demands(&arm_demands, self);
 
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
             MatchInfo::Enum(MatchEnumInfo { input, arms, .. })
-                if !demand.vars.contains(&input.var_id) =>
+                if !demand.vars.contains_key(&input.var_id) =>
             {
                 Some(OptimizationCandidate {
                     match_variable: input.var_id,
@@ -239,7 +239,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         _statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info {
-        let mut demand = LoweredDemand::default();
+        let mut demand = MatchOptimizerDemand::default();
         demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         Self::Info { candidate: None, demand }
     }
@@ -249,7 +249,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         _statement_location: StatementLocation,
         data: &VariableId,
     ) -> Self::Info {
-        let mut demand = LoweredDemand::default();
+        let mut demand = MatchOptimizerDemand::default();
         demand.variables_used(self, std::iter::once((data, ())));
         Self::Info { candidate: None, demand }
     }
