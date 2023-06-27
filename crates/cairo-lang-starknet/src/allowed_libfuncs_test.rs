@@ -12,7 +12,7 @@ use super::{
 fn experimental_list_includes_all() {
     let blocked_libfuncs = [
         "print",
-        "set_block_number",
+        "cheatcode",
         "set_block_timestamp",
         "set_caller_address",
         "set_contract_address",

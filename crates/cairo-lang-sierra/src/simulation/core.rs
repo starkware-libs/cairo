@@ -11,7 +11,8 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    Mem, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64, Uint8,
+    UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -25,10 +26,10 @@ use crate::extensions::gas::GasConcreteLibfunc::{
     BuiltinWithdrawGas, GetAvailableGas, GetBuiltinCosts, RedepositGas, WithdrawGas,
 };
 use crate::extensions::int::unsigned::{
-    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete, UintConstConcreteLibfunc,
+    Uint16Concrete, Uint32Concrete, Uint64Concrete, Uint8Concrete,
 };
 use crate::extensions::int::unsigned128::Uint128Concrete;
-use crate::extensions::int::IntOperator;
+use crate::extensions::int::{IntConstConcreteLibfunc, IntOperator};
 use crate::extensions::mem::MemConcreteLibfunc::{
     AllocLocal, FinalizeLocals, Rename, StoreLocal, StoreTemp,
 };
@@ -224,6 +225,9 @@ pub fn simulate<
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),
         Uint64(libfunc) => simulate_u64_libfunc(libfunc, &inputs),
         Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
+        Sint8(_) | Sint16(_) | Sint32(_) | Sint64(_) | Sint128(_) => {
+            unimplemented!("Simulation of signed integer libfuncs is not implemented yet.")
+        }
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt252(libfunc) => simulate_felt252_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {
@@ -428,7 +432,7 @@ fn simulate_u128_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint128Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint128Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint128(*c)], 0))
             } else {
@@ -536,7 +540,7 @@ fn simulate_u8_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint8Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint8Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint8(*c)], 0))
             } else {
@@ -605,7 +609,7 @@ fn simulate_u16_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint16Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint16Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint16(*c)], 0))
             } else {
@@ -674,7 +678,7 @@ fn simulate_u32_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint32Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint32Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint32(*c)], 0))
             } else {
@@ -743,7 +747,7 @@ fn simulate_u64_libfunc(
     inputs: &[CoreValue],
 ) -> Result<(Vec<CoreValue>, usize), LibfuncSimulationError> {
     match libfunc {
-        Uint64Concrete::Const(UintConstConcreteLibfunc { c, .. }) => {
+        Uint64Concrete::Const(IntConstConcreteLibfunc { c, .. }) => {
             if inputs.is_empty() {
                 Ok((vec![CoreValue::Uint64(*c)], 0))
             } else {

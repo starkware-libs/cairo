@@ -1,0 +1,195 @@
+//! > i128_to_felt252 libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(v: i128) -> felt252 {
+    integer::i128_to_felt252(v)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i128 = i128;
+type felt252 = felt252;
+
+libfunc i128_to_felt252 = i128_to_felt252;
+libfunc store_temp<felt252> = store_temp<felt252>;
+
+i128_to_felt252([0]) -> ([1]);
+store_temp<felt252>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: i128) -> (felt252);
+
+//! > ==========================================================================
+
+//! > i128_eq libfunc (a deref, b deref)
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i128, b: i128) -> bool {
+    integer::i128_eq(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 0] + [fp + -3], ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 6;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 400})
+
+//! > sierra_code
+type i128 = i128;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc i128_eq = i128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+i128_eq([0], [1]) { fallthrough() 6() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([4]);
+jump() { 10() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([5]);
+enum_init<core::bool, 1>([5]) -> ([6]);
+store_temp<core::bool>([6]) -> ([4]);
+rename<core::bool>([4]) -> ([7]);
+return([7]);
+
+test::foo@0([0]: i128, [1]: i128) -> (core::bool);
+
+//! > ==========================================================================
+
+//! > i128_eq libfunc (a immediate, b immediate)
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> bool {
+    integer::i128_eq(11_i128, 12_i128)
+}
+
+//! > casm
+[ap + 0] = 11, ap++;
+[ap + -1] = [ap + 0] + 12, ap++;
+jmp rel 4 if [ap + -1] != 0;
+jmp rel 6;
+[ap + 0] = 0, ap++;
+jmp rel 4;
+[ap + 0] = 1, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 500})
+
+//! > sierra_code
+type i128 = i128;
+type Unit = Struct<ut@Tuple>;
+type core::bool = Enum<ut@core::bool, Unit, Unit>;
+
+libfunc i128_const<11> = i128_const<11>;
+libfunc i128_const<12> = i128_const<12>;
+libfunc store_temp<i128> = store_temp<i128>;
+libfunc i128_eq = i128_eq;
+libfunc branch_align = branch_align;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
+libfunc store_temp<core::bool> = store_temp<core::bool>;
+libfunc jump = jump;
+libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
+libfunc rename<core::bool> = rename<core::bool>;
+
+i128_const<11>() -> ([0]);
+i128_const<12>() -> ([1]);
+store_temp<i128>([0]) -> ([0]);
+i128_eq([0], [1]) { fallthrough() 9() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([2]);
+enum_init<core::bool, 0>([2]) -> ([3]);
+store_temp<core::bool>([3]) -> ([4]);
+jump() { 13() };
+branch_align() -> ();
+struct_construct<Unit>() -> ([5]);
+enum_init<core::bool, 1>([5]) -> ([6]);
+store_temp<core::bool>([6]) -> ([4]);
+rename<core::bool>([4]) -> ([7]);
+return([7]);
+
+test::foo@0() -> (core::bool);
+
+//! > ==========================================================================
+
+//! > i128_is_zero libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+use zeroable::IsZeroResult;
+use zeroable::NonZeroIntoImpl;
+use traits::Into;
+fn foo(a: i128) -> i128 {
+    match integer::i128_is_zero(a) {
+        IsZeroResult::Zero(()) => 123_i128,
+        IsZeroResult::NonZero(x) => x.into(),
+    }
+}
+
+//! > casm
+jmp rel 6 if [fp + -3] != 0;
+[ap + 0] = 123, ap++;
+jmp rel 3;
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 300})
+
+//! > sierra_code
+type i128 = i128;
+type NonZero<i128> = NonZero<i128>;
+
+libfunc i128_is_zero = i128_is_zero;
+libfunc branch_align = branch_align;
+libfunc i128_const<123> = i128_const<123>;
+libfunc store_temp<i128> = store_temp<i128>;
+libfunc jump = jump;
+libfunc unwrap_non_zero<i128> = unwrap_non_zero<i128>;
+libfunc rename<i128> = rename<i128>;
+
+i128_is_zero([0]) { fallthrough() 5([1]) };
+branch_align() -> ();
+i128_const<123>() -> ([2]);
+store_temp<i128>([2]) -> ([3]);
+jump() { 8() };
+branch_align() -> ();
+unwrap_non_zero<i128>([1]) -> ([4]);
+store_temp<i128>([4]) -> ([3]);
+rename<i128>([3]) -> ([5]);
+return([5]);
+
+test::foo@0([0]: i128) -> (i128);

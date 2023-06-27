@@ -820,6 +820,8 @@ pub trait SemanticGroup:
     // ==============
     #[salsa::invoke(items::generics::generic_param_semantic)]
     fn generic_param_semantic(&self, generic_param: GenericParamId) -> Maybe<GenericParam>;
+    #[salsa::invoke(items::generics::generic_impl_param_trait)]
+    fn generic_impl_param_trait(&self, generic_param_id: GenericParamId) -> Maybe<TraitId>;
 
     // Concrete type.
     // ==============
@@ -1133,6 +1135,7 @@ fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<Resol
             }
         },
         LookupItemId::ImplFunction(id) => vec![db.impl_function_resolver_data(id)],
+        LookupItemId::TraitFunction(id) => vec![db.trait_function_resolver_data(id)],
     }
     .into_iter()
     .flatten()

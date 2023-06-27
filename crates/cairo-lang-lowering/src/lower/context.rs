@@ -29,7 +29,7 @@ use crate::ids::{
 };
 use crate::lower::external::{extern_facade_expr, extern_facade_return_tys};
 use crate::objects::Variable;
-use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VariableId};
+use crate::{FlatLowered, MatchArm, MatchExternInfo, MatchInfo, VarUsage, VariableId};
 
 pub struct VariableAllocator<'db> {
     pub db: &'db dyn LoweringGroup,
@@ -47,13 +47,14 @@ impl<'db> VariableAllocator<'db> {
         variables: Arena<Variable>,
     ) -> Maybe<Self> {
         let generic_params = db.function_with_body_generic_params(function_id)?;
+        let generic_param_ids = generic_params.iter().map(|p| p.id()).collect_vec();
         Ok(Self {
             db,
             variables,
             module_file_id: function_id.module_file_id(db.upcast()),
             lookup_context: ImplLookupContext::new(
                 function_id.parent_module(db.upcast()),
-                generic_params,
+                generic_param_ids,
             ),
         })
     }
@@ -213,7 +214,7 @@ pub struct VarRequest {
 #[derive(Clone, Debug)]
 pub enum LoweredExpr {
     /// The expression value lies in a variable.
-    AtVariable(VariableId),
+    AtVariable(VarUsage),
     /// The expression value is a tuple.
     Tuple {
         exprs: Vec<LoweredExpr>,
@@ -228,13 +229,14 @@ pub enum LoweredExpr {
     },
 }
 impl LoweredExpr {
-    pub fn var(
+    // Returns a VarUsage corresponding to the lowered expression.
+    pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut BlockBuilder,
-    ) -> Result<VariableId, LoweringFlowError> {
+    ) -> Result<VarUsage, LoweringFlowError> {
         match self {
-            LoweredExpr::AtVariable(var_id) => Ok(var_id),
+            LoweredExpr::AtVariable(var_usage) => Ok(var_usage),
             LoweredExpr::Tuple { exprs, location } => {
                 let inputs: Vec<_> = exprs
                     .into_iter()
@@ -245,9 +247,12 @@ impl LoweredExpr {
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
-            LoweredExpr::ExternEnum(extern_enum) => extern_enum.var(ctx, builder),
+            LoweredExpr::ExternEnum(extern_enum) => {
+                let location = extern_enum.location;
+                Ok(VarUsage { var_id: extern_enum.var(ctx, builder)?, location })
+            }
             LoweredExpr::Member(member_path, _location) => {
-                Ok(builder.get_ref(ctx, &member_path).unwrap().var_id)
+                Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
             LoweredExpr::Snapshot { expr, location } => {
                 let (original, snapshot) =
@@ -257,13 +262,22 @@ impl LoweredExpr {
                     builder.update_ref(ctx, member_path, original);
                 }
 
-                Ok(snapshot)
+                Ok(VarUsage { var_id: snapshot, location })
             }
         }
     }
+
+    pub fn var(
+        self,
+        ctx: &mut LoweringContext<'_, '_>,
+        builder: &mut BlockBuilder,
+    ) -> Result<VariableId, LoweringFlowError> {
+        Ok(self.as_var_usage(ctx, builder)?.var_id)
+    }
+
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
-            LoweredExpr::AtVariable(var) => ctx.variables[*var].ty,
+            LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
             LoweredExpr::Tuple { exprs, .. } => ctx.db.intern_type(semantic::TypeLongId::Tuple(
                 exprs.iter().map(|expr| expr.ty(ctx)).collect(),
             )),
@@ -340,7 +354,8 @@ impl LoweredExprExternEnum {
                     variant: concrete_variant,
                     location: self.location,
                 }
-                .add(ctx, &mut subscope.statements);
+                .add(ctx, &mut subscope.statements)
+                .var_id;
                 Ok((subscope.goto_callsite(Some(result)), block_id))
             })
             .collect::<Result<Vec<_>, _>>()
@@ -409,7 +424,8 @@ pub fn lowering_flow_error_to_sealed_block(
                 ),
                 location: ctx.variables[data_var].location,
             }
-            .add(ctx, &mut builder.statements);
+            .add(ctx, &mut builder.statements)
+            .var_id;
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
@@ -418,7 +434,8 @@ pub fn lowering_flow_error_to_sealed_block(
                 ])),
                 location: ctx.variables[data_var].location,
             }
-            .add(ctx, &mut builder.statements);
+            .add(ctx, &mut builder.statements)
+            .var_id;
             builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {

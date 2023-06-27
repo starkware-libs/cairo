@@ -13,6 +13,11 @@ use super::felt252_dict::{
     Felt252DictEntryLibfunc, Felt252DictEntryType, Felt252DictLibfunc, Felt252DictType,
 };
 use super::gas::BuiltinCostsType;
+use super::int::signed::{
+    Sint16Libfunc, Sint16Type, Sint32Libfunc, Sint32Type, Sint64Libfunc, Sint64Type, Sint8Libfunc,
+    Sint8Type,
+};
+use super::int::signed128::{Sint128Libfunc, Sint128Type};
 use super::int::unsigned::{
     Uint16Libfunc, Uint16Type, Uint32Libfunc, Uint32Type, Uint64Libfunc, Uint64Type, Uint8Libfunc,
     Uint8Type,
@@ -57,6 +62,11 @@ define_type_hierarchy! {
         Uint64(Uint64Type),
         Uint128(Uint128Type),
         Uint128MulGuarantee(U128MulGuaranteeType),
+        Sint8(Sint8Type),
+        Sint16(Sint16Type),
+        Sint32(Sint32Type),
+        Sint64(Sint64Type),
+        Sint128(Sint128Type),
         NonZero(NonZeroType),
         Nullable(NullableType),
         RangeCheck(RangeCheckType),
@@ -96,6 +106,11 @@ define_libfunc_hierarchy! {
         Uint128(Uint128Libfunc),
         Uint256(Uint256Libfunc),
         Uint512(Uint512Libfunc),
+        Sint8(Sint8Libfunc),
+        Sint16(Sint16Libfunc),
+        Sint32(Sint32Libfunc),
+        Sint64(Sint64Libfunc),
+        Sint128(Sint128Libfunc),
         Mem(MemLibfunc),
         Nullable(NullableLibfunc),
         UnwrapNonZero(UnwrapNonZeroLibfunc),

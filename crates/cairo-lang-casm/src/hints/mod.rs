@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::writedoc;
 use parity_scale_codec_derive::{Decode, Encode};
 use schemars::JsonSchema;
@@ -48,30 +49,28 @@ pub enum StarknetHint {
     #[codec(index = 0)]
     SystemCall { system: ResOperand },
     #[codec(index = 1)]
-    SetBlockNumber { value: ResOperand },
-    #[codec(index = 2)]
     SetBlockTimestamp { value: ResOperand },
-    #[codec(index = 3)]
+    #[codec(index = 2)]
     SetCallerAddress { value: ResOperand },
-    #[codec(index = 4)]
+    #[codec(index = 3)]
     SetContractAddress { value: ResOperand },
-    #[codec(index = 5)]
+    #[codec(index = 4)]
     SetSequencerAddress { value: ResOperand },
-    #[codec(index = 6)]
+    #[codec(index = 5)]
     SetVersion { value: ResOperand },
-    #[codec(index = 7)]
+    #[codec(index = 6)]
     SetAccountContractAddress { value: ResOperand },
-    #[codec(index = 8)]
+    #[codec(index = 7)]
     SetMaxFee { value: ResOperand },
-    #[codec(index = 9)]
+    #[codec(index = 8)]
     SetTransactionHash { value: ResOperand },
-    #[codec(index = 10)]
+    #[codec(index = 9)]
     SetChainId { value: ResOperand },
-    #[codec(index = 11)]
+    #[codec(index = 10)]
     SetNonce { value: ResOperand },
-    #[codec(index = 12)]
+    #[codec(index = 11)]
     SetSignature { start: ResOperand, end: ResOperand },
-    #[codec(index = 13)]
+    #[codec(index = 12)]
     PopLog {
         value: ResOperand,
         opt_variant: CellRef,
@@ -79,6 +78,14 @@ pub enum StarknetHint {
         keys_end: CellRef,
         data_start: CellRef,
         data_end: CellRef,
+    },
+    #[codec(index = 13)]
+    Cheatcode {
+        selector: BigIntAsHex,
+        input_start: ResOperand,
+        input_end: ResOperand,
+        output_start: CellRef,
+        output_end: CellRef,
     },
 }
 
@@ -699,9 +706,6 @@ impl Display for StarknetHint {
             StarknetHint::SystemCall { system } => {
                 write!(f, "syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            StarknetHint::SetBlockNumber { value } => {
-                write!(f, "syscall_handler.block_number = {}", ResOperandFormatter(value))
-            }
             StarknetHint::SetBlockTimestamp { value } => {
                 write!(f, "syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
             }
@@ -748,15 +752,11 @@ impl Display for StarknetHint {
                     ResOperandFormatter(end)
                 )
             }
-            StarknetHint::PopLog {
-                value: _,
-                opt_variant: _,
-                keys_start: _,
-                keys_end: _,
-                data_start: _,
-                data_end: _,
-            } => {
+            StarknetHint::PopLog { .. } => {
                 write!(f, "raise NotImplemented")
+            }
+            StarknetHint::Cheatcode { .. } => {
+                write!(f, "raise NotImplementedError")
             }
         }
     }

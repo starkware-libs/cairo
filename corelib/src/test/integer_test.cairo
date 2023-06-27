@@ -1120,3 +1120,37 @@ fn test_u128_byte_reverse() {
         'Wrong byte reverse'
     );
 }
+
+#[test]
+fn test_i8_operators() {
+    assert_eq(@1_i8, @1_i8, '1 == 1');
+    assert_ne(@1_i8, @2_i8, '1 != 2');
+}
+
+
+#[test]
+fn test_i16_operators() {
+    assert_eq(@1_i16, @1_i16, '1 == 1');
+    assert_ne(@1_i16, @2_i16, '1 != 2');
+}
+
+
+#[test]
+fn test_i32_operators() {
+    assert_eq(@1_i32, @1_i32, '1 == 1');
+    assert_ne(@1_i32, @2_i32, '1 != 2');
+}
+
+
+#[test]
+fn test_i64_operators() {
+    assert_eq(@1_i64, @1_i64, '1 == 1');
+    assert_ne(@1_i64, @2_i64, '1 != 2');
+}
+
+
+#[test]
+fn test_i128_operators() {
+    assert_eq(@1_i128, @1_i128, '1 == 1');
+    assert_ne(@1_i128, @2_i128, '1 != 2');
+}
