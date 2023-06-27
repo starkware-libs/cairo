@@ -295,18 +295,9 @@ impl SignatureAndTypeGenericLibfunc for ArraySliceLibfuncWrapped {
             // Success.
             BranchSignature {
                 vars: vec![
-<<<<<<< HEAD
-                    rc_output_info.clone(),
-=======
                     // Range check.
-                    OutputVarInfo {
-                        ty: range_check_type.clone(),
-                        ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                            param_idx: 0,
-                        }),
-                    },
+                    rc_output_info.clone(),
                     // Array slice snapshot.
->>>>>>> v2.0.0-rc5
                     OutputVarInfo {
                         ty: arr_snapshot_type,
                         ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

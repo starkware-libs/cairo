@@ -8,8 +8,8 @@ use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
-    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{

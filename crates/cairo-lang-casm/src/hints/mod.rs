@@ -1,11 +1,7 @@
 use std::fmt::{Display, Formatter};
 
-<<<<<<< HEAD
 use cairo_lang_utils::bigint::BigIntAsHex;
-use indoc::writedoc;
-=======
 use indoc::formatdoc;
->>>>>>> v2.0.0-rc5
 use parity_scale_codec_derive::{Decode, Encode};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -86,11 +82,7 @@ pub enum StarknetHint {
     SetNonce { value: ResOperand },
     #[codec(index = 11)]
     SetSignature { start: ResOperand, end: ResOperand },
-<<<<<<< HEAD
     #[codec(index = 12)]
-=======
-    #[codec(index = 13)]
->>>>>>> v2.0.0-rc5
     PopLog {
         value: ResOperand,
         opt_variant: CellRef,
@@ -99,7 +91,6 @@ pub enum StarknetHint {
         data_start: CellRef,
         data_end: CellRef,
     },
-<<<<<<< HEAD
     #[codec(index = 13)]
     Cheatcode {
         selector: BigIntAsHex,
@@ -108,8 +99,6 @@ pub enum StarknetHint {
         output_start: CellRef,
         output_end: CellRef,
     },
-=======
->>>>>>> v2.0.0-rc5
 }
 
 // Represents a cairo core hint.
@@ -703,12 +692,6 @@ impl PythonicHint for StarknetHint {
             StarknetHint::SystemCall { system } => {
                 format!("syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-<<<<<<< HEAD
-=======
-            StarknetHint::SetBlockNumber { value } => {
-                format!("syscall_handler.block_number = {}", ResOperandFormatter(value))
-            }
->>>>>>> v2.0.0-rc5
             StarknetHint::SetBlockTimestamp { value } => {
                 format!("syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
             }
@@ -749,23 +732,9 @@ impl PythonicHint for StarknetHint {
                     ResOperandFormatter(end)
                 )
             }
-<<<<<<< HEAD
-            StarknetHint::PopLog { .. } => {
-                write!(f, "raise NotImplemented")
+            StarknetHint::PopLog { .. } | StarknetHint::Cheatcode { .. } => {
+                "raise NotImplementedError".to_string()
             }
-            StarknetHint::Cheatcode { .. } => {
-                write!(f, "raise NotImplementedError")
-            }
-=======
-            StarknetHint::PopLog {
-                value: _,
-                opt_variant: _,
-                keys_start: _,
-                keys_end: _,
-                data_start: _,
-                data_end: _,
-            } => "raise NotImplemented".to_string(),
->>>>>>> v2.0.0-rc5
         }
     }
 }

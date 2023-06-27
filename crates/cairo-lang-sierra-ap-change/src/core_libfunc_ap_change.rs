@@ -163,22 +163,13 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-<<<<<<< HEAD
-            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
+            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(16)],
             Uint128Concrete::Bitwise(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(21)],
-            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
-=======
-            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(16)],
-        },
-        CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
-            Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-            Uint256Concrete::Divmod(_) => vec![ApChange::Known(43)],
             Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(25)],
->>>>>>> v2.0.0-rc5
         },
         CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
             Uint512Concrete::DivModU256(_) => vec![ApChange::Known(43)],
@@ -267,10 +258,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             }
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
                 TestingConcreteLibfunc::PopLog(_) => vec![ApChange::Known(5), ApChange::Known(5)],
-<<<<<<< HEAD
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
-=======
->>>>>>> v2.0.0-rc5
                 _ => vec![ApChange::Known(0)],
             },
         },
