@@ -1028,9 +1028,9 @@ impl<'a> CairoHintProcessor<'a> {
             .expect("Internal runner error.");
 
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-        self.starknet_state = std::mem::take(&mut res.starknet_state);
         match res.value {
             RunResultValue::Success(value) => {
+                self.starknet_state = std::mem::take(&mut res.starknet_state);
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
