@@ -178,7 +178,7 @@ End:
 blk4:
 Statements:
   (v10: core::felt252) <- 3u
-  (v48: core::RangeCheck, v49: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v38, v39, v10)
+  (v46: core::RangeCheck, v47: core::gas::GasBuiltin, v28: core::panics::PanicResult::<(core::felt252,)>) <- test::foo(v38, v39, v10)
 End:
   Match(match_enum(v28) {
     PanicResult::Ok(v29) => blk5,
@@ -196,13 +196,13 @@ Statements:
   (v32: (core::felt252,)) <- struct_construct(v21)
   (v33: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Ok(v32)
 End:
-  Return(v48, v49, v33)
+  Return(v46, v47, v33)
 
 blk6:
 Statements:
   (v35: core::panics::PanicResult::<(core::felt252,)>) <- PanicResult::Err(v31)
 End:
-  Return(v48, v49, v35)
+  Return(v46, v47, v35)
 
 blk7:
 Statements:

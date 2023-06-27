@@ -52,11 +52,11 @@ End:
 blk1:
 Statements:
 End:
-  Goto(blk5, {v42 -> v46})
+  Goto(blk5, {v42 -> v44})
 
 blk2:
 Statements:
-  (v55: core::RangeCheck, v13: core::option::Option::<core::integer::u64>) <- core::integer::U128TryIntoU64::try_into(v42, v3)
+  (v49: core::RangeCheck, v13: core::option::Option::<core::integer::u64>) <- core::integer::U128TryIntoU64::try_into(v42, v3)
 End:
   Match(match_enum(v13) {
     Option::Some(v26) => blk3,
@@ -68,12 +68,12 @@ Statements:
   (v39: (core::integer::u64,)) <- struct_construct(v26)
   (v40: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Ok(v39)
 End:
-  Return(v55, v40)
+  Return(v49, v40)
 
 blk4:
 Statements:
 End:
-  Goto(blk5, {v55 -> v46})
+  Goto(blk5, {v49 -> v44})
 
 blk5:
 Statements:
@@ -84,7 +84,7 @@ Statements:
   (v34: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v33, v36)
   (v41: core::panics::PanicResult::<(core::integer::u64,)>) <- PanicResult::Err(v34)
 End:
-  Return(v46, v41)
+  Return(v44, v41)
 
 //! > lowering
 Main:

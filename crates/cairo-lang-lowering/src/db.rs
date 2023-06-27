@@ -330,6 +330,7 @@ fn concrete_function_with_body_postpanic_lowered(
     apply_inlining(db, function, &mut lowered)?;
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
+    reorganize_blocks(&mut lowered);
     add_destructs(db, function, &mut lowered);
     Ok(Arc::new(lowered))
 }
