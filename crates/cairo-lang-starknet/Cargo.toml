@@ -41,11 +41,11 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.0.0-rc2" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
     "testing",
 ] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc2" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true

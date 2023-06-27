@@ -26,9 +26,9 @@ salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.0.0-rc2" }
+cairo-lang-plugins = { path = "../cairo-lang-plugins" }
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc2" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
