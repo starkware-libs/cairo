@@ -15,7 +15,7 @@ itertools.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0-rc2" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
