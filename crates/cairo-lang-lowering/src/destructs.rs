@@ -148,7 +148,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
             // Since we need to insert destructor call right after the statement.
             (block_id, statement_index + 1),
         );
-        info.variables_used(self, &stmt.inputs(), ());
+        info.variables_used(self, stmt.inputs().iter().map(|var_id| (var_id, ())));
     }
 
     fn visit_goto(
@@ -158,7 +158,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
     }
 
     fn merge_match(
@@ -177,7 +177,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
             })
             .collect_vec();
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), ());
+        demand.variables_used(self, match_info.inputs().iter().map(|var_id| (var_id, ())));
         demand
     }
 
@@ -187,7 +187,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut info = LoweredDemand::default();
-        info.variables_used(self, vars, ());
+        info.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         info
     }
 
