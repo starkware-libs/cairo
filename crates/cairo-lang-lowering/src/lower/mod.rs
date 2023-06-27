@@ -1168,8 +1168,8 @@ fn lower_expr_member_access(
             ctx.get_location(expr.stable_ptr.untyped()),
         ));
     }
-    Ok(LoweredExpr::AtVariable(VarUsage {
-        var_id: generators::StructMemberAccess {
+    Ok(LoweredExpr::AtVariable(
+        generators::StructMemberAccess {
             input: lower_expr(ctx, builder, expr.expr)?.var(ctx, builder)?,
             member_tys: members
                 .into_iter()
@@ -1179,8 +1179,7 @@ fn lower_expr_member_access(
             location,
         }
         .add(ctx, &mut builder.statements),
-        location,
-    }))
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprStructCtor].
