@@ -28,7 +28,7 @@ impl BoolSerde of Serde<bool> {
     }
 }
 
-extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) nopanic;
 impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
     fn bitand(lhs: bool, rhs: bool) -> bool {
@@ -37,7 +37,7 @@ impl BoolBitAnd of BitAnd<bool> {
     }
 }
 
-extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool, ) nopanic;
 impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
     fn bitor(lhs: bool, rhs: bool) -> bool {
@@ -46,17 +46,17 @@ impl BoolBitOr of BitOr<bool> {
     }
 }
 
-extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool, ) nopanic;
 #[inline(always)]
 impl BoolNot of Not<bool> {
     #[inline(always)]
-    fn not(a: bool) -> bool implicits() nopanic {
+    fn not(a: bool) -> bool nopanic {
         let (r, ) = bool_not_impl(a);
         r
     }
 }
 
-extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool, ) nopanic;
 impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
     fn bitxor(lhs: bool, rhs: bool) -> bool {
@@ -90,7 +90,7 @@ impl BoolFelt252DictValue of Felt252DictValue<bool> {
     }
 }
 
-extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
+extern fn bool_to_felt252(a: bool) -> felt252 nopanic;
 
 // General purpose implicits.
 extern type RangeCheck;

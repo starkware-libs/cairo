@@ -206,7 +206,7 @@ extern fn u128_safe_divmod(
     lhs: u128, rhs: NonZero<u128>
 ) -> (u128, u128) implicits(RangeCheck) nopanic;
 
-extern fn u128_eq(lhs: u128, rhs: u128) -> bool implicits() nopanic;
+extern fn u128_eq(lhs: u128, rhs: u128) -> bool nopanic;
 
 impl U128PartialEq of PartialEq<u128> {
     #[inline(always)]
@@ -267,7 +267,7 @@ impl U128BitNot of BitNot<u128> {
     }
 }
 
-extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
+extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> nopanic;
 
 extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
 
@@ -280,7 +280,7 @@ extern fn u8_to_felt252(a: u8) -> felt252 nopanic;
 #[panic_with('u8_from Overflow', u8_from_felt252)]
 extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) nopanic;
 
-extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
+extern fn u8_eq(lhs: u8, rhs: u8) -> bool nopanic;
 
 impl U8Serde of Serde<u8> {
     fn serialize(self: @u8, ref output: Array<felt252>) {
@@ -376,7 +376,7 @@ impl U8SubEq of SubEq<u8> {
     }
 }
 
-extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 implicits() nopanic;
+extern fn u8_wide_mul(lhs: u8, rhs: u8) -> u16 nopanic;
 extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
 impl U8Mul of Mul<u8> {
@@ -391,7 +391,7 @@ impl U8MulEq of MulEq<u8> {
     }
 }
 
-extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
+extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> nopanic;
 extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[panic_with('u8 is 0', u8_as_non_zero)]
@@ -445,28 +445,6 @@ impl U8BitNot of BitNot<u8> {
         BoundedInt::max() - a
     }
 }
-extern fn u8_bitwise(lhs: u8, rhs: u8) -> (u8, u8, u8) implicits(Bitwise) nopanic;
-impl U8BitAnd of BitAnd<u8> {
-    #[inline(always)]
-    fn bitand(lhs: u8, rhs: u8) -> u8 {
-        let (v, _, _) = u8_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U8BitXor of BitXor<u8> {
-    #[inline(always)]
-    fn bitxor(lhs: u8, rhs: u8) -> u8 {
-        let (_, v, _) = u8_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U8BitOr of BitOr<u8> {
-    #[inline(always)]
-    fn bitor(lhs: u8, rhs: u8) -> u8 {
-        let (_, _, v) = u8_bitwise(lhs, rhs);
-        v
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u16;
@@ -477,7 +455,7 @@ extern fn u16_to_felt252(a: u16) -> felt252 nopanic;
 #[panic_with('u16_from Overflow', u16_from_felt252)]
 extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) nopanic;
 
-extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
+extern fn u16_eq(lhs: u16, rhs: u16) -> bool nopanic;
 
 impl U16Serde of Serde<u16> {
     fn serialize(self: @u16, ref output: Array<felt252>) {
@@ -573,7 +551,7 @@ impl U16SubEq of SubEq<u16> {
     }
 }
 
-extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 implicits() nopanic;
+extern fn u16_wide_mul(lhs: u16, rhs: u16) -> u32 nopanic;
 extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 
 impl U16Mul of Mul<u16> {
@@ -589,7 +567,7 @@ impl U16MulEq of MulEq<u16> {
     }
 }
 
-extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
+extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> nopanic;
 extern fn u16_safe_divmod(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
 
 #[panic_with('u16 is 0', u16_as_non_zero)]
@@ -643,28 +621,6 @@ impl U16BitNot of BitNot<u16> {
         BoundedInt::max() - a
     }
 }
-extern fn u16_bitwise(lhs: u16, rhs: u16) -> (u16, u16, u16) implicits(Bitwise) nopanic;
-impl U16BitAnd of BitAnd<u16> {
-    #[inline(always)]
-    fn bitand(lhs: u16, rhs: u16) -> u16 {
-        let (v, _, _) = u16_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U16BitXor of BitXor<u16> {
-    #[inline(always)]
-    fn bitxor(lhs: u16, rhs: u16) -> u16 {
-        let (_, v, _) = u16_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U16BitOr of BitOr<u16> {
-    #[inline(always)]
-    fn bitor(lhs: u16, rhs: u16) -> u16 {
-        let (_, _, v) = u16_bitwise(lhs, rhs);
-        v
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u32;
@@ -675,7 +631,7 @@ extern fn u32_to_felt252(a: u32) -> felt252 nopanic;
 #[panic_with('u32_from Overflow', u32_from_felt252)]
 extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) nopanic;
 
-extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
+extern fn u32_eq(lhs: u32, rhs: u32) -> bool nopanic;
 
 impl U32Serde of Serde<u32> {
     fn serialize(self: @u32, ref output: Array<felt252>) {
@@ -771,7 +727,7 @@ impl U32SubEq of SubEq<u32> {
     }
 }
 
-extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 implicits() nopanic;
+extern fn u32_wide_mul(lhs: u32, rhs: u32) -> u64 nopanic;
 extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
 impl U32Mul of Mul<u32> {
@@ -787,7 +743,7 @@ impl U32MulEq of MulEq<u32> {
     }
 }
 
-extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
+extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> nopanic;
 extern fn u32_safe_divmod(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
 
 #[panic_with('u32 is 0', u32_as_non_zero)]
@@ -841,28 +797,6 @@ impl U32BitNot of BitNot<u32> {
         BoundedInt::max() - a
     }
 }
-extern fn u32_bitwise(lhs: u32, rhs: u32) -> (u32, u32, u32) implicits(Bitwise) nopanic;
-impl U32BitAnd of BitAnd<u32> {
-    #[inline(always)]
-    fn bitand(lhs: u32, rhs: u32) -> u32 {
-        let (v, _, _) = u32_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U32BitXor of BitXor<u32> {
-    #[inline(always)]
-    fn bitxor(lhs: u32, rhs: u32) -> u32 {
-        let (_, v, _) = u32_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U32BitOr of BitOr<u32> {
-    #[inline(always)]
-    fn bitor(lhs: u32, rhs: u32) -> u32 {
-        let (_, _, v) = u32_bitwise(lhs, rhs);
-        v
-    }
-}
 
 #[derive(Copy, Drop)]
 extern type u64;
@@ -873,7 +807,7 @@ extern fn u64_to_felt252(a: u64) -> felt252 nopanic;
 #[panic_with('u64_from Overflow', u64_from_felt252)]
 extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) nopanic;
 
-extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
+extern fn u64_eq(lhs: u64, rhs: u64) -> bool nopanic;
 
 impl U64Serde of Serde<u64> {
     fn serialize(self: @u64, ref output: Array<felt252>) {
@@ -969,7 +903,7 @@ impl U64SubEq of SubEq<u64> {
     }
 }
 
-extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 implicits() nopanic;
+extern fn u64_wide_mul(lhs: u64, rhs: u64) -> u128 nopanic;
 extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 
 impl U64Mul of Mul<u64> {
@@ -985,7 +919,7 @@ impl U64MulEq of MulEq<u64> {
     }
 }
 
-extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
+extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> nopanic;
 extern fn u64_safe_divmod(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[panic_with('u64 is 0', u64_as_non_zero)]
@@ -1037,28 +971,6 @@ impl U64DivRem of DivRem<u64> {
 impl U64BitNot of BitNot<u64> {
     fn bitnot(a: u64) -> u64 {
         BoundedInt::max() - a
-    }
-}
-extern fn u64_bitwise(lhs: u64, rhs: u64) -> (u64, u64, u64) implicits(Bitwise) nopanic;
-impl U64BitAnd of BitAnd<u64> {
-    #[inline(always)]
-    fn bitand(lhs: u64, rhs: u64) -> u64 {
-        let (v, _, _) = u64_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U64BitXor of BitXor<u64> {
-    #[inline(always)]
-    fn bitxor(lhs: u64, rhs: u64) -> u64 {
-        let (_, v, _) = u64_bitwise(lhs, rhs);
-        v
-    }
-}
-impl U64BitOr of BitOr<u64> {
-    #[inline(always)]
-    fn bitor(lhs: u64, rhs: u64) -> u64 {
-        let (_, _, v) = u64_bitwise(lhs, rhs);
-        v
     }
 }
 
@@ -1235,7 +1147,7 @@ fn u256_from_felt252(lhs: felt252) -> u256 implicits(RangeCheck) nopanic {
     }
 }
 
-extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> implicits() nopanic;
+extern fn u256_is_zero(a: u256) -> IsZeroResult<u256> nopanic;
 
 /// Calculates division with remainder of a u256 by a non-zero u256.
 /// Additionally returns a `U128MulGuarantee` that is required for validating the calculation.
@@ -1506,31 +1418,6 @@ impl U256TryIntoFelt252 of TryInto<u256, felt252> {
         Option::Some(
             self.high.into() * 0x100000000000000000000000000000000_felt252 + self.low.into()
         )
-    }
-}
-impl I8IntoFelt252 of Into<i8, felt252> {
-    fn into(self: i8) -> felt252 {
-        i8_to_felt252(self)
-    }
-}
-impl I16IntoFelt252 of Into<i16, felt252> {
-    fn into(self: i16) -> felt252 {
-        i16_to_felt252(self)
-    }
-}
-impl I32IntoFelt252 of Into<i32, felt252> {
-    fn into(self: i32) -> felt252 {
-        i32_to_felt252(self)
-    }
-}
-impl I64IntoFelt252 of Into<i64, felt252> {
-    fn into(self: i64) -> felt252 {
-        i64_to_felt252(self)
-    }
-}
-impl I128IntoFelt252 of Into<i128, felt252> {
-    fn into(self: i128) -> felt252 {
-        i128_to_felt252(self)
     }
 }
 
@@ -1916,105 +1803,5 @@ impl U256Zeroable of Zeroable<u256> {
     #[inline(always)]
     fn is_non_zero(self: u256) -> bool {
         self != U256Zeroable::zero()
-    }
-}
-
-#[derive(Copy, Drop)]
-extern type i8;
-impl NumericLiterali8 of NumericLiteral<i8>;
-extern fn i8_const<value>() -> i8 nopanic;
-extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
-
-extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
-extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
-
-impl I8PartialEq of PartialEq<i8> {
-    #[inline(always)]
-    fn eq(lhs: @i8, rhs: @i8) -> bool {
-        i8_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i8, rhs: @i8) -> bool {
-        !(*lhs == *rhs)
-    }
-}
-
-#[derive(Copy, Drop)]
-extern type i16;
-impl NumericLiterali16 of NumericLiteral<i16>;
-extern fn i16_const<value>() -> i16 nopanic;
-extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
-
-extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
-extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
-
-impl I16PartialEq of PartialEq<i16> {
-    #[inline(always)]
-    fn eq(lhs: @i16, rhs: @i16) -> bool {
-        i16_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i16, rhs: @i16) -> bool {
-        !(*lhs == *rhs)
-    }
-}
-
-#[derive(Copy, Drop)]
-extern type i32;
-impl NumericLiterali32 of NumericLiteral<i32>;
-extern fn i32_const<value>() -> i32 nopanic;
-extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
-
-extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
-extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
-
-impl I32PartialEq of PartialEq<i32> {
-    #[inline(always)]
-    fn eq(lhs: @i32, rhs: @i32) -> bool {
-        i32_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i32, rhs: @i32) -> bool {
-        !(*lhs == *rhs)
-    }
-}
-
-#[derive(Copy, Drop)]
-extern type i64;
-impl NumericLiterali64 of NumericLiteral<i64>;
-extern fn i64_const<value>() -> i64 nopanic;
-extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
-
-extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
-extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
-
-impl I64PartialEq of PartialEq<i64> {
-    #[inline(always)]
-    fn eq(lhs: @i64, rhs: @i64) -> bool {
-        i64_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i64, rhs: @i64) -> bool {
-        !(*lhs == *rhs)
-    }
-}
-
-#[derive(Copy, Drop)]
-extern type i128;
-impl NumericLiterali128 of NumericLiteral<i128>;
-extern fn i128_const<value>() -> i128 nopanic;
-extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
-
-extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
-extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
-
-impl I128PartialEq of PartialEq<i128> {
-    #[inline(always)]
-    fn eq(lhs: @i128, rhs: @i128) -> bool {
-        i128_eq(*lhs, *rhs)
-    }
-    #[inline(always)]
-    fn ne(lhs: @i128, rhs: @i128) -> bool {
-        !(*lhs == *rhs)
     }
 }

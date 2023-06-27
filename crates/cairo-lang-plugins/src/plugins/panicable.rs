@@ -179,6 +179,7 @@ fn extract_success_ty_and_variants(
 /// panicable function name.
 fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, SmolStr)> {
     let [
+        // TODO(yuval): allow panic with with strings.
         AttributeArg {
             variant: AttributeArgVariant::Unnamed { value: ast::Expr::ShortString(err_value), .. },
             ..
