@@ -105,7 +105,7 @@ impl MatchOptimizerContext {
             remapping.insert(*var_id, *input);
         }
 
-        demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
         info.demand = demand;
 
         self.fixes.push(FixInfo { statement_location, target_block: arm.block_id, remapping });
@@ -155,7 +155,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     ) {
         if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
             info.demand.variables_introduced(self, &stmt.outputs(), ());
-            info.demand.variables_used(self, &stmt.inputs(), ());
+            info.demand.variables_used(self, stmt.inputs().iter().map(|var_id| (var_id, ())));
         }
 
         info.candidate = None;
@@ -169,7 +169,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         remapping: &VarRemapping,
     ) {
         if !remapping.is_empty() {
-            info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+            info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
 
             if let Some(ref mut candidate) = &mut info.candidate {
                 let expected_remappings =
@@ -221,7 +221,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             _ => None,
         };
 
-        demand.variables_used(self, &match_info.inputs(), ());
+        demand.variables_used(self, match_info.inputs().iter().map(|var_id| (var_id, ())));
 
         Self::Info { candidate, demand }
     }
@@ -232,7 +232,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, vars, ());
+        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         Self::Info { candidate: None, demand }
     }
 
@@ -242,7 +242,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         data: &VariableId,
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, &[*data], ());
+        demand.variables_used(self, std::iter::once((data, ())));
         Self::Info { candidate: None, demand }
     }
 }

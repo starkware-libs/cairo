@@ -134,7 +134,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         let Ok(branch_info) = self.analyze_statement(stmt) else {return;};
         info.demand.variables_introduced(self, &stmt.outputs(), ());
         self.revoke_if_needed(info, branch_info);
-        info.demand.variables_used(self, &stmt.inputs(), ());
+        info.demand.variables_used(self, stmt.inputs().iter().map(|var_id| (var_id, ())));
     }
 
     fn visit_goto(
@@ -146,7 +146,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     ) {
         let Ok(info) = info else {return;};
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
-        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, ((src), ()))));
     }
 
     fn merge_match(
@@ -172,7 +172,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
             arm_demands.push((info.demand, ()));
         }
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), ());
+        demand.variables_used(self, match_info.inputs().iter().map(|var_id| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change })
     }
 
@@ -182,7 +182,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, vars, ());
+        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
 
