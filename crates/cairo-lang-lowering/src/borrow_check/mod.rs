@@ -16,7 +16,7 @@ use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, 
 pub mod analysis;
 pub mod demand;
 
-pub type LoweredDemand = Demand<VariableId, PanicState>;
+pub type BorrowCheckerDemand = Demand<VariableId, LocationId, PanicState>;
 pub struct BorrowChecker<'a> {
     db: &'a dyn LoweringGroup,
     diagnostics: &'a mut LoweringDiagnostics,
@@ -80,7 +80,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
 }
 
 impl<'a> Analyzer<'_> for BorrowChecker<'a> {
-    type Info = LoweredDemand;
+    type Info = BorrowCheckerDemand;
 
     fn visit_stmt(
         &mut self,
@@ -94,9 +94,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 if let Ok(signature) = stmt.function.signature(self.db) {
                     if signature.panicable {
                         // Be prepared to panic here.
-                        let panic_demand =
-                            LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-                        *info = LoweredDemand::merge_demands(
+                        let panic_demand = BorrowCheckerDemand {
+                            aux: PanicState::EndsWithPanic,
+                            ..Default::default()
+                        };
+                        *info = BorrowCheckerDemand::merge_demands(
                             &[(panic_demand, ()), (info.clone(), ())],
                             self,
                         );
@@ -146,7 +148,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 (demand, ())
             })
             .collect_vec();
-        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
+        let mut demand = BorrowCheckerDemand::merge_demands(&arm_demands, self);
         demand.variables_used(
             self,
             match_info.inputs().iter().map(|VarUsage { var_id, location }| (var_id, *location)),
@@ -159,7 +161,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info {
-        let mut info = LoweredDemand::default();
+        let mut info = BorrowCheckerDemand::default();
         info.variables_used(
             self,
             vars.iter().map(|var_id| self.with_location(var_id)).collect_vec().into_iter(),
@@ -172,7 +174,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         data: &VariableId,
     ) -> Self::Info {
-        let mut info = LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
+        let mut info = BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
         info.variables_used(self, std::iter::once(self.with_location(data)));
         info
     }

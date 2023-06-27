@@ -79,7 +79,7 @@ pub fn analyze_ap_changes(
             let mut info = analysis.cache[&block_id].as_ref().map_err(|v| *v)?.clone();
             let introducd_vars = callers[0].1.keys().cloned().collect_vec();
             info.demand.variables_introduced(&mut ctx, &introducd_vars, ());
-            for var in info.demand.vars.iter() {
+            for var in info.demand.vars.keys() {
                 if ctx.might_be_revoked(&peeled_used_after_revoke, ctx.peel_aliases(var)) {
                     need_ap_alignment.insert(*var);
                 }
@@ -111,7 +111,7 @@ struct FindLocalsContext<'a> {
     partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
 }
 
-pub type LoweredDemand = Demand<VariableId>;
+pub type LoweredDemand = Demand<VariableId, ()>;
 #[derive(Clone)]
 struct AnalysisInfo {
     demand: LoweredDemand,
@@ -347,7 +347,7 @@ impl<'a> FindLocalsContext<'a> {
         if !branch_info.known_ap_change {
             info.known_ap_change = false;
             // Revoke all demanded variables.
-            for var in info.demand.vars.iter() {
+            for var in info.demand.vars.keys() {
                 self.used_after_revoke.insert(*var);
             }
         }
