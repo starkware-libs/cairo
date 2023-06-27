@@ -195,7 +195,7 @@ fn build_u256_sqrt(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(16) range_check;
+        buffer(6) range_check;
         deref value_low;
         deref value_high;
     };
@@ -203,9 +203,8 @@ fn build_u256_sqrt(
     casm_build_extend! {casm_builder,
         const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
-        const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
+        const u128_bound_minus_u65_bound = BigInt::from(2).pow(128) - BigInt::from(2).pow(65);
         const u128_half = u128::MAX / 2 + 1;
-        const zero = 0;
         let orig_range_check = range_check;
 
         // Square root 64-bit limbs.
@@ -231,11 +230,14 @@ fn build_u256_sqrt(
 
         // Verify the hint consistency and ranges.
         // Assert range on sqrt limbs.
+        // Note that for an honest prover we have 0 <= sqrt0, sqrt1 < 2**64.
+        // But for soundness it is sufficient to check that:
+        // 0 <= sqrt0, sqrt1 and sqrt0 + sqrt1 < 2**65,
+        // which guarantees that 0 <= sqrt0, sqrt1 < 2**65.
         assert sqrt0 = *(range_check++);
-        tempvar a = sqrt0 + u128_bound_minus_u64_bound;
-        assert a = *(range_check++);
         assert sqrt1 = *(range_check++);
-        tempvar a = sqrt1 + u128_bound_minus_u64_bound;
+        tempvar sqrt0_plus_sqrt1 = sqrt0 + sqrt1;
+        tempvar a = sqrt0_plus_sqrt1 + u128_bound_minus_u65_bound;
         assert a = *(range_check++);
 
         // Assert range on remainder limbs.
@@ -277,32 +279,30 @@ fn build_u256_sqrt(
 
         // The upper u128 word.
         tempvar accum6 = accum5 + remainder_high;
-        tempvar accum7 = accum6 - value_high;
         tempvar element = sqrt1 * sqrt1;
-        tempvar accum8 = accum7 + element;
-        assert accum8 = zero;
+        assert value_high = accum6 + element;
 
-        // We have validated that value is larger than root ** 2, since we validated that
-        // `root ** 2 + remainder = value` - and `remainder` is positive.
-        // All that remains is to show that value is smaller than (root + 1) ** 2.
+        // We have validated that value is larger than sqrt ** 2, since we validated that
+        // `sqrt ** 2 + remainder = value` - and `remainder` is positive.
+        // All that remains is to show that value is smaller than (sqrt + 1) ** 2.
         // It is enough to show that:
-        // `(root + 1) ** 2 - value > 0`
-        // `root ** 2 + 2 * root + 1 - value > 0`
-        // `2 * root - (value - root ** 2) + 1 > 0`
-        // `2 * root - remainder + 1 > 0`
-        // `2 * root - remainder >= 0`
+        // `(sqrt + 1) ** 2 - value > 0`
+        // `sqrt ** 2 + 2 * sqrt + 1 - value > 0`
+        // `2 * sqrt - (value - sqrt ** 2) + 1 > 0`
+        // `2 * sqrt - remainder + 1 > 0`
+        // `2 * sqrt - remainder >= 0`
 
         // Calculate the u128 representation of sqrt.
         tempvar shifted_sqrt1 = sqrt1 * u64_limit;
         tempvar sqrt = sqrt0 + shifted_sqrt1;
 
-        // Making sure `2 * root - remainder >= 0`.
+        // Making sure `2 * sqrt - remainder >= 0`.
         tempvar shifted_remainder_high = remainder_high * u128_limit;
         tempvar remainder = remainder_low + shifted_remainder_high;
         tempvar sqrt_mul_2 = sqrt + sqrt;
         tempvar sqrt_mul_2_minus_remainder = sqrt_mul_2 - remainder;
         tempvar fixed_sqrt_mul_2_minus_remainder;
-        // Since we just want to make sure `2 * root - remainder` is positive, we can trust the
+        // Since we just want to make sure `2 * sqrt - remainder` is positive, we can trust the
         // hint to make sure that we are just in [0, 2**129) range.
         // We know it is in that range since `sqrt` is in [0, 2**128) so `2 * sqrt` is in
         // [0, 2**129).

@@ -99,6 +99,7 @@ pub fn build(
                 CostValidationInfo::default(),
             ));
         }
+<<<<<<< HEAD
         TestingConcreteLibfunc::Cheatcode(c) => {
             let [input] = builder.try_get_refs()?;
             let [input_start, input_end] = input.try_unpack()?;
@@ -133,6 +134,8 @@ pub fn build(
                 CostValidationInfo::default(),
             ));
         }
+=======
+>>>>>>> v2.0.0-rc5
     }
     casm_build_extend! {casm_builder, ap += 0; };
 

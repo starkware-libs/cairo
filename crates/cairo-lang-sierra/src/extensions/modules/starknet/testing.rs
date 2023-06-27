@@ -9,12 +9,21 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
+<<<<<<< HEAD
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
     NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
     OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
+=======
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
+};
+use crate::extensions::{
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
+    SpecializationError,
+>>>>>>> v2.0.0-rc5
 };
 use crate::ids::ConcreteTypeId;
 use crate::program::GenericArg;
@@ -172,12 +181,20 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
                         // keys
                         OutputVarInfo {
                             ty: span_ty.clone(),
+<<<<<<< HEAD
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+=======
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+>>>>>>> v2.0.0-rc5
                         },
                         // data
                         OutputVarInfo {
                             ty: span_ty,
+<<<<<<< HEAD
                             ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+=======
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+>>>>>>> v2.0.0-rc5
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -193,6 +210,7 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
     }
 }
 
+<<<<<<< HEAD
 /// Libfunc for creating a general cheatcode.
 #[derive(Default)]
 pub struct CheatcodeLibfunc {}
@@ -259,6 +277,8 @@ impl SignatureBasedConcreteLibfunc for CheatcodeConcreteLibfunc {
     }
 }
 
+=======
+>>>>>>> v2.0.0-rc5
 define_libfunc_hierarchy! {
     pub enum TestingLibfunc {
          SetBlockTimestamp(TestSetterLibfunc<SetBlockTimestampTrait>),
@@ -273,6 +293,9 @@ define_libfunc_hierarchy! {
          SetNonce(TestSetterLibfunc<SetNonceTrait>),
          SetSignature(TestSetterLibfunc<SetSignatureTrait>),
          PopLog(PopLogLibfunc),
+<<<<<<< HEAD
          Cheatcode(CheatcodeLibfunc),
+=======
+>>>>>>> v2.0.0-rc5
     }, TestingConcreteLibfunc
 }

@@ -307,6 +307,7 @@ fn test_get_signature() {
 
 #[test]
 #[available_gas(300000)]
+<<<<<<< HEAD
 fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
     starknet::testing::set_contract_address(contract_address);
@@ -325,6 +326,8 @@ fn test_pop_log() {
 
 #[test]
 #[available_gas(300000)]
+=======
+>>>>>>> v2.0.0-rc5
 #[should_panic]
 fn test_pop_log_empty_logs() {
     let contract_address = starknet::contract_address_const::<0x1234>();

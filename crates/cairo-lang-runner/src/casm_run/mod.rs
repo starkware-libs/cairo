@@ -25,7 +25,7 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::CairoRunner;
+use cairo_vm::vm::runners::cairo_runner::{CairoRunner, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
@@ -57,7 +57,7 @@ type Fq = Fp256<MontBackend<FqConfig, 4>>;
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
-        code: hint.to_string(),
+        code: hint.representing_string(),
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
@@ -93,7 +93,40 @@ pub struct CairoHintProcessor<'a> {
     pub starknet_state: StarknetState,
 }
 
+<<<<<<< HEAD
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
+=======
+impl<'a> CairoHintProcessor<'a> {
+    pub fn new<'b, Instructions: Iterator<Item = &'b Instruction> + Clone>(
+        runner: Option<&'a SierraCasmRunner>,
+        instructions: Instructions,
+        starknet_state: StarknetState,
+    ) -> Self {
+        let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
+        let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
+
+        let mut hint_offset = 0;
+
+        for instruction in instructions {
+            if !instruction.hints.is_empty() {
+                // Register hint with string for the hint processor.
+                for hint in instruction.hints.iter() {
+                    string_to_hint.insert(hint.representing_string(), hint.clone());
+                }
+                // Add hint, associated with the instruction offset.
+                hints_dict.insert(
+                    hint_offset,
+                    instruction.hints.iter().map(hint_to_hint_params).collect(),
+                );
+            }
+            hint_offset += instruction.body.op_size();
+        }
+        CairoHintProcessor { runner, hints_dict, string_to_hint, starknet_state }
+    }
+}
+
+fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
+>>>>>>> v2.0.0-rc5
     let base = match cell_ref.register {
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
@@ -316,6 +349,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
+        _run_resources: &mut RunResources,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -396,6 +430,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     insert_value_to_cellref!(vm, opt_variant, 1)?;
                 }
             }
+<<<<<<< HEAD
             StarknetHint::Cheatcode { selector, input_start, input_end, .. } => {
                 let selector = &selector.value.to_bytes_be().1;
                 let selector = std::str::from_utf8(selector).map_err(|_| {
@@ -423,6 +458,8 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     ))))?,
                 }
             }
+=======
+>>>>>>> v2.0.0-rc5
         };
         Ok(())
     }
@@ -433,7 +470,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         hint_code: &str,
         _ap_tracking_data: &ApTracking,
         _reference_ids: &HashMap<String, usize>,
-        _references: &HashMap<usize, HintReference>,
+        _references: &[HintReference],
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -742,7 +779,15 @@ impl<'a> CairoHintProcessor<'a> {
                 )
             }),
             "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
+<<<<<<< HEAD
                 self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
+=======
+                self.replace_class(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer,
+                )
+>>>>>>> v2.0.0-rc5
             }),
             _ => panic!("Unknown selector for system call!"),
         }
@@ -845,7 +890,11 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
         let contract = self.starknet_state.exec_info.contract_address.clone();
+<<<<<<< HEAD
         self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
+=======
+        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
+>>>>>>> v2.0.0-rc5
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -994,8 +1043,15 @@ impl<'a> CairoHintProcessor<'a> {
         &mut self,
         gas_counter: &mut usize,
         new_class: Felt252,
+<<<<<<< HEAD
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
+=======
+        _vm: &mut dyn VMWrapper,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, 50);
+        // Prepare runner for running the call.
+>>>>>>> v2.0.0-rc5
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
@@ -1024,9 +1080,9 @@ impl<'a> CairoHintProcessor<'a> {
             .expect("Internal runner error.");
 
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-        self.starknet_state = std::mem::take(&mut res.starknet_state);
         match res.value {
             RunResultValue::Success(value) => {
+                self.starknet_state = std::mem::take(&mut res.starknet_state);
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
@@ -1893,10 +1949,14 @@ where
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
+<<<<<<< HEAD
         .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
         .map_err(CairoRunError::from)?;
     runner
         .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
+=======
+        .run_until_pc(end, &mut RunResources::default(), &mut vm, &mut hint_processor)
+>>>>>>> v2.0.0-rc5
         .map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))

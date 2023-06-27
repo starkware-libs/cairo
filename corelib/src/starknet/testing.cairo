@@ -17,6 +17,7 @@ extern fn set_signature(signature: Span<felt252>) implicits() nopanic;
 extern fn pop_log(
     address: ContractAddress
 ) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
+<<<<<<< HEAD
 
 // A general cheatcode function used to simplify implementation of Starknet testing functions.
 // External users of the cairo crates can also implement their own cheatcodes
@@ -32,3 +33,5 @@ fn set_block_number(block_number: u64) {
 
     cheatcode::<'set_block_number'>(data.span());
 }
+=======
+>>>>>>> v2.0.0-rc5

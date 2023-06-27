@@ -209,7 +209,7 @@ impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
                 // result
                 OutputVarInfo {
                     ty: u128_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
             SierraApChange::Known { new_vars_only: false },
