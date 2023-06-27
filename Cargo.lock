@@ -2859,8 +2859,11 @@ name = "starknet-sierra-compile"
 version = "2.0.0-rc4"
 dependencies = [
  "anyhow",
+ "cairo-lang-sierra",
  "cairo-lang-starknet",
+ "cairo-lang-utils",
  "clap",
+ "serde",
  "serde_json",
 ]
 

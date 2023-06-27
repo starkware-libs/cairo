@@ -455,7 +455,7 @@ impl AbiBuilder {
             }
         };
         let name = type_id.format(db);
-        self.abi.items.push(Item::Event(Event { name, kind: event_kind }));
+        self.abi.items.push(Item::Event(Event { name, kind: Some(event_kind) }));
 
         Ok(())
     }
@@ -674,8 +674,11 @@ pub struct L1Handler {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Event {
     pub name: String,
+    /// Event kind.
+    /// Optional for backwards compatibility.
+    // TODO(orizi): Remove the option once we update Sierra major version.
     #[serde(flatten)]
-    pub kind: EventKind,
+    pub kind: Option<EventKind>,
 }
 
 /// Contract event kind.
