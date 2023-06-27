@@ -847,7 +847,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
+        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
 

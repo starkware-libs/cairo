@@ -7,8 +7,8 @@ use crate::extensions::felt252::Felt252Type;
 use crate::extensions::int::unsigned::Uint64Type;
 use crate::extensions::int::unsigned128::Uint128Type;
 use crate::extensions::lib_func::{
-    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
-    SierraApChange, SignatureSpecializationContext,
+    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
+    SignatureSpecializationContext,
 };
 use crate::extensions::{
     NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, OutputVarReferenceInfo,
@@ -175,12 +175,12 @@ impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
                         // keys
                         OutputVarInfo {
                             ty: span_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                         // data
                         OutputVarInfo {
                             ty: span_ty,
-                            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
                         },
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
