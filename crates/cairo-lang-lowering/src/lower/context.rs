@@ -384,7 +384,7 @@ pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
-    Panic(VariableId),
+    Panic(VariableId, LocationId),
     Return(VariableId, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
@@ -394,7 +394,7 @@ impl LoweringFlowError {
     pub fn is_unreachable(&self) -> bool {
         match self {
             LoweringFlowError::Failed(_) => false,
-            LoweringFlowError::Panic(_)
+            LoweringFlowError::Panic(_, _)
             | LoweringFlowError::Return(_, _)
             | LoweringFlowError::Match(_) => true,
         }
@@ -413,7 +413,7 @@ pub fn lowering_flow_error_to_sealed_block(
         LoweringFlowError::Return(return_var, location) => {
             builder.ret(ctx, return_var, location)?;
         }
-        LoweringFlowError::Panic(data_var) => {
+        LoweringFlowError::Panic(data_var, location) => {
             let panic_instance = generators::StructConstruct {
                 inputs: vec![],
                 ty: get_ty_by_name(
@@ -422,7 +422,7 @@ pub fn lowering_flow_error_to_sealed_block(
                     "Panic".into(),
                     vec![],
                 ),
-                location: ctx.variables[data_var].location,
+                location,
             }
             .add(ctx, &mut builder.statements)
             .var_id;
@@ -432,7 +432,7 @@ pub fn lowering_flow_error_to_sealed_block(
                     ctx.variables[panic_instance].ty,
                     ctx.variables[data_var].ty,
                 ])),
-                location: ctx.variables[data_var].location,
+                location,
             }
             .add(ctx, &mut builder.statements)
             .var_id;
