@@ -116,7 +116,7 @@ pub fn build_hints_dict<'b>(
         if !instruction.hints.is_empty() {
             // Register hint with string for the hint processor.
             for hint in instruction.hints.iter() {
-                string_to_hint.insert(hint.to_string(), hint.clone());
+                string_to_hint.insert(hint.representing_string(), hint.clone());
             }
             // Add hint, associated with the instruction offset.
             hints_dict

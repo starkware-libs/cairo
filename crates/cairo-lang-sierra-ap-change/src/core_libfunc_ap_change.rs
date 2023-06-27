@@ -163,27 +163,13 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-<<<<<<< HEAD
-            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
-            Uint128Concrete::Bitwise(_) => vec![ApChange::Known(0)],
-||||||| 9aeaf41c
-            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
-=======
             Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(16)],
->>>>>>> 496b6455^2
+            Uint128Concrete::Bitwise(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-<<<<<<< HEAD
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(21)],
-            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
-||||||| 9aeaf41c
-            Uint256Concrete::Divmod(_) => vec![ApChange::Known(43)],
-            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
-=======
-            Uint256Concrete::Divmod(_) => vec![ApChange::Known(43)],
             Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(25)],
->>>>>>> 496b6455^2
         },
         CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
             Uint512Concrete::DivModU256(_) => vec![ApChange::Known(43)],
@@ -270,20 +256,11 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             | StarkNetConcreteLibfunc::Secp256(_) => {
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
-<<<<<<< HEAD
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
                 TestingConcreteLibfunc::PopLog(_) => vec![ApChange::Known(5), ApChange::Known(5)],
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
                 _ => vec![ApChange::Known(0)],
             },
-||||||| 9aeaf41c
-            StarkNetConcreteLibfunc::Testing(_) => vec![ApChange::Known(0)],
-=======
-            StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
-                TestingConcreteLibfunc::PopLog(_) => vec![ApChange::Known(5), ApChange::Known(5)],
-                _ => vec![ApChange::Known(0)],
-            },
->>>>>>> 496b6455^2
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
             NullableConcreteLibfunc::Null(_) => vec![ApChange::Known(0)],

@@ -3906,13 +3906,7 @@
       ],
       [
         263,
-<<<<<<< HEAD
-        "enum_match<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
-||||||| 9aeaf41c
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
-=======
         "dup<erc20::erc20::ERC20::allowances::ContractState>"
->>>>>>> 496b6455^2
       ],
       [
         264,
@@ -3920,7 +3914,7 @@
       ],
       [
         265,
-        "enum_match<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
       ],
       [
         266,
@@ -3988,13 +3982,7 @@
       ],
       [
         282,
-<<<<<<< HEAD
-        "enum_match<core::panics::PanicResult::<((),)>>"
-||||||| 9aeaf41c
-        "enum_match<core::PanicResult::<((),)>>"
-=======
         "enum_init<core::result::Result::<(), core::array::Array::<core::felt252>>, 1>"
->>>>>>> 496b6455^2
       ],
       [
         283,
@@ -4006,197 +3994,107 @@
       ],
       [
         285,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 0>"
-=======
-        "enum_match<core::PanicResult::<((),)>>"
->>>>>>> 496b6455^2
+        "enum_match<core::panics::PanicResult::<((),)>>"
       ],
       [
         286,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
-=======
         "struct_deconstruct<Tuple<Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         287,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 1>"
-=======
         "struct_construct<Tuple<erc20::erc20::ERC20::name::ContractState, Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         288,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 0>"
       ],
       [
         289,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>>"
       ],
       [
         290,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 0>"
-=======
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 1>"
->>>>>>> 496b6455^2
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::name::ContractState, ())>, 1>"
       ],
       [
         291,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
-=======
         "snapshot_take<erc20::erc20::ERC20::symbol::ContractState>"
->>>>>>> 496b6455^2
       ],
       [
         292,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 1>"
-=======
         "struct_construct<Tuple<erc20::erc20::ERC20::symbol::ContractState, Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         293,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 0>"
       ],
       [
         294,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>>"
       ],
       [
         295,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 0>"
-=======
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 1>"
->>>>>>> 496b6455^2
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::symbol::ContractState, ())>, 1>"
       ],
       [
         296,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
-=======
         "snapshot_take<erc20::erc20::ERC20::decimals::ContractState>"
->>>>>>> 496b6455^2
       ],
       [
         297,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 1>"
-=======
         "struct_construct<Tuple<erc20::erc20::ERC20::decimals::ContractState, Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         298,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 0>"
       ],
       [
         299,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>>"
       ],
       [
         300,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::decimals::ContractState, ())>, 1>"
       ],
       [
         301,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 0>"
-=======
         "snapshot_take<erc20::erc20::ERC20::total_supply::ContractState>"
->>>>>>> 496b6455^2
       ],
       [
         302,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
-=======
         "function_call<user@core::integer::StorageAccessu256::write>"
->>>>>>> 496b6455^2
       ],
       [
         303,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 1>"
-=======
         "struct_construct<Tuple<erc20::erc20::ERC20::total_supply::ContractState, Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         304,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 0>"
       ],
       [
         305,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 0>"
-=======
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
->>>>>>> 496b6455^2
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>>"
       ],
       [
         306,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
-=======
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 1>"
->>>>>>> 496b6455^2
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::total_supply::ContractState, ())>, 1>"
       ],
       [
         307,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 1>"
-=======
         "struct_construct<Tuple<erc20::erc20::ERC20::balances::ContractState, Unit>>"
->>>>>>> 496b6455^2
       ],
       [
         308,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 0>"
       ],
       [
         309,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>>"
       ],
       [
         310,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::balances::ContractState, ())>, 1>"
       ],
       [
         311,
@@ -4216,23 +4114,11 @@
       ],
       [
         315,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 0>"
-=======
         "emit_event_syscall"
->>>>>>> 496b6455^2
       ],
       [
         316,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>>"
-=======
         "enum_match<core::result::Result::<core::felt252, core::array::Array::<core::felt252>>>"
->>>>>>> 496b6455^2
       ],
       [
         317,
@@ -4240,21 +4126,15 @@
       ],
       [
         318,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 1>"
-=======
         "struct_construct<Tuple<core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>>>"
->>>>>>> 496b6455^2
       ],
       [
         319,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         320,
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         321,
@@ -4262,7 +4142,7 @@
       ],
       [
         322,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         323,
@@ -4270,13 +4150,7 @@
       ],
       [
         324,
-<<<<<<< HEAD
-        "enum_match<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
-||||||| 9aeaf41c
-        "enum_match<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
-=======
         "enum_match<core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>>"
->>>>>>> 496b6455^2
       ],
       [
         325,
@@ -4292,7 +4166,7 @@
       ],
       [
         328,
-        "enum_match<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         329,
@@ -4304,23 +4178,11 @@
       ],
       [
         331,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 0>"
-=======
         "u8_const<1>"
->>>>>>> 496b6455^2
       ],
       [
         332,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>>"
-=======
         "storage_address_from_base_and_offset"
->>>>>>> 496b6455^2
       ],
       [
         333,
@@ -4328,21 +4190,15 @@
       ],
       [
         334,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 1>"
-=======
         "struct_construct<Tuple<core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>>>"
->>>>>>> 496b6455^2
       ],
       [
         335,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         336,
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         337,
@@ -4350,7 +4206,7 @@
       ],
       [
         338,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         339,
@@ -4414,33 +4270,15 @@
       ],
       [
         354,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
-=======
         "enum_init<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, 1>"
->>>>>>> 496b6455^2
       ],
       [
         355,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
-=======
         "rename<core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>>"
->>>>>>> 496b6455^2
       ],
       [
         356,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
-=======
         "function_call<user@core::starknet::SyscallResultTraitImpl::<core::box::Box::<core::starknet::info::ExecutionInfo>>::unwrap_syscall>"
->>>>>>> 496b6455^2
       ],
       [
         357,
@@ -4448,33 +4286,15 @@
       ],
       [
         358,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 0>"
-=======
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
->>>>>>> 496b6455^2
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 0>"
       ],
       [
         359,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
-=======
-        "store_temp<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
->>>>>>> 496b6455^2
+        "store_temp<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>>"
       ],
       [
         360,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 1>"
-=======
-        "enum_init<core::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
->>>>>>> 496b6455^2
+        "enum_init<core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>, 1>"
       ],
       [
         361,
@@ -4486,45 +4306,27 @@
       ],
       [
         363,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 0>"
       ],
       [
         364,
-        "store_temp<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>>"
       ],
       [
         365,
-        "enum_init<core::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(erc20::erc20::ERC20::allowances::ContractState, ())>, 1>"
       ],
       [
         366,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<((),)>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<((),)>, 0>"
-=======
         "function_call<user@erc20::erc20::ERC20::EventApprovalIntoEvent::into>"
->>>>>>> 496b6455^2
       ],
       [
         367,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<((),)>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<((),)>>"
-=======
         "function_call<user@core::integer::u256_overflowing_add>"
->>>>>>> 496b6455^2
       ],
       [
         368,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<((),)>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<((),)>, 1>"
-=======
         "struct_deconstruct<Tuple<core::integer::u256, core::bool>>"
->>>>>>> 496b6455^2
       ],
       [
         369,
@@ -4540,15 +4342,15 @@
       ],
       [
         372,
-        "enum_init<core::PanicResult::<((),)>, 0>"
+        "enum_init<core::panics::PanicResult::<((),)>, 0>"
       ],
       [
         373,
-        "store_temp<core::PanicResult::<((),)>>"
+        "store_temp<core::panics::PanicResult::<((),)>>"
       ],
       [
         374,
-        "enum_init<core::PanicResult::<((),)>, 1>"
+        "enum_init<core::panics::PanicResult::<((),)>, 1>"
       ],
       [
         375,
@@ -4564,33 +4366,15 @@
       ],
       [
         378,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
-=======
         "felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>"
->>>>>>> 496b6455^2
       ],
       [
         379,
-<<<<<<< HEAD
-        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
-||||||| 9aeaf41c
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
-=======
         "function_call<user@erc20::erc20::ERC20::ApprovalIsEvent::append_keys_and_data>"
->>>>>>> 496b6455^2
       ],
       [
         380,
-<<<<<<< HEAD
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
-||||||| 9aeaf41c
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
-=======
         "enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>"
->>>>>>> 496b6455^2
       ],
       [
         381,
@@ -4598,15 +4382,15 @@
       ],
       [
         382,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         383,
-        "store_temp<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         384,
-        "enum_init<core::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         385,
