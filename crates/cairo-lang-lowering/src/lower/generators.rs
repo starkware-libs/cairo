@@ -133,9 +133,13 @@ impl Snapshot {
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut StatementsBuilder,
     ) -> (VariableId, VariableId) {
-        let input_ty = ctx.variables[self.input].ty;
+        let input_var = &ctx.variables[self.input];
+        let input_ty = input_var.ty;
         let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
-        let output_original = ctx.new_var(VarRequest { ty: input_ty, location: self.location });
+
+        // The location of the original input var is likely to be more relevent to the user.
+        let output_original =
+            ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });
         builder.push_statement(Statement::Snapshot(StatementSnapshot {
             input: self.input,
