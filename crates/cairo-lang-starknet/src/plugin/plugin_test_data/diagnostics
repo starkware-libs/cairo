@@ -79,7 +79,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -246,7 +247,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -295,8 +297,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo_v0(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v0(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -318,8 +320,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -341,8 +343,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo_v1(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v1(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -466,7 +468,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -511,8 +514,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -627,7 +630,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -670,9 +674,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, );
+            let res = super::foo(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -792,7 +796,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -837,8 +842,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -908,7 +913,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
                                        ^
 
 error: Type not found.
- --> contract:60:32
+ --> contract:61:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -972,7 +977,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1020,9 +1026,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, __arg_x, __arg_y);
+            let res = super::foo(ref contract_state, __arg_x, __arg_y);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1152,7 +1158,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1201,8 +1208,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1222,8 +1229,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_declare__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_declare__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1243,8 +1250,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_deploy__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_deploy__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1264,8 +1271,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__execute__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__execute__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1428,7 +1435,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1617,7 +1625,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1877,7 +1886,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2095,7 +2105,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2143,8 +2154,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_external(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_external(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2164,8 +2175,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_l1_handler(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_l1_handler(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2185,8 +2196,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_constructor(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_constructor(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2331,7 +2342,8 @@ use starknet::event::EventEmitter;
 
     
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2409,6 +2421,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 
+
 impls:
 
 impl ContractStateDrop<> of Drop::<ContractState<>>;
@@ -2480,7 +2493,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2556,6 +2570,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
         Option::None(())
     }
 }
+
 
 
 impls:

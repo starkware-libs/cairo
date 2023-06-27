@@ -202,5 +202,15 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         Option::None(())
     }
 }
+impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {
+    fn into(self: A) -> MyEventEnum {
+        MyEventEnum::A(self)
+    }
+}
+impl MyEventEnumBIntoEvent of Into<B, MyEventEnum> {
+    fn into(self: B) -> MyEventEnum {
+        MyEventEnum::B(self)
+    }
+}
 
 //! > expected_diagnostics

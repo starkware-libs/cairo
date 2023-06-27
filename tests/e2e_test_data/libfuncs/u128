@@ -552,13 +552,12 @@ fn foo(input: u128) -> u128 {
 [ap + 0] = [[fp + -4] + 17], ap++;
 [ap + 0] = [ap + -1] * 340282366920938463463374607431768211455, ap++;
 [ap + 0] = [ap + -4] + [ap + -1], ap++;
-[ap + -1] = [ap + 0] * 1329227995784915872903807060280344576, ap++;
 [ap + 0] = [fp + -4] + 20, ap++;
-[ap + 0] = [ap + -2], ap++;
+[ap + 0] = [ap + -2] * -2722258935367507787987227068238114324480, ap++;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Bitwise: 4, Const: 2700})
+test::foo: OrderedHashMap({Bitwise: 4, Const: 2600})
 
 //! > sierra_code
 type Bitwise = Bitwise;
