@@ -565,8 +565,9 @@ pub fn compile(
                 .map_err(|error| CompilationError::InvocationError { statement_idx, error })?;
 
                 let start_offset = program_offset;
-                if let Some(aux_info) = compiled_invocation.aux_info {
+                if let Some(mut aux_info) = compiled_invocation.aux_info {
                     if last_aux_info == None && aux_info.not_empty() {
+                        aux_info.core_libfunc_instr_num = compiled_invocation.instructions.len();
                         last_aux_info = Some(aux_info);
                     }
                 }

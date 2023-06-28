@@ -709,39 +709,39 @@ impl Default for CasmBuilder {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ExprDesc {
-    expr: String,
-    var_a: Var,
-    op: String,
-    var_b: Option<Var>,
+    pub expr: String,
+    pub var_a: Var,
+    pub op: String,
+    pub var_b: Option<Var>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct VarDesc {
-    name: String,
-    var_id: Var,
-    var_expr: CellExpression,
-    expr: Option<ExprDesc>,
+    pub name: String,
+    pub var_id: Var,
+    pub var_expr: CellExpression,
+    pub expr: Option<ExprDesc>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct AssertDesc {
-    lhs: String,
-    var_id: Var,
-    expr: ExprDesc,
+    pub lhs: String,
+    pub var_id: Var,
+    pub expr: ExprDesc,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ConstDesc {
-    name: String,
-    var_id: Var,
-    expr: String,
-    value: CellExpression,
+    pub name: String,
+    pub var_id: Var,
+    pub expr: String,
+    pub value: CellExpression,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct JumpDesc {
-    target: String,
-    cond_var: Option<(String, Var)>,
+    pub target: String,
+    pub cond_var: Option<(String, Var)>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -753,6 +753,23 @@ pub struct RetExprDesc {
 pub struct RetBranchDesc {
     pub name: String,
     pub exprs: Vec<RetExprDesc>,
+}
+
+impl RetBranchDesc {
+    pub fn get_expr_at_pos(&self, pos: usize) -> Option<String> {
+        let mut skipped: usize = 0;
+        for expr in &self.exprs {
+            if skipped + expr.names.len() > pos {
+                return Some(expr.names[pos - skipped].clone());
+            }
+            skipped += expr.names.len();
+        }
+        None
+    }
+
+    pub fn flat_exprs(&self) -> Vec<String> {
+        self.exprs.iter().flat_map(|exprs| exprs.names.iter().map(|s| s.clone())).collect()
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -773,6 +790,7 @@ pub struct CasmBuilderAuxiliaryInfo {
     pub args: Vec<(Var, CellExpression)>,
     pub statements: Vec<StatementDesc>,
     pub return_args: Vec<RetBranchDesc>,
+    pub core_libfunc_instr_num: usize,
 }
 
 impl CasmBuilderAuxiliaryInfo {
@@ -859,7 +877,7 @@ impl CasmBuilderAuxiliaryInfo {
     pub fn add_assert(&mut self, lhs: &str, var: Var, rhs: &str, var_a: Var, op: &str, var_b: Option<Var>) {
         if match self.statements.last_mut() {
                 Some(StatementDesc::TempVar(tv)) =>  {
-                    if tv.name == lhs {
+                    if tv.name == lhs && tv.expr.is_none() {
                         tv.expr = Some(ExprDesc {
                             expr: String::from(rhs),
                             var_a: var_a,
@@ -872,7 +890,7 @@ impl CasmBuilderAuxiliaryInfo {
                     }
                 },
                 Some(StatementDesc::LocalVar(lv)) => {
-                    if lv.name == lhs {
+                    if lv.name == lhs && lv.expr.is_none() {
                         lv.expr = Some(ExprDesc {
                             expr: String::from(rhs),
                             var_a: var_a,
@@ -928,6 +946,7 @@ impl Default for CasmBuilderAuxiliaryInfo {
             args: Default::default(),
             statements: Default::default(),
             return_args: Default::default(),
+            core_libfunc_instr_num: 0,
         }
     }
 }
@@ -1054,9 +1073,8 @@ macro_rules! casm_build_extend {
     ($builder:ident, assert $value:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         $builder.buffer_write_and_inc($buffer, $value);
         {
-            let var_expr = $builder.get_value($value, false);
+            let buffer_expr = $builder.get_value($buffer, false);
             if let Some(aux_info) = &mut $builder.aux_info {
-                aux_info.add_tempvar(stringify!($value), $value, var_expr);
                 aux_info.add_assert(
                     stringify!($value),
                     $value,
@@ -1065,6 +1083,7 @@ macro_rules! casm_build_extend {
                     "*()",
                     None,
                 );
+                aux_info.add_tempvar(stringify!($buffer), $buffer, buffer_expr);
                 aux_info.add_assert(
                     stringify!($buffer),
                     $buffer,
@@ -1187,8 +1206,10 @@ macro_rules! casm_build_extend {
     };
     ($builder:ident, let $dst:ident = * ( $buffer:ident ++ ); $($tok:tt)*) => {
         let $dst = $builder.get_ref_and_inc($buffer);
+        let buffer_expr = $builder.get_value($buffer, false);
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(stringify!($dst), $dst, &format!("mem {}", stringify!($buffer)), $buffer, "*()", None);
+            aux_info.add_tempvar(stringify!($buffer), $buffer, buffer_expr);
             aux_info.add_assert(
                 stringify!($buffer),
                 $buffer,
