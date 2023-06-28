@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::{compile_cairo_project_at_path, CompilerConfig};
 use cairo_lang_utils::logging::init_logging;
 use clap::Parser;
@@ -13,6 +14,9 @@ use clap::Parser;
 struct Args {
     /// The file to compile
     path: PathBuf,
+    /// Whether path is a single file.
+    #[arg(short, long)]
+    single_file: bool,
     /// The output file name (default: stdout).
     output: Option<String>,
     /// Replaces sierra ids with human-readable ones.
@@ -25,6 +29,9 @@ fn main() -> anyhow::Result<()> {
     log::info!("Starting Cairo compilation.");
 
     let args = Args::parse();
+
+    // Check if args.path is a file or a directory.
+    check_compiler_path(args.single_file, &args.path)?;
 
     let sierra_program = compile_cairo_project_at_path(
         &args.path,
