@@ -314,6 +314,10 @@ mod internal;
 mod zeroable;
 use zeroable::{Zeroable, NonZero};
 
+// bytes31.
+mod bytes_31;
+use bytes_31::{bytes31, bytes31_try_from_felt252, bytes31_to_felt252};
+
 #[cfg(test)]
 mod test;
 

@@ -12,3 +12,4 @@ mod secp256k1_test;
 mod plugins_test;
 mod testing_test;
 mod test_utils;
+mod bytes31_test;
