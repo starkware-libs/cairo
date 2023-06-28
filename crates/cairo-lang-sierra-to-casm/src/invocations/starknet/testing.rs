@@ -1,4 +1,4 @@
-use cairo_lang_casm::builder::{CasmBuilder, Var};
+use cairo_lang_casm::builder::CasmBuilder;
 use cairo_lang_casm::casm_build_extend;
 use cairo_lang_casm::hints::StarknetHint;
 use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
@@ -15,62 +15,10 @@ pub fn build(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {
     let mut casm_builder = CasmBuilder::default();
-    let mut declare_single_value = || -> Result<Var, InvocationError> {
-        let [value] = builder.try_get_single_cells()?;
-        add_input_variables! {casm_builder, deref value;};
-        Ok(value)
-    };
     match libfunc {
-        TestingConcreteLibfunc::SetBlockTimestamp(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetBlockTimestamp {value: value}; };
-        }
-        TestingConcreteLibfunc::SetCallerAddress(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetCallerAddress {value: value}; };
-        }
-        TestingConcreteLibfunc::SetContractAddress(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetContractAddress {value: value}; };
-        }
-        TestingConcreteLibfunc::SetSequencerAddress(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetSequencerAddress {value: value}; };
-        }
-        TestingConcreteLibfunc::SetVersion(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetVersion {value: value}; };
-        }
-        TestingConcreteLibfunc::SetAccountContractAddress(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetAccountContractAddress {value: value}; };
-        }
-        TestingConcreteLibfunc::SetMaxFee(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetMaxFee {value: value}; };
-        }
-        TestingConcreteLibfunc::SetTransactionHash(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetTransactionHash {value: value}; };
-        }
-        TestingConcreteLibfunc::SetChainId(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetChainId {value: value}; };
-        }
-        TestingConcreteLibfunc::SetNonce(_) => {
-            let value = declare_single_value()?;
-            casm_build_extend! {casm_builder, hint StarknetHint::SetNonce {value: value}; };
-        }
-        TestingConcreteLibfunc::SetSignature(_) => {
-            let [signature] = builder.try_get_refs()?;
-            let [start, end] = signature.try_unpack()?;
-            add_input_variables! {casm_builder, deref start; deref end;};
-            casm_build_extend! {casm_builder,
-                hint StarknetHint::SetSignature { start: start, end: end };
-            };
-        }
         TestingConcreteLibfunc::PopLog(_) => {
-            let address = declare_single_value()?;
+            let [address] = builder.try_get_single_cells()?;
+            add_input_variables! {casm_builder, deref address;};
 
             casm_build_extend! {casm_builder,
                 tempvar variant;
@@ -90,14 +38,14 @@ pub fn build(
             };
 
             let none_variant_id = get_non_fallthrough_statement_id(&builder);
-            return Ok(builder.build_from_casm_builder(
+            Ok(builder.build_from_casm_builder(
                 casm_builder,
                 [
                     ("Fallthrough", &[&[keys_start, keys_end], &[data_start, data_end]], None),
                     ("None", &[], Some(none_variant_id)),
                 ],
                 CostValidationInfo::default(),
-            ));
+            ))
         }
         TestingConcreteLibfunc::Cheatcode(c) => {
             let [input] = builder.try_get_refs()?;
@@ -127,18 +75,11 @@ pub fn build(
 
             casm_build_extend! {casm_builder, ap += 2; }
 
-            return Ok(builder.build_from_casm_builder(
+            Ok(builder.build_from_casm_builder(
                 casm_builder,
                 [("Fallthrough", &[&[output_start, output_end]], None)],
                 CostValidationInfo::default(),
-            ));
+            ))
         }
     }
-    casm_build_extend! {casm_builder, ap += 0; };
-
-    Ok(builder.build_from_casm_builder(
-        casm_builder,
-        [("Fallthrough", &[], None)],
-        CostValidationInfo::default(),
-    ))
 }
