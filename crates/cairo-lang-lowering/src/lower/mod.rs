@@ -625,7 +625,7 @@ fn lower_expr_function_call(
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
-        return Err(LoweringFlowError::Panic(input.var_id));
+        return Err(LoweringFlowError::Panic(input.var_id, location));
     }
 
     // The following is relevant only to extern functions.
