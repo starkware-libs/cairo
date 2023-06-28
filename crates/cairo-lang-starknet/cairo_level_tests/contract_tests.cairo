@@ -99,10 +99,7 @@ fn test_wrapper_not_enough_args() {
 #[test]
 #[should_panic]
 fn test_wrapper_too_many_enough_args() {
-    let mut calldata = Default::default();
-    calldata.append(1);
-    calldata.append(2);
-    TestContract::__external::get_plus_2(calldata.span());
+    TestContract::__external::get_plus_2(array![1, 2].span());
 }
 
 #[test]
@@ -123,10 +120,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 #[test]
 #[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
-    let mut calldata = Default::default();
-    calldata.append(1);
-    calldata.append(2);
-    let mut retdata = TestContract::__external::get_appended_array(calldata.span());
+    let mut retdata = TestContract::__external::get_appended_array(array![1, 2].span());
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong length');
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong original value');
     assert_eq(@single_deserialize(ref retdata), @1, 'Wrong added value');
@@ -295,10 +289,7 @@ fn test_get_nonce() {
 #[available_gas(300000)]
 fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
-    let mut signature = Default::default();
-    signature.append('some');
-    signature.append('signature');
-    starknet::testing::set_signature(signature.span());
+    starknet::testing::set_signature(array!['some', 'signature'].span());
     let read_signature = starknet::get_tx_info().unbox().signature;
     assert_eq(@read_signature.len(), @2, 'unexpected read size');
     assert_eq(read_signature.at(0), @'some', 'unexpected element 0');
@@ -322,8 +313,7 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 #[test]
 #[available_gas(300000)]
 fn test_storage_address() {
-    let mut args = Default::default();
-    args.append(0x17);
+    let mut args = array![0x17];
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
     let ret_data = TestContract::__external::test_storage_address(args.span());
 
