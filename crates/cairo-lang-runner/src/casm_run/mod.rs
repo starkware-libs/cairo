@@ -345,38 +345,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
                     exec_scopes,
                 )?;
             }
-            StarknetHint::PopLog {
-                value,
-                opt_variant,
-                keys_start,
-                keys_end,
-                data_start,
-                data_end,
-            } => {
-                let contract_address = get_val(vm, value)?;
-                let mut res_segment = MemBuffer::new_segment(vm);
-                let logs = self.starknet_state.logs.entry(contract_address).or_default();
-
-                if let Some((keys, data)) = logs.pop_front() {
-                    let keys_start_ptr = res_segment.ptr;
-                    res_segment.write_data(keys.iter())?;
-                    let keys_end_ptr = res_segment.ptr;
-
-                    let data_start_ptr = res_segment.ptr;
-                    res_segment.write_data(data.iter())?;
-                    let data_end_ptr = res_segment.ptr;
-
-                    // Option::Some variant
-                    insert_value_to_cellref!(vm, opt_variant, 0)?;
-                    insert_value_to_cellref!(vm, keys_start, keys_start_ptr)?;
-                    insert_value_to_cellref!(vm, keys_end, keys_end_ptr)?;
-                    insert_value_to_cellref!(vm, data_start, data_start_ptr)?;
-                    insert_value_to_cellref!(vm, data_end, data_end_ptr)?;
-                } else {
-                    // Option::None variant
-                    insert_value_to_cellref!(vm, opt_variant, 1)?;
-                }
-            }
         };
         Ok(())
     }
@@ -1020,7 +988,7 @@ impl<'a> CairoHintProcessor<'a> {
             }
         };
 
-        let res_segment = MemBuffer::new_segment(vm);
+        let mut res_segment = MemBuffer::new_segment(vm);
         let res_segment_start = res_segment.ptr;
         match selector {
             "set_sequencer_address" => {
@@ -1060,6 +1028,17 @@ impl<'a> CairoHintProcessor<'a> {
             }
             "set_signature" => {
                 self.starknet_state.exec_info.tx_info.signature = inputs;
+            }
+            "pop_log" => {
+                let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
+                if let Some((keys, data)) =
+                    contract_logs.and_then(|contract_logs| contract_logs.pop_front())
+                {
+                    res_segment.write(keys.len())?;
+                    res_segment.write_data(keys.iter())?;
+                    res_segment.write(data.len())?;
+                    res_segment.write_data(data.iter())?;
+                }
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"
