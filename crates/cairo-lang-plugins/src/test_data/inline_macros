@@ -17,11 +17,16 @@ const e: u8 = consteval_int!(255 + 1 - 1);
 //! > generated_cairo_code
 const a: felt252 = 0;
 
+
 const b: felt252 = 9;
+
 
 const c: felt252 = 4 + 5;
 
+
 const d: felt252 = 47;
+
+
 const e: u8 = 255;
 
 //! > expected_diagnostics
@@ -44,6 +49,10 @@ const d: felt252 = consteval_int!(~24);
 
 const e: felt252 = consteval_int!(234 < 5);
 
+const e: felt252 = consteval_int![4 + 5];
+
+const f: felt252 = consteval_int!{4 + 5};
+
 //! > generated_cairo_code
 const a: felt252 = consteval_int!(func_call(24));
 
@@ -58,6 +67,12 @@ const d: felt252 = consteval_int!(~24);
 
 
 const e: felt252 = consteval_int!(234 < 5);
+
+
+const e: felt252 = consteval_int![4 + 5];
+
+
+const f: felt252 = consteval_int!{4 + 5};
 
 //! > expected_diagnostics
 error: Unsupported expression in consteval_int macro
@@ -85,9 +100,19 @@ error: Unsupported binary operator in consteval_int macro
 const e: felt252 = consteval_int!(234 < 5);
                                   ^*****^
 
+error: Macro consteval_int does not support this bracket type
+ --> dummy_file.cairo:11:20
+const e: felt252 = consteval_int![4 + 5];
+                   ^*******************^
+
+error: Macro consteval_int does not support this bracket type
+ --> dummy_file.cairo:13:20
+const f: felt252 = consteval_int!{4 + 5};
+                   ^*******************^
+
 //! > ==========================================================================
 
-//! > Test consteval_int! inside functions (currently does nothing)
+//! > Test consteval_int! inside functions
 
 //! > test_runner_name
 test_expand_plugin
@@ -101,7 +126,55 @@ fn some_func()
 //! > generated_cairo_code
 fn some_func()
 {
-    return consteval_int!(4 + 5);
+    return 9;
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test recursive consteval_int! 
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn some_func()
+{
+    return consteval_int!(4 + consteval_int!(2+3));
+}
+
+//! > generated_cairo_code
+fn some_func()
+{
+    return consteval_int!(4 + consteval_int!(2+3));
+}
+
+//! > expected_diagnostics
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:3:31
+    return consteval_int!(4 + consteval_int!(2+3));
+                              ^*****************^
+
+//! > ==========================================================================
+
+//! > Test unknwon macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let x = foo!(0);
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let x = foo!(0);
+}
+
+//! > expected_diagnostics
+error: Unknown inline macro: foo
+ --> dummy_file.cairo:2:13
+    let x = foo!(0);
+            ^*****^
