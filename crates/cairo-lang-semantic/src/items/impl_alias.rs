@@ -6,7 +6,7 @@ use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::try_extract_matches;
 
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use super::imp::ImplId;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -48,15 +48,11 @@ pub fn priv_impl_alias_semantic_data(
     let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
     let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &impl_alias_ast.generic_params(syntax_db),
-        false,
-    )?;
+    let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
+    let generic_params = generic_params_data.generic_params.clone();
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+
     let item = resolver.resolve_concrete_path(
         &mut diagnostics,
         &impl_alias_ast.impl_path(syntax_db),
@@ -72,7 +68,6 @@ pub fn priv_impl_alias_semantic_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()));
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
 
     let resolver_data = Arc::new(resolver.data);
@@ -96,15 +91,10 @@ pub fn priv_impl_alias_semantic_data_cycle(
     let impl_alias_ast = module_impl_aliases.get(impl_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
     let err = Err(diagnostics.report(&impl_alias_ast.name(syntax_db), ImplAliasCycle));
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &impl_alias_ast.generic_params(syntax_db),
-        false,
-    )?;
+    let generic_params_data = db.impl_alias_generic_params_data(*impl_alias_id)?;
+    let generic_params = generic_params_data.generic_params.clone();
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
@@ -134,7 +124,33 @@ pub fn impl_alias_generic_params(
     db: &dyn SemanticGroup,
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Vec<GenericParam>> {
-    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.generic_params)
+    Ok(db.impl_alias_generic_params_data(impl_alias_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_alias_generic_params_data].
+pub fn impl_alias_generic_params_data(
+    db: &dyn SemanticGroup,
+    impl_alias_id: ImplAliasId,
+) -> Maybe<GenericParamsData> {
+    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
+    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let syntax_db = db.upcast();
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &impl_alias_ast.generic_params(syntax_db),
+    )?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped())
+    });
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_resolver_data].

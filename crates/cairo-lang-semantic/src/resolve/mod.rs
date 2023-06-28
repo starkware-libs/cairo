@@ -2,7 +2,8 @@ use std::iter::Peekable;
 use std::ops::{Deref, DerefMut, Neg};
 
 use cairo_lang_defs::ids::{
-    GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId, ModuleId, TraitId,
+    GenericKind, GenericParamId, GenericTypeId, ImplDefId, LanguageElementId, ModuleFileId,
+    ModuleId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateLongId;
@@ -90,7 +91,7 @@ pub struct ResolverData {
     // Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
     // Generic parameters accessible to the resolver.
-    generic_params: OrderedHashMap<SmolStr, GenericParam>,
+    generic_params: OrderedHashMap<SmolStr, GenericParamId>,
     // Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
@@ -164,9 +165,9 @@ impl<'db> Resolver<'db> {
     /// Adds a generic param to an existing resolver.
     /// This is required since a resolver needs to exist before resolving the generic params,
     /// and thus, they are added to the Resolver only after they are resolved.
-    pub fn add_generic_param(&mut self, generic_param: GenericParam) {
+    pub fn add_generic_param(&mut self, generic_param_id: GenericParamId) {
         let db = self.db.upcast();
-        self.generic_params.insert(generic_param.id().name(db), generic_param);
+        self.generic_params.insert(generic_param_id.name(db), generic_param_id);
     }
 
     /// Resolves a concrete item, given a path.
@@ -628,19 +629,18 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.generic_params.get(&ident) {
-            let item = match generic_param_id {
-                GenericParam::Type(param) => ResolvedConcreteItem::Type(
-                    self.db.intern_type(TypeLongId::GenericParameter(param.id)),
+        if let Some(generic_param_id) = self.data.generic_params.get(&ident) {
+            let item = match generic_param_id.kind(self.db.upcast()) {
+                GenericKind::Type => ResolvedConcreteItem::Type(
+                    self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
                 ),
-                GenericParam::Const(_) => todo!("Add a variant to ConstId."),
-                GenericParam::Impl(param) => {
-                    ResolvedConcreteItem::Impl(ImplId::GenericParameter(param.id))
+                GenericKind::Const => todo!("Add a variant to ConstId."),
+                GenericKind::Impl => {
+                    ResolvedConcreteItem::Impl(ImplId::GenericParameter(*generic_param_id))
                 }
             };
             return Some(item);
         }
-
         // TODO(spapini): Resolve local variables.
 
         None
@@ -760,7 +760,7 @@ impl<'db> Resolver<'db> {
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
         ImplLookupContext::new(
             self.module_file_id.0,
-            self.generic_params.values().map(|p| p.id()).collect(),
+            self.generic_params.values().copied().collect(),
         )
     }
 
