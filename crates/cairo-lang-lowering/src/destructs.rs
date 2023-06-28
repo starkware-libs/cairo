@@ -23,7 +23,7 @@ use crate::{
     StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
-pub type LoweredDemand = Demand<VariableId, PanicState>;
+pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
 
 /// Context for the dectructor call addition phase,
 pub struct DestructAdder<'a> {
@@ -133,7 +133,7 @@ pub enum PanicLocation {
 }
 
 impl<'a> Analyzer<'_> for DestructAdder<'a> {
-    type Info = LoweredDemand;
+    type Info = DestructAdderDemand;
 
     fn visit_stmt(
         &mut self,
@@ -176,7 +176,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
                 (demand, use_position)
             })
             .collect_vec();
-        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
+        let mut demand = DestructAdderDemand::merge_demands(&arm_demands, self);
         demand.variables_used(
             self,
             match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
@@ -189,7 +189,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info {
-        let mut info = LoweredDemand::default();
+        let mut info = DestructAdderDemand::default();
         info.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         info
     }
@@ -207,7 +207,7 @@ impl<'a> DestructAdder<'a> {
     fn update_panic_state(
         &mut self,
         introductions: &[VariableId],
-        info: &mut LoweredDemand,
+        info: &mut DestructAdderDemand,
         block_id: BlockId,
         statement_index: usize,
     ) {
