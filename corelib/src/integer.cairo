@@ -157,7 +157,7 @@ impl U128MulEq of MulEq<u128> {
 }
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
-fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> implicits() nopanic {
+fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -395,7 +395,7 @@ extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[panic_with('u8 is 0', u8_as_non_zero)]
-fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> implicits() nopanic {
+fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -593,7 +593,7 @@ extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
 extern fn u16_safe_divmod(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
 
 #[panic_with('u16 is 0', u16_as_non_zero)]
-fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> implicits() nopanic {
+fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -791,7 +791,7 @@ extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
 extern fn u32_safe_divmod(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
 
 #[panic_with('u32 is 0', u32_as_non_zero)]
-fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> implicits() nopanic {
+fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -989,7 +989,7 @@ extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
 extern fn u64_safe_divmod(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[panic_with('u64 is 0', u64_as_non_zero)]
-fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> implicits() nopanic {
+fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -1252,7 +1252,7 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
 extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
-fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
+fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
