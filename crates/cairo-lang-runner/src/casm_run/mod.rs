@@ -613,6 +613,9 @@ impl HintProcessor for CairoHintProcessor<'_> {
                         // Call the function.
                         let Some(entry_point) = contract_info.externals.get(&selector) else
                         {
+                            // Restore the contract addresses in the context.
+                            self.starknet_state.exec_info.caller_address = old_caller_address;
+                            self.starknet_state.exec_info.contract_address = old_contract_address;
                             fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
                         };
                         let function = runner
@@ -636,6 +639,10 @@ impl HintProcessor for CairoHintProcessor<'_> {
                                 read_array_result_as_vec(&res.memory, &value)
                             }
                             RunResultValue::Panic(mut panic_data) => {
+                                // Restore the contract addresses in the context.
+                                self.starknet_state.exec_info.caller_address = old_caller_address;
+                                self.starknet_state.exec_info.contract_address =
+                                    old_contract_address;
                                 fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
                             }
                         };
