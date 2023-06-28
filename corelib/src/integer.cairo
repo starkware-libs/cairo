@@ -2332,6 +2332,32 @@ impl I128Neg of Neg<i128> {
     }
 }
 
+impl I128Mul of Mul<i128> {
+    fn mul(lhs: i128, rhs: i128) -> i128 {
+        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        };
+        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
+            Result::Ok(v) => (v, lhs_neg),
+            Result::Err(v) => (~v + 1, !lhs_neg),
+        };
+        let res_as_u128 = lhs_u127 * rhs_u127;
+        let res_as_felt252: felt252 = if res_neg {
+            -res_as_u128.into()
+        } else {
+            res_as_u128.into()
+        };
+        res_as_felt252.try_into().expect('i128_mul Overflow')
+    }
+}
+impl I128MulEq of MulEq<i128> {
+    #[inline(always)]
+    fn mul_eq(ref self: i128, other: i128) {
+        self = Mul::mul(self, other);
+    }
+}
+
 /// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
 extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 impl I128PartialOrd of PartialOrd<i128> {
