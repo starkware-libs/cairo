@@ -34,6 +34,13 @@ macro_rules! rparen {
 }
 pub(crate) use rparen;
 
+macro_rules! rbrack {
+    () => {
+        SyntaxKind::TerminalRBrack
+    };
+}
+pub(crate) use rbrack;
+
 macro_rules! rangle {
     () => {
         SyntaxKind::TerminalGT

@@ -290,7 +290,7 @@
     │   │       │   │   │           │                   │           │   ├── token (kind: TokenColon): ':'
     │   │       │   │   │           │                   │           │   └── trailing_trivia (kind: Trivia)
     │   │       │   │   │           │                   │           │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │           │                   │           └── expr (kind: ExprTuple)
+    │   │       │   │   │           │                   │           └── expr (kind: ExprListParenthesized)
     │   │       │   │   │           │                   │               ├── lparen (kind: TerminalLParen)
     │   │       │   │   │           │                   │               │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │                   │               │   ├── token (kind: TokenLParen): '('
