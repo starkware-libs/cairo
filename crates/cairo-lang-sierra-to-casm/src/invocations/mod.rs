@@ -34,6 +34,7 @@ mod array;
 mod bitwise;
 mod boolean;
 mod boxing;
+mod bytes31;
 mod casts;
 mod debug;
 mod ec;
@@ -619,6 +620,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
             felt252_dict::build_entry(libfunc, builder)
         }
+        CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
     }
 }
 

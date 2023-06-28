@@ -3,6 +3,7 @@ use std::iter;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
+use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -361,6 +362,13 @@ pub fn core_libfunc_cost(
                 vec![(ConstCost::steps(1) + DICT_SQUASH_UNIQUE_KEY_COST).into()]
             }
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ConstCost::steps(1).into()],
+        },
+        CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
+            Bytes31ConcreteLibfunc::ToFelt252(_) => vec![ConstCost::steps(0).into()],
+            Bytes31ConcreteLibfunc::TryFromFelt252(_) => vec![
+                (ConstCost { steps: 7, holes: 0, range_checks: 3 }).into(),
+                (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
+            ],
         },
     }
 }
