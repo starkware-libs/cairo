@@ -91,6 +91,22 @@ pub fn setup_project(
     }
 }
 
+/// Checks that the given path is a valid compiler path.
+pub fn check_compiler_path(single_file: bool, path: &Path) -> anyhow::Result<()> {
+    if path.is_file() {
+        if !single_file {
+            anyhow::bail!("The given path is a file, but --single-file was not supplied.");
+        }
+    } else if path.is_dir() {
+        if single_file {
+            anyhow::bail!("The given path is a directory, but --single-file was supplied.");
+        }
+    } else {
+        anyhow::bail!("The given path does not exist.");
+    }
+    Ok(())
+}
+
 pub fn get_main_crate_ids_from_project(
     db: &mut dyn SemanticGroup,
     config: &ProjectConfig,

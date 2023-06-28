@@ -1,11 +1,11 @@
 //! Compiles and runs a Cairo program.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Ok};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
-use cairo_lang_compiler::project::setup_project;
+use cairo_lang_compiler::project::{check_compiler_path, setup_project};
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_runner::short_string::as_cairo_short_string;
 use cairo_lang_runner::{SierraCasmRunner, StarknetState};
@@ -24,7 +24,10 @@ use clap::Parser;
 #[clap(version, verbatim_doc_comment)]
 struct Args {
     /// The file to compile and run.
-    path: String,
+    path: PathBuf,
+    /// Whether path is a single file.
+    #[arg(short, long)]
+    single_file: bool,
     /// In cases where gas is available, the amount of provided gas.
     #[arg(long)]
     available_gas: Option<usize>,
@@ -36,12 +39,15 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
+    // Check if args.path is a file or a directory.
+    check_compiler_path(args.single_file, &args.path)?;
+
     let db = &mut RootDatabase::builder().detect_corelib().build()?;
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
     if DiagnosticsReporter::stderr().check(db) {
-        anyhow::bail!("failed to compile: {}", args.path);
+        anyhow::bail!("failed to compile: {}", args.path.display());
     }
 
     let sierra_program = db

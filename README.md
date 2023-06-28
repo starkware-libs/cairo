@@ -63,7 +63,7 @@ cargo test
 
 Compile Cairo to Sierra:
 ```bash
-cargo run --bin cairo-compile -- /path/to/input.cairo /path/to/output.sierra --replace-ids
+cargo run --bin cairo-compile -- --single-file /path/to/input.cairo /path/to/output.sierra --replace-ids
 ```
 
 Compile Sierra to casm (Cairo assembly):
@@ -73,7 +73,7 @@ cargo run --bin sierra-compile -- /path/to/input.sierra /path/to/output.casm
 
 Run Cairo code directly:
 ```bash
-cargo run --bin cairo-run -- /path/to/file.cairo
+cargo run --bin cairo-run -- --single-file /path/to/file.cairo
 ```
 
 See more information [here](./crates/cairo-lang-runner/README.md). You can also find Cairo examples in the [examples](./examples) directory.
@@ -84,7 +84,7 @@ For running tests specifically, see here: [cairo-test](./crates/cairo-lang-test-
 
 Compile a Starknet Contract to a Sierra ContractClass:
 ```bash
-cargo run --bin starknet-compile -- /path/to/input.cairo /path/to/output.json
+cargo run --bin starknet-compile -- --single-file /path/to/input.cairo /path/to/output.json
 ```
 
 Or specify the contract path if multiple contracts are defined in the same project:
