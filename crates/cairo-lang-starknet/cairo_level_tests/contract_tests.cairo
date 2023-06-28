@@ -310,7 +310,7 @@ fn test_get_signature() {
 #[should_panic]
 fn test_pop_log_empty_logs() {
     let contract_address = starknet::contract_address_const::<0x1234>();
-    starknet::testing::pop_log(contract_address).unwrap();
+    starknet::testing::pop_log_raw(contract_address).unwrap();
 }
 
 #[test]
