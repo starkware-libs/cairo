@@ -1,7 +1,7 @@
 # Testing cairo files
 
 ```
-cargo run --bin cairo-test -- /path/to/file.cairo
+cargo run --bin cairo-test -- --single-file /path/to/file.cairo
 ```
 
 We can use this command to run Cairo level tests.
@@ -36,5 +36,5 @@ You can run only tests containing a given string using `-f <filter_string>`.
 For example:
 
 ```
-cargo run --bin cairo-test -- /path/to/file.cairo -f specific_test
+cargo run --bin cairo-test -- --single-file /path/to/file.cairo -f specific_test
 ```

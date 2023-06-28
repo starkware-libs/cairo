@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;
+use cairo_lang_compiler::project::check_compiler_path;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_starknet::allowed_libfuncs::ListSelector;
 use cairo_lang_starknet::contract_class::starknet_compile;
@@ -14,6 +15,9 @@ use clap::Parser;
 struct Args {
     /// The crate to compile.
     path: PathBuf,
+    /// Whether path is a single file.
+    #[arg(short, long)]
+    single_file: bool,
     // The contract fully qualified path.
     #[arg(short, long)]
     contract_path: Option<String>,
@@ -32,6 +36,10 @@ struct Args {
 
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
+
+    // Check if args.path is a file or a directory.
+    check_compiler_path(args.single_file, &args.path)?;
+
     let list_selector =
         ListSelector::new(args.allowed_libfuncs_list_name, args.allowed_libfuncs_list_file)
             .expect("Both allowed libfunc list name and file were supplied.");
