@@ -19,7 +19,7 @@ use super::consts::{
     EVENT_ATTR, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
     L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
-use super::entry_point::{generate_entry_point_wrapper, EntryPointKind};
+use super::entry_point::{generate_entry_point_wrapper, has_external_attribute, EntryPointKind};
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -232,7 +232,9 @@ pub fn handle_contract_by_storage(
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function) => {
-                let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(db, item_function) else {
+                let Some(entry_point_kind) =
+                    EntryPointKind::try_from_function_with_body(db, &mut diagnostics, item_function)
+                else {
                     continue;
                 };
                 let function_name = RewriteNode::new_trimmed(
@@ -248,15 +250,8 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                let Some(attr) = item_impl.find_attr(db, EXTERNAL_ATTR) else {
+                if !has_external_attribute(db, &mut diagnostics, &item) {
                     continue;
-                };
-                // TODO(spapini): Check attr args instead.
-                if attr.as_syntax_node().get_text_without_trivia(db) != "#[external(v0)]" {
-                    diagnostics.push(PluginDiagnostic {
-                        message: "Only #[external(v0)] is supported.".to_string(),
-                        stable_ptr: attr.stable_ptr().untyped(),
-                    });
                 }
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());

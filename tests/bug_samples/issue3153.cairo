@@ -94,7 +94,7 @@ mod TestContract {
         _single_proposal: Proposal
     }
 
-    #[external]
+    #[external(v0)]
     fn reproduce(ref self: ContractState) {
         self._single_proposal.read();
 

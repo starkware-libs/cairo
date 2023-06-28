@@ -11,13 +11,13 @@ mod TestContract {
     #[storage]
     struct Storage {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
@@ -34,13 +34,13 @@ mod TestContract {
     #[storage]
     struct Storage {}
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
         Default::<Array<felt252>>::default().span()
     }
 
-    #[external]
+    #[external(v0)]
     #[raw_output]
     fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
         Default::<Array<felt252>>::default().span()
@@ -53,7 +53,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 496467993860656971014768480101995430067197153434631914833246400084882928457;
+const TEST_CLASS_HASH: felt252 = 581545919454531849714359504100377059156837590992531505782264904856778651010;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
