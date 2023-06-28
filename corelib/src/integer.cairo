@@ -2055,6 +2055,13 @@ impl I8SubEq of SubEq<i8> {
     }
 }
 
+impl I8Neg of Neg<i8> {
+    #[inline(always)]
+    fn neg(a: i8) -> i8 {
+        0 - a
+    }
+}
+
 extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
 impl I8Mul of Mul<i8> {
     fn mul(lhs: i8, rhs: i8) -> i8 {
@@ -2143,6 +2150,13 @@ impl I16SubEq of SubEq<i16> {
     #[inline(always)]
     fn sub_eq(ref self: i16, other: i16) {
         self = Sub::sub(self, other);
+    }
+}
+
+impl I16Neg of Neg<i16> {
+    #[inline(always)]
+    fn neg(a: i16) -> i16 {
+        0 - a
     }
 }
 
@@ -2237,6 +2251,13 @@ impl I32SubEq of SubEq<i32> {
     }
 }
 
+impl I32Neg of Neg<i32> {
+    #[inline(always)]
+    fn neg(a: i32) -> i32 {
+        0 - a
+    }
+}
+
 extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
 impl I32Mul of Mul<i32> {
     fn mul(lhs: i32, rhs: i32) -> i32 {
@@ -2325,6 +2346,13 @@ impl I64SubEq of SubEq<i64> {
     #[inline(always)]
     fn sub_eq(ref self: i64, other: i64) {
         self = Sub::sub(self, other);
+    }
+}
+
+impl I64Neg of Neg<i64> {
+    #[inline(always)]
+    fn neg(a: i64) -> i64 {
+        0 - a
     }
 }
 
@@ -2419,6 +2447,12 @@ impl I128SubEq of SubEq<i128> {
     }
 }
 
+impl I128Neg of Neg<i128> {
+    #[inline(always)]
+    fn neg(a: i128) -> i128 {
+        0 - a
+    }
+}
 
 extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
 impl I128PartialOrd of PartialOrd<i128> {
