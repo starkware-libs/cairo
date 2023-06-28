@@ -25,7 +25,6 @@ use smol_str::SmolStr;
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
 use super::inference::infers::InferenceEmbeddings;
-use super::inference::solver::SolutionSet;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
@@ -42,6 +41,7 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
+use crate::items::imp::can_infer_impl_by_self;
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
 use crate::items::trt::ConcreteTraitGenericFunctionLongId;
@@ -1428,27 +1428,9 @@ fn method_call_expr(
             if name != func_name {
                 continue;
             }
-
-            // Check if trait function signature's first param can fit our expr type.
-            let mut inference_data = ctx.resolver.inference().clone_data();
-            let mut inference = inference_data.inference(ctx.db);
-            let lookup_context = ctx.resolver.impl_lookup_context();
-            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
-            ) else {
-                continue;
-            };
-
-            // Find impls for it.
-            inference.solve().ok();
-            if !matches!(
-                inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
-                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
-            ) {
-                continue;
+            if can_infer_impl_by_self(ctx, trait_function, ty, stable_ptr.untyped()) {
+                candidates.push(trait_function);
             }
-
-            candidates.push(trait_function);
         }
     }
 

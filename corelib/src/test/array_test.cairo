@@ -86,3 +86,10 @@ fn test_slice_out_of_bound_1() {
 fn test_slice_out_of_bound_2() {
     test_array_helper().span().slice(0, 4);
 }
+
+#[test]
+fn test_untyped_array_index() {
+    let mut arr = Default::default();
+    arr.append(10_felt252);
+    assert_eq(arr[0], @10, 'array[0] != 10');
+}

@@ -41,6 +41,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
+use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarId, InferenceData, InferenceResult};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
@@ -887,13 +888,19 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference_data = ctx.resolver.inference().clone_data();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
+    // Check if trait function signature's first param can fit our expr type.
     let Some((concrete_trait_id, _)) =
     temp_inference.infer_concrete_trait_by_self(
         trait_function_id, self_ty, &lookup_context, Some(stable_ptr),
     ) else {
         return false;
     };
-    get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
+    // Find impls for it.
+    temp_inference.solve().ok();
+    matches!(
+        temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
+        Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+    )
 }
 
 /// Returns an impl of a given trait function with a given self_ty, as well as the number of
