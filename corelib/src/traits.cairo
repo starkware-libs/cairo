@@ -38,6 +38,10 @@ trait DivEq<T> {
     fn div_eq(ref self: T, other: T);
 }
 
+trait Pow<T, S> {
+    fn pow(lhs: T, rhs: S) -> T;
+}
+
 // TODO(spapini): When associated types are supported, support the general trait Rem<X, Y>.
 trait Rem<T> {
     fn rem(lhs: T, rhs: T) -> T;
