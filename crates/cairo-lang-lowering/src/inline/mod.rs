@@ -16,7 +16,9 @@ use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind, LoweringDiag
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VariableId};
+use crate::{
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, Statement, VarRemapping, VarUsage, VariableId,
+};
 
 /// data about inlining.
 #[derive(Debug, PartialEq, Eq)]
@@ -337,7 +339,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
     pub fn inline_function(
         &mut self,
         function_id: ConcreteFunctionWithBodyId,
-        inputs: &[VariableId],
+        inputs: &[VarUsage],
         outputs: &[VariableId],
     ) -> Maybe<()> {
         let lowered =
@@ -363,7 +365,7 @@ impl<'db> FunctionInlinerRewriter<'db> {
         // The input variables need to be renamed to match the inputs to the function call.
         let renamed_vars = HashMap::<VariableId, VariableId>::from_iter(izip!(
             lowered.parameters.iter().cloned(),
-            inputs.iter().cloned()
+            inputs.iter().map(|var_usage| var_usage.var_id)
         ));
 
         let mut mapper = Mapper {

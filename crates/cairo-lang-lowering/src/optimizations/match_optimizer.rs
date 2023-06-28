@@ -10,7 +10,7 @@ use crate::borrow_check::demand::DemandReporter;
 use crate::borrow_check::Demand;
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
-    StatementEnumConstruct, VarRemapping, VariableId,
+    StatementEnumConstruct, VarRemapping, VarUsage, VariableId,
 };
 
 pub type LoweredDemand = Demand<VariableId>;
@@ -102,7 +102,7 @@ impl MatchOptimizerContext {
         if demand.vars.contains(var_id) {
             // The input to EnumConstruct should be available as `var_id`
             // in `arm.block_id`
-            remapping.insert(*var_id, *input);
+            remapping.insert(*var_id, input.var_id);
         }
 
         demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
@@ -155,7 +155,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     ) {
         if !self.statement_can_be_optimized_out(stmt, info, statement_location) {
             info.demand.variables_introduced(self, &stmt.outputs(), ());
-            info.demand.variables_used(self, stmt.inputs().iter().map(|var_id| (var_id, ())));
+            info.demand.variables_used(
+                self,
+                stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+            );
         }
 
         info.candidate = None;
@@ -210,9 +213,11 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         let candidate = match match_info {
             // A match is a candidate for the optimization if it is a match on an Enum
             // and its input is unused after the match.
-            MatchInfo::Enum(MatchEnumInfo { input, arms, .. }) if !demand.vars.contains(input) => {
+            MatchInfo::Enum(MatchEnumInfo { input, arms, .. })
+                if !demand.vars.contains(&input.var_id) =>
+            {
                 Some(OptimizationCandidate {
-                    match_variable: *input,
+                    match_variable: input.var_id,
                     match_arms: arms,
                     arm_demands: infos.iter().map(|info| info.demand.clone()).collect(),
                 })
@@ -221,7 +226,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
             _ => None,
         };
 
-        demand.variables_used(self, match_info.inputs().iter().map(|var_id| (var_id, ())));
+        demand.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
 
         Self::Info { candidate, demand }
     }

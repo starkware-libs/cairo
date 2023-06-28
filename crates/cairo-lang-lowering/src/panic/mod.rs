@@ -16,7 +16,7 @@ use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, Statement,
     StatementCall, StatementEnumConstruct, StatementStructConstruct, StatementStructDestructure,
-    VarRemapping, VariableId,
+    VarRemapping, VarUsage, VariableId,
 };
 
 // TODO(spapini): Remove tuple in the Ok() variant of the panic, by supporting multiple values in
@@ -222,7 +222,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         // complete it.
         let block_ok = self.ctx.enqueue_block(FlatBlock {
             statements: vec![Statement::StructDestructure(StatementStructDestructure {
-                input: inner_ok_value,
+                input: VarUsage { var_id: inner_ok_value, location },
                 outputs: inner_ok_values.clone(),
             })],
             end: FlatBlockEnd::Goto(
@@ -240,7 +240,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
         let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
                 concrete_enum_id: callee_info.ok_variant.concrete_enum_id,
-                input: panic_result_var,
+                input: VarUsage { var_id: panic_result_var, location },
                 arms: vec![
                     MatchArm {
                         variant_id: callee_info.ok_variant,
@@ -270,7 +270,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.err_variant.clone(),
-                    input: err_data,
+                    input: VarUsage { var_id: err_data, location },
                     output,
                 }));
                 FlatBlockEnd::Return(vec![output])
@@ -282,7 +282,10 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
                 self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                    inputs: returns,
+                    inputs: returns
+                        .into_iter()
+                        .map(|var_id| VarUsage { var_id, location })
+                        .collect(),
                     output: tupled_res,
                 }));
 
@@ -291,7 +294,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.ok_variant.clone(),
-                    input: tupled_res,
+                    input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
                 FlatBlockEnd::Return(vec![output])
