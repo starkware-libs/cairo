@@ -257,7 +257,6 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
-                TestingConcreteLibfunc::PopLog(_) => vec![ApChange::Known(5), ApChange::Known(5)],
                 TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
             },
         },

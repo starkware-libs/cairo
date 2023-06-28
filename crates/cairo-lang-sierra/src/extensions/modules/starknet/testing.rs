@@ -1,60 +1,15 @@
 use num_bigint::BigInt;
 
 use super::felt252_span_ty;
-use super::interoperability::ContractAddressType;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
     BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
     SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{
-    NamedLibfunc, NamedType, NoGenericArgsGenericLibfunc, OutputVarReferenceInfo,
-    SignatureBasedConcreteLibfunc, SpecializationError,
+    NamedLibfunc, OutputVarReferenceInfo, SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::program::GenericArg;
-
-#[derive(Default)]
-pub struct PopLogLibfunc {}
-
-impl NoGenericArgsGenericLibfunc for PopLogLibfunc {
-    const STR_ID: &'static str = "pop_log";
-
-    fn specialize_signature(
-        &self,
-        context: &dyn SignatureSpecializationContext,
-    ) -> Result<LibfuncSignature, SpecializationError> {
-        let contract_address_ty = context.get_concrete_type(ContractAddressType::id(), &[])?;
-        let span_ty = felt252_span_ty(context)?;
-
-        Ok(LibfuncSignature {
-            param_signatures: vec![ParamSignature::new(contract_address_ty)],
-            branch_signatures: vec![
-                // Some variant branch.
-                BranchSignature {
-                    vars: vec![
-                        // keys
-                        OutputVarInfo {
-                            ty: span_ty.clone(),
-                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                        },
-                        // data
-                        OutputVarInfo {
-                            ty: span_ty,
-                            ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                        },
-                    ],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-                // None variant branch.
-                BranchSignature {
-                    vars: vec![],
-                    ap_change: SierraApChange::Known { new_vars_only: false },
-                },
-            ],
-            fallthrough: Some(0),
-        })
-    }
-}
 
 /// Libfunc for creating a general cheatcode.
 #[derive(Default)]
@@ -124,7 +79,6 @@ impl SignatureBasedConcreteLibfunc for CheatcodeConcreteLibfunc {
 
 define_libfunc_hierarchy! {
     pub enum TestingLibfunc {
-         PopLog(PopLogLibfunc),
          Cheatcode(CheatcodeLibfunc),
     }, TestingConcreteLibfunc
 }

@@ -3,10 +3,6 @@ use array::ArrayTrait;
 use array::SpanTrait;
 use traits::Into;
 
-extern fn pop_log(
-    address: ContractAddress
-) -> Option<(Span<felt252>, Span<felt252>)> implicits() nopanic;
-
 // A general cheatcode function used to simplify implementation of Starknet testing functions.
 // External users of the cairo crates can also implement their own cheatcodes
 // by injecting custom `CairoHintProcessor`.
@@ -72,4 +68,10 @@ fn set_nonce(nonce: felt252) {
 // Set the signature.
 fn set_signature(signature: Span<felt252>) {
     cheatcode::<'set_signature'>(signature);
+}
+
+// Pop the earliest unpopped logged event for the contract.
+fn pop_log(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>)> {
+    let mut log = cheatcode::<'pop_log'>(array![address.into()].span());
+    Option::Some((serde::Serde::deserialize(ref log)?, serde::Serde::deserialize(ref log)?, ))
 }
