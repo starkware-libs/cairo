@@ -52,10 +52,10 @@ test_function_lowering
 fn foo(x: ACopy, y: ADrop) {
   if true {
     use_a_copy(x);
-    use_a_drop(y);
+    use_a_drop1(y);
   } else {
   }
-  use_a_drop(y);
+  use_a_drop2(y);
 }
 
 //! > function_name
@@ -68,18 +68,19 @@ extern type ADrop;
 impl ADropDrop of Drop::<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
-extern fn use_a_drop(x: ADrop) nopanic;
+extern fn use_a_drop1(x: ADrop) nopanic;
+extern fn use_a_drop2(x: ADrop) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
- --> lib.cairo:8:18
-fn foo(x: ACopy, y: ADrop) {
-                 ^
+ --> lib.cairo:15:15
+  use_a_drop2(y);
+              ^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>. Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
- --> lib.cairo:8:8
+ --> lib.cairo:9:8
 fn foo(x: ACopy, y: ADrop) {
        ^
 
@@ -252,3 +253,40 @@ fn foo(ref a: A) {
 
 //! > lowering_flat
 Parameters: v0: test::A
+
+//! > ==========================================================================
+
+//! > Test pushing of moved var.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: ADrop, mut y: ADrop) {
+  if true {
+    use_a_drop(y);
+  } else {
+    y = x;
+  }
+  use_a_drop(y);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type ADrop;
+impl ADropDrop of Drop::<ADrop>;
+
+extern fn use_a_drop(x: ADrop) nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
+ --> lib.cairo:5:22
+fn foo(x: ADrop, mut y: ADrop) {
+                     ^
+
+//! > lowering_flat
+Parameters: v0: test::ADrop, v1: test::ADrop

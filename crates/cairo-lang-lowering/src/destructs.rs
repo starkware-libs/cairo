@@ -90,8 +90,6 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
 
         panic!("Borrow checker should have caught this.")
     }
-
-    fn dup(&mut self, _position: (), _var: VariableId) {}
 }
 
 /// A state saved for each position in the back analysis.
