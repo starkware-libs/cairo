@@ -202,18 +202,18 @@ test_expr_diagnostics
 }
 
 //! > module_code
-mod A {
+mod a {
   use super::B;
 }
 
-use A::B;
+use a::B;
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Cycle detected while resolving 'use' items.
  --> lib.cairo:5:8
-use A::B;
+use a::B;
        ^
 
 //! > ==========================================================================

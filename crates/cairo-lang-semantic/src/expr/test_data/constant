@@ -5,7 +5,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-    let x = MY_CONST + MyModule::CONST_IN_MODULE;
+    let x = MY_CONST + my_module::CONST_IN_MODULE;
 }
 
 //! > function_name
@@ -14,7 +14,7 @@ foo
 //! > module_code
 const MY_CONST: felt252 = 0x1234;
 
-mod MyModule {
+mod my_module {
     const CONST_IN_MODULE: felt252 = 1;
 }
 
