@@ -5,7 +5,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod HelloStarknet {
+mod hello_starknet {
     #[storage]
     struct Storage { balance: felt252, }
 
@@ -26,7 +26,7 @@ mod HelloStarknet {
 lib.cairo:
 
 #[starknet::contract]
-mod HelloStarknet {
+mod hello_starknet {
     #[storage]
     struct Storage { balance: felt252, }
 
@@ -49,7 +49,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1601010881861231008477297663414424217411948115109752938040170845939822336344;
+const TEST_CLASS_HASH: felt252 = 1102354323051365330526116728762987089260624826846154342310342950171552219682;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {

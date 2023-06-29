@@ -27,7 +27,7 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x2a8c26879debefc5a8fc3ebbbfd771e67184dcc0e70d03acef76bb3921ddd45",
+    "0x84737894901c89dc14402492642de6b0e3584e45733ce5824fcdc7fa9397bb",
     "0x5",
     "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0xc",
@@ -213,7 +213,7 @@
       ],
       [
         10,
-        "minimal_contract::minimal_contract::MinimalContract::ContractState"
+        "minimal_contract::minimal_contract::minimal_contract::ContractState"
       ],
       [
         11,
@@ -339,19 +339,19 @@
       ],
       [
         25,
-        "struct_construct<minimal_contract::minimal_contract::MinimalContract::ContractState>"
+        "struct_construct<minimal_contract::minimal_contract::minimal_contract::ContractState>"
       ],
       [
         26,
-        "store_temp<minimal_contract::minimal_contract::MinimalContract::ContractState>"
+        "store_temp<minimal_contract::minimal_contract::minimal_contract::ContractState>"
       ],
       [
         27,
-        "function_call<user@minimal_contract::minimal_contract::MinimalContract::empty>"
+        "function_call<user@minimal_contract::minimal_contract::minimal_contract::empty>"
       ],
       [
         28,
-        "drop<minimal_contract::minimal_contract::MinimalContract::ContractState>"
+        "drop<minimal_contract::minimal_contract::minimal_contract::ContractState>"
       ],
       [
         29,
@@ -433,11 +433,11 @@
     "user_func_names": [
       [
         0,
-        "minimal_contract::minimal_contract::MinimalContract::__external::empty"
+        "minimal_contract::minimal_contract::minimal_contract::__external::empty"
       ],
       [
         1,
-        "minimal_contract::minimal_contract::MinimalContract::empty"
+        "minimal_contract::minimal_contract::minimal_contract::empty"
       ],
       [
         2,
@@ -466,7 +466,7 @@
     },
     {
       "type": "event",
-      "name": "minimal_contract::minimal_contract::MinimalContract::Event",
+      "name": "minimal_contract::minimal_contract::minimal_contract::Event",
       "kind": "enum",
       "variants": []
     }

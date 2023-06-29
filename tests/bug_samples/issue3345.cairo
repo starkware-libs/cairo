@@ -10,7 +10,7 @@ trait ITree<TContractState> {
 }
 
 #[starknet::contract]
-mod ExampleFailure {
+mod example_failure {
     use super::Node;
     use super::ITree;
     use array::{ArrayTrait, Array};

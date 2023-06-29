@@ -86,7 +86,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
 }
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use super::Proposal;
     #[storage]
     struct Storage {

@@ -14,7 +14,7 @@ trait IContract<T> {
 }
 
 #[starknet::contract]
-mod ContractA {
+mod contract_a {
     use traits::Into;
     use starknet::info::get_contract_address;
     #[storage]
@@ -123,7 +123,7 @@ fn test_contract_not_deployed() {
 }
 
 #[starknet::contract]
-mod ContractFailedConstructor {
+mod contract_failed_constructor {
     #[storage]
     struct Storage {}
 
@@ -148,7 +148,7 @@ fn test_failed_constructor() {
 }
 
 #[starknet::contract]
-mod ContractFailedEntrypoint {
+mod contract_failed_entrypoint {
     #[storage]
     struct Storage {}
 

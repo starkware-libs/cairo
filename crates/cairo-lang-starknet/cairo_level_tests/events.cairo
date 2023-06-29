@@ -16,7 +16,7 @@ trait IContractWithEvent<T> {
 }
 
 #[starknet::contract]
-mod ContractWithEvent {
+mod contract_with_event {
     use traits::Into;
     use starknet::info::get_contract_address;
     #[storage]

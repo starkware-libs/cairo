@@ -44,7 +44,7 @@ struct AbcEtc {
 
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use super::AbcEtc;
 
     #[storage]
