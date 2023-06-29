@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use array::ArrayTrait;
     use starknet::get_caller_address;
     use starknet::storage_read_syscall;
