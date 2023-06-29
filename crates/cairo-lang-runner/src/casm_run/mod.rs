@@ -707,7 +707,7 @@ impl<'a> CairoHintProcessor<'a> {
                 secp256r1_get_point_from_x(
                     gas_counter,
                     system_buffer.next_u256()?,
-                    system_buffer.next_felt252()?.is_zero(),
+                    system_buffer.next_felt252()?.is_odd(),
                     exec_scopes,
                 )
             }),
@@ -1111,9 +1111,7 @@ fn secp256k1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, 500);
-    if m >= <secp256k1::Fr as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Scalar out of range");
-    }
+
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let product = *p * secp256k1::Fr::from(m);
@@ -1239,9 +1237,7 @@ fn secp256r1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, 500);
-    if m >= <secp256r1::Fr as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Scalar out of range");
-    }
+
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let product = *p * secp256r1::Fr::from(m);
@@ -1263,7 +1259,7 @@ fn secp256r1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)| match (smaller.0.is_even(), y_parity) {
+        .map(|(smaller, greater)| match (smaller.0.is_odd(), y_parity) {
             (true, true) | (false, false) => smaller,
             (true, false) | (false, true) => greater,
         })
