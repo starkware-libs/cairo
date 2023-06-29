@@ -16,7 +16,7 @@ trait IContractWithEvent<T> {
 }
 
 #[starknet::contract]
-mod ContractWithEvent {
+mod contract_with_event {
     use traits::Into;
     use starknet::info::get_contract_address;
     #[storage]
@@ -55,7 +55,7 @@ mod ContractWithEvent {
     }
 }
 
-use ContractWithEvent::{Event, IncrementalEvent, StaticEvent};
+use contract_with_event::{Event, IncrementalEvent, StaticEvent};
 
 #[test]
 #[available_gas(30000000)]
@@ -63,7 +63,10 @@ fn test_events() {
     internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        ContractWithEvent::TEST_CLASS_HASH.try_into().unwrap(), 0, Default::default().span(), false
+        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(),
+        0,
+        Default::default().span(),
+        false
     )
         .unwrap();
     let mut contract = IContractWithEventDispatcher { contract_address };
