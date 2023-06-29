@@ -61,15 +61,6 @@ pub enum StarknetHint {
     #[codec(index = 0)]
     SystemCall { system: ResOperand },
     #[codec(index = 1)]
-    PopLog {
-        value: ResOperand,
-        opt_variant: CellRef,
-        keys_start: CellRef,
-        keys_end: CellRef,
-        data_start: CellRef,
-        data_end: CellRef,
-    },
-    #[codec(index = 2)]
     Cheatcode {
         selector: BigIntAsHex,
         input_start: ResOperand,
@@ -670,9 +661,7 @@ impl PythonicHint for StarknetHint {
             StarknetHint::SystemCall { system } => {
                 format!("syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            StarknetHint::PopLog { .. } | StarknetHint::Cheatcode { .. } => {
-                "raise NotImplementedError".to_string()
-            }
+            StarknetHint::Cheatcode { .. } => "raise NotImplementedError".to_string(),
         }
     }
 }

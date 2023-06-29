@@ -48,8 +48,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
         StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
-            TestingConcreteLibfunc::PopLog(_) => vec![steps(2), steps(2)],
-            _ => vec![steps(1)],
+            TestingConcreteLibfunc::Cheatcode(_) => vec![steps(1)],
         },
         StarkNetConcreteLibfunc::Secp256(libfunc) => {
             match libfunc {
