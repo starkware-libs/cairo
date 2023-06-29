@@ -67,7 +67,7 @@ fn recover_public_key_u32<
 >(
     msg_hash: u256, r: u256, s: u256, v: u32
 ) -> Option<Secp256Point> {
-    let y_parity = v % 2 == 0;
+    let y_parity = v % 2 == 1;
     recover_public_key(:msg_hash, :r, :s, :y_parity)
 }
 
@@ -112,7 +112,7 @@ fn verify_eth_signature_u32<
 >(
     msg_hash: u256, r: u256, s: u256, v: u32, eth_address: EthAddress
 ) {
-    let y_parity = v % 2 == 0;
+    let y_parity = v % 2 == 1;
     verify_eth_signature::<Secp256Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
