@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod MinimalContract {
+mod minimal_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]

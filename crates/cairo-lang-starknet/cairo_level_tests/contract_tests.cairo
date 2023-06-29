@@ -17,7 +17,7 @@ use super::utils::single_deserialize;
 trait ITestContract {}
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use array::ArrayTrait;
     use option::OptionTrait;
     use traits::Into;
@@ -93,19 +93,19 @@ mod TestContract {
 #[test]
 #[should_panic]
 fn test_wrapper_not_enough_args() {
-    TestContract::__external::get_plus_2(Default::default().span());
+    test_contract::__external::get_plus_2(Default::default().span());
 }
 
 #[test]
 #[should_panic]
 fn test_wrapper_too_many_enough_args() {
-    TestContract::__external::get_plus_2(array![1, 2].span());
+    test_contract::__external::get_plus_2(array![1, 2].span());
 }
 
 #[test]
 #[available_gas(30000)]
 fn test_wrapper_valid_args() {
-    let mut retdata = TestContract::__external::get_plus_2(serialized_element(1));
+    let mut retdata = test_contract::__external::get_plus_2(serialized_element(1));
     assert_eq(@single_deserialize(ref retdata), @3, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -114,13 +114,13 @@ fn test_wrapper_valid_args() {
 #[available_gas(20000)]
 #[should_panic]
 fn test_wrapper_valid_args_out_of_gas() {
-    TestContract::__external::spend_all_gas(Default::default().span());
+    test_contract::__external::spend_all_gas(Default::default().span());
 }
 
 #[test]
 #[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
-    let mut retdata = TestContract::__external::get_appended_array(array![1, 2].span());
+    let mut retdata = test_contract::__external::get_appended_array(array![1, 2].span());
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong length');
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong original value');
     assert_eq(@single_deserialize(ref retdata), @1, 'Wrong added value');
@@ -130,7 +130,7 @@ fn test_wrapper_array_arg_and_output() {
 #[test]
 #[available_gas(200000)]
 fn read_first_value() {
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
+    let mut retdata = test_contract::__external::get_value(ArrayTrait::new().span());
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -138,8 +138,8 @@ fn read_first_value() {
 #[test]
 #[available_gas(300000)]
 fn write_read_value() {
-    assert(TestContract::__external::set_value(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::get_value(ArrayTrait::new().span());
+    assert(test_contract::__external::set_value(serialized_element(4)).is_empty(), 'Not empty');
+    let mut retdata = test_contract::__external::get_value(ArrayTrait::new().span());
     assert_eq(@single_deserialize(ref retdata), @4, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -147,7 +147,7 @@ fn write_read_value() {
 #[test]
 #[available_gas(200000)]
 fn empty_start() {
-    let mut retdata = TestContract::__external::contains(serialized_element(4));
+    let mut retdata = test_contract::__external::contains(serialized_element(4));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -155,11 +155,11 @@ fn empty_start() {
 #[test]
 #[available_gas(300000)]
 fn contains_added() {
-    assert(TestContract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::contains(serialized_element(4));
+    assert(test_contract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
+    let mut retdata = test_contract::__external::contains(serialized_element(4));
     assert_eq(@single_deserialize(ref retdata), @1, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
-    let mut retdata = TestContract::__external::contains(serialized_element(5));
+    let mut retdata = test_contract::__external::contains(serialized_element(5));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -167,9 +167,9 @@ fn contains_added() {
 #[test]
 #[available_gas(300000)]
 fn not_contains_removed() {
-    assert(TestContract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
-    assert(TestContract::__external::remove(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = TestContract::__external::contains(serialized_element(4));
+    assert(test_contract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
+    assert(test_contract::__external::remove(serialized_element(4)).is_empty(), 'Not empty');
+    let mut retdata = test_contract::__external::contains(serialized_element(4));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -177,7 +177,7 @@ fn not_contains_removed() {
 #[test]
 #[available_gas(300000)]
 fn read_large_first_value() {
-    let mut retdata = TestContract::__external::get_large(
+    let mut retdata = test_contract::__external::get_large(
         serialized_element(u256 { low: 1_u128, high: 2_u128 })
     );
     assert_eq(
@@ -192,9 +192,9 @@ fn write_read_large_value() {
     let mut args = Default::default();
     serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
     serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
-    let mut retdata = TestContract::__external::set_large(args.span());
+    let mut retdata = test_contract::__external::set_large(args.span());
     assert(retdata.is_empty(), 'Array not empty');
-    let mut retdata = TestContract::__external::get_large(
+    let mut retdata = test_contract::__external::get_large(
         serialized_element(u256 { low: 1_u128, high: 2_u128 })
     );
     assert_eq(
@@ -315,7 +315,7 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 fn test_storage_address() {
     let mut args = array![0x17];
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
-    let ret_data = TestContract::__external::test_storage_address(args.span());
+    let ret_data = test_contract::__external::test_storage_address(args.span());
 
     assert_eq(args[0_u32], ret_data[0_u32], 'Unexpected ret_data.');
 }
@@ -387,7 +387,7 @@ fn test_dispatcher_serde() {
     assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
 
     // Library Dispatcher
-    let class_hash = TestContract::TEST_CLASS_HASH.try_into().unwrap();
+    let class_hash = test_contract::TEST_CLASS_HASH.try_into().unwrap();
     let contract1 = ITestContractLibraryDispatcher { class_hash };
 
     // Serialize

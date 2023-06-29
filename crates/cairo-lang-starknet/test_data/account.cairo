@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod Account {
+mod account {
     use array::{ArrayTrait, SpanTrait};
     use box::BoxTrait;
     use ecdsa::check_ecdsa_signature;

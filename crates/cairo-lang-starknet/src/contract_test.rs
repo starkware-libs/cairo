@@ -21,10 +21,10 @@ fn test_contract_resolving() {
     let crate_id = setup_test_crate(
         db,
         indoc! {"
-            mod NotAContract {}
+            mod not_a_contract {}
 
             #[starknet::contract]
-            mod ERC20 {
+            mod erc_20 {
                 #[storage]
                 struct Storage {}
                 fn internal_func(ref system: System) -> felt252 {
