@@ -21,7 +21,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = MatchOptimizerContext { fixes: vec![] };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 

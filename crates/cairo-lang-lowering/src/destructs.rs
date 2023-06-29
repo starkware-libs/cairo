@@ -244,7 +244,7 @@ pub fn add_destructs(
     if lowered.blocks.has_root().is_ok() {
         let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(
             &mut analysis.analyzer,
