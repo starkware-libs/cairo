@@ -207,12 +207,12 @@ foo
 
 //! > module_code
 #[inline(always)]
-fn bar(a: felt252, b: felt252) -> felt252 implicits()  {
+fn bar(a: felt252, b: felt252) -> felt252 {
   bar2(a, b) + bar2(b, a)
 }
 
 #[inline(always)]
-fn bar2(a: felt252, b: felt252) -> felt252 implicits()  {
+fn bar2(a: felt252, b: felt252) -> felt252 {
    a * b
 }
 
