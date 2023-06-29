@@ -20,7 +20,7 @@ pub fn reorganize_blocks(lowered: &mut FlatLowered) {
             can_be_merged: vec![true; lowered.blocks.len()],
         };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 

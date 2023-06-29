@@ -17,7 +17,7 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 
