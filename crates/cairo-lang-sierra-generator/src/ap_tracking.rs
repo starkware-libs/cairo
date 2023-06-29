@@ -38,7 +38,7 @@ pub fn get_ap_tracking_configuration(
     }
 
     let mut analysis =
-        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
+        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
 
     analysis.analyzer.ap_tracking_configuration

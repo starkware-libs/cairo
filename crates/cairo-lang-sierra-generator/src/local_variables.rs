@@ -52,7 +52,7 @@ pub fn analyze_ap_changes(
         partial_param_parents: Default::default(),
     };
     let mut analysis =
-        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
+        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
     let mut root_info = analysis.get_root_info()?;
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
@@ -76,7 +76,7 @@ pub fn analyze_ap_changes(
             if callers.len() <= 1 {
                 continue;
             }
-            let mut info = analysis.cache[&block_id].as_ref().map_err(|v| *v)?.clone();
+            let mut info = analysis.block_info[&block_id].as_ref().map_err(|v| *v)?.clone();
             let introducd_vars = callers[0].1.keys().cloned().collect_vec();
             info.demand.variables_introduced(&mut ctx, &introducd_vars, ());
             for var in info.demand.vars.keys() {

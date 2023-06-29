@@ -193,7 +193,7 @@ pub fn borrow_check(
     if lowered.blocks.has_root().is_ok() {
         let checker = BorrowChecker { db, diagnostics: &mut diagnostics, lowered, success: Ok(()) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, ());
         let success = analysis.analyzer.success;
