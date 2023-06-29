@@ -161,7 +161,7 @@ trait IMyContract<TContractState> {
 }
 
 #[starknet::contract]
-mod MySecondContract {
+mod my_second_contract {
     use super::IMyContractDispatcherTrait;
     use super::IMyContractDispatcher;
 
@@ -190,7 +190,7 @@ trait IMyContract {
 }
 
 #[starknet::contract]
-mod MySecondContract {
+mod my_second_contract {
     use super::IMyContractDispatcherTrait;
     use super::IMyContractLibraryDispatcher;
 
@@ -219,7 +219,7 @@ keccak hash of the function name - in this case `starknet_keccak("foo")`.
 [source,rust]
 ----
 #[starknet::contract]
-mod MySecondContract {
+mod my_second_contract {
     #[external(v0)]
     fn syscall_call_another_contract(
         address: starknet::ContractAddress, selector: felt252, calldata: Array<felt252>

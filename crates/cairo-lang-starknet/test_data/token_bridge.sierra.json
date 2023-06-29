@@ -27,10 +27,10 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x30236d584ffddc192784c36d3b37c90836a944bdb87974b728f57e41c8f914a",
-    "0x308b6c4e9a848bf4520854f23259c3575e403fb0db2ca0a046d2e1541e9e813",
-    "0x3924e5f5e8941da781a06098e2800768baaa28f70d132c8aa82d1e9db695a39",
-    "0x265930ce27c5b3eee7cf703aeeb5aa8d15d9d214b388526e08d09fe684a4d7d",
+    "0x2c1dcfb05cbeb2cd6a12b5cb6ea5ab2343eaeb256ff1cd1edbba785667c5278",
+    "0x3e5e891b2e5180215a2a3178e466b57efc9505d1abbedb93c9476a750d9244f",
+    "0x1f8ec16f6b17b2368b8532fee7c5738d48f9e2199542b11262ca0118a177001",
+    "0x153222d8bd51f339fa0e1324d0c21e4bf1bf77a4fda5c106154064ccbe99c36",
     "0xa",
     "0xb",
     "0xc",
@@ -45,7 +45,7 @@
     "0x24d668d7ede46c87d2cddfbcf73195c96f0ca8075ae10c8a468054b80120d78",
     "0x13",
     "0xd",
-    "0x1f022ff5375e6bc9f00e80e1800443b954626bff94e59f0629af6be722663c7",
+    "0x1988c950ea4447f9b5a3c13d73260c3d6fdcc333708aa7a9b5efbfed12dae3d",
     "0x15",
     "0x436f6e747261637441646472657373",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
@@ -61,28 +61,28 @@
     "0x4e6f6e5a65726f",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x20",
-    "0x102fb4e3a665321f284a009b3d8f158554063301fc9d6556c3c54658cbc48bf",
+    "0x3ea4cee081e67bec5a55514e3d1f4ab849a9509b2dff9a9dff517b2d89adc7b",
     "0x22",
-    "0x11d056809d6b91303161b39532ec9b6bdd4bdaed6f9a821a9e99ce5d4880f6f",
-    "0x1f51e1f6a877413aa2e0f8ed72968b11ab2d20871baea85860537c9ee453d04",
+    "0x24ba1aec81ac076d67f32412d63e7c679cce362718911f96037f6387a0fcc52",
+    "0x16bb3ac93cfc8306e5922ef0fa601ada63eb43d22e3abc377baf030d8b7b67f",
     "0x25",
-    "0x259fb31a4e7b0377c09e783815c81bfed6454de43be508ae9e1843492e19db9",
+    "0x331f24fbc94aed31bb6a99655b01537ab2f3ffe7a17b7bb4eba6c4d0565ef23",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x18a8a18484eb6f98bcdc87d2795f91743a396c246eee5eb7f892ff610439aec",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x2a",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
-    "0x19dcffce5266704e70bca22c0e282476ab2f8c633067ec57a00a281fd2c562",
+    "0x1df0702c06c466674715e95998090d9cd6d60b7136799ae18f82e818b8bbf7b",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x2e",
-    "0xda085a77cd59b5b89234f6a2afec1d799bc3329c9b5982a830b2eeb2d27c9d",
-    "0x380d3e0b093c5f2413e5be70e1e1d93f647e7b387a3ffdad29abd456aea5b8b",
+    "0x251415d66ba5a598e492445f1657ae77219b5dbc98fb752caafb6f113b67655",
+    "0x215b084a80816fcc5b2be449f228d12f0ad57acfa634ca66d15fa437ef73d4e",
     "0x24",
     "0x27",
     "0x2d",
     "0x30",
-    "0x2517dfa233a4f8466b807fc350213d3b79eeefe8082bb071f84e1b52d037ed",
+    "0x2430979ee2ace1e2d20c2cf97375653d83f6f42a5bfc8d181cc804831b94c1",
     "0x32",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -1798,19 +1798,19 @@
       ],
       [
         10,
-        "token_bridge::token_bridge::TokenBridge::governor::ContractState"
+        "token_bridge::token_bridge::token_bridge::governor::ContractState"
       ],
       [
         11,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState"
+        "token_bridge::token_bridge::token_bridge::l1_bridge::ContractState"
       ],
       [
         12,
-        "token_bridge::token_bridge::TokenBridge::l2_token::ContractState"
+        "token_bridge::token_bridge::token_bridge::l2_token::ContractState"
       ],
       [
         13,
-        "token_bridge::token_bridge::TokenBridge::ContractState"
+        "token_bridge::token_bridge::token_bridge::ContractState"
       ],
       [
         14,
@@ -1842,11 +1842,11 @@
       ],
       [
         21,
-        "Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>"
+        "Tuple<token_bridge::token_bridge::token_bridge::ContractState, Unit>"
       ],
       [
         22,
-        "core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>"
+        "core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::ContractState, ())>"
       ],
       [
         23,
@@ -1894,27 +1894,27 @@
       ],
       [
         34,
-        "Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>"
+        "Tuple<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, Unit>"
       ],
       [
         35,
-        "core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>"
+        "core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, ())>"
       ],
       [
         36,
-        "token_bridge::token_bridge::TokenBridge::L1BridgeSet"
+        "token_bridge::token_bridge::token_bridge::L1BridgeSet"
       ],
       [
         37,
-        "Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>"
+        "Tuple<token_bridge::token_bridge::token_bridge::l2_token::ContractState, Unit>"
       ],
       [
         38,
-        "core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>"
+        "core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l2_token::ContractState, ())>"
       ],
       [
         39,
-        "token_bridge::token_bridge::TokenBridge::L2TokenSet"
+        "token_bridge::token_bridge::token_bridge::L2TokenSet"
       ],
       [
         40,
@@ -1938,7 +1938,7 @@
       ],
       [
         45,
-        "token_bridge::token_bridge::TokenBridge::WithdrawInitiated"
+        "token_bridge::token_bridge::token_bridge::WithdrawInitiated"
       ],
       [
         46,
@@ -1950,19 +1950,19 @@
       ],
       [
         48,
-        "token_bridge::token_bridge::TokenBridge::DepositHandled"
+        "token_bridge::token_bridge::token_bridge::DepositHandled"
       ],
       [
         49,
-        "token_bridge::token_bridge::TokenBridge::Event"
+        "token_bridge::token_bridge::token_bridge::Event"
       ],
       [
         50,
-        "Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>"
+        "Tuple<token_bridge::token_bridge::token_bridge::governor::ContractState, Unit>"
       ],
       [
         51,
-        "core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>"
+        "core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::governor::ContractState, ())>"
       ],
       [
         52,
@@ -2140,27 +2140,27 @@
       ],
       [
         25,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::governor::ContractState>"
       ],
       [
         26,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState>"
       ],
       [
         27,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::l2_token::ContractState>"
       ],
       [
         28,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::ContractState>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::ContractState>"
       ],
       [
         29,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::ContractState>"
+        "snapshot_take<token_bridge::token_bridge::token_bridge::ContractState>"
       ],
       [
         30,
-        "drop<token_bridge::token_bridge::TokenBridge::ContractState>"
+        "drop<token_bridge::token_bridge::token_bridge::ContractState>"
       ],
       [
         31,
@@ -2272,7 +2272,7 @@
       ],
       [
         58,
-        "store_temp<token_bridge::token_bridge::TokenBridge::ContractState>"
+        "store_temp<token_bridge::token_bridge::token_bridge::ContractState>"
       ],
       [
         59,
@@ -2280,15 +2280,15 @@
       ],
       [
         60,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l1_bridge>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge>"
       ],
       [
         61,
-        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::ContractState, ())>>"
       ],
       [
         62,
-        "drop<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
+        "drop<Tuple<token_bridge::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         63,
@@ -2312,7 +2312,7 @@
       ],
       [
         68,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l2_token>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::TokenBridgeImpl::set_l2_token>"
       ],
       [
         69,
@@ -2332,7 +2332,7 @@
       ],
       [
         73,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::initiate_withdraw>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw>"
       ],
       [
         74,
@@ -2348,11 +2348,11 @@
       ],
       [
         77,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::handle_deposit>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::handle_deposit>"
       ],
       [
         78,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::constructor>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::constructor>"
       ],
       [
         79,
@@ -2392,19 +2392,19 @@
       ],
       [
         88,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::ContractState>"
+        "struct_deconstruct<token_bridge::token_bridge::token_bridge::ContractState>"
       ],
       [
         89,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
+        "snapshot_take<token_bridge::token_bridge::token_bridge::governor::ContractState>"
       ],
       [
         90,
-        "store_temp<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
+        "store_temp<token_bridge::token_bridge::token_bridge::governor::ContractState>"
       ],
       [
         91,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::read>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::governor::InternalContractStateImpl::read>"
       ],
       [
         92,
@@ -2428,15 +2428,15 @@
       ],
       [
         97,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
+        "snapshot_take<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState>"
       ],
       [
         98,
-        "store_temp<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
+        "store_temp<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState>"
       ],
       [
         99,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::read>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::l1_bridge::InternalContractStateImpl::read>"
       ],
       [
         100,
@@ -2464,59 +2464,59 @@
       ],
       [
         106,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::write>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::l1_bridge::InternalContractStateImpl::write>"
       ],
       [
         107,
-        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, ())>>"
       ],
       [
         108,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, Unit>>"
       ],
       [
         109,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::L1BridgeSet>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         110,
-        "store_temp<token_bridge::token_bridge::TokenBridge::L1BridgeSet>"
+        "store_temp<token_bridge::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         111,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::L1BridgeSet, token_bridge::token_bridge::TokenBridge::EventL1BridgeSetIntoEvent>>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::L1BridgeSet, token_bridge::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>>"
       ],
       [
         112,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         113,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::ContractState, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         114,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::ContractState, ())>, 0>"
       ],
       [
         115,
-        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::ContractState, ())>>"
       ],
       [
         116,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::ContractState, ())>, 1>"
       ],
       [
         117,
-        "drop<token_bridge::token_bridge::TokenBridge::governor::ContractState>"
+        "drop<token_bridge::token_bridge::token_bridge::governor::ContractState>"
       ],
       [
         118,
-        "drop<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
+        "drop<token_bridge::token_bridge::token_bridge::l2_token::ContractState>"
       ],
       [
         119,
-        "drop<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState>"
+        "drop<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState>"
       ],
       [
         120,
@@ -2548,15 +2548,15 @@
       ],
       [
         127,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
+        "snapshot_take<token_bridge::token_bridge::token_bridge::l2_token::ContractState>"
       ],
       [
         128,
-        "store_temp<token_bridge::token_bridge::TokenBridge::l2_token::ContractState>"
+        "store_temp<token_bridge::token_bridge::token_bridge::l2_token::ContractState>"
       ],
       [
         129,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::read>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::l2_token::InternalContractStateImpl::read>"
       ],
       [
         130,
@@ -2564,27 +2564,27 @@
       ],
       [
         131,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::write>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::l2_token::InternalContractStateImpl::write>"
       ],
       [
         132,
-        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l2_token::ContractState, ())>>"
       ],
       [
         133,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::token_bridge::l2_token::ContractState, Unit>>"
       ],
       [
         134,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::L2TokenSet>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         135,
-        "store_temp<token_bridge::token_bridge::TokenBridge::L2TokenSet>"
+        "store_temp<token_bridge::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         136,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::L2TokenSet, token_bridge::token_bridge::TokenBridge::EventL2TokenSetIntoEvent>>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::L2TokenSet, token_bridge::token_bridge::token_bridge::EventL2TokenSetIntoEvent>>"
       ],
       [
         137,
@@ -2624,7 +2624,7 @@
       ],
       [
         146,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l2_token>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::HelperImpl::read_initialized_l2_token>"
       ],
       [
         147,
@@ -2664,7 +2664,7 @@
       ],
       [
         156,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l1_bridge>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge>"
       ],
       [
         157,
@@ -2684,7 +2684,7 @@
       ],
       [
         161,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::WithdrawInitiated>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         162,
@@ -2696,11 +2696,11 @@
       ],
       [
         164,
-        "store_temp<token_bridge::token_bridge::TokenBridge::WithdrawInitiated>"
+        "store_temp<token_bridge::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         165,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::WithdrawInitiated, token_bridge::token_bridge::TokenBridge::EventWithdrawInitiatedIntoEvent>>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::WithdrawInitiated, token_bridge::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent>>"
       ],
       [
         166,
@@ -2748,19 +2748,19 @@
       ],
       [
         177,
-        "struct_construct<token_bridge::token_bridge::TokenBridge::DepositHandled>"
+        "struct_construct<token_bridge::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         178,
-        "enum_init<token_bridge::token_bridge::TokenBridge::Event, 3>"
+        "enum_init<token_bridge::token_bridge::token_bridge::Event, 3>"
       ],
       [
         179,
-        "store_temp<token_bridge::token_bridge::TokenBridge::Event>"
+        "store_temp<token_bridge::token_bridge::token_bridge::Event>"
       ],
       [
         180,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::Event, core::traits::TIntoT::<token_bridge::token_bridge::TokenBridge::Event>>>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::Event, core::traits::TIntoT::<token_bridge::token_bridge::token_bridge::Event>>>"
       ],
       [
         181,
@@ -2768,15 +2768,15 @@
       ],
       [
         182,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::write>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::governor::InternalContractStateImpl::write>"
       ],
       [
         183,
-        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::governor::ContractState, ())>>"
       ],
       [
         184,
-        "struct_deconstruct<Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<token_bridge::token_bridge::token_bridge::governor::ContractState, Unit>>"
       ],
       [
         185,
@@ -2964,35 +2964,35 @@
       ],
       [
         231,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, Unit>>"
       ],
       [
         232,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, ())>, 0>"
       ],
       [
         233,
-        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, ())>>"
       ],
       [
         234,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l1_bridge::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l1_bridge::ContractState, ())>, 1>"
       ],
       [
         235,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::EventL1BridgeSetIntoEvent::into>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into>"
       ],
       [
         236,
-        "snapshot_take<token_bridge::token_bridge::TokenBridge::Event>"
+        "snapshot_take<token_bridge::token_bridge::token_bridge::Event>"
       ],
       [
         237,
-        "drop<token_bridge::token_bridge::TokenBridge::Event>"
+        "drop<token_bridge::token_bridge::token_bridge::Event>"
       ],
       [
         238,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_data>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::EventIsEvent::append_keys_and_data>"
       ],
       [
         239,
@@ -3004,23 +3004,23 @@
       ],
       [
         241,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::l2_token::ContractState, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::token_bridge::l2_token::ContractState, Unit>>"
       ],
       [
         242,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l2_token::ContractState, ())>, 0>"
       ],
       [
         243,
-        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l2_token::ContractState, ())>>"
       ],
       [
         244,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::l2_token::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::l2_token::ContractState, ())>, 1>"
       ],
       [
         245,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::EventL2TokenSetIntoEvent::into>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into>"
       ],
       [
         246,
@@ -3116,7 +3116,7 @@
       ],
       [
         269,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::EventWithdrawInitiatedIntoEvent::into>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into>"
       ],
       [
         270,
@@ -3124,23 +3124,23 @@
       ],
       [
         271,
-        "function_call<user@core::traits::TIntoT::<token_bridge::token_bridge::TokenBridge::Event>::into>"
+        "function_call<user@core::traits::TIntoT::<token_bridge::token_bridge::token_bridge::Event>::into>"
       ],
       [
         272,
-        "struct_construct<Tuple<token_bridge::token_bridge::TokenBridge::governor::ContractState, Unit>>"
+        "struct_construct<Tuple<token_bridge::token_bridge::token_bridge::governor::ContractState, Unit>>"
       ],
       [
         273,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::governor::ContractState, ())>, 0>"
       ],
       [
         274,
-        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::governor::ContractState, ())>>"
       ],
       [
         275,
-        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::TokenBridge::governor::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(token_bridge::token_bridge::token_bridge::governor::ContractState, ())>, 1>"
       ],
       [
         276,
@@ -3252,11 +3252,11 @@
       ],
       [
         303,
-        "enum_init<token_bridge::token_bridge::TokenBridge::Event, 0>"
+        "enum_init<token_bridge::token_bridge::token_bridge::Event, 0>"
       ],
       [
         304,
-        "enum_match<token_bridge::token_bridge::TokenBridge::Event>"
+        "enum_match<token_bridge::token_bridge::token_bridge::Event>"
       ],
       [
         305,
@@ -3264,7 +3264,7 @@
       ],
       [
         306,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_data>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>"
       ],
       [
         307,
@@ -3272,7 +3272,7 @@
       ],
       [
         308,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_data>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data>"
       ],
       [
         309,
@@ -3280,7 +3280,7 @@
       ],
       [
         310,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_data>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>"
       ],
       [
         311,
@@ -3288,11 +3288,11 @@
       ],
       [
         312,
-        "store_temp<token_bridge::token_bridge::TokenBridge::DepositHandled>"
+        "store_temp<token_bridge::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         313,
-        "function_call<user@token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_data>"
+        "function_call<user@token_bridge::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data>"
       ],
       [
         314,
@@ -3300,7 +3300,7 @@
       ],
       [
         315,
-        "enum_init<token_bridge::token_bridge::TokenBridge::Event, 1>"
+        "enum_init<token_bridge::token_bridge::token_bridge::Event, 1>"
       ],
       [
         316,
@@ -3332,7 +3332,7 @@
       ],
       [
         323,
-        "enum_init<token_bridge::token_bridge::TokenBridge::Event, 2>"
+        "enum_init<token_bridge::token_bridge::token_bridge::Event, 2>"
       ],
       [
         324,
@@ -3344,7 +3344,7 @@
       ],
       [
         326,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::L1BridgeSet>"
+        "struct_deconstruct<token_bridge::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         327,
@@ -3352,53 +3352,53 @@
       ],
       [
         328,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::L2TokenSet>"
+        "struct_deconstruct<token_bridge::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         329,
-        "dup<token_bridge::token_bridge::TokenBridge::WithdrawInitiated>"
+        "dup<token_bridge::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         330,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::WithdrawInitiated>"
+        "struct_deconstruct<token_bridge::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         331,
-        "dup<token_bridge::token_bridge::TokenBridge::DepositHandled>"
+        "dup<token_bridge::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         332,
-        "struct_deconstruct<token_bridge::token_bridge::TokenBridge::DepositHandled>"
+        "struct_deconstruct<token_bridge::token_bridge::token_bridge::DepositHandled>"
       ]
     ],
     "user_func_names": [
       [
         0,
-        "token_bridge::token_bridge::TokenBridge::__external::get_version"
+        "token_bridge::token_bridge::token_bridge::__external::get_version"
       ],
       [
         1,
-        "token_bridge::token_bridge::TokenBridge::__external::get_identity"
+        "token_bridge::token_bridge::token_bridge::__external::get_identity"
       ],
       [
         2,
-        "token_bridge::token_bridge::TokenBridge::__external::set_l1_bridge"
+        "token_bridge::token_bridge::token_bridge::__external::set_l1_bridge"
       ],
       [
         3,
-        "token_bridge::token_bridge::TokenBridge::__external::set_l2_token"
+        "token_bridge::token_bridge::token_bridge::__external::set_l2_token"
       ],
       [
         4,
-        "token_bridge::token_bridge::TokenBridge::__external::initiate_withdraw"
+        "token_bridge::token_bridge::token_bridge::__external::initiate_withdraw"
       ],
       [
         5,
-        "token_bridge::token_bridge::TokenBridge::__l1_handler::handle_deposit"
+        "token_bridge::token_bridge::token_bridge::__l1_handler::handle_deposit"
       ],
       [
         6,
-        "token_bridge::token_bridge::TokenBridge::__constructor::constructor"
+        "token_bridge::token_bridge::token_bridge::__constructor::constructor"
       ],
       [
         7,
@@ -3414,7 +3414,7 @@
       ],
       [
         10,
-        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l1_bridge"
+        "token_bridge::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge"
       ],
       [
         11,
@@ -3422,7 +3422,7 @@
       ],
       [
         12,
-        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::set_l2_token"
+        "token_bridge::token_bridge::token_bridge::TokenBridgeImpl::set_l2_token"
       ],
       [
         13,
@@ -3430,7 +3430,7 @@
       ],
       [
         14,
-        "token_bridge::token_bridge::TokenBridge::TokenBridgeImpl::initiate_withdraw"
+        "token_bridge::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw"
       ],
       [
         15,
@@ -3438,11 +3438,11 @@
       ],
       [
         16,
-        "token_bridge::token_bridge::TokenBridge::handle_deposit"
+        "token_bridge::token_bridge::token_bridge::handle_deposit"
       ],
       [
         17,
-        "token_bridge::token_bridge::TokenBridge::constructor"
+        "token_bridge::token_bridge::token_bridge::constructor"
       ],
       [
         18,
@@ -3454,11 +3454,11 @@
       ],
       [
         20,
-        "token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::read"
+        "token_bridge::token_bridge::token_bridge::governor::InternalContractStateImpl::read"
       ],
       [
         21,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::read"
+        "token_bridge::token_bridge::token_bridge::l1_bridge::InternalContractStateImpl::read"
       ],
       [
         22,
@@ -3466,23 +3466,23 @@
       ],
       [
         23,
-        "token_bridge::token_bridge::TokenBridge::l1_bridge::InternalContractStateImpl::write"
+        "token_bridge::token_bridge::token_bridge::l1_bridge::InternalContractStateImpl::write"
       ],
       [
         24,
-        "token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::L1BridgeSet, token_bridge::token_bridge::TokenBridge::EventL1BridgeSetIntoEvent>"
+        "token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::L1BridgeSet, token_bridge::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>"
       ],
       [
         25,
-        "token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::read"
+        "token_bridge::token_bridge::token_bridge::l2_token::InternalContractStateImpl::read"
       ],
       [
         26,
-        "token_bridge::token_bridge::TokenBridge::l2_token::InternalContractStateImpl::write"
+        "token_bridge::token_bridge::token_bridge::l2_token::InternalContractStateImpl::write"
       ],
       [
         27,
-        "token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::L2TokenSet, token_bridge::token_bridge::TokenBridge::EventL2TokenSetIntoEvent>"
+        "token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::L2TokenSet, token_bridge::token_bridge::token_bridge::EventL2TokenSetIntoEvent>"
       ],
       [
         28,
@@ -3490,7 +3490,7 @@
       ],
       [
         29,
-        "token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l2_token"
+        "token_bridge::token_bridge::token_bridge::HelperImpl::read_initialized_l2_token"
       ],
       [
         30,
@@ -3498,11 +3498,11 @@
       ],
       [
         31,
-        "token_bridge::token_bridge::TokenBridge::HelperImpl::read_initialized_l1_bridge"
+        "token_bridge::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge"
       ],
       [
         32,
-        "token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::WithdrawInitiated, token_bridge::token_bridge::TokenBridge::EventWithdrawInitiatedIntoEvent>"
+        "token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::WithdrawInitiated, token_bridge::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent>"
       ],
       [
         33,
@@ -3510,11 +3510,11 @@
       ],
       [
         34,
-        "token_bridge::token_bridge::TokenBridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::TokenBridge::Event, core::traits::TIntoT::<token_bridge::token_bridge::TokenBridge::Event>>"
+        "token_bridge::token_bridge::token_bridge::ContractStateEventEmitter::emit::<token_bridge::token_bridge::token_bridge::Event, core::traits::TIntoT::<token_bridge::token_bridge::token_bridge::Event>>"
       ],
       [
         35,
-        "token_bridge::token_bridge::TokenBridge::governor::InternalContractStateImpl::write"
+        "token_bridge::token_bridge::token_bridge::governor::InternalContractStateImpl::write"
       ],
       [
         36,
@@ -3546,15 +3546,15 @@
       ],
       [
         43,
-        "token_bridge::token_bridge::TokenBridge::EventL1BridgeSetIntoEvent::into"
+        "token_bridge::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into"
       ],
       [
         44,
-        "token_bridge::token_bridge::TokenBridge::EventIsEvent::append_keys_and_data"
+        "token_bridge::token_bridge::token_bridge::EventIsEvent::append_keys_and_data"
       ],
       [
         45,
-        "token_bridge::token_bridge::TokenBridge::EventL2TokenSetIntoEvent::into"
+        "token_bridge::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into"
       ],
       [
         46,
@@ -3574,11 +3574,11 @@
       ],
       [
         50,
-        "token_bridge::token_bridge::TokenBridge::EventWithdrawInitiatedIntoEvent::into"
+        "token_bridge::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into"
       ],
       [
         51,
-        "core::traits::TIntoT::<token_bridge::token_bridge::TokenBridge::Event>::into"
+        "core::traits::TIntoT::<token_bridge::token_bridge::token_bridge::Event>::into"
       ],
       [
         52,
@@ -3590,19 +3590,19 @@
       ],
       [
         54,
-        "token_bridge::token_bridge::TokenBridge::L1BridgeSetIsEvent::append_keys_and_data"
+        "token_bridge::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data"
       ],
       [
         55,
-        "token_bridge::token_bridge::TokenBridge::L2TokenSetIsEvent::append_keys_and_data"
+        "token_bridge::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data"
       ],
       [
         56,
-        "token_bridge::token_bridge::TokenBridge::WithdrawInitiatedIsEvent::append_keys_and_data"
+        "token_bridge::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data"
       ],
       [
         57,
-        "token_bridge::token_bridge::TokenBridge::DepositHandledIsEvent::append_keys_and_data"
+        "token_bridge::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data"
       ],
       [
         58,
@@ -3770,7 +3770,7 @@
     },
     {
       "type": "event",
-      "name": "token_bridge::token_bridge::TokenBridge::L1BridgeSet",
+      "name": "token_bridge::token_bridge::token_bridge::L1BridgeSet",
       "kind": "struct",
       "members": [
         {
@@ -3782,7 +3782,7 @@
     },
     {
       "type": "event",
-      "name": "token_bridge::token_bridge::TokenBridge::L2TokenSet",
+      "name": "token_bridge::token_bridge::token_bridge::L2TokenSet",
       "kind": "struct",
       "members": [
         {
@@ -3794,7 +3794,7 @@
     },
     {
       "type": "event",
-      "name": "token_bridge::token_bridge::TokenBridge::WithdrawInitiated",
+      "name": "token_bridge::token_bridge::token_bridge::WithdrawInitiated",
       "kind": "struct",
       "members": [
         {
@@ -3816,7 +3816,7 @@
     },
     {
       "type": "event",
-      "name": "token_bridge::token_bridge::TokenBridge::DepositHandled",
+      "name": "token_bridge::token_bridge::token_bridge::DepositHandled",
       "kind": "struct",
       "members": [
         {
@@ -3833,27 +3833,27 @@
     },
     {
       "type": "event",
-      "name": "token_bridge::token_bridge::TokenBridge::Event",
+      "name": "token_bridge::token_bridge::token_bridge::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "L1BridgeSet",
-          "type": "token_bridge::token_bridge::TokenBridge::L1BridgeSet",
+          "type": "token_bridge::token_bridge::token_bridge::L1BridgeSet",
           "kind": "nested"
         },
         {
           "name": "L2TokenSet",
-          "type": "token_bridge::token_bridge::TokenBridge::L2TokenSet",
+          "type": "token_bridge::token_bridge::token_bridge::L2TokenSet",
           "kind": "nested"
         },
         {
           "name": "WithdrawInitiated",
-          "type": "token_bridge::token_bridge::TokenBridge::WithdrawInitiated",
+          "type": "token_bridge::token_bridge::token_bridge::WithdrawInitiated",
           "kind": "nested"
         },
         {
           "name": "DepositHandled",
-          "type": "token_bridge::token_bridge::TokenBridge::DepositHandled",
+          "type": "token_bridge::token_bridge::token_bridge::DepositHandled",
           "kind": "nested"
         }
       ]

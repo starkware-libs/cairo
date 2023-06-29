@@ -13,7 +13,7 @@ trait IWithReplace<TContractState> {
 }
 
 #[starknet::contract]
-mod ContractA {
+mod contract_a {
     use core::traits::TryInto;
     use option::OptionTrait;
     use core::result::ResultTrait;
@@ -43,7 +43,7 @@ trait IWithFoo<TContractState> {
 }
 
 #[starknet::contract]
-mod ContractB {
+mod contract_b {
     #[storage]
     struct Storage {
         value: u128, 
