@@ -5,7 +5,7 @@ use array::ArrayTrait;
 use zeroable::IsZeroResult;
 use traits::Into;
 
-mod StarkCurve {
+mod stark_curve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
     const ALPHA: felt252 = 1;
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
