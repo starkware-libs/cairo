@@ -20,6 +20,7 @@ ItemEnum
 error: Missing token TokenComma.
  --> dummy_file.cairo:3:16
     B: (felt252),
+               ^
 
 //! > expected_tree
 └── Top level kind: ItemEnum
@@ -43,7 +44,7 @@ error: Missing token TokenComma.
     │   │   ├── name (kind: TokenIdentifier): 'B'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
-    │   │       └── ty (kind: ExprTuple)
+    │   │       └── ty (kind: ExprListParenthesized)
     │   │           ├── lparen (kind: TokenLParen): '('
     │   │           ├── expressions (kind: ExprList)
     │   │           │   └── item #0 (kind: ExprPath)

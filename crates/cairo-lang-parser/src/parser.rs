@@ -1167,7 +1167,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
         let dotdot = self.take::<TerminalDotDot>(); // ..
-                                                    // TODO(yuval): consider changing this to SimpleExpr once it exists.
+        // TODO(yuval): consider changing this to SimpleExpr once it exists.
         let expr = self.parse_expr();
         StructArgTail::new_green(self.db, dotdot, expr)
     }
@@ -1334,9 +1334,30 @@ impl<'a> Parser<'a> {
                         let lparen = self.take::<TerminalLParen>();
                         let pattern = self.parse_pattern();
                         let rparen = self.parse_token::<TerminalRParen>();
-                        PatternEnum::new_green(self.db, path, lparen, pattern, rparen).into()
+                        let inner_pattern =
+                            PatternEnumInnerPattern::new_green(self.db, lparen, pattern, rparen);
+                        PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
-                    _ => path.into(),
+                    _ => {
+                        let children = match self.db.lookup_intern_green(path.0).details {
+                            GreenNodeDetails::Node { children, width: _ } => children,
+                            _ => return None,
+                        };
+                        // If the path has more than 1 element assume it's a simplified Enum variant
+                        // Eg. MyEnum::A(()) ~ MyEnum::A
+                        // Multi-path identifiers aren't allowed, for now this mechanism is
+                        // sufficient
+                        match children.len() {
+                            // 0 => return None, - unreachable
+                            1 => path.into(),
+                            _ => PatternEnum::new_green(
+                                self.db,
+                                path,
+                                OptionPatternEnumInnerPatternEmpty::new_green(self.db).into(),
+                            )
+                            .into(),
+                        }
+                    }
                 }
             }
             SyntaxKind::TerminalLParen => {
@@ -1577,7 +1598,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Member or None if a struct member variant can't
+    /// Returns a GreenId of a node with kind Member or None if a struct member/enum variant can't
     /// be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let attributes =
@@ -1598,13 +1619,13 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind VariantList.
     fn parse_variant_list(&mut self) -> VariantListGreen {
         VariantList::new_green(
-                self.db,
-                self.parse_separated_list::<Variant, TerminalComma, VariantListElementOrSeparatorGreen>(
-                    Self::try_parse_variant,
-                    is_of_kind!(rparen, block, lbrace, rbrace, top_level),
-                    "variant",
-                ),
-            )
+            self.db,
+            self.parse_separated_list::<Variant, TerminalComma, VariantListElementOrSeparatorGreen>(
+                Self::try_parse_variant,
+                is_of_kind!(rparen, block, lbrace, rbrace, top_level),
+                "variant",
+            ),
+        )
     }
 
     /// Returns a GreenId of a node with kind Member or None if a enum variant can't
@@ -1642,11 +1663,7 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
     fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
-        if self.is_peek_identifier_like() {
-            Some(self.parse_path())
-        } else {
-            None
-        }
+        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
     }
 
     /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`.
@@ -2045,11 +2062,7 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == self.peek().kind {
-            Some(self.take::<Terminal>())
-        } else {
-            None
-        }
+        if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.

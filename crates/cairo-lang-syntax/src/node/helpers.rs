@@ -290,6 +290,7 @@ impl QueryAttrs for Member {
         self.attributes(db).elements(db)
     }
 }
+
 impl QueryAttrs for Variant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)

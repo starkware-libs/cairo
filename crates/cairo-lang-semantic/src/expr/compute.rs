@@ -8,10 +8,14 @@ use std::ops::Deref;
 use ast::PathSegment;
 use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
-use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
+use cairo_lang_syntax::node::ast::{
+    BlockOrIf, ExprPtr, PatternStructParam, PatternTuplePtr, UnaryOperator,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
+use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -1033,8 +1037,24 @@ fn compute_pattern_semantic(
 
             // Compute inner pattern.
             let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
-            let inner_pattern =
-                compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), inner_ty)?.into();
+
+            let inner_pattern: Box<Pattern> = match enum_pattern.pattern(syntax_db) {
+                ast::OptionPatternEnumInnerPattern::Empty(_) => Pattern::Tuple(PatternTuple {
+                    field_patterns: vec![],
+                    ty: unit_ty(ctx.db),
+                    stable_ptr: PatternTuplePtr(ctx.db.intern_stable_ptr(SyntaxStablePtr::Child {
+                        parent: enum_pattern.stable_ptr().0,
+                        kind: SyntaxKind::PatternTuple,
+                        key_fields: vec![],
+                        index: 0,
+                    })),
+                })
+                .into(),
+                ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
+                    compute_pattern_semantic(ctx, p.pattern(syntax_db), inner_ty)?.into()
+                }
+            };
+
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: concrete_variant,
                 inner_pattern,

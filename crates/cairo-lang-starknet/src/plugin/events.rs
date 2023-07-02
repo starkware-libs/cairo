@@ -1,13 +1,12 @@
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList, OptionTypeClause};
+use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -211,11 +210,17 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     let mut variants = vec![];
     let mut event_into_impls = vec![];
     for variant in enum_ast.variants(db).elements(db) {
-        let ty = RewriteNode::new_trimmed(variant.type_clause(db).ty(db).as_syntax_node());
+        let ty = match variant.type_clause(db) {
+            ast::OptionTypeClause::Empty(_) => RewriteNode::Text("()".to_string()),
+            ast::OptionTypeClause::TypeClause(tc) => {
+                RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
+            }
+        };
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let member_kind = get_field_enum_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
+        let member_kind =
+            get_field_enum_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(

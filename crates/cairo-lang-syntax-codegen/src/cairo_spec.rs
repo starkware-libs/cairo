@@ -266,10 +266,14 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("PatternEnum")
         .node("path", "ExprPath")
+        .node("pattern", "OptionPatternEnumInnerPattern")
+    )
+    .add_struct(StructBuilder::new("PatternEnumInnerPattern")
         .node("lparen", "TerminalLParen")
         .node("pattern", "Pattern")
         .node("rparen", "TerminalRParen")
     )
+    .add_option("PatternEnumInnerPattern")
     // --- Type clauses ---
     // TODO(yuval): support SimpleExpr instead of Expr
     .add_struct(StructBuilder::new("TypeClause").node("colon", "TerminalColon").node("ty", "Expr"))
