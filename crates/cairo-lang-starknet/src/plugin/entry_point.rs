@@ -63,23 +63,22 @@ pub fn generate_entry_point_wrapper(
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
 
-    let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
-
     let Some(first_param) = params.next() else {
         return Err(vec![PluginDiagnostic{
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
+            message: "The first paramater of an entry point must be `self`.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
         }]);
     };
     if first_param.name(db).text(db) != "self" {
         return Err(vec![PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
-            stable_ptr: sig.stable_ptr().untyped(),
+            message: "The first paramater of an entry point must be `self`.".into(),
+            stable_ptr: first_param.stable_ptr().untyped(),
         }]);
     };
     let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
     // TODO(spapini): Check modifiers and type.
 
+    let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).text(db));
