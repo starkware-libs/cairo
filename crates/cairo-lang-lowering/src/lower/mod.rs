@@ -127,16 +127,15 @@ pub fn lower_function(
                 SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                     // Convert to a return.
                     let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                    let var = expr.unwrap_or_else(|| {
+                    let var_usage = expr.unwrap_or_else(|| {
                         generators::StructConstruct {
                             inputs: vec![],
                             ty: unit_ty(ctx.db.upcast()),
                             location,
                         }
                         .add(&mut ctx, &mut builder.statements)
-                        .var_id
                     });
-                    builder.ret(&mut ctx, var, location)?;
+                    builder.ret(&mut ctx, var_usage.var_id, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -200,16 +199,15 @@ pub fn lower_loop_function(
             SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                 // Convert to a return.
                 let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                let var = expr.unwrap_or_else(|| {
+                let var_usage = expr.unwrap_or_else(|| {
                     generators::StructConstruct {
                         inputs: vec![],
                         ty: unit_ty(ctx.db.upcast()),
                         location,
                     }
                     .add(&mut ctx, &mut builder.statements)
-                    .var_id
                 });
-                builder.ret(&mut ctx, var, location)?;
+                builder.ret(&mut ctx, var_usage.var_id, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
@@ -292,7 +290,7 @@ pub fn lowered_expr_to_block_scope_end(
 ) -> Maybe<SealedBlockBuilder> {
     Ok(match lowered_expr {
         Ok(LoweredExpr::Tuple { exprs, .. }) if exprs.is_empty() => builder.goto_callsite(None),
-        Ok(lowered_expr) => match lowered_expr.var(ctx, &mut builder) {
+        Ok(lowered_expr) => match lowered_expr.as_var_usage(ctx, &mut builder) {
             Ok(var) => builder.goto_callsite(Some(var)),
             Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
         },
@@ -1249,7 +1247,7 @@ fn lower_expr_error_propagate(
     let subscope_ok = create_subscope_with_bound_refs(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
     let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
-    let sealed_block_ok = subscope_ok.goto_callsite(Some(expr_var));
+    let sealed_block_ok = subscope_ok.goto_callsite(Some(VarUsage { var_id: expr_var, location }));
 
     // Err arm.
     let mut subscope_err = create_subscope_with_bound_refs(ctx, builder);
@@ -1310,8 +1308,8 @@ fn lower_optimized_extern_error_propagate(
         input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
-    let expr =
-        extern_facade_expr(ctx, ok_variant.ty, input_vars, location).var(ctx, &mut subscope_ok)?;
+    let expr = extern_facade_expr(ctx, ok_variant.ty, input_vars, location)
+        .as_var_usage(ctx, &mut subscope_ok)?;
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr));
 
     // Err arm.
