@@ -31,16 +31,21 @@ use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
 use num_traits::{Num, Signed};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
 use crate::compiler_version::current_compiler_version_id;
+use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
 
 /// The expected gas cost of an entrypoint.
 pub const ENTRY_POINT_COST: i32 = 10000;
+
+static CONSTRUCTOR_ENTRY_POINT_SELECTOR: Lazy<BigUint> =
+    Lazy::new(|| starknet_keccak(b"constructor"));
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum StarknetSierraCompilationError {
@@ -58,6 +63,8 @@ pub enum StarknetSierraCompilationError {
     InvalidEntryPointSignatureMissingArgs,
     #[error("Invalid entry point signature.")]
     InvalidEntryPointSignature,
+    #[error("Invalid constructor entry point.")]
+    InvalidContructorEntryPoint,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature - builtins are not in the expected order.")]
@@ -226,6 +233,16 @@ impl CasmContractClass {
         }
 
         let (_, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+
+        match &contract_class.entry_points_by_type.constructor.as_slice() {
+            [] => {}
+            [ContractEntryPoint { selector, .. }]
+                if selector == &*CONSTRUCTOR_ENTRY_POINT_SELECTOR => {}
+            _ => {
+                return Err(StarknetSierraCompilationError::InvalidContructorEntryPoint);
+            }
+        };
+
         for entry_points in [
             &contract_class.entry_points_by_type.constructor,
             &contract_class.entry_points_by_type.external,
