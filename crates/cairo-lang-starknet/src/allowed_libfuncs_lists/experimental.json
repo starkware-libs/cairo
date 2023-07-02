@@ -60,6 +60,7 @@
         "felt252_sub_const",
         "finalize_locals",
         "function_call",
+        "get_block_hash_syscall",
         "get_builtin_costs",
         "get_execution_info_syscall",
         "hades_permutation",
