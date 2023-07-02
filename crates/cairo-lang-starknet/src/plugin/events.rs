@@ -1,12 +1,13 @@
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
+use cairo_lang_semantic::corelib::unit_ty;
 use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
-use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
+use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList, OptionTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -154,6 +155,37 @@ fn get_field_kind(
     default
 }
 
+fn get_field_enum_kind(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    member: &ast::Variant,
+    default: EventFieldKind,
+) -> EventFieldKind {
+    let is_nested = member.has_attr(db, "nested");
+    let is_key = member.has_attr(db, "key");
+    let is_serde = member.has_attr(db, "serde");
+
+    // Currently, nested fields are unsupported.
+    if is_nested {
+        diagnostics.push(PluginDiagnostic {
+            message: "Nested event fields are currently unsupported".to_string(),
+            stable_ptr: member.stable_ptr().untyped(),
+        });
+    }
+    // Currently, serde fields are unsupported.
+    if is_serde {
+        diagnostics.push(PluginDiagnostic {
+            message: "Serde event fields are currently unsupported".to_string(),
+            stable_ptr: member.stable_ptr().untyped(),
+        });
+    }
+
+    if is_key {
+        return EventFieldKind::KeySerde;
+    }
+    default
+}
+
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
     if !derive_event_needed(&enum_ast, db) {
@@ -183,7 +215,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let member_kind = get_field_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
+        let member_kind = get_field_enum_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(

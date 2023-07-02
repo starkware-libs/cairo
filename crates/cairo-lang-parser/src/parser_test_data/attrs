@@ -37,6 +37,7 @@ ItemList
 ExprBlock
 FunctionDeclaration
 MemberList
+VariantList
 
 //! > expected_diagnostics
 
@@ -72,7 +73,7 @@ MemberList
     │   ├── name (kind: TokenIdentifier): 'bool'
     │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     │   ├── lbrace (kind: TokenLBrace): '{'
-    │   ├── variants (kind: MemberList) <ignored>
+    │   ├── variants (kind: VariantList) <ignored>
     │   └── rbrace (kind: TokenRBrace): '}'
     ├── child #1 (kind: ItemModule)
     │   ├── attributes (kind: AttributeList)

@@ -222,7 +222,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
-        let variants = self.parse_member_list();
+        let variants = self.parse_variant_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
         ItemEnum::new_green(
             self.db,
@@ -1167,7 +1167,7 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `\.\.<Expr>`
     fn expect_struct_argument_tail(&mut self) -> StructArgTailGreen {
         let dotdot = self.take::<TerminalDotDot>(); // ..
-        // TODO(yuval): consider changing this to SimpleExpr once it exists.
+                                                    // TODO(yuval): consider changing this to SimpleExpr once it exists.
         let expr = self.parse_expr();
         StructArgTail::new_green(self.db, dotdot, expr)
     }
@@ -1577,7 +1577,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Member or None if a struct member/enum variant can't
+    /// Returns a GreenId of a node with kind Member or None if a struct member variant can't
     /// be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let attributes =
@@ -1593,6 +1593,34 @@ impl<'a> Parser<'a> {
             should_stop: is_of_kind!(comma, rbrace, top_level),
         });
         Some(Member::new_green(self.db, attributes, name, type_clause))
+    }
+
+    /// Returns a GreenId of a node with kind VariantList.
+    fn parse_variant_list(&mut self) -> VariantListGreen {
+        VariantList::new_green(
+                self.db,
+                self.parse_separated_list::<Variant, TerminalComma, VariantListElementOrSeparatorGreen>(
+                    Self::try_parse_variant,
+                    is_of_kind!(rparen, block, lbrace, rbrace, top_level),
+                    "variant",
+                ),
+            )
+    }
+
+    /// Returns a GreenId of a node with kind Member or None if a enum variant can't
+    /// be parsed.
+    fn try_parse_variant(&mut self) -> Option<VariantGreen> {
+        let attributes =
+            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+        let name = if attributes.is_some() {
+            self.parse_identifier()
+        } else {
+            self.try_parse_identifier()?
+        };
+        let attributes = attributes.unwrap_or_else(|| AttributeList::new_green(self.db, vec![]));
+
+        let type_clause = self.parse_option_type_clause();
+        Some(Variant::new_green(self.db, attributes, name, type_clause))
     }
 
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`
@@ -1614,7 +1642,11 @@ impl<'a> Parser<'a> {
     }
     /// Returns a GreenId of a node with kind ExprPath or None if a path can't be parsed.
     fn try_parse_path(&mut self) -> Option<ExprPathGreen> {
-        if self.is_peek_identifier_like() { Some(self.parse_path()) } else { None }
+        if self.is_peek_identifier_like() {
+            Some(self.parse_path())
+        } else {
+            None
+        }
     }
 
     /// Expected pattern: `(<PathSegment>::)*<PathSegment>(::){0,1}<GenericArgs>`.
@@ -2013,7 +2045,11 @@ impl<'a> Parser<'a> {
     /// Note that this function should not be called for 'TerminalIdentifier' -
     /// try_parse_identifier() should be used instead.
     fn try_parse_token<Terminal: syntax::node::Terminal>(&mut self) -> Option<Terminal::Green> {
-        if Terminal::KIND == self.peek().kind { Some(self.take::<Terminal>()) } else { None }
+        if Terminal::KIND == self.peek().kind {
+            Some(self.take::<Terminal>())
+        } else {
+            None
+        }
     }
 
     /// If the current token is of kind `token_kind`, returns a GreenId of a node with this kind.
