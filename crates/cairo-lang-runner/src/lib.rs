@@ -31,6 +31,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
+use cairo_vm::vm::runners::cairo_runner::RunResources;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
@@ -185,8 +186,12 @@ impl SierraCasmRunner {
         let instructions =
             chain!(entry_code.iter(), self.casm_program.instructions.iter(), footer.iter());
         let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
-        let mut hint_processor =
-            CairoHintProcessor { runner: Some(self), starknet_state, string_to_hint };
+        let mut hint_processor = CairoHintProcessor {
+            runner: Some(self),
+            starknet_state,
+            string_to_hint,
+            run_resources: RunResources::default(),
+        };
         self.run_function(func, &mut hint_processor, hints_dict, instructions, builtins).map(|v| {
             RunResultStarknet {
                 gas_counter: v.gas_counter,

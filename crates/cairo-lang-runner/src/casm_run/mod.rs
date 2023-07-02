@@ -15,7 +15,9 @@ use cairo_lang_casm::operand::{
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::extract_matches;
-use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
+use cairo_vm::hint_processor::hint_processor_definition::{
+    HintProcessor, HintProcessorLogic, HintReference,
+};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
 };
@@ -26,7 +28,7 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::{CairoRunner, RunResources};
+use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
@@ -92,6 +94,8 @@ pub struct CairoHintProcessor<'a> {
     pub string_to_hint: HashMap<String, Hint>,
     // The starknet state.
     pub starknet_state: StarknetState,
+    // Maintains the resources of the run.
+    pub run_resources: RunResources,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -309,7 +313,7 @@ fn get_maybe(
     }
 }
 
-impl HintProcessor for CairoHintProcessor<'_> {
+impl HintProcessorLogic for CairoHintProcessor<'_> {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
         &mut self,
@@ -317,7 +321,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
-        _run_resources: &mut RunResources,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -358,6 +361,24 @@ impl HintProcessor for CairoHintProcessor<'_> {
         _references: &[HintReference],
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
+    }
+}
+
+impl ResourceTracker for CairoHintProcessor<'_> {
+    fn consumed(&self) -> bool {
+        self.run_resources.consumed()
+    }
+
+    fn consume_step(&mut self) {
+        self.run_resources.consume_step()
+    }
+
+    fn get_n_steps(&self) -> Option<usize> {
+        self.run_resources.get_n_steps()
+    }
+
+    fn run_resources(&self) -> &RunResources {
+        self.run_resources.run_resources()
     }
 }
 
@@ -1862,6 +1883,7 @@ where
         runner: None,
         string_to_hint,
         starknet_state: StarknetState::default(),
+        run_resources: RunResources::default(),
     };
     run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
         .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
@@ -1908,9 +1930,7 @@ where
 
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
-    runner
-        .run_until_pc(end, &mut RunResources::default(), &mut vm, hint_processor)
-        .map_err(CairoRunError::from)?;
+    runner.run_until_pc(end, &mut vm, hint_processor).map_err(CairoRunError::from)?;
     runner.end_run(true, false, &mut vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
