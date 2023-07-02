@@ -67,14 +67,14 @@ pub fn generate_entry_point_wrapper(
 
     let Some(first_param) = params.next() else {
         return Err(vec![PluginDiagnostic{
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
+            message: "An entry point must get a `self` param.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
         }]);
     };
     if first_param.name(db).text(db) != "self" {
         return Err(vec![PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
-            stable_ptr: sig.stable_ptr().untyped(),
+            message: "An entry point must get a `self` param.".into(),
+            stable_ptr: first_param.stable_ptr().untyped(),
         }]);
     };
     let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
