@@ -135,7 +135,7 @@ pub fn lower_function(
                         }
                         .add(&mut ctx, &mut builder.statements)
                     });
-                    builder.ret(&mut ctx, var_usage, location)?;
+                    builder.ret(&mut ctx, var_usage.var_id, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -207,7 +207,7 @@ pub fn lower_loop_function(
                     }
                     .add(&mut ctx, &mut builder.statements)
                 });
-                builder.ret(&mut ctx, var_usage, location)?;
+                builder.ret(&mut ctx, var_usage.var_id, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
