@@ -341,9 +341,17 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
             .ctx
             .db
             .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
-        generators::StructConstruct { inputs: members, ty, location: self.location }
-            .add(self.ctx, self.statements)
-            .var_id
+        // TODO(ilya): Is using the `self.location` correct here?
+        generators::StructConstruct {
+            inputs: members
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location: self.location })
+                .collect_vec(),
+            ty,
+            location: self.location,
+        }
+        .add(self.ctx, self.statements)
+        .var_id
     }
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {
