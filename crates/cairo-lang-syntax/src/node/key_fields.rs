@@ -131,6 +131,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::PatternEnum => {
             vec![]
         }
+        SyntaxKind::PatternEnumInnerPattern => {
+            vec![]
+        }
+        SyntaxKind::OptionPatternEnumInnerPatternEmpty => {
+            vec![]
+        }
         SyntaxKind::TypeClause => {
             vec![]
         }

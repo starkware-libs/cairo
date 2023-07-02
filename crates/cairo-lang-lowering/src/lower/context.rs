@@ -240,9 +240,10 @@ impl LoweredExpr {
             LoweredExpr::Tuple { exprs, location } => {
                 let inputs: Vec<_> = exprs
                     .into_iter()
-                    .map(|expr| expr.var(ctx, builder))
+                    .map(|expr| expr.as_var_usage(ctx, builder))
                     .collect::<Result<Vec<_>, _>>()?;
-                let tys = inputs.iter().map(|var| ctx.variables[*var].ty).collect();
+                let tys =
+                    inputs.iter().map(|var_usage| ctx.variables[var_usage.var_id].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
@@ -428,12 +429,11 @@ pub fn lowering_flow_error_to_sealed_block(
                 ),
                 location,
             }
-            .add(ctx, &mut builder.statements)
-            .var_id;
+            .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
-                inputs: vec![panic_instance, data_var],
+                inputs: vec![panic_instance, VarUsage { var_id: data_var, location }],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
-                    ctx.variables[panic_instance].ty,
+                    ctx.variables[panic_instance.var_id].ty,
                     ctx.variables[data_var].ty,
                 ])),
                 location,

@@ -528,7 +528,6 @@ fn lower_expr_literal(
                     .map(|value| {
                         generators::Literal { value, ty: u128_ty, location }
                             .add(ctx, &mut builder.statements)
-                            .var_id
                     })
                     .collect(),
                 ty: u256_ty,
@@ -1211,9 +1210,7 @@ fn lower_expr_struct_ctor(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| {
-                    lower_expr(ctx, builder, member_expr[&member.id])?.var(ctx, builder)
-                })
+                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,

@@ -228,7 +228,7 @@ impl StructMemberAccess {
 
 /// Generator for [StatementStructConstruct].
 pub struct StructConstruct {
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     pub ty: semantic::TypeId,
     pub location: LocationId,
 }
@@ -240,12 +240,7 @@ impl StructConstruct {
     ) -> VarUsage {
         let output = ctx.new_var(VarRequest { ty: self.ty, location: self.location });
         builder.push_statement(Statement::StructConstruct(StatementStructConstruct {
-            // TODO(ilya): Fix to usage location.
-            inputs: self
-                .inputs
-                .into_iter()
-                .map(|var_id| VarUsage { var_id, location: ctx.variables[var_id].location })
-                .collect(),
+            inputs: self.inputs,
             output,
         }));
         VarUsage { var_id: output, location: self.location }

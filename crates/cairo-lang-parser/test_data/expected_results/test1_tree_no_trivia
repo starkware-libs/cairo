@@ -197,9 +197,10 @@
     │   │       │   │   │   │       │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │   │       │   │   │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
-    │   │       │   │   │   │       │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │       ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
@@ -211,9 +212,10 @@
     │   │       │   │   │   │       │       │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │   │       │   │   │   │       │       │   │   └── item #1 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │       │   │       └── ident (kind: TokenIdentifier): 'V2'
-    │   │       │   │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │       │   ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │       │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │       ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
