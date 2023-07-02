@@ -355,8 +355,7 @@ impl LoweredExprExternEnum {
                     variant: concrete_variant,
                     location: self.location,
                 }
-                .add(ctx, &mut subscope.statements)
-                .var_id;
+                .add(ctx, &mut subscope.statements);
                 Ok((subscope.goto_callsite(Some(result)), block_id))
             })
             .collect::<Result<Vec<_>, _>>()
