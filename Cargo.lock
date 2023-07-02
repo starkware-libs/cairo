@@ -394,9 +394,9 @@ dependencies = [
 
 [[package]]
 name = "cairo-felt"
-version = "0.6.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edaee21a254b549dd00ecb5db15399c8d03b663ddb5a659f7c62ea7e16a3ed85"
+checksum = "d33ab1b2fe5c7e5ddd89cdc77d7aa86122f0d79046b8e62746cdd5904c37c6b3"
 dependencies = [
  "lazy_static",
  "num-bigint",
@@ -1044,15 +1044,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-take_until_unbalanced"
-version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32c366b2a52b63db19fcc20a761ea37aa9f5fdce1723016c458e3990ef4fdf2c"
-dependencies = [
- "nom",
-]
-
-[[package]]
 name = "cairo-test"
 version = "2.0.0-rc5"
 dependencies = [
@@ -1064,15 +1055,14 @@ dependencies = [
 
 [[package]]
 name = "cairo-vm"
-version = "0.6.1"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8be504f2684bab154d3bd45257c847db6fb450333305f162600dc497687d87d2"
+checksum = "a5565de156db90dc8837664315701f903595b0ee62baab30b3597d29b3b1fd9b"
 dependencies = [
  "anyhow",
  "bincode",
  "bitvec",
  "cairo-felt",
- "cairo-take_until_unbalanced",
  "generic-array",
  "hashbrown 0.13.2",
  "hex",
@@ -1092,7 +1082,6 @@ dependencies = [
  "sha2",
  "sha3",
  "starknet-crypto",
- "thiserror",
  "thiserror-no-std",
 ]
 
