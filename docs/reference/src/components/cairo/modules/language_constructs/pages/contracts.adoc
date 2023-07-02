@@ -80,12 +80,12 @@ Another possibility is to get a read-only reference to the storage:
 ----
 This is a view function - it can only read from the storage.
 - `#[constructor]` function is called when the contract is deployed. There may be only one such
-function. If it is not defined, the contract is deployed with all storage variables
-default-initialized. For example:
+function and it must be called `constructor`. If it is not defined, the contract is deployed with
+all storage variables default-initialized. For example:
 [source]
 ----
     #[constructor]
-    fn constructor_example() {
+    fn constructor() {
         x::write(3);
     }
 ----

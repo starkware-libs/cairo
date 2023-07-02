@@ -1570,7 +1570,7 @@
       ],
       [
         68,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor>"
       ],
       [
         69,
@@ -2380,7 +2380,7 @@
       ],
       [
         3,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::init"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::constructor"
       ],
       [
         4,
@@ -2412,7 +2412,7 @@
       ],
       [
         11,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::init"
+        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor"
       ],
       [
         12,
@@ -2547,7 +2547,7 @@
     "L1_HANDLER": [],
     "CONSTRUCTOR": [
       {
-        "selector": "0x3b6771b04b068edcfb8c265b21ed5c6a5748d427138f776f3f164cc45f75b31",
+        "selector": "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194",
         "function_idx": 3
       }
     ]
@@ -2601,7 +2601,7 @@
     },
     {
       "type": "constructor",
-      "name": "init",
+      "name": "constructor",
       "inputs": [
         {
           "name": "initial_counter",
