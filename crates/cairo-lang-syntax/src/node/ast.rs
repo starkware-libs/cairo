@@ -7976,6 +7976,174 @@ impl TypedSyntaxNode for MemberList {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Variant {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Variant {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        type_clause: OptionTypeClauseGreen,
+    ) -> VariantGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, type_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        VariantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Variant,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Variant {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
+        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantPtr(pub SyntaxStablePtrId);
+impl VariantPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantGreen(pub GreenId);
+impl TypedSyntaxNode for Variant {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Variant);
+    type StablePtr = VariantPtr;
+    type Green = VariantGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VariantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Variant,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionTypeClause::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Variant,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Variant
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VariantPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct VariantList(ElementList<Variant, 2>);
+impl Deref for VariantList {
+    type Target = ElementList<Variant, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl VariantList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<VariantListElementOrSeparatorGreen>,
+    ) -> VariantListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        VariantListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VariantList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantListPtr(pub SyntaxStablePtrId);
+impl VariantListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum VariantListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(VariantGreen),
+}
+impl From<TerminalCommaGreen> for VariantListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        VariantListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<VariantGreen> for VariantListElementOrSeparatorGreen {
+    fn from(value: VariantGreen) -> Self {
+        VariantListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl VariantListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            VariantListElementOrSeparatorGreen::Separator(green) => green.0,
+            VariantListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantListGreen(pub GreenId);
+impl TypedSyntaxNode for VariantList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VariantList);
+    type StablePtr = VariantListPtr;
+    type Green = VariantListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VariantListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VariantList,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VariantListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Item {
     Constant(ItemConstant),
     Module(ItemModule),
@@ -10714,7 +10882,7 @@ impl ItemEnum {
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         lbrace: TerminalLBraceGreen,
-        variants: MemberListGreen,
+        variants: VariantListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemEnumGreen {
         let children: Vec<GreenId> =
@@ -10742,8 +10910,8 @@ impl ItemEnum {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn variants(&self, db: &dyn SyntaxGroup) -> MemberList {
-        MemberList::from_syntax_node(db, self.children[5].clone())
+    pub fn variants(&self, db: &dyn SyntaxGroup) -> VariantList {
+        VariantList::from_syntax_node(db, self.children[5].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[6].clone())
@@ -10780,7 +10948,7 @@ impl TypedSyntaxNode for ItemEnum {
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalLBrace::missing(db).0,
-                    MemberList::missing(db).0,
+                    VariantList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: TextWidth::default(),

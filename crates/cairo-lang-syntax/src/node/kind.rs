@@ -73,6 +73,8 @@ pub enum SyntaxKind {
     FunctionSignature,
     Member,
     MemberList,
+    Variant,
+    VariantList,
     ItemList,
     ItemMissing,
     Attribute,
