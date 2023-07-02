@@ -4,9 +4,9 @@ use cairo_lang_semantic::corelib;
 use super::block_builder::BlockBuilder;
 use super::context::{LoweredExpr, LoweringContext, LoweringResult, VarRequest};
 use super::generators::{self, StructConstruct};
-use super::{create_subscope_with_bound_refs, lower_expr, lower_expr_to_var_usage};
+use super::{create_subscope_with_bound_refs, lower_expr_to_var_usage};
 use crate::ids::LocationId;
-use crate::{MatchArm, MatchEnumInfo, MatchInfo, VariableId};
+use crate::{MatchArm, MatchEnumInfo, MatchInfo, VarUsage};
 
 /// Creates a bool variable with the given variant.
 pub fn create_bool(
@@ -14,15 +14,13 @@ pub fn create_bool(
     builder: &mut BlockBuilder,
     variant: semantic::ConcreteVariant,
     location: LocationId,
-) -> VariableId {
+) -> VarUsage {
     let semantic_db = ctx.db.upcast();
 
     let unit = StructConstruct { inputs: vec![], ty: corelib::unit_ty(semantic_db), location }
         .add(ctx, &mut builder.statements);
 
-    generators::EnumConstruct { input: unit, variant, location }
-        .add(ctx, &mut builder.statements)
-        .var_id
+    generators::EnumConstruct { input: unit, variant, location }.add(ctx, &mut builder.statements)
 }
 
 /// Lowers an expression of type [semantic::ExprLogicalOperator].
@@ -44,8 +42,7 @@ pub fn lower_logical_op(
     let (sealed_block_lhs_true, lhs_false_block_id, sealed_block_lhs_false) = match expr.op {
         // Lowers `lhs && rhs` to `if lhs { rhs } else { false }`.
         semantic::LogicalOperator::AndAnd => {
-            let rhs_var = lower_expr(ctx, &mut subscope_lhs_true, expr.rhs)?
-                .var(ctx, &mut subscope_lhs_true)?;
+            let rhs_var = lower_expr_to_var_usage(ctx, &mut subscope_lhs_true, expr.rhs)?;
 
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(rhs_var));
             let mut subscope_lhs_false = create_subscope_with_bound_refs(ctx, builder);
@@ -71,8 +68,7 @@ pub fn lower_logical_op(
             let sealed_block_lhs_true = subscope_lhs_true.goto_callsite(Some(true_var));
             let mut subscope_lhs_false = create_subscope_with_bound_refs(ctx, builder);
             let lhs_false_block_id = subscope_lhs_false.block_id;
-            let rhs_var = lower_expr(ctx, &mut subscope_lhs_false, expr.rhs)?
-                .var(ctx, &mut subscope_lhs_false)?;
+            let rhs_var = lower_expr_to_var_usage(ctx, &mut subscope_lhs_false, expr.rhs)?;
 
             let sealed_block_lhs_false = subscope_lhs_false.goto_callsite(Some(rhs_var));
             (sealed_block_lhs_true, lhs_false_block_id, sealed_block_lhs_false)
