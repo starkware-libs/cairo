@@ -6,7 +6,8 @@ use std::collections::HashMap;
 use itertools::Itertools;
 
 use crate::{
-    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId,
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage,
+    VariableId,
 };
 
 /// Location of a lowering statement inside a block.
@@ -41,7 +42,7 @@ pub trait Analyzer<'a> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info;
     fn info_from_panic(
         &mut self,

@@ -239,14 +239,14 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
         info.variables_used(
             self,
-            vars.iter()
-                .enumerate()
-                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+            vars.iter().enumerate().map(|(idx, VarUsage { var_id, .. })| {
+                (var_id, UseLocation { statement_location, idx })
+            }),
         );
         info
     }

@@ -201,7 +201,7 @@ fn generate_push_values_statement_for_remapping(
 /// Returns a list of Sierra statements.
 pub fn generate_return_code(
     context: &mut ExprGeneratorContext<'_>,
-    returned_variables: &[id_arena::Id<lowering::Variable>],
+    returned_variables: &[lowering::VarUsage],
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
     let mut statements: Vec<pre_sierra::Statement> = vec![];

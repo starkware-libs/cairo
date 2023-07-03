@@ -80,7 +80,7 @@ pub trait RebuilderEx: Rebuilder {
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
             FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
-                returns.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
+                returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
             ),
             FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_id(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {

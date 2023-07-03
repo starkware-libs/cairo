@@ -131,7 +131,10 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     let mut blocks_to_visit = vec![];
     match &mut ctx.lowered.blocks[block_id].end {
         FlatBlockEnd::Return(rets) => {
-            rets.splice(0..0, implicits);
+            rets.splice(
+                0..0,
+                implicits.iter().map(|var_id| VarUsage { var_id: *var_id, location: ctx.location }),
+            );
         }
         FlatBlockEnd::Panic(_) => {
             unreachable!("Panics should have been stripped in a previous phase.")

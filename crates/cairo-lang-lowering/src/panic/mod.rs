@@ -273,19 +273,16 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: err_data, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::Return(returns) => {
-                let location = self.ctx.variables[returns[0]].location;
+                let location = self.ctx.variables[returns[0].var_id].location;
 
                 // Tuple construction.
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
                 self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                    inputs: returns
-                        .into_iter()
-                        .map(|var_id| VarUsage { var_id, location })
-                        .collect(),
+                    inputs: returns,
                     output: tupled_res,
                 }));
 
@@ -297,7 +294,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },
