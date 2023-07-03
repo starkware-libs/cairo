@@ -137,7 +137,7 @@ impl BlockBuilder {
     pub fn ret(
         mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        expr: VariableId,
+        expr: VarUsage,
         location: LocationId,
     ) -> Maybe<()> {
         let ref_vars = ctx
@@ -159,7 +159,7 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
+        self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr.var_id]).collect()));
         Ok(())
     }
 
