@@ -68,9 +68,9 @@ pub trait RebuilderEx: Rebuilder {
     /// Apply map_var_id to all the variable in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
         let mut remapping = VarRemapping {
-            remapping: OrderedHashMap::from_iter(
-                remapping.iter().map(|(dst, src)| (self.map_var_id(*dst), self.map_var_id(*src))),
-            ),
+            remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
+                (self.map_var_id(*dst), self.map_var_usage(*src_var_usage))
+            })),
         };
         self.transform_remapping(&mut remapping);
         remapping

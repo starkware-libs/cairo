@@ -75,7 +75,7 @@ impl Rebuilder for Context {
     fn transform_remapping(&mut self, remapping: &mut VarRemapping) {
         let mut new_remapping = VarRemapping::default();
         for (dst, src) in remapping.iter() {
-            if dst != src && self.variable_used.contains(dst) {
+            if dst != &src.var_id && self.variable_used.contains(dst) {
                 new_remapping.insert(*dst, *src);
             }
         }
@@ -92,7 +92,7 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
     let mut ctx = Context::default();
     visit_remappings(lowered, |remapping| {
         for (dst, src) in remapping.iter() {
-            ctx.dest_to_srcs.entry(*dst).or_default().push(*src);
+            ctx.dest_to_srcs.entry(*dst).or_default().push(src.var_id);
         }
     });
 

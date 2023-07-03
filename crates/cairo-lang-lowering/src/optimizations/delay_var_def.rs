@@ -104,7 +104,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for var_id in remapping.values() {
+        for VarUsage { var_id, .. } in remapping.values() {
             info.next_use.insert(*var_id, statement_location);
         }
     }

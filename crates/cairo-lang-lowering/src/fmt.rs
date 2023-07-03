@@ -24,7 +24,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
         let mut remapping = self.iter().peekable();
         write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
-            src.fmt(f, ctx)?;
+            src.var_id.fmt(f, ctx)?;
             write!(f, " -> ")?;
             dst.fmt(f, ctx)?;
             if remapping.peek().is_some() {
