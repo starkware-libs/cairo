@@ -237,10 +237,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut demand = MatchOptimizerDemand::default();
-        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
+        demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Self::Info { candidate: None, demand }
     }
 

@@ -160,12 +160,12 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = BorrowCheckerDemand::default();
         info.variables_used(
             self,
-            vars.iter().map(|var_id| self.with_location(var_id)).collect_vec().into_iter(),
+            vars.iter().map(|VarUsage { var_id, location }| (var_id, *location)),
         );
         info
     }
