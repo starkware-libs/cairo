@@ -290,3 +290,37 @@ error: Variable was previously moved. Trait has no implementation in context: co
 
 //! > lowering_flat
 Parameters: v0: test::ADrop, v1: test::ADrop
+
+//! > ==========================================================================
+
+//! > Test match_extern on moved var.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: NonCopy) -> Option<NonCopy> {
+  use_non_copy(x);
+  do_match_extern(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+extern fn use_non_copy(x: NonCopy) nopanic;
+
+extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
+ --> lib.cairo:8:19
+  do_match_extern(x)
+                  ^
+
+//! > lowering_flat
+Parameters: v0: test::NonCopy
