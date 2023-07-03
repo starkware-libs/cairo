@@ -209,6 +209,19 @@ return([23], [1], [2]); // 37
 
 test::foo@0([0]: GasBuiltin, [1]: Bitwise, [2]: Pedersen, [3]: felt252) -> (GasBuiltin, Bitwise, Pedersen);
 
+//! > test_name
+redeposit_gas libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .redeposit_gas_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_redeposit_gas (mem : F → F) (κ : ℕ) (value : F) : Prop :=
+  true
+
+def auto_spec_redeposit_gas (mem : F → F) (κ : ℕ) (value : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > withdraw_gas use no builtins
@@ -274,6 +287,19 @@ store_temp<core::option::Option::<()>>([10]) -> ([10]); // 12
 return([4], [5], [10]); // 13
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas use no builtins
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -369,6 +395,19 @@ store_temp<core::option::Option::<()>>([16]) -> ([16]); // 20
 return([5], [6], [2], [16]); // 21
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas use pedersen builtin
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -506,6 +545,19 @@ return([6], [7], [2], [3], [30]); // 39
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen) -> (RangeCheck, GasBuiltin, Bitwise, Pedersen, core::option::Option::<()>);
 
+//! > test_name
+withdraw_gas use pedersen and bitwise builtins
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > withdraw_gas_all use no builtins
@@ -580,6 +632,19 @@ store_temp<core::option::Option::<()>>([12]) -> ([12]); // 15
 return([6], [7], [12]); // 16
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas_all use no builtins
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_all_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -680,6 +745,19 @@ store_temp<core::option::Option::<()>>([18]) -> ([18]); // 23
 return([7], [8], [2], [18]); // 24
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas_all use pedersen builtin
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_all_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -782,6 +860,19 @@ store_temp<core::option::Option::<()>>([20]) -> ([20]); // 25
 return([7], [8], [2], [20]); // 26
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Bitwise, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas_all use bitwise builtin
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_all_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -909,3 +1000,16 @@ store_temp<core::option::Option::<()>>([26]) -> ([26]); // 33
 return([8], [9], [2], [3], [26]); // 34
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen, [4]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Bitwise, Pedersen, core::option::Option::<()>);
+
+//! > test_name
+withdraw_gas_all use pedersen and bitwise builtins
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .withdraw_gas_all_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true
+
+def auto_spec_withdraw_gas_all (mem : F → F) (κ : ℕ) (range_check gas_counter builtin_cost ρ_range_check ρ_updated_gas : F) : Prop :=
+  true

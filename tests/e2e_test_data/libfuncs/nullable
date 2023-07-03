@@ -28,6 +28,12 @@ return([0]); // 2
 
 test::foo@0() -> (Nullable<felt252>);
 
+//! > test_name
+null libfunc
+
+//! > lean_soundness
+-- Could not find lean info.
+
 //! > ==========================================================================
 
 //! > nullable_from_box libfunc
@@ -60,6 +66,12 @@ store_temp<Nullable<felt252>>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: Box<felt252>) -> (Nullable<felt252>);
+
+//! > test_name
+nullable_from_box libfunc
+
+//! > lean_soundness
+-- Could not find lean info.
 
 //! > ==========================================================================
 
@@ -106,6 +118,19 @@ store_temp<Box<felt252>>([2]) -> ([2]); // 6
 return([2]); // 7
 
 test::foo@0([0]: Nullable<felt252>, [1]: Box<felt252>) -> (Box<felt252>);
+
+//! > test_name
+match_nullable libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .match_nullable_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_match_nullable (mem : F → F) (κ : ℕ) (value : F) : Prop :=
+  true
+
+def auto_spec_match_nullable (mem : F → F) (κ : ℕ) (value : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -254,6 +279,19 @@ store_temp<felt252>([5]) -> ([5]); // 9
 return([5]); // 10
 
 test::foo@0([0]: felt252) -> (felt252);
+
+//! > test_name
+nullable libfuncs
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .nullable_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_nullable (mem : F → F) (κ : ℕ) (cell ρ_addr : F) : Prop :=
+  true
+
+def auto_spec_nullable (mem : F → F) (κ : ℕ) (cell ρ_addr : F) : Prop :=
+  true
 
 //! > ==========================================================================
 

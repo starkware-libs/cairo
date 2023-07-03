@@ -31,6 +31,19 @@ return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
+//! > test_name
+bool_xor libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .bool_xor_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_bool_xor (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
+
+def auto_spec_bool_xor (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > bool_or libfunc
@@ -67,6 +80,19 @@ return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
+//! > test_name
+bool_or libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .bool_or_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_bool_or (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
+
+def auto_spec_bool_or (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > bool_and libfunc
@@ -100,6 +126,19 @@ store_temp<core::bool>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
+
+//! > test_name
+bool_and libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .bool_and_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_bool_and (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
+
+def auto_spec_bool_and (mem : F → F) (κ : ℕ) (a b ρ_res : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -137,6 +176,19 @@ return([1]); // 2
 
 test::foo@0([0]: core::bool) -> (core::bool);
 
+//! > test_name
+bool_not libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .bool_not_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_bool_not (mem : F → F) (κ : ℕ) (a ρ_res : F) : Prop :=
+  true
+
+def auto_spec_bool_not (mem : F → F) (κ : ℕ) (a ρ_res : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > bool_to_felt252 libfunc.
@@ -172,3 +224,9 @@ store_temp<felt252>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: core::bool) -> (felt252);
+
+//! > test_name
+bool_to_felt252 libfunc.
+
+//! > lean_soundness
+-- Could not find lean info.

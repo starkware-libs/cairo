@@ -73,6 +73,19 @@ return([6], [7], [11]); // 13
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::array::Span::<core::felt252>, [3]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
 
+//! > test_name
+emit_event_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .emit_event_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_emit_event_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_emit_event_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > get_block_hash_syscall libfunc
@@ -142,6 +155,19 @@ store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt
 return([6], [7], [10]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: u64) -> (GasBuiltin, System, core::result::Result::<core::felt252, core::array::Array::<core::felt252>>);
+
+//! > test_name
+get_block_hash_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .get_block_hash_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_get_block_hash_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_get_block_hash_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -221,6 +247,19 @@ store_temp<core::result::Result::<core::box::Box::<core::starknet::info::Executi
 return([5], [6], [9]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>);
+
+//! > test_name
+get_execution_info_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .get_execution_info_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_get_execution_info_syscall (mem : F → F) (κ : ℕ) (gas_builtin system ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_get_execution_info_syscall (mem : F → F) (κ : ℕ) (gas_builtin system ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -383,6 +422,19 @@ return([8], [9], [12]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: ContractAddress, [3]: felt252, [4]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>);
 
+//! > test_name
+call_contract_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .call_contract_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_call_contract_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_call_contract_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > storage_read_syscall libfunc
@@ -456,6 +508,19 @@ store_temp<core::result::Result::<core::felt252, core::array::Array::<core::felt
 return([7], [8], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress) -> (GasBuiltin, System, core::result::Result::<core::felt252, core::array::Array::<core::felt252>>);
+
+//! > test_name
+storage_read_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .storage_read_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_storage_read_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_storage_read_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -534,6 +599,19 @@ store_temp<core::result::Result::<(), core::array::Array::<core::felt252>>>([12]
 return([7], [8], [12]); // 13
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: u32, [3]: StorageAddress, [4]: felt252) -> (GasBuiltin, System, core::result::Result::<(), core::array::Array::<core::felt252>>);
+
+//! > test_name
+storage_write_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .storage_write_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_storage_write_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_storage_write_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -629,6 +707,19 @@ return([10], [11], [15]); // 13
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: core::array::Span::<core::felt252>, [5]: core::bool) -> (GasBuiltin, System, core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>);
 
+//! > test_name
+deploy_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .deploy_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_deploy_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ ρ₀₂ : F) : Prop :=
+  true
+
+def auto_spec_deploy_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ ρ₀₂ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > keccak libfunc
@@ -711,6 +802,19 @@ return([9], [10], [13]); // 15
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: Array<u64>) -> (GasBuiltin, System, core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>);
 
+//! > test_name
+keccak libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .keccak_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_keccak (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_keccak (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > library_call_syscall libfunc
@@ -787,6 +891,19 @@ store_temp<core::result::Result::<core::array::Span::<core::felt252>, core::arra
 return([8], [9], [12]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: core::array::Span::<core::felt252>) -> (GasBuiltin, System, core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>);
+
+//! > test_name
+library_call_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .library_call_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_library_call_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_library_call_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 

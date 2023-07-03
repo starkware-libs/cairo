@@ -1083,8 +1083,7 @@ macro_rules! casm_build_extend {
                     "*()",
                     None,
                 );
-                aux_info.add_tempvar(stringify!($buffer), $buffer, buffer_expr);
-                aux_info.add_assert(
+                aux_info.add_let(
                     stringify!($buffer),
                     $buffer,
                     &format!("{} + 1", stringify!($buffer)),
@@ -1209,8 +1208,7 @@ macro_rules! casm_build_extend {
         let buffer_expr = $builder.get_value($buffer, false);
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(stringify!($dst), $dst, &format!("mem {}", stringify!($buffer)), $buffer, "*()", None);
-            aux_info.add_tempvar(stringify!($buffer), $buffer, buffer_expr);
-            aux_info.add_assert(
+            aux_info.add_let(
                 stringify!($buffer),
                 $buffer,
                 &format!("{} + 1", stringify!($buffer)),

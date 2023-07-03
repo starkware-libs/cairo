@@ -215,3 +215,16 @@ store_temp<Tuple<u128, u128, u128>>([7]) -> ([7]); // 3
 return([3], [7]); // 4
 
 test::foo@0([0]: Bitwise, [1]: u128, [2]: u128) -> (Bitwise, Tuple<u128, u128, u128>);
+
+//! > test_name
+bitwise libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .bitwise_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_bitwise (mem : F → F) (κ : ℕ) (x y bitwise ρ_bitwise ρ_and ρ_xor ρ_or : F) : Prop :=
+  true
+
+def auto_spec_bitwise (mem : F → F) (κ : ℕ) (x y bitwise ρ_bitwise ρ_and ρ_xor ρ_or : F) : Prop :=
+  true

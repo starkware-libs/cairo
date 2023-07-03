@@ -256,7 +256,7 @@ fn make_ret_args(
     if aux_info.return_args.len() == 1 {
         return aux_info.return_args[0].exprs.iter().flat_map(
             |expr| expr.names.iter()
-        ).map(|name| format!("ρ_{}",name)).collect();
+        ).map(|name| format!("ρ_{name}")).collect();
     }
 
     let mut ret_args = Vec::new();
@@ -266,7 +266,7 @@ fn make_ret_args(
         for (i, name) in
             aux_info.return_args[0].exprs.iter().flat_map(|expr| expr.names.iter()).enumerate() {
             if i < num_args + 1 - pos {
-                ret_args.push(format!("ρ_{}", name));
+                ret_args.push(format!("ρ_{name}"));
             } else {
                 if i == num_args + 1 - pos {
                     ret_args.push(String::from("ρ_branch_id"));
@@ -280,6 +280,53 @@ fn make_ret_args(
         }
     }
     ret_args
+}
+
+/// Rebinding information for variables.
+#[derive(Clone)]
+struct VarRebind {
+    /// Number of rebindings for each variable. 0 is for the first variable,
+    /// 1 for the bnext one, etc.
+    vars: HashMap<String, usize>,
+}
+
+impl VarRebind {
+    pub fn new() -> Self {
+        Self { vars: HashMap::new() }
+    }
+
+    pub fn get_var_name(&self, name: &str) -> String {
+        let count = self.vars.get(name).unwrap_or(&0);
+        if *count == 0 {
+            name.to_string()
+        } else {
+            format!("{}{}", name, make_subscript(*count))
+        }
+    }
+
+    pub fn rebind(&mut self, name: &str) -> usize {
+        *self.vars.entry(name.to_string())
+        .and_modify(|c| *c += 1)
+        .or_insert(0)
+    }
+
+    pub fn get_rebind_name(&mut self, name: &str) -> String {
+        self.rebind(name);
+        self.get_var_name(name)
+    }
+
+    pub fn replace_var_names_in_expr(&self, expr: &str) -> String {
+        let pat = &[' ', '+', '-', '*', '/', '(', ')'];
+        expr.split_inclusive(pat)
+            .map(|s| {
+                if let Some(name) = s.split(pat).next() {
+                    s.replace(name, &self.get_var_name(name))
+                } else {
+                    s.to_string()
+                }
+            })
+            .join("")
+    }
 }
 
 /// All the information needed to generate the Lean code for a single function.
@@ -380,20 +427,21 @@ fn generate_consts(lean_info: &LeanFuncInfo) -> Vec<String> {
 
     for const_def in &lean_info.aux_info.consts {
 
-        let mut expr = const_def.expr.replace("::", "_");
-        let value_comment = if let CellExpression::Immediate(value) = &const_def.value {
-            if expr == const_def.name {
-                expr = format!("({} : F)", value.to_string());
-                "".to_string()
-            } else {
-                format!("-- {}", value.to_string())
-            }
-        } else { "".to_string() };
-
-        consts.push(format!(
-            "def {const_name} : F := {expr} {value_comment}",
-            const_name = const_def.name,
-        ));
+        // let expr = const_def.expr.replace("::", "_");
+        if let CellExpression::Immediate(value) = &const_def.value {
+            consts.push(format!(
+                "def {const_name} : F := ({value_str} : F) -- {expr}",
+                const_name = const_def.name,
+                value_str = value.to_string(),
+                expr = const_def.expr,
+            ));
+        } else {
+            consts.push(format!(
+                "def {const_name} : F := {expr}",
+                const_name = const_def.name,
+                expr = const_def.expr,
+            ));
+        }
     }
 
     consts
@@ -435,19 +483,22 @@ fn generate_soundness_auto_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
     let func_name = &lean_info.func_name[..];
     let args_str =
         lean_info.get_arg_names().iter().chain(lean_info.get_explicit_ret_arg_names().iter()).join(" ");
+    let mut rebind = VarRebind::new();
+    for arg in lean_info.get_arg_names() {
+        rebind.rebind(&arg);
+    }
 
     let mut auto_spec: Vec<String> = Vec::new();
     auto_spec.push(format!("def spec_{func_name} (mem : F → F) (κ : ℕ) ({args_str} : F) : Prop :="));
 
-    auto_spec.append(&mut generate_soundness_auto_spec_block(lean_info, 0, 2));
+    auto_spec.append(&mut generate_soundness_auto_spec_block(lean_info, &mut rebind, 0, 2));
 
     auto_spec
 }
 
-// To do: rebinding! xxxxxxxxxxxx
-
 fn generate_soundness_auto_spec_block(
     lean_info: &LeanFuncInfo,
+    rebind: &mut VarRebind,
     block_start: usize,
     indent: usize
 ) -> Vec<String> {
@@ -456,40 +507,45 @@ fn generate_soundness_auto_spec_block(
     for (i, statement) in lean_info.aux_info.statements[block_start..].iter().enumerate() {
         match statement {
             StatementDesc::TempVar(var) | StatementDesc::LocalVar(var) => {
-                // The range check increment is not part of the specification.
-                if let Some(expr) = &var.expr {
-                   if lean_info.is_range_check_inc(expr) {
-                       continue;
-                   }
-                };
+                // Must rewrite variable names with the rebind subscripts before rebinding the lhs.
+                let expr = if let Some(expr) = &var.expr {
+                    Some(rebind.replace_var_names_in_expr(&expr.expr))
+                } else { None };
+                let var_name=rebind.get_rebind_name(&var.name);
                 push_spec(
                     &mut spec_block,
                     indent,
                     &format!(
                         "∃ {var_name} : F,{expr}",
-                        var_name=var.name,
-                        expr=if let Some(expr) = &var.expr {
-                            format!(" {var_name} = {expr_str}", var_name=var.name, expr_str=expr.expr)
+                        expr=if let Some(expr_str) = &expr {
+                            format!(" {var_name} = {expr_str}")
                         } else { String::new() }
                     ));
             },
             StatementDesc::Let(assign) => {
+                // The range check increment is not part of the specification.
+                if lean_info.is_range_check_inc(&assign.expr) {
+                    continue;
+                }
+                let expr_str = rebind.replace_var_names_in_expr(&assign.expr.expr);
                 push_spec(
                     &mut spec_block,
                     indent,
-                    &format!("∃ {var_name} : F, {var_name} = {expr}", var_name=assign.lhs, expr=assign.expr.expr));
+                    &format!("∃ {var_name} : F, {var_name} = {expr_str}", var_name = rebind.get_rebind_name(&assign.lhs)));
             },
             StatementDesc::Assert(assert) => {
                 if lean_info.is_range_check(&assert.expr) {
                     push_spec(
                         &mut spec_block,
                         indent,
-                        &format!("is_range_checked (rc_bound F) {var_name}", var_name=assert.lhs));
+                        &format!("is_range_checked (rc_bound F) {var_name}", var_name = rebind.get_var_name(&assert.lhs)));
                 } else {
                     push_spec(
                         &mut spec_block,
                         indent,
-                        &format!("{var_name} = {expr}", var_name=assert.lhs, expr=assert.expr.expr));
+                        &format!("{var_name} = {expr}",
+                            var_name = rebind.get_var_name(&assert.lhs),
+                            expr = rebind.replace_var_names_in_expr(&assert.expr.expr)));
                 }
             },
             StatementDesc::Jump(jump) => {
@@ -501,7 +557,7 @@ fn generate_soundness_auto_spec_block(
                 if pos.is_none() {
                     append_spec(
                         &mut spec_block,
-                        generate_soundness_auto_spec_ret_block(lean_info, &jump.target, indent));
+                        generate_soundness_auto_spec_ret_block(lean_info, rebind, &jump.target, indent));
                     return spec_block;
                 }
 
@@ -513,18 +569,31 @@ fn generate_soundness_auto_spec_block(
                         // Conditional jump, must generate both branches.
                         push_spec(&mut spec_block, indent, "(");
                         let indent = indent + 2;
-                        push_spec(&mut spec_block, indent, &format!("({var_name} = 0", var_name=cond_var.0));
-                        append_spec(&mut spec_block, generate_soundness_auto_spec_block(lean_info, block_start + i + 1, indent + 2));
+                        let var_name = rebind.get_var_name(&cond_var.0);
+
+                        // First branch
+                        push_spec(&mut spec_block, indent, &format!("({var_name} = 0"));
+                        // Clone the rebind object before entering the branch, as the second branch
+                        // should be independent of the rebinding accumulated in the first branch.
+                        append_spec(&mut spec_block,
+                            generate_soundness_auto_spec_block(
+                                lean_info, &mut rebind.clone(), block_start + i + 1, indent + 2));
+
                         push_spec(&mut spec_block, indent, ") ∨");
-                        push_spec(&mut spec_block, indent, &format!("({var_name} ≠ 0", var_name=cond_var.0));
-                        append_spec(&mut spec_block, generate_soundness_auto_spec_block(lean_info, pos + 1, indent + 2));
+
+                        // Second branch
+                        push_spec(&mut spec_block, indent, &format!("({var_name} ≠ 0"));
+                        append_spec(&mut spec_block,
+                            generate_soundness_auto_spec_block(
+                                lean_info, rebind, pos + 1, indent + 2));
                         push_spec(&mut spec_block, indent, ")");
                         let indent = indent - 2;
                         push_spec(&mut spec_block, indent, ")");
                     },
                     _ => {
                         // Unconditional jump, must generate only the target block.
-                        append_spec(&mut spec_block, generate_soundness_auto_spec_block(lean_info, pos + 1, indent));
+                        append_spec(&mut spec_block,
+                            generate_soundness_auto_spec_block(lean_info, rebind, pos + 1, indent));
                     }
                 };
                 return spec_block; // Remain code handled already in the branches.
@@ -536,12 +605,13 @@ fn generate_soundness_auto_spec_block(
 
     append_spec(
         &mut spec_block,
-        generate_soundness_auto_spec_ret_block(lean_info, "Fallthrough", indent));
+        generate_soundness_auto_spec_ret_block(lean_info, rebind, "Fallthrough", indent));
     spec_block
 }
 
 fn generate_soundness_auto_spec_ret_block(
     lean_info: &LeanFuncInfo,
+    rebind: &VarRebind,
     ret_block_name: &str,
     indent: usize
 ) -> Vec<String> {
@@ -558,13 +628,14 @@ fn generate_soundness_auto_spec_ret_block(
 
     if lean_info.ret_args.branch_id_pos.is_some() {
         // The first return argument is the branch ID
-        push_spec(&mut spec_block, indent, &format!("{ret_arg} = {branch_id}", ret_arg=&ret_arg_names[0]));
+        push_spec(&mut spec_block, indent, &format!("{ret_arg} = {branch_id}", ret_arg = &ret_arg_names[0]));
         ret_arg_start = 1;
     }
 
     for (name, expr) in ret_arg_names[ret_arg_start..].iter().zip(
         flat_exprs[lean_info.ret_args.num_implicit_ret_args..].iter()
     ) {
+        let expr = rebind.replace_var_names_in_expr(expr);
         push_spec(&mut spec_block, indent, &format!("{name} = {expr}"));
     }
 
@@ -629,7 +700,7 @@ pub fn generate_lean_casm(
     let mut lean_casm = String::new();
     lean_casm.push_str("import starkware.cairo.lean.semantics.soundness.hoare\n\n");
     lean_casm.push_str("variables {F : Type} [field F] [decidable_eq F]\n\n");
-    let casm_body = format!("def code_{} : list F := [\n", func_name);
+    let casm_body = format!("def code_{func_name} : list F := [\n");
     lean_casm.push_str(&casm_body);
     // Temporary, not valid Lean yet.
     lean_casm.push_str(

@@ -56,6 +56,19 @@ return([5], [8]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
 
+//! > test_name
+u128_overflowing_add libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_overflowing_add_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_overflowing_add (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
+  true
+
+def auto_spec_u128_overflowing_add (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > u128_overflowing_sub libfunc
@@ -115,6 +128,19 @@ store_temp<core::result::Result::<core::integer::u128, core::integer::u128>>([8]
 return([5], [8]); // 10
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::result::Result::<core::integer::u128, core::integer::u128>);
+
+//! > test_name
+u128_overflowing_sub libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_overflowing_sub_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_overflowing_sub (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
+  true
+
+def auto_spec_u128_overflowing_sub (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_branch_id ρ₀ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -187,6 +213,19 @@ return([6], [7]); // 5
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, Tuple<u128, u128>);
 
+//! > test_name
+u128_wide_mul function (u128_guarantee_mul and u128_mul_guarantee_verify)
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_wide_mul_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_wide_mul (mem : F → F) (κ : ℕ) (a b ρ_res_high ρ_res_low ρ_a ρ_b ρ_res_high ρ_res_low : F) : Prop :=
+  true
+
+def auto_spec_u128_wide_mul (mem : F → F) (κ : ℕ) (a b ρ_res_high ρ_res_low ρ_a ρ_b ρ_res_high ρ_res_low : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > u128_safe_divmod libfunc
@@ -240,6 +279,19 @@ store_temp<Tuple<u128, u128>>([6]) -> ([6]); // 3
 return([3], [6]); // 4
 
 test::foo@0([0]: RangeCheck, [1]: u128, [2]: NonZero<u128>) -> (RangeCheck, Tuple<u128, u128>);
+
+//! > test_name
+u128_safe_divmod libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_safe_divmod_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_safe_divmod (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_q ρ_r : F) : Prop :=
+  true
+
+def auto_spec_u128_safe_divmod (mem : F → F) (κ : ℕ) (range_check a b ρ_range_check ρ_q ρ_r : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -315,6 +367,19 @@ return([4], [9]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::integer::U128sFromFelt252Result);
 
+//! > test_name
+u128s_from_felt252 libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128s_from_felt252_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128s_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_u128s_from_felt252 (mem : F → F) (κ : ℕ) (range_check value ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > u128_eq libfunc (a deref, b deref)
@@ -364,6 +429,19 @@ store_temp<core::bool>([5]) -> ([5]); // 9
 return([5]); // 10
 
 test::foo@0([0]: u128, [1]: u128) -> (core::bool);
+
+//! > test_name
+u128_eq libfunc (a deref, b deref)
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_eq_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_eq (mem : F → F) (κ : ℕ) (a b : F) : Prop :=
+  true
+
+def auto_spec_u128_eq (mem : F → F) (κ : ℕ) (a b : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -424,6 +502,19 @@ return([5]); // 13
 
 test::foo@0() -> (core::bool);
 
+//! > test_name
+u128_eq libfunc (a immediate, b immediate)
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_eq_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_eq (mem : F → F) (κ : ℕ) (a b : F) : Prop :=
+  true
+
+def auto_spec_u128_eq (mem : F → F) (κ : ℕ) (a b : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > u128_sqrt libfunc
@@ -473,6 +564,19 @@ store_temp<u64>([3]) -> ([3]); // 2
 return([2], [3]); // 3
 
 test::foo@0([0]: RangeCheck, [1]: u128) -> (RangeCheck, u64);
+
+//! > test_name
+u128_sqrt libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_sqrt_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_sqrt (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_root : F) : Prop :=
+  true
+
+def auto_spec_u128_sqrt (mem : F → F) (κ : ℕ) (range_check value ρ_range_check ρ_root : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -534,3 +638,16 @@ store_temp<u128>([3]) -> ([3]); // 2
 return([2], [3]); // 3
 
 test::foo@0([0]: Bitwise, [1]: u128) -> (Bitwise, u128);
+
+//! > test_name
+u128_byte_reverse libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .u128_byte_reverse_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_u128_byte_reverse (mem : F → F) (κ : ℕ) (temp bitwise ρ_bitwise ρ_result : F) : Prop :=
+  true
+
+def auto_spec_u128_byte_reverse (mem : F → F) (κ : ℕ) (temp bitwise ρ_bitwise ρ_result : F) : Prop :=
+  true

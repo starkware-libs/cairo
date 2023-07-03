@@ -67,6 +67,19 @@ return([7], [8], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256k1Point, [3]: Secp256k1Point) -> (GasBuiltin, System, core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>);
 
+//! > test_name
+secp256k1_add_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .secp256k1_add_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_secp256k1_add_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_secp256k1_add_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > secp256k1_mul_syscall libfunc
@@ -140,6 +153,19 @@ store_temp<core::result::Result::<core::starknet::secp256k1::Secp256k1Point, cor
 return([7], [8], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256k1Point, [3]: core::integer::u256) -> (GasBuiltin, System, core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>);
+
+//! > test_name
+secp256k1_mul_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .secp256k1_mul_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_secp256k1_mul_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_secp256k1_mul_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_updated_gas_builtin ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -218,6 +244,19 @@ return([7], [8], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::bool) -> (GasBuiltin, System, core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>);
 
+//! > test_name
+secp256k1_get_point_from_x_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .secp256k1_get_point_from_x_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_secp256k1_get_point_from_x_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_secp256k1_get_point_from_x_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > secp256k1_new_syscall libfunc
@@ -295,6 +334,19 @@ return([7], [8], [11]); // 12
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: core::integer::u256, [3]: core::integer::u256) -> (GasBuiltin, System, core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>);
 
+//! > test_name
+secp256k1_new_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .secp256k1_new_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_secp256k1_new_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_secp256k1_new_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell cell cell cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > secp256k1_get_xy_syscall libfunc
@@ -371,3 +423,16 @@ store_temp<core::result::Result::<(core::integer::u256, core::integer::u256), co
 return([7], [8], [12]); // 13
 
 test::foo@0([0]: GasBuiltin, [1]: System, [2]: Secp256k1Point) -> (GasBuiltin, System, core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>);
+
+//! > test_name
+secp256k1_get_xy_syscall libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .secp256k1_get_xy_syscall_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_secp256k1_get_xy_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ ρ₀₂ ρ₀₃ : F) : Prop :=
+  true
+
+def auto_spec_secp256k1_get_xy_syscall (mem : F → F) (κ : ℕ) (gas_builtin system cell ρ_updated_gas_builtin ρ_system ρ_branch_id ρ₀ ρ₀₁ ρ₀₂ ρ₀₃ : F) : Prop :=
+  true

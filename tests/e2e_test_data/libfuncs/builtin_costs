@@ -36,3 +36,9 @@ store_temp<BuiltinCosts>([0]) -> ([0]); // 3
 return([0]); // 4
 
 test::foo@0() -> (BuiltinCosts);
+
+//! > test_name
+get_builtin_costs libfunc
+
+//! > lean_soundness
+-- Could not find lean info.

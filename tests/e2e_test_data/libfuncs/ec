@@ -30,6 +30,12 @@ return([0]); // 2
 
 test::foo@0() -> (EcPoint);
 
+//! > test_name
+ec_point_zero libfunc
+
+//! > lean_soundness
+-- Could not find lean info.
+
 //! > ==========================================================================
 
 //! > ec_point_try_new_nz libfunc
@@ -90,6 +96,19 @@ store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>
 return([5]); // 9
 
 test::foo@0([0]: felt252, [1]: felt252) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
+
+//! > test_name
+ec_point_try_new_nz libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_point_try_new_nz_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_point_try_new_nz (mem : F → F) (κ : ℕ) (x y ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_ec_point_try_new_nz (mem : F → F) (κ : ℕ) (x y ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -187,6 +206,19 @@ return([4], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
 
+//! > test_name
+ec_point_from_x_nz libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_point_from_x_nz_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_point_from_x_nz (mem : F → F) (κ : ℕ) (range_check x ρ_range_check ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_ec_point_from_x_nz (mem : F → F) (κ : ℕ) (range_check x ρ_range_check ρ_branch_id ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > ec_point_unwrap libfunc
@@ -225,6 +257,12 @@ store_temp<Tuple<felt252, felt252>>([3]) -> ([3]); // 2
 return([3]); // 3
 
 test::foo@0([0]: NonZero<EcPoint>) -> (Tuple<felt252, felt252>);
+
+//! > test_name
+ec_point_unwrap libfunc
+
+//! > lean_soundness
+-- Could not find lean info.
 
 //! > ==========================================================================
 
@@ -283,6 +321,19 @@ return([3]); // 9
 
 test::foo@0([0]: EcPoint) -> (felt252);
 
+//! > test_name
+ec_point_is_zero libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_point_is_zero_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_point_is_zero (mem : F → F) (κ : ℕ) (x y : F) : Prop :=
+  true
+
+def auto_spec_ec_point_is_zero (mem : F → F) (κ : ℕ) (x y : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > ec_neg libfunc
@@ -316,6 +367,19 @@ store_temp<EcPoint>([1]) -> ([1]); // 1
 return([1]); // 2
 
 test::foo@0([0]: EcPoint) -> (EcPoint);
+
+//! > test_name
+ec_neg libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_neg_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_neg (mem : F → F) (κ : ℕ) (x y ρ_x ρ_neg_y : F) : Prop :=
+  true
+
+def auto_spec_ec_neg (mem : F → F) (κ : ℕ) (x y ρ_x ρ_neg_y : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -365,6 +429,19 @@ return([0]); // 1
 
 test::foo@0() -> (EcState);
 
+//! > test_name
+ec_state_init libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_state_init_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_state_init (mem : F → F) (κ : ℕ) (ρ_random_x ρ_random_y ρ_random_ptr : F) : Prop :=
+  true
+
+def auto_spec_ec_state_init (mem : F → F) (κ : ℕ) (ρ_random_x ρ_random_y ρ_random_ptr : F) : Prop :=
+  true
+
 //! > ==========================================================================
 
 //! > ec_state_add libfunc
@@ -413,6 +490,19 @@ store_temp<EcState>([2]) -> ([2]); // 1
 return([2]); // 2
 
 test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState);
+
+//! > test_name
+ec_state_add libfunc
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_state_add_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_state_add (mem : F → F) (κ : ℕ) (px py sx sy random_ptr ρ_result_x ρ_result_y ρ_random_ptr : F) : Prop :=
+  true
+
+def auto_spec_ec_state_add (mem : F → F) (κ : ℕ) (px py sx sy random_ptr ρ_result_x ρ_result_y ρ_random_ptr : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
@@ -482,6 +572,19 @@ store_temp<core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>>
 return([4]); // 9
 
 test::foo@0([0]: EcState) -> (core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>);
+
+//! > test_name
+ec_state_try_finalize_nz libfunc and ec_state_finalize
+
+//! > lean_soundness
+import starkware.cairo.lean.semantics.soundness.prelude
+import .ec_state_try_finalize_nz_code.lean
+variables {F : Type} [field F] [decidable_eq F]
+def spec_ec_state_try_finalize_nz (mem : F → F) (κ : ℕ) (x y random_ptr ρ₀ ρ₀₁ : F) : Prop :=
+  true
+
+def auto_spec_ec_state_try_finalize_nz (mem : F → F) (κ : ℕ) (x y random_ptr ρ₀ ρ₀₁ : F) : Prop :=
+  true
 
 //! > ==========================================================================
 
