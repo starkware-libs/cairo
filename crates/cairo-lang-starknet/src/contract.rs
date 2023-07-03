@@ -72,18 +72,11 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
             // Then we want lookup b inside a and not inside b.
 
             for generated_file_info in generated_file_infos.iter().skip(1) {
-                let Some(generated_file_info) = generated_file_info else {
-                    continue;
-                };
-                let Some(mapper) =
-                    generated_file_info.aux_data.0.as_any().downcast_ref::<DynPluginAuxData>()
-                else {
-                    continue;
-                };
-                let Some(aux_data) = mapper.0.as_any().downcast_ref::<StarkNetContractAuxData>()
-                else {
-                    continue;
-                };
+                let Some(generated_file_info) = generated_file_info else { continue; };
+                let Some(mapper) = generated_file_info.aux_data.0.as_any(
+                ).downcast_ref::<DynPluginAuxData>() else { continue; };
+                let Some(aux_data) = mapper.0.as_any(
+                ).downcast_ref::<StarkNetContractAuxData>() else { continue; };
 
                 for contract_name in &aux_data.contracts {
                     if let ModuleId::Submodule(submodule_id) = *module_id {

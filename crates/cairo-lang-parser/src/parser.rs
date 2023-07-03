@@ -1077,36 +1077,25 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &self.db.lookup_intern_green(expr.0)
-        else {
-            return None;
-        };
+        } = &self.db.lookup_intern_green(expr.0) else {return None;};
 
         // Check that it has one child.
-        let [path_segment] = children0[..] else {
-            return None;
-        };
+        let [path_segment] = children0[..] else {return None;};
 
         // Check that `path_segment` is `PathSegmentSimple`.
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = self.db.lookup_intern_green(path_segment)
-        else {
-            return None;
-        };
+        } = self.db.lookup_intern_green(path_segment) else {return None;};
 
         // Check that it has one child.
-        let [ident] = children1[..] else {
-            return None;
-        };
+        let [ident] = children1[..] else {return None;};
 
         // Check that it is indeed `TerminalIdentifier`.
-        let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } =
-            self.db.lookup_intern_green(ident)
-        else {
-            return None;
-        };
+        let GreenNode {
+            kind: SyntaxKind::TerminalIdentifier,
+            ..
+        } = self.db.lookup_intern_green(ident) else {return None;};
 
         Some(TerminalIdentifierGreen(ident))
     }
