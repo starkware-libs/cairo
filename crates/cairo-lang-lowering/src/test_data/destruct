@@ -128,48 +128,48 @@ impl APanicDestruct of PanicDestruct<A> {
 Parameters: v0: test::A
 blk0 (root):
 Statements:
-  (v14: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v13: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v14) {
-    PanicResult::Ok(v15) => blk1,
-    PanicResult::Err(v17) => blk4,
+  Match(match_enum(v13) {
+    PanicResult::Ok(v14) => blk1,
+    PanicResult::Err(v16) => blk4,
   })
 
 blk1:
 Statements:
-  (v19: core::panics::PanicResult::<((),)>) <- test::may_panic()
+  (v18: core::panics::PanicResult::<((),)>) <- test::may_panic()
 End:
-  Match(match_enum(v19) {
-    PanicResult::Ok(v20) => blk2,
-    PanicResult::Err(v22) => blk3,
+  Match(match_enum(v18) {
+    PanicResult::Ok(v19) => blk2,
+    PanicResult::Err(v21) => blk3,
   })
 
 blk2:
 Statements:
-  (v13: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v3: core::felt252) <- 3224115u
-  (v11: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v13, v3)
+  (v11: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v10, v3)
   (v8: core::panics::Panic) <- struct_construct()
-  (v8: core::panics::Panic, v25: ()) <- test::APanicDestruct::panic_destruct(v8, v0)
+  (v8: core::panics::Panic, v24: ()) <- test::APanicDestruct::panic_destruct(v8, v0)
   (v9: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v8, v11)
-  (v18: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v9)
+  (v17: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v9)
 End:
-  Return(v18)
+  Return(v17)
 
 blk3:
 Statements:
-  (v27: core::panics::Panic, v28: core::array::Array::<core::felt252>) <- struct_destructure(v22)
-  (v27: core::panics::Panic, v29: ()) <- test::APanicDestruct::panic_destruct(v27, v0)
-  (v22: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v27, v28)
-  (v24: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v22)
+  (v26: core::panics::Panic, v27: core::array::Array::<core::felt252>) <- struct_destructure(v21)
+  (v26: core::panics::Panic, v28: ()) <- test::APanicDestruct::panic_destruct(v26, v0)
+  (v21: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v26, v27)
+  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v21)
 End:
-  Return(v24)
+  Return(v23)
 
 blk4:
 Statements:
-  (v31: core::panics::Panic, v32: core::array::Array::<core::felt252>) <- struct_destructure(v17)
-  (v31: core::panics::Panic, v33: ()) <- test::APanicDestruct::panic_destruct(v31, v0)
-  (v17: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v31, v32)
-  (v23: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v17)
+  (v30: core::panics::Panic, v31: core::array::Array::<core::felt252>) <- struct_destructure(v16)
+  (v30: core::panics::Panic, v32: ()) <- test::APanicDestruct::panic_destruct(v30, v0)
+  (v16: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v30, v31)
+  (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Err(v16)
 End:
-  Return(v23)
+  Return(v22)

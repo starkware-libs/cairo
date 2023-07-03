@@ -13,6 +13,7 @@ use cairo_lang_casm::operand::{
     BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
 };
 use cairo_lang_sierra::ids::FunctionId;
+use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::extract_matches;
 use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
 use cairo_vm::serde::deserialize_program::{
@@ -25,7 +26,7 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::CairoRunner;
+use cairo_vm::vm::runners::cairo_runner::{CairoRunner, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
@@ -57,7 +58,7 @@ type Fq = Fp256<MontBackend<FqConfig, 4>>;
 /// Convert a Hint to the cairo-vm class HintParams by canonically serializing it to a string.
 pub fn hint_to_hint_params(hint: &Hint) -> HintParams {
     HintParams {
-        code: hint.to_string(),
+        code: hint.representing_string(),
         accessible_scopes: vec![],
         flow_tracking_data: FlowTrackingData {
             ap_tracking: ApTracking::new(),
@@ -93,7 +94,7 @@ pub struct CairoHintProcessor<'a> {
     pub starknet_state: StarknetState,
 }
 
-fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
+pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
     let base = match cell_ref.register {
         Register::AP => vm.get_ap(),
         Register::FP => vm.get_fp(),
@@ -102,6 +103,7 @@ fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatab
 }
 
 /// Inserts a value into the vm memory cell represented by the cellref.
+#[macro_export]
 macro_rules! insert_value_to_cellref {
     ($vm:ident, $cell_ref:ident, $value:expr) => {
         $vm.insert_value(cell_ref_to_relocatable($cell_ref, $vm), $value)
@@ -190,7 +192,7 @@ fn get_cell_maybe(
 }
 
 /// Fetches the value of a cell plus an offset from the vm, useful for pointers.
-fn get_ptr(
+pub fn get_ptr(
     vm: &VirtualMachine,
     cell: &CellRef,
     offset: &Felt252,
@@ -217,8 +219,20 @@ fn get_double_deref_maybe(
     get_maybe_from_addr(vm, get_ptr(vm, cell, offset)?)
 }
 
+/// Extracts a parameter assumed to be a buffer, and converts it into a relocatable.
+fn extract_relocatable(
+    vm: &VirtualMachine,
+    buffer: &ResOperand,
+) -> Result<Relocatable, VirtualMachineError> {
+    let (base, offset) = extract_buffer(buffer);
+    get_ptr(vm, base, &offset)
+}
+
 /// Fetches the value of `res_operand` from the vm.
-fn get_val(vm: &VirtualMachine, res_operand: &ResOperand) -> Result<Felt252, VirtualMachineError> {
+pub fn get_val(
+    vm: &VirtualMachine,
+    res_operand: &ResOperand,
+) -> Result<Felt252, VirtualMachineError> {
     match res_operand {
         ResOperand::Deref(cell) => get_cell_val(vm, cell),
         ResOperand::DoubleDeref(cell, offset) => get_double_deref_val(vm, cell, &(*offset).into()),
@@ -303,6 +317,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
+        _run_resources: &mut RunResources,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -315,78 +330,20 @@ impl HintProcessor for CairoHintProcessor<'_> {
             StarknetHint::SystemCall { system } => {
                 self.execute_syscall(system, vm, exec_scopes)?;
             }
-            StarknetHint::SetBlockNumber { value } => {
-                self.starknet_state.exec_info.block_info.block_number = get_val(vm, value)?;
-            }
-            StarknetHint::SetSequencerAddress { value } => {
-                self.starknet_state.exec_info.block_info.sequencer_address = get_val(vm, value)?;
-            }
-            StarknetHint::SetBlockTimestamp { value } => {
-                self.starknet_state.exec_info.block_info.block_timestamp = get_val(vm, value)?;
-            }
-            StarknetHint::SetCallerAddress { value } => {
-                self.starknet_state.exec_info.caller_address = get_val(vm, value)?;
-            }
-            StarknetHint::SetContractAddress { value } => {
-                self.starknet_state.exec_info.contract_address = get_val(vm, value)?;
-            }
-            StarknetHint::SetVersion { value } => {
-                self.starknet_state.exec_info.tx_info.version = get_val(vm, value)?;
-            }
-            StarknetHint::SetAccountContractAddress { value } => {
-                self.starknet_state.exec_info.tx_info.account_contract_address =
-                    get_val(vm, value)?;
-            }
-            StarknetHint::SetMaxFee { value } => {
-                self.starknet_state.exec_info.tx_info.max_fee = get_val(vm, value)?;
-            }
-            StarknetHint::SetTransactionHash { value } => {
-                self.starknet_state.exec_info.tx_info.transaction_hash = get_val(vm, value)?;
-            }
-            StarknetHint::SetChainId { value } => {
-                self.starknet_state.exec_info.tx_info.chain_id = get_val(vm, value)?;
-            }
-            StarknetHint::SetNonce { value } => {
-                self.starknet_state.exec_info.tx_info.nonce = get_val(vm, value)?;
-            }
-            StarknetHint::SetSignature { start, end } => {
-                let (cell, offset) = extract_buffer(start);
-                let start = get_ptr(vm, cell, &offset)?;
-                let (cell, offset) = extract_buffer(end);
-                let end = get_ptr(vm, cell, &offset)?;
-                self.starknet_state.exec_info.tx_info.signature = vm_get_range(vm, start, end)?;
-            }
-            StarknetHint::PopLog {
-                value,
-                opt_variant,
-                keys_start,
-                keys_end,
-                data_start,
-                data_end,
+            StarknetHint::Cheatcode {
+                selector,
+                input_start,
+                input_end,
+                output_start,
+                output_end,
             } => {
-                let contract_address = get_val(vm, value)?;
-                let mut res_segment = MemBuffer::new_segment(vm);
-                let logs = self.starknet_state.logs.entry(contract_address).or_default();
-
-                if let Some((keys, data)) = logs.pop_front() {
-                    let keys_start_ptr = res_segment.ptr;
-                    res_segment.write_data(keys.iter())?;
-                    let keys_end_ptr = res_segment.ptr;
-
-                    let data_start_ptr = res_segment.ptr;
-                    res_segment.write_data(data.iter())?;
-                    let data_end_ptr = res_segment.ptr;
-
-                    // Option::Some variant
-                    insert_value_to_cellref!(vm, opt_variant, 0)?;
-                    insert_value_to_cellref!(vm, keys_start, keys_start_ptr)?;
-                    insert_value_to_cellref!(vm, keys_end, keys_end_ptr)?;
-                    insert_value_to_cellref!(vm, data_start, data_start_ptr)?;
-                    insert_value_to_cellref!(vm, data_end, data_end_ptr)?;
-                } else {
-                    // Option::None variant
-                    insert_value_to_cellref!(vm, opt_variant, 1)?;
-                }
+                self.execute_cheatcode(
+                    selector,
+                    [input_start, input_end],
+                    [output_start, output_end],
+                    vm,
+                    exec_scopes,
+                )?;
             }
         };
         Ok(())
@@ -398,7 +355,7 @@ impl HintProcessor for CairoHintProcessor<'_> {
         hint_code: &str,
         _ap_tracking_data: &ApTracking,
         _reference_ids: &HashMap<String, usize>,
-        _references: &HashMap<usize, HintReference>,
+        _references: &[HintReference],
     ) -> Result<Box<dyn Any>, VirtualMachineError> {
         Ok(Box::new(self.string_to_hint[hint_code].clone()))
     }
@@ -549,8 +506,7 @@ impl<'a> CairoHintProcessor<'a> {
         vm: &mut VirtualMachine,
         exec_scopes: &mut ExecutionScopes,
     ) -> Result<(), HintError> {
-        let (cell, offset) = extract_buffer(system);
-        let system_ptr = get_ptr(vm, cell, &offset)?;
+        let system_ptr = extract_relocatable(vm, system)?;
         let mut system_buffer = MemBuffer::new(vm, system_ptr);
         let selector = system_buffer.next_felt252()?.to_bytes_be();
         let mut gas_counter = system_buffer.next_usize()?;
@@ -708,11 +664,7 @@ impl<'a> CairoHintProcessor<'a> {
                 )
             }),
             "ReplaceClass" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                self.replace_class(
-                    gas_counter,
-                    system_buffer.next_felt252()?.into_owned(),
-                    system_buffer,
-                )
+                self.replace_class(gas_counter, system_buffer.next_felt252()?.into_owned())
             }),
             _ => panic!("Unknown selector for system call!"),
         }
@@ -815,7 +767,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_front((keys, data));
+        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -964,10 +916,8 @@ impl<'a> CairoHintProcessor<'a> {
         &mut self,
         gas_counter: &mut usize,
         new_class: Felt252,
-        _vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, 50);
-        // Prepare runner for running the call.
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
@@ -996,14 +946,108 @@ impl<'a> CairoHintProcessor<'a> {
             .expect("Internal runner error.");
 
         *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
-        self.starknet_state = std::mem::take(&mut res.starknet_state);
         match res.value {
             RunResultValue::Success(value) => {
+                self.starknet_state = std::mem::take(&mut res.starknet_state);
                 Ok(segment_with_data(vm, read_array_result_as_vec(&res.memory, &value).into_iter())
                     .expect("failed to allocate segment"))
             }
             RunResultValue::Panic(panic_data) => Err(panic_data),
         }
+    }
+
+    /// Executes a cheatcode.
+    fn execute_cheatcode(
+        &mut self,
+        selector: &BigIntAsHex,
+        [input_start, input_end]: [&ResOperand; 2],
+        [output_start, output_end]: [&CellRef; 2],
+        vm: &mut VirtualMachine,
+        _exec_scopes: &mut ExecutionScopes,
+    ) -> Result<(), HintError> {
+        // Parse the selector.
+        let selector = &selector.value.to_bytes_be().1;
+        let selector = std::str::from_utf8(selector).map_err(|_| {
+            HintError::CustomHint(Box::from("failed to parse selector".to_string()))
+        })?;
+
+        // Extract the inputs.
+        let input_start = extract_relocatable(vm, input_start)?;
+        let input_end = extract_relocatable(vm, input_end)?;
+        let inputs = vm_get_range(vm, input_start, input_end)?;
+
+        // Helper for all the instances requiring only a single input.
+        let as_single_input = |inputs: Vec<Felt252>| {
+            if inputs.len() != 1 {
+                Err(HintError::CustomHint(Box::from(format!(
+                    "`{selector}` cheatcode invalid args: pass span of an array with exactly one \
+                     element",
+                ))))
+            } else {
+                Ok(inputs[0].clone())
+            }
+        };
+
+        let mut res_segment = MemBuffer::new_segment(vm);
+        let res_segment_start = res_segment.ptr;
+        match selector {
+            "set_sequencer_address" => {
+                self.starknet_state.exec_info.block_info.sequencer_address =
+                    as_single_input(inputs)?;
+            }
+            "set_block_number" => {
+                self.starknet_state.exec_info.block_info.block_number = as_single_input(inputs)?;
+            }
+            "set_block_timestamp" => {
+                self.starknet_state.exec_info.block_info.block_timestamp = as_single_input(inputs)?;
+            }
+            "set_caller_address" => {
+                self.starknet_state.exec_info.caller_address = as_single_input(inputs)?;
+            }
+            "set_contract_address" => {
+                self.starknet_state.exec_info.contract_address = as_single_input(inputs)?;
+            }
+            "set_version" => {
+                self.starknet_state.exec_info.tx_info.version = as_single_input(inputs)?;
+            }
+            "set_account_contract_address" => {
+                self.starknet_state.exec_info.tx_info.account_contract_address =
+                    as_single_input(inputs)?;
+            }
+            "set_max_fee" => {
+                self.starknet_state.exec_info.tx_info.max_fee = as_single_input(inputs)?;
+            }
+            "set_transaction_hash" => {
+                self.starknet_state.exec_info.tx_info.transaction_hash = as_single_input(inputs)?;
+            }
+            "set_chain_id" => {
+                self.starknet_state.exec_info.tx_info.chain_id = as_single_input(inputs)?;
+            }
+            "set_nonce" => {
+                self.starknet_state.exec_info.tx_info.nonce = as_single_input(inputs)?;
+            }
+            "set_signature" => {
+                self.starknet_state.exec_info.tx_info.signature = inputs;
+            }
+            "pop_log" => {
+                let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
+                if let Some((keys, data)) =
+                    contract_logs.and_then(|contract_logs| contract_logs.pop_front())
+                {
+                    res_segment.write(keys.len())?;
+                    res_segment.write_data(keys.iter())?;
+                    res_segment.write(data.len())?;
+                    res_segment.write_data(data.iter())?;
+                }
+            }
+            _ => Err(HintError::CustomHint(Box::from(format!(
+                "Unknown cheatcode selector: {selector}"
+            ))))?,
+        }
+        let res_segment_end = res_segment.ptr;
+        insert_value_to_cellref!(vm, output_start, res_segment_start)?;
+        insert_value_to_cellref!(vm, output_end, res_segment_end)?;
+        Ok(())
     }
 }
 
@@ -1306,8 +1350,7 @@ pub fn execute_deprecated_hint(
 ) -> Result<(), HintError> {
     match deprecated_hint {
         DeprecatedHint::Felt252DictRead { dict_ptr, key, value_dst } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -1318,8 +1361,7 @@ pub fn execute_deprecated_hint(
             insert_value_to_cellref!(vm, value_dst, value)?;
         }
         DeprecatedHint::Felt252DictWrite { dict_ptr, key, value } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let value = get_maybe(vm, value)?;
             let dict_manager_exec_scope = exec_scopes
@@ -1525,8 +1567,7 @@ pub fn execute_core_hint(
             })?;
         }
         CoreHint::AllocFelt252Dict { segment_arena_ptr } => {
-            let (cell, base_offset) = extract_buffer(segment_arena_ptr);
-            let dict_manager_address = get_ptr(vm, cell, &base_offset)?;
+            let dict_manager_address = extract_relocatable(vm, segment_arena_ptr)?;
             let n_dicts = vm
                 .get_integer((dict_manager_address - 2)?)?
                 .into_owned()
@@ -1550,8 +1591,7 @@ pub fn execute_core_hint(
             vm.insert_value((dict_infos_base + 3 * n_dicts)?, new_dict_segment)?;
         }
         CoreHint::Felt252DictEntryInit { dict_ptr, key } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_ptr)?;
             let key = get_val(vm, key)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_mut_ref::<DictManagerExecScope>("dict_manager_exec_scope")
@@ -1572,8 +1612,7 @@ pub fn execute_core_hint(
             dict_manager_exec_scope.insert_to_tracker(dict_address, key, value);
         }
         CoreHint::GetSegmentArenaIndex { dict_end_ptr, dict_index, .. } => {
-            let (dict_base, dict_offset) = extract_buffer(dict_end_ptr);
-            let dict_address = get_ptr(vm, dict_base, &dict_offset)?;
+            let dict_address = extract_relocatable(vm, dict_end_ptr)?;
             let dict_manager_exec_scope = exec_scopes
                 .get_ref::<DictManagerExecScope>("dict_manager_exec_scope")
                 .expect("Trying to read from a dict while dict manager was not initialized.");
@@ -1590,8 +1629,7 @@ pub fn execute_core_hint(
             );
             let dict_squash_exec_scope =
                 exec_scopes.get_mut_ref::<DictSquashExecScope>("dict_squash_exec_scope")?;
-            let (dict_accesses_base, dict_accesses_offset) = extract_buffer(dict_accesses);
-            let dict_accesses_address = get_ptr(vm, dict_accesses_base, &dict_accesses_offset)?;
+            let dict_accesses_address = extract_relocatable(vm, dict_accesses)?;
             let n_accesses = get_val(vm, n_accesses)?
                 .to_usize()
                 .expect("Number of accesses is too large or negative.");
@@ -1627,8 +1665,7 @@ pub fn execute_core_hint(
         CoreHint::GetCurrentAccessIndex { range_check_ptr } => {
             let dict_squash_exec_scope: &mut DictSquashExecScope =
                 exec_scopes.get_mut_ref("dict_squash_exec_scope")?;
-            let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
-            let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
+            let range_check_ptr = extract_relocatable(vm, range_check_ptr)?;
             let current_access_index = dict_squash_exec_scope.current_access_index().unwrap();
             vm.insert_value(range_check_ptr, current_access_index)?;
         }
@@ -1693,8 +1730,7 @@ pub fn execute_core_hint(
             let prime_over_3_high = 3544607988759775765608368578435044694_u128;
             // ceil((PRIME / 2) / 2 ** 128).
             let prime_over_2_high = 5316911983139663648412552867652567041_u128;
-            let (range_check_base, range_check_offset) = extract_buffer(range_check_ptr);
-            let range_check_ptr = get_ptr(vm, range_check_base, &range_check_offset)?;
+            let range_check_ptr = extract_relocatable(vm, range_check_ptr)?;
             vm.insert_value(
                 range_check_ptr,
                 Felt252::from(lengths_and_indices[0].0.to_biguint() % prime_over_3_high),
@@ -1729,12 +1765,8 @@ pub fn execute_core_hint(
             )?;
         }
         CoreHint::DebugPrint { start, end } => {
-            let as_relocatable = |vm, value| {
-                let (base, offset) = extract_buffer(value);
-                get_ptr(vm, base, &offset)
-            };
-            let mut curr = as_relocatable(vm, start)?;
-            let end = as_relocatable(vm, end)?;
+            let mut curr = extract_relocatable(vm, start)?;
+            let end = extract_relocatable(vm, end)?;
             while curr != end {
                 let value = vm.get_integer(curr)?;
                 if let Some(shortstring) = as_cairo_short_string(&value) {
@@ -1877,11 +1909,9 @@ where
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
     runner
-        .run_until_pc(end, &mut None, &mut vm, hint_processor as &mut dyn HintProcessor)
+        .run_until_pc(end, &mut RunResources::default(), &mut vm, hint_processor)
         .map_err(CairoRunError::from)?;
-    runner
-        .end_run(true, false, &mut vm, hint_processor as &mut dyn HintProcessor)
-        .map_err(CairoRunError::from)?;
+    runner.end_run(true, false, &mut vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }

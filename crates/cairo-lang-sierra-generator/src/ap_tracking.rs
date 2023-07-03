@@ -1,5 +1,7 @@
 use cairo_lang_lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use cairo_lang_lowering::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use cairo_lang_lowering::{
+    BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -38,7 +40,7 @@ pub fn get_ap_tracking_configuration(
     }
 
     let mut analysis =
-        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
+        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
     analysis.get_root_info();
 
     analysis.analyzer.ap_tracking_configuration
@@ -64,10 +66,10 @@ struct ApTrackingAnalysisInfo {
 }
 
 impl ApTrackingAnalysisInfo {
-    pub fn variables_used(
+    pub fn variables_used<'a>(
         &mut self,
         ctx: &ApTrackingAnalysisContext,
-        vars: &[VariableId],
+        vars: impl Iterator<Item = &'a VariableId>,
         block_id: BlockId,
     ) {
         for var_id in vars {
@@ -107,7 +109,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             info.vars.swap_remove(&var_id);
         }
 
-        info.variables_used(self, &stmt.inputs(), block_id);
+        info.variables_used(
+            self,
+            stmt.inputs().iter().map(|VarUsage { var_id, .. }| var_id),
+            block_id,
+        );
     }
 
     fn visit_goto(
@@ -126,7 +132,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, remapping.values().cloned().collect_vec().as_slice(), block_id);
+        info.variables_used(self, remapping.values(), block_id);
     }
 
     fn merge_match(
@@ -174,7 +180,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, &match_info.inputs(), block_id);
+        info.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| var_id),
+            block_id,
+        );
         info
     }
 
@@ -190,7 +200,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
 
         let mut info = Self::Info { vars: Default::default() };
-        info.variables_used(self, vars, block_id);
+        info.variables_used(self, vars.iter(), block_id);
         info
     }
 

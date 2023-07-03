@@ -28,14 +28,14 @@
     "0x753332",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x4275696c74696e436f737473",
-    "0x6bb8c6706da785f3ac63e05b51057c3300d2d0a129cd16b1f99fc92d4f323c",
-    "0x223b876ce59fbc872ac2e1412727be9abe279bf03bb3002a29d7aeba8b23a9f",
+    "0x15cc5a3d2c617c3e088cb1bc205a507cb981db5ce29bf3027452efd48498957",
+    "0x300a433ef39e38a55467cb0518e491b52db851942b6a365c1fa3cb1188a518c",
     "0xb",
     "0x53797374656d",
     "0xc",
     "0x16a4c8d7c05909052238a862d8cc3e7975bf05a07b3a69c6b28951083a6d672",
     "0xf",
-    "0xae27a339713c3f37e38b8f97fcd7b81e6d796c49084e120b579e658b3d602d",
+    "0x2aff36dce660072e4ef4ba9e4f7c19fd1af950c3d87fa12327eba10fb08e92b",
     "0xe",
     "0x10",
     "0x5",
@@ -51,7 +51,7 @@
     "0x75313238",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x18",
-    "0x292312ad6ba33da36ffa03ec0b9fae18742b4dea53c2684190c7679240d66bc",
+    "0x7f39c8e135d726b4c0ddeae6e6dfb314f8078c0700b8396b5e7377ce1bb0bf",
     "0x1a",
     "0x5365676d656e744172656e61",
     "0x426f78",
@@ -59,7 +59,7 @@
     "0x1d",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x1f",
-    "0x1c70522e88b94fa533021e9cad30499073bb0a80bca28e1fddbc8e13771483",
+    "0x3e139f59a5b92c8ca1251140c1a454e3133e0ff68fc79153b68ddc7cecbdcd5",
     "0x21",
     "0x2d7b9ba5597ffc180f5bbd030da76b84ecf1e4f1311043a0a15295f29ccc1b0",
     "0x269f68bb644f670e09b63c88f4a1e509f95c6afa409f98c6ba88ec53cc6af92",
@@ -932,11 +932,11 @@
       ],
       [
         11,
-        "test_contract::test_contract::TestContract::my_storage_var::ContractState"
+        "test_contract::test_contract::test_contract::my_storage_var::ContractState"
       ],
       [
         12,
-        "test_contract::test_contract::TestContract::ContractState"
+        "test_contract::test_contract::test_contract::ContractState"
       ],
       [
         13,
@@ -944,7 +944,7 @@
       ],
       [
         14,
-        "Tuple<test_contract::test_contract::TestContract::ContractState, felt252, felt252>"
+        "Tuple<test_contract::test_contract::test_contract::ContractState, felt252, felt252>"
       ],
       [
         15,
@@ -956,7 +956,7 @@
       ],
       [
         17,
-        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>"
+        "core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::felt252, core::felt252)>"
       ],
       [
         18,
@@ -992,11 +992,11 @@
       ],
       [
         26,
-        "Tuple<test_contract::test_contract::TestContract::ContractState, u128>"
+        "Tuple<test_contract::test_contract::test_contract::ContractState, u128>"
       ],
       [
         27,
-        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>"
+        "core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::integer::u128)>"
       ],
       [
         28,
@@ -1020,11 +1020,11 @@
       ],
       [
         33,
-        "Tuple<test_contract::test_contract::TestContract::my_storage_var::ContractState, Unit>"
+        "Tuple<test_contract::test_contract::test_contract::my_storage_var::ContractState, Unit>"
       ],
       [
         34,
-        "core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>"
+        "core::panics::PanicResult::<(test_contract::test_contract::test_contract::my_storage_var::ContractState, ())>"
       ],
       [
         35,
@@ -1210,11 +1210,11 @@
       ],
       [
         28,
-        "struct_construct<test_contract::test_contract::TestContract::my_storage_var::ContractState>"
+        "struct_construct<test_contract::test_contract::test_contract::my_storage_var::ContractState>"
       ],
       [
         29,
-        "struct_construct<test_contract::test_contract::TestContract::ContractState>"
+        "struct_construct<test_contract::test_contract::test_contract::ContractState>"
       ],
       [
         30,
@@ -1226,7 +1226,7 @@
       ],
       [
         32,
-        "store_temp<test_contract::test_contract::TestContract::ContractState>"
+        "store_temp<test_contract::test_contract::test_contract::ContractState>"
       ],
       [
         33,
@@ -1234,19 +1234,19 @@
       ],
       [
         34,
-        "function_call<user@test_contract::test_contract::TestContract::test>"
+        "function_call<user@test_contract::test_contract::test_contract::test>"
       ],
       [
         35,
-        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::felt252, core::felt252)>>"
       ],
       [
         36,
-        "struct_deconstruct<Tuple<test_contract::test_contract::TestContract::ContractState, felt252, felt252>>"
+        "struct_deconstruct<Tuple<test_contract::test_contract::test_contract::ContractState, felt252, felt252>>"
       ],
       [
         37,
-        "drop<test_contract::test_contract::TestContract::ContractState>"
+        "drop<test_contract::test_contract::test_contract::ContractState>"
       ],
       [
         38,
@@ -1342,7 +1342,7 @@
       ],
       [
         61,
-        "function_call<user@test_contract::test_contract::TestContract::another_function>"
+        "function_call<user@test_contract::test_contract::test_contract::another_function>"
       ],
       [
         62,
@@ -1374,15 +1374,15 @@
       ],
       [
         69,
-        "function_call<user@test_contract::test_contract::TestContract::call_foo>"
+        "function_call<user@test_contract::test_contract::test_contract::call_foo>"
       ],
       [
         70,
-        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::integer::u128)>>"
       ],
       [
         71,
-        "struct_deconstruct<Tuple<test_contract::test_contract::TestContract::ContractState, u128>>"
+        "struct_deconstruct<Tuple<test_contract::test_contract::test_contract::ContractState, u128>>"
       ],
       [
         72,
@@ -1402,7 +1402,7 @@
       ],
       [
         76,
-        "function_call<user@test_contract::test_contract::TestContract::libcall_foo>"
+        "function_call<user@test_contract::test_contract::test_contract::libcall_foo>"
       ],
       [
         77,
@@ -1410,11 +1410,11 @@
       ],
       [
         78,
-        "function_call<user@test_contract::test_contract::TestContract::segment_arena_builtin>"
+        "function_call<user@test_contract::test_contract::test_contract::segment_arena_builtin>"
       ],
       [
         79,
-        "function_call<user@test_contract::test_contract::TestContract::l1_handle>"
+        "function_call<user@test_contract::test_contract::test_contract::l1_handle>"
       ],
       [
         80,
@@ -1462,19 +1462,19 @@
       ],
       [
         91,
-        "struct_deconstruct<test_contract::test_contract::TestContract::ContractState>"
+        "struct_deconstruct<test_contract::test_contract::test_contract::ContractState>"
       ],
       [
         92,
-        "snapshot_take<test_contract::test_contract::TestContract::my_storage_var::ContractState>"
+        "snapshot_take<test_contract::test_contract::test_contract::my_storage_var::ContractState>"
       ],
       [
         93,
-        "store_temp<test_contract::test_contract::TestContract::my_storage_var::ContractState>"
+        "store_temp<test_contract::test_contract::test_contract::my_storage_var::ContractState>"
       ],
       [
         94,
-        "function_call<user@test_contract::test_contract::TestContract::my_storage_var::InternalContractStateImpl::read>"
+        "function_call<user@test_contract::test_contract::test_contract::my_storage_var::InternalContractStateImpl::read>"
       ],
       [
         95,
@@ -1498,35 +1498,35 @@
       ],
       [
         100,
-        "function_call<user@test_contract::test_contract::TestContract::my_storage_var::InternalContractStateImpl::write>"
+        "function_call<user@test_contract::test_contract::test_contract::my_storage_var::InternalContractStateImpl::write>"
       ],
       [
         101,
-        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test_contract::test_contract::test_contract::my_storage_var::ContractState, ())>>"
       ],
       [
         102,
-        "struct_deconstruct<Tuple<test_contract::test_contract::TestContract::my_storage_var::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test_contract::test_contract::test_contract::my_storage_var::ContractState, Unit>>"
       ],
       [
         103,
-        "struct_construct<Tuple<test_contract::test_contract::TestContract::ContractState, felt252, felt252>>"
+        "struct_construct<Tuple<test_contract::test_contract::test_contract::ContractState, felt252, felt252>>"
       ],
       [
         104,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 0>"
       ],
       [
         105,
-        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::felt252, core::felt252)>>"
       ],
       [
         106,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::felt252, core::felt252)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::felt252, core::felt252)>, 1>"
       ],
       [
         107,
-        "drop<test_contract::test_contract::TestContract::my_storage_var::ContractState>"
+        "drop<test_contract::test_contract::test_contract::my_storage_var::ContractState>"
       ],
       [
         108,
@@ -1610,19 +1610,19 @@
       ],
       [
         128,
-        "struct_construct<Tuple<test_contract::test_contract::TestContract::ContractState, u128>>"
+        "struct_construct<Tuple<test_contract::test_contract::test_contract::ContractState, u128>>"
       ],
       [
         129,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::integer::u128)>, 0>"
       ],
       [
         130,
-        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::integer::u128)>>"
       ],
       [
         131,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::ContractState, core::integer::u128)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::ContractState, core::integer::u128)>, 1>"
       ],
       [
         132,
@@ -1750,19 +1750,19 @@
       ],
       [
         163,
-        "struct_construct<Tuple<test_contract::test_contract::TestContract::my_storage_var::ContractState, Unit>>"
+        "struct_construct<Tuple<test_contract::test_contract::test_contract::my_storage_var::ContractState, Unit>>"
       ],
       [
         164,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::my_storage_var::ContractState, ())>, 0>"
       ],
       [
         165,
-        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test_contract::test_contract::test_contract::my_storage_var::ContractState, ())>>"
       ],
       [
         166,
-        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::TestContract::my_storage_var::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test_contract::test_contract::test_contract::my_storage_var::ContractState, ())>, 1>"
       ],
       [
         167,
@@ -1920,27 +1920,27 @@
     "user_func_names": [
       [
         0,
-        "test_contract::test_contract::TestContract::__external::test"
+        "test_contract::test_contract::test_contract::__external::test"
       ],
       [
         1,
-        "test_contract::test_contract::TestContract::__external::another_function"
+        "test_contract::test_contract::test_contract::__external::another_function"
       ],
       [
         2,
-        "test_contract::test_contract::TestContract::__external::call_foo"
+        "test_contract::test_contract::test_contract::__external::call_foo"
       ],
       [
         3,
-        "test_contract::test_contract::TestContract::__external::libcall_foo"
+        "test_contract::test_contract::test_contract::__external::libcall_foo"
       ],
       [
         4,
-        "test_contract::test_contract::TestContract::__external::segment_arena_builtin"
+        "test_contract::test_contract::test_contract::__external::segment_arena_builtin"
       ],
       [
         5,
-        "test_contract::test_contract::TestContract::__l1_handler::l1_handle"
+        "test_contract::test_contract::test_contract::__l1_handler::l1_handle"
       ],
       [
         6,
@@ -1948,7 +1948,7 @@
       ],
       [
         7,
-        "test_contract::test_contract::TestContract::test"
+        "test_contract::test_contract::test_contract::test"
       ],
       [
         8,
@@ -1964,7 +1964,7 @@
       ],
       [
         11,
-        "test_contract::test_contract::TestContract::another_function"
+        "test_contract::test_contract::test_contract::another_function"
       ],
       [
         12,
@@ -1976,7 +1976,7 @@
       ],
       [
         14,
-        "test_contract::test_contract::TestContract::call_foo"
+        "test_contract::test_contract::test_contract::call_foo"
       ],
       [
         15,
@@ -1984,23 +1984,23 @@
       ],
       [
         16,
-        "test_contract::test_contract::TestContract::libcall_foo"
+        "test_contract::test_contract::test_contract::libcall_foo"
       ],
       [
         17,
-        "test_contract::test_contract::TestContract::segment_arena_builtin"
+        "test_contract::test_contract::test_contract::segment_arena_builtin"
       ],
       [
         18,
-        "test_contract::test_contract::TestContract::l1_handle"
+        "test_contract::test_contract::test_contract::l1_handle"
       ],
       [
         19,
-        "test_contract::test_contract::TestContract::my_storage_var::InternalContractStateImpl::read"
+        "test_contract::test_contract::test_contract::my_storage_var::InternalContractStateImpl::read"
       ],
       [
         20,
-        "test_contract::test_contract::TestContract::my_storage_var::InternalContractStateImpl::write"
+        "test_contract::test_contract::test_contract::my_storage_var::InternalContractStateImpl::write"
       ],
       [
         21,
@@ -2184,7 +2184,7 @@
     },
     {
       "type": "event",
-      "name": "test_contract::test_contract::TestContract::Event",
+      "name": "test_contract::test_contract::test_contract::Event",
       "kind": "enum",
       "variants": []
     }

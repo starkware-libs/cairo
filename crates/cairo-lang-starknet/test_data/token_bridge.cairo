@@ -10,7 +10,7 @@ trait IMintableToken<T> {
 }
 
 #[starknet::contract]
-mod TokenBridge {
+mod token_bridge {
     use array::ArrayTrait;
     use integer::{Felt252IntoU256, U128IntoFelt252};
     use option::OptionTrait;
@@ -110,7 +110,7 @@ mod TokenBridge {
             assert(l1_bridge_address.is_non_zero(), 'ZERO_BRIDGE_ADDRESS');
 
             self.l1_bridge.write(l1_bridge_address.into());
-            self.emit(Event::L1BridgeSet(L1BridgeSet { l1_bridge_address }));
+            self.emit(L1BridgeSet { l1_bridge_address });
         }
 
         fn set_l2_token(ref self: ContractState, l2_token_address: ContractAddress) {
@@ -121,7 +121,7 @@ mod TokenBridge {
             assert(l2_token_address.is_non_zero(), 'ZERO_TOKEN_ADDRESS');
 
             self.l2_token.write(l2_token_address);
-            self.emit(Event::L2TokenSet(L2TokenSet { l2_token_address }));
+            self.emit(L2TokenSet { l2_token_address });
         }
 
         fn initiate_withdraw(ref self: ContractState, l1_recipient: EthAddress, amount: u256) {
@@ -132,21 +132,13 @@ mod TokenBridge {
             }.permissioned_burn(account: caller_address, :amount);
 
             // Send the message.
-            let mut message_payload: Array<felt252> = Default::default();
-            message_payload.append(WITHDRAW_MESSAGE);
-            message_payload.append(l1_recipient.into());
-            message_payload.append(amount.low.into());
-            message_payload.append(amount.high.into());
-
+            let mut message_payload: Array<felt252> = array![
+                WITHDRAW_MESSAGE, l1_recipient.into(), amount.low.into(), amount.high.into()
+            ];
             send_message_to_l1_syscall(
                 to_address: self.read_initialized_l1_bridge(), payload: message_payload.span()
             );
-            self
-                .emit(
-                    Event::WithdrawInitiated(
-                        WithdrawInitiated { l1_recipient, amount, caller_address }
-                    )
-                );
+            self.emit(WithdrawInitiated { l1_recipient, amount, caller_address });
         }
     }
 

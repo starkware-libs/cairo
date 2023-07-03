@@ -13,7 +13,7 @@ use ec::{
 // standard ECDSA.
 // While this does not allow to create valid signatures if one does not possess the private key,
 // it means that the signature algorithm used should be modified accordingly.
-// Namely, it should check that `r, s < StarkCurve::ORDER`.
+// Namely, it should check that `r, s < stark_curve::ORDER`.
 //
 // Arguments:
 // * `message_hash` - the signed message.
@@ -29,14 +29,14 @@ fn check_ecdsa_signature(
 ) -> bool {
     // TODO(lior): Change to || once short circuiting is supported.
 
-    // Check that s != 0 (mod StarkCurve.ORDER).
+    // Check that s != 0 (mod stark_curve::ORDER).
     if (signature_s == 0) {
         return false;
     }
-    if (signature_s == ec::StarkCurve::ORDER) {
+    if (signature_s == ec::stark_curve::ORDER) {
         return false;
     }
-    if (signature_r == ec::StarkCurve::ORDER) {
+    if (signature_r == ec::stark_curve::ORDER) {
         return false;
     }
 
@@ -58,7 +58,7 @@ fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let gen_point = match ec_point_try_new(ec::StarkCurve::GEN_X, ec::StarkCurve::GEN_Y) {
+    let gen_point = match ec_point_try_new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
         Option::None(()) => {
             return false;

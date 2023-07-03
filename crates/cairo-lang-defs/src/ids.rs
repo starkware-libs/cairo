@@ -745,6 +745,27 @@ impl OptionFrom<ModuleItemId> for GenericTypeId {
     }
 }
 
+// Conversion from GenericItemId to LookupItemId.
+impl From<GenericItemId> for LookupItemId {
+    fn from(item: GenericItemId) -> Self {
+        match item {
+            GenericItemId::FreeFunc(id) => LookupItemId::ModuleItem(ModuleItemId::FreeFunction(id)),
+            GenericItemId::ExternFunc(id) => {
+                LookupItemId::ModuleItem(ModuleItemId::ExternFunction(id))
+            }
+            GenericItemId::TraitFunc(id) => LookupItemId::TraitFunction(id),
+            GenericItemId::ImplFunc(id) => LookupItemId::ImplFunction(id),
+            GenericItemId::Trait(id) => LookupItemId::ModuleItem(ModuleItemId::Trait(id)),
+            GenericItemId::Impl(id) => LookupItemId::ModuleItem(ModuleItemId::Impl(id)),
+            GenericItemId::Struct(id) => LookupItemId::ModuleItem(ModuleItemId::Struct(id)),
+            GenericItemId::Enum(id) => LookupItemId::ModuleItem(ModuleItemId::Enum(id)),
+            GenericItemId::ExternType(id) => LookupItemId::ModuleItem(ModuleItemId::ExternType(id)),
+            GenericItemId::TypeAlias(id) => LookupItemId::ModuleItem(ModuleItemId::TypeAlias(id)),
+            GenericItemId::ImplAlias(id) => LookupItemId::ModuleItem(ModuleItemId::ImplAlias(id)),
+        }
+    }
+}
+
 define_language_element_id_as_enum! {
     /// Items for resolver lookups.
     /// These are top items that hold semantic information.
@@ -753,5 +774,6 @@ define_language_element_id_as_enum! {
         ModuleItem(ModuleItemId),
         // TODO(spapini): Replace with ImplItemId.
         ImplFunction(ImplFunctionId),
+        TraitFunction(TraitFunctionId),
     }
 }

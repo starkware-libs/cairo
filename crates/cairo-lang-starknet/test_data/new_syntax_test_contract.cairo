@@ -11,7 +11,7 @@ trait ICounterContract<TContractState> {
 }
 
 #[starknet::contract]
-mod CounterContract {
+mod counter_contract {
     use starknet::ContractAddress;
     use super::{
         IOtherContractDispatcher, IOtherContractDispatcherTrait, IOtherContractLibraryDispatcher
@@ -57,7 +57,7 @@ mod CounterContract {
         fn increase_counter(ref self: ContractState, amount: u128) {
             let current = self.counter.read();
             self.counter.write(current + amount);
-            self.emit(Event::CounterIncreased(CounterIncreased { amount }));
+            self.emit(CounterIncreased { amount });
         }
 
         fn decrease_counter(ref self: ContractState, amount: u128) {
@@ -65,7 +65,7 @@ mod CounterContract {
             if allowed {
                 let current = self.counter.read();
                 self.counter.write(current - amount);
-                self.emit(Event::CounterDecreased(CounterDecreased { amount }));
+                self.emit(CounterDecreased { amount });
             }
         }
     }

@@ -20,7 +20,7 @@ trait IERC20<TContractState> {
 }
 
 #[starknet::contract]
-mod ERC20 {
+mod erc_20 {
     use zeroable::Zeroable;
     use starknet::get_caller_address;
     use starknet::contract_address_const;
@@ -162,7 +162,7 @@ mod ERC20 {
             assert(!recipient.is_zero(), 'ERC20: transfer to 0');
             self.balances.write(sender, self.balances.read(sender) - amount);
             self.balances.write(recipient, self.balances.read(recipient) + amount);
-            self.emit(Event::Transfer(Transfer { from: sender, to: recipient, value: amount }));
+            self.emit(Transfer { from: sender, to: recipient, value: amount });
         }
 
         fn spend_allowance(
@@ -182,7 +182,7 @@ mod ERC20 {
         ) {
             assert(!spender.is_zero(), 'ERC20: approve from 0');
             self.allowances.write((owner, spender), amount);
-            self.emit(Event::Approval(Approval { owner, spender, value: amount }));
+            self.emit(Approval { owner, spender, value: amount });
         }
     }
 }

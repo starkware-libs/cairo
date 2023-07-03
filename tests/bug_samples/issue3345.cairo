@@ -10,7 +10,7 @@ trait ITree<TContractState> {
 }
 
 #[starknet::contract]
-mod ExampleFailure {
+mod example_failure {
     use super::Node;
     use super::ITree;
     use array::{ArrayTrait, Array};
@@ -37,7 +37,7 @@ mod ExampleFailure {
     #[external(v0)]
     impl Tree of ITree<ContractState> {
         fn sorted_list(ref self: ContractState, root: u128) {
-            let mut in_order: Array<(u128, Node)> = ArrayTrait::new();
+            let mut in_order: Array<(u128, Node)> = array![];
             self.append_in_order_nodes(ref in_order, root);
         }
     }

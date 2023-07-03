@@ -1,0 +1,252 @@
+//! > Test consteval_int! macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+const a: felt252 = 0;
+
+const b: felt252 = consteval_int!(4 + 5);
+
+const c: felt252 = 4 + 5;
+
+const d: felt252 = consteval_int!(23 + 4 * 5 + (4 + 5) / 2);
+
+const e: u8 = consteval_int!(255 + 1 - 1);
+
+//! > generated_cairo_code
+const a: felt252 = 0;
+
+
+const b: felt252 = 9;
+
+
+const c: felt252 = 4 + 5;
+
+
+const d: felt252 = 47;
+
+
+const e: u8 = 255;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test bad consteval_int! macros
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+const a: felt252 = consteval_int!(func_call(24));
+
+const b: felt252 = consteval_int!('some string');
+
+const c: felt252 = consteval_int!(*24);
+
+const d: felt252 = consteval_int!(~24);
+
+const e: felt252 = consteval_int!(234 < 5);
+
+const e: felt252 = consteval_int![4 + 5];
+
+const f: felt252 = consteval_int!{4 + 5};
+
+//! > generated_cairo_code
+const a: felt252 = consteval_int!(func_call(24));
+
+
+const b: felt252 = consteval_int!('some string');
+
+
+const c: felt252 = consteval_int!(*24);
+
+
+const d: felt252 = consteval_int!(~24);
+
+
+const e: felt252 = consteval_int!(234 < 5);
+
+
+const e: felt252 = consteval_int![4 + 5];
+
+
+const f: felt252 = consteval_int!{4 + 5};
+
+//! > expected_diagnostics
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:1:35
+const a: felt252 = consteval_int!(func_call(24));
+                                  ^***********^
+
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:3:35
+const b: felt252 = consteval_int!('some string');
+                                  ^***********^
+
+error: Unsupported unary operator in consteval_int macro
+ --> dummy_file.cairo:5:35
+const c: felt252 = consteval_int!(*24);
+                                  ^*^
+
+error: Unsupported unary operator in consteval_int macro
+ --> dummy_file.cairo:7:35
+const d: felt252 = consteval_int!(~24);
+                                  ^*^
+
+error: Unsupported binary operator in consteval_int macro
+ --> dummy_file.cairo:9:35
+const e: felt252 = consteval_int!(234 < 5);
+                                  ^*****^
+
+error: Macro consteval_int does not support this bracket type
+ --> dummy_file.cairo:11:20
+const e: felt252 = consteval_int![4 + 5];
+                   ^*******************^
+
+error: Macro consteval_int does not support this bracket type
+ --> dummy_file.cairo:13:20
+const f: felt252 = consteval_int!{4 + 5};
+                   ^*******************^
+
+//! > ==========================================================================
+
+//! > Test consteval_int! inside functions
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn some_func()
+{
+    return consteval_int!(4 + 5);
+}
+
+//! > generated_cairo_code
+fn some_func()
+{
+    return 9;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test recursive consteval_int! 
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn some_func()
+{
+    return consteval_int!(4 + consteval_int!(2+3));
+}
+
+//! > generated_cairo_code
+fn some_func()
+{
+    return consteval_int!(4 + consteval_int!(2+3));
+}
+
+//! > expected_diagnostics
+error: Unsupported expression in consteval_int macro
+ --> dummy_file.cairo:3:31
+    return consteval_int!(4 + consteval_int!(2+3));
+                              ^*****************^
+
+//! > ==========================================================================
+
+//! > Test unknwon macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let x = foo!(0);
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let x = foo!(0);
+}
+
+//! > expected_diagnostics
+error: Unknown inline macro: foo
+ --> dummy_file.cairo:2:13
+    let x = foo!(0);
+            ^*****^
+
+//! > ==========================================================================
+
+//! > Test array macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let arr = array![1,2,3];
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let arr = {
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            __array_builder_macro_result__.append(1);
+            __array_builder_macro_result__.append(2);
+            __array_builder_macro_result__.append(3);
+            __array_builder_macro_result__
+        };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array macro empty
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let arr = array![];
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let arr = {
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            __array_builder_macro_result__
+        };
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array macro with method call
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    array![10, 11, 12].span();
+}
+
+//! > generated_cairo_code
+fn foo() {
+{
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            __array_builder_macro_result__.append(10);
+            __array_builder_macro_result__.append(11);
+            __array_builder_macro_result__.append(12);
+            __array_builder_macro_result__
+        }.span();
+}
+
+//! > expected_diagnostics

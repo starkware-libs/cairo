@@ -5,7 +5,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
 
@@ -29,7 +29,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
 
@@ -55,7 +55,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 163010207270130705852809562941790435675492496513793075754021342799706585500;
+const TEST_CLASS_HASH: felt252 = 75913422193598734687236969958070324999070170986463056419297228471797480047;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -75,7 +75,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -141,8 +142,8 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::good_l1_handler(ref storage, __arg_from_address, __arg_arg);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -167,8 +168,8 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::good_l1_handler_ignored(ref storage, __arg__from_address, __arg_arg);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -188,8 +189,8 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::l1_handler_no_params(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::l1_handler_no_params(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -211,8 +212,8 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::l1_handler_wrong_first_param_name(ref storage, __arg_abc);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -234,8 +235,8 @@ mod __l1_handler {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::l1_handler_wrong_first_param_type(ref storage, __arg_from_address);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
             let mut arr = array::array_new();
             // References.
             // Result.

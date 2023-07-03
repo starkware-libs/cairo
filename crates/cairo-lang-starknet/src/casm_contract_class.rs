@@ -2,7 +2,7 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
-use cairo_lang_casm::hints::Hint;
+use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
@@ -151,9 +151,9 @@ impl TypeResolver<'_> {
             return false;
         }
 
-        // If the error type is Span<felt252>, it's a good error type, using the old panic
+        // If the error type is Array<felt252>, it's a good error type, using the old panic
         // mechanism.
-        if self.is_felt252_span(err_ty) {
+        if self.is_felt252_array(err_ty) {
             return true;
         }
 
@@ -371,7 +371,7 @@ impl CasmContractClass {
                 hints
                     .iter()
                     .map(|(pc, hints)| {
-                        (*pc, hints.iter().map(|hint| hint.to_string()).collect_vec())
+                        (*pc, hints.iter().map(|hint| hint.get_pythonic_hint()).collect_vec())
                     })
                     .collect_vec(),
             )

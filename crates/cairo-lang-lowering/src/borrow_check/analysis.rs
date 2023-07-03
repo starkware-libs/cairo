@@ -53,21 +53,24 @@ pub trait Analyzer<'a> {
 /// Main analysis type that allows traversing the flow backwards.
 pub struct BackAnalysis<'a, TAnalyzer: Analyzer<'a>> {
     pub lowered: &'a FlatLowered,
-    pub cache: HashMap<BlockId, TAnalyzer::Info>,
+    pub block_info: HashMap<BlockId, TAnalyzer::Info>,
     pub analyzer: TAnalyzer,
 }
 impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
     /// Gets the analysis info for the entire function.
     pub fn get_root_info(&mut self) -> TAnalyzer::Info {
-        self.get_block_info(BlockId::root())
+        let mut dfs_stack = vec![BlockId::root()];
+        while let Some(block_id) = dfs_stack.last() {
+            let end = &self.lowered.blocks[*block_id].end;
+            if !self.add_missing_dependency_blocks(&mut dfs_stack, end) {
+                self.calc_block_info(dfs_stack.pop().unwrap());
+            }
+        }
+        self.block_info[&BlockId::root()].clone()
     }
 
     /// Gets the analysis info from the start of a block.
-    fn get_block_info(&mut self, block_id: BlockId) -> TAnalyzer::Info {
-        if let Some(cached_result) = self.cache.get(&block_id) {
-            return cached_result.clone();
-        }
-
+    fn calc_block_info(&mut self, block_id: BlockId) {
         let mut info = self.get_end_info(block_id, &self.lowered.blocks[block_id].end);
 
         // Go through statements backwards, and update info.
@@ -78,9 +81,37 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
 
         self.analyzer.visit_block_start(&mut info, block_id, &self.lowered.blocks[block_id]);
 
-        // Cache result.
-        self.cache.insert(block_id, info.clone());
-        info
+        // Store result.
+        self.block_info.insert(block_id, info);
+    }
+
+    /// Adds to the DFS stack the dependent blocks that are not yet in cache - returns whether if
+    /// there are any such blocks.
+    fn add_missing_dependency_blocks(
+        &self,
+        dfs_stack: &mut Vec<BlockId>,
+        block_end: &'a FlatBlockEnd,
+    ) -> bool {
+        match block_end {
+            FlatBlockEnd::NotSet => unreachable!(),
+            FlatBlockEnd::Goto(target_block_id, _)
+                if !self.block_info.contains_key(target_block_id) =>
+            {
+                dfs_stack.push(*target_block_id);
+                true
+            }
+            FlatBlockEnd::Goto(_, _) | FlatBlockEnd::Return(_) | FlatBlockEnd::Panic(_) => false,
+            FlatBlockEnd::Match { info } => {
+                let mut missing_cache = false;
+                for arm in info.arms() {
+                    if !self.block_info.contains_key(&arm.block_id) {
+                        dfs_stack.push(arm.block_id);
+                        missing_cache = true;
+                    }
+                }
+                missing_cache
+            }
+        }
     }
 
     /// Gets the analysis info from a [FlatBlockEnd] onwards.
@@ -89,7 +120,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
         match block_end {
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Goto(target_block_id, remapping) => {
-                let mut info = self.get_block_info(*target_block_id);
+                let mut info = self.block_info[target_block_id].clone();
                 self.analyzer.visit_goto(
                     &mut info,
                     statement_location,
@@ -105,7 +136,7 @@ impl<'a, TAnalyzer: Analyzer<'a>> BackAnalysis<'a, TAnalyzer> {
                     .arms()
                     .iter()
                     .rev()
-                    .map(|arm| self.get_block_info(arm.block_id))
+                    .map(|arm| self.block_info[&arm.block_id].clone())
                     .collect_vec()
                     .into_iter()
                     .rev()

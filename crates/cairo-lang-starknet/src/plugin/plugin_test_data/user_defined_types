@@ -5,7 +5,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         var: WrappedFelt252,
@@ -58,7 +58,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         var: WrappedFelt252,
@@ -113,7 +113,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1406712675341655973569057151004659905207406513053522188099790886884464153584;
+const TEST_CLASS_HASH: felt252 = 1329599320257538578850523391356788449669795141703595629323844053189765658355;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -137,7 +137,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);

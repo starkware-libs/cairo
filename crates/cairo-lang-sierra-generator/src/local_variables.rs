@@ -15,7 +15,7 @@ use itertools::{zip_eq, Itertools};
 use lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use lowering::borrow_check::demand::DemandReporter;
 use lowering::borrow_check::Demand;
-use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping};
+use lowering::{FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage};
 
 use crate::ap_tracking::{get_ap_tracking_configuration, ApTrackingConfiguration};
 use crate::db::SierraGenGroup;
@@ -52,7 +52,7 @@ pub fn analyze_ap_changes(
         partial_param_parents: Default::default(),
     };
     let mut analysis =
-        BackAnalysis { lowered: lowered_function, cache: Default::default(), analyzer: ctx };
+        BackAnalysis { lowered: lowered_function, block_info: Default::default(), analyzer: ctx };
     let mut root_info = analysis.get_root_info()?;
     root_info.demand.variables_introduced(&mut analysis.analyzer, &lowered_function.parameters, ());
 
@@ -76,10 +76,10 @@ pub fn analyze_ap_changes(
             if callers.len() <= 1 {
                 continue;
             }
-            let mut info = analysis.cache[&block_id].as_ref().map_err(|v| *v)?.clone();
+            let mut info = analysis.block_info[&block_id].as_ref().map_err(|v| *v)?.clone();
             let introducd_vars = callers[0].1.keys().cloned().collect_vec();
             info.demand.variables_introduced(&mut ctx, &introducd_vars, ());
-            for var in info.demand.vars.iter() {
+            for var in info.demand.vars.keys() {
                 if ctx.might_be_revoked(&peeled_used_after_revoke, ctx.peel_aliases(var)) {
                     need_ap_alignment.insert(*var);
                 }
@@ -111,7 +111,7 @@ struct FindLocalsContext<'a> {
     partial_param_parents: UnorderedHashMap<VariableId, VariableId>,
 }
 
-pub type LoweredDemand = Demand<VariableId>;
+pub type LoweredDemand = Demand<VariableId, ()>;
 #[derive(Clone)]
 struct AnalysisInfo {
     demand: LoweredDemand,
@@ -134,7 +134,8 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         let Ok(branch_info) = self.analyze_statement(stmt) else {return;};
         info.demand.variables_introduced(self, &stmt.outputs(), ());
         self.revoke_if_needed(info, branch_info);
-        info.demand.variables_used(self, &stmt.inputs(), ());
+        info.demand
+            .variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 
     fn visit_goto(
@@ -146,7 +147,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     ) {
         let Ok(info) = info else {return;};
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
-        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, ((src), ()))));
     }
 
     fn merge_match(
@@ -172,7 +173,10 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
             arm_demands.push((info.demand, ()));
         }
         let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), ());
+        demand.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
         Ok(AnalysisInfo { demand, known_ap_change })
     }
 
@@ -182,7 +186,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         vars: &[VariableId],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, vars, ());
+        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
 
@@ -241,7 +245,7 @@ impl<'a> FindLocalsContext<'a> {
     fn analyze_call(
         &mut self,
         concrete_function_id: cairo_lang_sierra::ids::ConcreteLibfuncId,
-        input_vars: &[VariableId],
+        input_vars: &[VarUsage],
         output_vars: &[VariableId],
     ) -> BranchInfo {
         let libfunc_signature = get_libfunc_signature(self.db, concrete_function_id.clone());
@@ -258,17 +262,17 @@ impl<'a> FindLocalsContext<'a> {
     fn analyze_branch(
         &mut self,
         branch_signature: &BranchSignature,
-        input_vars: &[VariableId],
+        input_vars: &[VarUsage],
         output_vars: &[VariableId],
     ) -> BranchInfo {
         let var_output_infos = &branch_signature.vars;
         for (var, output_info) in zip_eq(output_vars.iter(), var_output_infos.iter()) {
             match output_info.ref_info {
                 OutputVarReferenceInfo::SameAsParam { param_idx } => {
-                    self.aliases.insert(*var, input_vars[param_idx]);
+                    self.aliases.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::PartialParam { param_idx } => {
-                    self.partial_param_parents.insert(*var, input_vars[param_idx]);
+                    self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::NewTempVar { .. }
                 | OutputVarReferenceInfo::SimpleDerefs
@@ -309,7 +313,7 @@ impl<'a> FindLocalsContext<'a> {
             }
             lowering::Statement::StructDestructure(statement_struct_destructure) => {
                 let ty = self.db.get_concrete_type_id(
-                    self.lowered_function.variables[statement_struct_destructure.input].ty,
+                    self.lowered_function.variables[statement_struct_destructure.input.var_id].ty,
                 )?;
                 self.analyze_call(struct_deconstruct_libfunc_id(self.db, ty)?, &inputs, &outputs)
             }
@@ -324,12 +328,14 @@ impl<'a> FindLocalsContext<'a> {
                 )
             }
             lowering::Statement::Snapshot(statement_snapshot) => {
-                self.aliases.insert(statement_snapshot.output_original, statement_snapshot.input);
-                self.aliases.insert(statement_snapshot.output_snapshot, statement_snapshot.input);
+                self.aliases
+                    .insert(statement_snapshot.output_original, statement_snapshot.input.var_id);
+                self.aliases
+                    .insert(statement_snapshot.output_snapshot, statement_snapshot.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
             lowering::Statement::Desnap(statement_desnap) => {
-                self.aliases.insert(statement_desnap.output, statement_desnap.input);
+                self.aliases.insert(statement_desnap.output, statement_desnap.input.var_id);
                 BranchInfo { known_ap_change: true }
             }
         };
@@ -341,7 +347,7 @@ impl<'a> FindLocalsContext<'a> {
         if !branch_info.known_ap_change {
             info.known_ap_change = false;
             // Revoke all demanded variables.
-            for var in info.demand.vars.iter() {
+            for var in info.demand.vars.keys() {
                 self.used_after_revoke.insert(*var);
             }
         }
@@ -354,8 +360,9 @@ impl<'a> FindLocalsContext<'a> {
                 get_libfunc_signature(self.db, concrete_function_id)
             }
             MatchInfo::Enum(s) => {
-                let concrete_enum_type =
-                    self.db.get_concrete_type_id(self.lowered_function.variables[s.input].ty)?;
+                let concrete_enum_type = self
+                    .db
+                    .get_concrete_type_id(self.lowered_function.variables[s.input.var_id].ty)?;
                 let concrete_function_id = match_enum_libfunc_id(self.db, concrete_enum_type)?;
                 get_libfunc_signature(self.db, concrete_function_id)
             }

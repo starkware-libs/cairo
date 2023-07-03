@@ -157,7 +157,7 @@ impl U128MulEq of MulEq<u128> {
 }
 
 #[panic_with('u128 is 0', u128_as_non_zero)]
-fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> implicits() nopanic {
+fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -395,7 +395,7 @@ extern fn u8_is_zero(a: u8) -> IsZeroResult<u8> implicits() nopanic;
 extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeCheck) nopanic;
 
 #[panic_with('u8 is 0', u8_as_non_zero)]
-fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> implicits() nopanic {
+fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -593,7 +593,7 @@ extern fn u16_is_zero(a: u16) -> IsZeroResult<u16> implicits() nopanic;
 extern fn u16_safe_divmod(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) implicits(RangeCheck) nopanic;
 
 #[panic_with('u16 is 0', u16_as_non_zero)]
-fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> implicits() nopanic {
+fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -791,7 +791,7 @@ extern fn u32_is_zero(a: u32) -> IsZeroResult<u32> implicits() nopanic;
 extern fn u32_safe_divmod(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) implicits(RangeCheck) nopanic;
 
 #[panic_with('u32 is 0', u32_as_non_zero)]
-fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> implicits() nopanic {
+fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -989,7 +989,7 @@ extern fn u64_is_zero(a: u64) -> IsZeroResult<u64> implicits() nopanic;
 extern fn u64_safe_divmod(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) implicits(RangeCheck) nopanic;
 
 #[panic_with('u64 is 0', u64_as_non_zero)]
-fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> implicits() nopanic {
+fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -1252,7 +1252,7 @@ fn u256_safe_div_rem(lhs: u256, rhs: NonZero<u256>) -> (u256, u256) implicits(Ra
 extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 
 #[panic_with('u256 is 0', u256_as_non_zero)]
-fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> implicits() nopanic {
+fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
         IsZeroResult::Zero(()) => Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
@@ -1506,6 +1506,31 @@ impl U256TryIntoFelt252 of TryInto<u256, felt252> {
         Option::Some(
             self.high.into() * 0x100000000000000000000000000000000_felt252 + self.low.into()
         )
+    }
+}
+impl I8IntoFelt252 of Into<i8, felt252> {
+    fn into(self: i8) -> felt252 {
+        i8_to_felt252(self)
+    }
+}
+impl I16IntoFelt252 of Into<i16, felt252> {
+    fn into(self: i16) -> felt252 {
+        i16_to_felt252(self)
+    }
+}
+impl I32IntoFelt252 of Into<i32, felt252> {
+    fn into(self: i32) -> felt252 {
+        i32_to_felt252(self)
+    }
+}
+impl I64IntoFelt252 of Into<i64, felt252> {
+    fn into(self: i64) -> felt252 {
+        i64_to_felt252(self)
+    }
+}
+impl I128IntoFelt252 of Into<i128, felt252> {
+    fn into(self: i128) -> felt252 {
+        i128_to_felt252(self)
     }
 }
 
@@ -1891,5 +1916,105 @@ impl U256Zeroable of Zeroable<u256> {
     #[inline(always)]
     fn is_non_zero(self: u256) -> bool {
         self != U256Zeroable::zero()
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type i8;
+impl NumericLiterali8 of NumericLiteral<i8>;
+extern fn i8_const<value>() -> i8 nopanic;
+extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
+
+extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
+extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
+
+impl I8PartialEq of PartialEq<i8> {
+    #[inline(always)]
+    fn eq(lhs: @i8, rhs: @i8) -> bool {
+        i8_eq(*lhs, *rhs)
+    }
+    #[inline(always)]
+    fn ne(lhs: @i8, rhs: @i8) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type i16;
+impl NumericLiterali16 of NumericLiteral<i16>;
+extern fn i16_const<value>() -> i16 nopanic;
+extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
+
+extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
+extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
+
+impl I16PartialEq of PartialEq<i16> {
+    #[inline(always)]
+    fn eq(lhs: @i16, rhs: @i16) -> bool {
+        i16_eq(*lhs, *rhs)
+    }
+    #[inline(always)]
+    fn ne(lhs: @i16, rhs: @i16) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type i32;
+impl NumericLiterali32 of NumericLiteral<i32>;
+extern fn i32_const<value>() -> i32 nopanic;
+extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
+
+extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
+extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
+
+impl I32PartialEq of PartialEq<i32> {
+    #[inline(always)]
+    fn eq(lhs: @i32, rhs: @i32) -> bool {
+        i32_eq(*lhs, *rhs)
+    }
+    #[inline(always)]
+    fn ne(lhs: @i32, rhs: @i32) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type i64;
+impl NumericLiterali64 of NumericLiteral<i64>;
+extern fn i64_const<value>() -> i64 nopanic;
+extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
+
+extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
+extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
+
+impl I64PartialEq of PartialEq<i64> {
+    #[inline(always)]
+    fn eq(lhs: @i64, rhs: @i64) -> bool {
+        i64_eq(*lhs, *rhs)
+    }
+    #[inline(always)]
+    fn ne(lhs: @i64, rhs: @i64) -> bool {
+        !(*lhs == *rhs)
+    }
+}
+
+#[derive(Copy, Drop)]
+extern type i128;
+impl NumericLiterali128 of NumericLiteral<i128>;
+extern fn i128_const<value>() -> i128 nopanic;
+extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
+
+extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
+extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
+
+impl I128PartialEq of PartialEq<i128> {
+    #[inline(always)]
+    fn eq(lhs: @i128, rhs: @i128) -> bool {
+        i128_eq(*lhs, *rhs)
+    }
+    #[inline(always)]
+    fn ne(lhs: @i128, rhs: @i128) -> bool {
+        !(*lhs == *rhs)
     }
 }

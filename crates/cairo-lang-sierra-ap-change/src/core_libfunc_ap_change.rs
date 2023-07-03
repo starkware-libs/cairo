@@ -15,6 +15,8 @@ use cairo_lang_sierra::extensions::felt252_dict::{
 use cairo_lang_sierra::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, CostTokenType, GasConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::int::signed::{SintConcrete, SintTraits};
+use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned::{UintConcrete, UintTraits};
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::unsigned256::Uint256Concrete;
@@ -161,16 +163,28 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(0)]
             }
             Uint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
-            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(17)],
+            Uint128Concrete::ByteReverse(_) => vec![ApChange::Known(16)],
             Uint128Concrete::Bitwise(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Uint256(libfunc) => match libfunc {
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(21)],
-            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(27)],
+            Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(25)],
         },
         CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
-            Uint512Concrete::DivModU256(_) => vec![ApChange::Known(47)],
+            Uint512Concrete::DivModU256(_) => vec![ApChange::Known(43)],
+        },
+        CoreConcreteLibfunc::Sint8(libfunc) => sint_ap_change(libfunc),
+        CoreConcreteLibfunc::Sint16(libfunc) => sint_ap_change(libfunc),
+        CoreConcreteLibfunc::Sint32(libfunc) => sint_ap_change(libfunc),
+        CoreConcreteLibfunc::Sint64(libfunc) => sint_ap_change(libfunc),
+        CoreConcreteLibfunc::Sint128(libfunc) => match libfunc {
+            Sint128Concrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+            Sint128Concrete::FromFelt252(_) => vec![ApChange::Known(1), ApChange::Known(6)],
+            Sint128Concrete::Const(_) | Sint128Concrete::ToFelt252(_) => {
+                vec![ApChange::Known(0)]
+            }
+            Sint128Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Mem(libfunc) => match libfunc {
             MemConcreteLibfunc::StoreTemp(libfunc) => {
@@ -243,8 +257,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
                 vec![ApChange::Known(2), ApChange::Known(2)]
             }
             StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
-                TestingConcreteLibfunc::PopLog(_) => vec![ApChange::Known(5), ApChange::Known(5)],
-                _ => vec![ApChange::Known(0)],
+                TestingConcreteLibfunc::Cheatcode(_) => vec![ApChange::Known(2)],
             },
         },
         CoreConcreteLibfunc::Nullable(libfunc) => match libfunc {
@@ -284,5 +297,18 @@ fn uint_ap_change<TUintTraits: UintTraits + IntMulTraits + IsZeroTraits>(
         UintConcrete::Divmod(_) => vec![ApChange::Known(5)],
         UintConcrete::WideMul(_) => vec![ApChange::Known(0)],
         UintConcrete::Bitwise(_) => vec![ApChange::Known(0)],
+    }
+}
+
+/// Returns the ap changes for s8/s16/s32/s64 libfuncs.
+fn sint_ap_change<TSintTraits: SintTraits + IntMulTraits + IsZeroTraits>(
+    libfunc: &SintConcrete<TSintTraits>,
+) -> Vec<ApChange> {
+    match libfunc {
+        SintConcrete::Const(_) | SintConcrete::ToFelt252(_) => vec![ApChange::Known(0)],
+        SintConcrete::Equal(_) => vec![ApChange::Known(1), ApChange::Known(1)],
+        SintConcrete::FromFelt252(_) => vec![ApChange::Known(2), ApChange::Known(7)],
+        SintConcrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
+        SintConcrete::WideMul(_) => vec![ApChange::Known(0)],
     }
 }

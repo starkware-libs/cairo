@@ -10,7 +10,7 @@ use super::function_with_body::{get_inline_config, FunctionBody, FunctionBodyDat
 use super::functions::{
     forbid_inline_always_with_impl_generic_param, FunctionDeclarationData, InlineConfiguration,
 };
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
@@ -68,7 +68,36 @@ pub fn free_function_generic_params(
     db: &dyn SemanticGroup,
     free_function_id: FreeFunctionId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_free_function_declaration_data(free_function_id)?.generic_params)
+    Ok(db.free_function_generic_params_data(free_function_id)?.generic_params)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::free_function_generic_params_data].
+pub fn free_function_generic_params_data(
+    db: &dyn SemanticGroup,
+    free_function_id: FreeFunctionId,
+) -> Maybe<GenericParamsData> {
+    let syntax_db = db.upcast();
+    let module_file_id = free_function_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_free_functions = db.module_free_functions(module_file_id.0)?;
+    let function_syntax = module_free_functions.get(&free_function_id).to_maybe()?;
+    let declaration = function_syntax.declaration(syntax_db);
+
+    // Generic params.
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &declaration.generic_params(syntax_db),
+    )?;
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+    });
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
 
 /// Query implementation of [crate::db::SemanticGroup::free_function_declaration_resolver_data].
@@ -102,15 +131,10 @@ pub fn priv_free_function_declaration_data(
     let declaration = function_syntax.declaration(syntax_db);
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &declaration.generic_params(syntax_db),
-        false,
-    )?;
+    let generic_params_data = db.free_function_generic_params_data(free_function_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let mut environment = Environment::default();
 
@@ -137,7 +161,6 @@ pub fn priv_free_function_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(declaration.stable_ptr().untyped()));
     }
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let signature = resolver.inference().rewrite(signature).no_err();
 
     Ok(FunctionDeclarationData {
@@ -191,7 +214,7 @@ pub fn priv_free_function_body_data(
     // Generic params.
     let mut resolver = Resolver::new(db, module_file_id);
     for generic_param in declaration.generic_params {
-        resolver.add_generic_param(generic_param);
+        resolver.add_generic_param(generic_param.id());
     }
 
     let environment = declaration.environment;

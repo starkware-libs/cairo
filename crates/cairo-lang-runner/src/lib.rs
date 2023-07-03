@@ -116,7 +116,7 @@ pub fn build_hints_dict<'b>(
         if !instruction.hints.is_empty() {
             // Register hint with string for the hint processor.
             for hint in instruction.hints.iter() {
-                string_to_hint.insert(hint.to_string(), hint.clone());
+                string_to_hint.insert(hint.representing_string(), hint.clone());
             }
             // Add hint, associated with the instruction offset.
             hints_dict
@@ -344,7 +344,7 @@ impl SierraCasmRunner {
 
     /// Returns the instructions to add to the beginning of the code to successfully call the main
     /// function, as well as the builtins required to execute the program.
-    fn create_entry_code(
+    pub fn create_entry_code(
         &self,
         func: &Function,
         args: &[Arg],
@@ -473,7 +473,7 @@ impl SierraCasmRunner {
 
     /// Returns the initial value for the gas counter.
     /// If available_gas is None returns 0.
-    fn get_initial_available_gas(
+    pub fn get_initial_available_gas(
         &self,
         func: &Function,
         available_gas: Option<usize>,
@@ -510,6 +510,10 @@ impl SierraCasmRunner {
             ret;
         }
         .instructions
+    }
+
+    pub fn get_casm_program(&self) -> &CairoProgram {
+        &self.casm_program
     }
 }
 

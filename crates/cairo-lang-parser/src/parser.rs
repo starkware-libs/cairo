@@ -927,13 +927,63 @@ impl<'a> Parser<'a> {
         ExprFunctionCall::new_green(self.db, func_name, parenthesized_args)
     }
 
-    /// Assumes the current token is LParen.
-    /// Expected pattern: `<ArgListParenthesized>`
+    /// Assumes the current token is TerminalNot.
+    /// Expected pattern: `!<WrappedArgList>`
     fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
         let bang = self.take::<TerminalNot>();
         let macro_name = path;
-        let parenthesized_args = self.expect_parenthesized_argument_list();
-        ExprInlineMacro::new_green(self.db, macro_name, bang, parenthesized_args)
+        let wrapped_expr_list = self.parse_wrapped_expr_list();
+        ExprInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list)
+    }
+
+    /// Returns a GreenId of a node with an ExprTuple|ExprListBracketed kind or None if such an
+    /// argument list can't be parsed.
+    fn parse_wrapped_expr_list(&mut self) -> WrappedExprListGreen {
+        let current_token = self.peek().kind;
+        match current_token {
+            SyntaxKind::TerminalLParen => self
+                .expect_wrapped_expr_list::<TerminalLParen, TerminalRParen, _, _>(
+                    ExprListParenthesized::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrack => self
+                .expect_wrapped_expr_list::<TerminalLBrack, TerminalRBrack, _, _>(
+                    ExprListBracketed::new_green,
+                )
+                .into(),
+            SyntaxKind::TerminalLBrace => self
+                .expect_wrapped_expr_list::<TerminalLBrace, TerminalRBrace, _, _>(
+                    ExprListBraced::new_green,
+                )
+                .into(),
+            _ => self.create_and_report_missing::<WrappedExprList>(
+                ParserDiagnosticKind::MissingExpression,
+            ),
+        }
+    }
+
+    /// Assumes the current token is LTerminal.
+    /// Expected pattern: `[LTerminal](<expr>,)*<expr>?[RTerminal]`
+    /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
+    /// the parsed list and returns the result.
+    fn expect_wrapped_expr_list<
+        LTerminal: syntax::node::Terminal,
+        RTerminal: syntax::node::Terminal,
+        ListGreen,
+        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, ExprListGreen, RTerminal::Green) -> ListGreen,
+    >(
+        &mut self,
+        new_green: NewGreen,
+    ) -> ListGreen {
+        let l_term = self.take::<LTerminal>();
+        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
+                Self::try_parse_expr,
+                is_of_kind!(rparen, rbrace, rbrack, block, top_level),
+                "expression",
+            );
+        let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
+        new_green(self.db, l_term, ExprList::new_green(self.db, exprs), r_term)
     }
 
     /// Assumes the current token is LParen.
@@ -1075,8 +1125,13 @@ impl<'a> Parser<'a> {
             // We have exactly one item and no separator --> This is not a tuple.
             ExprParenthesized::new_green(self.db, lparen, *expr, rparen).into()
         } else {
-            ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen)
-                .into()
+            ExprListParenthesized::new_green(
+                self.db,
+                lparen,
+                ExprList::new_green(self.db, exprs),
+                rparen,
+            )
+            .into()
         }
     }
 
@@ -1099,7 +1154,13 @@ impl<'a> Parser<'a> {
                 span: TextSpan { start: self.offset, end: self.offset },
             });
         }
-        ExprTuple::new_green(self.db, lparen, ExprList::new_green(self.db, exprs), rparen).into()
+        ExprListParenthesized::new_green(
+            self.db,
+            lparen,
+            ExprList::new_green(self.db, exprs),
+            rparen,
+        )
+        .into()
     }
 
     /// Assumes the current token is DotDot.

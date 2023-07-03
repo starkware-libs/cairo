@@ -20,10 +20,10 @@ use crate::ids::{ConcreteFunctionWithBodyId, SemanticFunctionIdEx};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{
     BlockId, FlatLowered, MatchInfo, Statement, StatementCall, StatementStructConstruct,
-    StatementStructDestructure, VarRemapping, VariableId,
+    StatementStructDestructure, VarRemapping, VarUsage, VariableId,
 };
 
-pub type LoweredDemand = Demand<VariableId, PanicState>;
+pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
 
 /// Context for the dectructor call addition phase,
 pub struct DestructAdder<'a> {
@@ -90,8 +90,6 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
 
         panic!("Borrow checker should have caught this.")
     }
-
-    fn dup(&mut self, _position: (), _var: VariableId) {}
 }
 
 /// A state saved for each position in the back analysis.
@@ -133,7 +131,7 @@ pub enum PanicLocation {
 }
 
 impl<'a> Analyzer<'_> for DestructAdder<'a> {
-    type Info = LoweredDemand;
+    type Info = DestructAdderDemand;
 
     fn visit_stmt(
         &mut self,
@@ -148,7 +146,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
             // Since we need to insert destructor call right after the statement.
             (block_id, statement_index + 1),
         );
-        info.variables_used(self, &stmt.inputs(), ());
+        info.variables_used(self, stmt.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())));
     }
 
     fn visit_goto(
@@ -158,7 +156,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
     }
 
     fn merge_match(
@@ -176,8 +174,11 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
                 (demand, use_position)
             })
             .collect_vec();
-        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), ());
+        let mut demand = DestructAdderDemand::merge_demands(&arm_demands, self);
+        demand.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| (var_id, ())),
+        );
         demand
     }
 
@@ -186,8 +187,8 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info {
-        let mut info = LoweredDemand::default();
-        info.variables_used(self, vars, ());
+        let mut info = DestructAdderDemand::default();
+        info.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
         info
     }
 
@@ -204,7 +205,7 @@ impl<'a> DestructAdder<'a> {
     fn update_panic_state(
         &mut self,
         introductions: &[VariableId],
-        info: &mut LoweredDemand,
+        info: &mut DestructAdderDemand,
         block_id: BlockId,
         statement_index: usize,
     ) {
@@ -241,7 +242,7 @@ pub fn add_destructs(
     if lowered.blocks.has_root().is_ok() {
         let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(
             &mut analysis.analyzer,
@@ -272,10 +273,8 @@ pub fn add_destructs(
             .base_semantic_function(db)
             .untyped_stable_ptr(db.upcast());
         for destruction in analysis.analyzer.destructions {
-            let output_var = variables.new_var(VarRequest {
-                ty: unit_ty(db.upcast()),
-                location: variables.get_location(stable_ptr),
-            });
+            let location = variables.get_location(stable_ptr);
+            let output_var = variables.new_var(VarRequest { ty: unit_ty(db.upcast()), location });
             match destruction {
                 DestructionEntry::Plain(PlainDestructionEntry {
                     position: (block_id, insert_index),
@@ -295,7 +294,7 @@ pub fn add_destructs(
                         insert_index,
                         Statement::Call(StatementCall {
                             function: semantic_function.lowered(db),
-                            inputs: vec![var_id],
+                            inputs: vec![VarUsage { var_id, location }],
                             outputs: vec![output_var],
                             location: lowered.variables[var_id].location,
                         }),
@@ -323,7 +322,10 @@ pub fn add_destructs(
                             insert_index,
                             Statement::Call(StatementCall {
                                 function: semantic_function.lowered(db),
-                                inputs: vec![panic_var, var_id],
+                                inputs: vec![panic_var, var_id]
+                                    .into_iter()
+                                    .map(|var_id| VarUsage { var_id, location })
+                                    .collect(),
                                 outputs: vec![panic_var, output_var],
                                 location: lowered.variables[panic_var].location,
                             }),
@@ -334,33 +336,34 @@ pub fn add_destructs(
                         } => {
                             let long_ty = db.lookup_intern_type(lowered.variables[tuple_var].ty);
                             let TypeLongId::Tuple(tys) = long_ty else { unreachable!() };
+
+                            let location = variables.get_location(stable_ptr);
                             let vars = tys
                                 .iter()
                                 .copied()
-                                .map(|ty| {
-                                    variables.new_var(VarRequest {
-                                        ty,
-                                        location: variables.get_location(stable_ptr),
-                                    })
-                                })
+                                .map(|ty| variables.new_var(VarRequest { ty, location }))
                                 .collect::<Vec<_>>();
-                            let output_var = variables.new_var(VarRequest {
-                                ty: unit_ty(db.upcast()),
-                                location: variables.get_location(stable_ptr),
-                            });
+                            let output_var = variables
+                                .new_var(VarRequest { ty: unit_ty(db.upcast()), location });
                             let statements = vec![
                                 Statement::StructDestructure(StatementStructDestructure {
-                                    input: tuple_var,
+                                    input: VarUsage { var_id: tuple_var, location },
                                     outputs: vars.clone(),
                                 }),
                                 Statement::Call(StatementCall {
                                     function: semantic_function.lowered(db),
-                                    inputs: vec![vars[0], var_id],
+                                    inputs: vec![
+                                        VarUsage { var_id: vars[0], location },
+                                        VarUsage { var_id, location },
+                                    ],
                                     outputs: vec![vars[0], output_var],
                                     location: lowered.variables[tuple_var].location,
                                 }),
                                 Statement::StructConstruct(StatementStructConstruct {
-                                    inputs: vars,
+                                    inputs: vars
+                                        .into_iter()
+                                        .map(|var_id| VarUsage { var_id, location })
+                                        .collect(),
                                     output: tuple_var,
                                 }),
                             ];

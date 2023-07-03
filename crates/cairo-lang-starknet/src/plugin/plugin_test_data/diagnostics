@@ -5,13 +5,13 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract;
+mod test_contract;
 
 //! > generated_cairo_code
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract;
+mod test_contract;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contracts without body are not supported.
@@ -19,10 +19,168 @@ error: Plugin diagnostic: Contracts without body are not supported.
 #[starknet::contract]
 ^*******************^
 
-error: Module file not found. Expected path: src/TestContract.cairo
+error: Module file not found. Expected path: src/test_contract.cairo
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^
+
+//! > ==========================================================================
+
+//! > Test first param must be self.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo() {}
+
+    #[external(v0)]
+    fn bar(_n: u32) {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo() {}
+
+    #[external(v0)]
+    fn bar(_n: u32) {}
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 56395456059873064996312675641821105984258358465983630422471486920500588688;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+
+
+
+trait __abi<ContractState> {
+    #[external]
+        fn foo();
+        #[external]
+        fn bar(_n: u32);
+        
+    
+}
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+impls:
+
+impl ContractStateDrop<> of Drop::<ContractState<>>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None(())
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+ --> lib.cairo:8:11
+    fn foo() {}
+          ^^
+
+error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+ --> lib.cairo:11:12
+    fn bar(_n: u32) {}
+           ^*****^
 
 //! > ==========================================================================
 
@@ -33,7 +191,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         mapping: Map::<felt252, felt252>,
@@ -44,7 +202,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         mapping: Map::<felt252, felt252>,
@@ -57,7 +215,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1341682109668993677560518930855711196908916948134858721445948442570067905693;
+const TEST_CLASS_HASH: felt252 = 585714219604284949312488231214316555669580783328194809075076667937711803805;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -79,7 +237,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -188,7 +347,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -206,7 +365,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -226,7 +385,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 754105767191811147979944710646961209961363280570278494420555505184329284073;
+const TEST_CLASS_HASH: felt252 = 393806972942277607821072105318331163597970668207822274409669945054460847164;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -246,7 +405,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -295,8 +455,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo_v0(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v0(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -318,8 +478,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -341,8 +501,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo_v1(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v1(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -420,7 +580,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -432,7 +592,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -446,7 +606,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 176944079142407587387190530893114389990845565313618653790365543142034343496;
+const TEST_CLASS_HASH: felt252 = 516977575265217330182845769154459023540283221406901776467308604288970786024;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -466,7 +626,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -511,8 +672,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -581,7 +742,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -593,7 +754,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -607,7 +768,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 674733877474415941508584206307591616829394990485238586786524939912659551605;
+const TEST_CLASS_HASH: felt252 = 489215812708762262321593369929310129684834641386672889484400421559941333500;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -627,7 +788,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -670,9 +832,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, );
+            let res = super::foo(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -746,7 +908,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -758,7 +920,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -772,7 +934,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1429429983509870149720508681041011741538943313114434010796762656739872213454;
+const TEST_CLASS_HASH: felt252 = 1265092799867197978363841180035964557093255172609887126562878375001682451963;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -792,7 +954,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -837,8 +1000,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::foo(ref storage, __arg_x);
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -908,7 +1071,7 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
                                        ^
 
 error: Type not found.
- --> contract:60:32
+ --> contract:61:32
                 serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
                                ^
 
@@ -926,7 +1089,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -938,7 +1101,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -952,7 +1115,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 501657588045192249015495923887077829935164555967246544055516439806515603398;
+const TEST_CLASS_HASH: felt252 = 1496063534612202122784781543886673498221182393177447897962767144086700522025;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -972,7 +1135,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1020,9 +1184,9 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
+            let mut contract_state = super::unsafe_new_contract_state();
             
-            let res = super::foo(ref storage, __arg_x, __arg_y);
+            let res = super::foo(ref contract_state, __arg_x, __arg_y);
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1096,7 +1260,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -1113,7 +1277,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
@@ -1132,7 +1296,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 938238064410810455539553151030852030316348638665372096617601853905966039814;
+const TEST_CLASS_HASH: felt252 = 1161951693435338292010126047291936292193455496737609784468650217503643411416;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1152,7 +1316,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1201,8 +1366,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1222,8 +1387,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_declare__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_declare__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1243,8 +1408,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__validate_deploy__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_deploy__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1264,8 +1429,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::__execute__(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__execute__(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -1334,7 +1499,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
 
@@ -1370,7 +1535,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {}
 
@@ -1408,7 +1573,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 406140038303566402066747746329142593547865136993594396332720436023616420884;
+const TEST_CLASS_HASH: felt252 = 1546445079340859639365845092387677843502325126655810594464828949621108474705;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1428,7 +1593,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1565,7 +1731,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         same_name: felt252,
@@ -1579,7 +1745,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
         same_name: felt252,
@@ -1595,7 +1761,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 740643162547049089477684638892724514387240513222624188091347173391995815741;
+const TEST_CLASS_HASH: felt252 = 1105606754110051083728243557082802883446336715205195351698561354337476454550;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1617,7 +1783,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1753,7 +1920,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     fn same_name() -> felt252 {
         1
     }
@@ -1763,7 +1930,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     fn same_name() -> felt252 {
         1
     }
@@ -1784,7 +1951,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     struct Storage {
         same_name: felt252,
     }
@@ -1797,7 +1964,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     struct Storage {
         same_name: felt252,
     }
@@ -1821,7 +1988,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -1838,7 +2005,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -1857,7 +2024,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 421416711325618464026129086548833816049770041305674853614145850831686865933;
+const TEST_CLASS_HASH: felt252 = 1738931947817543127574982731191165532662415247853947540214483435696729745212;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1877,7 +2044,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -1989,7 +2157,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[contract]
-mod TestContract {
+mod test_contract {
 
 }
 
@@ -2002,7 +2170,7 @@ trait ContractAbi {
 lib.cairo:
 
 #[contract]
-mod TestContract {
+mod test_contract {
 
 }
 
@@ -2031,7 +2199,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2052,7 +2220,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2075,7 +2243,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1553034322921547056442646243462740009446825625720542295128023423050392851763;
+const TEST_CLASS_HASH: felt252 = 659208935625225645673012054755134575540283560013107281636737814367393316164;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2095,7 +2263,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2143,8 +2312,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_external(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_external(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2164,8 +2333,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_l1_handler(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_l1_handler(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2185,8 +2354,8 @@ mod __external {
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_contract_state();
-            super::AImpl::foo_constructor(ref storage, );
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_constructor(ref contract_state, );
             let mut arr = array::array_new();
             // References.
             // Result.
@@ -2282,7 +2451,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2296,7 +2465,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2312,7 +2481,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 630648468733378027508723437737677651831264605311973040547153568922485258761;
+const TEST_CLASS_HASH: felt252 = 191867647445899813732255736453831540083131731341500404649215625255809344635;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2331,7 +2500,8 @@ use starknet::event::EventEmitter;
 
     
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2409,6 +2579,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 
+
 impls:
 
 impl ContractStateDrop<> of Drop::<ContractState<>>;
@@ -2428,7 +2599,7 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2443,7 +2614,7 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     #[storage]
     struct Storage {
     }
@@ -2460,7 +2631,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1582029945692481340710966191082993519925188868684819773595331942685503258042;
+const TEST_CLASS_HASH: felt252 = 1310046472266970990678663450742219093213412730506752722328026548424285619862;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2480,7 +2651,8 @@ use starknet::event::EventEmitter;
     #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit(ref self: ContractState, event: Event) {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
@@ -2556,6 +2728,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
         Option::None(())
     }
 }
+
 
 
 impls:

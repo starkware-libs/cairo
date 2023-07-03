@@ -29,7 +29,7 @@ fn build_u512_safe_divmod_by_u256(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(13) range_check;
+        buffer(9) range_check;
         deref dividend0;
         deref dividend1;
         deref dividend2;
@@ -41,8 +41,7 @@ fn build_u512_safe_divmod_by_u256(
     casm_build_extend! {casm_builder,
         const zero = 0;
         const one = 1;
-        const u128_bound_minus_i16_upper_bound = u128::MAX - i16::MAX as u128;
-        const i16_lower_bound = BigInt::from(i16::MIN);
+        const u128_bound_minus_4 = u128::MAX - 3;
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         let orig_range_check = range_check;
@@ -83,9 +82,16 @@ fn build_u512_safe_divmod_by_u256(
 
         // Assert remainder is less than divisor.
         tempvar diff1 = divisor1 - remainder1;
-        tempvar diff0 = divisor0 - remainder0;
-        tempvar diff0_min_1 = diff0 - one;
+
+        // Allocate memory cells for the hints,
+        // as well as for the memory used by just one branch.
+        ap += 12;
+        tempvar diff0;
+        tempvar diff0_min_1;
+
         jump HighDiff if diff1 != 0;
+        assert diff0 = divisor0 - remainder0;
+        assert diff0_min_1 = diff0 - one;
         assert diff0_min_1 = *(range_check++);
         jump After;
     HighDiff:
@@ -94,7 +100,6 @@ fn build_u512_safe_divmod_by_u256(
     }
     // Do basic calculations.
     casm_build_extend! {casm_builder,
-        ap += 10;
         tempvar q0d0_low;
         tempvar q0d0_high;
         hint WideMul128 { lhs: quotient0, rhs: divisor0 } into { low: q0d0_low, high: q0d0_high };
@@ -117,10 +122,9 @@ fn build_u512_safe_divmod_by_u256(
         tempvar part0 = q0d0_low + remainder0;
         tempvar part1 = part0 - dividend0;
         tempvar leftover = part1 / u128_limit;
-        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
-        assert a = *(range_check++);
-        tempvar a = leftover - i16_lower_bound;
-        assert a = *(range_check++);
+        // leftover is an integer in range:
+        // [(0 * 2 - u128::MAX) / u128_limit, (u128::MAX * 2 - 0) / u128_limit] ==> [0, 1].
+        assert leftover = leftover * leftover;
         // Validate limb1.
         tempvar part0 = leftover + q0d0_high;
         tempvar part1 = part0 + q1d0_low;
@@ -128,9 +132,10 @@ fn build_u512_safe_divmod_by_u256(
         tempvar part3 = part2 + remainder1;
         tempvar part4 = part3 - dividend1;
         tempvar leftover = part4 / u128_limit;
-        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
-        assert a = *(range_check++);
-        tempvar a = leftover - i16_lower_bound;
+        // leftover is an integer in range:
+        // [(0 + 0 * 4 - u128::MAX) / u128_limit, (1 + u128::MAX * 4 - 0) / u128_limit] ==> [0, 3].
+        assert leftover = *(range_check++);
+        tempvar a = leftover + u128_bound_minus_4;
         assert a = *(range_check++);
         // Validate limb2.
         tempvar part0 = leftover + q1d0_high;
@@ -139,15 +144,18 @@ fn build_u512_safe_divmod_by_u256(
         tempvar part3 = part2 + q2d0_low;
         tempvar part4 = part3 - dividend2;
         tempvar leftover = part4 / u128_limit;
-        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
-        assert a = *(range_check++);
-        tempvar a = leftover - i16_lower_bound;
+        // leftover is an integer in range:
+        // [(0 + 0 * 4 - u128::MAX) / u128_limit, (3 + u128::MAX * 4 - 0) / u128_limit] ==> [0, 3].
+        assert leftover = *(range_check++);
+        tempvar a = leftover + u128_bound_minus_4;
         assert a = *(range_check++);
         // Validate limb3.
-        // We know that limb4 and limb5 should be 0.
-        // Therfore quotient3 or divisor1 should also be 0.
-        // We also know that quotient2*divisor1 and quotient3*divisor0 should be smaller than 2**128.
-        // Therefore the smaller of each pair must be smaller than 2**64.
+        // Because quotient * divisor + remainder = dividend < 2**512,
+        // either quotient3 or divisor1 should be 0.
+        // We also know that quotient2 * divisor1 and quotient3 * divisor0 should be smaller
+        // than 2**128.
+        // Therefore the smaller value from each pair must be smaller than 2**64.
+        // Note that the other pair is zero.
         // So by checking this we can avoid wraparound on the prime.
         tempvar qd3_small;
         tempvar qd3_large;

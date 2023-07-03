@@ -11,7 +11,8 @@ use crate::extensions::array::ArrayConcreteLibfunc;
 use crate::extensions::boolean::BoolConcreteLibfunc;
 use crate::extensions::core::CoreConcreteLibfunc::{
     self, ApTracking, Array, Bool, BranchAlign, Drop, Dup, Ec, Enum, Felt252, FunctionCall, Gas,
-    Mem, Struct, Uint128, Uint16, Uint32, Uint64, Uint8, UnconditionalJump, UnwrapNonZero,
+    Mem, Sint128, Sint16, Sint32, Sint64, Sint8, Struct, Uint128, Uint16, Uint32, Uint64, Uint8,
+    UnconditionalJump, UnwrapNonZero,
 };
 use crate::extensions::ec::EcConcreteLibfunc;
 use crate::extensions::enm::{EnumConcreteLibfunc, EnumInitConcreteLibfunc};
@@ -224,6 +225,9 @@ pub fn simulate<
         Uint32(libfunc) => simulate_u32_libfunc(libfunc, &inputs),
         Uint64(libfunc) => simulate_u64_libfunc(libfunc, &inputs),
         Uint128(libfunc) => simulate_u128_libfunc(libfunc, &inputs),
+        Sint8(_) | Sint16(_) | Sint32(_) | Sint64(_) | Sint128(_) => {
+            unimplemented!("Simulation of signed integer libfuncs is not implemented yet.")
+        }
         Bool(libfunc) => simulate_bool_libfunc(libfunc, &inputs),
         Felt252(libfunc) => simulate_felt252_libfunc(libfunc, &inputs),
         UnwrapNonZero(_) => match &inputs[..] {

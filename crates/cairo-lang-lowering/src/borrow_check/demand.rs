@@ -1,5 +1,5 @@
 /// ! This module provides the Demand utility struct used for analyzing usage of variables.
-use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 /// A reporting trait that reports each variables dup, drop and last_use positions.
 pub trait DemandReporter<Var, Aux = ()> {
@@ -9,24 +9,34 @@ pub trait DemandReporter<Var, Aux = ()> {
         self.drop(position, var);
     }
     fn drop(&mut self, _position: Self::IntroducePosition, _var: Var) {}
-    fn dup(&mut self, _position: Self::UsePosition, _var: Var) {}
-    fn last_use(&mut self, _position: Self::UsePosition, _var_index: usize, _var: Var) {}
+    fn dup(
+        &mut self,
+        _position: Self::UsePosition,
+        _var: Var,
+        _next_usage_position: Self::UsePosition,
+    ) {
+    }
+    fn last_use(&mut self, _position: Self::UsePosition, _var: Var) {}
     fn unused_mapped_var(&mut self, _var: Var) {}
 }
 
 /// Demanded variables from a certain point in the flow until the end of the function.
 /// Needs to be updates in backwards order.
 #[derive(Clone)]
-pub struct Demand<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default = ()> {
-    pub vars: OrderedHashSet<Var>,
+pub struct Demand<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default = ()> {
+    pub vars: OrderedHashMap<Var, UsePosition>,
     pub aux: Aux,
 }
-impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default> Default for Demand<Var, Aux> {
+impl<Var: std::hash::Hash + Eq + Copy, UsePosition, Aux: Clone + Default> Default
+    for Demand<Var, UsePosition, Aux>
+{
     fn default() -> Self {
         Self { vars: Default::default(), aux: Default::default() }
     }
 }
-impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand<Var, Aux> {
+impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default + AuxCombine>
+    Demand<Var, UsePosition, Aux>
+{
     /// Finalizes a demand. Returns a boolean representing success - if all the variable demands
     /// were satisfied.
     pub fn finalize(self) -> bool {
@@ -34,24 +44,27 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Updates the demand when a variable remapping occurs.
-    pub fn apply_remapping<V: Into<Var>, T: DemandReporter<Var, Aux>>(
+    pub fn apply_remapping<
+        'a,
+        V: Copy + Into<Var> + 'a,
+        T: DemandReporter<Var, Aux, UsePosition = UsePosition>,
+    >(
         &mut self,
         reporter: &mut T,
-        remapping: impl Iterator<Item = (V, V)>
+        remapping: impl Iterator<Item = (&'a V, (&'a V, T::UsePosition))>
         + std::iter::DoubleEndedIterator
         + std::iter::ExactSizeIterator,
-        position: T::UsePosition,
     ) {
         // Traverse the remapping in reverse order, as remappings can use the same variable more
         // than once, and the whole usage is analyzed in reverse.
-        for (var_index, (dst, src)) in remapping.enumerate().rev() {
-            let src = src.into();
-            let dst = dst.into();
-            if self.vars.swap_remove(&dst) {
-                if self.vars.insert(src) {
-                    reporter.last_use(position, var_index, src);
+        for (dst, (src, position)) in remapping.rev() {
+            let src = (*src).into();
+            let dst = (*dst).into();
+            if self.vars.swap_remove(&dst).is_some() {
+                if let Some(next_usage_position) = self.vars.insert(src, position) {
+                    reporter.dup(position, src, next_usage_position);
                 } else {
-                    reporter.dup(position, src);
+                    reporter.last_use(position, src);
                 }
             } else {
                 reporter.unused_mapped_var(dst);
@@ -60,18 +73,23 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
     }
 
     /// Updates the demand when some variables are used right before the current flow.
-    pub fn variables_used<V: Copy + Into<Var>, T: DemandReporter<Var, Aux>>(
+    pub fn variables_used<
+        'a,
+        V: Copy + Into<Var> + 'a,
+        T: DemandReporter<Var, Aux, UsePosition = UsePosition>,
+    >(
         &mut self,
         reporter: &mut T,
-        vars: &[V],
-        position: T::UsePosition,
+        vars: impl Iterator<Item = (&'a V, T::UsePosition)>
+        + std::iter::DoubleEndedIterator
+        + std::iter::ExactSizeIterator,
     ) {
-        for (var_index, var) in vars.iter().enumerate().rev() {
-            if !self.vars.insert((*var).into()) {
+        for (var, position) in vars.rev() {
+            if let Some(next_usage_position) = self.vars.insert((*var).into(), position) {
                 // Variable already used. If it's not dup, that is an issue.
-                reporter.dup(position, (*var).into());
+                reporter.dup(position, (*var).into(), next_usage_position);
             } else {
-                reporter.last_use(position, var_index, (*var).into());
+                reporter.last_use(position, (*var).into());
             }
         }
     }
@@ -84,7 +102,7 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
         position: T::IntroducePosition,
     ) {
         for var in vars {
-            if !self.vars.swap_remove(&(*var).into()) {
+            if self.vars.swap_remove(&(*var).into()).is_none() {
                 // Variable introduced, but not demanded. If it's not drop, that is an issue.
                 reporter.drop_aux(position, (*var).into(), self.aux.clone());
             }
@@ -97,15 +115,15 @@ impl<Var: std::hash::Hash + Eq + Copy, Aux: Clone + Default + AuxCombine> Demand
         reporter: &mut T,
     ) -> Self {
         // Union demands.
-        let mut vars = OrderedHashSet::new();
+        let mut vars = OrderedHashMap::default();
         for (arm_demand, _) in demands {
-            vars.extend(arm_demand.vars.iter().copied());
+            vars.extend(arm_demand.vars.iter().map(|(var, position)| (*var, *position)));
         }
         let demand = Self { vars, aux: Aux::merge(demands.iter().map(|(d, _)| &d.aux)) };
         // Check each var.
-        for var in demand.vars.iter() {
+        for var in demand.vars.keys() {
             for (arm_demand, position) in demands {
-                if !arm_demand.vars.contains(var) {
+                if !arm_demand.vars.contains_key(var) {
                     // Variable demanded only on some branches. It should be dropped in other.
                     // If it's not drop, that is an issue.
                     reporter.drop_aux(*position, *var, arm_demand.aux.clone());

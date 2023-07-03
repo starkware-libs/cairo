@@ -60,7 +60,7 @@ impl TestRunner {
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
     pub fn new(
-        path: &str,
+        path: &Path,
         filter: &str,
         include_ignored: bool,
         ignored: bool,
@@ -82,7 +82,7 @@ impl TestRunner {
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 
         if DiagnosticsReporter::stderr().check(db) {
-            bail!("failed to compile: {}", path);
+            bail!("failed to compile: {}", path.display());
         }
 
         Ok(Self {

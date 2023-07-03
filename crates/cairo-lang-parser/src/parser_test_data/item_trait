@@ -173,7 +173,7 @@ SyntaxFile
 test_partial_parser_tree
 
 //! > cairo_code
-mod X {
+mod x {
     trait A {
         fn foo() {}
     }
@@ -195,7 +195,7 @@ ItemStruct
     │   └── child #0 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
     │       ├── module_kw (kind: TokenModule): 'mod'
-    │       ├── name (kind: TokenIdentifier): 'X'
+    │       ├── name (kind: TokenIdentifier): 'x'
     │       └── body (kind: ModuleBody)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── items (kind: ItemList)

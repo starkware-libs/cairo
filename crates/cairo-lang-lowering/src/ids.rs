@@ -352,7 +352,7 @@ impl LocationId {
     pub fn with_auto_generation_note(
         &self,
         db: &dyn LoweringGroup,
-        logic_name: String,
+        logic_name: &str,
     ) -> LocationId {
         self.with_note(db, format!("while compiling auto-generated {logic_name}"))
     }

@@ -21,7 +21,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 const MASK_64: u256 = 0xFFFFFFFFFFFFFFFF;
 const MASK_160: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-const TWO_POW_160: u256 = 10000000000000000000000000000000000000000;
+const TWO_POW_160: u256 = 0x10000000000000000000000000000000000000000;
 
 #[derive(Copy, Drop, Serde)]
 struct Proposal {
@@ -86,7 +86,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
 }
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use super::Proposal;
     #[storage]
     struct Storage {

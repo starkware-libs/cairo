@@ -15,7 +15,7 @@ cairo_lang_test_utils::test_file_test!(
     expand_plugin,
     "src/test_data",
     {
-        consteval_int: "consteval_int",
+        inline_macros: "inline_macros",
         config: "config",
         derive: "derive",
         generate_trait: "generate_trait",

@@ -8,8 +8,8 @@ use crate::extensions::bitwise::BitwiseType;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::is_zero::{IsZeroLibfunc, IsZeroTraits};
 use crate::extensions::lib_func::{
-    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::range_check::RangeCheckType;
 use crate::extensions::{
@@ -209,7 +209,7 @@ impl NoGenericArgsGenericLibfunc for U128ByteReverseLibfunc {
                 // result
                 OutputVarInfo {
                     ty: u128_ty,
-                    ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 },
+                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
                 },
             ],
             SierraApChange::Known { new_vars_only: false },

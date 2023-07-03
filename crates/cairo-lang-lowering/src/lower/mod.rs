@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
@@ -125,7 +127,7 @@ pub fn lower_function(
                 SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                     // Convert to a return.
                     let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                    let var = expr.unwrap_or_else(|| {
+                    let var_usage = expr.unwrap_or_else(|| {
                         generators::StructConstruct {
                             inputs: vec![],
                             ty: unit_ty(ctx.db.upcast()),
@@ -133,7 +135,7 @@ pub fn lower_function(
                         }
                         .add(&mut ctx, &mut builder.statements)
                     });
-                    builder.ret(&mut ctx, var, location)?;
+                    builder.ret(&mut ctx, var_usage.var_id, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -196,16 +198,16 @@ pub fn lower_loop_function(
         match block_sealed {
             SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                 // Convert to a return.
-                let var = expr.unwrap_or_else(|| {
+                let location = ctx.get_location(semantic_block.stable_ptr.untyped());
+                let var_usage = expr.unwrap_or_else(|| {
                     generators::StructConstruct {
                         inputs: vec![],
                         ty: unit_ty(ctx.db.upcast()),
-                        location: ctx.get_location(semantic_block.stable_ptr.untyped()),
+                        location,
                     }
                     .add(&mut ctx, &mut builder.statements)
                 });
-                let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                builder.ret(&mut ctx, var, location)?;
+                builder.ret(&mut ctx, var_usage.var_id, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
@@ -288,7 +290,7 @@ pub fn lowered_expr_to_block_scope_end(
 ) -> Maybe<SealedBlockBuilder> {
     Ok(match lowered_expr {
         Ok(LoweredExpr::Tuple { exprs, .. }) if exprs.is_empty() => builder.goto_callsite(None),
-        Ok(lowered_expr) => match lowered_expr.var(ctx, &mut builder) {
+        Ok(lowered_expr) => match lowered_expr.as_var_usage(ctx, &mut builder) {
             Ok(var) => builder.goto_callsite(Some(var)),
             Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
         },
@@ -393,7 +395,7 @@ fn lower_single_pattern(
                     })
                     .collect(),
             };
-            for (var, (_, member)) in
+            for (var_id, (_, member)) in
                 generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
@@ -401,31 +403,40 @@ fn lower_single_pattern(
                         ctx,
                         builder,
                         member_pattern,
-                        LoweredExpr::AtVariable(var),
+                        LoweredExpr::AtVariable(VarUsage {
+                            var_id,
+                            location: ctx.get_location(member_pattern.stable_ptr().untyped()),
+                        }),
                     )?;
                 }
             }
         }
-        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, stable_ptr }) => {
-            let location = ctx.get_location(stable_ptr.untyped());
+        semantic::Pattern::Tuple(semantic::PatternTuple { field_patterns, ty, .. }) => {
             let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
                 exprs
             } else {
                 let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), *ty);
-                let reqs = extract_matches!(long_type_id, TypeLongId::Tuple)
-                    .into_iter()
-                    .map(|ty| VarRequest {
-                        ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                        location,
-                    })
-                    .collect();
+                let reqs =
+                    zip_eq(field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
+                        .map(|(pattern, ty)| VarRequest {
+                            ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
+                            location: ctx.get_location(pattern.deref().stable_ptr().untyped()),
+                        })
+                        .collect();
                 generators::StructDestructure {
                     input: lowered_expr.var(ctx, builder)?,
                     var_reqs: reqs,
                 }
                 .add(ctx, &mut builder.statements)
                 .into_iter()
-                .map(LoweredExpr::AtVariable)
+                .map(|var_id| {
+                    LoweredExpr::AtVariable(VarUsage {
+                        var_id,
+                        // The variable is used immediatly after the destructure, so the usage
+                        // location is the same as the definition location.
+                        location: ctx.variables[var_id].location,
+                    })
+                })
                 .collect()
             };
             for (var, pattern) in zip_eq(outputs, field_patterns) {
@@ -584,7 +595,7 @@ fn lower_expr_desnap(
     if let LoweredExpr::Snapshot { expr, .. } = &expr {
         return Ok(expr.as_ref().clone());
     }
-    let input = expr.var(ctx, builder)?;
+    let input = expr.as_var_usage(ctx, builder)?;
 
     Ok(LoweredExpr::AtVariable(
         generators::Desnap { input, location }.add(ctx, &mut builder.statements),
@@ -611,7 +622,7 @@ fn lower_expr_function_call(
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
-        return Err(LoweringFlowError::Panic(input.var_id));
+        return Err(LoweringFlowError::Panic(input.var_id, location));
     }
 
     // The following is relevant only to extern functions.
@@ -689,13 +700,20 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: call_result.returns[0],
+                input: VarUsage { var_id: call_result.returns[0], location } ,
                 arms: vec![],
                 location,
             })));
         }
 
-        let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
+        let res = LoweredExpr::AtVariable(
+            call_result
+                .returns
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location })
+                .next()
+                .unwrap(),
+        );
         return Ok((call_result.extra_outputs, res));
     };
 
@@ -785,7 +803,9 @@ fn call_loop_func(
         builder.update_ref(ctx, ref_arg, output_var);
     }
 
-    Ok(LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap()))
+    Ok(LoweredExpr::AtVariable(
+        call_result.returns.into_iter().map(|var_id| VarUsage { var_id, location }).next().unwrap(),
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
@@ -843,7 +863,8 @@ fn lower_expr_match(
                 location: pattern_location,
             });
             arm_var_ids.push(vec![var_id]);
-            let variant_expr = LoweredExpr::AtVariable(var_id);
+            let variant_expr =
+                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
             match lower_single_pattern(
                 ctx,
@@ -866,7 +887,7 @@ fn lower_expr_match(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
-        input: expr_var,
+        input: VarUsage { var_id: expr_var, location },
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -948,7 +969,12 @@ fn lower_optimized_extern_match(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum.inputs,
+        inputs: extern_enum
+            .inputs
+            .iter()
+            .cloned()
+            .map(|var_id| VarUsage { var_id, location })
+            .collect(),
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -1013,7 +1039,7 @@ fn lower_expr_match_felt252(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![expr_var],
+        inputs: vec![VarUsage { var_id: expr_var, location }],
         arms: vec![
             MatchArm {
                 variant_id: jump_nz_zero_variant(semantic_db),
@@ -1119,7 +1145,7 @@ fn lower_expr_enum_ctor(
     let location = ctx.get_location(expr.stable_ptr.untyped());
     Ok(LoweredExpr::AtVariable(
         generators::EnumConstruct {
-            input: lower_expr(ctx, builder, expr.value_expr)?.var(ctx, builder)?,
+            input: lower_expr_to_var_usage(ctx, builder, expr.value_expr)?,
             variant: expr.variant.clone(),
             location,
         }
@@ -1153,7 +1179,7 @@ fn lower_expr_member_access(
     }
     Ok(LoweredExpr::AtVariable(
         generators::StructMemberAccess {
-            input: lower_expr(ctx, builder, expr.expr)?.var(ctx, builder)?,
+            input: lower_expr_to_var_usage(ctx, builder, expr.expr)?,
             member_tys: members
                 .into_iter()
                 .map(|(_, member)| wrap_in_snapshots(ctx.db.upcast(), member.ty, expr.n_snapshots))
@@ -1182,9 +1208,7 @@ fn lower_expr_struct_ctor(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| {
-                    lower_expr(ctx, builder, member_expr[&member.id])?.var(ctx, builder)
-                })
+                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,
@@ -1223,22 +1247,25 @@ fn lower_expr_error_propagate(
     let subscope_ok = create_subscope_with_bound_refs(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
     let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
-    let sealed_block_ok = subscope_ok.goto_callsite(Some(expr_var));
+    let sealed_block_ok = subscope_ok.goto_callsite(Some(VarUsage { var_id: expr_var, location }));
 
     // Err arm.
     let mut subscope_err = create_subscope_with_bound_refs(ctx, builder);
     let block_err_id = subscope_err.block_id;
     let err_value = ctx.new_var(VarRequest { ty: err_variant.ty, location });
-    let err_res =
-        generators::EnumConstruct { input: err_value, variant: func_err_variant.clone(), location }
-            .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
+    let err_res = generators::EnumConstruct {
+        input: VarUsage { var_id: err_value, location },
+        variant: func_err_variant.clone(),
+        location,
+    }
+    .add(ctx, &mut subscope_err.statements);
+    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: ok_variant.concrete_enum_id,
-        input: var,
+        input: VarUsage { var_id: var, location },
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),
@@ -1281,8 +1308,8 @@ fn lower_optimized_extern_error_propagate(
         input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
-    let expr =
-        extern_facade_expr(ctx, ok_variant.ty, input_vars, location).var(ctx, &mut subscope_ok)?;
+    let expr = extern_facade_expr(ctx, ok_variant.ty, input_vars, location)
+        .as_var_usage(ctx, &mut subscope_ok)?;
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr));
 
     // Err arm.
@@ -1295,16 +1322,21 @@ fn lower_optimized_extern_error_propagate(
 
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_err);
     let expr = extern_facade_expr(ctx, err_variant.ty, input_vars, location);
-    let input = expr.var(ctx, &mut subscope_err)?;
+    let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum.inputs,
+        inputs: extern_enum
+            .inputs
+            .iter()
+            .cloned()
+            .map(|var_id| VarUsage { var_id, location })
+            .collect(),
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),

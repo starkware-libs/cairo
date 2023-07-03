@@ -65,6 +65,7 @@ pub type VariableId = Id<Variable>;
 ///
 /// The tail expression `1 + a`  is also going to be assinged a variable and a VarUsage.
 /// in that case, the location of both the variable and the usage will be the same.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct VarUsage {
     pub var_id: VariableId,
     pub location: LocationId,
@@ -182,7 +183,7 @@ pub enum Statement {
     Desnap(StatementDesnap),
 }
 impl Statement {
-    pub fn inputs(&self) -> Vec<VariableId> {
+    pub fn inputs(&self) -> Vec<VarUsage> {
         match &self {
             Statement::Literal(_stmt) => vec![],
             Statement::Call(stmt) => stmt.inputs.clone(),
@@ -221,7 +222,7 @@ pub struct StatementCall {
     /// A function to "call".
     pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     /// New variables to be introduced into the current scope from the function outputs.
     pub outputs: Vec<VariableId>,
     /// Location for the call.
@@ -234,7 +235,7 @@ pub struct StatementCall {
 pub struct StatementEnumConstruct {
     pub variant: ConcreteVariant,
     /// A living variable in current scope to wrap with the variant.
-    pub input: VariableId,
+    pub input: VarUsage,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
@@ -242,7 +243,7 @@ pub struct StatementEnumConstruct {
 /// A statement that constructs a struct (tuple included) into a new variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementStructConstruct {
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
@@ -252,7 +253,7 @@ pub struct StatementStructConstruct {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementStructDestructure {
     /// A living variable in current scope to destructure.
-    pub input: VariableId,
+    pub input: VarUsage,
     /// The variables to bind values to.
     pub outputs: Vec<VariableId>,
 }
@@ -260,7 +261,7 @@ pub struct StatementStructDestructure {
 /// A statement that takes a snapshot of a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementSnapshot {
-    pub input: VariableId,
+    pub input: VarUsage,
     pub output_original: VariableId,
     pub output_snapshot: VariableId,
 }
@@ -268,7 +269,7 @@ pub struct StatementSnapshot {
 /// A statement that desnaps a variable.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatementDesnap {
-    pub input: VariableId,
+    pub input: VarUsage,
     /// The variable to bind the value to.
     pub output: VariableId,
 }
@@ -294,7 +295,7 @@ pub struct MatchExternInfo {
     /// A concrete external function to call.
     pub function: FunctionId,
     /// Living variables in current scope to move to the function, as arguments.
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
@@ -307,7 +308,7 @@ pub struct MatchExternInfo {
 pub struct MatchEnumInfo {
     pub concrete_enum_id: ConcreteEnumId,
     /// A living variable in current scope to match on.
-    pub input: VariableId,
+    pub input: VarUsage,
     /// Match arms. All blocks should have the same rets.
     /// Order must be identical to the order in the definition of the enum.
     pub arms: Vec<MatchArm>,
@@ -321,7 +322,7 @@ pub enum MatchInfo {
     Extern(MatchExternInfo),
 }
 impl MatchInfo {
-    pub fn inputs(&self) -> Vec<VariableId> {
+    pub fn inputs(&self) -> Vec<VarUsage> {
         match self {
             MatchInfo::Enum(s) => vec![s.input],
             MatchInfo::Extern(s) => s.inputs.clone(),

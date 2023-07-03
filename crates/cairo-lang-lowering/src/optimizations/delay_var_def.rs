@@ -17,7 +17,7 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 
@@ -80,15 +80,15 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
             Statement::Literal(stmt) => stmt.output,
             Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
             Statement::StructDestructure(stmt)
-                if self.lowered.variables[stmt.input].droppable.is_ok()
+                if self.lowered.variables[stmt.input.var_id].droppable.is_ok()
                     && stmt.outputs.iter().all(|var_id| !info.next_use.contains_key(var_id)) =>
             {
                 self.statement_to_move.push((statement_location, None));
                 return;
             }
             _ => {
-                for var_id in stmt.inputs() {
-                    info.next_use.insert(var_id, statement_location);
+                for var_usage in stmt.inputs() {
+                    info.next_use.insert(var_usage.var_id, statement_location);
                 }
                 return;
             }
@@ -132,8 +132,8 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
             }
         }
 
-        for var_id in match_info.inputs() {
-            info.next_use.insert(var_id, statement_location);
+        for var_usage in match_info.inputs() {
+            info.next_use.insert(var_usage.var_id, statement_location);
         }
 
         info

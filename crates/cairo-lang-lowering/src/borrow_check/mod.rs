@@ -10,17 +10,25 @@ use crate::borrow_check::analysis::BackAnalysis;
 use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind::*;
 use crate::diagnostic::LoweringDiagnostics;
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::ids::LocationId;
+use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 pub mod analysis;
 pub mod demand;
 
-pub type LoweredDemand = Demand<VariableId, PanicState>;
+pub type BorrowCheckerDemand = Demand<VariableId, LocationId, PanicState>;
 pub struct BorrowChecker<'a> {
     db: &'a dyn LoweringGroup,
     diagnostics: &'a mut LoweringDiagnostics,
     lowered: &'a FlatLowered,
     success: Maybe<()>,
+}
+
+impl BorrowChecker<'_> {
+    // TODO(ilya): Remove the following function once we have usage locations for all the variables.
+    fn with_location<'a>(&self, var_id: &'a VariableId) -> (&'a VariableId, LocationId) {
+        (var_id, self.lowered.variables[*var_id].location)
+    }
 }
 
 /// A state saved for each position in the back analysis.
@@ -46,7 +54,7 @@ impl AuxCombine for PanicState {
 
 impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
     type IntroducePosition = ();
-    type UsePosition = ();
+    type UsePosition = LocationId;
 
     fn drop_aux(&mut self, _position: (), var_id: VariableId, panic_state: PanicState) {
         let var = &self.lowered.variables[var_id];
@@ -61,18 +69,19 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         ));
     }
 
-    fn dup(&mut self, _position: (), var: VariableId) {
-        let var = &self.lowered.variables[var];
+    fn dup(&mut self, _position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
+        let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
-            self.success = Err(self
-                .diagnostics
-                .report_by_location(var.location.get(self.db), VariableMoved { inference_error }));
+            self.success = Err(self.diagnostics.report_by_location(
+                next_usage_position.get(self.db),
+                VariableMoved { inference_error },
+            ));
         }
     }
 }
 
 impl<'a> Analyzer<'_> for BorrowChecker<'a> {
-    type Info = LoweredDemand;
+    type Info = BorrowCheckerDemand;
 
     fn visit_stmt(
         &mut self,
@@ -86,9 +95,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 if let Ok(signature) = stmt.function.signature(self.db) {
                     if signature.panicable {
                         // Be prepared to panic here.
-                        let panic_demand =
-                            LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-                        *info = LoweredDemand::merge_demands(
+                        let panic_demand = BorrowCheckerDemand {
+                            aux: PanicState::EndsWithPanic,
+                            ..Default::default()
+                        };
+                        *info = BorrowCheckerDemand::merge_demands(
                             &[(panic_demand, ()), (info.clone(), ())],
                             self,
                         );
@@ -106,7 +117,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
             }
             _ => {}
         }
-        info.variables_used(self, &stmt.inputs(), ());
+        info.variables_used(
+            self,
+            stmt.inputs().iter().map(|VarUsage { var_id, location }| (var_id, *location)),
+        );
     }
 
     fn visit_goto(
@@ -116,7 +130,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (*dst, *src)), ());
+        info.apply_remapping(
+            self,
+            remapping.iter().map(|(dst, src)| (dst, (src, self.lowered.variables[*src].location))),
+        );
     }
 
     fn merge_match(
@@ -132,8 +149,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 (demand, ())
             })
             .collect_vec();
-        let mut demand = LoweredDemand::merge_demands(&arm_demands, self);
-        demand.variables_used(self, &match_info.inputs(), ());
+        let mut demand = BorrowCheckerDemand::merge_demands(&arm_demands, self);
+        demand.variables_used(
+            self,
+            match_info.inputs().iter().map(|VarUsage { var_id, location }| (var_id, *location)),
+        );
         demand
     }
 
@@ -142,8 +162,11 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         vars: &[VariableId],
     ) -> Self::Info {
-        let mut info = LoweredDemand::default();
-        info.variables_used(self, vars, ());
+        let mut info = BorrowCheckerDemand::default();
+        info.variables_used(
+            self,
+            vars.iter().map(|var_id| self.with_location(var_id)).collect_vec().into_iter(),
+        );
         info
     }
 
@@ -152,8 +175,8 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         data: &VariableId,
     ) -> Self::Info {
-        let mut info = LoweredDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-        info.variables_used(self, &[*data], ());
+        let mut info = BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
+        info.variables_used(self, std::iter::once(self.with_location(data)));
         info
     }
 }
@@ -170,7 +193,7 @@ pub fn borrow_check(
     if lowered.blocks.has_root().is_ok() {
         let checker = BorrowChecker { db, diagnostics: &mut diagnostics, lowered, success: Ok(()) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, ());
         let success = analysis.analyzer.success;

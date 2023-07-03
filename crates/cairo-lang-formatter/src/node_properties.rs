@@ -195,7 +195,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ExprListBraced
+                | SyntaxKind::ExprListBracketed
                 | SyntaxKind::ExprUnary => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
@@ -214,7 +216,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ExprListBraced
+                | SyntaxKind::ExprListBracketed
                 | SyntaxKind::ExprUnary => Some(10),
                 _ => None,
             },
@@ -231,7 +235,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
-                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ExprListBraced
+                | SyntaxKind::ExprListBracketed
                 | SyntaxKind::ExprUnary => Some(1),
                 SyntaxKind::TerminalEq => Some(10),
                 SyntaxKind::PatternEnum | SyntaxKind::PatternTuple | SyntaxKind::PatternStruct => {
@@ -244,7 +250,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::ExprParenthesized
                 | SyntaxKind::ExprList
                 | SyntaxKind::ExprBlock
-                | SyntaxKind::ExprTuple
+                | SyntaxKind::ExprListParenthesized
+                | SyntaxKind::ExprListBraced
+                | SyntaxKind::ExprListBracketed
                 | SyntaxKind::PatternTuple
                 | SyntaxKind::ModuleBody
                 | SyntaxKind::MatchArms
