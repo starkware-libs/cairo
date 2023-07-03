@@ -132,7 +132,9 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping.iter().map(|(dst, src)| (dst, (src, self.lowered.variables[*src].location))),
+            remapping
+                .iter()
+                .map(|(dst, VarUsage { var_id: src, location })| (dst, (src, *location))),
         );
     }
 
