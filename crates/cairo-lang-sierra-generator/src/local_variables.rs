@@ -183,10 +183,10 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
+        demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
 

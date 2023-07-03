@@ -84,7 +84,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
         let outputs = match &self {
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
-                returns.clone()
+                returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
             FlatBlockEnd::Panic(data) => {
                 write!(f, "  Panic(")?;

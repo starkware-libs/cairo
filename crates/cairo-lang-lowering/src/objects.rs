@@ -135,7 +135,7 @@ pub enum FlatBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VariableId>),
+    Return(Vec<VarUsage>),
     /// This block ends with a panic.
     Panic(VariableId),
     /// This block ends with a jump to a different block.
