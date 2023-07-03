@@ -77,7 +77,7 @@ fn add_drop_statements(
     drop_location: &DropLocation,
     statements: &mut Vec<pre_sierra::Statement>,
 ) -> Maybe<()> {
-    let Some(vars) = drops.get(drop_location) else { return Ok(()) };
+    let Some(vars) = drops.get(drop_location)  else { return Ok(()) };
 
     for sierra_gen_var in vars {
         let sierra_var = context.get_sierra_variable(*sierra_gen_var);
@@ -297,10 +297,8 @@ fn generate_statement_call_code(
     // Checks if the call invalidates ap tracking.
     let libfunc_signature = get_libfunc_signature(context.get_db(), libfunc_id.clone());
     let [branch_signature] = &libfunc_signature.branch_signatures[..] else {
-        panic!(
-            "Unexpected branches in '{}'.",
-            DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id)
-        );
+        panic!("Unexpected branches in '{}'.",
+        DebugReplacer { db: context.get_db() }.replace_libfunc_id(&libfunc_id));
     };
     if matches!(branch_signature.ap_change, SierraApChange::Unknown) {
         context.set_ap_tracking(false)

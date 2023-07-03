@@ -138,14 +138,14 @@ fn generate_derive_code_for_type(
         }
 
         for arg in attr.args {
-            let AttributeArg {
-                variant:
-                    AttributeArgVariant::Unnamed {
-                        value: ast::Expr::Path(path), value_stable_ptr, ..
-                    },
+            let AttributeArg{
+                variant: AttributeArgVariant::Unnamed {
+                    value: ast::Expr::Path(path),
+                    value_stable_ptr,
+                    ..
+                },
                 ..
-            } = arg
-            else {
+            } = arg else {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: arg.arg_stable_ptr.untyped(),
                     message: "Expected path.".into(),

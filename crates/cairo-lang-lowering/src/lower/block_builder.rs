@@ -178,8 +178,7 @@ impl BlockBuilder {
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: LocationId,
     ) -> LoweringResult<LoweredExpr> {
-        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
-        else {
+        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
             return Err(LoweringFlowError::Match(match_info));
         };
 
@@ -209,8 +208,8 @@ impl BlockBuilder {
         // Remap Variables from all blocks.
         for sealed_block in &sealed_blocks {
             let SealedBlockBuilder::GotoCallsite { builder: subscope, expr } = sealed_block else {
-                continue;
-            };
+            continue;
+        };
             n_reachable_blocks += 1;
             if let Some(var_usage) = expr {
                 semantic_remapping.expr.get_or_insert_with(|| {

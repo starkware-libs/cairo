@@ -45,10 +45,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
     let [trait_ast_segment] = &trait_ast.elements(db)[..] else {
         return PluginResult {
             code: None,
-            diagnostics: vec![PluginDiagnostic {
-                stable_ptr: trait_ast.stable_ptr().untyped(),
-                message: "Generated trait must have a single element path.".to_string(),
-            }],
+            diagnostics: vec![
+                PluginDiagnostic {
+                    stable_ptr: trait_ast.stable_ptr().untyped(),
+                    message: "Generated trait must have a single element path.".to_string(),
+                }],
             remove_original_item: false,
         };
     };
@@ -99,10 +100,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
                             return false;
                         };
                         let [ast::PathSegment::Simple(trait_generic_arg)] =
-                            &trait_generic_arg.elements(db)[..]
-                        else {
-                            return false;
-                        };
+                        &trait_generic_arg.elements(db)[..] else { return false; };
                         let trait_generic_arg_name = trait_generic_arg.ident(db);
                         let impl_generic_param_name = match impl_generic_param {
                             ast::GenericParam::Type(param) => param.name(db),
