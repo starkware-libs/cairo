@@ -137,7 +137,7 @@ pub enum FlatBlockEnd {
     /// This block ends with a `return` statement, exiting the function.
     Return(Vec<VarUsage>),
     /// This block ends with a panic.
-    Panic(VariableId),
+    Panic(VarUsage),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
     Match {

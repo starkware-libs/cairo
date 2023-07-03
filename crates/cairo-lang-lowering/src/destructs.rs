@@ -195,7 +195,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panic should have been lowered.")
     }

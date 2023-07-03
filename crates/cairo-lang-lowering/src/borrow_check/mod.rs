@@ -24,13 +24,6 @@ pub struct BorrowChecker<'a> {
     success: Maybe<()>,
 }
 
-impl BorrowChecker<'_> {
-    // TODO(ilya): Remove the following function once we have usage locations for all the variables.
-    fn with_location<'a>(&self, var_id: &'a VariableId) -> (&'a VariableId, LocationId) {
-        (var_id, self.lowered.variables[*var_id].location)
-    }
-}
-
 /// A state saved for each position in the back analysis.
 /// Used to determine if this flow is guaranteed to end in a panic.
 #[derive(Copy, Clone, Default)]
@@ -175,10 +168,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        data: &VariableId,
+        data: &VarUsage,
     ) -> Self::Info {
         let mut info = BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-        info.variables_used(self, std::iter::once(self.with_location(data)));
+        info.variables_used(self, std::iter::once((&data.var_id, data.location)));
         info
     }
 }

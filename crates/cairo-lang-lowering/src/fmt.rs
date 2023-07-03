@@ -88,7 +88,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
             }
             FlatBlockEnd::Panic(data) => {
                 write!(f, "  Panic(")?;
-                vec![*data]
+                vec![data.var_id]
             }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));

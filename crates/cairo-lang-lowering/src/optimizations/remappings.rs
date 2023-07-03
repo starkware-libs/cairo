@@ -112,8 +112,8 @@ pub fn optimize_remappings(lowered: &mut FlatLowered) {
                 }
             }
             FlatBlockEnd::Panic(data) => {
-                let var = ctx.map_var_id(*data);
-                ctx.set_used(var);
+                let var_usage = ctx.map_var_usage(*data);
+                ctx.set_used(var_usage.var_id);
             }
             FlatBlockEnd::Goto(_, _) => {}
             FlatBlockEnd::Match { info } => {

@@ -128,7 +128,7 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
     }
 }
