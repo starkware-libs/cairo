@@ -1,4 +1,6 @@
-use std::str::FromStr;
+#[cfg(not(feature = "std"))]
+use alloc::string::ToString;
+use core::str::FromStr;
 
 use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::indoc;

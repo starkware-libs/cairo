@@ -2,12 +2,13 @@
 #[path = "bigint_test.rs"]
 mod test;
 
-use std::ops::Neg;
+#[cfg(not(feature = "std"))]
+use alloc::{format, string::String, vec::Vec};
+use core::ops::Neg;
 
 use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::{Num, Signed};
 use parity_scale_codec::{Decode, Encode};
-use schemars::JsonSchema;
 use serde::ser::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 
@@ -47,17 +48,21 @@ where
 }
 
 // A wrapper for BigInt that serializes as hex.
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[serde(transparent)]
 pub struct BigIntAsHex {
     /// A field element that encodes the signature of the called function.
     #[serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")]
-    #[schemars(schema_with = "big_int_schema")]
+    #[cfg_attr(feature = "schemars", schemars(schema_with = "big_int_schema"))]
     pub value: BigInt,
 }
 
 // BigInt doesn't implement JsonSchema, so we need to manually define it.
+#[cfg(feature = "schemars")]
 fn big_int_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    use schemars::JsonSchema;
+
     #[allow(dead_code)]
     #[derive(JsonSchema)]
     pub enum Sign {

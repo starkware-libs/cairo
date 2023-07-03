@@ -1,0 +1,46 @@
+[package]
+name = "cairo-lang-vm-utils"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Shared helper function to interact with the cairo-vm"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cairo-lang-casm = { path = "../cairo-lang-casm", default-features = false }
+cairo-lang-utils= { path = "../cairo-lang-utils", default-features = false }
+cairo-vm.workspace = true
+cairo-felt.workspace = true
+
+# Optional dependencies
+ark-std = {workspace = true, optional = true }
+ark-ff = { workspace = true, optional = true }
+num-traits = { workspace = true, optional = true }
+num-bigint = { workspace = true, optional = true }
+num-integer = { workspace = true, optional = true }
+hashbrown = { workspace = true, optional = true }
+
+
+[features]
+default = ["std"]
+std = [
+    "cairo-lang-casm/std",
+    "cairo-lang-utils/std",
+    "cairo-vm/std",
+    "cairo-felt/std",
+    "ark-std?/std",
+    "ark-ff?/std",
+    "num-traits?/std",
+    "num-bigint?/std",
+    "num-integer?/std"
+]
+execute_core_hints = [
+    "dep:ark-std",
+    "dep:ark-ff",
+    "dep:num-traits",
+    "dep:num-bigint",
+    "dep:num-integer", 
+    "dep:hashbrown",
+]

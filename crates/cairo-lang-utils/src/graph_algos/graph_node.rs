@@ -1,3 +1,5 @@
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 use core::hash::Hash;
 
 /// A trait for a node in a graph. Note that a GraphNode has to be able to provide its neighbors

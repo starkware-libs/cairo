@@ -1,5 +1,7 @@
 //! Logic for computing the strongly connected component of a node in a graph.
 
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
 use core::hash::Hash;
 
 use super::graph_node::GraphNode;
@@ -84,7 +86,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 // neighbor was not visited yet. Visit it and maybe apply its lowlink to root.
                 compute_scc_recursive(ctx, &neighbor);
                 // Now neighbor should be in known_nodes.
-                current_wrapper_node.lowlink = std::cmp::min(
+                current_wrapper_node.lowlink = core::cmp::min(
                     current_wrapper_node.lowlink,
                     ctx.known_nodes[&neighbor_id].lowlink,
                 );
@@ -93,7 +95,7 @@ fn compute_scc_recursive<Node: GraphNode>(ctx: &mut SccAlgoContext<Node>, curren
                 if ctx.known_nodes[&neighbor_id].on_stack {
                     // This is a back edge, meaning neighbor is in current_node's SCC.
                     current_wrapper_node.lowlink =
-                        std::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
+                        core::cmp::min(current_wrapper_node.lowlink, neighbor_node.index);
                 } else {
                     // If neighbor is known but not on stack, it's in a concluded dropped SCC.
                     // Ignore it.

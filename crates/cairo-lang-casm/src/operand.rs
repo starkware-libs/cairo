@@ -1,17 +1,15 @@
-use std::fmt::Display;
+use core::fmt::Display;
 
 use cairo_lang_utils::bigint::BigIntAsHex;
 use parity_scale_codec_derive::{Decode, Encode};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
 mod test;
 
-#[derive(
-    Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, JsonSchema,
-)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Register {
     #[codec(index = 0)]
     AP,
@@ -19,7 +17,7 @@ pub enum Register {
     FP,
 }
 impl Display for Register {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Register::AP => write!(f, "ap"),
             Register::FP => write!(f, "fp"),
@@ -28,7 +26,8 @@ impl Display for Register {
 }
 
 // Represents the rhs operand of an assert equal InstructionBody.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum ResOperand {
     #[codec(index = 0)]
     Deref(CellRef),
@@ -40,7 +39,7 @@ pub enum ResOperand {
     BinOp(BinOpOperand),
 }
 impl Display for ResOperand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             ResOperand::Deref(operand) => write!(f, "{operand}"),
             ResOperand::DoubleDeref(operand, offset) => write!(f, "[{operand} + {offset}]"),
@@ -65,13 +64,14 @@ impl<T: Into<BigIntAsHex>> From<T> for ResOperand {
 }
 
 /// Represents an operand of the form [reg + offset].
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
+#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct CellRef {
     pub register: Register,
     pub offset: i16,
 }
 impl Display for CellRef {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "[{} + {}]", self.register, self.offset)
     }
 }
@@ -81,7 +81,8 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
     CellRef { register: Register::AP, offset }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum DerefOrImmediate {
     #[codec(index = 0)]
     Deref(CellRef),
@@ -89,7 +90,7 @@ pub enum DerefOrImmediate {
     Immediate(BigIntAsHex),
 }
 impl Display for DerefOrImmediate {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             DerefOrImmediate::Deref(operand) => write!(f, "{operand}"),
             DerefOrImmediate::Immediate(operand) => write!(f, "{}", operand.value),
@@ -107,7 +108,8 @@ impl From<CellRef> for DerefOrImmediate {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub enum Operation {
     #[codec(index = 0)]
     Add,
@@ -115,7 +117,7 @@ pub enum Operation {
     Mul,
 }
 impl Display for Operation {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Operation::Add => write!(f, "+"),
             Operation::Mul => write!(f, "*"),
@@ -123,14 +125,15 @@ impl Display for Operation {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 pub struct BinOpOperand {
     pub op: Operation,
     pub a: CellRef,
     pub b: DerefOrImmediate,
 }
 impl Display for BinOpOperand {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{} {} {}", self.a, self.op, self.b)
     }
 }

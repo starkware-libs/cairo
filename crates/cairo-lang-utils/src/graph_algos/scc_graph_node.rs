@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::vec::Vec;
+
 use super::graph_node::GraphNode;
 use super::strongly_connected_components::ComputeScc;
 

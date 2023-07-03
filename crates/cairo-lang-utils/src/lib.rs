@@ -1,5 +1,8 @@
 //! Cairo utilities.
-use std::fmt;
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
 
 pub mod bigint;
 pub mod casts;
@@ -11,8 +14,12 @@ pub mod iterators;
 pub mod logging;
 pub mod ordered_hash_map;
 pub mod ordered_hash_set;
+pub mod short_string;
 pub mod unordered_hash_map;
 pub mod unordered_hash_set;
+
+#[cfg(not(feature = "std"))]
+use alloc::boxed::Box;
 
 /// Similar to From / TryFrom, but returns an option.
 pub trait OptionFrom<T>
@@ -22,10 +29,10 @@ where
     fn option_from(other: T) -> Option<Self>;
 }
 
-pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: std::fmt::Display>(
-    f: &mut fmt::Formatter<'_>,
+pub fn write_comma_separated<Iter: IntoIterator<Item = V>, V: core::fmt::Display>(
+    f: &mut core::fmt::Formatter<'_>,
     values: Iter,
-) -> fmt::Result {
+) -> core::fmt::Result {
     let mut iter = values.into_iter();
     if let Some(value) = iter.next() {
         write!(f, "{value}")?;
@@ -82,7 +89,7 @@ impl<T, E> ResultHelper<E> for Result<T, E> {
 pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut T, f: F) -> R {
     // TODO(spapini): Consider replacing take with something the leaves the memory dangling, instead
     // of filling with default().
-    let (res, boxed) = f(Box::new(std::mem::take(ptr)));
+    let (res, boxed) = f(Box::new(core::mem::take(ptr)));
     *ptr = *boxed;
     res
 }
@@ -113,8 +120,8 @@ macro_rules! define_short_id {
         impl<T: ?Sized + cairo_lang_utils::Upcast<dyn $db + 'static>>
             cairo_lang_debug::DebugWithDb<T> for $short_id
         {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &T) -> std::fmt::Result {
-                use std::fmt::Debug;
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>, db: &T) -> core::fmt::Result {
+                use core::fmt::Debug;
 
                 use cairo_lang_debug::helper::Fallback;
                 let db = db.upcast();

@@ -1,0 +1,22 @@
+[package]
+name = "cairo-lang-casm-contract-class"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Casm representaion of a starknet contract"
+
+[dependencies]
+cairo-lang-casm = { path = "../cairo-lang-casm", default-features = false }
+cairo-lang-utils = { path = "../cairo-lang-utils", default-features = false }
+num-bigint.workspace = true
+serde.workspace = true
+
+[features]
+default = ["std"]
+std = [
+    "cairo-lang-casm/std",
+    "cairo-lang-utils/std",
+    "num-bigint/std",
+    "serde/std",
+]

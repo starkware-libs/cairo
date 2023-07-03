@@ -700,7 +700,7 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: VarUsage { var_id: call_result.returns[0], location } ,
+                input: VarUsage { var_id: call_result.returns[0], location },
                 arms: vec![],
                 location,
             })));
