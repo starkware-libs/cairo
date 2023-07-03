@@ -290,3 +290,36 @@ error: Variable was previously moved. Trait has no implementation in context: co
 
 //! > lowering_flat
 Parameters: v0: test::ADrop, v1: test::ADrop
+
+//! > ==========================================================================
+
+//! > Test panic with moved input.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  let arr = array!['err_code'];
+  let mut b = arr;
+  b.append('bla');
+
+  panic(arr);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> inline_macros:10:9
+  panic(arr);
+        ^*^
+
+//! > lowering_flat
+Parameters:
