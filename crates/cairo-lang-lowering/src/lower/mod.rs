@@ -633,7 +633,7 @@ fn lower_expr_function_call(
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
-                inputs: arg_inputs.into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+                inputs: arg_inputs,
                 member_paths: ref_args_iter.cloned().collect(),
                 location,
             };
@@ -969,12 +969,7 @@ fn lower_optimized_extern_match(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum
-            .inputs
-            .iter()
-            .cloned()
-            .map(|var_id| VarUsage { var_id, location })
-            .collect(),
+        inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -1331,12 +1326,7 @@ fn lower_optimized_extern_error_propagate(
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum
-            .inputs
-            .iter()
-            .cloned()
-            .map(|var_id| VarUsage { var_id, location })
-            .collect(),
+        inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),
