@@ -125,10 +125,13 @@ impl AbiBuilder {
             let generate_info =
                 db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
             let Some(generate_info) = generate_info else { continue };
-            let Some(mapper) = generate_info.aux_data.0.as_any(
-                            ).downcast_ref::<DynPluginAuxData>() else { continue; };
-            let Some(aux_data) = mapper.0.as_any(
-                            ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
+            let Some(mapper) = generate_info.aux_data.0.as_any().downcast_ref::<DynPluginAuxData>()
+            else {
+                continue;
+            };
+            let Some(aux_data) = mapper.0.as_any().downcast_ref::<StarkNetEventAuxData>() else {
+                continue;
+            };
             let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
             let event_type =
                 extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
@@ -348,8 +351,8 @@ impl AbiBuilder {
     ) -> Result<(Vec<Input>, StateMutability), ABIError> {
         let mut params = signature.params.iter();
         let Some(first_param) = params.next() else {
-                return Err(ABIError::EntrypointMustHaveSelf);
-            };
+            return Err(ABIError::EntrypointMustHaveSelf);
+        };
         if first_param.name != "self" {
             return Err(ABIError::EntrypointMustHaveSelf);
         }
@@ -449,12 +452,14 @@ impl AbiBuilder {
             return Err(ABIError::UnexpectedType);
         };
         let Some(event_data) = self.event_derive_data.get(&type_id) else {
-            return Err(ABIError::EventNotDerived)
+            return Err(ABIError::EventNotDerived);
         };
 
         let event_kind = match event_data.clone() {
             EventData::Struct { members } => {
-                let ConcreteTypeId::Struct(concrete_struct_id) = concrete else { unreachable!(); };
+                let ConcreteTypeId::Struct(concrete_struct_id) = concrete else {
+                    unreachable!();
+                };
                 let concrete_members = db.concrete_struct_members(concrete_struct_id)?;
                 let event_fields = members
                     .into_iter()
@@ -467,7 +472,9 @@ impl AbiBuilder {
                 EventKind::Struct { members: event_fields }
             }
             EventData::Enum { variants } => {
-                let ConcreteTypeId::Enum(concrete_enum_id) = concrete else { unreachable!(); };
+                let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
+                    unreachable!();
+                };
                 let concrete_variants = db.concrete_enum_variants(concrete_enum_id)?;
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {

@@ -37,7 +37,9 @@ impl PluginAuxData for StarkNetContractAuxData {
         db: &(dyn SemanticGroup + 'static),
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
-        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {
+            return None;
+        };
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
@@ -70,7 +72,9 @@ impl PluginAuxData for StarkNetABIAuxData {
         db: &(dyn SemanticGroup + 'static),
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
-        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {return None;};
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {
+            return None;
+        };
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
@@ -104,7 +108,9 @@ impl PluginAuxData for StarkNetEventAuxData {
         db: &(dyn SemanticGroup + 'static),
         diag: &dyn std::any::Any,
     ) -> Option<PluginMappedDiagnostic> {
-        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else { return None; };
+        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {
+            return None;
+        };
         let span = self
             .patches
             .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
