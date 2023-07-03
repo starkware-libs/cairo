@@ -186,10 +186,9 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping
-                .iter()
-                .enumerate()
-                .map(|(idx, (dst, src))| (dst, (src, UseLocation { statement_location, idx }))),
+            remapping.iter().enumerate().map(|(idx, (dst, src))| {
+                (dst, (&src.var_id, UseLocation { statement_location, idx }))
+            }),
         );
         for (idx, (dst, _src)) in remapping.iter().enumerate() {
             if self.local_vars.contains(dst) {

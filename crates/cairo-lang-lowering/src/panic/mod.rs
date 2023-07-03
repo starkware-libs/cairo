@@ -183,7 +183,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, FlatBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
-        let location = self.ctx.variables.variables[original_outputs[0]].location;
+        let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
 
         // Get callee info.
         let callee_signature = call.function.signature(self.ctx.variables.db)?;
@@ -227,7 +227,13 @@ impl<'a> PanicBlockLoweringContext<'a> {
             })],
             end: FlatBlockEnd::Goto(
                 block_continuation,
-                VarRemapping { remapping: zip_eq(original_outputs, inner_ok_values).collect() },
+                VarRemapping {
+                    remapping: zip_eq(
+                        original_outputs,
+                        inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
+                    )
+                    .collect(),
+                },
             ),
         });
 
