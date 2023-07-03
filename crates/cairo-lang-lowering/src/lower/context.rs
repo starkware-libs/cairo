@@ -389,7 +389,7 @@ pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
     Panic(VariableId, LocationId),
-    Return(VariableId, LocationId),
+    Return(VarUsage, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),

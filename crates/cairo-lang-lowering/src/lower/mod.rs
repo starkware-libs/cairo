@@ -135,7 +135,7 @@ pub fn lower_function(
                         }
                         .add(&mut ctx, &mut builder.statements)
                     });
-                    builder.ret(&mut ctx, var_usage.var_id, location)?;
+                    builder.ret(&mut ctx, var_usage, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -207,7 +207,7 @@ pub fn lower_loop_function(
                     }
                     .add(&mut ctx, &mut builder.statements)
                 });
-                builder.ret(&mut ctx, var_usage.var_id, location)?;
+                builder.ret(&mut ctx, var_usage, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
@@ -323,7 +323,7 @@ pub fn lower_statement(
             log::trace!("Lowering a continue statement.");
             let loop_expr = ctx.current_loop_expr.clone().unwrap();
             let lowered_expr = call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
-            let ret_var = lowered_expr.var(ctx, builder)?;
+            let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
         semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
@@ -332,9 +332,9 @@ pub fn lower_statement(
             let ret_var = match expr_option {
                 None => {
                     let location = ctx.get_location(stable_ptr.untyped());
-                    LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?
+                    LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
                 }
-                Some(expr) => lower_expr(ctx, builder, *expr)?.var(ctx, builder)?,
+                Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
             };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
@@ -1259,7 +1259,7 @@ fn lower_expr_error_propagate(
         location,
     }
     .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
@@ -1325,7 +1325,7 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.
