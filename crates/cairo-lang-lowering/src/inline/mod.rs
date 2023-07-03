@@ -218,7 +218,10 @@ impl<'a, 'b> Rebuilder for Mapper<'a, 'b> {
                 let remapping = VarRemapping {
                     remapping: OrderedHashMap::from_iter(izip!(
                         self.outputs.iter().cloned(),
-                        returns.iter().copied()
+                        returns.iter().map(|var_id| VarUsage {
+                            var_id: *var_id,
+                            location: self.lowered.variables[*var_id].location
+                        })
                     )),
                 };
                 *end = FlatBlockEnd::Goto(self.return_block_id, remapping);

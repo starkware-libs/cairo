@@ -288,7 +288,13 @@ impl SealedBlockBuilder {
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                 assert!(
                     remapping
-                        .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))
+                        .insert(
+                            *remapped_var,
+                            VarUsage {
+                                var_id: builder.get_semantic(ctx, *semantic, location),
+                                location,
+                            }
+                        )
                         .is_none()
                 );
             }
@@ -301,7 +307,7 @@ impl SealedBlockBuilder {
                     .as_var_usage(ctx, &mut builder)
                     .unwrap()
                 });
-                assert!(remapping.insert(remapped_var, var_usage.var_id).is_none());
+                assert!(remapping.insert(remapped_var, var_usage).is_none());
             }
 
             builder.finalize(ctx, FlatBlockEnd::Goto(target, remapping));

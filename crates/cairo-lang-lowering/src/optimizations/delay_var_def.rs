@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 /// Moves var definitions closer to their usage point and removes unused var.
 /// Currently only moves consts and empty structs.
@@ -104,7 +104,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for var_id in remapping.values() {
+        for VarUsage { var_id, .. } in remapping.values() {
             info.next_use.insert(*var_id, statement_location);
         }
     }

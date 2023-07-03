@@ -90,10 +90,10 @@ pub struct FlatLowered {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VarRemapping {
     /// Map from new_var to old_var (since new_var cannot appear twice, but old_var can).
-    pub remapping: OrderedHashMap<VariableId, VariableId>,
+    pub remapping: OrderedHashMap<VariableId, VarUsage>,
 }
 impl Deref for VarRemapping {
-    type Target = OrderedHashMap<VariableId, VariableId>;
+    type Target = OrderedHashMap<VariableId, VarUsage>;
 
     fn deref(&self) -> &Self::Target {
         &self.remapping

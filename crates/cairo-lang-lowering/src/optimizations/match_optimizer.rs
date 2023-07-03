@@ -102,10 +102,13 @@ impl MatchOptimizerContext {
         if demand.vars.contains_key(var_id) {
             // The input to EnumConstruct should be available as `var_id`
             // in `arm.block_id`
-            remapping.insert(*var_id, input.var_id);
+            remapping.insert(*var_id, *input);
         }
 
-        demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
+        demand.apply_remapping(
+            self,
+            remapping.iter().map(|(dst, src_var_usage)| (dst, (&src_var_usage.var_id, ()))),
+        );
         info.demand = demand;
 
         self.fixes.push(FixInfo { statement_location, target_block: arm.block_id, remapping });
@@ -172,12 +175,13 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
         remapping: &VarRemapping,
     ) {
         if !remapping.is_empty() {
-            info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
+            info.demand
+                .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
 
             if let Some(ref mut candidate) = &mut info.candidate {
                 let expected_remappings =
-                    if let Some(var_id) = remapping.get(&candidate.match_variable) {
-                        candidate.match_variable = *var_id;
+                    if let Some(var_usage) = remapping.get(&candidate.match_variable) {
+                        candidate.match_variable = var_usage.var_id;
                         1
                     } else {
                         0

@@ -132,7 +132,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, remapping.values(), block_id);
+        info.variables_used(
+            self,
+            remapping.values().map(|VarUsage { var_id, .. }| var_id),
+            block_id,
+        );
     }
 
     fn merge_match(
