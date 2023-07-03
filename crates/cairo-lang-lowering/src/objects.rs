@@ -90,10 +90,10 @@ pub struct FlatLowered {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VarRemapping {
     /// Map from new_var to old_var (since new_var cannot appear twice, but old_var can).
-    pub remapping: OrderedHashMap<VariableId, VariableId>,
+    pub remapping: OrderedHashMap<VariableId, VarUsage>,
 }
 impl Deref for VarRemapping {
-    type Target = OrderedHashMap<VariableId, VariableId>;
+    type Target = OrderedHashMap<VariableId, VarUsage>;
 
     fn deref(&self) -> &Self::Target {
         &self.remapping
@@ -135,9 +135,9 @@ pub enum FlatBlockEnd {
     /// the end of the lowering phase.
     NotSet,
     /// This block ends with a `return` statement, exiting the function.
-    Return(Vec<VariableId>),
+    Return(Vec<VarUsage>),
     /// This block ends with a panic.
-    Panic(VariableId),
+    Panic(VarUsage),
     /// This block ends with a jump to a different block.
     Goto(BlockId, VarRemapping),
     Match {

@@ -194,6 +194,6 @@ fn create_panic_block(
                 output: err_data_var,
             }),
         ],
-        end: FlatBlockEnd::Panic(err_data_var),
+        end: FlatBlockEnd::Panic(VarUsage { var_id: err_data_var, location }),
     })
 }

@@ -10,7 +10,7 @@ trait IMintableToken<T> {
 }
 
 #[starknet::contract]
-mod TokenBridge {
+mod token_bridge {
     use array::ArrayTrait;
     use integer::{Felt252IntoU256, U128IntoFelt252};
     use option::OptionTrait;

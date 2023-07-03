@@ -240,9 +240,10 @@ impl LoweredExpr {
             LoweredExpr::Tuple { exprs, location } => {
                 let inputs: Vec<_> = exprs
                     .into_iter()
-                    .map(|expr| expr.var(ctx, builder))
+                    .map(|expr| expr.as_var_usage(ctx, builder))
                     .collect::<Result<Vec<_>, _>>()?;
-                let tys = inputs.iter().map(|var| ctx.variables[*var].ty).collect();
+                let tys =
+                    inputs.iter().map(|var_usage| ctx.variables[var_usage.var_id].ty).collect();
                 let ty = ctx.db.intern_type(semantic::TypeLongId::Tuple(tys));
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
@@ -299,7 +300,7 @@ impl LoweredExpr {
 pub struct LoweredExprExternEnum {
     pub function: semantic::FunctionId,
     pub concrete_enum_id: semantic::ConcreteEnumId,
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     pub member_paths: Vec<semantic::ExprVarMemberPath>,
     pub location: LocationId,
 }
@@ -354,8 +355,7 @@ impl LoweredExprExternEnum {
                     variant: concrete_variant,
                     location: self.location,
                 }
-                .add(ctx, &mut subscope.statements)
-                .var_id;
+                .add(ctx, &mut subscope.statements);
                 Ok((subscope.goto_callsite(Some(result)), block_id))
             })
             .collect::<Result<Vec<_>, _>>()
@@ -365,11 +365,7 @@ impl LoweredExprExternEnum {
 
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function.lowered(ctx.db),
-            inputs: self
-                .inputs
-                .into_iter()
-                .map(|var_id| VarUsage { var_id, location: ctx.variables[var_id].location })
-                .collect(),
+            inputs: self.inputs,
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
                 .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
                 .collect(),
@@ -388,8 +384,8 @@ pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
-    Panic(VariableId, LocationId),
-    Return(VariableId, LocationId),
+    Panic(VarUsage, LocationId),
+    Return(VarUsage, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),
@@ -428,18 +424,16 @@ pub fn lowering_flow_error_to_sealed_block(
                 ),
                 location,
             }
-            .add(ctx, &mut builder.statements)
-            .var_id;
+            .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
                 inputs: vec![panic_instance, data_var],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
-                    ctx.variables[panic_instance].ty,
-                    ctx.variables[data_var].ty,
+                    ctx.variables[panic_instance.var_id].ty,
+                    ctx.variables[data_var.var_id].ty,
                 ])),
                 location,
             }
-            .add(ctx, &mut builder.statements)
-            .var_id;
+            .add(ctx, &mut builder.statements);
             builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {

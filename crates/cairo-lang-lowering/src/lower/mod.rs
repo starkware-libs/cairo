@@ -127,16 +127,15 @@ pub fn lower_function(
                 SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                     // Convert to a return.
                     let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                    let var = expr.unwrap_or_else(|| {
+                    let var_usage = expr.unwrap_or_else(|| {
                         generators::StructConstruct {
                             inputs: vec![],
                             ty: unit_ty(ctx.db.upcast()),
                             location,
                         }
                         .add(&mut ctx, &mut builder.statements)
-                        .var_id
                     });
-                    builder.ret(&mut ctx, var, location)?;
+                    builder.ret(&mut ctx, var_usage, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -200,16 +199,15 @@ pub fn lower_loop_function(
             SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                 // Convert to a return.
                 let location = ctx.get_location(semantic_block.stable_ptr.untyped());
-                let var = expr.unwrap_or_else(|| {
+                let var_usage = expr.unwrap_or_else(|| {
                     generators::StructConstruct {
                         inputs: vec![],
                         ty: unit_ty(ctx.db.upcast()),
                         location,
                     }
                     .add(&mut ctx, &mut builder.statements)
-                    .var_id
                 });
-                builder.ret(&mut ctx, var, location)?;
+                builder.ret(&mut ctx, var_usage, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
@@ -292,7 +290,7 @@ pub fn lowered_expr_to_block_scope_end(
 ) -> Maybe<SealedBlockBuilder> {
     Ok(match lowered_expr {
         Ok(LoweredExpr::Tuple { exprs, .. }) if exprs.is_empty() => builder.goto_callsite(None),
-        Ok(lowered_expr) => match lowered_expr.var(ctx, &mut builder) {
+        Ok(lowered_expr) => match lowered_expr.as_var_usage(ctx, &mut builder) {
             Ok(var) => builder.goto_callsite(Some(var)),
             Err(err) => lowering_flow_error_to_sealed_block(ctx, builder, err)?,
         },
@@ -325,7 +323,7 @@ pub fn lower_statement(
             log::trace!("Lowering a continue statement.");
             let loop_expr = ctx.current_loop_expr.clone().unwrap();
             let lowered_expr = call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
-            let ret_var = lowered_expr.var(ctx, builder)?;
+            let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
         semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
@@ -334,9 +332,9 @@ pub fn lower_statement(
             let ret_var = match expr_option {
                 None => {
                     let location = ctx.get_location(stable_ptr.untyped());
-                    LoweredExpr::Tuple { exprs: vec![], location }.var(ctx, builder)?
+                    LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
                 }
-                Some(expr) => lower_expr(ctx, builder, *expr)?.var(ctx, builder)?,
+                Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
             };
             return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
         }
@@ -528,7 +526,6 @@ fn lower_expr_literal(
                     .map(|value| {
                         generators::Literal { value, ty: u128_ty, location }
                             .add(ctx, &mut builder.statements)
-                            .var_id
                     })
                     .collect(),
                 ty: u256_ty,
@@ -625,7 +622,7 @@ fn lower_expr_function_call(
     // If the function is panic(), do something special.
     if expr.function == get_core_function_id(ctx.db.upcast(), "panic".into(), vec![]) {
         let [input] = <[_; 1]>::try_from(arg_inputs).ok().unwrap();
-        return Err(LoweringFlowError::Panic(input.var_id, location));
+        return Err(LoweringFlowError::Panic(input, location));
     }
 
     // The following is relevant only to extern functions.
@@ -636,7 +633,7 @@ fn lower_expr_function_call(
             let lowered_expr = LoweredExprExternEnum {
                 function: expr.function,
                 concrete_enum_id,
-                inputs: arg_inputs.into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+                inputs: arg_inputs,
                 member_paths: ref_args_iter.cloned().collect(),
                 location,
             };
@@ -972,12 +969,7 @@ fn lower_optimized_extern_match(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum
-            .inputs
-            .iter()
-            .cloned()
-            .map(|var_id| VarUsage { var_id, location })
-            .collect(),
+        inputs: extern_enum.inputs,
         arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
@@ -1211,9 +1203,7 @@ fn lower_expr_struct_ctor(
         generators::StructConstruct {
             inputs: members
                 .into_iter()
-                .map(|(_, member)| {
-                    lower_expr(ctx, builder, member_expr[&member.id])?.var(ctx, builder)
-                })
+                .map(|(_, member)| lower_expr_to_var_usage(ctx, builder, member_expr[&member.id]))
                 .collect::<Result<Vec<_>, _>>()?,
             ty: expr.ty,
             location,
@@ -1252,7 +1242,7 @@ fn lower_expr_error_propagate(
     let subscope_ok = create_subscope_with_bound_refs(ctx, builder);
     let block_ok_id = subscope_ok.block_id;
     let expr_var = ctx.new_var(VarRequest { ty: ok_variant.ty, location });
-    let sealed_block_ok = subscope_ok.goto_callsite(Some(expr_var));
+    let sealed_block_ok = subscope_ok.goto_callsite(Some(VarUsage { var_id: expr_var, location }));
 
     // Err arm.
     let mut subscope_err = create_subscope_with_bound_refs(ctx, builder);
@@ -1264,7 +1254,7 @@ fn lower_expr_error_propagate(
         location,
     }
     .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge blocks.
@@ -1313,8 +1303,8 @@ fn lower_optimized_extern_error_propagate(
         input_tys.into_iter().map(|ty| ctx.new_var(VarRequest { ty, location })).collect();
     let block_ok_input_vars = input_vars.clone();
     match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope_ok);
-    let expr =
-        extern_facade_expr(ctx, ok_variant.ty, input_vars, location).var(ctx, &mut subscope_ok)?;
+    let expr = extern_facade_expr(ctx, ok_variant.ty, input_vars, location)
+        .as_var_usage(ctx, &mut subscope_ok)?;
     let sealed_block_ok = subscope_ok.goto_callsite(Some(expr));
 
     // Err arm.
@@ -1330,18 +1320,13 @@ fn lower_optimized_extern_error_propagate(
     let input = expr.as_var_usage(ctx, &mut subscope_err)?;
     let err_res = generators::EnumConstruct { input, variant: func_err_variant.clone(), location }
         .add(ctx, &mut subscope_err.statements);
-    subscope_err.ret(ctx, err_res.var_id, location).map_err(LoweringFlowError::Failed)?;
+    subscope_err.ret(ctx, err_res, location).map_err(LoweringFlowError::Failed)?;
     let sealed_block_err = SealedBlockBuilder::Ends(block_err_id);
 
     // Merge.
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
-        inputs: extern_enum
-            .inputs
-            .iter()
-            .cloned()
-            .map(|var_id| VarUsage { var_id, location })
-            .collect(),
+        inputs: extern_enum.inputs,
         arms: vec![
             MatchArm {
                 variant_id: ok_variant.clone(),

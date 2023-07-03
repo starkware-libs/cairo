@@ -77,9 +77,9 @@ fn check_variable_lifetime(
             let var_id = if location.statement_location.1 == statements.len() {
                 match &block.end {
                     lowering::FlatBlockEnd::Goto(_, remapping) => {
-                        *remapping.values().nth(location.idx).unwrap()
+                        remapping.values().nth(location.idx).unwrap().var_id
                     }
-                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx].var_id,
                     lowering::FlatBlockEnd::Panic(_) => {
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }

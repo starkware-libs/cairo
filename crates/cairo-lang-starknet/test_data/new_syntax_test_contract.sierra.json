@@ -27,9 +27,9 @@
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x7",
     "0x4275696c74696e436f737473",
-    "0x9b8ee4e8113431b55e39ef48f9c4b19aabc04a6057afe1332baab1072d492e",
-    "0xcff5fd812fe56ea67099249d4ae47a084bfa2dbe2972c0e94f81a8d3bb901a",
-    "0x37ed8ab0202cefe84d71cf4b8f8ae6613f58cb1c8e84e04d6bf437307fed6d1",
+    "0x1d71694c1b21e4cbad8d9413b7bbcb21b70a98c7cd782687b335e205eba3e29",
+    "0x297a7d03406570080368a70b688cab5647539464e1f9865bb5dca6215619e02",
+    "0x34b7120044042f0bb86027e354580896e0eda82c956b11bab337521113a9b3b",
     "0xa",
     "0xb",
     "0x53797374656d",
@@ -45,7 +45,7 @@
     "0x13",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0xc",
-    "0x25414d68664e316c1e57ced1d67502453fa6085bc07017f402b94bcab17b038",
+    "0x2d9d4d4ea152e369cac5e9e76f6441ac8ec52c4b0737951925595d2faf3615b",
     "0x16",
     "0x436f6e747261637441646472657373",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
@@ -53,9 +53,9 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x1a",
-    "0x2ff7cb8153a86b005cc6a56a30001728f4dd569309ed2883885c16760e18efc",
+    "0x11ec3442bcc60c65f2a3eb39736d6a4f90309c6e8248dee344eb16c5c36321f",
     "0x1c",
-    "0x20a2a856e734cb4d8263b3bb88ed552926d9520046adf5935c6320e3686341d",
+    "0x3fc2253f66998e19db2dc24ba8aa62d9288f71bf4e3245f70bae56ad53269b0",
     "0x1b85b08b450bf445ccde6e04e8ea67cb746ad76521bcdb997c33e37dd63c61",
     "0x1f",
     "0x1955a7ab8ad770a2a9f80abb58127ed010fd2bd46e3b6a2498c3bc5632556dc",
@@ -63,9 +63,9 @@
     "0x8",
     "0xa853c166304d20fb0711becf2cbdf482dee3cac4e9717d040b7a7ab1df7eec",
     "0x22",
-    "0x1b0e14950a2da822b774d239517b06384fe0447224c8bf42aa7ab1e821eb61e",
+    "0x9a0e49034b0cab96ccd9f52ddf23332493f0bb769627fdd24b11005379c6c7",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x12b864985887809a48e63eb27eb55347c6a0e3ededd21a60a7129810bc752d",
+    "0x23ab723238d76a4760bbbc6fa6f6e2ff3a40fb8a6a5ef10d9fb2deb8b4b6f22",
     "0x26",
     "0x53746f726167654261736541646472657373",
     "0x2cf4ead4392e987c9b56754a10f0a8e0f13776791e096fa6503893f05582c51",
@@ -77,7 +77,7 @@
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x30",
-    "0x3a4ae10f6aea87eba8f4bbaaa7cf71539bb9581c853ec9f12fe8d2c1cf0a3db",
+    "0x3b4381a647b26152ede97fb8379e7fbda6a0e155098fe6a7fbcc4d97bdadad7",
     "0x1e",
     "0x24",
     "0x3522ccb327be2a2dc64ba094bb62be1059f61c3de4441ef9de45a238fd7988a",
@@ -1096,15 +1096,15 @@
       ],
       [
         10,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState"
       ],
       [
         11,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState"
       ],
       [
         12,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState"
       ],
       [
         13,
@@ -1144,11 +1144,11 @@
       ],
       [
         22,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>"
       ],
       [
         23,
-        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>"
       ],
       [
         24,
@@ -1168,15 +1168,15 @@
       ],
       [
         28,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>"
       ],
       [
         29,
-        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())>"
       ],
       [
         30,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased"
       ],
       [
         31,
@@ -1200,7 +1200,7 @@
       ],
       [
         36,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased"
       ],
       [
         37,
@@ -1208,11 +1208,11 @@
       ],
       [
         38,
-        "Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>"
+        "Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>"
       ],
       [
         39,
-        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>"
+        "core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())>"
       ],
       [
         40,
@@ -1256,7 +1256,7 @@
       ],
       [
         50,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event"
       ],
       [
         51,
@@ -1398,23 +1398,23 @@
       ],
       [
         25,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState>"
       ],
       [
         26,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>"
       ],
       [
         27,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         28,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         29,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         30,
@@ -1426,11 +1426,11 @@
       ],
       [
         32,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         33,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::get_counter>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::get_counter>"
       ],
       [
         34,
@@ -1538,15 +1538,15 @@
       ],
       [
         60,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::increase_counter>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::increase_counter>"
       ],
       [
         61,
-        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>>"
       ],
       [
         62,
-        "drop<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
+        "drop<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         63,
@@ -1554,7 +1554,7 @@
       ],
       [
         64,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::decrease_counter>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::decrease_counter>"
       ],
       [
         65,
@@ -1570,7 +1570,7 @@
       ],
       [
         68,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::init>"
       ],
       [
         69,
@@ -1578,19 +1578,19 @@
       ],
       [
         70,
-        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState>"
+        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         71,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>"
       ],
       [
         72,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState>"
       ],
       [
         73,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::InternalContractStateImpl::read>"
       ],
       [
         74,
@@ -1682,7 +1682,7 @@
       ],
       [
         96,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState>"
       ],
       [
         97,
@@ -1694,63 +1694,63 @@
       ],
       [
         99,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::write>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::InternalContractStateImpl::write>"
       ],
       [
         100,
-        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())>>"
       ],
       [
         101,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>>"
       ],
       [
         102,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         103,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         104,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterIncreasedIntoEvent>>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent>>"
       ],
       [
         105,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         106,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         107,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>, 0>"
       ],
       [
         108,
-        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>>"
       ],
       [
         109,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>, 1>"
       ],
       [
         110,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState>"
       ],
       [
         111,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>"
       ],
       [
         112,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>"
       ],
       [
         113,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::read>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::InternalContractStateImpl::read>"
       ],
       [
         114,
@@ -1778,11 +1778,11 @@
       ],
       [
         120,
-        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState>"
+        "dup<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState>"
       ],
       [
         121,
-        "dup<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState>"
+        "dup<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>"
       ],
       [
         122,
@@ -1790,15 +1790,15 @@
       ],
       [
         123,
-        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased>"
+        "struct_construct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         124,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         125,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased, new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterDecreasedIntoEvent>>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>>"
       ],
       [
         126,
@@ -1830,15 +1830,15 @@
       ],
       [
         133,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::write>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::InternalContractStateImpl::write>"
       ],
       [
         134,
-        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())>>"
       ],
       [
         135,
-        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>>"
       ],
       [
         136,
@@ -1958,39 +1958,39 @@
       ],
       [
         165,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>>"
       ],
       [
         166,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())>, 0>"
       ],
       [
         167,
-        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())>>"
       ],
       [
         168,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())>, 1>"
       ],
       [
         169,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterIncreasedIntoEvent::into>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent::into>"
       ],
       [
         170,
-        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event>"
+        "snapshot_take<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         171,
-        "drop<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event>"
+        "drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         172,
-        "store_temp<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event>"
+        "store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         173,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_data>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventIsEvent::append_keys_and_data>"
       ],
       [
         174,
@@ -2114,7 +2114,7 @@
       ],
       [
         204,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterDecreasedIntoEvent::into>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into>"
       ],
       [
         205,
@@ -2134,19 +2134,19 @@
       ],
       [
         209,
-        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, Unit>>"
+        "struct_construct<Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>>"
       ],
       [
         210,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())>, 0>"
       ],
       [
         211,
-        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())>>"
       ],
       [
         212,
-        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())>, 1>"
       ],
       [
         213,
@@ -2210,11 +2210,11 @@
       ],
       [
         228,
-        "enum_init<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event, 0>"
+        "enum_init<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event, 0>"
       ],
       [
         229,
-        "enum_match<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event>"
+        "enum_match<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         230,
@@ -2222,7 +2222,7 @@
       ],
       [
         231,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_data>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>"
       ],
       [
         232,
@@ -2230,7 +2230,7 @@
       ],
       [
         233,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_data>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>"
       ],
       [
         234,
@@ -2314,7 +2314,7 @@
       ],
       [
         254,
-        "enum_init<new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event, 1>"
+        "enum_init<new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event, 1>"
       ],
       [
         255,
@@ -2322,11 +2322,11 @@
       ],
       [
         256,
-        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased>"
+        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         257,
-        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased>"
+        "struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         258,
@@ -2368,23 +2368,23 @@
     "user_func_names": [
       [
         0,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::get_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::get_counter"
       ],
       [
         1,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::increase_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::increase_counter"
       ],
       [
         2,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::decrease_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::decrease_counter"
       ],
       [
         3,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::init"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__constructor::init"
       ],
       [
         4,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::get_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::get_counter"
       ],
       [
         5,
@@ -2400,11 +2400,11 @@
       ],
       [
         8,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::increase_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::increase_counter"
       ],
       [
         9,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::decrease_counter"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::decrease_counter"
       ],
       [
         10,
@@ -2412,11 +2412,11 @@
       ],
       [
         11,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::init"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::init"
       ],
       [
         12,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::InternalContractStateImpl::read"
       ],
       [
         13,
@@ -2432,15 +2432,15 @@
       ],
       [
         16,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::write"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::InternalContractStateImpl::write"
       ],
       [
         17,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterIncreasedIntoEvent>"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent>"
       ],
       [
         18,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::read"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::InternalContractStateImpl::read"
       ],
       [
         19,
@@ -2452,7 +2452,7 @@
       ],
       [
         21,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased, new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterDecreasedIntoEvent>"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>"
       ],
       [
         22,
@@ -2460,7 +2460,7 @@
       ],
       [
         23,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::other_contract::InternalContractStateImpl::write"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::InternalContractStateImpl::write"
       ],
       [
         24,
@@ -2480,11 +2480,11 @@
       ],
       [
         28,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterIncreasedIntoEvent::into"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent::into"
       ],
       [
         29,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventIsEvent::append_keys_and_data"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventIsEvent::append_keys_and_data"
       ],
       [
         30,
@@ -2504,7 +2504,7 @@
       ],
       [
         34,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::EventCounterDecreasedIntoEvent::into"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into"
       ],
       [
         35,
@@ -2512,11 +2512,11 @@
       ],
       [
         36,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreasedIsEvent::append_keys_and_data"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data"
       ],
       [
         37,
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreasedIsEvent::append_keys_and_data"
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data"
       ],
       [
         38,
@@ -2615,7 +2615,7 @@
     },
     {
       "type": "event",
-      "name": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased",
+      "name": "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased",
       "kind": "struct",
       "members": [
         {
@@ -2627,7 +2627,7 @@
     },
     {
       "type": "event",
-      "name": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased",
+      "name": "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased",
       "kind": "struct",
       "members": [
         {
@@ -2639,17 +2639,17 @@
     },
     {
       "type": "event",
-      "name": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::Event",
+      "name": "new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "CounterIncreased",
-          "type": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterIncreased",
+          "type": "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased",
           "kind": "nested"
         },
         {
           "name": "CounterDecreased",
-          "type": "new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterDecreased",
+          "type": "new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased",
           "kind": "nested"
         }
       ]

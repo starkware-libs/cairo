@@ -9,7 +9,13 @@ pub trait DemandReporter<Var, Aux = ()> {
         self.drop(position, var);
     }
     fn drop(&mut self, _position: Self::IntroducePosition, _var: Var) {}
-    fn dup(&mut self, _position: Self::UsePosition, _var: Var) {}
+    fn dup(
+        &mut self,
+        _position: Self::UsePosition,
+        _var: Var,
+        _next_usage_position: Self::UsePosition,
+    ) {
+    }
     fn last_use(&mut self, _position: Self::UsePosition, _var: Var) {}
     fn unused_mapped_var(&mut self, _var: Var) {}
 }
@@ -54,11 +60,11 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
         for (dst, (src, position)) in remapping.rev() {
             let src = (*src).into();
             let dst = (*dst).into();
-            if self.vars.swap_remove(&dst).is_some() {
-                if self.vars.insert(src, position).is_none() {
-                    reporter.last_use(position, src);
+            if let Some(dest_next_usage_position) = self.vars.swap_remove(&dst) {
+                if let Some(next_usage_position) = self.vars.insert(src, dest_next_usage_position) {
+                    reporter.dup(position, src, next_usage_position);
                 } else {
-                    reporter.dup(position, src);
+                    reporter.last_use(position, src);
                 }
             } else {
                 reporter.unused_mapped_var(dst);
@@ -79,9 +85,9 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
         + std::iter::ExactSizeIterator,
     ) {
         for (var, position) in vars.rev() {
-            if self.vars.insert((*var).into(), position).is_some() {
+            if let Some(next_usage_position) = self.vars.insert((*var).into(), position) {
                 // Variable already used. If it's not dup, that is an issue.
-                reporter.dup(position, (*var).into());
+                reporter.dup(position, (*var).into(), next_usage_position);
             } else {
                 reporter.last_use(position, (*var).into());
             }

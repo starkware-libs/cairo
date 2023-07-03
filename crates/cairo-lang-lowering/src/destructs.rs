@@ -90,8 +90,6 @@ impl<'a> DemandReporter<VariableId, PanicState> for DestructAdder<'a> {
 
         panic!("Borrow checker should have caught this.")
     }
-
-    fn dup(&mut self, _position: (), _var: VariableId) {}
 }
 
 /// A state saved for each position in the back analysis.
@@ -158,7 +156,7 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (src, ()))));
+        info.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
     fn merge_match(
@@ -187,17 +185,17 @@ impl<'a> Analyzer<'_> for DestructAdder<'a> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = DestructAdderDemand::default();
-        info.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
+        info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         info
     }
 
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panic should have been lowered.")
     }
@@ -244,7 +242,7 @@ pub fn add_destructs(
     if lowered.blocks.has_root().is_ok() {
         let checker = DestructAdder { db, lowered, destructions: vec![], panic_ty: panic_ty(db) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(
             &mut analysis.analyzer,

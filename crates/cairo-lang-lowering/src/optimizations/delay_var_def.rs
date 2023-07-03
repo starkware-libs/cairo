@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
 /// Moves var definitions closer to their usage point and removes unused var.
 /// Currently only moves consts and empty structs.
@@ -17,7 +17,7 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: ctx };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
         let ctx = analysis.analyzer;
 
@@ -104,7 +104,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for var_id in remapping.values() {
+        for VarUsage { var_id, .. } in remapping.values() {
             info.next_use.insert(*var_id, statement_location);
         }
     }
@@ -142,11 +142,11 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = Self::Info::default();
-        for var_id in vars {
-            info.next_use.insert(*var_id, statement_location);
+        for var_usage in vars {
+            info.next_use.insert(var_usage.var_id, statement_location);
         }
         info
     }
@@ -154,7 +154,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.");
     }

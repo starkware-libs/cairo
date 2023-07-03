@@ -24,13 +24,6 @@ pub struct BorrowChecker<'a> {
     success: Maybe<()>,
 }
 
-impl BorrowChecker<'_> {
-    // TODO(ilya): Remove the following function once we have usage locations for all the variables.
-    fn with_location<'a>(&self, var_id: &'a VariableId) -> (&'a VariableId, LocationId) {
-        (var_id, self.lowered.variables[*var_id].location)
-    }
-}
-
 /// A state saved for each position in the back analysis.
 /// Used to determine if this flow is guaranteed to end in a panic.
 #[derive(Copy, Clone, Default)]
@@ -69,12 +62,13 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         ));
     }
 
-    fn dup(&mut self, _position: LocationId, var_id: VariableId) {
+    fn dup(&mut self, _position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
-            self.success = Err(self
-                .diagnostics
-                .report_by_location(var.location.get(self.db), VariableMoved { inference_error }));
+            self.success = Err(self.diagnostics.report_by_location(
+                next_usage_position.get(self.db),
+                VariableMoved { inference_error },
+            ));
         }
     }
 }
@@ -131,7 +125,9 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping.iter().map(|(dst, src)| (dst, (src, self.lowered.variables[*src].location))),
+            remapping
+                .iter()
+                .map(|(dst, VarUsage { var_id: src, location })| (dst, (src, *location))),
         );
     }
 
@@ -159,12 +155,12 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = BorrowCheckerDemand::default();
         info.variables_used(
             self,
-            vars.iter().map(|var_id| self.with_location(var_id)).collect_vec().into_iter(),
+            vars.iter().map(|VarUsage { var_id, location }| (var_id, *location)),
         );
         info
     }
@@ -172,10 +168,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        data: &VariableId,
+        data: &VarUsage,
     ) -> Self::Info {
         let mut info = BorrowCheckerDemand { aux: PanicState::EndsWithPanic, ..Default::default() };
-        info.variables_used(self, std::iter::once(self.with_location(data)));
+        info.variables_used(self, std::iter::once((&data.var_id, data.location)));
         info
     }
 }
@@ -192,7 +188,7 @@ pub fn borrow_check(
     if lowered.blocks.has_root().is_ok() {
         let checker = BorrowChecker { db, diagnostics: &mut diagnostics, lowered, success: Ok(()) };
         let mut analysis =
-            BackAnalysis { lowered: &*lowered, cache: Default::default(), analyzer: checker };
+            BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
         root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, ());
         let success = analysis.analyzer.success;

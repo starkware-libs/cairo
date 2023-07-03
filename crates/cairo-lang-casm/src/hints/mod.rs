@@ -61,37 +61,6 @@ pub enum StarknetHint {
     #[codec(index = 0)]
     SystemCall { system: ResOperand },
     #[codec(index = 1)]
-    SetBlockTimestamp { value: ResOperand },
-    #[codec(index = 2)]
-    SetCallerAddress { value: ResOperand },
-    #[codec(index = 3)]
-    SetContractAddress { value: ResOperand },
-    #[codec(index = 4)]
-    SetSequencerAddress { value: ResOperand },
-    #[codec(index = 5)]
-    SetVersion { value: ResOperand },
-    #[codec(index = 6)]
-    SetAccountContractAddress { value: ResOperand },
-    #[codec(index = 7)]
-    SetMaxFee { value: ResOperand },
-    #[codec(index = 8)]
-    SetTransactionHash { value: ResOperand },
-    #[codec(index = 9)]
-    SetChainId { value: ResOperand },
-    #[codec(index = 10)]
-    SetNonce { value: ResOperand },
-    #[codec(index = 11)]
-    SetSignature { start: ResOperand, end: ResOperand },
-    #[codec(index = 12)]
-    PopLog {
-        value: ResOperand,
-        opt_variant: CellRef,
-        keys_start: CellRef,
-        keys_end: CellRef,
-        data_start: CellRef,
-        data_end: CellRef,
-    },
-    #[codec(index = 13)]
     Cheatcode {
         selector: BigIntAsHex,
         input_start: ResOperand,
@@ -692,49 +661,7 @@ impl PythonicHint for StarknetHint {
             StarknetHint::SystemCall { system } => {
                 format!("syscall_handler.syscall(syscall_ptr={})", ResOperandFormatter(system))
             }
-            StarknetHint::SetBlockTimestamp { value } => {
-                format!("syscall_handler.block_timestamp = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetCallerAddress { value } => {
-                format!("syscall_handler.caller_address = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetContractAddress { value } => {
-                format!("syscall_handler.contract_address = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetSequencerAddress { value } => {
-                format!("syscall_handler.sequencer_address = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetVersion { value } => {
-                format!("syscall_handler.tx_info.version = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetAccountContractAddress { value } => {
-                format!(
-                    "syscall_handler.tx_info.account_contract_address = {}",
-                    ResOperandFormatter(value)
-                )
-            }
-            StarknetHint::SetMaxFee { value } => {
-                format!("syscall_handler.tx_info.max_fee = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetTransactionHash { value } => {
-                format!("syscall_handler.tx_info.transaction_hash = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetChainId { value } => {
-                format!("syscall_handler.tx_info.chain_id = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetNonce { value } => {
-                format!("syscall_handler.tx_info.nonce = {}", ResOperandFormatter(value))
-            }
-            StarknetHint::SetSignature { start, end } => {
-                format!(
-                    "syscall_handler.tx_info.signature = [memory[i] for i in range({}, {})]",
-                    ResOperandFormatter(start),
-                    ResOperandFormatter(end)
-                )
-            }
-            StarknetHint::PopLog { .. } | StarknetHint::Cheatcode { .. } => {
-                "raise NotImplementedError".to_string()
-            }
+            StarknetHint::Cheatcode { .. } => "raise NotImplementedError".to_string(),
         }
     }
 }

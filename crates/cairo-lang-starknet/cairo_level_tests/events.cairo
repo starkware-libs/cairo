@@ -16,7 +16,7 @@ trait IContractWithEvent<T> {
 }
 
 #[starknet::contract]
-mod ContractWithEvent {
+mod contract_with_event {
     use traits::Into;
     use starknet::info::get_contract_address;
     #[storage]
@@ -55,7 +55,7 @@ mod ContractWithEvent {
     }
 }
 
-use ContractWithEvent::{Event, IncrementalEvent, StaticEvent};
+use contract_with_event::{Event, IncrementalEvent, StaticEvent};
 
 #[test]
 #[available_gas(30000000)]
@@ -63,7 +63,10 @@ fn test_events() {
     internal::revoke_ap_tracking();
     // Set up.
     let (contract_address, _) = deploy_syscall(
-        ContractWithEvent::TEST_CLASS_HASH.try_into().unwrap(), 0, Default::default().span(), false
+        contract_with_event::TEST_CLASS_HASH.try_into().unwrap(),
+        0,
+        Default::default().span(),
+        false
     )
         .unwrap();
     let mut contract = IContractWithEventDispatcher { contract_address };
@@ -74,49 +77,43 @@ fn test_events() {
     contract.emit_event(true);
     contract.emit_event(false);
     contract.emit_event(true);
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
+
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 0 }),
         'event == IncrementalEvent(0)'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 1 }),
         'event == IncrementalEvent(1)'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::StaticEvent(StaticEvent {}),
         'event == StaticEvent'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::StaticEvent(StaticEvent {}),
         'event == StaticEvent'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 2 }),
         'event == IncrementalEvent(2)'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::StaticEvent(StaticEvent {}),
         'event == StaticEvent'
     );
-    let (mut keys, mut data) = starknet::testing::pop_log(contract_address).unwrap();
     assert_eq(
-        @starknet::Event::deserialize(ref keys, ref data).unwrap(),
+        @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 3 }),
         'event == IncrementalEvent(3)'
     );
-    assert(starknet::testing::pop_log(contract_address).is_none(), 'no more events');
+    assert(starknet::testing::pop_log_raw(contract_address).is_none(), 'no more events');
 }
 
 #[test]
@@ -131,13 +128,13 @@ fn test_pop_log() {
     starknet::emit_event_syscall(keys.span(), data.span());
     starknet::emit_event_syscall(keys.span(), data.span());
 
-    let (keys, data) = starknet::testing::pop_log(contract_address).unwrap();
+    let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
     assert_eq(@keys.len(), @1, 'unexpected keys size');
     assert_eq(@data.len(), @1, 'unexpected data size');
     assert_eq(keys.at(0), @1234, 'unexpected key');
     assert_eq(data.at(0), @2345, 'unexpected data');
 
-    let (keys, data) = starknet::testing::pop_log(contract_address).unwrap();
+    let (keys, data) = starknet::testing::pop_log_raw(contract_address).unwrap();
     assert_eq(@keys.len(), @1, 'unexpected keys size');
     assert_eq(@data.len(), @1, 'unexpected data size');
     assert_eq(keys.at(0), @1234, 'unexpected key');

@@ -14,9 +14,7 @@ use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
 use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
-use crate::{
-    BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage, VariableId,
-};
+use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage};
 
 struct Context<'a> {
     db: &'a dyn LoweringGroup,
@@ -24,7 +22,7 @@ struct Context<'a> {
     lowered: &'a mut FlatLowered,
     implicit_index: HashMap<TypeId, usize>,
     implicits_tys: Vec<TypeId>,
-    implicit_vars_for_block: HashMap<BlockId, Vec<VariableId>>,
+    implicit_vars_for_block: HashMap<BlockId, Vec<VarUsage>>,
     visited: HashSet<BlockId>,
     location: LocationId,
 }
@@ -81,20 +79,25 @@ pub fn inner_lower_implicits(
 
     // Introduce new input variables in the root block.
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
-    ctx.lowered.parameters.splice(0..0, implicit_vars.iter().cloned());
+    ctx.lowered.parameters.splice(0..0, implicit_vars.iter().map(|var_usage| var_usage.var_id));
 
     lowered.variables = std::mem::take(&mut ctx.variables.variables);
 
     Ok(())
 }
 
-/// Allocates and returns new variables for each of the current function's implicits.
+/// Allocates and returns new variables with usage location for each of the current function's
+/// implicits.
 fn alloc_implicits(
     ctx: &mut VariableAllocator<'_>,
     implicits_tys: &[TypeId],
     location: LocationId,
-) -> Vec<VariableId> {
-    implicits_tys.iter().copied().map(|ty| ctx.new_var(VarRequest { ty, location })).collect_vec()
+) -> Vec<VarUsage> {
+    implicits_tys
+        .iter()
+        .copied()
+        .map(|ty| VarUsage { var_id: ctx.new_var(VarRequest { ty, location }), location })
+        .collect_vec()
 }
 
 /// Adds implicits in a block.
@@ -102,19 +105,26 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     if !ctx.visited.insert(block_id) {
         return Ok(());
     }
+
     let mut implicits = ctx
         .implicit_vars_for_block
         .entry(block_id)
-        .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
+        .or_insert_with(|| {
+            alloc_implicits(
+                ctx.variables,
+                &ctx.implicits_tys,
+                ctx.location.with_auto_generation_note(ctx.db, "implicits"),
+            )
+        })
         .clone();
     for statement in &mut ctx.lowered.blocks[block_id].statements {
         if let Statement::Call(stmt) = statement {
             let callee_implicits = ctx.db.function_implicits(stmt.function)?;
-
             let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
+
             let indices = callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
-            let implicit_input_vars =
-                indices.iter().map(|i| VarUsage { var_id: implicits[*i], location });
+
+            let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
             stmt.inputs.splice(0..0, implicit_input_vars);
             let implicit_output_vars = callee_implicits
                 .iter()
@@ -122,7 +132,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 .map(|ty| ctx.variables.new_var(VarRequest { ty, location }))
                 .collect_vec();
             for (i, var) in zip_eq(indices, implicit_output_vars.iter()) {
-                implicits[i] = *var;
+                implicits[i] = VarUsage { var_id: *var, location: ctx.variables[*var].location };
             }
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
@@ -131,7 +141,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
     let mut blocks_to_visit = vec![];
     match &mut ctx.lowered.blocks[block_id].end {
         FlatBlockEnd::Return(rets) => {
-            rets.splice(0..0, implicits);
+            rets.splice(0..0, implicits.iter().cloned());
         }
         FlatBlockEnd::Panic(_) => {
             unreachable!("Panics should have been stripped in a previous phase.")
@@ -143,8 +153,11 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                 .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
                 .clone();
             let old_remapping = std::mem::take(&mut remapping.remapping);
-            remapping.remapping =
-                chain!(zip_eq(target_implicits, implicits), old_remapping).collect();
+            remapping.remapping = chain!(
+                zip_eq(target_implicits.into_iter().map(|var_usage| var_usage.var_id), implicits),
+                old_remapping
+            )
+            .collect();
             blocks_to_visit.push(*block_id);
         }
         FlatBlockEnd::Match { info } => match info {
@@ -159,14 +172,13 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
             }
             MatchInfo::Extern(stmt) => {
                 let callee_implicits = ctx.db.function_implicits(stmt.function)?;
-                let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
+
                 let indices =
                     callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
 
-                let implicit_input_vars =
-                    indices.iter().map(|i| VarUsage { var_id: implicits[*i], location });
+                let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
                 stmt.inputs.splice(0..0, implicit_input_vars);
-                let location = stmt.location;
+                let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
 
                 for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
                     let mut arm_implicits = implicits.clone();
@@ -175,7 +187,7 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
                         let var = ctx.variables.new_var(VarRequest { ty, location });
                         implicit_input_vars.push(var);
                         let implicit_index = ctx.implicit_index[&ty];
-                        arm_implicits[implicit_index] = var;
+                        arm_implicits[implicit_index] = VarUsage { var_id: var, location };
                     }
                     assert!(
                         ctx.implicit_vars_for_block.insert(*block_id, arm_implicits).is_none(),

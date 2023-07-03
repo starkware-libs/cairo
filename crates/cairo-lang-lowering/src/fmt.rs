@@ -24,7 +24,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
         let mut remapping = self.iter().peekable();
         write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
-            src.fmt(f, ctx)?;
+            src.var_id.fmt(f, ctx)?;
             write!(f, " -> ")?;
             dst.fmt(f, ctx)?;
             if remapping.peek().is_some() {
@@ -84,11 +84,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
         let outputs = match &self {
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
-                returns.clone()
+                returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
             FlatBlockEnd::Panic(data) => {
                 write!(f, "  Panic(")?;
-                vec![*data]
+                vec![data.var_id]
             }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));

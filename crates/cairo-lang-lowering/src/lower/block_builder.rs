@@ -97,19 +97,23 @@ impl BlockBuilder {
             .map(|var_id| VarUsage { var_id, location })
     }
 
-    /// Gets the current lowered variable bound to a semantic variable.
+    /// Gets a VarUsage with the current lowered variable bound to a semantic variable.
     pub fn get_semantic(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         semantic_var_id: semantic::VarId,
         location: LocationId,
-    ) -> VariableId {
-        self.semantics
-            .get(
-                BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                &MemberPath::Var(semantic_var_id),
-            )
-            .expect("Use of undefined variable cannot happen after semantic phase.")
+    ) -> VarUsage {
+        VarUsage {
+            var_id: self
+                .semantics
+                .get(
+                    BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+                    &MemberPath::Var(semantic_var_id),
+                )
+                .expect("Use of undefined variable cannot happen after semantic phase."),
+            location,
+        }
     }
 
     /// Adds a statement to the block.
@@ -123,13 +127,13 @@ impl BlockBuilder {
     }
 
     /// Ends a block with Panic.
-    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VariableId) -> Maybe<()> {
+    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VarUsage) -> Maybe<()> {
         self.finalize(ctx, FlatBlockEnd::Panic(data));
         Ok(())
     }
 
     /// Ends a block with Callsite.
-    pub fn goto_callsite(self, expr: Option<VariableId>) -> SealedBlockBuilder {
+    pub fn goto_callsite(self, expr: Option<VarUsage>) -> SealedBlockBuilder {
         SealedBlockBuilder::GotoCallsite { builder: self, expr }
     }
 
@@ -137,7 +141,7 @@ impl BlockBuilder {
     pub fn ret(
         mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        expr: VariableId,
+        expr: VarUsage,
         location: LocationId,
     ) -> Maybe<()> {
         let ref_vars = ctx
@@ -159,7 +163,16 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr]).collect()));
+        self.finalize(
+            ctx,
+            FlatBlockEnd::Return(
+                chain!(
+                    ref_vars.iter().cloned().map(|var_id| VarUsage { var_id, location }),
+                    [expr]
+                )
+                .collect(),
+            ),
+        );
         Ok(())
     }
 
@@ -211,9 +224,9 @@ impl BlockBuilder {
             continue;
         };
             n_reachable_blocks += 1;
-            if let Some(var) = expr {
+            if let Some(var_usage) = expr {
                 semantic_remapping.expr.get_or_insert_with(|| {
-                    let var = ctx.variables[*var].clone();
+                    let var = ctx.variables[var_usage.var_id].clone();
                     ctx.variables.variables.alloc(var)
                 });
             }
@@ -225,7 +238,7 @@ impl BlockBuilder {
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = self.get_semantic(ctx, *semantic, location);
+                    let var = self.get_semantic(ctx, *semantic, location).var_id;
                     let var = ctx.variables[var].clone();
                     ctx.variables.variables.alloc(var)
                 });
@@ -268,7 +281,7 @@ pub struct SemanticRemapping {
 #[allow(clippy::large_enum_variant)]
 pub enum SealedBlockBuilder {
     /// Block should end by goto callsite. `expr` may be None for blocks that return the unit type.
-    GotoCallsite { builder: BlockBuilder, expr: Option<VariableId> },
+    GotoCallsite { builder: BlockBuilder, expr: Option<VarUsage> },
     /// Block end is already known.
     Ends(BlockId),
 }
@@ -293,15 +306,15 @@ impl SealedBlockBuilder {
                 );
             }
             if let Some(remapped_var) = semantic_remapping.expr {
-                let expr = expr.unwrap_or_else(|| {
+                let var_usage = expr.unwrap_or_else(|| {
                     LoweredExpr::Tuple {
                         exprs: vec![],
                         location: ctx.variables[remapped_var].location,
                     }
-                    .var(ctx, &mut builder)
+                    .as_var_usage(ctx, &mut builder)
                     .unwrap()
                 });
-                assert!(remapping.insert(remapped_var, expr).is_none());
+                assert!(remapping.insert(remapped_var, var_usage).is_none());
             }
 
             builder.finalize(ctx, FlatBlockEnd::Goto(target, remapping));
@@ -341,9 +354,17 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
             .ctx
             .db
             .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
-        generators::StructConstruct { inputs: members, ty, location: self.location }
-            .add(self.ctx, self.statements)
-            .var_id
+        // TODO(ilya): Is using the `self.location` correct here?
+        generators::StructConstruct {
+            inputs: members
+                .into_iter()
+                .map(|var_id| VarUsage { var_id, location: self.location })
+                .collect_vec(),
+            ty,
+            location: self.location,
+        }
+        .add(self.ctx, self.statements)
+        .var_id
     }
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {
