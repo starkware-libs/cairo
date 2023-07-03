@@ -255,7 +255,7 @@ Parameters: v0: test::A
 
 //! > ==========================================================================
 
-//! > Test pushing of moved var and returning moved variable
+//! > Test pushing of moved var and match_extern usage location.
 
 //! > test_runner_name
 test_function_lowering
@@ -265,7 +265,8 @@ fn foo(x: ADrop, mut y: ADrop) -> ADrop {
   if true {
     use_a_drop(y);
   } else {
-    y = x;
+    use_a_drop(x);
+    y = transform(x).unwrap();
   }
 
   return y;
@@ -275,18 +276,27 @@ fn foo(x: ADrop, mut y: ADrop) -> ADrop {
 foo
 
 //! > module_code
+use option::OptionTrait;
+
 extern type ADrop;
 impl ADropDrop of Drop::<ADrop>;
 
 extern fn use_a_drop(x: ADrop) nopanic;
 
+extern fn transform(x: ADrop) -> Option<ADrop> nopanic;
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
- --> lib.cairo:12:10
+ --> lib.cairo:17:10
   return y;
          ^
+
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
+ --> lib.cairo:14:19
+    y = transform(x).unwrap();
+                  ^
 
 //! > lowering_flat
 Parameters: v0: test::ADrop, v1: test::ADrop
