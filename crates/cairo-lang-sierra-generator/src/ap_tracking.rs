@@ -1,5 +1,7 @@
 use cairo_lang_lowering::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use cairo_lang_lowering::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use cairo_lang_lowering::{
+    BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId,
+};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
@@ -64,10 +66,10 @@ struct ApTrackingAnalysisInfo {
 }
 
 impl ApTrackingAnalysisInfo {
-    pub fn variables_used(
+    pub fn variables_used<'a>(
         &mut self,
         ctx: &ApTrackingAnalysisContext,
-        vars: &[VariableId],
+        vars: impl Iterator<Item = &'a VariableId>,
         block_id: BlockId,
     ) {
         for var_id in vars {
@@ -109,7 +111,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
 
         info.variables_used(
             self,
-            &stmt.inputs().into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            stmt.inputs().iter().map(|VarUsage { var_id, .. }| var_id),
             block_id,
         );
     }
@@ -130,7 +132,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, remapping.values().cloned().collect_vec().as_slice(), block_id);
+        info.variables_used(self, remapping.values(), block_id);
     }
 
     fn merge_match(
@@ -180,7 +182,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
 
         info.variables_used(
             self,
-            &match_info.inputs().into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            match_info.inputs().iter().map(|VarUsage { var_id, .. }| var_id),
             block_id,
         );
         info
@@ -198,7 +200,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
 
         let mut info = Self::Info { vars: Default::default() };
-        info.variables_used(self, vars, block_id);
+        info.variables_used(self, vars.iter(), block_id);
         info
     }
 
