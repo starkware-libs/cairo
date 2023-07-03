@@ -51,7 +51,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
             message: "Event structs with generic arguments are unsupported".to_string(),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
-        return PluginResult{ code: None, diagnostics, remove_original_item: false };
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     // Generate append_keys_and_data() code.
@@ -202,7 +202,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             message: "Event enums with generic arguments are unsupported".to_string(),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
-        return PluginResult{ code: None, diagnostics, remove_original_item: false };
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     let mut append_variants = vec![];
@@ -327,13 +327,11 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
         for arg in &attr.args {
-            let AttributeArg{
-                variant: AttributeArgVariant::Unnamed {
-                    value: ast::Expr::Path(path),
-                    ..
-                },
+            let AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
                 ..
-            } = arg else {
+            } = arg
+            else {
                 continue;
             };
             if path.as_syntax_node().get_text_without_trivia(db) == "starknet::Event" {

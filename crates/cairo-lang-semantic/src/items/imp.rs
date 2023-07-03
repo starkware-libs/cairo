@@ -863,7 +863,7 @@ pub fn find_candidates_at_context(
         }
         let param =
             extract_matches!(db.generic_param_semantic(*generic_param_id)?, GenericParam::Impl);
-        let Ok(imp_concrete_trait_id) = param.concrete_trait else {continue};
+        let Ok(imp_concrete_trait_id) = param.concrete_trait else { continue };
         if !concrete_trait_fits_trait_filter(db, imp_concrete_trait_id, &filter)? {
             continue;
         }
@@ -890,9 +890,11 @@ pub fn can_infer_impl_by_self(
     let mut temp_inference_data = ctx.resolver.inference().clone_data();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let Some((concrete_trait_id, _)) =
-    temp_inference.infer_concrete_trait_by_self(
-        trait_function_id, self_ty, &lookup_context, Some(stable_ptr),
+    let Some((concrete_trait_id, _)) = temp_inference.infer_concrete_trait_by_self(
+        trait_function_id,
+        self_ty,
+        &lookup_context,
+        Some(stable_ptr),
     ) else {
         return false;
     };
@@ -910,16 +912,17 @@ pub fn infer_impl_by_self(
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, n_snapshots)) =
         ctx.resolver.inference().infer_concrete_trait_by_self(
-            trait_function_id, self_ty, &lookup_context, Some(stable_ptr),
-        ) else
-    {
+            trait_function_id,
+            self_ty,
+            &lookup_context,
+            Some(stable_ptr),
+        )
+    else {
         return None;
     };
-    let Ok(_) = get_impl_at_context(
-            ctx.db, lookup_context, concrete_trait_id, stable_ptr
-        ) else {
-            return None;
-        };
+    let Ok(_) = get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr) else {
+        return None;
+    };
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
     );
