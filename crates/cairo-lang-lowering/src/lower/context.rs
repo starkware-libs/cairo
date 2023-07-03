@@ -433,8 +433,7 @@ pub fn lowering_flow_error_to_sealed_block(
                 ])),
                 location,
             }
-            .add(ctx, &mut builder.statements)
-            .var_id;
+            .add(ctx, &mut builder.statements);
             builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {

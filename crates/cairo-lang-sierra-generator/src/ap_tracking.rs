@@ -211,7 +211,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _ap_tracking_configuration: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.");
     }

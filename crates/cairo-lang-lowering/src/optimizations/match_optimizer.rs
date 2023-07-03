@@ -251,10 +251,10 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        data: &VariableId,
+        data: &VarUsage,
     ) -> Self::Info {
         let mut demand = MatchOptimizerDemand::default();
-        demand.variables_used(self, std::iter::once((data, ())));
+        demand.variables_used(self, std::iter::once((&data.var_id, ())));
         Self::Info { candidate: None, demand }
     }
 }

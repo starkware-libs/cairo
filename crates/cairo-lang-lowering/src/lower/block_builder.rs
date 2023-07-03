@@ -127,7 +127,7 @@ impl BlockBuilder {
     }
 
     /// Ends a block with Panic.
-    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VariableId) -> Maybe<()> {
+    pub fn panic(self, ctx: &mut LoweringContext<'_, '_>, data: VarUsage) -> Maybe<()> {
         self.finalize(ctx, FlatBlockEnd::Panic(data));
         Ok(())
     }

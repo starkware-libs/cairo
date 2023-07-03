@@ -7,7 +7,6 @@ use itertools::Itertools;
 
 use crate::{
     BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage,
-    VariableId,
 };
 
 /// Location of a lowering statement inside a block.
@@ -47,7 +46,7 @@ pub trait Analyzer<'a> {
     fn info_from_panic(
         &mut self,
         statement_location: StatementLocation,
-        var: &VariableId,
+        var: &VarUsage,
     ) -> Self::Info;
 }
 
