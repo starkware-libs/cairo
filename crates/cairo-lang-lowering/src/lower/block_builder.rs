@@ -97,19 +97,23 @@ impl BlockBuilder {
             .map(|var_id| VarUsage { var_id, location })
     }
 
-    /// Gets the current lowered variable bound to a semantic variable.
+    /// Gets a VarUsage with the current lowered variable bound to a semantic variable.
     pub fn get_semantic(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
         semantic_var_id: semantic::VarId,
         location: LocationId,
-    ) -> VariableId {
-        self.semantics
-            .get(
-                BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                &MemberPath::Var(semantic_var_id),
-            )
-            .expect("Use of undefined variable cannot happen after semantic phase.")
+    ) -> VarUsage {
+        VarUsage {
+            var_id: self
+                .semantics
+                .get(
+                    BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+                    &MemberPath::Var(semantic_var_id),
+                )
+                .expect("Use of undefined variable cannot happen after semantic phase."),
+            location,
+        }
     }
 
     /// Adds a statement to the block.
@@ -159,7 +163,16 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(ctx, FlatBlockEnd::Return(chain!(ref_vars, [expr.var_id]).collect()));
+        self.finalize(
+            ctx,
+            FlatBlockEnd::Return(
+                chain!(
+                    ref_vars.iter().cloned().map(|var_id| VarUsage { var_id, location }),
+                    [expr]
+                )
+                .collect(),
+            ),
+        );
         Ok(())
     }
 
@@ -225,7 +238,7 @@ impl BlockBuilder {
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = self.get_semantic(ctx, *semantic, location);
+                    let var = self.get_semantic(ctx, *semantic, location).var_id;
                     let var = ctx.variables[var].clone();
                     ctx.variables.variables.alloc(var)
                 });
@@ -288,7 +301,10 @@ impl SealedBlockBuilder {
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                 assert!(
                     remapping
-                        .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))
+                        .insert(
+                            *remapped_var,
+                            builder.get_semantic(ctx, *semantic, location).var_id
+                        )
                         .is_none()
                 );
             }

@@ -79,7 +79,7 @@ fn check_variable_lifetime(
                     lowering::FlatBlockEnd::Goto(_, remapping) => {
                         *remapping.values().nth(location.idx).unwrap()
                     }
-                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx].var_id,
                     lowering::FlatBlockEnd::Panic(_) => {
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }

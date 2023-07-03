@@ -266,6 +266,8 @@ impl<'a> PanicBlockLoweringContext<'a> {
             FlatBlockEnd::Panic(err_data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
+
+                // TODO(ilya): Make err_data a VarUsage and take the location from there.
                 let location = self.ctx.variables[err_data].location;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
@@ -273,19 +275,17 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: err_data, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::Return(returns) => {
-                let location = self.ctx.variables[returns[0]].location;
+                // The last var usage is the "real" return value (not implicit or ref).
+                let location = returns.last().unwrap().location;
 
                 // Tuple construction.
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
                 self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                    inputs: returns
-                        .into_iter()
-                        .map(|var_id| VarUsage { var_id, location })
-                        .collect(),
+                    inputs: returns,
                     output: tupled_res,
                 }));
 
@@ -297,7 +297,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },

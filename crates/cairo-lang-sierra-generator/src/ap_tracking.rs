@@ -191,7 +191,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
     fn info_from_return(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         // TODO(ilya): Consider the following disabling of ap tracking.
 
@@ -200,7 +200,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
 
         let mut info = Self::Info { vars: Default::default() };
-        info.variables_used(self, vars.iter(), block_id);
+        info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| var_id), block_id);
         info
     }
 
