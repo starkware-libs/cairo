@@ -60,8 +60,8 @@ impl<Var: std::hash::Hash + Eq + Copy, UsePosition: Copy, Aux: Clone + Default +
         for (dst, (src, position)) in remapping.rev() {
             let src = (*src).into();
             let dst = (*dst).into();
-            if self.vars.swap_remove(&dst).is_some() {
-                if let Some(next_usage_position) = self.vars.insert(src, position) {
+            if let Some(dest_next_usage_position) = self.vars.swap_remove(&dst) {
+                if let Some(next_usage_position) = self.vars.insert(src, dest_next_usage_position) {
                     reporter.dup(position, src, next_usage_position);
                 } else {
                     reporter.last_use(position, src);
