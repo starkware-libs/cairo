@@ -41,8 +41,9 @@ pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     };
 
     let type_path_elements = type_path.elements(db);
-    let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)
-        ] = type_path_elements.as_slice() else {
+    let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)] =
+        type_path_elements.as_slice()
+    else {
         return false;
     };
 

@@ -353,13 +353,14 @@ impl ImplFunctionId {
     pub fn impl_def_id(&self, db: &dyn DefsGroup) -> ImplDefId {
         let ImplFunctionLongId(module_file_id, ptr) = db.lookup_intern_impl_function(*self);
         // TODO(spapini): Use a parent function.
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(ptr.untyped())
+        else {
             panic!()
         };
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
             panic!()
         };
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
             panic!()
         };
         let impl_ptr = ast::ItemImplPtr(parent);
@@ -454,13 +455,14 @@ impl TraitFunctionId {
         // Trait function ast lies a few levels bellow the trait ast.
         // Fetch the grand grand grand parent.
         // TODO(spapini): Use a parent function.
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(ptr.untyped()) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(ptr.untyped())
+        else {
             panic!()
         };
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
             panic!()
         };
-        let SyntaxStablePtr::Child{parent, ..} = db.lookup_intern_stable_ptr(parent) else {
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
             panic!()
         };
         let trait_ptr = ast::ItemTraitPtr(parent);
@@ -501,18 +503,17 @@ define_language_element_id!(
 );
 impl GenericParamLongId {
     pub fn name(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let SyntaxStablePtr::Child {key_fields, .. }=
-            db.lookup_intern_stable_ptr(self.1.0) else {
-                unreachable!()
-            };
+        let SyntaxStablePtr::Child { key_fields, .. } = db.lookup_intern_stable_ptr(self.1.0)
+        else {
+            unreachable!()
+        };
         let name_green = TerminalIdentifierGreen(key_fields[0]);
         name_green.identifier(db)
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> GenericKind {
-        let SyntaxStablePtr::Child { kind, .. } =
-            db.lookup_intern_stable_ptr(self.1.0) else {
-                unreachable!()
-            };
+        let SyntaxStablePtr::Child { kind, .. } = db.lookup_intern_stable_ptr(self.1.0) else {
+            unreachable!()
+        };
         match kind {
             SyntaxKind::GenericParamType => GenericKind::Type,
             SyntaxKind::GenericParamConst => GenericKind::Const,
@@ -522,12 +523,15 @@ impl GenericParamLongId {
     }
     /// Retrieves the ID of the generic item holding this generic parameter.
     pub fn generic_item(&self, db: &dyn DefsGroup) -> GenericItemId {
-        let SyntaxStablePtr::Child { parent, .. } =
-            db.lookup_intern_stable_ptr(self.1.0) else { panic!() };
-        let SyntaxStablePtr::Child { parent, .. } =
-            db.lookup_intern_stable_ptr(parent) else { panic!() };
-        let SyntaxStablePtr::Child { parent, .. } =
-            db.lookup_intern_stable_ptr(parent) else { panic!() };
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(self.1.0) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
+        let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
+            panic!()
+        };
         GenericItemId::from_ptr(db, self.0, parent)
     }
 }
@@ -577,16 +581,25 @@ impl GenericItemId {
         module_file: ModuleFileId,
         stable_ptr: SyntaxStablePtrId,
     ) -> Self {
-        let SyntaxStablePtr::Child { parent: parent0, kind,.. } =
-            db.lookup_intern_stable_ptr(stable_ptr) else { panic!() };
+        let SyntaxStablePtr::Child { parent: parent0, kind, .. } =
+            db.lookup_intern_stable_ptr(stable_ptr)
+        else {
+            panic!()
+        };
         match kind {
             SyntaxKind::FunctionDeclaration => {
-                let SyntaxStablePtr::Child { parent: parent1, kind,.. } =
-                    db.lookup_intern_stable_ptr(parent0) else { panic!() };
+                let SyntaxStablePtr::Child { parent: parent1, kind, .. } =
+                    db.lookup_intern_stable_ptr(parent0)
+                else {
+                    panic!()
+                };
                 match kind {
                     SyntaxKind::FunctionWithBody => {
-                        let SyntaxStablePtr::Child { parent: parent2,.. } =
-                            db.lookup_intern_stable_ptr(parent1) else { panic!() };
+                        let SyntaxStablePtr::Child { parent: parent2, .. } =
+                            db.lookup_intern_stable_ptr(parent1)
+                        else {
+                            panic!()
+                        };
 
                         match db.lookup_intern_stable_ptr(parent2) {
                             SyntaxStablePtr::Root => GenericItemId::FreeFunc(

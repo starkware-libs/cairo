@@ -131,12 +131,9 @@ pub fn try_extract_test_config(
 
 /// Tries to extract the relevant expected panic values.
 fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
-    let [
-        AttributeArg {
-            variant: AttributeArgVariant::Named { name, value: panics, .. },
-            ..
-        }
-    ] = &attr.args[..] else {
+    let [AttributeArg { variant: AttributeArgVariant::Named { name, value: panics, .. }, .. }] =
+        &attr.args[..]
+    else {
         return None;
     };
     if name != "expected" {
