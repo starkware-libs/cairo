@@ -29,7 +29,7 @@ extern type NonZero<T>;
 impl NonZeroTCopy<T, impl TCopy: Copy<T>> of Copy<NonZero<T>>;
 impl NonZeroTDrop<T, impl TDrop: Drop<T>> of Drop<NonZero<T>>;
 enum IsZeroResult<T> {
-    Zero: (),
+    Zero,
     NonZero: NonZero<T>,
 }
 extern fn unwrap_non_zero<T>(a: NonZero<T>) -> T nopanic;
@@ -43,7 +43,7 @@ impl NonZeroIntoImpl<T> of Into<NonZero<T>, T> {
 impl IsZeroResultIntoBool<T, impl TDrop: Drop<T>> of Into<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {
         match self {
-            IsZeroResult::Zero(()) => true,
+            IsZeroResult::Zero => true,
             IsZeroResult::NonZero(_) => false,
         }
     }

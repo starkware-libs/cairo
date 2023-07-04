@@ -123,7 +123,7 @@ fn test_dict_of_nullable() {
     assert_eq(@val11, @2, 'dict[11] == 2');
     assert(
         match nullable::match_nullable(val12) {
-            nullable::FromNullableResult::Null(()) => true,
+            nullable::FromNullableResult::Null => true,
             nullable::FromNullableResult::NotNull(_) => false,
         },
         'default_val == null'

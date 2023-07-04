@@ -35,7 +35,7 @@ fn _poseidon_hash_span_inner(
 ) -> felt252 {
     let x = match span.pop_front() {
         Option::Some(x) => x,
-        Option::None(()) => {
+        Option::None => {
             // Pad input with [1, 0].
             let (s0, s1, s2) = hades_permutation(state.s0 + 1, state.s1, state.s2);
             return s0;
@@ -43,7 +43,7 @@ fn _poseidon_hash_span_inner(
     };
     let y = match span.pop_front() {
         Option::Some(y) => y,
-        Option::None(()) => {
+        Option::None => {
             // Add x and pad with [0].
             let (s0, s1, s2) = hades_permutation(state.s0 + *x, state.s1 + 1, state.s2);
             return s0;

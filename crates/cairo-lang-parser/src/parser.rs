@@ -1345,8 +1345,8 @@ impl<'a> Parser<'a> {
                         };
                         // If the path has more than 1 element assume it's a simplified Enum variant
                         // Eg. MyEnum::A(()) ~ MyEnum::A
-                        // Multi-path identifiers aren't allowed, for now this mechanism is
-                        // sufficient
+                        // Multi-element path identifiers aren't allowed, for now this mechanism is
+                        // sufficient.
                         match children.len() {
                             // 0 => return None, - unreachable
                             1 => path.into(),
