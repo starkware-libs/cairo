@@ -1,10 +1,10 @@
 #[starknet::interface]
-trait IOtherContract<TContractState> {
+pub trait IOtherContract<TContractState> {
     fn decrease_allowed(self: @TContractState) -> bool;
 }
 
 #[starknet::interface]
-trait ICounterContract<TContractState> {
+pub trait ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128);
     fn decrease_counter(ref self: TContractState, amount: u128);
     fn get_counter(self: @TContractState) -> u128;

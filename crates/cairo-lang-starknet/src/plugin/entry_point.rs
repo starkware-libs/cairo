@@ -175,7 +175,7 @@ pub fn generate_entry_point_wrapper(
 
     Ok(RewriteNode::interpolate_patched(
         "$implicit_precedence$
-        fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
+        pub fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             $arg_definitions$

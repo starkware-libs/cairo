@@ -20,17 +20,21 @@ pub struct PanicablePlugin;
 
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
-        let (declaration, attributes) = match item_ast {
-            ast::Item::ExternFunction(extern_func_ast) => {
-                (extern_func_ast.declaration(db), extern_func_ast.attributes(db))
-            }
-            ast::Item::FreeFunction(free_func_ast) => {
-                (free_func_ast.declaration(db), free_func_ast.attributes(db))
-            }
+        let (declaration, attributes, visibility) = match item_ast {
+            ast::Item::ExternFunction(extern_func_ast) => (
+                extern_func_ast.declaration(db),
+                extern_func_ast.attributes(db),
+                extern_func_ast.visibility(db),
+            ),
+            ast::Item::FreeFunction(free_func_ast) => (
+                free_func_ast.declaration(db),
+                free_func_ast.attributes(db),
+                free_func_ast.visibility(db),
+            ),
             _ => return PluginResult::default(),
         };
 
-        generate_panicable_code(db, declaration, attributes)
+        generate_panicable_code(db, declaration, attributes, visibility)
     }
 }
 impl AsDynMacroPlugin for PanicablePlugin {
@@ -48,6 +52,7 @@ fn generate_panicable_code(
     db: &dyn SyntaxGroup,
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
+    visibility: ast::Visibility,
 ) -> PluginResult {
     let mut attrs = attributes.query_attr(db, "panic_with");
     if attrs.is_empty() {
@@ -66,6 +71,11 @@ fn generate_panicable_code(
         };
     }
     let attr = attrs.swap_remove(0);
+
+    let vis = match visibility {
+        ast::Visibility::Public(_) => "pub ",
+        ast::Visibility::Default(_) => "",
+    };
 
     let signature = declaration.signature(db);
     let Some((inner_ty_text, success_variant, failure_variant)) =
@@ -115,7 +125,7 @@ fn generate_panicable_code(
             name: "panicable".into(),
             content: indoc::formatdoc!(
                 r#"
-                    fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
+                    {vis}fn {panicable_name}{generics_params}({params}) -> {inner_ty_text} {{
                         match {function_name}({args}) {{
                             {success_variant} (v) => {{
                                 v

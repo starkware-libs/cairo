@@ -1,13 +1,13 @@
-enum MyEnumShort {
+pub enum MyEnumShort {
     a: felt252,
     b: felt252
 }
-enum MyEnumLong {
+pub enum MyEnumLong {
     a: felt252,
     b: felt252,
     c: felt252
 }
-enum MyEnumGeneric<S, T> {
+pub enum MyEnumGeneric<S, T> {
     a: T,
     b: S,
     c: T
@@ -32,7 +32,7 @@ fn main() -> felt252 {
     300
 }
 
-fn match_short(e: MyEnumShort) -> felt252 {
+pub fn match_short(e: MyEnumShort) -> felt252 {
     match e {
         MyEnumShort::a(x) => {
             x
@@ -43,7 +43,7 @@ fn match_short(e: MyEnumShort) -> felt252 {
     }
 }
 
-fn match_long(e: MyEnumLong) -> felt252 {
+pub fn match_long(e: MyEnumLong) -> felt252 {
     match e {
         MyEnumLong::a(x) => {
             x

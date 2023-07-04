@@ -2,6 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'main'
@@ -56,6 +57,7 @@
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
     │   │   │   ├── name (kind: TokenIdentifier): 'fib'
@@ -198,6 +200,7 @@
     │   │       └── rbrace (kind: TokenRBrace): '}'
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TokenFunction): 'fn'
     │       │   ├── name (kind: TokenIdentifier): 'fib_tuple'

@@ -2,7 +2,7 @@ use array::ArrayTrait;
 use serde::Serde;
 use array::SpanTrait;
 
-enum Option<T> {
+pub enum Option<T> {
     Some: T,
     None: (),
 }
@@ -29,7 +29,7 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
     }
 }
 
-trait OptionTrait<T> {
+pub trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect(self: Option<T>, err: felt252) -> T;
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.

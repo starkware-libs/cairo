@@ -15,7 +15,7 @@ foo
 const MY_CONST: felt252 = 0x1234;
 
 mod MyModule {
-    const CONST_IN_MODULE: felt252 = 1;
+    pub const CONST_IN_MODULE: felt252 = 1;
 }
 
 //! > expected_diagnostics

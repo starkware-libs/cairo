@@ -8,25 +8,25 @@ use starknet::{
 use serde::Serde;
 
 #[derive(Copy, Drop)]
-extern type StorageAddress;
+pub extern type StorageAddress;
 
 #[derive(Copy, Drop)]
-extern type StorageBaseAddress;
+pub extern type StorageBaseAddress;
 
 // Storage.
-extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
-extern fn storage_base_address_from_felt252(
+pub extern fn storage_base_address_const<const address: felt252>() -> StorageBaseAddress nopanic;
+pub extern fn storage_base_address_from_felt252(
     addr: felt252
 ) -> StorageBaseAddress implicits(RangeCheck) nopanic;
 
-extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
-extern fn storage_address_from_base_and_offset(
+pub extern fn storage_address_to_felt252(address: StorageAddress) -> felt252 nopanic;
+pub extern fn storage_address_from_base_and_offset(
     base: StorageBaseAddress, offset: u8
 ) -> StorageAddress nopanic;
 
-extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
+pub extern fn storage_address_from_base(base: StorageBaseAddress) -> StorageAddress nopanic;
 
-extern fn storage_address_try_from_felt252(
+pub extern fn storage_address_try_from_felt252(
     address: felt252
 ) -> Option<StorageAddress> implicits(RangeCheck) nopanic;
 
@@ -52,7 +52,7 @@ impl StorageAddressSerde of serde::Serde<StorageAddress> {
     }
 }
 
-trait StorageAccess<T> {
+pub trait StorageAccess<T> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T>;
     fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()>;
     fn read_at_offset_internal(

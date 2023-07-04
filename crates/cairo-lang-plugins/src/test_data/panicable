@@ -5,7 +5,7 @@ test_expand_plugin
 
 //! > cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+pub extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
 #[panic_with('2', bar_changed)]
 extern fn bar() -> Result::<felt252, Err> nopanic;
@@ -23,9 +23,9 @@ fn possibly_panic() -> Result::<felt252, Err> { Result::<felt252, Err>::Ok(1) }
 
 //! > generated_cairo_code
 #[panic_with('1', foo_improved)]
-extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
+pub extern fn foo(a: felt252, ref b: other) -> Option::<()> implicits(RangeCheck, GasBuiltin) nopanic;
 
-fn foo_improved(a: felt252, ref b: other) -> () {
+pub fn foo_improved(a: felt252, ref b: other) -> () {
     match foo(a, ref b) {
         Option::Some (v) => {
             v

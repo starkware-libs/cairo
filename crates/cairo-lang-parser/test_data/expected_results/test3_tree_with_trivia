@@ -2,6 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -123,6 +124,7 @@
     │   │               └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -472,6 +474,7 @@
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #2 (kind: FunctionWithBody)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── declaration (kind: FunctionDeclaration)
     │       │   ├── function_kw (kind: TerminalFunction)
     │       │   │   ├── leading_trivia (kind: Trivia)

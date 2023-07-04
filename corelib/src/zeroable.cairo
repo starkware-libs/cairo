@@ -1,6 +1,6 @@
 // === Zeroable ===
 
-trait Zeroable<T> {
+pub trait Zeroable<T> {
     /// Returns the additive identity element of Self, 0.
     fn zero() -> T;
     /// Returns whether self is equal to 0, the additive identity element.
@@ -25,10 +25,10 @@ impl Felt252Zeroable of Zeroable<felt252> {
 
 // === NonZero ===
 
-extern type NonZero<T>;
+pub extern type NonZero<T>;
 impl NonZeroTCopy<T, impl TCopy: Copy<T>> of Copy<NonZero<T>>;
 impl NonZeroTDrop<T, impl TDrop: Drop<T>> of Drop<NonZero<T>>;
-enum IsZeroResult<T> {
+pub enum IsZeroResult<T> {
     Zero: (),
     NonZero: NonZero<T>,
 }

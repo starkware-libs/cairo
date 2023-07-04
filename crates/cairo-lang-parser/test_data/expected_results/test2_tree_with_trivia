@@ -2,6 +2,7 @@
     ├── items (kind: ItemList)
     │   ├── child #0 (kind: FunctionWithBody)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── declaration (kind: FunctionDeclaration)
     │   │   │   ├── function_kw (kind: TerminalFunction)
     │   │   │   │   ├── leading_trivia (kind: Trivia) []
@@ -373,6 +374,7 @@
     │   │               └── child #0 (kind: TokenNewline).
     │   └── child #1 (kind: ItemModule)
     │       ├── attributes (kind: AttributeList) []
+    │       ├── visibility (kind: VisibilityDefault) []
     │       ├── module_kw (kind: TerminalModule)
     │       │   ├── leading_trivia (kind: Trivia)
     │       │   │   └── child #0 (kind: TokenNewline).
@@ -392,6 +394,7 @@
     │           ├── items (kind: ItemList)
     │           │   ├── child #0 (kind: FunctionWithBody)
     │           │   │   ├── attributes (kind: AttributeList) []
+    │           │   │   ├── visibility (kind: VisibilityDefault) []
     │           │   │   ├── declaration (kind: FunctionDeclaration)
     │           │   │   │   ├── function_kw (kind: TerminalFunction)
     │           │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -590,6 +593,7 @@
     │           │   │               └── child #0 (kind: TokenNewline).
     │           │   └── child #1 (kind: ItemStruct)
     │           │       ├── attributes (kind: AttributeList) []
+    │           │       ├── visibility (kind: VisibilityDefault) []
     │           │       ├── struct_kw (kind: TerminalStruct)
     │           │       │   ├── leading_trivia (kind: Trivia)
     │           │       │   │   └── child #0 (kind: TokenWhitespace).
@@ -609,6 +613,7 @@
     │           │       ├── members (kind: MemberList)
     │           │       │   ├── item #0 (kind: Member)
     │           │       │   │   ├── attributes (kind: AttributeList) []
+    │           │       │   │   ├── visibility (kind: VisibilityDefault) []
     │           │       │   │   ├── name (kind: TerminalIdentifier)
     │           │       │   │   │   ├── leading_trivia (kind: Trivia)
     │           │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -635,6 +640,7 @@
     │           │       │   │       └── child #2 (kind: TokenNewline).
     │           │       │   └── item #1 (kind: Member)
     │           │       │       ├── attributes (kind: AttributeList) []
+    │           │       │       ├── visibility (kind: VisibilityDefault) []
     │           │       │       ├── name (kind: TerminalIdentifier)
     │           │       │       │   ├── leading_trivia (kind: Trivia)
     │           │       │       │   │   └── child #0 (kind: TokenWhitespace).
