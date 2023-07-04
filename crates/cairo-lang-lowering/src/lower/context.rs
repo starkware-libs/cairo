@@ -198,6 +198,14 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         self.variables.new_var(req)
     }
 
+    /// Same as `new_var` but returns it as a `VarUsage`.
+    /// This is useful when the variable definition and usage locations are the same.
+    pub fn new_var_usage(&mut self, req: VarRequest) -> VarUsage {
+        let location = req.location;
+
+        VarUsage { var_id: self.variables.new_var(req), location }
+    }
+
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
         self.variables.get_location(stable_ptr)
