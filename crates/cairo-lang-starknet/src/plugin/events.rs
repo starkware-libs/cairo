@@ -61,7 +61,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_field_kind(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
+        let member_kind = get_field_kind_for_member(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
         members.push((member.name(db).text(db), member_kind));
 
         let member_for_append = RewriteNode::interpolate_patched(
@@ -123,7 +123,11 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-fn get_field_kind(
+/**
+    Retrieves the field kind for a given struct member, indicating how the field should be serialized.
+    See [EventFieldKind].
+*/
+fn get_field_kind_for_member(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     member: &ast::Member,
@@ -154,28 +158,32 @@ fn get_field_kind(
     default
 }
 
-fn get_field_enum_kind(
+/**
+    Retrieves the field kind for a given enum variant, indicating how the field should be serialized.
+    See [EventFieldKind].
+*/
+fn get_field_kind_for_variant(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    member: &ast::Variant,
+    variant: &ast::Variant,
     default: EventFieldKind,
 ) -> EventFieldKind {
-    let is_nested = member.has_attr(db, "nested");
-    let is_key = member.has_attr(db, "key");
-    let is_serde = member.has_attr(db, "serde");
+    let is_nested = variant.has_attr(db, "nested");
+    let is_key = variant.has_attr(db, "key");
+    let is_serde = variant.has_attr(db, "serde");
 
     // Currently, nested fields are unsupported.
     if is_nested {
         diagnostics.push(PluginDiagnostic {
             message: "Nested event fields are currently unsupported".to_string(),
-            stable_ptr: member.stable_ptr().untyped(),
+            stable_ptr: variant.stable_ptr().untyped(),
         });
     }
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic {
             message: "Serde event fields are currently unsupported".to_string(),
-            stable_ptr: member.stable_ptr().untyped(),
+            stable_ptr: variant.stable_ptr().untyped(),
         });
     }
 
@@ -220,7 +228,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let member_kind =
-            get_field_enum_kind(db, &mut diagnostics, &variant, EventFieldKind::Nested);
+            get_field_kind_for_variant(db, &mut diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
