@@ -127,7 +127,13 @@ libfunc function_call<user@new_syntax_test_contract::new_syntax_test_contract::c
 libfunc function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize> = function_call<user@core::starknet::contract_address::ContractAddressSerde::deserialize>;
 libfunc enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>> = enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc store_temp<ContractAddress> = store_temp<ContractAddress>;
+<<<<<<< HEAD
 libfunc function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::init> = function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::init>;
+||||||| 801265d38
+libfunc function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init> = function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init>;
+=======
+libfunc function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor> = function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor>;
+>>>>>>> origin/dev-v2.0.0
 libfunc drop<ContractAddress> = drop<ContractAddress>;
 libfunc struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState> = struct_deconstruct<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>;
 libfunc drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState> = drop<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>;
@@ -765,7 +771,13 @@ store_temp<System>([2]) -> ([51]);
 store_temp<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState>([46]) -> ([52]);
 store_temp<u128>([13]) -> ([53]);
 store_temp<ContractAddress>([20]) -> ([54]);
+<<<<<<< HEAD
 function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::init>([50], [51], [52], [53], [54]) -> ([47], [48], [49]);
+||||||| 801265d38
+function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init>([50], [51], [52], [53], [54]) -> ([47], [48], [49]);
+=======
+function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor>([50], [51], [52], [53], [54]) -> ([47], [48], [49]);
+>>>>>>> origin/dev-v2.0.0
 store_temp<RangeCheck>([40]) -> ([40]);
 enum_match<core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>>([49]) { fallthrough([55]) 454([56]) };
 branch_align() -> ();
@@ -1970,19 +1982,41 @@ rename<RangeCheck>([6]) -> ([10]);
 rename<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([11]);
 return([10], [11]);
 
+<<<<<<< HEAD
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::get_counter@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::increase_counter@118([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::__external::decrease_counter@252([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::__constructor::init@386([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::get_counter@545([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+||||||| 801265d38
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::get_counter@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::increase_counter@118([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::decrease_counter@252([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::init@386([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::get_counter@545([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
+=======
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::get_counter@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::increase_counter@118([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__external::decrease_counter@252([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::constructor@386([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::array::Span::<core::felt252>,)>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::CounterContract::get_counter@545([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
+>>>>>>> origin/dev-v2.0.0
 core::integer::U128Serde::serialize@569([0]: u128, [1]: Array<felt252>) -> (Array<felt252>, Unit);
 core::starknet::use_system_implicit@581([0]: System) -> (System, Unit);
 core::integer::U128Serde::deserialize@585([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::integer::u128>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::increase_counter@627([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterContract::decrease_counter@709([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>);
 core::starknet::contract_address::ContractAddressSerde::deserialize@847([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
+<<<<<<< HEAD
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::init@871([0]: GasBuiltin, [1]: System, [2]: new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, [3]: u128, [4]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())>);
 new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::InternalContractStateImpl::read@914([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+||||||| 801265d38
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::init@871([0]: GasBuiltin, [1]: System, [2]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, [3]: u128, [4]: ContractAddress) -> (GasBuiltin, System, core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read@914([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
+=======
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor@871([0]: GasBuiltin, [1]: System, [2]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, [3]: u128, [4]: ContractAddress) -> (GasBuiltin, System, core::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::CounterContract::ContractState, ())>);
+new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::InternalContractStateImpl::read@914([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: new_syntax_test_contract::new_syntax_test_contract::CounterContract::counter::ContractState) -> (RangeCheck, GasBuiltin, System, core::PanicResult::<(core::integer::u128,)>);
+>>>>>>> origin/dev-v2.0.0
 core::Felt252Serde::serialize@952([0]: felt252, [1]: Array<felt252>) -> (Array<felt252>, Unit);
 core::integer::u128_try_from_felt252@958([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 core::integer::U128Add::add@974([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u128,)>);

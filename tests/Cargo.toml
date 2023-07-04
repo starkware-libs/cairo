@@ -9,6 +9,7 @@ description = ""
 [dev-dependencies]
 assert_matches.workspace = true
 cairo-felt.workspace = true
+<<<<<<< HEAD
 cairo-lang-casm = { path = "../crates/cairo-lang-casm" }
 cairo-lang-compiler = { path = "../crates/cairo-lang-compiler" }
 cairo-lang-defs = { path = "../crates/cairo-lang-defs" }
@@ -18,14 +19,53 @@ cairo-lang-lowering = { path = "../crates/cairo-lang-lowering" }
 cairo-lang-parser = { path = "../crates/cairo-lang-parser" }
 cairo-lang-plugins = { path = "../crates/cairo-lang-plugins" }
 cairo-lang-runner = { path = "../crates/cairo-lang-runner" }
+||||||| 801265d38
+cairo-lang-casm = { path = "../crates/cairo-lang-casm", version = "2.0.0-rc5" }
+cairo-lang-compiler = { path = "../crates/cairo-lang-compiler", version = "2.0.0-rc5" }
+cairo-lang-defs = { path = "../crates/cairo-lang-defs", version = "2.0.0-rc5" }
+cairo-lang-diagnostics = { path = "../crates/cairo-lang-diagnostics", version = "2.0.0-rc5" }
+cairo-lang-filesystem = { path = "../crates/cairo-lang-filesystem", version = "2.0.0-rc5" }
+cairo-lang-lowering = { path = "../crates/cairo-lang-lowering", version = "2.0.0-rc5" }
+cairo-lang-parser = { path = "../crates/cairo-lang-parser", version = "2.0.0-rc5" }
+cairo-lang-plugins = { path = "../crates/cairo-lang-plugins", version = "2.0.0-rc5" }
+cairo-lang-runner = { path = "../crates/cairo-lang-runner", version = "2.0.0-rc5" }
+=======
+cairo-lang-casm = { path = "../crates/cairo-lang-casm", version = "2.0.0" }
+cairo-lang-compiler = { path = "../crates/cairo-lang-compiler", version = "2.0.0" }
+cairo-lang-defs = { path = "../crates/cairo-lang-defs", version = "2.0.0" }
+cairo-lang-diagnostics = { path = "../crates/cairo-lang-diagnostics", version = "2.0.0" }
+cairo-lang-filesystem = { path = "../crates/cairo-lang-filesystem", version = "2.0.0" }
+cairo-lang-lowering = { path = "../crates/cairo-lang-lowering", version = "2.0.0" }
+cairo-lang-parser = { path = "../crates/cairo-lang-parser", version = "2.0.0" }
+cairo-lang-plugins = { path = "../crates/cairo-lang-plugins", version = "2.0.0" }
+cairo-lang-runner = { path = "../crates/cairo-lang-runner", version = "2.0.0" }
+>>>>>>> origin/dev-v2.0.0
 cairo-lang-semantic = { path = "../crates/cairo-lang-semantic", features = ["testing"] }
+<<<<<<< HEAD
 cairo-lang-sierra = { path = "../crates/cairo-lang-sierra" }
 cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas" }
+||||||| 801265d38
+cairo-lang-sierra = { path = "../crates/cairo-lang-sierra", version = "2.0.0-rc5" }
+cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas", version = "2.0.0-rc5" }
+=======
+cairo-lang-sierra = { path = "../crates/cairo-lang-sierra", version = "2.0.0" }
+cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas", version = "2.0.0" }
+>>>>>>> origin/dev-v2.0.0
 cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator", features = ["testing"] }
 cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", features = ["testing"] }
+<<<<<<< HEAD
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils" }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
+||||||| 801265d38
+cairo-lang-syntax = { path = "../crates/cairo-lang-syntax", version = "2.0.0-rc5" }
+cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", version = "2.0.0-rc5" }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", version = "2.0.0-rc5" }
+=======
+cairo-lang-syntax = { path = "../crates/cairo-lang-syntax", version = "2.0.0" }
+cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", version = "2.0.0" }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", version = "2.0.0" }
+>>>>>>> origin/dev-v2.0.0
 env_logger.workspace = true
 itertools.workspace = true
 log.workspace = true

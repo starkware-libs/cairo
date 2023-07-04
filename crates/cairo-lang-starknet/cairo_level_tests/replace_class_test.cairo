@@ -29,11 +29,23 @@ mod contract_a {
         self.value.write(value);
     }
 
+<<<<<<< HEAD
     #[external(v0)]
     impl IWithReplaceImpl of super::IWithReplace<ContractState> {
         fn replace(ref self: ContractState, class_hash: ClassHash) {
             starknet::replace_class_syscall(class_hash).unwrap();
         }
+||||||| 801265d38
+    #[external]
+    fn replace(ref self: ContractState) {
+        starknet::replace_class_syscall(super::ContractB::TEST_CLASS_HASH.try_into().unwrap())
+            .unwrap();
+=======
+    #[external(v0)]
+    fn replace(ref self: ContractState) {
+        starknet::replace_class_syscall(super::ContractB::TEST_CLASS_HASH.try_into().unwrap())
+            .unwrap();
+>>>>>>> origin/dev-v2.0.0
     }
 }
 

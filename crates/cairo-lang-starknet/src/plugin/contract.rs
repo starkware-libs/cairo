@@ -411,6 +411,18 @@ fn handle_entry_point(
 ) {
     let attr = entry_point_kind.get_attr();
 
+    if entry_point_kind == EntryPointKind::Constructor {
+        {
+            let name_node = item_function.declaration(db).name(db);
+            if name_node.text(db) != "constructor" {
+                diagnostics.push(PluginDiagnostic {
+                    message: "The constructor function must be called `constructor`.".to_string(),
+                    stable_ptr: name_node.stable_ptr().untyped(),
+                })
+            }
+        };
+    }
+
     let declaration = item_function.declaration(db);
     if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
         declaration.generic_params(db)

@@ -80,12 +80,12 @@ Another possibility is to get a read-only reference to the storage:
 ----
 This is a view function - it can only read from the storage.
 - `#[constructor]` function is called when the contract is deployed. There may be only one such
-function. If it is not defined, the contract is deployed with all storage variables
-default-initialized. For example:
+function and it must be called `constructor`. If it is not defined, the contract is deployed with
+all storage variables default-initialized. For example:
 [source]
 ----
     #[constructor]
-    fn constructor_example() {
+    fn constructor() {
         x::write(3);
     }
 ----
@@ -219,8 +219,16 @@ keccak hash of the function name - in this case `starknet_keccak("foo")`.
 [source,rust]
 ----
 #[starknet::contract]
+<<<<<<< HEAD
 mod my_second_contract {
     #[external(v0)]
+||||||| 801265d38
+mod MySecondContract {
+    #[external]
+=======
+mod MySecondContract {
+    #[external(v0)]
+>>>>>>> origin/dev-v2.0.0
     fn syscall_call_another_contract(
         address: starknet::ContractAddress, selector: felt252, calldata: Array<felt252>
     ) -> Span::<felt252> {
