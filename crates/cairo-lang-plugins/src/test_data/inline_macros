@@ -195,9 +195,9 @@ fn foo() {
 fn foo() {
     let arr = {
             let mut __array_builder_macro_result__ = ArrayTrait::new();
-            __array_builder_macro_result__.append(1);
-            __array_builder_macro_result__.append(2);
-            __array_builder_macro_result__.append(3);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 1);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 2);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 3);
             __array_builder_macro_result__
         };
 }
@@ -242,9 +242,9 @@ fn foo() {
 fn foo() {
 {
             let mut __array_builder_macro_result__ = ArrayTrait::new();
-            __array_builder_macro_result__.append(10);
-            __array_builder_macro_result__.append(11);
-            __array_builder_macro_result__.append(12);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 10);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 11);
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 12);
             __array_builder_macro_result__
         }.span();
 }
