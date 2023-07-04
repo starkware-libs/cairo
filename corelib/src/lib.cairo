@@ -10,10 +10,7 @@ use serde::Serde;
 use array::SpanTrait;
 
 #[derive(Copy, Drop)]
-enum bool {
-    False,
-    True,
-}
+enum bool {False, True, }
 
 impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
@@ -181,7 +178,7 @@ extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopan
 impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     fn try_into(self: felt252) -> Option<NonZero<felt252>> {
         match felt252_is_zero(self) {
-            zeroable::IsZeroResult::Zero => Option::None(()),
+            zeroable::IsZeroResult::Zero=> Option::None(()),
             zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
         }
     }

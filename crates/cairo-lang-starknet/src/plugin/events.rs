@@ -51,7 +51,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
             message: "Event structs with generic arguments are unsupported".to_string(),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
-        return PluginResult{ code: None, diagnostics, remove_original_item: false };
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     // Generate append_keys_and_data() code.
@@ -61,7 +61,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_field_kind_for_member(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
+        let member_kind =
+            get_field_kind_for_member(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
         members.push((member.name(db).text(db), member_kind));
 
         let member_for_append = RewriteNode::interpolate_patched(
@@ -123,10 +124,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-/**
-    Retrieves the field kind for a given struct member, indicating how the field should be serialized.
-    See [EventFieldKind].
-*/
+/// Retrieves the field kind for a given struct member, indicating how the field should be
+/// serialized. See [EventFieldKind].
 fn get_field_kind_for_member(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -158,10 +157,8 @@ fn get_field_kind_for_member(
     default
 }
 
-/**
-    Retrieves the field kind for a given enum variant, indicating how the field should be serialized.
-    See [EventFieldKind].
-*/
+/// Retrieves the field kind for a given enum variant, indicating how the field should be
+/// serialized. See [EventFieldKind].
 fn get_field_kind_for_variant(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -210,7 +207,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             message: "Event enums with generic arguments are unsupported".to_string(),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
-        return PluginResult{ code: None, diagnostics, remove_original_item: false };
+        return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
 
     let mut append_variants = vec![];
@@ -335,13 +332,11 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
         for arg in &attr.args {
-            let AttributeArg{
-                variant: AttributeArgVariant::Unnamed {
-                    value: ast::Expr::Path(path),
-                    ..
-                },
+            let AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
                 ..
-            } = arg else {
+            } = arg
+            else {
                 continue;
             };
             if path.as_syntax_node().get_text_without_trivia(db) == "starknet::Event" {

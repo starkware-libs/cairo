@@ -234,9 +234,11 @@ pub fn handle_contract_by_storage(
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function) => {
-                let Some(entry_point_kind) =
-                    EntryPointKind::try_from_function_with_body(db, &mut diagnostics, item_function)
-                else {
+                let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(
+                    db,
+                    &mut diagnostics,
+                    item_function,
+                ) else {
                     continue;
                 };
                 let function_name = RewriteNode::new_trimmed(
@@ -255,7 +257,9 @@ pub fn handle_contract_by_storage(
                 if !has_external_attribute(db, &mut diagnostics, &item) {
                     continue;
                 }
-                let ast::MaybeImplBody::Some(body) = item_impl.body(db) else { continue; };
+                let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
+                    continue;
+                };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
                     forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
@@ -267,7 +271,9 @@ pub fn handle_contract_by_storage(
                     );
                     forbid_attribute_in_external_impl(db, &mut diagnostics, &item, L1_HANDLER_ATTR);
 
-                    let ast::ImplItem::Function(item_function) = item else { continue; };
+                    let ast::ImplItem::Function(item_function) = item else {
+                        continue;
+                    };
                     let function_name = RewriteNode::new_trimmed(
                         item_function.declaration(db).name(db).as_syntax_node(),
                     );

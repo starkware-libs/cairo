@@ -51,7 +51,7 @@ pub fn dot_completions(
     let mut completions = Vec::new();
     for trait_function in relevant_methods {
         let Some(completion) = completion_for_method(db, module_id, trait_function) else {
-             continue;
+            continue;
         };
         completions.push(completion);
     }
@@ -152,7 +152,10 @@ fn find_methods_for_type(
             let lookup_context = resolver.impl_lookup_context();
             // Check if trait function signature's first param can fit our expr type.
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context, Some(stable_ptr)
+                trait_function,
+                ty,
+                &lookup_context,
+                Some(stable_ptr),
             ) else {
                 eprintln!("Can't fit");
                 continue;
