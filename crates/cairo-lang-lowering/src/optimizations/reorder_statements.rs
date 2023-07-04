@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[path = "delay_var_def_test.rs"]
+#[path = "reorder_statements_test.rs"]
 mod test;
 
 use std::cmp::Reverse;
@@ -10,10 +10,13 @@ use itertools::Itertools;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
 
-/// Moves var definitions closer to their usage point and removes unused var.
-/// Currently only moves consts and empty structs.
-/// Remove unnessary remapping before this optimization will result in better code.
-pub fn delay_var_def(lowered: &mut FlatLowered) {
+/// Reorder the statments in the lowering in order to move variable definitions closer to their
+/// usage. Statement with no side effects and unused outputs are removed.
+///
+/// Currently only effects literal struct construct and struct deconstruct statements.
+///
+/// Removing unnessary remapping before this optimization will result in better code.
+pub fn reorder_statements(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
         let mut analysis =
