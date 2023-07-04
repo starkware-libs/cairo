@@ -425,7 +425,7 @@ impl<'a> MemBuffer<'a> {
     }
 
     /// Returns the current position of the buffer and advances it by one.
-    pub fn next(&mut self) -> Relocatable {
+    fn next(&mut self) -> Relocatable {
         let ptr = self.ptr;
         self.ptr += 1;
         ptr
