@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
     SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
@@ -108,6 +109,17 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
+        // Find the Event core trait.
+        let starknet_module = core_submodule(db, "starknet");
+        let event_module = extract_matches!(
+            db.module_item_by_name(starknet_module, "event".into())?.unwrap(),
+            ModuleItemId::Submodule
+        );
+        let event_trait = extract_matches!(
+            db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into())?.unwrap(),
+            ModuleItemId::Trait
+        );
+
         // Find the Event type and add impls to ABI.
         for impl_id in impls {
             // Handle external impls.
@@ -120,6 +132,9 @@ impl AbiBuilder {
             }
 
             // Handle impls of starknet::Event.
+            if db.impl_def_trait(impl_id)? != event_trait {
+                continue;
+            }
             // Check if we have an Event derive plugin data on the impl.
             let module_file = impl_id.module_file_id(db.upcast());
             let generate_info =
