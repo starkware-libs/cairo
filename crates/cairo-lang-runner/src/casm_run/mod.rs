@@ -383,7 +383,7 @@ impl ResourceTracker for CairoHintProcessor<'_> {
 }
 
 /// Wrapper trait for a VM owner.
-trait VMWrapper {
+pub trait VMWrapper {
     fn vm(&mut self) -> &mut VirtualMachine;
 }
 impl VMWrapper for VirtualMachine {
@@ -405,7 +405,7 @@ fn segment_with_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
 }
 
 /// A helper struct to continuously write and read from a buffer in the VM memory.
-struct MemBuffer<'a> {
+pub struct MemBuffer<'a> {
     /// The VM to write to.
     /// This is a trait so that we would borrow the actual VM only once.
     vm: &'a mut dyn VMWrapper,
@@ -414,18 +414,18 @@ struct MemBuffer<'a> {
 }
 impl<'a> MemBuffer<'a> {
     /// Creates a new buffer.
-    fn new(vm: &'a mut dyn VMWrapper, ptr: Relocatable) -> Self {
+    pub fn new(vm: &'a mut dyn VMWrapper, ptr: Relocatable) -> Self {
         Self { vm, ptr }
     }
 
     /// Creates a new segment and returns a buffer wrapping it.
-    fn new_segment(vm: &'a mut dyn VMWrapper) -> Self {
+    pub fn new_segment(vm: &'a mut dyn VMWrapper) -> Self {
         let ptr = vm.vm().add_memory_segment();
         Self::new(vm, ptr)
     }
 
     /// Returns the current position of the buffer and advances it by one.
-    fn next(&mut self) -> Relocatable {
+    pub fn next(&mut self) -> Relocatable {
         let ptr = self.ptr;
         self.ptr += 1;
         ptr
@@ -434,7 +434,7 @@ impl<'a> MemBuffer<'a> {
     /// Returns the felt252 value in the current position of the buffer and advances it by one.
     /// Fails if the value is not a felt252.
     /// Borrows the buffer since a reference is returned.
-    fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
+    pub fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
         let ptr = self.next();
         self.vm.vm().get_integer(ptr)
     }
@@ -442,21 +442,21 @@ impl<'a> MemBuffer<'a> {
     /// Returns the usize value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a usize.
-    fn next_usize(&mut self) -> Result<usize, MemoryError> {
+    pub fn next_usize(&mut self) -> Result<usize, MemoryError> {
         Ok(self.next_felt252()?.to_usize().unwrap())
     }
 
     /// Returns the u128 value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a u128.
-    fn next_u128(&mut self) -> Result<u128, MemoryError> {
+    pub fn next_u128(&mut self) -> Result<u128, MemoryError> {
         Ok(self.next_felt252()?.to_u128().unwrap())
     }
 
     /// Returns the u64 value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a u64.
-    fn next_u64(&mut self) -> Result<u64, MemoryError> {
+    pub fn next_u64(&mut self) -> Result<u64, MemoryError> {
         Ok(self.next_felt252()?.to_u64().unwrap())
     }
 
@@ -464,13 +464,13 @@ impl<'a> MemBuffer<'a> {
     /// it by two.
     /// Fails with `MemoryError` if any of the next two values are not felt252s.
     /// Panics if any of the next two values are not u128.
-    fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
+    pub fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
         Ok(self.next_u128()? + BigUint::from(self.next_u128()?).shl(128))
     }
 
     /// Returns the address value in the current position of the buffer and advances it by one.
     /// Fails if the value is not an address.
-    fn next_addr(&mut self) -> Result<Relocatable, MemoryError> {
+    pub fn next_addr(&mut self) -> Result<Relocatable, MemoryError> {
         let ptr = self.next();
         self.vm.vm().get_relocatable(ptr)
     }
@@ -478,20 +478,20 @@ impl<'a> MemBuffer<'a> {
     /// Returns the array of integer values pointed to by the two next addresses in the buffer and
     /// advances it by two. Will fail if the two values are not addresses or if the addresses do
     /// not point to an array of integers.
-    fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
+    pub fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
         let start = self.next_addr()?;
         let end = self.next_addr()?;
         vm_get_range(self.vm.vm(), start, end)
     }
 
     /// Writes a value to the current position of the buffer and advances it by one.
-    fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
+    pub fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
         let ptr = self.next();
         self.vm.vm().insert_value(ptr, value)
     }
     /// Writes an iterator of values starting from the current position of the buffer and advances
     /// it to after the end of the written value.
-    fn write_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    pub fn write_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
@@ -503,7 +503,7 @@ impl<'a> MemBuffer<'a> {
 
     /// Writes an array into a new segment and writes the start and end pointers to the current
     /// position of the buffer. Advances the buffer by two.
-    fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
