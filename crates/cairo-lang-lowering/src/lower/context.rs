@@ -248,10 +248,7 @@ impl LoweredExpr {
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
-            LoweredExpr::ExternEnum(extern_enum) => {
-                let location = extern_enum.location;
-                Ok(VarUsage { var_id: extern_enum.var(ctx, builder)?, location })
-            }
+            LoweredExpr::ExternEnum(extern_enum) => extern_enum.as_var_usage(ctx, builder),
             LoweredExpr::Member(member_path, _location) => {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
@@ -305,11 +302,11 @@ pub struct LoweredExprExternEnum {
     pub location: LocationId,
 }
 impl LoweredExprExternEnum {
-    pub fn var(
+    pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut BlockBuilder,
-    ) -> LoweringResult<VariableId> {
+    ) -> LoweringResult<VarUsage> {
         let concrete_variants = ctx
             .db
             .concrete_enum_variants(self.concrete_enum_id)
@@ -373,7 +370,7 @@ impl LoweredExprExternEnum {
         });
         builder
             .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
-            .var(ctx, builder)
+            .as_var_usage(ctx, builder)
     }
 }
 

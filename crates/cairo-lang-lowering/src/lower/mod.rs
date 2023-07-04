@@ -311,7 +311,7 @@ pub fn lower_statement(
             // The LoweredExpr must be evaluated now to push/bring back variables in case it is
             // LoweredExpr::ExternEnum.
             if let LoweredExpr::ExternEnum(x) = lowered_expr {
-                x.var(ctx, builder)?;
+                x.as_var_usage(ctx, builder)?;
             }
         }
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
