@@ -1570,13 +1570,7 @@
       ],
       [
         68,
-<<<<<<< HEAD
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::init>"
-||||||| 801265d38
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::init>"
-=======
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor>"
->>>>>>> origin/dev-v2.0.0
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::counter_contract::constructor>"
       ],
       [
         69,
@@ -2386,13 +2380,7 @@
       ],
       [
         3,
-<<<<<<< HEAD
-        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__constructor::init"
-||||||| 801265d38
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::init"
-=======
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::__constructor::constructor"
->>>>>>> origin/dev-v2.0.0
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::__constructor::constructor"
       ],
       [
         4,
@@ -2424,13 +2412,7 @@
       ],
       [
         11,
-<<<<<<< HEAD
-        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::init"
-||||||| 801265d38
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::init"
-=======
-        "new_syntax_test_contract::new_syntax_test_contract::CounterContract::constructor"
->>>>>>> origin/dev-v2.0.0
+        "new_syntax_test_contract::new_syntax_test_contract::counter_contract::constructor"
       ],
       [
         12,

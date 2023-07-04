@@ -152,16 +152,8 @@ mod contract_failed_entrypoint {
     #[storage]
     struct Storage {}
 
-<<<<<<< HEAD
     #[external(v0)]
     fn foo(ref self: ContractState, value: u128) {
-||||||| 801265d38
-    #[external]
-    fn foo(ref self: ContractState, value_: u128) {
-=======
-    #[external(v0)]
-    fn foo(ref self: ContractState, value_: u128) {
->>>>>>> origin/dev-v2.0.0
         panic_with_felt252('Failure');
     }
 }
