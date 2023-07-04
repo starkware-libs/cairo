@@ -865,10 +865,9 @@ fn lower_expr_match(
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-                    let result =
-                        lower_single_pattern(ctx, &mut subscope, &inner_pattern, variant_expr);
+                    
 
-                    result
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
                 }
                 None => {
                     let var_id = ctx.new_var(VarRequest {
@@ -959,7 +958,7 @@ fn lower_optimized_extern_match(
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
             let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
                 Some(inner_pattern) => {
-                    lower_single_pattern(ctx, &mut subscope, &inner_pattern, variant_expr)
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
                 }
                 None => Ok(()),
             };
