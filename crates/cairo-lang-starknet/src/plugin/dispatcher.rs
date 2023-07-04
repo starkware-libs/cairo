@@ -176,7 +176,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     "call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
-                    // return_type_name.clone(),
                 ));
                 safe_library_caller_method_impls.push(safe_declaration_method_impl(
                     safe_dispatcher_signature(db, &declaration, &safe_library_caller_name),
@@ -185,7 +184,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     "syscalls::library_call_syscall",
                     serialization_code,
                     ret_decode,
-                    // return_type_name
                 ));
             }
             // ignore the missing item.
