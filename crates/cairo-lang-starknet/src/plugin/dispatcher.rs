@@ -360,10 +360,10 @@ fn safe_declaration_method_impl(
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
             (
                 "deserialization_code".to_string(),
-                if ret_decode != "" {
-                    RewriteNode::Text(ret_decode)
-                } else {
+                if ret_decode.is_empty() {
                     RewriteNode::Text(String::from("()"))
+                } else {
+                    RewriteNode::Text(ret_decode)
                 },
             ),
         ]
@@ -398,7 +398,7 @@ fn safe_dispatcher_signature(
     declaration: &ast::FunctionDeclaration,
     self_type_name: &str,
 ) -> RewriteNode {
-    let mut signature = dispatcher_signature(db, &declaration, &self_type_name);
+    let mut signature = dispatcher_signature(db, declaration, self_type_name);
     let return_type = signature
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
@@ -407,16 +407,16 @@ fn safe_dispatcher_signature(
         .as_mut()
         .unwrap();
 
-    if return_type.len() > 0 {
+    if return_type.is_empty() {
+        let new_ret_type = RewriteNode::Text(String::from(" -> Result<(), Array<felt252>>"));
+        return_type.splice(0..0, [new_ret_type]);
+    } else {
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
         let new_ret_type = RewriteNode::interpolate_patched(
-            &"Result<$ret_type$, Array<felt252>>",
+            "Result<$ret_type$, Array<felt252>>",
             [("ret_type".to_string(), previous_ret_type)].into(),
         );
         return_type.splice(1..2, [new_ret_type]);
-    } else {
-        let new_ret_type = RewriteNode::Text(String::from(" -> Result<(), Array<felt252>>"));
-        return_type.splice(0..0, [new_ret_type]);
     };
 
     signature
