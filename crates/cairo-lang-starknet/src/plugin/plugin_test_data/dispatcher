@@ -116,6 +116,124 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
 }
 
+trait IContractSafeDispatcherTrait<T> {
+    fn get_something(self: T, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>>;
+    fn empty(self: T, ) -> Result<(), Array<felt252>>;
+}
+
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
+struct IContractSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
+    fn get_something(self: IContractSafeLibraryDispatcher, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>> {
+    let mut __calldata__ = traits::Default::default();
+            serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
+
+    let result = starknet::syscalls::library_call_syscall(
+        self.class_hash,
+        0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    match result {
+        Result::Ok(ret_data) => {
+            let mut ret_data = ret_data;
+            Result::Ok(
+                
+        option::OptionTrait::expect(
+            serde::Serde::<felt252>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+            )
+        },
+        Result::Err(panic_data) => {
+            Result::Err(panic_data)
+        }
+    }
+}
+
+    fn empty(self: IContractSafeLibraryDispatcher, ) -> Result<(), Array<felt252>> {
+    let mut __calldata__ = traits::Default::default();
+    
+    let result = starknet::syscalls::library_call_syscall(
+        self.class_hash,
+        0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    match result {
+        Result::Ok(ret_data) => {
+            let mut ret_data = ret_data;
+            Result::Ok(
+                ()
+            )
+        },
+        Result::Err(panic_data) => {
+            Result::Err(panic_data)
+        }
+    }
+}
+
+}
+
+
+#[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
+struct IContractSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
+    fn get_something(self: IContractSafeDispatcher, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>> {
+    let mut __calldata__ = traits::Default::default();
+            serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+        serde::Serde::<felt252>::serialize(@num, ref __calldata__);
+
+    let result = starknet::call_contract_syscall(
+        self.contract_address,
+        0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    match result {
+        Result::Ok(ret_data) => {
+            let mut ret_data = ret_data;
+            Result::Ok(
+                
+        option::OptionTrait::expect(
+            serde::Serde::<felt252>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+            )
+        },
+        Result::Err(panic_data) => {
+            Result::Err(panic_data)
+        }
+    }
+}
+
+    fn empty(self: IContractSafeDispatcher, ) -> Result<(), Array<felt252>> {
+    let mut __calldata__ = traits::Default::default();
+    
+    let result = starknet::call_contract_syscall(
+        self.contract_address,
+        0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    match result {
+        Result::Ok(ret_data) => {
+            let mut ret_data = ret_data;
+            Result::Ok(
+                ()
+            )
+        },
+        Result::Err(panic_data) => {
+            Result::Err(panic_data)
+        }
+    }
+}
+
+}
+
 
 impls:
 
@@ -214,6 +332,106 @@ impl StorageAccessIContractLibraryDispatcher of starknet::StorageAccess::<IContr
     #[inline(always)]
     fn size_internal(value: IContractLibraryDispatcher) -> u8 {
         starknet::StorageAccess::<starknet::ClassHash>::size_internal(value.class_hash)
+    }
+}
+
+impls:
+
+impl IContractSafeLibraryDispatcherCopy<> of Copy::<IContractSafeLibraryDispatcher<>>;
+impl IContractSafeLibraryDispatcherDrop<> of Drop::<IContractSafeLibraryDispatcher<>>;
+impl IContractSafeLibraryDispatcherSerde<> of serde::Serde::<IContractSafeLibraryDispatcher<>> {
+    fn serialize(self: @IContractSafeLibraryDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeLibraryDispatcher<>> {
+        Option::Some(IContractSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StorageAccessIContractSafeLibraryDispatcher of starknet::StorageAccess::<IContractSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
+        let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IContractSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
+        let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read_at_offset_internal(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IContractSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ClassHash>::write_at_offset_internal(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size_internal(value: IContractSafeLibraryDispatcher) -> u8 {
+        starknet::StorageAccess::<starknet::ClassHash>::size_internal(value.class_hash)
+    }
+}
+
+impls:
+
+impl IContractSafeDispatcherCopy<> of Copy::<IContractSafeDispatcher<>>;
+impl IContractSafeDispatcherDrop<> of Drop::<IContractSafeDispatcher<>>;
+impl IContractSafeDispatcherSerde<> of serde::Serde::<IContractSafeDispatcher<>> {
+    fn serialize(self: @IContractSafeDispatcher<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IContractSafeDispatcher<>> {
+        Option::Some(IContractSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StorageAccessIContractSafeDispatcher of starknet::StorageAccess::<IContractSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
+        let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IContractSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeDispatcher> {
+        let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read_at_offset_internal(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IContractSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IContractSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::StorageAccess::<starknet::ContractAddress>::write_at_offset_internal(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size_internal(value: IContractSafeDispatcher) -> u8 {
+        starknet::StorageAccess::<starknet::ContractAddress>::size_internal(value.contract_address)
     }
 }
 
