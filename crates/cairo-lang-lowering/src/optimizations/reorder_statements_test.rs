@@ -6,7 +6,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::delay_var_def;
+use super::reorder_statements;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -15,15 +15,17 @@ use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    delay_var_def,
+    reorder_statements,
     "src/optimizations/test_data",
     {
-        move_literals :"move_literals",
+        reorder_statements :"reorder_statements",
     },
-    test_delay_var_def
+    test_reorder_statements
 );
 
-fn test_delay_var_def(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_reorder_statements(
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
@@ -44,7 +46,7 @@ fn test_delay_var_def(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap
     reorganize_blocks(&mut before);
 
     let mut after = before.clone();
-    delay_var_def(&mut after);
+    reorder_statements(&mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

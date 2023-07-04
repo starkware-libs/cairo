@@ -455,7 +455,7 @@ Statements:
 End:
   Return(v25)
 
-//! > after_delay_var_def1
+//! > after_reorder_statements1
 Parameters:
 blk0 (root):
 Statements:
@@ -819,7 +819,7 @@ Statements:
 End:
   Return(v34, v35, v25)
 
-//! > after_delay_var_def2
+//! > after_reorder_statements2
 Parameters: v26: core::RangeCheck, v27: core::gas::GasBuiltin
 blk0 (root):
 Statements:
