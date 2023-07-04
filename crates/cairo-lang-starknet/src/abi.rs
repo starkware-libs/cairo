@@ -5,6 +5,7 @@ use cairo_lang_defs::ids::{
     SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
@@ -26,6 +27,7 @@ use crate::plugin::consts::{
     INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 
 #[cfg(test)]
 #[path = "abi_test.rs"]
@@ -108,20 +110,32 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
-        // Find the Event type and add impls to ABI.
-        for impl_id in impls {
-            // Handle external impls.
-            if impl_id
-                .has_attr(db.upcast(), EXTERNAL_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                builder.add_impl(db, impl_id, storage_type)?;
+        // Handle impls of starknet::Event.
+        // Find the Event core trait.
+        let starknet_module = core_submodule(db, "starknet");
+        let event_module = extract_matches!(
+            db.module_item_by_name(starknet_module, "event".into())?.unwrap(),
+            ModuleItemId::Submodule
+        );
+        let event_trait = extract_matches!(
+            db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into())?.unwrap(),
+            ModuleItemId::Trait
+        );
+
+        // Add impls to ABI.
+        for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
+            if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
+                builder.add_impl(db, id, storage_type)?;
                 continue;
             }
 
-            // Handle impls of starknet::Event.
+            // Only handle impls of starknet::Event.
+            if db.impl_def_trait(id)? != event_trait {
+                continue;
+            }
+
             // Check if we have an Event derive plugin data on the impl.
-            let module_file = impl_id.module_file_id(db.upcast());
+            let module_file = id.module_file_id(db.upcast());
             let generate_info =
                 db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
             let Some(generate_info) = generate_info else { continue };
@@ -129,7 +143,7 @@ impl AbiBuilder {
                             ).downcast_ref::<DynPluginAuxData>() else { continue; };
             let Some(aux_data) = mapper.0.as_any(
                             ).downcast_ref::<StarkNetEventAuxData>() else { continue; };
-            let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
+            let concrete_trait_id = db.impl_def_concrete_trait(id)?;
             let event_type =
                 extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
             builder.event_derive_data.insert(event_type, aux_data.event_data.clone());
