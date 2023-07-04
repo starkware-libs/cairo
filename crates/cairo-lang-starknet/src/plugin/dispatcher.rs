@@ -265,8 +265,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         .into(),
     ));
 
-    dbg!(&builder.code);
-
     PluginResult {
         code: Some(PluginGeneratedFile {
             name: dispatcher_trait_name.into(),
