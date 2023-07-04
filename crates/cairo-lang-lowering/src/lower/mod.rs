@@ -461,10 +461,7 @@ fn lower_expr_to_var_usage(
     builder: &mut BlockBuilder,
     expr_id: semantic::ExprId,
 ) -> LoweringResult<VarUsage> {
-    Ok(VarUsage {
-        var_id: lower_expr(ctx, builder, expr_id)?.var(ctx, builder)?,
-        location: ctx.get_location(ctx.function_body.exprs[expr_id].stable_ptr().untyped()),
-    })
+    lower_expr(ctx, builder, expr_id)?.as_var_usage(ctx, builder)
 }
 
 /// Lowers a semantic expression.
