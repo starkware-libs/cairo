@@ -853,23 +853,34 @@ fn lower_expr_match(
                 ));
             }
 
-            let pattern_location =
-                ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
+            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
+                Some(inner_pattern) => {
+                    let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
 
-            let var_id = ctx.new_var(VarRequest {
-                ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                location: pattern_location,
-            });
-            arm_var_ids.push(vec![var_id]);
-            let variant_expr =
-                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
+                    let var_id = ctx.new_var(VarRequest {
+                        ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                        location: pattern_location,
+                    });
+                    arm_var_ids.push(vec![var_id]);
+                    let variant_expr =
+                        LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-            match lower_single_pattern(
-                ctx,
-                &mut subscope,
-                &enum_pattern.inner_pattern,
-                variant_expr,
-            ) {
+                    let result =
+                        lower_single_pattern(ctx, &mut subscope, &inner_pattern, variant_expr);
+
+                    result
+                }
+                None => {
+                    let var_id = ctx.new_var(VarRequest {
+                        ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                        location: ctx.get_location(enum_pattern.stable_ptr.untyped()),
+                    });
+                    arm_var_ids.push(vec![var_id]);
+                    Ok(())
+                }
+            };
+
+            match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.
                     lower_tail_expr(ctx, subscope, arm.expression)
@@ -946,12 +957,14 @@ fn lower_optimized_extern_match(
             match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
-            match lower_single_pattern(
-                ctx,
-                &mut subscope,
-                &enum_pattern.inner_pattern,
-                variant_expr,
-            ) {
+            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
+                Some(inner_pattern) => {
+                    lower_single_pattern(ctx, &mut subscope, &inner_pattern, variant_expr)
+                }
+                None => Ok(()),
+            };
+
+            match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.
                     lower_tail_expr(ctx, subscope, arm.expression)
@@ -987,16 +1000,13 @@ fn lower_expr_match_felt252(
     log::trace!("Lowering a match-felt252 expression.");
     let location = ctx.get_location(expr.stable_ptr.untyped());
     // Check that the match has the expected form.
-    let (literal, block0, block_otherwise) = if let [
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
-            expression: block0,
-        },
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Otherwise(_),
-            expression: block_otherwise,
-        },
-    ] = &expr.arms[..]
+    let (literal, block0, block_otherwise) = if let [semantic::MatchArm {
+        pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
+        expression: block0,
+    }, semantic::MatchArm {
+        pattern: semantic::Pattern::Otherwise(_),
+        expression: block_otherwise,
+    }] = &expr.arms[..]
     {
         (literal, block0, block_otherwise)
     } else {
