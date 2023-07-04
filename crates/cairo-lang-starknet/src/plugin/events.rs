@@ -124,8 +124,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-/// Retrieves the field kind for a given struct member, indicating how the field should be serialized.
-/// See [EventFieldKind].
+/// Retrieves the field kind for a given struct member, indicating how the field should be
+/// serialized. See [EventFieldKind].
 fn get_field_kind_for_member(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -157,8 +157,8 @@ fn get_field_kind_for_member(
     default
 }
 
-/// Retrieves the field kind for a given enum variant, indicating how the field should be serialized.
-/// See [EventFieldKind].
+/// Retrieves the field kind for a given enum variant, indicating how the field should be
+/// serialized. See [EventFieldKind].
 fn get_field_kind_for_variant(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
