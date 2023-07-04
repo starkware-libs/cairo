@@ -224,7 +224,7 @@ fn get_double_deref_maybe(
 }
 
 /// Extracts a parameter assumed to be a buffer, and converts it into a relocatable.
-fn extract_relocatable(
+pub fn extract_relocatable(
     vm: &VirtualMachine,
     buffer: &ResOperand,
 ) -> Result<Relocatable, VirtualMachineError> {
@@ -1831,7 +1831,7 @@ fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Ve
 }
 
 /// Loads a range of values from the VM memory.
-fn vm_get_range(
+pub fn vm_get_range(
     vm: &mut VirtualMachine,
     mut calldata_start_ptr: Relocatable,
     calldata_end_ptr: Relocatable,
@@ -1846,7 +1846,7 @@ fn vm_get_range(
 }
 
 /// Extracts a parameter assumed to be a buffer.
-fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
+pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
