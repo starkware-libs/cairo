@@ -26,8 +26,11 @@ trait Secp256PointTrait<Secp256Point> {
 /// Receives a signature and the signed message hash.
 /// Returns the public key associated with the signer, represented as a point on the curve.
 /// Note:
-///   Some places use non boolean values for v.
+///   Some places use non boolean v instead of y_parity.
 ///   In that case, `recover_public_key_u32` may be a better match.
+///   `y_parity` is the parity of the y coordinate of the ec point whose x coordinate is `r`.
+///   `y_parity` == true means that the y coordinate is odd.
+///
 fn recover_public_key<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
@@ -67,7 +70,7 @@ fn recover_public_key_u32<
 >(
     msg_hash: u256, r: u256, s: u256, v: u32
 ) -> Option<Secp256Point> {
-    let y_parity = v % 2 == 0;
+    let y_parity = v % 2 == 1;
     recover_public_key(:msg_hash, :r, :s, :y_parity)
 }
 
@@ -112,7 +115,7 @@ fn verify_eth_signature_u32<
 >(
     msg_hash: u256, r: u256, s: u256, v: u32, eth_address: EthAddress
 ) {
-    let y_parity = v % 2 == 0;
+    let y_parity = v % 2 == 1;
     verify_eth_signature::<Secp256Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
