@@ -25,10 +25,7 @@ fn main() -> anyhow::Result<()> {
 
     let sierra_code = fs::read_to_string(args.file).with_context(|| "Could not read file!")?;
     let Ok(program) = ProgramParser::new().parse(&sierra_code) else {
-        anyhow::bail!(indoc! {"
-            Failed to parse sierra program.
-            Note: StarkNet contracts should be compiled with `starknet-sierra-compile`."
-        })
+        anyhow::bail!(indoc! {"Failed to parse sierra program."})
     };
 
     let gas_usage_check = true;
