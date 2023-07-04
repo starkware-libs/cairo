@@ -1,10 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
-    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, SubmoduleId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
+    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
@@ -95,12 +96,29 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
+        // Find the Event core trait.
+        let starknet_module = core_submodule(db, "starknet");
+        let event_module = extract_matches!(
+            db.module_item_by_name(starknet_module, "event".into())?.unwrap(),
+            ModuleItemId::Submodule
+        );
+        let event_trait = extract_matches!(
+            db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into())?.unwrap(),
+            ModuleItemId::Trait
+        );
+
         // Add impls to ABI.
         for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
             if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
                 builder.add_impl(db, id, storage_type)?;
                 continue;
             }
+
+            // Only handle impls of starknet::Event.
+            if db.impl_def_trait(id)? != event_trait {
+                continue;
+            }
+
             // Check if we have an Event derive plugin data on the impl.
             let module_file = id.module_file_id(db.upcast());
             let generate_info =
