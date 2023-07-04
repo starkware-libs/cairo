@@ -136,10 +136,10 @@ pub fn lower_expr_if_eq(
         expr.debug(&ctx.expr_formatter)
     );
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
-    let condition_var = if is_zero(ctx, expr_b) {
-        lower_expr(ctx, builder, expr_a)?.var(ctx, builder)?
+    let match_input = if is_zero(ctx, expr_b) {
+        lower_expr_to_var_usage(ctx, builder, expr_a)?
     } else if is_zero(ctx, expr_a) {
-        lower_expr(ctx, builder, expr_b)?.var(ctx, builder)?
+        lower_expr_to_var_usage(ctx, builder, expr_b)?
     } else {
         let lowered_a = lower_expr_to_var_usage(ctx, builder, expr_a)?;
         let lowered_b = lower_expr_to_var_usage(ctx, builder, expr_b)?;
@@ -179,7 +179,7 @@ pub fn lower_expr_if_eq(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![VarUsage { var_id: condition_var, location: if_location }],
+        inputs: vec![match_input],
         arms: vec![
             MatchArm {
                 variant_id: corelib::jump_nz_zero_variant(semantic_db),

@@ -649,7 +649,7 @@ fn lower_expr_function_call(
 
     // Rebind the ref variables.
     for (ref_arg, output_var) in zip_eq(ref_args_iter, ref_outputs) {
-        builder.update_ref(ctx, ref_arg, output_var);
+        builder.update_ref(ctx, ref_arg, output_var.var_id);
     }
 
     Ok(res)
@@ -666,7 +666,7 @@ fn perform_function_call(
     extra_ret_tys: Vec<semantic::TypeId>,
     ret_ty: semantic::TypeId,
     location: LocationId,
-) -> Result<(Vec<VariableId>, LoweredExpr), LoweringFlowError> {
+) -> Result<(Vec<VarUsage>, LoweredExpr), LoweringFlowError> {
     // If the function is not extern, simply call it.
     if function.try_get_extern_function_id(ctx.db.upcast()).is_none() {
         let call_result = generators::Call {
@@ -697,20 +697,13 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: VarUsage { var_id: call_result.returns[0], location } ,
+                input: call_result.returns[0],
                 arms: vec![],
                 location,
             })));
         }
 
-        let res = LoweredExpr::AtVariable(
-            call_result
-                .returns
-                .into_iter()
-                .map(|var_id| VarUsage { var_id, location })
-                .next()
-                .unwrap(),
-        );
+        let res = LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap());
         return Ok((call_result.extra_outputs, res));
     };
 
@@ -725,7 +718,15 @@ fn perform_function_call(
     }
     .add(ctx, &mut builder.statements);
 
-    Ok((call_result.extra_outputs, extern_facade_expr(ctx, ret_ty, call_result.returns, location)))
+    Ok((
+        call_result.extra_outputs,
+        extern_facade_expr(
+            ctx,
+            ret_ty,
+            call_result.returns.into_iter().map(|var_usage| var_usage.var_id).collect_vec(),
+            location,
+        ),
+    ))
 }
 
 /// Lowers an expression of type [semantic::ExprLoop].
@@ -797,12 +798,10 @@ fn call_loop_func(
 
     // Rebind the ref variables.
     for (ref_arg, output_var) in zip_eq(&signature.extra_rets, call_result.extra_outputs) {
-        builder.update_ref(ctx, ref_arg, output_var);
+        builder.update_ref(ctx, ref_arg, output_var.var_id);
     }
 
-    Ok(LoweredExpr::AtVariable(
-        call_result.returns.into_iter().map(|var_id| VarUsage { var_id, location }).next().unwrap(),
-    ))
+    Ok(LoweredExpr::AtVariable(call_result.returns.into_iter().next().unwrap()))
 }
 
 /// Lowers an expression of type [semantic::ExprMatch].
