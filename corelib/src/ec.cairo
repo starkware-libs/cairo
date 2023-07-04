@@ -36,7 +36,7 @@ extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> 
 fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
         Option::Some(pt) => Option::Some(pt.into()),
-        Option::None(()) => Option::None(()),
+        Option::None => Option::None(()),
     }
 }
 
@@ -50,7 +50,7 @@ extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(Ran
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
         Option::Some(pt) => Option::Some(pt.into()),
-        Option::None(()) => Option::None(()),
+        Option::None => Option::None(()),
     }
 }
 
@@ -63,7 +63,7 @@ extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 /// Converts `p` to `NonZeroEcPoint`. Panics if `p` is the zero point.
 fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
     match ec_point_is_zero(p) {
-        IsZeroResult::Zero(()) => panic_with_felt252('Zero point'),
+        IsZeroResult::Zero => panic_with_felt252('Zero point'),
         IsZeroResult::NonZero(p_nz) => p_nz,
     }
 }
@@ -89,14 +89,14 @@ extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implic
 fn ec_state_finalize(s: EcState) -> EcPoint {
     match ec_state_try_finalize_nz(s) {
         Option::Some(pt) => pt.into(),
-        Option::None(()) => ec_point_zero(),
+        Option::None => ec_point_zero(),
     }
 }
 
 /// Computes the product of an EC point `p` by the given scalar `m`.
 fn ec_mul(p: EcPoint, m: felt252) -> EcPoint {
     match ec_point_is_zero(p) {
-        IsZeroResult::Zero(()) => p,
+        IsZeroResult::Zero => p,
         IsZeroResult::NonZero(p_nz) => {
             let mut state = ec_state_init();
             ec_state_add_mul(ref state, m, p_nz);
@@ -110,13 +110,13 @@ impl EcPointAdd of Add<EcPoint> {
     // TODO(lior): Implement using a libfunc to make it more efficient.
     fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         let lhs_nz = match ec_point_is_zero(lhs) {
-            IsZeroResult::Zero(()) => {
+            IsZeroResult::Zero => {
                 return rhs;
             },
             IsZeroResult::NonZero(pt) => pt,
         };
         let rhs_nz = match ec_point_is_zero(rhs) {
-            IsZeroResult::Zero(()) => {
+            IsZeroResult::Zero => {
                 return lhs;
             },
             IsZeroResult::NonZero(pt) => pt,
@@ -139,7 +139,7 @@ impl EcPointSub of Sub<EcPoint> {
     /// Computes the difference between two points on the curve.
     fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         match ec_point_is_zero(rhs) {
-            IsZeroResult::Zero(()) => {
+            IsZeroResult::Zero => {
                 // lhs - 0 = lhs.
                 return lhs;
             },
