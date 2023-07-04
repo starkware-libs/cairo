@@ -219,16 +219,8 @@ keccak hash of the function name - in this case `starknet_keccak("foo")`.
 [source,rust]
 ----
 #[starknet::contract]
-<<<<<<< HEAD
 mod my_second_contract {
     #[external(v0)]
-||||||| 801265d38
-mod MySecondContract {
-    #[external]
-=======
-mod MySecondContract {
-    #[external(v0)]
->>>>>>> origin/dev-v2.0.0
     fn syscall_call_another_contract(
         address: starknet::ContractAddress, selector: felt252, calldata: Array<felt252>
     ) -> Span::<felt252> {
