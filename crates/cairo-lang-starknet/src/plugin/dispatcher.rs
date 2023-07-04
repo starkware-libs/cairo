@@ -147,7 +147,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    [("func_decl".to_string(), safe_dispatcher_signature(db, &declaration, "T"))].into(),
+                    [("func_decl".to_string(), safe_dispatcher_signature(db, &declaration, "T"))]
+                        .into(),
                 ));
                 let entry_point_selector = RewriteNode::Text(format!(
                     "0x{:x}",
@@ -225,7 +226,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 class_hash: starknet::ClassHash,
             }}
 
-            impl {safe_library_caller_name}Impl of {safe_dispatcher_trait_name}<{safe_library_caller_name}> {{
+            impl {safe_library_caller_name}Impl of \
+             {safe_dispatcher_trait_name}<{safe_library_caller_name}> {{
             $safe_library_caller_method_impls$
             }}
 
@@ -235,7 +237,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 contract_address: starknet::ContractAddress,
             }}
 
-            impl {safe_contract_caller_name}Impl of {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
+            impl {safe_contract_caller_name}Impl of \
+             {safe_dispatcher_trait_name}<{safe_contract_caller_name}> {{
             $safe_contract_caller_method_impls$
             }}
             ",
@@ -250,7 +253,10 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 "library_caller_method_impls".to_string(),
                 RewriteNode::new_modified(library_caller_method_impls),
             ),
-            ("safe_dispatcher_signatures".to_string(), RewriteNode::new_modified(safe_dispatcher_signatures)),
+            (
+                "safe_dispatcher_signatures".to_string(),
+                RewriteNode::new_modified(safe_dispatcher_signatures),
+            ),
             (
                 "safe_contract_caller_method_impls".to_string(),
                 RewriteNode::new_modified(safe_contract_caller_method_impls),
@@ -352,7 +358,14 @@ fn safe_declaration_method_impl(
             ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
             ("member".to_string(), RewriteNode::Text(member.to_string())),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
-            ("deserialization_code".to_string(), if ret_decode != "" {RewriteNode::Text(ret_decode)} else {RewriteNode::Text(String::from("()"))}),
+            (
+                "deserialization_code".to_string(),
+                if ret_decode != "" {
+                    RewriteNode::Text(ret_decode)
+                } else {
+                    RewriteNode::Text(String::from("()"))
+                },
+            ),
         ]
         .into(),
     )
@@ -389,13 +402,16 @@ fn safe_dispatcher_signature(
     let return_type = signature
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
-        .modify(db).children.as_mut().unwrap();
+        .modify(db)
+        .children
+        .as_mut()
+        .unwrap();
 
     if return_type.len() > 0 {
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
         let new_ret_type = RewriteNode::interpolate_patched(
             &"Result<$ret_type$, Array<felt252>>",
-            [("ret_type".to_string(), previous_ret_type)].into()
+            [("ret_type".to_string(), previous_ret_type)].into(),
         );
         return_type.splice(1..2, [new_ret_type]);
     } else {
