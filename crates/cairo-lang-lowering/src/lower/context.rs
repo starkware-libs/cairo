@@ -273,14 +273,6 @@ impl LoweredExpr {
         }
     }
 
-    pub fn var(
-        self,
-        ctx: &mut LoweringContext<'_, '_>,
-        builder: &mut BlockBuilder,
-    ) -> Result<VariableId, LoweringFlowError> {
-        Ok(self.as_var_usage(ctx, builder)?.var_id)
-    }
-
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
         match self {
             LoweredExpr::AtVariable(var_usage) => ctx.variables[var_usage.var_id].ty,
