@@ -65,7 +65,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 56395456059873064996312675641821105984258358465983630422471486920500588688;
+const TEST_CLASS_HASH: felt252 = 45160169293473719406744259310761826795062156439927954035200894390197437803;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -171,12 +171,12 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: The first paramater of an entry point must be `self`.
- --> lib.cairo:8:11
+ --> lib.cairo:7:11
     fn foo() {}
           ^^
 
 error: Plugin diagnostic: The first paramater of an entry point must be `self`.
- --> lib.cairo:11:12
+ --> lib.cairo:10:12
     fn bar(_n: u32) {}
            ^*****^
 

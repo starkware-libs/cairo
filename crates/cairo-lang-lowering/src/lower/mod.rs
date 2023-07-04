@@ -135,7 +135,7 @@ pub fn lower_function(
                         }
                         .add(&mut ctx, &mut builder.statements)
                     });
-                    builder.ret(&mut ctx, var_usage.var_id, location)?;
+                    builder.ret(&mut ctx, var_usage, location)?;
                 }
                 SealedBlockBuilder::Ends(_) => {}
             }
@@ -207,7 +207,7 @@ pub fn lower_loop_function(
                     }
                     .add(&mut ctx, &mut builder.statements)
                 });
-                builder.ret(&mut ctx, var_usage.var_id, location)?;
+                builder.ret(&mut ctx, var_usage, location)?;
             }
             SealedBlockBuilder::Ends(_) => {}
         }
@@ -699,7 +699,7 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: VarUsage { var_id: call_result.returns[0], location },
+                input: VarUsage { var_id: call_result.returns[0].var_id, location },
                 arms: vec![],
                 location,
             })));

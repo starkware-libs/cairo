@@ -315,7 +315,7 @@ impl SealedBlockBuilder {
                     .as_var_usage(ctx, &mut builder)
                     .unwrap()
                 });
-                assert!(remapping.insert(remapped_var, var_usage.var_id).is_none());
+                assert!(remapping.insert(remapped_var, var_usage).is_none());
             }
 
             builder.finalize(ctx, FlatBlockEnd::Goto(target, remapping));

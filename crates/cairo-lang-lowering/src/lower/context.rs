@@ -423,10 +423,10 @@ pub fn lowering_flow_error_to_sealed_block(
             }
             .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
-                inputs: vec![panic_instance, VarUsage { var_id: data_var, location }],
+                inputs: vec![panic_instance, data_var],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
                     ctx.variables[panic_instance.var_id].ty,
-                    ctx.variables[data_var].ty,
+                    ctx.variables[data_var.var_id].ty,
                 ])),
                 location,
             }
