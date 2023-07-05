@@ -91,7 +91,7 @@ fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
         let (low_quotient, low_remainder) = u128_safe_divmod(
             low, one_shift_left_bytes_u128(index).try_into().unwrap()
         );
-        let right = high.into() * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
+        let right = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - index).into()
             + low_quotient.into();
         return (low_remainder.into(), right);
     }
