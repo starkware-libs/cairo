@@ -346,11 +346,11 @@ fn concrete_function_with_body_lowered(
 ) -> Maybe<Arc<FlatLowered>> {
     let mut lowered = (*db.concrete_function_with_body_postpanic_lowered(function)?).clone();
     optimize_remappings(&mut lowered);
-    reorder_statements(&mut lowered);
+    reorder_statements(db, &mut lowered);
     optimize_matches(&mut lowered);
     lower_implicits(db, function, &mut lowered);
     optimize_remappings(&mut lowered);
-    reorder_statements(&mut lowered);
+    reorder_statements(db, &mut lowered);
     reorganize_blocks(&mut lowered);
     Ok(Arc::new(lowered))
 }

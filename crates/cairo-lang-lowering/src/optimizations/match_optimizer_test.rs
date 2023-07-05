@@ -48,7 +48,7 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     before = lower_panics(db, function_id, &before).unwrap();
     reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
-    reorder_statements(&mut before);
+    reorder_statements(db, &mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);
