@@ -41,7 +41,9 @@ mod counter_contract {
     }
 
     #[constructor]
-    fn init(ref self: ContractState, initial_counter: u128, other_contract_addr: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, initial_counter: u128, other_contract_addr: ContractAddress
+    ) {
         self.counter.write(initial_counter);
         self
             .other_contract
@@ -70,4 +72,3 @@ mod counter_contract {
         }
     }
 }
-

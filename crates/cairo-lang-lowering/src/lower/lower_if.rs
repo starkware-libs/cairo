@@ -8,13 +8,13 @@ use semantic::ExprFunctionCallArg;
 
 use super::block_builder::{BlockBuilder, SealedBlockBuilder};
 use super::context::{LoweredExpr, LoweringContext, LoweringFlowError, LoweringResult};
-use super::{lower_expr, lowered_expr_to_block_scope_end};
+use super::lowered_expr_to_block_scope_end;
 use crate::ids::{LocationId, SemanticFunctionIdEx};
 use crate::lower::context::VarRequest;
 use crate::lower::{
     create_subscope_with_bound_refs, generators, lower_block, lower_expr_to_var_usage,
 };
-use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo, VarUsage};
+use crate::{MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo};
 
 #[allow(dead_code)]
 enum IfCondition {
@@ -78,7 +78,7 @@ pub fn lower_expr_if_bool(
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a boolean if expression: {:?}", expr.debug(&ctx.expr_formatter));
     // The condition cannot be unit.
-    let condition_var = lower_expr(ctx, builder, expr.condition)?.var(ctx, builder)?;
+    let condition = lower_expr_to_var_usage(ctx, builder, expr.condition)?;
     let semantic_db = ctx.db.upcast();
     let unit_ty = corelib::unit_ty(semantic_db);
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
@@ -105,7 +105,7 @@ pub fn lower_expr_if_bool(
 
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id: corelib::core_bool_enum(semantic_db),
-        input: VarUsage { var_id: condition_var, location: if_location },
+        input: condition,
         arms: vec![
             MatchArm {
                 variant_id: corelib::false_variant(semantic_db),
@@ -136,10 +136,10 @@ pub fn lower_expr_if_eq(
         expr.debug(&ctx.expr_formatter)
     );
     let if_location = ctx.get_location(expr.stable_ptr.untyped());
-    let condition_var = if is_zero(ctx, expr_b) {
-        lower_expr(ctx, builder, expr_a)?.var(ctx, builder)?
+    let match_input = if is_zero(ctx, expr_b) {
+        lower_expr_to_var_usage(ctx, builder, expr_a)?
     } else if is_zero(ctx, expr_a) {
-        lower_expr(ctx, builder, expr_b)?.var(ctx, builder)?
+        lower_expr_to_var_usage(ctx, builder, expr_b)?
     } else {
         let lowered_a = lower_expr_to_var_usage(ctx, builder, expr_a)?;
         let lowered_b = lower_expr_to_var_usage(ctx, builder, expr_b)?;
@@ -179,7 +179,7 @@ pub fn lower_expr_if_eq(
 
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: corelib::core_felt252_is_zero(semantic_db).lowered(ctx.db),
-        inputs: vec![VarUsage { var_id: condition_var, location: if_location }],
+        inputs: vec![match_input],
         arms: vec![
             MatchArm {
                 variant_id: corelib::jump_nz_zero_variant(semantic_db),

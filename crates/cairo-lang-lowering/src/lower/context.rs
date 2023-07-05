@@ -198,6 +198,14 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         self.variables.new_var(req)
     }
 
+    /// Same as `new_var` but returns it as a `VarUsage`.
+    /// This is useful when the variable definition and usage locations are the same.
+    pub fn new_var_usage(&mut self, req: VarRequest) -> VarUsage {
+        let location = req.location;
+
+        VarUsage { var_id: self.variables.new_var(req), location }
+    }
+
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
         self.variables.get_location(stable_ptr)
@@ -248,10 +256,7 @@ impl LoweredExpr {
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
-            LoweredExpr::ExternEnum(extern_enum) => {
-                let location = extern_enum.location;
-                Ok(VarUsage { var_id: extern_enum.var(ctx, builder)?, location })
-            }
+            LoweredExpr::ExternEnum(extern_enum) => extern_enum.as_var_usage(ctx, builder),
             LoweredExpr::Member(member_path, _location) => {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
@@ -266,14 +271,6 @@ impl LoweredExpr {
                 Ok(VarUsage { var_id: snapshot, location })
             }
         }
-    }
-
-    pub fn var(
-        self,
-        ctx: &mut LoweringContext<'_, '_>,
-        builder: &mut BlockBuilder,
-    ) -> Result<VariableId, LoweringFlowError> {
-        Ok(self.as_var_usage(ctx, builder)?.var_id)
     }
 
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
@@ -305,11 +302,11 @@ pub struct LoweredExprExternEnum {
     pub location: LocationId,
 }
 impl LoweredExprExternEnum {
-    pub fn var(
+    pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut BlockBuilder,
-    ) -> LoweringResult<VariableId> {
+    ) -> LoweringResult<VarUsage> {
         let concrete_variants = ctx
             .db
             .concrete_enum_variants(self.concrete_enum_id)
@@ -373,7 +370,7 @@ impl LoweredExprExternEnum {
         });
         builder
             .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
-            .var(ctx, builder)
+            .as_var_usage(ctx, builder)
     }
 }
 

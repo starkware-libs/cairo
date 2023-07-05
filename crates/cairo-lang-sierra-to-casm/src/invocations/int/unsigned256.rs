@@ -52,7 +52,7 @@ fn build_u256_divmod(
 
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
-        buffer(7) range_check;
+        buffer(5) range_check;
         deref dividend0;
         deref dividend1;
         deref divisor0;
@@ -62,8 +62,6 @@ fn build_u256_divmod(
     casm_build_extend! {casm_builder,
         const zero = 0;
         const one = 1;
-        const u128_bound_minus_i16_upper_bound = u128::MAX - i16::MAX as u128;
-        const i16_lower_bound = BigInt::from(i16::MIN);
         const u128_bound_minus_u64_bound = u128::MAX - u64::MAX as u128;
         const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
         let orig_range_check = range_check;
@@ -96,12 +94,16 @@ fn build_u256_divmod(
 
         // Assert remainder is less than divisor.
         tempvar diff1 = divisor1 - remainder1;
-        tempvar diff0 = divisor0 - remainder0;
-        tempvar diff0_min_1 = diff0 - one;
+        tempvar diff0;
+        tempvar diff0_min_1;
         jump HighDiff if diff1 != 0;
+        assert diff0 = divisor0 - remainder0;
+        assert diff0_min_1 = diff0 - one;
         assert diff0_min_1 = *(range_check++);
         jump After;
     HighDiff:
+        // Align the branches.
+        ap += 1;
         assert diff1 = *(range_check++);
     After:
     }
@@ -118,13 +120,10 @@ fn build_u256_divmod(
         // 3 * 2**128.
         tempvar part0 = q0d0_low + remainder0;
         tempvar part1 = part0 - dividend0;
-        // Divide by 2**128 and check that we got an integer in [-2**15, 2**15).
-        // This validates that we couldn't have wrapped around the prime in the division.
+        // leftover is in range:
+        // [(0 * 2 - u128::MAX) / u128_limit, (u128::MAX * 2 - 0) / u128_limit] ==> [0, 1].
         tempvar leftover = part1 / u128_limit;
-        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
-        assert a = *(range_check++);
-        tempvar a = leftover - i16_lower_bound;
-        assert a = *(range_check++);
+        assert leftover = leftover * leftover;
         // Validate limb1.
         // We know that limb2 and limb3 should be 0.
         // Therfore quotient1 or divisor1 should also be 0.
@@ -134,7 +133,7 @@ fn build_u256_divmod(
         tempvar qd1_small;
         tempvar qd1_large;
         jump DIVISOR1_EQ_ZERO if quotient1 != 0;
-        // quotient3 is 0 - no need to multiply it by the divisor.
+        // quotient1 is 0 - no need to multiply it by the divisor.
         tempvar quotient0_less_than_divisor1;
         hint TestLessThan { lhs: quotient0, rhs: divisor1 } into { dst: quotient0_less_than_divisor1 };
         jump QUOTIENT0_LESS_THAN_DIVISOR1 if quotient0_less_than_divisor1 != 0;
