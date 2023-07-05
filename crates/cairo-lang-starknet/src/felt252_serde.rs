@@ -1,3 +1,5 @@
+use std::ops::Shr;
+
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256k1;
@@ -13,9 +15,9 @@ use cairo_lang_sierra::ids::{
     VarId,
 };
 use cairo_lang_sierra::program::{
-    BranchInfo, BranchTarget, ConcreteLibfuncLongId, ConcreteTypeLongId, Function,
-    FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program, Statement,
-    StatementIdx, TypeDeclaration,
+    BranchInfo, BranchTarget, ConcreteLibfuncLongId, ConcreteTypeLongId, DeclaredTypeInfo,
+    Function, FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program,
+    Statement, StatementIdx, TypeDeclaration,
 };
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -328,7 +330,11 @@ impl Felt252Serde for Program {
             if i as u64 != e.id.id {
                 return Err(Felt252SerdeError::OutOfOrderTypeDeclarationsForSerialization);
             }
-            e.long_id.serialize(output)?;
+            ConcreteTypeInfo {
+                long_id: e.long_id.clone(),
+                declared_type_info: e.declared_type_info.clone(),
+            }
+            .serialize(output)?;
         }
         // Libfunc declaration.
         self.libfunc_declarations.len().serialize(output)?;
@@ -366,11 +372,11 @@ impl Felt252Serde for Program {
         let (size, mut input) = usize::deserialize(input)?;
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
-            let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
+            let (info, next) = ConcreteTypeInfo::deserialize(input)?;
             type_declarations.push(TypeDeclaration {
                 id: ConcreteTypeId::new(i as u64),
-                long_id,
-                declared_type_info: None,
+                long_id: info.long_id,
+                declared_type_info: info.declared_type_info,
             });
             input = next;
         }
@@ -406,6 +412,63 @@ impl Felt252Serde for Program {
             input = next;
         }
         Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
+    }
+}
+
+struct ConcreteTypeInfo {
+    long_id: ConcreteTypeLongId,
+    declared_type_info: Option<DeclaredTypeInfo>,
+}
+
+impl Felt252Serde for ConcreteTypeInfo {
+    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
+        self.long_id.generic_id.serialize(output)?;
+        let len = self.long_id.generic_args.len() as u128;
+        let declared_type_info: u64 = match &self.declared_type_info {
+            Some(info) => {
+                0x8000000000000000
+                    | (if info.storable { 0b0001 } else { 0 })
+                    | (if info.droppable { 0b0010 } else { 0 })
+                    | (if info.duplicatable { 0b0100 } else { 0 })
+                    | (if info.zero_sized { 0b1000 } else { 0 })
+            }
+            None => 0,
+        };
+        (BigInt::from(len) + BigInt::from(2u32).pow(128) * declared_type_info).serialize(output)?;
+        for arg in &self.long_id.generic_args {
+            arg.serialize(output)?;
+        }
+        Ok(())
+    }
+
+    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
+        let (generic_id, input) = GenericTypeId::deserialize(input)?;
+        let (len_and_declared_type_info, mut input) = BigInt::deserialize(input)?;
+        let len =
+            (len_and_declared_type_info.clone() & BigInt::from(u128::MAX)).to_usize().unwrap();
+        let declared_type_info = (len_and_declared_type_info.shr(128) as BigInt).to_u64().unwrap();
+        let mut generic_args = Vec::with_capacity(len);
+        for _ in 0..len {
+            let (arg, next) = GenericArg::deserialize(input)?;
+            generic_args.push(arg);
+            input = next;
+        }
+        Ok((
+            Self {
+                long_id: ConcreteTypeLongId { generic_id, generic_args },
+                declared_type_info: if declared_type_info == 0 {
+                    None
+                } else {
+                    Some(DeclaredTypeInfo {
+                        storable: (declared_type_info & 0b0001) != 0,
+                        droppable: (declared_type_info & 0b0010) != 0,
+                        duplicatable: (declared_type_info & 0b0100) != 0,
+                        zero_sized: (declared_type_info & 0b1000) != 0,
+                    })
+                },
+            },
+            input,
+        ))
     }
 }
 

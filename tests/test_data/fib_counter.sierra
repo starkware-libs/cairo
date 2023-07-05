@@ -1,6 +1,21 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;

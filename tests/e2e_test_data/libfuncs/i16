@@ -16,8 +16,18 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i16 = i16;
-type felt252 = felt252;
+type i16 = i16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc i16_to_felt252 = i16_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -53,9 +63,24 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type i16 = i16;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i16 = i16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::bool = Enum<ut@core::bool, Unit, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc i16_eq = i16_eq;
 libfunc branch_align = branch_align;
@@ -107,9 +132,24 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type i16 = i16;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i16 = i16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::bool = Enum<ut@core::bool, Unit, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc i16_const<11> = i16_const<11>;
 libfunc i16_const<12> = i16_const<12>;
@@ -170,8 +210,18 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type i16 = i16;
-type NonZero<i16> = NonZero<i16>;
+type i16 = i16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<i16> = NonZero<i16> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc i16_is_zero = i16_is_zero;
 libfunc branch_align = branch_align;

@@ -1,6 +1,21 @@
-type felt252 = felt252;
-type Uninitialized<felt252> = Uninitialized<felt252>;
-type NonZero<felt252> = NonZero<felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Uninitialized<felt252> = Uninitialized<felt252> with_info {
+  storable: false
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc alloc_local<felt252> = alloc_local<felt252>;
 libfunc finalize_locals = finalize_locals;

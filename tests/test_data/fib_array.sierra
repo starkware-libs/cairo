@@ -1,24 +1,129 @@
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type RangeCheck = RangeCheck;
-type u32 = u32;
-type Unit = Struct<ut@Tuple>;
-type Tuple<Array<felt252>, Unit> = Struct<ut@Tuple, Array<felt252>, Unit>;
-type core::panics::Panic = Struct<ut@core::panics::Panic>;
-type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>>;
-type core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())> = Enum<ut@core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, Tuple<Array<felt252>, Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Tuple<u32> = Struct<ut@Tuple, u32>;
-type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u32,)>, Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>>;
-type Tuple<felt252> = Struct<ut@Tuple, felt252>;
-type core::panics::PanicResult::<(@core::felt252,)> = Enum<ut@core::panics::PanicResult::<(@core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>>;
-type Tuple<Array<felt252>, felt252, u32> = Struct<ut@Tuple, Array<felt252>, felt252, u32>;
-type Tuple<Tuple<Array<felt252>, felt252, u32>> = Struct<ut@Tuple, Tuple<Array<felt252>, felt252, u32>>;
-type core::panics::PanicResult::<((core::array::Array::<core::felt252>, core::felt252, core::integer::u32),)> = Enum<ut@core::panics::PanicResult::<((core::array::Array::<core::felt252>, core::felt252, core::integer::u32),)>, Tuple<Tuple<Array<felt252>, felt252, u32>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type core::result::Result::<core::integer::u32, core::integer::u32> = Enum<ut@core::result::Result::<core::integer::u32, core::integer::u32>, u32, u32>;
-type Box<felt252> = Box<felt252>;
-type Tuple<Box<felt252>> = Struct<ut@Tuple, Box<felt252>>;
-type core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)> = Enum<ut@core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>, Tuple<Box<felt252>>, Tuple<core::panics::Panic, Array<felt252>>>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u32 = u32 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type Tuple<Array<felt252>, Unit> = Struct<ut@Tuple, Array<felt252>, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::Panic = Struct<ut@core::panics::Panic> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())> = Enum<ut@core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, Tuple<Array<felt252>, Unit>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<u32> = Struct<ut@Tuple, u32> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::integer::u32,)> = Enum<ut@core::panics::PanicResult::<(core::integer::u32,)>, Tuple<u32>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<felt252> = Struct<ut@Tuple, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(@core::felt252,)> = Enum<ut@core::panics::PanicResult::<(@core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<Array<felt252>, felt252, u32> = Struct<ut@Tuple, Array<felt252>, felt252, u32> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<Tuple<Array<felt252>, felt252, u32>> = Struct<ut@Tuple, Tuple<Array<felt252>, felt252, u32>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::PanicResult::<((core::array::Array::<core::felt252>, core::felt252, core::integer::u32),)> = Enum<ut@core::panics::PanicResult::<((core::array::Array::<core::felt252>, core::felt252, core::integer::u32),)>, Tuple<Tuple<Array<felt252>, felt252, u32>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::result::Result::<core::integer::u32, core::integer::u32> = Enum<ut@core::result::Result::<core::integer::u32, core::integer::u32>, u32, u32> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Box<felt252> = Box<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<Box<felt252>> = Struct<ut@Tuple, Box<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)> = Enum<ut@core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>, Tuple<Box<felt252>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc array_new<felt252> = array_new<felt252>;

@@ -21,8 +21,18 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc felt252_const<5> = felt252_const<5>;
 libfunc enum_init<test::SingleVariant, 0> = enum_init<test::SingleVariant, 0>;
@@ -61,8 +71,18 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
 libfunc branch_align = branch_align;
@@ -105,9 +125,24 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt252, Unit>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type test::Option = Enum<ut@test::Option, felt252, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc felt252_const<5> = felt252_const<5>;
 libfunc enum_init<test::Option, 0> = enum_init<test::Option, 0>;
@@ -151,9 +186,24 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type felt252 = felt252;
-type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt252, Unit>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type test::Option = Enum<ut@test::Option, felt252, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc enum_match<test::Option> = enum_match<test::Option>;
 libfunc branch_align = branch_align;
@@ -207,8 +257,18 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<test::Color, 2> = enum_init<test::Color, 2>;
@@ -248,8 +308,18 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<test::Color, 0> = enum_init<test::Color, 0>;
@@ -299,8 +369,18 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc enum_match<test::Color> = enum_match<test::Color>;
 libfunc branch_align = branch_align;

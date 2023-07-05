@@ -1,5 +1,15 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc store_temp<felt252> = store_temp<felt252>;

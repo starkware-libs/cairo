@@ -1,18 +1,93 @@
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>>;
-type u32 = u32;
-type System = System;
-type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]>;
-type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]>;
-type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>>;
-type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>>;
-type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type BuiltinCosts = BuiltinCosts;
-type minimal_contract::minimal_contract::minimal_contract::ContractState = Struct<ut@[234020764219730895051853597543107194102281619191220103452241707349048530875]>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type GasBuiltin = GasBuiltin with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u32 = u32 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type System = System with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type BuiltinCosts = BuiltinCosts with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type minimal_contract::minimal_contract::minimal_contract::ContractState = Struct<ut@[234020764219730895051853597543107194102281619191220103452241707349048530875]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc withdraw_gas = withdraw_gas;

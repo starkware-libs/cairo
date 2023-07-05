@@ -18,8 +18,18 @@ ret;
 test::foo: OrderedHashMap({Const: 1000})
 
 //! > sierra_code
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc dup<felt252> = dup<felt252>;
 libfunc dup<NonZero<felt252>> = dup<NonZero<felt252>>;
@@ -58,7 +68,12 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_add = felt252_add;

@@ -1,8 +1,33 @@
-type felt252 = felt252;
-type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<(core::felt252, core::felt252)> = Enum<ut@core::option::Option::<(core::felt252, core::felt252)>, Tuple<felt252, felt252>, Unit>;
-type core::option::Option::<core::felt252> = Enum<ut@core::option::Option::<core::felt252>, felt252, Unit>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<(core::felt252, core::felt252)> = Enum<ut@core::option::Option::<(core::felt252, core::felt252)>, Tuple<felt252, felt252>, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::option::Option::<core::felt252> = Enum<ut@core::option::Option::<core::felt252>, felt252, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc enum_match<core::option::Option::<(core::felt252, core::felt252)>> = enum_match<core::option::Option::<(core::felt252, core::felt252)>>;
 libfunc branch_align = branch_align;

@@ -27,10 +27,30 @@ test::foo: OrderedHashMap({Const: 600})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
 libfunc store_temp<Snapshot<Array<felt252>>> = store_temp<Snapshot<Array<felt252>>>;
@@ -98,12 +118,42 @@ test::foo: OrderedHashMap({Const: 1300})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type test::A = Struct<ut@test::A, Array<felt252>, felt252>;
-type Snapshot<test::A> = Snapshot<test::A>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type test::A = Struct<ut@test::A, Array<felt252>, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<test::A> = Snapshot<test::A> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc dup<Snapshot<test::A>> = dup<Snapshot<test::A>>;
 libfunc struct_snapshot_deconstruct<test::A> = struct_snapshot_deconstruct<test::A>;
@@ -192,12 +242,42 @@ test::bar1: OrderedHashMap({})
 test::foo: OrderedHashMap({Const: 900})
 
 //! > sierra_code
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type Unit = Struct<ut@Tuple>;
-type test::A = Enum<ut@test::A, Array<felt252>, felt252>;
-type Snapshot<test::A> = Snapshot<test::A>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type test::A = Enum<ut@test::A, Array<felt252>, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<test::A> = Snapshot<test::A> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc drop<Snapshot<Array<felt252>>> = drop<Snapshot<Array<felt252>>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;

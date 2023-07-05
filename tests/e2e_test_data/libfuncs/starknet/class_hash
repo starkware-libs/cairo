@@ -55,11 +55,36 @@ ret;
 test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type ClassHash = ClassHash;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::starknet::class_hash::ClassHash> = Enum<ut@core::option::Option::<core::starknet::class_hash::ClassHash>, ClassHash, Unit>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type ClassHash = ClassHash with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<core::starknet::class_hash::ClassHash> = Enum<ut@core::option::Option::<core::starknet::class_hash::ClassHash>, ClassHash, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc class_hash_try_from_felt252 = class_hash_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -111,8 +136,18 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type ClassHash = ClassHash;
-type felt252 = felt252;
+type ClassHash = ClassHash with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc class_hash_to_felt252 = class_hash_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;

@@ -30,9 +30,24 @@ ret;
 test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_overflowing_add = u128_overflowing_add;
 libfunc branch_align = branch_align;
@@ -94,9 +109,24 @@ ret;
 test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc branch_align = branch_align;
@@ -183,11 +213,36 @@ test::foo: OrderedHashMap({Const: 4130})
 core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
-type u128 = u128;
-type U128MulGuarantee = U128MulGuarantee;
-type RangeCheck = RangeCheck;
-type Unit = Struct<ut@Tuple>;
-type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type U128MulGuarantee = U128MulGuarantee with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_guarantee_mul = u128_guarantee_mul;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -254,10 +309,30 @@ ret;
 test::foo: OrderedHashMap({Const: 1680})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type NonZero<u128> = NonZero<u128>;
-type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<u128> = NonZero<u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_safe_divmod = u128_safe_divmod;
 libfunc struct_construct<Tuple<u128, u128>> = struct_construct<Tuple<u128, u128>>;
@@ -317,11 +392,36 @@ ret;
 test::foo: OrderedHashMap({Const: 1710})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type u128 = u128;
-type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128>;
-type core::integer::U128sFromFelt252Result = Enum<ut@core::integer::U128sFromFelt252Result, u128, Tuple<u128, u128>>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<u128, u128> = Struct<ut@Tuple, u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::integer::U128sFromFelt252Result = Enum<ut@core::integer::U128sFromFelt252Result, u128, Tuple<u128, u128>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128s_from_felt252 = u128s_from_felt252;
 libfunc branch_align = branch_align;
@@ -376,9 +476,24 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type u128 = u128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::bool = Enum<ut@core::bool, Unit, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_eq = u128_eq;
 libfunc branch_align = branch_align;
@@ -430,9 +545,24 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type u128 = u128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::bool = Enum<ut@core::bool, Unit, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_const<11> = u128_const<11>;
 libfunc u128_const<12> = u128_const<12>;
@@ -498,9 +628,24 @@ ret;
 test::foo: OrderedHashMap({Const: 1380})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type u64 = u64;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u64 = u64 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_sqrt = u128_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -560,8 +705,18 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 4, Const: 2600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u128 = u128;
+type Bitwise = Bitwise with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc u128_byte_reverse = u128_byte_reverse;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;

@@ -54,9 +54,24 @@ ret;
 test::foo: OrderedHashMap({Const: 1900})
 
 //! > sierra_code
-type SegmentArena = SegmentArena;
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type SegmentArena = SegmentArena with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_dict_new<felt252> = felt252_dict_new<felt252>;
 libfunc store_temp<SegmentArena> = store_temp<SegmentArena>;
@@ -103,10 +118,30 @@ ret;
 test::foo: OrderedHashMap({Const: 5320})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
-type Unit = Struct<ut@Tuple>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
 libfunc drop<felt252> = drop<felt252>;
@@ -161,9 +196,24 @@ ret;
 test::foo: OrderedHashMap({Const: 5520})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -253,10 +303,30 @@ ret;
 test::foo: OrderedHashMap({Const: 21180})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
-type Unit = Struct<ut@Tuple>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
@@ -514,12 +584,42 @@ ret;
 test::foo: OrderedHashMap({Const: 6410})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type SegmentArena = SegmentArena;
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type GasBuiltin = GasBuiltin with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type SegmentArena = SegmentArena with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type SquashedFelt252Dict<felt252> = SquashedFelt252Dict<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc felt252_dict_squash<felt252> = felt252_dict_squash<felt252>;
@@ -567,10 +667,30 @@ ret;
 test::foo: OrderedHashMap({Const: 5320})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
-type Tuple<Felt252DictEntry<felt252>, felt252> = Struct<ut@Tuple, Felt252DictEntry<felt252>, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<Felt252DictEntry<felt252>, felt252> = Struct<ut@Tuple, Felt252DictEntry<felt252>, felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
 libfunc struct_construct<Tuple<Felt252DictEntry<felt252>, felt252>> = struct_construct<Tuple<Felt252DictEntry<felt252>, felt252>>;
@@ -610,9 +730,24 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt252>;
 libfunc store_temp<Felt252Dict<felt252>> = store_temp<Felt252Dict<felt252>>;
@@ -673,10 +808,30 @@ ret;
 test::foo: OrderedHashMap({Const: 10740})
 
 //! > sierra_code
-type felt252 = felt252;
-type Felt252Dict<felt252> = Felt252Dict<felt252>;
-type Felt252DictEntry<felt252> = Felt252DictEntry<felt252>;
-type Tuple<Felt252Dict<felt252>, felt252, felt252> = Struct<ut@Tuple, Felt252Dict<felt252>, felt252, felt252>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Felt252Dict<felt252> = Felt252Dict<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Felt252DictEntry<felt252> = Felt252DictEntry<felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<Felt252Dict<felt252>, felt252, felt252> = Struct<ut@Tuple, Felt252Dict<felt252>, felt252, felt252> with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_dict_entry_get<felt252> = felt252_dict_entry_get<felt252>;
 libfunc felt252_dict_entry_finalize<felt252> = felt252_dict_entry_finalize<felt252>;

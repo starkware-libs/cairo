@@ -1,6 +1,21 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Pedersen = Pedersen;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Pedersen = Pedersen with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;

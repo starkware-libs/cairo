@@ -16,8 +16,18 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type u16 = u16;
-type u64 = u64;
+type u16 = u16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u64 = u64 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc upcast<u16, u64> = upcast<u16, u64>;
 libfunc store_temp<u64> = store_temp<u64>;
@@ -61,11 +71,36 @@ ret;
 test::foo: OrderedHashMap({Const: 770})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u64 = u64;
-type u16 = u16;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type u64 = u64 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u16 = u16 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<core::integer::u16> = Enum<ut@core::option::Option::<core::integer::u16>, u16, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc downcast<u64, u16> = downcast<u64, u16>;
 libfunc branch_align = branch_align;

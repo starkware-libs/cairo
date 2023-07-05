@@ -1,5 +1,15 @@
-type felt252 = felt252;
-type Pedersen = Pedersen;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Pedersen = Pedersen with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
 
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_const<2> = felt252_const<2>;

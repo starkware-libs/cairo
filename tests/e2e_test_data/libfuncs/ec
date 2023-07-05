@@ -19,7 +19,12 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_point_zero = ec_point_zero;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
@@ -65,11 +70,36 @@ ret;
 test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_point_try_new_nz = ec_point_try_new_nz;
 libfunc branch_align = branch_align;
@@ -160,12 +190,42 @@ ret;
 test::foo: OrderedHashMap({Const: 2110})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_point_from_x_nz = ec_point_from_x_nz;
 libfunc branch_align = branch_align;
@@ -218,10 +278,30 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type felt252 = felt252;
-type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
@@ -266,9 +346,24 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type felt252 = felt252;
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_point_is_zero = ec_point_is_zero;
 libfunc branch_align = branch_align;
@@ -316,7 +411,12 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_neg = ec_neg;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
@@ -366,7 +466,12 @@ ret;
 test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
-type EcState = EcState;
+type EcState = EcState with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_state_init = ec_state_init;
 libfunc rename<EcState> = rename<EcState>;
@@ -412,10 +517,30 @@ ret;
 test::foo: OrderedHashMap({Const: 1300})
 
 //! > sierra_code
-type EcState = EcState;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
+type EcState = EcState with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc ec_state_add = ec_state_add;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -471,9 +596,24 @@ ret;
 test::foo: OrderedHashMap({Const: 1500})
 
 //! > sierra_code
-type EcState = EcState;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
+type EcState = EcState with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc ec_state_try_finalize_nz = ec_state_try_finalize_nz;
 libfunc branch_align = branch_align;
@@ -526,12 +666,42 @@ ret;
 test::foo: OrderedHashMap({EcOp: 1, Const: 900})
 
 //! > sierra_code
-type EcOp = EcOp;
-type EcState = EcState;
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
+type EcOp = EcOp with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type EcState = EcState with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type EcPoint = EcPoint with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type NonZero<EcPoint> = NonZero<EcPoint> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
 
 libfunc ec_state_add_mul = ec_state_add_mul;
 libfunc struct_construct<Unit> = struct_construct<Unit>;

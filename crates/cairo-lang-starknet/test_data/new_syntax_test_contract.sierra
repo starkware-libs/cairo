@@ -1,63 +1,363 @@
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>>;
-type u32 = u32;
-type System = System;
-type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]>;
-type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]>;
-type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>>;
-type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>>;
-type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type BuiltinCosts = BuiltinCosts;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState = Struct<ut@[832340816400901084546613362961925436119397057229309266328198097839452732969]>;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState = Struct<ut@[1172577808735736832353886024273512027411705780646105696884237303683318128130]>;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState = Struct<ut@[1490232836111343480971941220678583465012958001113555331793578647835559762747], new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState>;
-type u128 = u128;
-type Tuple<u128> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u128>;
-type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@[1332562192295074151500384051594956669509317540405412225936028825197938663593], Tuple<u128>, Tuple<core::panics::Panic, Array<felt252>>>;
-type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit>;
-type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>;
-type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())> = Enum<ut@[1289500420609444623048262757396536171018222303178428190744170426127827034459], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
-type ContractAddress = ContractAddress;
-type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@[1730591083647345995550560488717538099208395506321115194079300232838727341527], ContractAddress, Unit>;
-type Box<felt252> = Box<felt252>;
-type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit>;
-type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>;
-type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())> = Enum<ut@[506665938953120229866051388089251885462427949513476602274181388100401771039], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased = Struct<ut@[1802420929075580184738966781637287028622319346658296671934919752560351013296], u128>;
-type new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher = Struct<ut@[48627562630565645581129371041557798121892467635660350500567627314067029089], ContractAddress>;
-type Tuple<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher>;
-type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)> = Enum<ut@[716197526968771225162222571991915920018818625153558424736417637627309938396], Tuple<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher>, Tuple<core::panics::Panic, Array<felt252>>>;
-type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit>;
-type Tuple<core::bool> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::bool>;
-type core::panics::PanicResult::<(core::bool,)> = Enum<ut@[297408365860982690370361624153524834589608492294743483451370466441617702636], Tuple<core::bool>, Tuple<core::panics::Panic, Array<felt252>>>;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased = Struct<ut@[272193040847643402439539108671371769509469683547498931949929073489298966215], u128>;
-type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit>;
-type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>;
-type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())> = Enum<ut@[1008366793847399986381429588425623782342044730802753347950714898267322937122], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
-type StorageBaseAddress = StorageBaseAddress;
-type core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>> = Enum<ut@[1270906046977841141060978118411832258207934732743670527139603475143660678225], u128, Array<felt252>>;
-type Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>;
-type core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)> = Enum<ut@[1522493967771700812565149476545852007609636825951037713316574942491938299168], Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type Tuple<u128, u128> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u128, u128>;
-type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@[809491719283488942717998662069949707618313996097849743584394103014299843857], u128, u128>;
-type StorageAddress = StorageAddress;
-type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@[455598176897554951975518433047350165683642644060968901071973598007398862489], Unit, Array<felt252>>;
-type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit>;
-type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
-type new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event = Enum<ut@[1675358226745831590541098035815409665669454039151810485508039475708162661079], new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased>;
-type core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>> = Enum<ut@[1502129160086636935390330412856261840811034229543857010824772186907784747146], new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, Array<felt252>>;
-type Tuple<core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>;
-type core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)> = Enum<ut@[375729225288783192565884702988831568595030025309771591191441844374634504297], Tuple<core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@[625340018035033268061024322321985773993398956645615401429157824148096863952], core::array::Span::<core::felt252>, Array<felt252>>;
-type core::option::Option::<core::bool> = Enum<ut@[1285779662732195324636979365443937893054110720561542424485926725261135233456], core::bool, Unit>;
-type core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>> = Enum<ut@[1066622978309758327526672597483202623059871376667747795906567598633136308279], ContractAddress, Array<felt252>>;
-type Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>;
-type core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)> = Enum<ut@[574270471157179058551129788862944486366001620725219078921063375728614337973], Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>>;
-type NonZero<felt252> = NonZero<felt252>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type GasBuiltin = GasBuiltin with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Array<felt252> = Array<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type u32 = u32 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type System = System with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type BuiltinCosts = BuiltinCosts with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState = Struct<ut@[832340816400901084546613362961925436119397057229309266328198097839452732969]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState = Struct<ut@[1172577808735736832353886024273512027411705780646105696884237303683318128130]> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState = Struct<ut@[1490232836111343480971941220678583465012958001113555331793578647835559762747], new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type u128 = u128 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<u128> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::integer::u128,)> = Enum<ut@[1332562192295074151500384051594956669509317540405412225936028825197938663593], Tuple<u128>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::option::Option::<core::integer::u128> = Enum<ut@[707802566805637274160536953450653899678320584667373508165987445807323736680], u128, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, ())> = Enum<ut@[1289500420609444623048262757396536171018222303178428190744170426127827034459], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type ContractAddress = ContractAddress with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@[1730591083647345995550560488717538099208395506321115194079300232838727341527], ContractAddress, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Box<felt252> = Box<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::option::Option::<core::box::Box::<@core::felt252>> = Enum<ut@[1182885770396068416776258475038712898857052156962285097349975100489777991911], Box<felt252>, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, ())> = Enum<ut@[506665938953120229866051388089251885462427949513476602274181388100401771039], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::counter::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased = Struct<ut@[1802420929075580184738966781637287028622319346658296671934919752560351013296], u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher = Struct<ut@[48627562630565645581129371041557798121892467635660350500567627314067029089], ContractAddress> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher,)> = Enum<ut@[716197526968771225162222571991915920018818625153558424736417637627309938396], Tuple<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::bool = Enum<ut@[1428587981972971377690703480718106917688158670535227238524565791273937320306], Unit, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<core::bool> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::bool> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::bool,)> = Enum<ut@[297408365860982690370361624153524834589608492294743483451370466441617702636], Tuple<core::bool>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased = Struct<ut@[272193040847643402439539108671371769509469683547498931949929073489298966215], u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::option::Option::<core::felt252> = Enum<ut@[502540321931352404499287398278270665773953423387279675570524389549882807569], felt252, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::PanicResult::<(new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, ())> = Enum<ut@[1008366793847399986381429588425623782342044730802753347950714898267322937122], Tuple<new_syntax_test_contract::new_syntax_test_contract::counter_contract::other_contract::ContractState, Unit>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type StorageBaseAddress = StorageBaseAddress with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>> = Enum<ut@[1270906046977841141060978118411832258207934732743670527139603475143660678225], u128, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)> = Enum<ut@[1522493967771700812565149476545852007609636825951037713316574942491938299168], Tuple<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<u128, u128> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@[809491719283488942717998662069949707618313996097849743584394103014299843857], u128, u128> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type StorageAddress = StorageAddress with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@[455598176897554951975518433047350165683642644060968901071973598007398862489], Unit, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<Unit> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::panics::PanicResult::<((),)> = Enum<ut@[361089181821616824109533730671601453699459898913788950609596320038338987733], Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type new_syntax_test_contract::new_syntax_test_contract::counter_contract::Event = Enum<ut@[1675358226745831590541098035815409665669454039151810485508039475708162661079], new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterIncreased, new_syntax_test_contract::new_syntax_test_contract::counter_contract::CounterDecreased> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>> = Enum<ut@[1502129160086636935390330412856261840811034229543857010824772186907784747146], new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)> = Enum<ut@[375729225288783192565884702988831568595030025309771591191441844374634504297], Tuple<core::result::Result::<new_syntax_test_contract::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@[625340018035033268061024322321985773993398956645615401429157824148096863952], core::array::Span::<core::felt252>, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::option::Option::<core::bool> = Enum<ut@[1285779662732195324636979365443937893054110720561542424485926725261135233456], core::bool, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>> = Enum<ut@[1066622978309758327526672597483202623059871376667747795906567598633136308279], ContractAddress, Array<felt252>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)> = Enum<ut@[574270471157179058551129788862944486366001620725219078921063375728614337973], Tuple<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>>, Tuple<core::panics::Panic, Array<felt252>>> with_info {
+  storable: true
+  droppable: true
+  duplicatable: false
+  zero_sized: false
+};
+type NonZero<felt252> = NonZero<felt252> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc revoke_ap_tracking = revoke_ap_tracking;
 libfunc withdraw_gas = withdraw_gas;

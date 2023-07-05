@@ -16,7 +16,12 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type bytes31 = bytes31;
+type bytes31 = bytes31 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc bytes31_const<256> = bytes31_const<256>;
 libfunc store_temp<bytes31> = store_temp<bytes31>;
@@ -84,11 +89,36 @@ ret;
 test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type bytes31 = bytes31;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::bytes_31::bytes31> = Enum<ut@core::option::Option::<core::bytes_31::bytes31>, bytes31, Unit>;
+type RangeCheck = RangeCheck with_info {
+  storable: true
+  droppable: false
+  duplicatable: false
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type bytes31 = bytes31 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type Unit = Struct<ut@Tuple> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: true
+};
+type core::option::Option::<core::bytes_31::bytes31> = Enum<ut@core::option::Option::<core::bytes_31::bytes31>, bytes31, Unit> with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc bytes31_try_from_felt252 = bytes31_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -138,8 +168,18 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type bytes31 = bytes31;
-type felt252 = felt252;
+type bytes31 = bytes31 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
+type felt252 = felt252 with_info {
+  storable: true
+  droppable: true
+  duplicatable: true
+  zero_sized: false
+};
 
 libfunc bytes31_to_felt252 = bytes31_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
