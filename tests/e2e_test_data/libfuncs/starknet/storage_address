@@ -53,9 +53,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1410})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type StorageBaseAddress = StorageBaseAddress;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -90,9 +90,9 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type StorageBaseAddress = StorageBaseAddress;
-type u8 = u8;
-type StorageAddress = StorageAddress;
+type StorageBaseAddress = StorageBaseAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
@@ -162,11 +162,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type StorageAddress = StorageAddress;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::starknet::storage_access::StorageAddress> = Enum<ut@core::option::Option::<core::starknet::storage_access::StorageAddress>, StorageAddress, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::starknet::storage_access::StorageAddress> = Enum<ut@core::option::Option::<core::starknet::storage_access::StorageAddress>, StorageAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc storage_address_try_from_felt252 = storage_address_try_from_felt252;
 libfunc branch_align = branch_align;

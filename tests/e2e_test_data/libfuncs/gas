@@ -40,10 +40,10 @@ test::foo: OrderedHashMap({Const: 800})
 test::bar: OrderedHashMap({})
 
 //! > sierra_code
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Unit = Struct<ut@Tuple>;
-type GasBuiltin = GasBuiltin;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc felt252_is_zero = felt252_is_zero;
 libfunc branch_align = branch_align;
@@ -115,10 +115,10 @@ ret;
 test::foo: OrderedHashMap({Const: 770})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc withdraw_gas = withdraw_gas;
@@ -201,13 +201,13 @@ ret;
 test::foo: OrderedHashMap({Const: 1570})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Pedersen = Pedersen;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc get_builtin_costs = get_builtin_costs;
@@ -324,15 +324,15 @@ ret;
 test::foo: OrderedHashMap({Const: 1970})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Pedersen = Pedersen;
-type u128 = u128;
-type Bitwise = Bitwise;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc get_builtin_costs = get_builtin_costs;
@@ -447,11 +447,11 @@ ret;
 test::foo: OrderedHashMap({Const: 870})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
@@ -537,13 +537,13 @@ ret;
 test::foo: OrderedHashMap({Const: 1170})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Pedersen = Pedersen;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
@@ -644,13 +644,13 @@ ret;
 test::foo: OrderedHashMap({Const: 1170})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type u128 = u128;
-type Bitwise = Bitwise;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;
@@ -762,15 +762,15 @@ ret;
 test::foo: OrderedHashMap({Const: 1470})
 
 //! > sierra_code
-type BuiltinCosts = BuiltinCosts;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type felt252 = felt252;
-type Pedersen = Pedersen;
-type u128 = u128;
-type Bitwise = Bitwise;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit>;
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<()> = Enum<ut@core::option::Option::<()>, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<BuiltinCosts> = dup<BuiltinCosts>;

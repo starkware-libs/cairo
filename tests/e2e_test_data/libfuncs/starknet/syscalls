@@ -38,14 +38,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type Unit = Struct<ut@Tuple>;
-type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc emit_event_syscall = emit_event_syscall;
 libfunc branch_align = branch_align;
@@ -119,12 +119,12 @@ ret;
 test::foo: OrderedHashMap({Const: 11200})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u64 = u64;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc get_block_hash_syscall = get_block_hash_syscall;
 libfunc branch_align = branch_align;
@@ -195,22 +195,22 @@ ret;
 test::foo: OrderedHashMap({Const: 11100})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u64 = u64;
-type ContractAddress = ContractAddress;
-type core::starknet::info::BlockInfo = Struct<ut@core::starknet::info::BlockInfo, u64, u64, ContractAddress>;
-type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo>;
-type felt252 = felt252;
-type u128 = u128;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252>;
-type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo>;
-type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt252>;
-type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo>;
-type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, Box<core::starknet::info::ExecutionInfo>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::BlockInfo = Struct<ut@core::starknet::info::BlockInfo, u64, u64, ContractAddress> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::BlockInfo> = Box<core::starknet::info::BlockInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::TxInfo = Struct<ut@core::starknet::info::TxInfo, felt252, ContractAddress, u128, core::array::Span::<core::felt252>, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::TxInfo> = Box<core::starknet::info::TxInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::starknet::info::ExecutionInfo = Struct<ut@core::starknet::info::ExecutionInfo, Box<core::starknet::info::BlockInfo>, Box<core::starknet::info::TxInfo>, ContractAddress, ContractAddress, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Box<core::starknet::info::ExecutionInfo> = Box<core::starknet::info::ExecutionInfo> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::box::Box::<core::starknet::info::ExecutionInfo>, core::array::Array::<core::felt252>>, Box<core::starknet::info::ExecutionInfo>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc get_execution_info_syscall = get_execution_info_syscall;
 libfunc branch_align = branch_align;
@@ -287,14 +287,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type ContractAddress = ContractAddress;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc call_contract_syscall = call_contract_syscall;
 libfunc branch_align = branch_align;
@@ -369,13 +369,13 @@ ret;
 test::foo: OrderedHashMap({Const: 11300})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u32 = u32;
-type StorageAddress = StorageAddress;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::felt252, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::felt252, core::array::Array::<core::felt252>>, felt252, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc storage_read_syscall = storage_read_syscall;
 libfunc branch_align = branch_align;
@@ -451,14 +451,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u32 = u32;
-type StorageAddress = StorageAddress;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Unit = Struct<ut@Tuple>;
-type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type StorageAddress = StorageAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc storage_write_syscall = storage_write_syscall;
 libfunc branch_align = branch_align;
@@ -548,18 +548,18 @@ ret;
 test::foo: OrderedHashMap({Const: 11700})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type ClassHash = ClassHash;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-type ContractAddress = ContractAddress;
-type Tuple<ContractAddress, core::array::Span::<core::felt252>> = Struct<ut@Tuple, ContractAddress, core::array::Span::<core::felt252>>;
-type core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, Tuple<ContractAddress, core::array::Span::<core::felt252>>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type ClassHash = ClassHash [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<ContractAddress, core::array::Span::<core::felt252>> = Struct<ut@Tuple, ContractAddress, core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::starknet::contract_address::ContractAddress, core::array::Span::<core::felt252>), core::array::Array::<core::felt252>>, Tuple<ContractAddress, core::array::Span::<core::felt252>>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc deploy_syscall = deploy_syscall;
 libfunc branch_align = branch_align;
@@ -637,17 +637,17 @@ ret;
 test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
-type u64 = u64;
-type Array<u64> = Array<u64>;
-type Snapshot<Array<u64>> = Snapshot<Array<u64>>;
-type core::array::Span::<core::integer::u64> = Struct<ut@core::array::Span::<core::integer::u64>, Snapshot<Array<u64>>>;
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, core::integer::u256, Array<felt252>>;
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<u64> = Array<u64> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<u64>> = Snapshot<Array<u64>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::integer::u64> = Struct<ut@core::array::Span::<core::integer::u64>, Snapshot<Array<u64>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>, core::integer::u256, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc snapshot_take<Array<u64>> = snapshot_take<Array<u64>>;
 libfunc drop<Array<u64>> = drop<Array<u64>>;
@@ -732,14 +732,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type ClassHash = ClassHash;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type ClassHash = ClassHash [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>, core::array::Span::<core::felt252>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc library_call_syscall = library_call_syscall;
 libfunc branch_align = branch_align;
@@ -815,14 +815,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
-type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>>;
-type Unit = Struct<ut@Tuple>;
-type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@core::array::Span::<core::felt252>, Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::result::Result::<(), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(), core::array::Array::<core::felt252>>, Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
 
 libfunc send_message_to_l1_syscall = send_message_to_l1_syscall;
 libfunc branch_align = branch_align;

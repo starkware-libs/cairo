@@ -40,12 +40,11 @@ impl fmt::Display for TypeDeclaration {
         if let Some(DeclaredTypeInfo { storable, droppable, duplicatable, zero_sized }) =
             declared_type_info
         {
-            writeln!(f, " with_info {{")?;
-            writeln!(f, "  storable: {:?}", storable)?;
-            writeln!(f, "  droppable: {:?}", droppable)?;
-            writeln!(f, "  duplicatable: {:?}", duplicatable)?;
-            writeln!(f, "  zero_sized: {:?}", zero_sized)?;
-            write!(f, "}}")?;
+            write!(
+                f,
+                " [storable: {storable:?}, drop: {droppable:?}, dup: {duplicatable:?}, \
+                 zero_sized: {zero_sized:?}]",
+            )?;
         }
         Ok(())
     }

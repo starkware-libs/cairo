@@ -1,4 +1,4 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
@@ -7,13 +7,13 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
 use cairo_lang_sierra::extensions::GenericLibfuncEx;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program;
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 
-use crate::db::SierraGenGroup;
+use crate::db::{SierraConcreteTypeLongIdCycleHandle, SierraGenGroup};
 use crate::pre_sierra::{self};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
@@ -64,36 +64,79 @@ fn generate_type_declarations<'a>(
     types: impl Iterator<Item = &'a ConcreteTypeId>,
 ) -> Vec<program::TypeDeclaration> {
     let mut declarations = vec![];
-    let mut already_declared = HashSet::new();
+    let mut additional_checks = OrderedHashSet::default();
+    let mut already_declared = UnorderedHashSet::default();
     for ty in types {
-        generate_type_declarations_helper(db, ty, &mut declarations, &mut already_declared);
+        generate_type_declarations_helper(
+            db,
+            ty,
+            &mut declarations,
+            &mut additional_checks,
+            &mut already_declared,
+        );
+    }
+    for additional_ty in additional_checks {
+        generate_type_declarations_helper(
+            db,
+            &additional_ty,
+            &mut declarations,
+            &mut OrderedHashSet::default(),
+            &mut already_declared,
+        );
     }
     declarations
 }
 
 /// Helper to ensure declaring types ordered in such a way that no type appears before types it
 /// depends on.
+/// `additional_checks` is used to make sure to also include types that only the cycle breakers are
+/// dependent on.
 fn generate_type_declarations_helper(
     db: &dyn SierraGenGroup,
     ty: &ConcreteTypeId,
     declarations: &mut Vec<program::TypeDeclaration>,
-    already_declared: &mut HashSet<ConcreteTypeId>,
+    additional_checks: &mut OrderedHashSet<ConcreteTypeId>,
+    already_declared: &mut UnorderedHashSet<ConcreteTypeId>,
 ) {
     if already_declared.contains(ty) {
         return;
     }
-    let long_id = db.lookup_intern_concrete_type(ty.clone());
+    let (long_id, is_breaker) = match db.lookup_intern_concrete_type(ty.clone()) {
+        SierraConcreteTypeLongIdCycleHandle::Regular(long_id) => (long_id, false),
+        SierraConcreteTypeLongIdCycleHandle::CycleBreaker(type_id) => {
+            (db.get_concrete_long_type_id(type_id).unwrap(), true)
+        }
+    };
+    already_declared.insert(ty.clone());
     for generic_arg in &long_id.generic_args {
         if let program::GenericArg::Type(inner_ty) = generic_arg {
-            generate_type_declarations_helper(db, inner_ty, declarations, already_declared);
+            // Making sure we order the types in reverse order of their dependencies.
+            // Breakers are not dependent on other types, so we start with them, and we just make
+            // sure to add their dependencies as well in the end.
+            if is_breaker {
+                additional_checks.insert(inner_ty.clone());
+            } else {
+                generate_type_declarations_helper(
+                    db,
+                    inner_ty,
+                    declarations,
+                    additional_checks,
+                    already_declared,
+                );
+            }
         }
     }
+    let type_info = db.get_type_info(ty.clone()).unwrap();
     declarations.push(program::TypeDeclaration {
         id: ty.clone(),
-        long_id,
-        declared_type_info: None,
+        long_id: long_id.as_ref().clone(),
+        declared_type_info: Some(DeclaredTypeInfo {
+            storable: type_info.storable,
+            droppable: type_info.droppable,
+            duplicatable: type_info.duplicatable,
+            zero_sized: type_info.zero_sized,
+        }),
     });
-    already_declared.insert(ty.clone());
 }
 
 /// Collects the set of all [ConcreteTypeId] that are used in the given list of
