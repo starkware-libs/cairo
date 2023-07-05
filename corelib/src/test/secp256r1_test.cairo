@@ -24,7 +24,7 @@ fn test_secp256r1_recover_public_key() {
 fn test_secp256r1_recover_public_key_u32() {
     let (msg_hash, r, s, expected_public_key_x, expected_public_key_y, _) =
         get_message_and_signature();
-    let public_key = recover_public_key_u32::<Secp256r1Point>(msg_hash, r, s, v: 0).unwrap();
+    let public_key = recover_public_key_u32::<Secp256r1Point>(msg_hash, r, s, v: 1).unwrap();
     let (x, y) = public_key.get_coordinates().unwrap_syscall();
     assert(expected_public_key_x == x, 'recover failed 1');
     assert(expected_public_key_y == y, 'recover failed 2');
