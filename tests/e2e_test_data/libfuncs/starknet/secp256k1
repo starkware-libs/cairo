@@ -36,12 +36,12 @@ ret;
 test::foo: OrderedHashMap({Const: 11300})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type Secp256k1Point = Secp256k1Point;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>, Secp256k1Point, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Secp256k1Point = Secp256k1Point [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>, Secp256k1Point, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc secp256k1_add_syscall = secp256k1_add_syscall;
 libfunc branch_align = branch_align;
@@ -115,14 +115,14 @@ ret;
 test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type Secp256k1Point = Secp256k1Point;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>, Secp256k1Point, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Secp256k1Point = Secp256k1Point [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::starknet::secp256k1::Secp256k1Point, core::array::Array::<core::felt252>>, Secp256k1Point, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc secp256k1_mul_syscall = secp256k1_mul_syscall;
 libfunc branch_align = branch_align;
@@ -196,17 +196,17 @@ ret;
 test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-type Secp256k1Point = Secp256k1Point;
-type core::option::Option::<core::starknet::secp256k1::Secp256k1Point> = Enum<ut@core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Secp256k1Point, Unit>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Secp256k1Point = Secp256k1Point [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::starknet::secp256k1::Secp256k1Point> = Enum<ut@core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Secp256k1Point, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc secp256k1_get_point_from_x_syscall = secp256k1_get_point_from_x_syscall;
 libfunc branch_align = branch_align;
@@ -281,16 +281,16 @@ ret;
 test::foo: OrderedHashMap({Const: 11500})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type Secp256k1Point = Secp256k1Point;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::starknet::secp256k1::Secp256k1Point> = Enum<ut@core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Secp256k1Point, Unit>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Secp256k1Point = Secp256k1Point [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::starknet::secp256k1::Secp256k1Point> = Enum<ut@core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Secp256k1Point, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, core::array::Array::<core::felt252>>, core::option::Option::<core::starknet::secp256k1::Secp256k1Point>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc secp256k1_new_syscall = secp256k1_new_syscall;
 libfunc branch_align = branch_align;
@@ -364,15 +364,15 @@ ret;
 test::foo: OrderedHashMap({Const: 11400})
 
 //! > sierra_code
-type GasBuiltin = GasBuiltin;
-type System = System;
-type Secp256k1Point = Secp256k1Point;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256>;
-type core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, Tuple<core::integer::u256, core::integer::u256>, Array<felt252>>;
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>> = Enum<ut@core::result::Result::<(core::integer::u256, core::integer::u256), core::array::Array::<core::felt252>>, Tuple<core::integer::u256, core::integer::u256>, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Secp256k1Point = Secp256k1Point [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc secp256k1_get_xy_syscall = secp256k1_get_xy_syscall;
 libfunc branch_align = branch_align;

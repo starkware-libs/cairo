@@ -104,6 +104,7 @@ impl TestFileRunner for SmallE2ETestRunner {
         let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
         let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
         let sierra_program_str = sierra_program.to_string();
+        print!("{}", sierra_program_str);
 
         // Compute the metadata.
         let metadata = build_metadata(&sierra_program, true);
