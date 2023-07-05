@@ -1,7 +1,6 @@
-use test::test_utils::assert_eq;
 use option::OptionTrait;
 use traits::{Into, TryInto};
-use bytes_31::{U128IntoBytes31, U8IntoBytes31};
+use bytes_31::{split_bytes31, U128IntoBytes31, U8IntoBytes31};
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
 
@@ -84,4 +83,36 @@ fn test_u128_into_bytes31() {
     assert(
         max_as_bytes31.into() == 0xffffffffffffffffffffffffffffffff_felt252, 'bad cast: 2^128 - 1'
     );
+}
+
+#[test]
+fn test_split_bytes31() {
+    let (left, right) = split_bytes31(0x1122, 2, 1);
+    assert(left == 0x22, 'bad split (2, 1) left');
+    assert(right == 0x11, 'bad split (2, 1) right');
+
+    let x = 0x112233445566778899aabbccddeeff00112233;
+    let (left, right) = split_bytes31(x, 19, 0);
+    assert(left == 0, 'bad split (19, 0) left');
+    assert(right == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 0) right');
+
+    let (left, right) = split_bytes31(x, 19, 1);
+    assert(left == 0x33, 'bad split (19, 1) left');
+    assert(right == 0x112233445566778899aabbccddeeff001122, 'bad split (19, 1) right');
+
+    let (left, right) = split_bytes31(x, 19, 15);
+    assert(left == 0x5566778899aabbccddeeff00112233, 'bad split (19, 15) left');
+    assert(right == 0x11223344, 'bad split (19, 15) right');
+
+    let (left, right) = split_bytes31(x, 19, 16);
+    assert(left == 0x445566778899aabbccddeeff00112233, 'bad split (19, 16) left');
+    assert(right == 0x112233, 'bad split (19, 16) right');
+
+    let (left, right) = split_bytes31(x, 19, 18);
+    assert(left == 0x2233445566778899aabbccddeeff00112233, 'bad split (19, 18) left');
+    assert(right == 0x11, 'bad split (19, 18) right');
+
+    let (left, right) = split_bytes31(x, 19, 19);
+    assert(left == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 19) left');
+    assert(right == 0, 'bad split (19, 19) right');
 }
