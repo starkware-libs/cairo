@@ -171,6 +171,7 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Uint256Concrete::IsZero(_) => vec![ApChange::Known(0), ApChange::Known(0)],
             Uint256Concrete::Divmod(_) => vec![ApChange::Known(19)],
             Uint256Concrete::SquareRoot(_) => vec![ApChange::Known(25)],
+            Uint256Concrete::InvModN(_) => vec![ApChange::Known(47), ApChange::Known(14)],
         },
         CoreConcreteLibfunc::Uint512(libfunc) => match libfunc {
             Uint512Concrete::DivModU256(_) => vec![ApChange::Known(43)],

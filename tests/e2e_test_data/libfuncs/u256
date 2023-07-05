@@ -285,3 +285,324 @@ store_temp<u128>([3]) -> ([5]);
 return([4], [5]);
 
 test::foo@0([0]: RangeCheck, [1]: core::integer::u256) -> (RangeCheck, u128);
+
+//! > ==========================================================================
+
+//! > u256_inv_mod_n libfunc
+
+//! > test_comments
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(b: NonZero<u256>, n: NonZero<u256>) -> Option<NonZero<u256>> {
+    math::u256_inv_mod_n(b, n)
+}
+
+//! > casm
+%{
+from starkware.python.math_utils import igcdex
+
+b = memory[fp + -6] + memory[fp + -5] * 2**128
+n = memory[fp + -4] + memory[fp + -3] * 2**128
+
+(_, r, g) = igcdex(n, b)
+if g != 1:
+    if g % 2 == 0:
+        g = 2
+    b_div_g = b // g
+    n_div_g = n // g
+    memory[ap + 0] = g & 0xffffffffffffffffffffffffffffffff
+    memory[ap + 1] = g >> 128
+    memory[ap + 2] = b_div_g & 0xffffffffffffffffffffffffffffffff
+    memory[ap + 3] = b_div_g >> 128
+    memory[ap + 4] = n_div_g & 0xffffffffffffffffffffffffffffffff
+    memory[ap + 5] = n_div_g >> 128
+else:
+    r %= n
+    if r < 0:
+        r += n
+    k = (r * b - 1) // n
+    memory[ap + 0] = 0
+    memory[ap + 2] = r & 0xffffffffffffffffffffffffffffffff
+    memory[ap + 3] = r >> 128
+    memory[ap + 4] = k & 0xffffffffffffffffffffffffffffffff
+    memory[ap + 5] = k >> 128
+%}
+jmp rel 56 if [ap + 0] != 0, ap++;
+[ap + 1] = [[fp + -7] + 0], ap++;
+[ap + 1] = [[fp + -7] + 1], ap++;
+[ap + 1] = [[fp + -7] + 2], ap++;
+[ap + 1] = [[fp + -7] + 3], ap++;
+[fp + -3] = [ap + 1] + [ap + -2], ap++;
+ap += 18;
+jmp rel 8 if [ap + -18] != 0;
+[fp + -4] = [ap + -17] + [ap + -22];
+[ap + -17] = [ap + -16] + 1;
+[ap + -16] = [[fp + -7] + 4];
+jmp rel 3;
+[ap + -18] = [[fp + -7] + 4];
+%{ (memory[ap + -14], memory[ap + -15]) = divmod(memory[ap + -22] * memory[fp + -6], 2**128) %}
+%{ (memory[ap + -12], memory[ap + -13]) = divmod(memory[ap + -22] * memory[fp + -5], 2**128) %}
+%{ (memory[ap + -10], memory[ap + -11]) = divmod(memory[ap + -21] * memory[fp + -6], 2**128) %}
+%{ (memory[ap + -8], memory[ap + -9]) = divmod(memory[ap + -21] * memory[fp + -5], 2**128) %}
+%{ (memory[ap + -6], memory[ap + -7]) = divmod(memory[fp + -4] * memory[ap + -20], 2**128) %}
+%{ (memory[ap + -4], memory[ap + -5]) = divmod(memory[fp + -4] * memory[ap + -19], 2**128) %}
+%{ (memory[ap + -2], memory[ap + -3]) = divmod(memory[fp + -3] * memory[ap + -20], 2**128) %}
+%{ (memory[ap + 0], memory[ap + -1]) = divmod(memory[fp + -3] * memory[ap + -19], 2**128) %}
+[ap + -15] = [ap + 1] + 1, ap++;
+[ap + 0] = [ap + 1] + [ap + -8], ap++;
+[ap + 0] = [ap + 1] * 340282366920938463463374607431768211456, ap++;
+[ap + 1] = [ap + 0] * [ap + 0], ap++;
+[ap + 0] = [ap + 0] * [ap + 0], ap++;
+[ap + 0] = [ap + -19] + [ap + -2], ap++;
+[ap + 0] = [ap + -1] + [ap + -19], ap++;
+[ap + 0] = [ap + -1] + [ap + -18], ap++;
+[ap + -1] = [ap + 0] + [ap + -14], ap++;
+[ap + -1] = [ap + 0] + [ap + -14], ap++;
+[ap + -1] = [ap + 0] + [ap + -13], ap++;
+[ap + -1] = [ap + 0] * 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -7] + 5];
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -7] + 6];
+[ap + 0] = [ap + -26] + [ap + -3], ap++;
+[ap + 0] = [ap + -1] + [ap + -25], ap++;
+[ap + 0] = [ap + -1] + [ap + -25], ap++;
+[ap + -1] = [ap + 0] + [ap + -19], ap++;
+[ap + -1] = [ap + 0] + [ap + -22], ap++;
+[ap + -1] = [ap + 0] + [ap + -20], ap++;
+[ap + -1] = [ap + 0] * 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [ap + 0] + -32768, ap++;
+[ap + -1] = [[fp + -7] + 7];
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768178688, ap++;
+[ap + -1] = [[fp + -7] + 8];
+[ap + -23] = [ap + -31] + [ap + -3];
+jmp rel 47;
+[ap + -1] = [[fp + -7] + 0], ap++;
+[ap + -1] = [[fp + -7] + 1], ap++;
+[ap + -1] = [[fp + -7] + 2], ap++;
+[ap + -1] = [[fp + -7] + 3], ap++;
+[ap + -1] = [[fp + -7] + 4], ap++;
+[ap + -1] = [[fp + -7] + 5];
+jmp rel 8 if [ap + -5] != 0, ap++;
+[ap + -7] = [ap + -1] + 1;
+jmp rel 4 if [ap + -1] != 0;
+[fp + -1] = [fp + -1] + 1;
+%{ (memory[ap + 0], memory[fp + -6]) = divmod(memory[ap + -7] * memory[ap + -5], 2**128) %}
+%{ (memory[ap + 1], memory[fp + -4]) = divmod(memory[ap + -7] * memory[ap + -3], 2**128) %}
+jmp rel 12 if [ap + -6] != 0, ap++;
+[ap + 1] = [ap + -5] * [ap + -8], ap++;
+[ap + 1] = [ap + -4] * [ap + -9], ap++;
+%{ memory[ap + 2] = memory[ap + -10] < 18446744073709551616 %}
+jmp rel 5 if [ap + 2] != 0, ap++;
+[ap + 0] = [ap + -8] + [ap + -6], ap++;
+jmp rel 17, ap++;
+[ap + 0] = [ap + -11], ap++;
+jmp rel 14, ap++;
+[ap + 1] = [ap + -6] * [ap + -7], ap++;
+[ap + 1] = [ap + -5] * [ap + -8], ap++;
+[ap + -7] = 0, ap++;
+[ap + -6] = 0, ap++;
+%{ memory[ap + 0] = memory[ap + -11] < 18446744073709551616 %}
+jmp rel 5 if [ap + 0] != 0, ap++;
+[ap + -2] = [ap + -11] + [ap + -9];
+jmp rel 3;
+[ap + -2] = [ap + -12];
+[ap + 0] = [ap + -2] + 340282366920938463426481119284349108224, ap++;
+[ap + -1] = [[fp + -7] + 6];
+[fp + -5] = [ap + -5] + [ap + -7];
+[fp + -3] = [ap + -4] + [ap + -6];
+jmp rel 66;
+[ap + 0] = [fp + -7] + 9, ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -44], ap++;
+[ap + 0] = [ap + -26], ap++;
+[ap + 0] = [ap + -28], ap++;
+call rel 83;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [fp + -3], ap++;
+[ap + 0] = [ap + -68], ap++;
+[ap + 0] = [ap + -51], ap++;
+[ap + 0] = [ap + -53], ap++;
+call rel 76;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -90], ap++;
+[ap + 0] = [ap + -76], ap++;
+[ap + 0] = [ap + -78], ap++;
+call rel 69;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [fp + -4], ap++;
+[ap + 0] = [ap + -114], ap++;
+[ap + 0] = [ap + -101], ap++;
+[ap + 0] = [ap + -103], ap++;
+call rel 62;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -137], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [ap + -126], ap++;
+[ap + 0] = [ap + -128], ap++;
+call rel 55;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -160], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [ap + -151], ap++;
+[ap + 0] = [ap + -153], ap++;
+call rel 48;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -184], ap++;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [ap + -176], ap++;
+[ap + 0] = [ap + -178], ap++;
+call rel 41;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -207], ap++;
+[ap + 0] = [fp + -6], ap++;
+[ap + 0] = [ap + -201], ap++;
+[ap + 0] = [ap + -203], ap++;
+call rel 34;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -231], ap++;
+[ap + 0] = [ap + -231], ap++;
+jmp rel 26;
+ap += 171;
+[ap + 0] = [fp + -7] + 7, ap++;
+[ap + 0] = [ap + -186], ap++;
+[ap + 0] = [ap + -183], ap++;
+[ap + 0] = [ap + -180], ap++;
+[ap + 0] = [fp + -4], ap++;
+call rel 17;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = [ap + -209], ap++;
+[ap + 0] = [ap + -208], ap++;
+[ap + 0] = [ap + -204], ap++;
+[ap + 0] = [fp + -6], ap++;
+call rel 10;
+[ap + 0] = [ap + -1], ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = 0, ap++;
+ret;
+%{ (memory[ap + 1], memory[ap + 0]) = divmod(memory[fp + -6], 18446744073709551616) %}
+[ap + 2] = [ap + 0] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [[fp + -7] + 0], ap++;
+[ap + -2] = [[fp + -7] + 1], ap++;
+[ap + -2] = [[fp + -7] + 2];
+[ap + 0] = [ap + -2] * 18446744073709551616, ap++;
+[fp + -6] = [ap + -1] + [ap + -4];
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+[ap + 0] = [ap + -4] * [fp + -5], ap++;
+%{ (memory[ap + 0], memory[ap + 1]) = divmod(memory[ap + -1], 18446744073709551616) %}
+[ap + 2] = [ap + 1] + 340282366920938463444927863358058659840, ap++;
+[ap + 1] = [[fp + -7] + 3], ap++;
+[ap + -1] = [[fp + -7] + 4], ap++;
+[ap + -3] = [[fp + -7] + 5];
+[ap + 0] = [ap + -3] * 18446744073709551616, ap++;
+[ap + -5] = [ap + -1] + [ap + -3];
+[ap + 0] = [ap + -3] * 18446744073709551616, ap++;
+[ap + 3] = [ap + -7] + [ap + -1], ap++;
+%{ (memory[ap + -1], memory[fp + -3]) = divmod(memory[ap + 2], 340282366920938463463374607431768211456) %}
+[ap + 0] = [ap + -1] + 340282366920938463426481119284349108224, ap++;
+[ap + -1] = [[fp + -7] + 6], ap++;
+[ap + -3] = [[fp + -7] + 7], ap++;
+[fp + -3] = [[fp + -7] + 8];
+[ap + -2] = [ap + -4] * 340282366920938463463374607431768211456;
+[ap + -1] = [ap + -2] + [fp + -3];
+[fp + -4] = [ap + -9] + [ap + -4];
+[ap + 0] = [fp + -7] + 9, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 35070})
+core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type u128 = u128;
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
+type U128MulGuarantee = U128MulGuarantee;
+type Unit = Struct<ut@Tuple>;
+type core::option::Option::<core::zeroable::NonZero::<core::integer::u256>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, NonZero<core::integer::u256>, Unit>;
+
+libfunc u256_guarantee_inv_mod_n = u256_guarantee_inv_mod_n;
+libfunc branch_align = branch_align;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<U128MulGuarantee> = store_temp<U128MulGuarantee>;
+libfunc function_call<user@core::integer::U128MulGuaranteeDestruct::destruct> = function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 0> = enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 0>;
+libfunc store_temp<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>> = store_temp<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>;
+libfunc jump = jump;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 1> = enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>> = rename<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>;
+libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
+libfunc store_temp<Unit> = store_temp<Unit>;
+
+u256_guarantee_inv_mod_n([0], [1], [2]) { fallthrough([3], [4], [5], [6], [7], [8], [9], [10], [11], [12]) 38([13], [14], [15]) };
+branch_align() -> ();
+store_temp<RangeCheck>([3]) -> ([18]);
+store_temp<U128MulGuarantee>([12]) -> ([19]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([18], [19]) -> ([16], [17]);
+drop<Unit>([17]) -> ();
+store_temp<RangeCheck>([16]) -> ([22]);
+store_temp<U128MulGuarantee>([11]) -> ([23]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([22], [23]) -> ([20], [21]);
+drop<Unit>([21]) -> ();
+store_temp<RangeCheck>([20]) -> ([26]);
+store_temp<U128MulGuarantee>([10]) -> ([27]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([26], [27]) -> ([24], [25]);
+drop<Unit>([25]) -> ();
+store_temp<RangeCheck>([24]) -> ([30]);
+store_temp<U128MulGuarantee>([9]) -> ([31]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([30], [31]) -> ([28], [29]);
+drop<Unit>([29]) -> ();
+store_temp<RangeCheck>([28]) -> ([34]);
+store_temp<U128MulGuarantee>([8]) -> ([35]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([34], [35]) -> ([32], [33]);
+drop<Unit>([33]) -> ();
+store_temp<RangeCheck>([32]) -> ([38]);
+store_temp<U128MulGuarantee>([7]) -> ([39]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([38], [39]) -> ([36], [37]);
+drop<Unit>([37]) -> ();
+store_temp<RangeCheck>([36]) -> ([42]);
+store_temp<U128MulGuarantee>([6]) -> ([43]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([42], [43]) -> ([40], [41]);
+drop<Unit>([41]) -> ();
+store_temp<RangeCheck>([40]) -> ([46]);
+store_temp<U128MulGuarantee>([5]) -> ([47]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([46], [47]) -> ([44], [45]);
+drop<Unit>([45]) -> ();
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 0>([4]) -> ([48]);
+store_temp<RangeCheck>([44]) -> ([49]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>([48]) -> ([50]);
+jump() { 51() };
+branch_align() -> ();
+store_temp<RangeCheck>([13]) -> ([53]);
+store_temp<U128MulGuarantee>([15]) -> ([54]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([53], [54]) -> ([51], [52]);
+drop<Unit>([52]) -> ();
+store_temp<RangeCheck>([51]) -> ([57]);
+store_temp<U128MulGuarantee>([14]) -> ([58]);
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([57], [58]) -> ([55], [56]);
+drop<Unit>([56]) -> ();
+struct_construct<Unit>() -> ([59]);
+enum_init<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>, 1>([59]) -> ([60]);
+store_temp<RangeCheck>([55]) -> ([49]);
+store_temp<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>([60]) -> ([50]);
+rename<RangeCheck>([49]) -> ([61]);
+rename<core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>>([50]) -> ([62]);
+return([61], [62]);
+u128_mul_guarantee_verify([0], [1]) -> ([2]);
+struct_construct<Unit>() -> ([3]);
+store_temp<RangeCheck>([2]) -> ([4]);
+store_temp<Unit>([3]) -> ([5]);
+return([4], [5]);
+
+test::foo@0([0]: RangeCheck, [1]: NonZero<core::integer::u256>, [2]: NonZero<core::integer::u256>) -> (RangeCheck, core::option::Option::<core::zeroable::NonZero::<core::integer::u256>>);
+core::integer::U128MulGuaranteeDestruct::destruct@54([0]: RangeCheck, [1]: U128MulGuarantee) -> (RangeCheck, Unit);

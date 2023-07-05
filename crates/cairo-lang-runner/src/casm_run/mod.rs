@@ -31,9 +31,9 @@ use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
 use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
-use num_bigint::BigUint;
-use num_integer::Integer;
-use num_traits::{FromPrimitive, ToPrimitive, Zero};
+use num_bigint::{BigInt, BigUint};
+use num_integer::{ExtendedGcd, Integer};
+use num_traits::{FromPrimitive, Signed, ToPrimitive, Zero};
 use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
@@ -1858,6 +1858,55 @@ pub fn execute_core_hint(
                 };
             insert_value_to_cellref!(vm, dst, memory_exec_scope.next_address)?;
             memory_exec_scope.next_address.offset += object_size;
+        }
+        CoreHint::U256InvModN {
+            b0,
+            b1,
+            n0,
+            n1,
+            g0_or_no_inv,
+            g1_option,
+            b_div_g_or_r0,
+            b_div_g_or_r1,
+            n_div_g_or_k0,
+            n_div_g_or_k1,
+        } => {
+            let pow_2_128 = BigInt::from(u128::MAX) + 1u32;
+            let b0 = get_val(vm, b0)?.to_bigint();
+            let b1 = get_val(vm, b1)?.to_bigint();
+            let n0 = get_val(vm, n0)?.to_bigint();
+            let n1 = get_val(vm, n1)?.to_bigint();
+            let b: BigInt = b0 + b1.shl(128);
+            let n: BigInt = n0 + n1.shl(128);
+            let ExtendedGcd { gcd: mut g, x: _, y: mut r } = n.extended_gcd(&b);
+            if g != 1.into() {
+                // This makes sure `g0_or_no_inv` is alway non-zero in the no inverse case.
+                if g.is_even() {
+                    g = 2u32.into();
+                }
+                let (limb1, limb0) = (&b / &g).div_rem(&pow_2_128);
+                insert_value_to_cellref!(vm, b_div_g_or_r0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, b_div_g_or_r1, Felt252::from(limb1))?;
+                let (limb1, limb0) = (&n / &g).div_rem(&pow_2_128);
+                insert_value_to_cellref!(vm, n_div_g_or_k0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, n_div_g_or_k1, Felt252::from(limb1))?;
+                let (limb1, limb0) = g.div_rem(&pow_2_128);
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, g1_option, Felt252::from(limb1))?;
+            } else {
+                r %= &n;
+                if r.is_negative() {
+                    r += &n;
+                }
+                let k: BigInt = (&r * b - 1) / n;
+                let (limb1, limb0) = r.div_rem(&pow_2_128);
+                insert_value_to_cellref!(vm, b_div_g_or_r0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, b_div_g_or_r1, Felt252::from(limb1))?;
+                let (limb1, limb0) = k.div_rem(&pow_2_128);
+                insert_value_to_cellref!(vm, n_div_g_or_k0, Felt252::from(limb0))?;
+                insert_value_to_cellref!(vm, n_div_g_or_k1, Felt252::from(limb1))?;
+                insert_value_to_cellref!(vm, g0_or_no_inv, Felt252::from(0))?;
+            }
         }
     };
     Ok(())

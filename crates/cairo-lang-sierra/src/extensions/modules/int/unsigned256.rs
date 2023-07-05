@@ -1,8 +1,8 @@
 use super::unsigned128::{U128MulGuaranteeType, Uint128Type};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    BranchSignature, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext,
+    BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
+    SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
 use crate::extensions::non_zero::nonzero_ty;
@@ -16,6 +16,7 @@ define_libfunc_hierarchy! {
         IsZero(Uint256IsZeroLibfunc),
         Divmod(Uint256DivmodLibfunc),
         SquareRoot(Uint256SquareRootLibfunc),
+        InvModN(Uint256InvModNLibfunc),
     }, Uint256Concrete
 }
 
@@ -111,5 +112,64 @@ impl NoGenericArgsGenericLibfunc for Uint256SquareRootLibfunc {
             ],
             SierraApChange::Known { new_vars_only: false },
         ))
+    }
+}
+
+// Inverse Modulo N.
+#[derive(Default)]
+pub struct Uint256InvModNLibfunc;
+impl NoGenericArgsGenericLibfunc for Uint256InvModNLibfunc {
+    const STR_ID: &'static str = "u256_guarantee_inv_mod_n";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        let nz_ty = nonzero_ty(context, &get_u256_type(context)?)?;
+        let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
+        let rc_output = OutputVarInfo {
+            ty: range_check_type.clone(),
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
+                param_idx: 0,
+            }),
+        };
+        let guarantee_output = OutputVarInfo {
+            ty: context.get_concrete_type(U128MulGuaranteeType::id(), &[])?,
+            ref_info: OutputVarReferenceInfo::SimpleDerefs,
+        };
+        Ok(LibfuncSignature {
+            param_signatures: vec![
+                // Range check.
+                ParamSignature::new(range_check_type).with_allow_add_const(),
+                // b.
+                ParamSignature::new(nz_ty.clone()),
+                // N for modulos.
+                ParamSignature::new(nz_ty.clone()),
+            ],
+            branch_signatures: vec![
+                // If the divisor has an inverse modulo N.
+                BranchSignature {
+                    vars: vec![
+                        rc_output.clone(),
+                        OutputVarInfo { ty: nz_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                        guarantee_output.clone(),
+                    ],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+                // The divisor does not have an inverse modulo N.
+                BranchSignature {
+                    vars: vec![rc_output, guarantee_output.clone(), guarantee_output],
+                    ap_change: SierraApChange::Known { new_vars_only: false },
+                },
+            ],
+            fallthrough: Some(0),
+        })
     }
 }
