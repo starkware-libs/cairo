@@ -36,7 +36,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(value: felt252) -> Option<bytes31> {
-    bytes31_try_from_felt252(value)
+    bytes_31::bytes31_try_from_felt252(value)
 }
 
 //! > casm
@@ -127,7 +127,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(value: bytes31) -> felt252 {
-    bytes31_to_felt252(value)
+    bytes_31::bytes31_to_felt252(value)
 }
 
 //! > casm

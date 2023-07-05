@@ -61,13 +61,13 @@ impl Bytes31Impl of Bytes31Trait {
         assert(len <= BYTES_IN_BYTES31, 'len > 31');
 
         if index == 0 {
-            return (bytes31_try_from_felt252(0).unwrap(), self);
+            return (bytes31_const::<0>(), self);
         }
         if index == len {
-            return (self, bytes31_try_from_felt252(0).unwrap());
+            return (self, bytes31_const::<0>());
         }
 
-        let u256{low, high } = u256_from_felt252(bytes31_to_felt252(self));
+        let u256{low, high } = u256_from_felt252(self.into());
 
         if index == BYTES_IN_U128 {
             return (low.into(), high.into());
@@ -87,7 +87,7 @@ impl Bytes31Impl of Bytes31Trait {
             );
             let right = u128_to_felt252(high) * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
                 + u128_to_felt252(low_quotient);
-            return (low_remainder.into(), bytes31_try_from_felt252(right).unwrap());
+            return (low_remainder.into(), right.try_into().unwrap());
         }
 
         // len > BYTES_IN_U128 && index > BYTES_IN_U128
@@ -95,7 +95,7 @@ impl Bytes31Impl of Bytes31Trait {
             high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap()
         );
         let left = u128_to_felt252(high_remainder) * POW_2_128 + u128_to_felt252(low);
-        return (bytes31_try_from_felt252(left).unwrap(), high_quotient.into());
+        return (left.try_into().unwrap(), high_quotient.into());
     }
 }
 

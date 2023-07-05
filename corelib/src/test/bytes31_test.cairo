@@ -1,6 +1,6 @@
 use option::OptionTrait;
 use traits::{Into, TryInto};
-use bytes_31::{U128IntoBytes31, U8IntoBytes31};
+use bytes_31::{Bytes31Trait, U128IntoBytes31, U8IntoBytes31};
 
 #[test]
 fn test_bytes31_to_from_felt252() {
@@ -80,47 +80,33 @@ fn test_u128_into_bytes31() {
 
 #[test]
 fn test_split_bytes31() {
-    let x = bytes31_try_from_felt252(0x1122).unwrap();
+    let x = bytes31_const::<0x1122>();
     let (left, right) = x.split_bytes31(2, 1);
-    assert(bytes31_to_felt252(left) == 0x22, 'bad split (2, 1) left');
-    assert(bytes31_to_felt252(right) == 0x11, 'bad split (2, 1) right');
+    assert(left.into() == 0x22, 'bad split (2, 1) left');
+    assert(right.into() == 0x11, 'bad split (2, 1) right');
 
-    let x = bytes31_try_from_felt252(0x112233445566778899aabbccddeeff00112233).unwrap();
+    let x = bytes31_const::<0x112233445566778899aabbccddeeff00112233>();
     let (left, right) = x.split_bytes31(19, 0);
-    assert(bytes31_to_felt252(left) == 0, 'bad split (19, 0) left');
-    assert(
-        bytes31_to_felt252(right) == 0x112233445566778899aabbccddeeff00112233,
-        'bad split (19, 0) right'
-    );
+    assert(left.into() == 0, 'bad split (19, 0) left');
+    assert(right.into() == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 0) right');
 
     let (left, right) = x.split_bytes31(19, 1);
-    assert(bytes31_to_felt252(left) == 0x33, 'bad split (19, 1) left');
-    assert(
-        bytes31_to_felt252(right) == 0x112233445566778899aabbccddeeff001122,
-        'bad split (19, 1) right'
-    );
+    assert(left.into() == 0x33, 'bad split (19, 1) left');
+    assert(right.into() == 0x112233445566778899aabbccddeeff001122, 'bad split (19, 1) right');
 
     let (left, right) = x.split_bytes31(19, 15);
-    assert(bytes31_to_felt252(left) == 0x5566778899aabbccddeeff00112233, 'bad split (19, 15) left');
-    assert(bytes31_to_felt252(right) == 0x11223344, 'bad split (19, 15) right');
+    assert(left.into() == 0x5566778899aabbccddeeff00112233, 'bad split (19, 15) left');
+    assert(right.into() == 0x11223344, 'bad split (19, 15) right');
 
     let (left, right) = x.split_bytes31(19, 16);
-    assert(
-        bytes31_to_felt252(left) == 0x445566778899aabbccddeeff00112233, 'bad split (19, 16) left'
-    );
-    assert(bytes31_to_felt252(right) == 0x112233, 'bad split (19, 16) right');
+    assert(left.into() == 0x445566778899aabbccddeeff00112233, 'bad split (19, 16) left');
+    assert(right.into() == 0x112233, 'bad split (19, 16) right');
 
     let (left, right) = x.split_bytes31(19, 18);
-    assert(
-        bytes31_to_felt252(left) == 0x2233445566778899aabbccddeeff00112233,
-        'bad split (19, 18) left'
-    );
-    assert(bytes31_to_felt252(right) == 0x11, 'bad split (19, 18) right');
+    assert(left.into() == 0x2233445566778899aabbccddeeff00112233, 'bad split (19, 18) left');
+    assert(right.into() == 0x11, 'bad split (19, 18) right');
 
     let (left, right) = x.split_bytes31(19, 19);
-    assert(
-        bytes31_to_felt252(left) == 0x112233445566778899aabbccddeeff00112233,
-        'bad split (19, 19) left'
-    );
-    assert(bytes31_to_felt252(right) == 0, 'bad split (19, 19) right');
+    assert(left.into() == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 19) left');
+    assert(right.into() == 0, 'bad split (19, 19) right');
 }
