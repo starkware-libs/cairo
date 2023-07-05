@@ -44,6 +44,15 @@ impl Location {
         self
     }
 
+    /// Creates a new Location with the given note as the last note.
+    pub fn maybe_with_note(mut self, note: Option<DiagnosticNote>) -> Self {
+        let Some(note) = note else {
+            return self;
+        };
+        self.notes.push(note);
+        self
+    }
+
     /// Creates a new Location with the a note from the given text and location.
     pub fn add_note_with_location(
         self,
