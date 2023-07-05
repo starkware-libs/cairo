@@ -43,36 +43,38 @@ struct IContractDispatcher {
 
 impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
     fn get_something(self: IContractDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+    let mut __calldata__ = traits::Default::default();
+            serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::call_contract_syscall(
-                self.contract_address,
-                0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@__calldata__),
-            )
-        );
-
+    let mut ret_data = starknet::call_contract_syscall(
+        self.contract_address,
+        0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    
+            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+            
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
-    }
+            
+}
 
     fn empty(self: IContractDispatcher, ) {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::call_contract_syscall(
-                self.contract_address,
-                0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@__calldata__),
-            )
-        );
-
-    }
+    let mut __calldata__ = traits::Default::default();
+    
+    let mut ret_data = starknet::call_contract_syscall(
+        self.contract_address,
+        0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    
+            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+            ()
+            
+}
 
 }
 
@@ -83,42 +85,44 @@ struct IContractLibraryDispatcher {
 
 impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibraryDispatcher> {
     fn get_something(self: IContractLibraryDispatcher, arg: felt252, num: felt252) -> felt252 {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
+    let mut __calldata__ = traits::Default::default();
+            serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::syscalls::library_call_syscall(
-                self.class_hash,
-                0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
-                array::ArrayTrait::span(@__calldata__),
-            )
-        );
-
+    let mut ret_data = starknet::syscalls::library_call_syscall(
+        self.class_hash,
+        0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    
+            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+            
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
         )
-    }
+            
+}
 
     fn empty(self: IContractLibraryDispatcher, ) {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-            starknet::syscalls::library_call_syscall(
-                self.class_hash,
-                0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
-                array::ArrayTrait::span(@__calldata__),
-            )
-        );
-
-    }
+    let mut __calldata__ = traits::Default::default();
+    
+    let mut ret_data = starknet::syscalls::library_call_syscall(
+        self.class_hash,
+        0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+        array::ArrayTrait::span(@__calldata__),
+    );
+    
+            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+            ()
+            
+}
 
 }
 
 trait IContractSafeDispatcherTrait<T> {
-    fn get_something(self: T, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>>;
-    fn empty(self: T, ) -> Result<(), Array<felt252>>;
+    fn get_something(self: T, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252>;
+    fn empty(self: T, ) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, storage_access::StorageAccess, Serde)]
@@ -127,52 +131,38 @@ struct IContractSafeLibraryDispatcher {
 }
 
 impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeLibraryDispatcher> {
-    fn get_something(self: IContractSafeLibraryDispatcher, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>> {
+    fn get_something(self: IContractSafeLibraryDispatcher, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252> {
     let mut __calldata__ = traits::Default::default();
             serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
-    let result = starknet::syscalls::library_call_syscall(
+    let mut ret_data = starknet::syscalls::library_call_syscall(
         self.class_hash,
         0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
         array::ArrayTrait::span(@__calldata__),
     );
-    match result {
-        Result::Ok(ret_data) => {
-            let mut ret_data = ret_data;
+    
+            let mut ret_data = ret_data?;
             Result::Ok(
-                
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
-        )
-            )
-        },
-        Result::Err(panic_data) => {
-            Result::Err(panic_data)
-        }
-    }
+        ))
+            
 }
 
-    fn empty(self: IContractSafeLibraryDispatcher, ) -> Result<(), Array<felt252>> {
+    fn empty(self: IContractSafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
     let mut __calldata__ = traits::Default::default();
     
-    let result = starknet::syscalls::library_call_syscall(
+    let mut ret_data = starknet::syscalls::library_call_syscall(
         self.class_hash,
         0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
         array::ArrayTrait::span(@__calldata__),
     );
-    match result {
-        Result::Ok(ret_data) => {
-            let mut ret_data = ret_data;
-            Result::Ok(
-                ()
-            )
-        },
-        Result::Err(panic_data) => {
-            Result::Err(panic_data)
-        }
-    }
+    
+            let mut ret_data = ret_data?;
+            Result::Ok(())
+            
 }
 
 }
@@ -184,52 +174,38 @@ struct IContractSafeDispatcher {
 }
 
 impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDispatcher> {
-    fn get_something(self: IContractSafeDispatcher, arg: felt252, num: felt252) -> Result<felt252, Array<felt252>> {
+    fn get_something(self: IContractSafeDispatcher, arg: felt252, num: felt252) -> starknet::SyscallResult<felt252> {
     let mut __calldata__ = traits::Default::default();
             serde::Serde::<felt252>::serialize(@arg, ref __calldata__);
         serde::Serde::<felt252>::serialize(@num, ref __calldata__);
 
-    let result = starknet::call_contract_syscall(
+    let mut ret_data = starknet::call_contract_syscall(
         self.contract_address,
         0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
         array::ArrayTrait::span(@__calldata__),
     );
-    match result {
-        Result::Ok(ret_data) => {
-            let mut ret_data = ret_data;
+    
+            let mut ret_data = ret_data?;
             Result::Ok(
-                
         option::OptionTrait::expect(
             serde::Serde::<felt252>::deserialize(ref ret_data),
             'Returned data too short',
-        )
-            )
-        },
-        Result::Err(panic_data) => {
-            Result::Err(panic_data)
-        }
-    }
+        ))
+            
 }
 
-    fn empty(self: IContractSafeDispatcher, ) -> Result<(), Array<felt252>> {
+    fn empty(self: IContractSafeDispatcher, ) -> starknet::SyscallResult<()> {
     let mut __calldata__ = traits::Default::default();
     
-    let result = starknet::call_contract_syscall(
+    let mut ret_data = starknet::call_contract_syscall(
         self.contract_address,
         0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
         array::ArrayTrait::span(@__calldata__),
     );
-    match result {
-        Result::Ok(ret_data) => {
-            let mut ret_data = ret_data;
-            Result::Ok(
-                ()
-            )
-        },
-        Result::Err(panic_data) => {
-            Result::Err(panic_data)
-        }
-    }
+    
+            let mut ret_data = ret_data?;
+            Result::Ok(())
+            
 }
 
 }

@@ -143,11 +143,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T"))].into(),
+                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
+                        .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    [("func_decl".to_string(), safe_dispatcher_signature(db, &declaration, "T"))]
+                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", false))]
                         .into(),
                 ));
                 let entry_point_selector = RewriteNode::Text(format!(
@@ -155,36 +156,40 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     starknet_keccak(declaration.name(db).text(db).as_bytes())
                 ));
                 contract_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &contract_caller_name),
+                    dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),
                     "contract_address",
                     "call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
+                    true,
                 ));
                 library_caller_method_impls.push(declaration_method_impl(
-                    dispatcher_signature(db, &declaration, &library_caller_name),
+                    dispatcher_signature(db, &declaration, &library_caller_name, true),
                     entry_point_selector.clone(),
                     "class_hash",
                     "syscalls::library_call_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
+                    true,
                 ));
-                safe_contract_caller_method_impls.push(safe_declaration_method_impl(
-                    safe_dispatcher_signature(db, &declaration, &safe_contract_caller_name),
+                safe_contract_caller_method_impls.push(declaration_method_impl(
+                    dispatcher_signature(db, &declaration, &safe_contract_caller_name, false),
                     entry_point_selector.clone(),
                     "contract_address",
                     "call_contract_syscall",
                     serialization_code.clone(),
                     ret_decode.clone(),
+                    false,
                 ));
-                safe_library_caller_method_impls.push(safe_declaration_method_impl(
-                    safe_dispatcher_signature(db, &declaration, &safe_library_caller_name),
+                safe_library_caller_method_impls.push(declaration_method_impl(
+                    dispatcher_signature(db, &declaration, &safe_library_caller_name, false),
                     entry_point_selector,
                     "class_hash",
                     "syscalls::library_call_syscall",
                     serialization_code,
                     ret_decode,
+                    false,
                 ));
             }
             // ignore the missing item.
@@ -290,65 +295,38 @@ fn declaration_method_impl(
     syscall: &str,
     serialization_code: Vec<RewriteNode>,
     ret_decode: String,
+    unwrap: bool,
 ) -> RewriteNode {
-    RewriteNode::interpolate_patched(
-        &formatdoc!(
-            "$func_decl$ {{
-                let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
-        $serialization_code$
-                let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(
-                    starknet::$syscall$(
-                        self.$member$,
-                        $entry_point_selector$,
-                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
-                    )
-                );
-        $deserialization_code$
-            }}
-        "
-        ),
-        [
-            ("func_decl".to_string(), func_declaration),
-            ("entry_point_selector".to_string(), entry_point_selector),
-            ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
-            ("member".to_string(), RewriteNode::Text(member.to_string())),
-            ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
-            ("deserialization_code".to_string(), RewriteNode::Text(ret_decode)),
-        ]
-        .into(),
-    )
-}
-/// Returns the method implementation rewrite node for a safe declaration.
-fn safe_declaration_method_impl(
-    func_declaration: RewriteNode,
-    entry_point_selector: RewriteNode,
-    member: &str,
-    syscall: &str,
-    serialization_code: Vec<RewriteNode>,
-    ret_decode: String,
-    // return_type_name: &str
-) -> RewriteNode {
+    let deserialization_code = if ret_decode.is_empty() {
+        RewriteNode::Text(String::from("()"))
+    } else {
+        RewriteNode::Text(ret_decode)
+    };
+    let return_code = RewriteNode::interpolate_patched(
+        if unwrap {
+            "
+            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+            $deserialization_code$
+            "
+        } else {
+            "
+            let mut ret_data = ret_data?;
+            Result::Ok($deserialization_code$)
+            "
+        },
+        [("deserialization_code".to_string(), deserialization_code)].into(),
+    );
     RewriteNode::interpolate_patched(
         &formatdoc!(
             "$func_decl$ {{
                 let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
                 $serialization_code$
-                let result = starknet::$syscall$(
+                let mut ret_data = starknet::$syscall$(
                     self.$member$,
                     $entry_point_selector$,
                     array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
                 );
-                match result {{
-                    Result::Ok(ret_data) => {{
-                        let mut ret_data = ret_data;
-                        Result::Ok(
-                            $deserialization_code$
-                        )
-                    }},
-                    Result::Err(panic_data) => {{
-                        Result::Err(panic_data)
-                    }}
-                }}
+                $return_code$
             }}
         "
         ),
@@ -358,14 +336,7 @@ fn safe_declaration_method_impl(
             ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
             ("member".to_string(), RewriteNode::Text(member.to_string())),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
-            (
-                "deserialization_code".to_string(),
-                if ret_decode.is_empty() {
-                    RewriteNode::Text(String::from("()"))
-                } else {
-                    RewriteNode::Text(ret_decode)
-                },
-            ),
+            ("return_code".to_string(), return_code),
         ]
         .into(),
     )
@@ -376,6 +347,7 @@ fn dispatcher_signature(
     db: &dyn SyntaxGroup,
     declaration: &ast::FunctionDeclaration,
     self_type_name: &str,
+    unwrap: bool,
 ) -> RewriteNode {
     let mut func_declaration = RewriteNode::from_ast(declaration);
     let params = func_declaration
@@ -390,16 +362,10 @@ fn dispatcher_signature(
         0..0,
         [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
     );
-    func_declaration
-}
-
-fn safe_dispatcher_signature(
-    db: &dyn SyntaxGroup,
-    declaration: &ast::FunctionDeclaration,
-    self_type_name: &str,
-) -> RewriteNode {
-    let mut signature = dispatcher_signature(db, declaration, self_type_name);
-    let return_type = signature
+    if unwrap {
+        return func_declaration;
+    }
+    let return_type = func_declaration
         .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
         .modify_child(db, ast::FunctionSignature::INDEX_RET_TY)
         .modify(db)
@@ -408,16 +374,16 @@ fn safe_dispatcher_signature(
         .unwrap();
 
     if return_type.is_empty() {
-        let new_ret_type = RewriteNode::Text(String::from(" -> Result<(), Array<felt252>>"));
+        let new_ret_type = RewriteNode::Text(String::from(" -> starknet::SyscallResult<()>"));
         return_type.splice(0..0, [new_ret_type]);
     } else {
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
         let new_ret_type = RewriteNode::interpolate_patched(
-            "Result<$ret_type$, Array<felt252>>",
+            "starknet::SyscallResult<$ret_type$>",
             [("ret_type".to_string(), previous_ret_type)].into(),
         );
         return_type.splice(1..2, [new_ret_type]);
     };
 
-    signature
+    func_declaration
 }
