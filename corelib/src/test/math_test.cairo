@@ -95,4 +95,14 @@ fn test_u256_div_mod_n() {
     let q = math::u256_div_mod_n(0_u256, 3_u256.try_into().unwrap(), 13_u256.try_into().unwrap())
         .unwrap();
     assert(q == 0, '0 / 3 != 0 (13)');
+    assert(
+        math::u256_div_mod_n(4_u256, 3_u256.try_into().unwrap(), 6_u256.try_into().unwrap())
+            .is_none(),
+        '4 / 3 == None (6)'
+    );
+    assert(
+        math::u256_div_mod_n(2_u256, 8_u256.try_into().unwrap(), 4_u256.try_into().unwrap())
+            .is_none(),
+        '2 / 8 == None (4)'
+    );
 }

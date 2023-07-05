@@ -130,6 +130,7 @@
         "struct_construct",
         "struct_deconstruct",
         "struct_snapshot_deconstruct",
+        "u256_inv_mod_n",
         "u256_safe_divmod",
         "u256_sqrt",
         "u256_is_zero",
