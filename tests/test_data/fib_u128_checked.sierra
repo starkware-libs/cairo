@@ -1,9 +1,9 @@
-type u128 = u128;
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit>;
-type RangeCheck = RangeCheck;
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::option::Option::<core::integer::u128> = Enum<ut@core::option::Option::<core::integer::u128>, u128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<u128> = dup<u128>;

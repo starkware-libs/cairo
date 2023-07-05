@@ -1,14 +1,14 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Tuple<felt252> = Struct<ut@Tuple, felt252>;
-type core::panics::Panic = Struct<ut@core::panics::Panic>;
-type Array<felt252> = Array<felt252>;
-type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>>;
-type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@core::panics::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>>;
-type RangeCheck = RangeCheck;
-type GasBuiltin = GasBuiltin;
-type Pedersen = Pedersen;
-type BuiltinCosts = BuiltinCosts;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252> = Struct<ut@Tuple, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::panics::Panic = Struct<ut@core::panics::Panic> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<(core::felt252,)> = Enum<ut@core::panics::PanicResult::<(core::felt252,)>, Tuple<felt252>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Pedersen = Pedersen [storable: true, drop: false, dup: false, zero_sized: false];
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;

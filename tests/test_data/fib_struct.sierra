@@ -1,7 +1,7 @@
-type felt252 = felt252;
-type NonZero<felt252> = NonZero<felt252>;
-type Unit = Struct<ut@Tuple>;
-type examples::fib_struct::FibResult = Struct<ut@examples::fib_struct::FibResult, felt252, felt252, Unit>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type examples::fib_struct::FibResult = Struct<ut@examples::fib_struct::FibResult, felt252, felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc dup<felt252> = dup<felt252>;

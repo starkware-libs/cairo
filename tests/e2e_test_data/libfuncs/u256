@@ -106,13 +106,13 @@ test::foo: OrderedHashMap({Const: 7250})
 core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
-type U128MulGuarantee = U128MulGuarantee;
-type Unit = Struct<ut@Tuple>;
-type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type U128MulGuarantee = U128MulGuarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<core::integer::u256, core::integer::u256> = Struct<ut@Tuple, core::integer::u256, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u256_safe_divmod = u256_safe_divmod;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
@@ -177,9 +177,9 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u256_is_zero = u256_is_zero;
 libfunc branch_align = branch_align;
@@ -271,9 +271,9 @@ ret;
 test::foo: OrderedHashMap({Const: 3690})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u256_sqrt = u256_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
