@@ -863,8 +863,6 @@ fn lower_expr_match(
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-                    
-
                     lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
                 }
                 None => {
