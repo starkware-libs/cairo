@@ -16,11 +16,13 @@ use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
+use crate::optimizations::branch_inversion;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
+use crate::test::branch_inversion::branch_inversion;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::FlatLowered;
 cairo_lang_test_utils::test_file_test!(
@@ -137,6 +139,9 @@ fn test_function_lowering_phases(
     let mut after_reorder_statements1 = after_optimize_remappings1.clone();
     reorder_statements(&db, &mut after_reorder_statements1);
 
+    let mut after_branch_inversion = after_reorder_statements1.clone();
+    branch_inversion(&db, &mut after_branch_inversion);
+
     let mut after_optimize_matches = after_reorder_statements1.clone();
     optimize_matches(&mut after_optimize_matches);
 
@@ -170,6 +175,7 @@ fn test_function_lowering_phases(
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
         ("after_reorder_statements1".into(), formatted_lowered(&db, &after_reorder_statements1)),
+        ("after_branch_inversion".into(), formatted_lowered(&db, &after_branch_inversion)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
