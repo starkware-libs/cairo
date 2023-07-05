@@ -60,13 +60,23 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::VariableMoved { inference_error } => {
                 format!("Variable was previously moved. {}", inference_error.format(db))
             }
-            LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
-                format!(
+            LoweringDiagnosticKind::VariableNotDropped {
+                drop_err,
+                destruct_err,
+                panic_destruct_err,
+            } => match panic_destruct_err {
+                Some(panic_destruct_err) => format!(
+                    "Variable not dropped. {}. {}. {}.",
+                    drop_err.format(db),
+                    destruct_err.format(db),
+                    panic_destruct_err.format(db)
+                ),
+                None => format!(
                     "Variable not dropped. {}. {}.",
                     drop_err.format(db),
-                    destruct_err.format(db)
-                )
-            }
+                    destruct_err.format(db),
+                ),
+            },
             LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
                 format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
             }
@@ -113,14 +123,24 @@ impl DiagnosticEntry for LoweringDiagnostic {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum LoweringDiagnosticKind {
-    Unreachable { last_statement_ptr: SyntaxStablePtrId },
+    Unreachable {
+        last_statement_ptr: SyntaxStablePtrId,
+    },
     // TODO(lior): Remove once supported.
     NonZeroValueInMatch,
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
-    VariableMoved { inference_error: InferenceError },
-    VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
-    DesnappingANonCopyableType { inference_error: InferenceError },
+    VariableMoved {
+        inference_error: InferenceError,
+    },
+    VariableNotDropped {
+        drop_err: InferenceError,
+        destruct_err: InferenceError,
+        panic_destruct_err: Option<InferenceError>,
+    },
+    DesnappingANonCopyableType {
+        inference_error: InferenceError,
+    },
     UnsupportedMatchedValue,
     UnsupportedMatchArms,
     UnsupportedMatchArmNotAVariant,
