@@ -55,11 +55,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1420})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type ContractAddress = ContractAddress;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@core::option::Option::<core::starknet::contract_address::ContractAddress>, ContractAddress, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::starknet::contract_address::ContractAddress> = Enum<ut@core::option::Option::<core::starknet::contract_address::ContractAddress>, ContractAddress, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc contract_address_try_from_felt252 = contract_address_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -111,8 +111,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type ContractAddress = ContractAddress;
-type felt252 = felt252;
+type ContractAddress = ContractAddress [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;

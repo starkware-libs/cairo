@@ -2,7 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_sierra::program;
 use cairo_lang_utils::extract_matches;
 
-use crate::db::SierraGenGroup;
+use crate::db::{SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::pre_sierra::{self, PushValue};
 
 pub trait SierraIdReplacer {
@@ -104,25 +104,30 @@ impl SierraIdReplacer for DebugReplacer<'_> {
         &self,
         id: &cairo_lang_sierra::ids::ConcreteTypeId,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId {
-        let mut long_id = self.db.lookup_intern_concrete_type(id.clone());
-        self.replace_generic_args(&mut long_id.generic_args);
-        if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
-            long_id.generic_id =
-                extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
-                    .to_string()
-                    .into();
-            if long_id.generic_id == "Tuple".into() {
-                long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
-                if long_id.generic_args.is_empty() {
-                    long_id.generic_id = "Unit".into();
+        match self.db.lookup_intern_concrete_type(id.clone()) {
+            SierraGeneratorTypeLongId::CycleBreaker(ty) => ty.format(self.db.upcast()).into(),
+            SierraGeneratorTypeLongId::Regular(long_id) => {
+                let mut long_id = long_id.as_ref().clone();
+                self.replace_generic_args(&mut long_id.generic_args);
+                if long_id.generic_id == "Enum".into() || long_id.generic_id == "Struct".into() {
+                    long_id.generic_id =
+                        extract_matches!(&long_id.generic_args[0], program::GenericArg::UserType)
+                            .to_string()
+                            .into();
+                    if long_id.generic_id == "Tuple".into() {
+                        long_id.generic_args = long_id.generic_args.into_iter().skip(1).collect();
+                        if long_id.generic_args.is_empty() {
+                            long_id.generic_id = "Unit".into();
+                        }
+                    } else {
+                        long_id.generic_args.clear();
+                    }
                 }
-            } else {
-                long_id.generic_args.clear();
+                cairo_lang_sierra::ids::ConcreteTypeId {
+                    id: id.id,
+                    debug_name: Some(long_id.to_string().into()),
+                }
             }
-        }
-        cairo_lang_sierra::ids::ConcreteTypeId {
-            id: id.id,
-            debug_name: Some(long_id.to_string().into()),
         }
     }
 

@@ -25,10 +25,9 @@ impl SignatureSpecializationContext for SierraSignatureSpecializationContext<'_>
         id: cairo_lang_sierra::ids::GenericTypeId,
         generic_args: &[cairo_lang_sierra::program::GenericArg],
     ) -> Option<cairo_lang_sierra::ids::ConcreteTypeId> {
-        Some(self.0.intern_concrete_type(ConcreteTypeLongId {
-            generic_id: id,
-            generic_args: generic_args.to_vec(),
-        }))
+        Some(self.0.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
+            ConcreteTypeLongId { generic_id: id, generic_args: generic_args.to_vec() }.into(),
+        )))
     }
 
     fn try_get_function_signature(

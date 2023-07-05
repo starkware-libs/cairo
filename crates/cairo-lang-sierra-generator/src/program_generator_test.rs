@@ -30,7 +30,7 @@ fn test_program_generator() {
     assert_eq!(
         program.to_string(),
         indoc! {"
-            type felt252 = felt252;
+            type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
             libfunc drop<felt252> = drop<felt252>;
             libfunc felt252_const<5> = felt252_const<5>;
@@ -72,10 +72,10 @@ fn test_type_dependency() {
     assert_eq!(
         program.to_string(),
         indoc! {"
-            type felt252 = felt252;
-            type Box<felt252> = Box<felt252>;
-            type Box<Box<felt252>> = Box<Box<felt252>>;
-            type Box<Box<Box<felt252>>> = Box<Box<Box<felt252>>>;
+            type Box<Box<Box<felt252>>> = Box<Box<Box<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+            type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+            type Box<Box<felt252>> = Box<Box<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+            type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
             libfunc unbox<Box<Box<felt252>>> = unbox<Box<Box<felt252>>>;
             libfunc store_temp<Box<Box<felt252>>> = store_temp<Box<Box<felt252>>>;
