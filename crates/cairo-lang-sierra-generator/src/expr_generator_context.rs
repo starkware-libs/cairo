@@ -121,10 +121,13 @@ impl<'a> ExprGeneratorContext<'a> {
             SierraGenVar::UninitializedLocal(lowering_var) => {
                 let inner_type =
                     self.db.get_concrete_type_id(self.lowered.variables[lowering_var].ty)?;
-                self.db.intern_concrete_type(ConcreteTypeLongId {
-                    generic_id: UninitializedType::ID,
-                    generic_args: vec![GenericArg::Type(inner_type)],
-                })
+                self.db.intern_concrete_type(crate::db::SierraGeneratorTypeLongId::Regular(
+                    ConcreteTypeLongId {
+                        generic_id: UninitializedType::ID,
+                        generic_args: vec![GenericArg::Type(inner_type)],
+                    }
+                    .into(),
+                ))
             }
         })
     }

@@ -31,9 +31,9 @@ ret;
 test::foo: OrderedHashMap({Const: 870})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u64 = u64;
-type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_overflowing_add = u64_overflowing_add;
 libfunc branch_align = branch_align;
@@ -95,9 +95,9 @@ ret;
 test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u64 = u64;
-type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_overflowing_sub = u64_overflowing_sub;
 libfunc branch_align = branch_align;
@@ -150,9 +150,9 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type u64 = u64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_eq = u64_eq;
 libfunc branch_align = branch_align;
@@ -204,9 +204,9 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type u64 = u64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_const<11> = u64_const<11>;
 libfunc u64_const<12> = u64_const<12>;
@@ -287,11 +287,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type u64 = u64;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::integer::u64> = Enum<ut@core::option::Option::<core::integer::u64>, u64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_try_from_felt252 = u64_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -350,8 +350,8 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type u64 = u64;
-type NonZero<u64> = NonZero<u64>;
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u64> = NonZero<u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_is_zero = u64_is_zero;
 libfunc branch_align = branch_align;
@@ -404,10 +404,10 @@ ret;
 test::foo: OrderedHashMap({Const: 1210})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u64 = u64;
-type NonZero<u64> = NonZero<u64>;
-type Tuple<u64, u64> = Struct<ut@Tuple, u64, u64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u64, u64> = Struct<ut@Tuple, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<u64> = NonZero<u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_safe_divmod = u64_safe_divmod;
 libfunc struct_construct<Tuple<u64, u64>> = struct_construct<Tuple<u64, u64>>;
@@ -456,9 +456,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1380})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u64 = u64;
-type u32 = u32;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_sqrt = u64_sqrt;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
