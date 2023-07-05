@@ -22,9 +22,9 @@ ret;
 test::foo: OrderedHashMap({Poseidon: 1, Const: 700})
 
 //! > sierra_code
-type Poseidon = Poseidon;
-type felt252 = felt252;
-type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252>;
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc hades_permutation = hades_permutation;
 libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
@@ -132,12 +132,12 @@ ret;
 test::foo: OrderedHashMap({Poseidon: 4, Const: 4500})
 
 //! > sierra_code
-type felt252 = felt252;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
-type core::poseidon::HashState = Struct<ut@core::poseidon::HashState, felt252, felt252, felt252, core::bool>;
-type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252>;
-type Poseidon = Poseidon;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::poseidon::HashState = Struct<ut@core::poseidon::HashState, felt252, felt252, felt252, core::bool> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc felt252_const<0> = felt252_const<0>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
