@@ -4,21 +4,36 @@ mod test;
 
 use std::cmp::Reverse;
 
+use cairo_lang_semantic::corelib;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VarUsage, VariableId};
+use crate::db::LoweringGroup;
+use crate::ids::{FunctionId, FunctionLongId};
+use crate::{
+    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+};
 
 /// Reorder the statments in the lowering in order to move variable definitions closer to their
 /// usage. Statement with no side effects and unused outputs are removed.
 ///
-/// Currently only effects literal struct construct and struct deconstruct statements.
+/// The list of call statements that can be moved is currently hardcoded.
 ///
 /// Removing unnessary remapping before this optimization will result in better code.
-pub fn reorder_statements(lowered: &mut FlatLowered) {
+pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let ctx = ReorderStatementsContext { lowered: &*lowered, statement_to_move: vec![] };
+        let semantic_db = db.upcast();
+        let bool_not_func_id = db.intern_lowering_function(FunctionLongId::Semantic(
+            corelib::get_core_function_id(semantic_db, "bool_not_impl".into(), vec![]),
+        ));
+
+        let ctx = ReorderStatementsContext {
+            lowered: &*lowered,
+            moveable_functions: UnorderedHashSet::from_iter(std::iter::once(bool_not_func_id)),
+            statement_to_move: vec![],
+        };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
@@ -68,7 +83,14 @@ pub struct ReorderStatementsInfo {
 
 pub struct ReorderStatementsContext<'a> {
     lowered: &'a FlatLowered,
+    // A list of function that can be moved.
+    moveable_functions: UnorderedHashSet<FunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
+}
+impl ReorderStatementsContext<'_> {
+    fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
+        self.moveable_functions.contains(&stmt.function)
+    }
 }
 impl Analyzer<'_> for ReorderStatementsContext<'_> {
     type Info = ReorderStatementsInfo;
@@ -80,6 +102,10 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         stmt: &Statement,
     ) {
         let var_to_move = match stmt {
+            Statement::Call(stmt) if self.call_can_be_moved(stmt) => {
+                assert_eq!(stmt.outputs.len(), 1, "Only calls with a single output can be moved");
+                stmt.outputs[0]
+            }
             Statement::Literal(stmt) => stmt.output,
             Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
             Statement::StructDestructure(stmt)

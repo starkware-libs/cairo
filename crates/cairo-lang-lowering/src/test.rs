@@ -135,7 +135,7 @@ fn test_function_lowering_phases(
     optimize_remappings(&mut after_optimize_remappings1);
 
     let mut after_reorder_statements1 = after_optimize_remappings1.clone();
-    reorder_statements(&mut after_reorder_statements1);
+    reorder_statements(&db, &mut after_reorder_statements1);
 
     let mut after_optimize_matches = after_reorder_statements1.clone();
     optimize_matches(&mut after_optimize_matches);
@@ -147,7 +147,7 @@ fn test_function_lowering_phases(
     optimize_remappings(&mut after_optimize_remappings2);
 
     let mut after_reorder_statements2 = after_optimize_remappings2.clone();
-    reorder_statements(&mut after_reorder_statements2);
+    reorder_statements(&db, &mut after_reorder_statements2);
 
     let mut after_reorganize_blocks = after_reorder_statements2.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
