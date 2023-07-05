@@ -10,6 +10,7 @@ use super::reorder_statements;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
+use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
@@ -43,10 +44,12 @@ fn test_reorder_statements(
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     optimize_remappings(&mut before);
+    apply_inlining(db, function_id, &mut before).unwrap();
+    optimize_remappings(&mut before);
     reorganize_blocks(&mut before);
 
     let mut after = before.clone();
-    reorder_statements(&mut after);
+    reorder_statements(db, &mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
