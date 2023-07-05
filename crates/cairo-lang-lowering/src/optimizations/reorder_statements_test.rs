@@ -43,7 +43,6 @@ fn test_reorder_statements(
         db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    optimize_remappings(&mut before);
     apply_inlining(db, function_id, &mut before).unwrap();
     optimize_remappings(&mut before);
     reorganize_blocks(&mut before);
