@@ -22,7 +22,7 @@ pub enum ProjectError {
 
 /// Setup to 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
-fn setup_single_file_project(
+pub fn setup_single_file_project(
     db: &mut dyn SemanticGroup,
     path: &Path,
 ) -> Result<CrateId, ProjectError> {
