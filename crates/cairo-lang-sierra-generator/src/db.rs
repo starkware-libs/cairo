@@ -9,11 +9,22 @@ use cairo_lang_sierra::extensions::{ConcreteType, GenericTypeEx};
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_utils::Upcast;
 use lowering::ids::ConcreteFunctionWithBodyId;
+use semantic::items::imp::ImplLookupContext;
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::program_generator::{self};
 use crate::specialization_context::SierraSignatureSpecializationContext;
 use crate::{ap_change, function_generator, pre_sierra};
+
+/// Helper type for Sierra long ids, which can be either a type long id or a cycle breaker.
+/// This is required for cases where the type long id is self referential.
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum SierraConcreteTypeLongIdCycleHandle {
+    /// A normal type long id.
+    Regular(Arc<cairo_lang_sierra::program::ConcreteTypeLongId>),
+    /// The long id for cycle breakers, such as `Box` and `Nullable`.
+    CycleBreaker(semantic::TypeId),
+}
 
 #[salsa::query_group(SierraGenDatabase)]
 pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
@@ -29,7 +40,7 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
     #[salsa::interned]
     fn intern_concrete_type(
         &self,
-        id: cairo_lang_sierra::program::ConcreteTypeLongId,
+        id: SierraConcreteTypeLongIdCycleHandle,
     ) -> cairo_lang_sierra::ids::ConcreteTypeId;
 
     /// Creates a Sierra function id for a function id of the semantic model.
@@ -47,6 +58,22 @@ pub trait SierraGenGroup: LoweringGroup + Upcast<dyn LoweringGroup> {
         &self,
         type_id: semantic::TypeId,
     ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId>;
+
+    /// Returns the matching sierra concrete type id for a given semantic type id.
+    #[salsa::invoke(crate::types::get_concrete_long_type_id)]
+    fn get_concrete_long_type_id(
+        &self,
+        type_id: semantic::TypeId,
+    ) -> Maybe<Arc<cairo_lang_sierra::program::ConcreteTypeLongId>>;
+
+    /// Returns if the semantic id has a circular definition.
+    #[salsa::invoke(crate::types::is_self_referential)]
+    #[salsa::cycle(crate::types::is_self_referential_cycle)]
+    fn is_self_referential(&self, type_id: semantic::TypeId) -> Maybe<bool>;
+
+    /// Returns the semantic type ids the type is directly dependent on.
+    #[salsa::invoke(crate::types::type_dependencies)]
+    fn type_dependencies(&self, type_id: semantic::TypeId) -> Maybe<Arc<Vec<semantic::TypeId>>>;
 
     /// Returns the [cairo_lang_sierra::program::FunctionSignature] object for the given function
     /// id.
@@ -145,7 +172,23 @@ fn get_type_info(
     db: &dyn SierraGenGroup,
     concrete_type_id: cairo_lang_sierra::ids::ConcreteTypeId,
 ) -> Maybe<Arc<cairo_lang_sierra::extensions::types::TypeInfo>> {
-    let long_id = db.lookup_intern_concrete_type(concrete_type_id);
+    let long_id = match db.lookup_intern_concrete_type(concrete_type_id) {
+        SierraConcreteTypeLongIdCycleHandle::Regular(long_id) => long_id,
+        SierraConcreteTypeLongIdCycleHandle::CycleBreaker(ty) => {
+            let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
+            let info = db.type_info(
+                ImplLookupContext { modules: [].into_iter().collect(), generic_params: vec![] },
+                ty,
+            )?;
+            return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
+                long_id,
+                storable: true,
+                droppable: info.droppable.is_ok(),
+                duplicatable: info.duplicatable.is_ok(),
+                zero_sized: false,
+            }));
+        }
+    };
     let concrete_ty = cairo_lang_sierra::extensions::core::CoreType::specialize_by_id(
         &SierraSignatureSpecializationContext(db),
         &long_id.generic_id,

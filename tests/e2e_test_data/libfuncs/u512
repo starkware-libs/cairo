@@ -157,14 +157,14 @@ test::foo: OrderedHashMap({Const: 24890})
 core::integer::U128MulGuaranteeDestruct::destruct: OrderedHashMap({Const: 3030})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type u128 = u128;
-type core::integer::u512 = Struct<ut@core::integer::u512, u128, u128, u128, u128>;
-type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128>;
-type NonZero<core::integer::u256> = NonZero<core::integer::u256>;
-type U128MulGuarantee = U128MulGuarantee;
-type Unit = Struct<ut@Tuple>;
-type Tuple<core::integer::u512, core::integer::u256> = Struct<ut@Tuple, core::integer::u512, core::integer::u256>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u512 = Struct<ut@core::integer::u512, u128, u128, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::integer::u512, core::integer::u256> = Struct<ut@Tuple, core::integer::u512, core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type U128MulGuarantee = U128MulGuarantee [storable: true, drop: false, dup: false, zero_sized: false];
+type NonZero<core::integer::u256> = NonZero<core::integer::u256> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u512_safe_divmod_by_u256 = u512_safe_divmod_by_u256;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;

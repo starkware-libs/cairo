@@ -22,8 +22,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::SingleVariant = Enum<ut@test::SingleVariant, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::SingleVariant = Enum<ut@test::SingleVariant, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_match<test::SingleVariant> = enum_match<test::SingleVariant>;
 libfunc branch_align = branch_align;
@@ -71,9 +71,9 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type felt252 = felt252;
-type Unit = Struct<ut@Tuple>;
-type test::Option = Enum<ut@test::Option, felt252, Unit>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::Option = Enum<ut@test::Option, felt252, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_match<test::Option> = enum_match<test::Option>;
 libfunc branch_align = branch_align;
@@ -137,8 +137,8 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type felt252 = felt252;
-type test::Color = Enum<ut@test::Color, felt252, felt252, felt252>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type test::Color = Enum<ut@test::Color, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_match<test::Color> = enum_match<test::Color>;
 libfunc branch_align = branch_align;
@@ -207,12 +207,12 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type Unit = Struct<ut@Tuple>;
-type felt252 = felt252;
-type Array<felt252> = Array<felt252>;
-type test::Color = Enum<ut@test::Color, Unit, Unit, Array<felt252>>;
-type Snapshot<test::Color> = Snapshot<test::Color>;
-type Snapshot<Array<felt252>> = Snapshot<Array<felt252>>;
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type test::Color = Enum<ut@test::Color, Unit, Unit, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<test::Color> = Snapshot<test::Color> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc enum_snapshot_match<test::Color> = enum_snapshot_match<test::Color>;
 libfunc branch_align = branch_align;
