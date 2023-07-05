@@ -46,7 +46,7 @@ fn test_reorder_statements(
     reorganize_blocks(&mut before);
 
     let mut after = before.clone();
-    reorder_statements(&mut after);
+    reorder_statements(db, &mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
