@@ -298,21 +298,22 @@ fn declaration_method_impl(
     unwrap: bool,
 ) -> RewriteNode {
     let deserialization_code = if ret_decode.is_empty() {
-        RewriteNode::Text(String::from("()"))
+        RewriteNode::Text(String::from(if unwrap {
+            "()\
+    "
+        } else {
+            "()"
+        }))
     } else {
         RewriteNode::Text(ret_decode)
     };
     let return_code = RewriteNode::interpolate_patched(
         if unwrap {
-            "
-            let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-            $deserialization_code$
-            "
+            "    let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+    $deserialization_code$"
         } else {
-            "
-            let mut ret_data = ret_data?;
-            Result::Ok($deserialization_code$)
-            "
+            "    let mut ret_data = ret_data?;
+    Result::Ok($deserialization_code$)"
         },
         [("deserialization_code".to_string(), deserialization_code)].into(),
     );
@@ -320,13 +321,13 @@ fn declaration_method_impl(
         &formatdoc!(
             "$func_decl$ {{
                 let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
-                $serialization_code$
+            $serialization_code$
                 let mut ret_data = starknet::$syscall$(
                     self.$member$,
                     $entry_point_selector$,
                     array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
                 );
-                $return_code$
+            $return_code$
             }}
         "
         ),
