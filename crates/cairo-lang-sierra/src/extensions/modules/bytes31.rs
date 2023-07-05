@@ -1,10 +1,14 @@
+use num_bigint::BigInt;
+
+use super::consts::{ConstGenLibfunc, WrapConstGenLibfunc};
 use super::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::felt252::Felt252Type;
 use crate::extensions::lib_func::{LibfuncSignature, SignatureSpecializationContext};
 use crate::extensions::{
-    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType, SpecializationError,
+    NamedType, NoGenericArgsGenericLibfunc, NoGenericArgsGenericType,
+    SignatureBasedConcreteLibfunc, SpecializationError,
 };
 use crate::ids::GenericTypeId;
 
@@ -21,9 +25,33 @@ impl NoGenericArgsGenericType for Bytes31Type {
 
 define_libfunc_hierarchy! {
     pub enum Bytes31Libfunc {
+        Const(Bytes31ConstLibfunc),
         ToFelt252(Bytes31ToFelt252Libfunc),
         TryFromFelt252(Bytes31FromFelt252Libfunc),
     }, Bytes31ConcreteLibfunc
+}
+
+/// Libfunc for creating a constant bytes31.
+#[derive(Default)]
+pub struct Bytes31ConstLibfuncWrapped {}
+impl ConstGenLibfunc for Bytes31ConstLibfuncWrapped {
+    const STR_ID: &'static str = "bytes31_const";
+    const GENERIC_TYPE_ID: GenericTypeId = <Bytes31Type as NoGenericArgsGenericType>::ID;
+
+    fn bound() -> BigInt {
+        BigInt::from(2).pow(248)
+    }
+}
+pub type Bytes31ConstLibfunc = WrapConstGenLibfunc<Bytes31ConstLibfuncWrapped>;
+
+pub struct Bytes31ConstConcreteLibfunc {
+    pub c: BigInt,
+    pub signature: LibfuncSignature,
+}
+impl SignatureBasedConcreteLibfunc for Bytes31ConstConcreteLibfunc {
+    fn signature(&self) -> &LibfuncSignature {
+        &self.signature
+    }
 }
 
 /// Libfunc for converting a bytes31 into a felt252.
