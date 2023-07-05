@@ -1,19 +1,22 @@
-use std::collections::{HashSet, VecDeque};
+use std::collections::VecDeque;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_sierra::extensions::array::ArrayType;
+use cairo_lang_sierra::extensions::boxing::BoxType;
 use cairo_lang_sierra::extensions::core::CoreLibfunc;
-use cairo_lang_sierra::extensions::GenericLibfuncEx;
+use cairo_lang_sierra::extensions::nullable::NullableType;
+use cairo_lang_sierra::extensions::{GenericLibfuncEx, NamedType};
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, ConcreteTypeId};
-use cairo_lang_sierra::program;
+use cairo_lang_sierra::program::{self, DeclaredTypeInfo};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::chain;
 
-use crate::db::SierraGenGroup;
+use crate::db::{SierraConcreteTypeLongIdCycleHandle, SierraGenGroup};
 use crate::pre_sierra::{self};
 use crate::replace_ids::{DebugReplacer, SierraIdReplacer};
 use crate::resolve_labels::{resolve_labels, LabelReplacer};
@@ -59,41 +62,77 @@ fn collect_used_libfuncs(
 
 /// Generates the list of [cairo_lang_sierra::program::TypeDeclaration] for the given list of
 /// [ConcreteTypeId].
-fn generate_type_declarations<'a>(
+fn generate_type_declarations(
     db: &dyn SierraGenGroup,
-    types: impl Iterator<Item = &'a ConcreteTypeId>,
+    mut remaining_types: OrderedHashSet<ConcreteTypeId>,
 ) -> Vec<program::TypeDeclaration> {
     let mut declarations = vec![];
-    let mut already_declared = HashSet::new();
-    for ty in types {
-        generate_type_declarations_helper(db, ty, &mut declarations, &mut already_declared);
+    let mut already_declared = UnorderedHashSet::default();
+    while let Some(ty) = remaining_types.iter().next().cloned() {
+        remaining_types.swap_remove(&ty);
+        generate_type_declarations_helper(
+            db,
+            &ty,
+            &mut declarations,
+            &mut remaining_types,
+            &mut already_declared,
+        );
     }
     declarations
 }
 
 /// Helper to ensure declaring types ordered in such a way that no type appears before types it
-/// depends on.
+/// depends on for knowing its size.
+/// `remaining_types` are types that will later be checked.
+/// We may add types to there if we are not sure their dependencies are already declared.
 fn generate_type_declarations_helper(
     db: &dyn SierraGenGroup,
     ty: &ConcreteTypeId,
     declarations: &mut Vec<program::TypeDeclaration>,
-    already_declared: &mut HashSet<ConcreteTypeId>,
+    remaining_types: &mut OrderedHashSet<ConcreteTypeId>,
+    already_declared: &mut UnorderedHashSet<ConcreteTypeId>,
 ) {
     if already_declared.contains(ty) {
         return;
     }
-    let long_id = db.lookup_intern_concrete_type(ty.clone());
-    for generic_arg in &long_id.generic_args {
-        if let program::GenericArg::Type(inner_ty) = generic_arg {
-            generate_type_declarations_helper(db, inner_ty, declarations, already_declared);
+    let long_id = match db.lookup_intern_concrete_type(ty.clone()) {
+        SierraConcreteTypeLongIdCycleHandle::Regular(long_id) => long_id,
+        SierraConcreteTypeLongIdCycleHandle::CycleBreaker(type_id) => {
+            db.get_concrete_long_type_id(type_id).unwrap()
+        }
+    };
+    already_declared.insert(ty.clone());
+    let inner_tys = long_id
+        .generic_args
+        .iter()
+        .filter_map(|arg| try_extract_matches!(arg, program::GenericArg::Type));
+    // Making sure we order the types such that types that require others to know their size are
+    // after the required types. Types that always have a known size would be first.
+    if [ArrayType::ID, BoxType::ID, NullableType::ID].contains(&long_id.generic_id) {
+        remaining_types.extend(inner_tys.cloned());
+    } else {
+        for inner_ty in inner_tys {
+            generate_type_declarations_helper(
+                db,
+                inner_ty,
+                declarations,
+                remaining_types,
+                already_declared,
+            );
         }
     }
+
+    let type_info = db.get_type_info(ty.clone()).unwrap();
     declarations.push(program::TypeDeclaration {
         id: ty.clone(),
-        long_id,
-        declared_type_info: None,
+        long_id: long_id.as_ref().clone(),
+        declared_type_info: Some(DeclaredTypeInfo {
+            storable: type_info.storable,
+            droppable: type_info.droppable,
+            duplicatable: type_info.duplicatable,
+            zero_sized: type_info.zero_sized,
+        }),
     });
-    already_declared.insert(ty.clone());
 }
 
 /// Collects the set of all [ConcreteTypeId] that are used in the given list of
@@ -154,7 +193,7 @@ pub fn get_sierra_program_for_functions(
     let libfunc_declarations =
         generate_libfunc_declarations(db, collect_used_libfuncs(&statements).iter());
     let type_declarations =
-        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations).iter());
+        generate_type_declarations(db, collect_used_types(db, &libfunc_declarations));
     // Resolve labels.
     let label_replacer = LabelReplacer::from_statements(&statements);
     let resolved_statements = resolve_labels(statements, &label_replacer);
