@@ -1,5 +1,9 @@
 use traits::{Into, TryInto};
 use option::OptionTrait;
+use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
+
+const BYTES_IN_BYTES31: u8 = 31;
+const BYTES_IN_U128: u8 = 16;
 
 #[derive(Copy, Drop)]
 extern type bytes31;
@@ -49,5 +53,108 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
     fn into(self: u128) -> bytes31 {
         let as_felt: felt252 = self.into();
         as_felt.try_into().unwrap()
+    }
+}
+
+// Splits a bytes31 into two bytes31s at the given index.
+// The bytes31s are represented using felt252s to improve performance.
+// Note: this function assumes that:
+// 1. `word` is validly convertible to a bytes31 which has no more than `len` bytes of data.
+// 2. index <= len.
+// 3. len <= BYTES_IN_BYTES31.
+// If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
+// private function. We could add masking/assertions but it would be more expansive.
+fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
+    if index == 0 {
+        return (0, word);
+    }
+    if index == len {
+        return (word, 0);
+    }
+
+    let u256{low, high }: u256 = word.into();
+
+    if index == BYTES_IN_U128 {
+        return (low.into(), high.into());
+    }
+
+    if len <= BYTES_IN_U128 {
+        let (quotient, remainder) = u128_safe_divmod(
+            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+        );
+        return (remainder.into(), quotient.into());
+    }
+
+    // len > BYTES_IN_U128
+    if index < BYTES_IN_U128 {
+        let (low_quotient, low_remainder) = u128_safe_divmod(
+            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+        );
+        let right = high.into() * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
+            + low_quotient.into();
+        return (low_remainder.into(), right);
+    }
+
+    // len > BYTES_IN_U128 && index > BYTES_IN_U128
+    let (high_quotient, high_remainder) = u128_safe_divmod(
+        high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap()
+    );
+    let left = high_remainder.into() * POW_2_128 + low.into();
+    return (left, high_quotient.into());
+}
+
+
+// Returns 1 << (8 * `n_bytes`) as felt252, assuming that `n_bytes < BYTES_IN_BYTES31`.
+//
+// Note: if `n_bytes >= BYTES_IN_BYTES31`, the behavior is undefined. If one wants to assert that in
+// the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31` because if
+// `n_bytes > 31` then `n_bytes - 16 > 15` and `one_shift_left_bytes_u128` would panic.
+fn one_shift_left_bytes_felt252(n_bytes: u8) -> felt252 {
+    if n_bytes < BYTES_IN_U128 {
+        one_shift_left_bytes_u128(n_bytes).into()
+    } else {
+        one_shift_left_bytes_u128(n_bytes - BYTES_IN_U128).into() * POW_2_128
+    }
+}
+
+// Returns 1 << (8 * `n_bytes`) as u128, where `n_bytes` must be < BYTES_IN_U128.
+//
+// Panics if `n_bytes >= BYTES_IN_U128`.
+fn one_shift_left_bytes_u128(n_bytes: u8) -> u128 {
+    // TODO(yuval): change to match once it's supported for integers.
+    if n_bytes == 0 {
+        0x1_u128
+    } else if n_bytes == 1 {
+        0x100_u128
+    } else if n_bytes == 2 {
+        0x10000_u128
+    } else if n_bytes == 3 {
+        0x1000000_u128
+    } else if n_bytes == 4 {
+        0x100000000_u128
+    } else if n_bytes == 5 {
+        0x10000000000_u128
+    } else if n_bytes == 6 {
+        0x1000000000000_u128
+    } else if n_bytes == 7 {
+        0x100000000000000_u128
+    } else if n_bytes == 8 {
+        0x10000000000000000_u128
+    } else if n_bytes == 9 {
+        0x1000000000000000000_u128
+    } else if n_bytes == 10 {
+        0x100000000000000000000_u128
+    } else if n_bytes == 11 {
+        0x10000000000000000000000_u128
+    } else if n_bytes == 12 {
+        0x1000000000000000000000000_u128
+    } else if n_bytes == 13 {
+        0x100000000000000000000000000_u128
+    } else if n_bytes == 14 {
+        0x10000000000000000000000000000_u128
+    } else if n_bytes == 15 {
+        0x1000000000000000000000000000000_u128
+    } else {
+        panic_with_felt252('n_bytes too big')
     }
 }
