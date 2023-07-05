@@ -17,6 +17,7 @@
         "bool_to_felt252",
         "bool_xor_impl",
         "branch_align",
+        "bytes31_const",
         "bytes31_to_felt252",
         "bytes31_try_from_felt252",
         "call_contract_syscall",

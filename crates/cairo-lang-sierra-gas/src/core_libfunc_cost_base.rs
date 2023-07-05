@@ -364,7 +364,9 @@ pub fn core_libfunc_cost(
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ConstCost::steps(1).into()],
         },
         CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
-            Bytes31ConcreteLibfunc::ToFelt252(_) => vec![ConstCost::steps(0).into()],
+            Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
+                vec![ConstCost::default().into()]
+            }
             Bytes31ConcreteLibfunc::TryFromFelt252(_) => vec![
                 (ConstCost { steps: 7, holes: 0, range_checks: 3 }).into(),
                 (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
