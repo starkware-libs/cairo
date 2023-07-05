@@ -23,9 +23,9 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u8 = u8;
-type Tuple<u8, u8, u8> = Struct<ut@Tuple, u8, u8, u8>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u8, u8, u8> = Struct<ut@Tuple, u8, u8, u8> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u8_bitwise = u8_bitwise;
 libfunc struct_construct<Tuple<u8, u8, u8>> = struct_construct<Tuple<u8, u8, u8>>;
@@ -67,9 +67,9 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u16 = u16;
-type Tuple<u16, u16, u16> = Struct<ut@Tuple, u16, u16, u16>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u16 = u16 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u16, u16, u16> = Struct<ut@Tuple, u16, u16, u16> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u16_bitwise = u16_bitwise;
 libfunc struct_construct<Tuple<u16, u16, u16>> = struct_construct<Tuple<u16, u16, u16>>;
@@ -111,9 +111,9 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u32 = u32;
-type Tuple<u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u32, u32, u32> = Struct<ut@Tuple, u32, u32, u32> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u32_bitwise = u32_bitwise;
 libfunc struct_construct<Tuple<u32, u32, u32>> = struct_construct<Tuple<u32, u32, u32>>;
@@ -155,9 +155,9 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u64 = u64;
-type Tuple<u64, u64, u64> = Struct<ut@Tuple, u64, u64, u64>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u64, u64, u64> = Struct<ut@Tuple, u64, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc u64_bitwise = u64_bitwise;
 libfunc struct_construct<Tuple<u64, u64, u64>> = struct_construct<Tuple<u64, u64, u64>>;
@@ -199,9 +199,9 @@ ret;
 test::foo: OrderedHashMap({Bitwise: 1, Const: 600})
 
 //! > sierra_code
-type Bitwise = Bitwise;
-type u128 = u128;
-type Tuple<u128, u128, u128> = Struct<ut@Tuple, u128, u128, u128>;
+type Bitwise = Bitwise [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<u128, u128, u128> = Struct<ut@Tuple, u128, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc bitwise = bitwise;
 libfunc struct_construct<Tuple<u128, u128, u128>> = struct_construct<Tuple<u128, u128, u128>>;
