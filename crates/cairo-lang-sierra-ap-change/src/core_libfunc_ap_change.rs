@@ -275,7 +275,9 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ApChange::Known(0)],
         },
         CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
-            Bytes31ConcreteLibfunc::ToFelt252(_) => vec![ApChange::Known(0)],
+            Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
+                vec![ApChange::Known(0)]
+            }
             Bytes31ConcreteLibfunc::TryFromFelt252(_) => {
                 vec![ApChange::Known(5), ApChange::Known(6)]
             }
