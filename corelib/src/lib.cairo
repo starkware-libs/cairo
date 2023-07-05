@@ -207,6 +207,8 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
     }
 }
 
+const POW_2_128: felt252 = 0x100000000000000000000000000000000;
+
 // TODO(spapini): Constraint using Copy and Drop traits.
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
