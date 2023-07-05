@@ -130,12 +130,8 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         _statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        let Ok(info) = info else {
-            return;
-        };
-        let Ok(branch_info) = self.analyze_statement(stmt) else {
-            return;
-        };
+        let Ok(info) = info else {return;};
+        let Ok(branch_info) = self.analyze_statement(stmt) else {return;};
         info.demand.variables_introduced(self, &stmt.outputs(), ());
         self.revoke_if_needed(info, branch_info);
         info.demand
@@ -149,9 +145,7 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
         target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        let Ok(info) = info else {
-            return;
-        };
+        let Ok(info) = info else {return;};
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
         info.demand
             .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));

@@ -258,13 +258,9 @@ fn generic_param_generic_params_list(
 
     // Traverse up the tree to the generic params list ptr.
     let SyntaxStablePtr::Child { parent, .. } =
-        db.lookup_intern_stable_ptr(generic_param_long_id.1.0)
-    else {
-        panic!()
-    };
-    let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-        panic!()
-    };
+        db.lookup_intern_stable_ptr(generic_param_long_id.1.0) else { panic!() };
+    let SyntaxStablePtr::Child { parent, .. } =
+        db.lookup_intern_stable_ptr(parent) else { panic!() };
     let module_file_id = generic_param_id.module_file_id(db.upcast());
 
     let file_id = db.module_file(module_file_id)?;

@@ -54,13 +54,14 @@ impl ImplGenericFunctionId {
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<ImplGenericFunctionWithBodyId>> {
         let ImplId::Concrete(concrete_impl_id) = self.impl_id else {
-            return Ok(None);
-        };
-        let Some(impl_function) = concrete_impl_id.get_impl_function(db.upcast(), self.function)?
-        else {
-            // Trait function not found in impl.
-            return Err(skip_diagnostic());
-        };
+                return Ok(None);
+            };
+        let Some(impl_function) = concrete_impl_id
+                .get_impl_function(db.upcast(), self.function)?
+                else {
+                    // Trait function not found in impl.
+                    return Err(skip_diagnostic());
+                };
         Ok(Some(ImplGenericFunctionWithBodyId { concrete_impl_id, function: impl_function }))
     }
     /// Converts to GenericFunctionWithBodyId if this is a function of a concrete impl.
@@ -69,8 +70,8 @@ impl ImplGenericFunctionId {
         db: &dyn SemanticGroup,
     ) -> Maybe<Option<GenericFunctionWithBodyId>> {
         let Some(impl_generic_with_body) = self.to_impl_generic_with_body(db)? else {
-            return Ok(None);
-        };
+                return Ok(None);
+            };
         Ok(Some(GenericFunctionWithBodyId::Impl(impl_generic_with_body)))
     }
     pub fn format(&self, db: &dyn SemanticGroup) -> SmolStr {
@@ -217,9 +218,10 @@ impl GenericFunctionWithBodyId {
                 impl_id: ImplId::Concrete(concrete_impl_id),
                 function,
             }) => {
-                let Some(impl_function) =
-                    db.impl_function_by_trait_function(concrete_impl_id.impl_def_id(db), function)?
-                else {
+                let Some(impl_function) = db.impl_function_by_trait_function(
+                    concrete_impl_id.impl_def_id(db),
+                    function,
+                )? else {
                     return Ok(None);
                 };
                 GenericFunctionWithBodyId::Impl(ImplGenericFunctionWithBodyId {
@@ -467,9 +469,10 @@ pub struct ConcreteFunction {
 }
 impl ConcreteFunction {
     pub fn body(&self, db: &dyn SemanticGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        let Some(generic_function) =
-            GenericFunctionWithBodyId::from_generic(db, self.generic_function)?
-        else {
+        let Some(generic_function) = GenericFunctionWithBodyId::from_generic(
+            db,
+            self.generic_function,
+        )? else {
             return Ok(None);
         };
         Ok(Some(db.intern_concrete_function_with_body(ConcreteFunctionWithBody {

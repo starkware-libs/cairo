@@ -99,7 +99,7 @@ fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
             value.serialize(ref output);
             serialize_array_helper(input, ref output);
         },
-        Option::None=> {},
+        Option::None => {},
     }
 }
 
@@ -146,7 +146,7 @@ impl SpanImpl<T> of SpanTrait<T> {
         self = Span { snapshot };
         match item {
             Option::Some(x) => Option::Some(x.unbox()),
-            Option::None=> Option::None(()),
+            Option::None => Option::None(()),
         }
     }
     #[inline(always)]
@@ -156,7 +156,7 @@ impl SpanImpl<T> of SpanTrait<T> {
         self = Span { snapshot };
         match item {
             Option::Some(x) => Option::Some(x.unbox()),
-            Option::None=> Option::None(()),
+            Option::None => Option::None(()),
         }
     }
     #[inline(always)]
@@ -198,7 +198,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
                 Option::Some(v) => {
                     response.append(TClone::clone(v));
                 },
-                Option::None=> {
+                Option::None => {
                     break ();
                 },
             };

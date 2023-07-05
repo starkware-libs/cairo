@@ -488,9 +488,7 @@ impl SierraCasmRunner {
         if self.metadata.gas_info.function_costs.is_empty() {
             return Ok(0);
         }
-        let Some(available_gas) = available_gas else {
-            return Ok(0);
-        };
+        let Some(available_gas) = available_gas else { return Ok(0); };
 
         // Compute the initial gas required by the function.
         let required_gas = self.metadata.gas_info.function_costs[func.id.clone()]

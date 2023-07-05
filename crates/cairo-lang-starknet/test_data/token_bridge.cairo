@@ -43,7 +43,12 @@ mod token_bridge {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {L1BridgeSet: L1BridgeSet, L2TokenSet: L2TokenSet, WithdrawInitiated: WithdrawInitiated, DepositHandled: DepositHandled, }
+    enum Event {
+        L1BridgeSet: L1BridgeSet,
+        L2TokenSet: L2TokenSet,
+        WithdrawInitiated: WithdrawInitiated,
+        DepositHandled: DepositHandled,
+    }
 
     // An event that is emitted when set_l1_bridge is called.
     // * l1_bridge_address is the new l1 bridge address.

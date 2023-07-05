@@ -134,9 +134,7 @@ impl<'a> HasDb<&'a dyn SemanticGroup> for Canonicalizer<'a> {
 add_basic_rewrites!(<'a>, Canonicalizer<'a>, NoError, @exclude TypeLongId ImplId);
 impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
-        let TypeLongId::Var(var) = value else {
-            return value.default_rewrite(self);
-        };
+        let TypeLongId::Var(var) = value else { return value.default_rewrite(self); };
         let next_id = LocalTypeVarId(self.to_canonic.type_var_mapping.len());
         Ok(TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
@@ -145,9 +143,7 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
 }
 impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
     fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
-        let ImplId::ImplVar(var_id) = value else {
-            return value.default_rewrite(self);
-        };
+        let ImplId::ImplVar(var_id) = value else { return value.default_rewrite(self); };
         let var = var_id.get(self.db);
         let next_id = LocalImplVarId(self.to_canonic.impl_var_mapping.len());
         let var = ImplVar {
@@ -183,9 +179,7 @@ impl<'a, 'b> HasDb<&'a dyn SemanticGroup> for Embedder<'a, 'b> {
 add_basic_rewrites!(<'a,'b>, Embedder<'a,'b>, NoError, @exclude TypeLongId ImplId);
 impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, NoError> {
-        let TypeLongId::Var(var) = value else {
-            return value.default_rewrite(self);
-        };
+        let TypeLongId::Var(var) = value else { return value.default_rewrite(self); };
         Ok(TypeLongId::Var(TypeVar {
             id: *self
                 .from_canonic
@@ -197,9 +191,7 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
 }
 impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
     fn rewrite(&mut self, value: ImplId) -> Result<ImplId, NoError> {
-        let ImplId::ImplVar(var_id) = value else {
-            return value.default_rewrite(self);
-        };
+        let ImplId::ImplVar(var_id) = value else { return value.default_rewrite(self); };
         let var = var_id.get(self.get_db());
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
         let var = ImplVar {
@@ -241,9 +233,7 @@ impl<'db> HasDb<&'db dyn SemanticGroup> for Mapper<'db> {
 add_basic_rewrites!(<'a>, Mapper<'a>, MapperError, @exclude TypeLongId ImplId);
 impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: TypeLongId) -> Result<TypeLongId, MapperError> {
-        let TypeLongId::Var(var) = value else {
-            return value.default_rewrite(self);
-        };
+        let TypeLongId::Var(var) = value else { return value.default_rewrite(self); };
         let id = self
             .mapping
             .type_var_mapping
@@ -255,9 +245,7 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
 }
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
     fn rewrite(&mut self, value: ImplId) -> Result<ImplId, MapperError> {
-        let ImplId::ImplVar(var_id) = value else {
-            return value.default_rewrite(self);
-        };
+        let ImplId::ImplVar(var_id) = value else { return value.default_rewrite(self); };
         let var = var_id.get(self.get_db());
         let id = self
             .mapping
