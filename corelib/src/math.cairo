@@ -1,7 +1,7 @@
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use traits::{Into, TryInto};
 use option::OptionTrait;
-use integer::{u256_wide_mul, u512_safe_div_rem_by_u256};
+use integer::{u256_wide_mul, u512_safe_div_rem_by_u256, U128MulGuarantee};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are
@@ -77,9 +77,38 @@ fn inv_mod<
     }
 }
 
+/// Returns `1 / b (mod n)`, or None if `b` is not invertible modulo `n`.
+/// Additionally returns several `U128MulGuarantee`s that are required for validating the
+/// calculation.
+extern fn u256_guarantee_inv_mod_n(
+    b: u256, n: NonZero<u256>
+) -> Result<
+    (
+        NonZero<u256>,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee,
+        U128MulGuarantee
+    ),
+    (U128MulGuarantee, U128MulGuarantee)
+> implicits(RangeCheck) nopanic;
+
+/// Returns the inverse of `a` modulo `n`, or None if `a` is not invertible modulo `n`.
+#[inline(always)]
+fn u256_inv_mod(a: u256, n: NonZero<u256>) -> Option<NonZero<u256>> {
+    match u256_guarantee_inv_mod_n(a, n) {
+        Result::Ok((inv_a, _, _, _, _, _, _, _, _)) => Option::Some(inv_a),
+        Result::Err(_) => Option::None(())
+    }
+}
+
 /// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
-fn u256_div_mod_n(a: u256, b: NonZero<u256>, n: NonZero<u256>) -> Option<u256> {
-    Option::Some(u256_mul_mod_n(a, inv_mod(b, n)?, n))
+fn u256_div_mod_n(a: u256, b: u256, n: NonZero<u256>) -> Option<u256> {
+    Option::Some(u256_mul_mod_n(a, u256_inv_mod(b, n)?.into(), n))
 }
 
 /// Returns `a * b (mod n)`.
