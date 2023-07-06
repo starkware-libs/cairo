@@ -301,26 +301,22 @@ fn declaration_method_impl(
     let deserialization_code = if ret_decode.is_empty() {
         RewriteNode::Text("()".to_string())
     } else {
-        RewriteNode::Text(
-            if unwrap {
-                ret_decode.clone()
-            } else {
-                ret_decode.split("\n").map(|x| format!("    {x}")).join("\n")
-            }
-        )
+        RewriteNode::Text(if unwrap {
+            ret_decode.clone()
+        } else {
+            ret_decode.split('\n').map(|x| format!("    {x}")).join("\n")
+        })
     };
     let return_code = RewriteNode::interpolate_patched(
         if unwrap {
             "let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         $deserialization_code$"
-        } else {
-            if ret_decode.is_empty() {
-                "let mut ret_data = ret_data?;
+        } else if ret_decode.is_empty() {
+            "let mut ret_data = ret_data?;
         Result::Ok($deserialization_code$)"
-            } else {
-                "let mut ret_data = ret_data?;
+        } else {
+            "let mut ret_data = ret_data?;
         Result::Ok(\n        $deserialization_code$\n        )"
-            }
         },
         [("deserialization_code".to_string(), deserialization_code)].into(),
     );
