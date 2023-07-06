@@ -2,6 +2,7 @@ use cairo_lang_sierra::extensions::ap_tracking::ApTrackingConcreteLibfunc;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
+use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc;
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -272,6 +273,14 @@ pub fn core_libfunc_ap_change<InfoProvider: InvocationApChangeInfoProvider>(
         CoreConcreteLibfunc::Felt252DictEntry(libfunc) => match libfunc {
             Felt252DictEntryConcreteLibfunc::Get(_) => vec![ApChange::Known(0)],
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ApChange::Known(0)],
+        },
+        CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
+            Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
+                vec![ApChange::Known(0)]
+            }
+            Bytes31ConcreteLibfunc::TryFromFelt252(_) => {
+                vec![ApChange::Known(5), ApChange::Known(6)]
+            }
         },
     }
 }

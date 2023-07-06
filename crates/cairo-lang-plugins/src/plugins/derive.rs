@@ -294,7 +294,7 @@ fn get_panic_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
         ExtraInfo::Struct { members, type_generics, other_generics } => {
             formatdoc! {"
                     impl {name}PanicDestruct{generics_impl} of PanicDestruct::<{name}{generics}> {{
-                        fn destruct(self: {name}{generics}, ref panic: Panic) nopanic {{
+                        fn panic_destruct(self: {name}{generics}, ref panic: Panic) nopanic {{
                             {}
                         }}
                     }}

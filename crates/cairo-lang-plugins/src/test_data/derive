@@ -75,7 +75,7 @@ impl TwoMemberStructDestruct<> of Destruct::<TwoMemberStruct<>> {
     }
 }
 impl TwoMemberStructPanicDestruct<> of PanicDestruct::<TwoMemberStruct<>> {
-    fn destruct(self: TwoMemberStruct<>, ref panic: Panic) nopanic {
+    fn panic_destruct(self: TwoMemberStruct<>, ref panic: Panic) nopanic {
         traits::PanicDestruct::panic_destruct(self.a, ref panic);
         traits::PanicDestruct::panic_destruct(self.b, ref panic);
     }
@@ -118,7 +118,7 @@ impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<Generic
     }
 }
 impl GenericStructPanicDestruct<T, impl TPanicDestruct: PanicDestruct<T>> of PanicDestruct::<GenericStruct<T, >> {
-    fn destruct(self: GenericStruct<T, >, ref panic: Panic) nopanic {
+    fn panic_destruct(self: GenericStruct<T, >, ref panic: Panic) nopanic {
         traits::PanicDestruct::panic_destruct(self.a, ref panic);
     }
 }
