@@ -13,13 +13,7 @@ itertools.workspace = true
 salsa.workspace = true
 
 [dev-dependencies]
-<<<<<<< HEAD
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros" }
-||||||| 87570bdf9
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.0.0" }
-=======
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.0.1" }
->>>>>>> origin/dev-v2.0.1
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

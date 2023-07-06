@@ -19,13 +19,7 @@ salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-<<<<<<< HEAD
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
-||||||| 87570bdf9
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.0" }
-=======
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.1" }
->>>>>>> origin/dev-v2.0.1
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true
