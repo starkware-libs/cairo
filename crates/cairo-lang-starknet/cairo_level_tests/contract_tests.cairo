@@ -333,10 +333,7 @@ struct B {
 }
 
 #[derive(starknet::Event, PartialEq, Drop, Clone)]
-enum MyEventEnum {
-    A: A,
-    B: B,
-}
+enum MyEventEnum {A: A, B: B, }
 
 fn event_serde_tester<
     T,

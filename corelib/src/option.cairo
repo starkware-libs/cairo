@@ -2,10 +2,7 @@ use array::ArrayTrait;
 use serde::Serde;
 use array::SpanTrait;
 
-enum Option<T> {
-    Some: T,
-    None,
-}
+enum Option<T> {Some: T, None, }
 
 impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<T>> {
     fn serialize(self: @Option<T>, ref output: Array<felt252>) {
@@ -14,7 +11,7 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
                 0.serialize(ref output);
                 x.serialize(ref output)
             },
-            Option::None => 1.serialize(ref output),
+            Option::None=> 1.serialize(ref output),
         }
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
