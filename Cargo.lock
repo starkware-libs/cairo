@@ -498,6 +498,7 @@ dependencies = [
 name = "cairo-lang-diagnostics"
 version = "2.0.1"
 dependencies = [
+ "cairo-lang-debug",
  "cairo-lang-filesystem",
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
