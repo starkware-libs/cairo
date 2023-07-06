@@ -198,6 +198,14 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
         self.variables.new_var(req)
     }
 
+    /// Same as `new_var` but returns it as a `VarUsage`.
+    /// This is useful when the variable definition and usage locations are the same.
+    pub fn new_var_usage(&mut self, req: VarRequest) -> VarUsage {
+        let location = req.location;
+
+        VarUsage { var_id: self.variables.new_var(req), location }
+    }
+
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
         self.variables.get_location(stable_ptr)
@@ -248,10 +256,7 @@ impl LoweredExpr {
                 Ok(generators::StructConstruct { inputs, ty, location }
                     .add(ctx, &mut builder.statements))
             }
-            LoweredExpr::ExternEnum(extern_enum) => {
-                let location = extern_enum.location;
-                Ok(VarUsage { var_id: extern_enum.var(ctx, builder)?, location })
-            }
+            LoweredExpr::ExternEnum(extern_enum) => extern_enum.as_var_usage(ctx, builder),
             LoweredExpr::Member(member_path, _location) => {
                 Ok(builder.get_ref(ctx, &member_path).unwrap())
             }
@@ -266,14 +271,6 @@ impl LoweredExpr {
                 Ok(VarUsage { var_id: snapshot, location })
             }
         }
-    }
-
-    pub fn var(
-        self,
-        ctx: &mut LoweringContext<'_, '_>,
-        builder: &mut BlockBuilder,
-    ) -> Result<VariableId, LoweringFlowError> {
-        Ok(self.as_var_usage(ctx, builder)?.var_id)
     }
 
     pub fn ty(&self, ctx: &mut LoweringContext<'_, '_>) -> semantic::TypeId {
@@ -300,16 +297,16 @@ impl LoweredExpr {
 pub struct LoweredExprExternEnum {
     pub function: semantic::FunctionId,
     pub concrete_enum_id: semantic::ConcreteEnumId,
-    pub inputs: Vec<VariableId>,
+    pub inputs: Vec<VarUsage>,
     pub member_paths: Vec<semantic::ExprVarMemberPath>,
     pub location: LocationId,
 }
 impl LoweredExprExternEnum {
-    pub fn var(
+    pub fn as_var_usage(
         self,
         ctx: &mut LoweringContext<'_, '_>,
         builder: &mut BlockBuilder,
-    ) -> LoweringResult<VariableId> {
+    ) -> LoweringResult<VarUsage> {
         let concrete_variants = ctx
             .db
             .concrete_enum_variants(self.concrete_enum_id)
@@ -365,11 +362,7 @@ impl LoweredExprExternEnum {
 
         let match_info = MatchInfo::Extern(MatchExternInfo {
             function: self.function.lowered(ctx.db),
-            inputs: self
-                .inputs
-                .into_iter()
-                .map(|var_id| VarUsage { var_id, location: ctx.variables[var_id].location })
-                .collect(),
+            inputs: self.inputs,
             arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
                 .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
                 .collect(),
@@ -377,7 +370,7 @@ impl LoweredExprExternEnum {
         });
         builder
             .merge_and_end_with_match(ctx, match_info, sealed_blocks, self.location)?
-            .var(ctx, builder)
+            .as_var_usage(ctx, builder)
     }
 }
 
@@ -388,8 +381,8 @@ pub type LoweringResult<T> = Result<T, LoweringFlowError>;
 pub enum LoweringFlowError {
     /// Computation failure. A corresponding diagnostic should be emitted.
     Failed(DiagnosticAdded),
-    Panic(VariableId, LocationId),
-    Return(VariableId, LocationId),
+    Panic(VarUsage, LocationId),
+    Return(VarUsage, LocationId),
     /// Every match arm is terminating - does not flow to parent builder
     /// e.g. returns or panics.
     Match(MatchInfo),
@@ -430,15 +423,14 @@ pub fn lowering_flow_error_to_sealed_block(
             }
             .add(ctx, &mut builder.statements);
             let err_instance = generators::StructConstruct {
-                inputs: vec![panic_instance, VarUsage { var_id: data_var, location }],
+                inputs: vec![panic_instance, data_var],
                 ty: ctx.db.intern_type(TypeLongId::Tuple(vec![
                     ctx.variables[panic_instance.var_id].ty,
-                    ctx.variables[data_var].ty,
+                    ctx.variables[data_var.var_id].ty,
                 ])),
                 location,
             }
-            .add(ctx, &mut builder.statements)
-            .var_id;
+            .add(ctx, &mut builder.statements);
             builder.panic(ctx, err_instance)?;
         }
         LoweringFlowError::Match(info) => {

@@ -15,7 +15,9 @@ use cairo_lang_casm::operand::{
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_utils::bigint::BigIntAsHex;
 use cairo_lang_utils::extract_matches;
-use cairo_vm::hint_processor::hint_processor_definition::{HintProcessor, HintReference};
+use cairo_vm::hint_processor::hint_processor_definition::{
+    HintProcessor, HintProcessorLogic, HintReference,
+};
 use cairo_vm::serde::deserialize_program::{
     ApTracking, BuiltinName, FlowTrackingData, HintParams, ReferenceManager,
 };
@@ -26,7 +28,7 @@ use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use cairo_vm::vm::errors::memory_errors::MemoryError;
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
-use cairo_vm::vm::runners::cairo_runner::{CairoRunner, RunResources};
+use cairo_vm::vm::runners::cairo_runner::{CairoRunner, ResourceTracker, RunResources};
 use cairo_vm::vm::vm_core::VirtualMachine;
 use dict_manager::DictManagerExecScope;
 use num_bigint::BigUint;
@@ -92,6 +94,8 @@ pub struct CairoHintProcessor<'a> {
     pub string_to_hint: HashMap<String, Hint>,
     // The starknet state.
     pub starknet_state: StarknetState,
+    // Maintains the resources of the run.
+    pub run_resources: RunResources,
 }
 
 pub fn cell_ref_to_relocatable(cell_ref: &CellRef, vm: &VirtualMachine) -> Relocatable {
@@ -220,7 +224,7 @@ fn get_double_deref_maybe(
 }
 
 /// Extracts a parameter assumed to be a buffer, and converts it into a relocatable.
-fn extract_relocatable(
+pub fn extract_relocatable(
     vm: &VirtualMachine,
     buffer: &ResOperand,
 ) -> Result<Relocatable, VirtualMachineError> {
@@ -309,7 +313,7 @@ fn get_maybe(
     }
 }
 
-impl HintProcessor for CairoHintProcessor<'_> {
+impl HintProcessorLogic for CairoHintProcessor<'_> {
     /// Trait function to execute a given hint in the hint processor.
     fn execute_hint(
         &mut self,
@@ -317,7 +321,6 @@ impl HintProcessor for CairoHintProcessor<'_> {
         exec_scopes: &mut ExecutionScopes,
         hint_data: &Box<dyn Any>,
         _constants: &HashMap<String, Felt252>,
-        _run_resources: &mut RunResources,
     ) -> Result<(), HintError> {
         let hint = hint_data.downcast_ref::<Hint>().unwrap();
         let hint = match hint {
@@ -361,8 +364,26 @@ impl HintProcessor for CairoHintProcessor<'_> {
     }
 }
 
+impl ResourceTracker for CairoHintProcessor<'_> {
+    fn consumed(&self) -> bool {
+        self.run_resources.consumed()
+    }
+
+    fn consume_step(&mut self) {
+        self.run_resources.consume_step()
+    }
+
+    fn get_n_steps(&self) -> Option<usize> {
+        self.run_resources.get_n_steps()
+    }
+
+    fn run_resources(&self) -> &RunResources {
+        self.run_resources.run_resources()
+    }
+}
+
 /// Wrapper trait for a VM owner.
-trait VMWrapper {
+pub trait VMWrapper {
     fn vm(&mut self) -> &mut VirtualMachine;
 }
 impl VMWrapper for VirtualMachine {
@@ -384,7 +405,7 @@ fn segment_with_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
 }
 
 /// A helper struct to continuously write and read from a buffer in the VM memory.
-struct MemBuffer<'a> {
+pub struct MemBuffer<'a> {
     /// The VM to write to.
     /// This is a trait so that we would borrow the actual VM only once.
     vm: &'a mut dyn VMWrapper,
@@ -393,12 +414,12 @@ struct MemBuffer<'a> {
 }
 impl<'a> MemBuffer<'a> {
     /// Creates a new buffer.
-    fn new(vm: &'a mut dyn VMWrapper, ptr: Relocatable) -> Self {
+    pub fn new(vm: &'a mut dyn VMWrapper, ptr: Relocatable) -> Self {
         Self { vm, ptr }
     }
 
     /// Creates a new segment and returns a buffer wrapping it.
-    fn new_segment(vm: &'a mut dyn VMWrapper) -> Self {
+    pub fn new_segment(vm: &'a mut dyn VMWrapper) -> Self {
         let ptr = vm.vm().add_memory_segment();
         Self::new(vm, ptr)
     }
@@ -413,29 +434,37 @@ impl<'a> MemBuffer<'a> {
     /// Returns the felt252 value in the current position of the buffer and advances it by one.
     /// Fails if the value is not a felt252.
     /// Borrows the buffer since a reference is returned.
-    fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
+    pub fn next_felt252(&mut self) -> Result<Cow<'_, Felt252>, MemoryError> {
         let ptr = self.next();
         self.vm.vm().get_integer(ptr)
+    }
+
+    /// Returns the bool value in the current position of the buffer and advances it by one.
+    /// Fails with `MemoryError` if the value is not a felt252.
+    /// Panics if the value is not a bool.
+    fn next_bool(&mut self) -> Result<bool, MemoryError> {
+        let ptr = self.next();
+        Ok(!(self.vm.vm().get_integer(ptr)?.is_zero()))
     }
 
     /// Returns the usize value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a usize.
-    fn next_usize(&mut self) -> Result<usize, MemoryError> {
+    pub fn next_usize(&mut self) -> Result<usize, MemoryError> {
         Ok(self.next_felt252()?.to_usize().unwrap())
     }
 
     /// Returns the u128 value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a u128.
-    fn next_u128(&mut self) -> Result<u128, MemoryError> {
+    pub fn next_u128(&mut self) -> Result<u128, MemoryError> {
         Ok(self.next_felt252()?.to_u128().unwrap())
     }
 
     /// Returns the u64 value in the current position of the buffer and advances it by one.
     /// Fails with `MemoryError` if the value is not a felt252.
     /// Panics if the value is not a u64.
-    fn next_u64(&mut self) -> Result<u64, MemoryError> {
+    pub fn next_u64(&mut self) -> Result<u64, MemoryError> {
         Ok(self.next_felt252()?.to_u64().unwrap())
     }
 
@@ -443,13 +472,13 @@ impl<'a> MemBuffer<'a> {
     /// it by two.
     /// Fails with `MemoryError` if any of the next two values are not felt252s.
     /// Panics if any of the next two values are not u128.
-    fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
+    pub fn next_u256(&mut self) -> Result<BigUint, MemoryError> {
         Ok(self.next_u128()? + BigUint::from(self.next_u128()?).shl(128))
     }
 
     /// Returns the address value in the current position of the buffer and advances it by one.
     /// Fails if the value is not an address.
-    fn next_addr(&mut self) -> Result<Relocatable, MemoryError> {
+    pub fn next_addr(&mut self) -> Result<Relocatable, MemoryError> {
         let ptr = self.next();
         self.vm.vm().get_relocatable(ptr)
     }
@@ -457,20 +486,20 @@ impl<'a> MemBuffer<'a> {
     /// Returns the array of integer values pointed to by the two next addresses in the buffer and
     /// advances it by two. Will fail if the two values are not addresses or if the addresses do
     /// not point to an array of integers.
-    fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
+    pub fn next_arr(&mut self) -> Result<Vec<Felt252>, HintError> {
         let start = self.next_addr()?;
         let end = self.next_addr()?;
         vm_get_range(self.vm.vm(), start, end)
     }
 
     /// Writes a value to the current position of the buffer and advances it by one.
-    fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
+    pub fn write<T: Into<MaybeRelocatable>>(&mut self, value: T) -> Result<(), MemoryError> {
         let ptr = self.next();
         self.vm.vm().insert_value(ptr, value)
     }
     /// Writes an iterator of values starting from the current position of the buffer and advances
     /// it to after the end of the written value.
-    fn write_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    pub fn write_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
@@ -482,7 +511,7 @@ impl<'a> MemBuffer<'a> {
 
     /// Writes an array into a new segment and writes the start and end pointers to the current
     /// position of the buffer. Advances the buffer by two.
-    fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
@@ -593,7 +622,7 @@ impl<'a> CairoHintProcessor<'a> {
                 secp256k1_get_point_from_x(
                     gas_counter,
                     system_buffer.next_u256()?,
-                    system_buffer.next_felt252()?.is_zero(),
+                    system_buffer.next_bool()?,
                     exec_scopes,
                 )
             }),
@@ -628,7 +657,7 @@ impl<'a> CairoHintProcessor<'a> {
                 secp256r1_get_point_from_x(
                     gas_counter,
                     system_buffer.next_u256()?,
-                    system_buffer.next_felt252()?.is_zero(),
+                    system_buffer.next_bool()?,
                     exec_scopes,
                 )
             }),
@@ -1126,9 +1155,7 @@ fn secp256k1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, 500);
-    if m >= <secp256k1::Fr as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Scalar out of range");
-    }
+
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let product = *p * secp256k1::Fr::from(m);
@@ -1150,10 +1177,10 @@ fn secp256k1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)| match (smaller.0.is_even(), y_parity) {
-            (true, true) | (false, false) => smaller,
-            (true, false) | (false, true) => greater,
-        })
+        .map(|(smaller, greater)|
+            // Return the correct y coordinate based on the parity.
+            if smaller.0.is_odd() == y_parity { smaller } else { greater }
+        )
         .map(|y| secp256k1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
     let Some(p) = maybe_p else {
@@ -1254,9 +1281,7 @@ fn secp256r1_mul(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, 500);
-    if m >= <secp256r1::Fr as PrimeField>::MODULUS.into() {
-        fail_syscall!(b"Scalar out of range");
-    }
+
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let product = *p * secp256r1::Fr::from(m);
@@ -1278,10 +1303,9 @@ fn secp256r1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)| match (smaller.0.is_even(), y_parity) {
-            (true, true) | (false, false) => smaller,
-            (true, false) | (false, true) => greater,
-        })
+        .map(|(smaller, greater)|
+            // Return the correct y coordinate based on the parity.
+            if smaller.0.is_odd() == y_parity { smaller } else { greater })
         .map(|y| secp256r1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
     let Some(p) = maybe_p else {
@@ -1810,7 +1834,7 @@ fn read_array_result_as_vec(memory: &[Option<Felt252>], value: &[Felt252]) -> Ve
 }
 
 /// Loads a range of values from the VM memory.
-fn vm_get_range(
+pub fn vm_get_range(
     vm: &mut VirtualMachine,
     mut calldata_start_ptr: Relocatable,
     calldata_end_ptr: Relocatable,
@@ -1825,7 +1849,7 @@ fn vm_get_range(
 }
 
 /// Extracts a parameter assumed to be a buffer.
-fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
+pub fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),
         ResOperand::BinOp(BinOpOperand { op: Operation::Add, a, b }) => {
@@ -1862,6 +1886,7 @@ where
         runner: None,
         string_to_hint,
         starknet_state: StarknetState::default(),
+        run_resources: RunResources::default(),
     };
     run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
         .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
@@ -1908,9 +1933,7 @@ where
 
     additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
 
-    runner
-        .run_until_pc(end, &mut RunResources::default(), &mut vm, hint_processor)
-        .map_err(CairoRunError::from)?;
+    runner.run_until_pc(end, &mut vm, hint_processor).map_err(CairoRunError::from)?;
     runner.end_run(true, false, &mut vm, hint_processor).map_err(CairoRunError::from)?;
     runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))

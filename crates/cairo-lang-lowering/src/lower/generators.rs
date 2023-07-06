@@ -70,14 +70,15 @@ impl Call {
         let returns = self
             .ret_tys
             .into_iter()
-            .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
+            .map(|ty| ctx.new_var_usage(VarRequest { ty, location: self.location }))
             .collect();
         let extra_outputs = self
             .extra_ret_tys
             .into_iter()
-            .map(|ty| ctx.new_var(VarRequest { ty, location: self.location }))
+            .map(|ty| ctx.new_var_usage(VarRequest { ty, location: self.location }))
             .collect();
-        let outputs = chain!(&extra_outputs, &returns).copied().collect();
+        let outputs =
+            chain!(&extra_outputs, &returns).map(|var_usage: &VarUsage| var_usage.var_id).collect();
 
         builder.push_statement(Statement::Call(StatementCall {
             function: self.function,
@@ -92,9 +93,9 @@ impl Call {
 /// Result of adding a Call statement.
 pub struct CallResult {
     /// Output variables for function's return value.
-    pub returns: Vec<VariableId>,
+    pub returns: Vec<VarUsage>,
     /// Output variables for function's `ref` parameters.
-    pub extra_outputs: Vec<VariableId>,
+    pub extra_outputs: Vec<VarUsage>,
 }
 
 /// Generator for [StatementEnumConstruct].

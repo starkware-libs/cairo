@@ -68,9 +68,9 @@ pub trait RebuilderEx: Rebuilder {
     /// Apply map_var_id to all the variable in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
         let mut remapping = VarRemapping {
-            remapping: OrderedHashMap::from_iter(
-                remapping.iter().map(|(dst, src)| (self.map_var_id(*dst), self.map_var_id(*src))),
-            ),
+            remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
+                (self.map_var_id(*dst), self.map_var_usage(*src_var_usage))
+            })),
         };
         self.transform_remapping(&mut remapping);
         remapping
@@ -80,9 +80,9 @@ pub trait RebuilderEx: Rebuilder {
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
             FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
-                returns.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
+                returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
             ),
-            FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_id(*data)),
+            FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_usage(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {
                 FlatBlockEnd::Goto(self.map_block_id(*block_id), self.rebuild_remapping(remapping))
             }

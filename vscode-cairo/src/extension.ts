@@ -53,7 +53,9 @@ function isExecutable(path: string): boolean {
 }
 
 function replacePathPlaceholders(path: string, root: string): string {
-  return path.replace(/\${workspaceFolder}/g, root);
+  return path
+    .replace(/\${workspaceFolder}/g, root)
+    .replace(/\${userHome}/g, process.env.HOME ?? "");
 }
 
 function findLanguageServerExecutable(

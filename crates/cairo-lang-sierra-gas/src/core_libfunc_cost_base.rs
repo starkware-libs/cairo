@@ -3,6 +3,7 @@ use std::iter;
 use cairo_lang_sierra::extensions::array::ArrayConcreteLibfunc;
 use cairo_lang_sierra::extensions::boolean::BoolConcreteLibfunc;
 use cairo_lang_sierra::extensions::boxing::BoxConcreteLibfunc;
+use cairo_lang_sierra::extensions::bytes31::Bytes31ConcreteLibfunc;
 use cairo_lang_sierra::extensions::casts::CastConcreteLibfunc;
 use cairo_lang_sierra::extensions::core::CoreConcreteLibfunc::{self, *};
 use cairo_lang_sierra::extensions::ec::EcConcreteLibfunc;
@@ -362,6 +363,15 @@ pub fn core_libfunc_cost(
             }
             Felt252DictEntryConcreteLibfunc::Finalize(_) => vec![ConstCost::steps(1).into()],
         },
+        CoreConcreteLibfunc::Bytes31(libfunc) => match libfunc {
+            Bytes31ConcreteLibfunc::Const(_) | Bytes31ConcreteLibfunc::ToFelt252(_) => {
+                vec![ConstCost::default().into()]
+            }
+            Bytes31ConcreteLibfunc::TryFromFelt252(_) => vec![
+                (ConstCost { steps: 7, holes: 0, range_checks: 3 }).into(),
+                (ConstCost { steps: 9, holes: 0, range_checks: 3 }).into(),
+            ],
+        },
     }
 }
 
@@ -584,7 +594,7 @@ fn u256_libfunc_cost(libfunc: &Uint256Concrete) -> Vec<ConstCost> {
         Uint256Concrete::IsZero(_) => {
             vec![steps(2), steps(2)]
         }
-        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 29, holes: 0, range_checks: 8 }],
+        Uint256Concrete::Divmod(_) => vec![ConstCost { steps: 26, holes: 0, range_checks: 6 }],
         Uint256Concrete::SquareRoot(_) => vec![ConstCost { steps: 30, holes: 0, range_checks: 7 }],
     }
 }

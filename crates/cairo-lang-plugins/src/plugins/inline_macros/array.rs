@@ -16,7 +16,7 @@ impl InlineMacro for ArrayMacro {
             .to_string();
         for arg in args {
             expanded_code.push_str(&format!(
-                "\n            __array_builder_macro_result__.append({});",
+                "\n            array::ArrayTrait::append(ref __array_builder_macro_result__, {});",
                 arg.as_syntax_node().get_text(db)
             ));
         }

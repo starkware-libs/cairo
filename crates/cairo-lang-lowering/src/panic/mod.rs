@@ -183,7 +183,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
     fn handle_call_panic(&mut self, call: &StatementCall) -> Maybe<(BlockId, FlatBlockEnd)> {
         // Extract return variable.
         let mut original_outputs = call.outputs.clone();
-        let location = self.ctx.variables.variables[original_outputs[0]].location;
+        let location = call.location.with_auto_generation_note(self.db(), "Panic handling");
 
         // Get callee info.
         let callee_signature = call.function.signature(self.ctx.variables.db)?;
@@ -227,15 +227,22 @@ impl<'a> PanicBlockLoweringContext<'a> {
             })],
             end: FlatBlockEnd::Goto(
                 block_continuation,
-                VarRemapping { remapping: zip_eq(original_outputs, inner_ok_values).collect() },
+                VarRemapping {
+                    remapping: zip_eq(
+                        original_outputs,
+                        inner_ok_values.into_iter().map(|var_id| VarUsage { var_id, location }),
+                    )
+                    .collect(),
+                },
             ),
         });
 
         // Prepare Err() match arm block.
         let err_var = self.new_var(VarRequest { ty: self.ctx.panic_info.err_variant.ty, location });
-        let block_err = self
-            .ctx
-            .enqueue_block(FlatBlock { statements: vec![], end: FlatBlockEnd::Panic(err_var) });
+        let block_err = self.ctx.enqueue_block(FlatBlock {
+            statements: vec![],
+            end: FlatBlockEnd::Panic(VarUsage { var_id: err_var, location }),
+        });
 
         let cur_block_end = FlatBlockEnd::Match {
             info: MatchInfo::Enum(MatchEnumInfo {
@@ -266,26 +273,24 @@ impl<'a> PanicBlockLoweringContext<'a> {
             FlatBlockEnd::Panic(err_data) => {
                 // Wrap with PanicResult::Err.
                 let ty = self.ctx.panic_info.panic_ty;
-                let location = self.ctx.variables[err_data].location;
+                let location = err_data.location;
                 let output = self.new_var(VarRequest { ty, location });
                 self.statements.push(Statement::EnumConstruct(StatementEnumConstruct {
                     variant: self.ctx.panic_info.err_variant.clone(),
-                    input: VarUsage { var_id: err_data, location },
+                    input: err_data,
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::Return(returns) => {
-                let location = self.ctx.variables[returns[0]].location;
+                // The last var usage is the "real" return value (not implicit or ref).
+                let location = returns.last().unwrap().location;
 
                 // Tuple construction.
                 let tupled_res =
                     self.new_var(VarRequest { ty: self.ctx.panic_info.ok_ty, location });
                 self.statements.push(Statement::StructConstruct(StatementStructConstruct {
-                    inputs: returns
-                        .into_iter()
-                        .map(|var_id| VarUsage { var_id, location })
-                        .collect(),
+                    inputs: returns,
                     output: tupled_res,
                 }));
 
@@ -297,7 +302,7 @@ impl<'a> PanicBlockLoweringContext<'a> {
                     input: VarUsage { var_id: tupled_res, location },
                     output,
                 }));
-                FlatBlockEnd::Return(vec![output])
+                FlatBlockEnd::Return(vec![VarUsage { var_id: output, location }])
             }
             FlatBlockEnd::NotSet => unreachable!(),
             FlatBlockEnd::Match { info } => FlatBlockEnd::Match { info },

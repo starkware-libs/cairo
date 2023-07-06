@@ -186,10 +186,9 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     ) {
         info.apply_remapping(
             self,
-            remapping
-                .iter()
-                .enumerate()
-                .map(|(idx, (dst, src))| (dst, (src, UseLocation { statement_location, idx }))),
+            remapping.iter().enumerate().map(|(idx, (dst, src))| {
+                (dst, (&src.var_id, UseLocation { statement_location, idx }))
+            }),
         );
         for (idx, (dst, _src)) in remapping.iter().enumerate() {
             if self.local_vars.contains(dst) {
@@ -239,14 +238,14 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = SierraDemand::default();
         info.variables_used(
             self,
-            vars.iter()
-                .enumerate()
-                .map(|(idx, var_id)| (var_id, UseLocation { statement_location, idx })),
+            vars.iter().enumerate().map(|(idx, VarUsage { var_id, .. })| {
+                (var_id, UseLocation { statement_location, idx })
+            }),
         );
         info
     }
@@ -254,7 +253,7 @@ impl<'a> Analyzer<'_> for VariableLifetimeContext<'a> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _var: &VariableId,
+        _var: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.")
     }

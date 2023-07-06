@@ -1,21 +1,39 @@
 #[cfg(test)]
-#[path = "delay_var_def_test.rs"]
+#[path = "reorder_statements_test.rs"]
 mod test;
 
 use std::cmp::Reverse;
 
+use cairo_lang_semantic::corelib;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::Itertools;
 
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
-use crate::{BlockId, FlatLowered, MatchInfo, Statement, VarRemapping, VariableId};
+use crate::db::LoweringGroup;
+use crate::ids::{FunctionId, FunctionLongId};
+use crate::{
+    BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
+};
 
-/// Moves var definitions closer to their usage point and removes unused var.
-/// Currently only moves consts and empty structs.
-/// Remove unnessary remapping before this optimization will result in better code.
-pub fn delay_var_def(lowered: &mut FlatLowered) {
+/// Reorder the statments in the lowering in order to move variable definitions closer to their
+/// usage. Statement with no side effects and unused outputs are removed.
+///
+/// The list of call statements that can be moved is currently hardcoded.
+///
+/// Removing unnessary remapping before this optimization will result in better code.
+pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
-        let ctx = DelayDefsContext { lowered: &*lowered, statement_to_move: vec![] };
+        let semantic_db = db.upcast();
+        let bool_not_func_id = db.intern_lowering_function(FunctionLongId::Semantic(
+            corelib::get_core_function_id(semantic_db, "bool_not_impl".into(), vec![]),
+        ));
+
+        let ctx = ReorderStatementsContext {
+            lowered: &*lowered,
+            moveable_functions: [bool_not_func_id].into_iter().collect(),
+            statement_to_move: vec![],
+        };
         let mut analysis =
             BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: ctx };
         analysis.get_root_info();
@@ -56,19 +74,26 @@ pub fn delay_var_def(lowered: &mut FlatLowered) {
 }
 
 #[derive(Clone, Default)]
-pub struct DelayDefsInfo {
+pub struct ReorderStatementsInfo {
     // A mapping from var_id to a candidate location that it can be moved to.
     // If the variable is used in multiple match arms we define the next use to be
     // the match.
     next_use: OrderedHashMap<VariableId, StatementLocation>,
 }
 
-pub struct DelayDefsContext<'a> {
+pub struct ReorderStatementsContext<'a> {
     lowered: &'a FlatLowered,
+    // A list of function that can be moved.
+    moveable_functions: UnorderedHashSet<FunctionId>,
     statement_to_move: Vec<(StatementLocation, Option<StatementLocation>)>,
 }
-impl Analyzer<'_> for DelayDefsContext<'_> {
-    type Info = DelayDefsInfo;
+impl ReorderStatementsContext<'_> {
+    fn call_can_be_moved(&mut self, stmt: &StatementCall) -> bool {
+        self.moveable_functions.contains(&stmt.function)
+    }
+}
+impl Analyzer<'_> for ReorderStatementsContext<'_> {
+    type Info = ReorderStatementsInfo;
 
     fn visit_stmt(
         &mut self,
@@ -77,6 +102,10 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
         stmt: &Statement,
     ) {
         let var_to_move = match stmt {
+            Statement::Call(stmt) if self.call_can_be_moved(stmt) => {
+                assert_eq!(stmt.outputs.len(), 1, "Only calls with a single output can be moved");
+                stmt.outputs[0]
+            }
             Statement::Literal(stmt) => stmt.output,
             Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
             Statement::StructDestructure(stmt)
@@ -94,7 +123,22 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
             }
         };
 
-        self.statement_to_move.push((statement_location, info.next_use.swap_remove(&var_to_move)));
+        let optional_target_location = info.next_use.swap_remove(&var_to_move);
+        if let Some(target_location) = optional_target_location {
+            // If the statement is not removed add demand for its inputs.
+            for var_usage in stmt.inputs() {
+                match info.next_use.entry(var_usage.var_id) {
+                    indexmap::map::Entry::Occupied(mut e) => {
+                        // Since we don't know where `e.get()` and `target_locaton` converge
+                        // we use `statement_location` as a conservative estimate.
+                        &e.insert(statement_location)
+                    }
+                    indexmap::map::Entry::Vacant(e) => e.insert(target_location),
+                };
+            }
+        }
+
+        self.statement_to_move.push((statement_location, optional_target_location));
     }
 
     fn visit_goto(
@@ -104,7 +148,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
         _target_block_id: BlockId,
         remapping: &VarRemapping,
     ) {
-        for var_id in remapping.values() {
+        for VarUsage { var_id, .. } in remapping.values() {
             info.next_use.insert(*var_id, statement_location);
         }
     }
@@ -142,11 +186,11 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
     fn info_from_return(
         &mut self,
         statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut info = Self::Info::default();
-        for var_id in vars {
-            info.next_use.insert(*var_id, statement_location);
+        for var_usage in vars {
+            info.next_use.insert(var_usage.var_id, statement_location);
         }
         info
     }
@@ -154,7 +198,7 @@ impl Analyzer<'_> for DelayDefsContext<'_> {
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.");
     }

@@ -6,28 +6,27 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::optimize_matches;
+use super::reorder_statements;
 use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
 use crate::optimizations::remappings::optimize_remappings;
-use crate::optimizations::reorder_statements::reorder_statements;
-use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    match_optimizer,
+    reorder_statements,
     "src/optimizations/test_data",
     {
-        arm_pattern_destructure: "arm_pattern_destructure",
-        option :"option",
+        reorder_statements :"reorder_statements",
     },
-    test_match_optimizer
+    test_reorder_statements
 );
 
-fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_reorder_statements(
+    inputs: &OrderedHashMap<String, String>,
+) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
@@ -42,16 +41,14 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     let mut before =
         db.priv_concrete_function_with_body_lowered_flat(function_id).unwrap().deref().clone();
-    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
+    let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
     apply_inlining(db, function_id, &mut before).unwrap();
-    before = lower_panics(db, function_id, &before).unwrap();
-    reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
-    reorder_statements(db, &mut before);
+    reorganize_blocks(&mut before);
 
     let mut after = before.clone();
-    optimize_matches(&mut after);
+    reorder_statements(db, &mut after);
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),

@@ -49,13 +49,13 @@ End:
 test_function_lowering
 
 //! > function
-fn foo(x: ACopy, y: ADrop) {
+fn foo(x: ACopy, y: ADrop) -> ADrop {
   if true {
     use_a_copy(x);
-    use_a_drop1(y);
+    use_a_drop(y);
   } else {
   }
-  use_a_drop2(y);
+  y
 }
 
 //! > function_name
@@ -68,20 +68,19 @@ extern type ADrop;
 impl ADropDrop of Drop::<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
-extern fn use_a_drop1(x: ADrop) nopanic;
-extern fn use_a_drop2(x: ADrop) nopanic;
+extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
- --> lib.cairo:15:15
-  use_a_drop2(y);
-              ^
+ --> lib.cairo:14:3
+  y
+  ^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>. Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
- --> lib.cairo:9:8
-fn foo(x: ACopy, y: ADrop) {
+ --> lib.cairo:8:8
+fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 
 //! > lowering_flat
@@ -256,19 +255,20 @@ Parameters: v0: test::A
 
 //! > ==========================================================================
 
-//! > Test pushing of moved var.
+//! > Test pushing of moved var and returning moved variable
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
-fn foo(x: ADrop, mut y: ADrop) {
+fn foo(x: ADrop, mut y: ADrop) -> ADrop {
   if true {
     use_a_drop(y);
   } else {
     y = x;
   }
-  use_a_drop(y);
+
+  return y;
 }
 
 //! > function_name
@@ -284,9 +284,76 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
- --> lib.cairo:5:22
-fn foo(x: ADrop, mut y: ADrop) {
-                     ^
+ --> lib.cairo:12:10
+  return y;
+         ^
 
 //! > lowering_flat
 Parameters: v0: test::ADrop, v1: test::ADrop
+
+//! > ==========================================================================
+
+//! > Test panic with moved input.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+  let arr = array!['err_code'];
+  let mut b = arr;
+  b.append('bla');
+
+  panic(arr);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> inline_macros:10:9
+  panic(arr);
+        ^*^
+
+//! > lowering_flat
+Parameters:
+
+//! > ==========================================================================
+
+//! > Test match_extern on moved var.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(x: NonCopy) -> Option<NonCopy> {
+  use_non_copy(x);
+  do_match_extern(x)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+extern fn use_non_copy(x: NonCopy) nopanic;
+
+extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
+ --> lib.cairo:8:19
+  do_match_extern(x)
+                  ^
+
+//! > lowering_flat
+Parameters: v0: test::NonCopy

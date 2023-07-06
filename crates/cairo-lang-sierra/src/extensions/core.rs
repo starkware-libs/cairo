@@ -3,6 +3,7 @@ use super::array::{ArrayLibfunc, ArrayType};
 use super::bitwise::BitwiseType;
 use super::boolean::BoolLibfunc;
 use super::branch_align::BranchAlignLibfunc;
+use super::bytes31::{Bytes31Libfunc, Bytes31Type};
 use super::casts::CastLibfunc;
 use super::debug::DebugLibfunc;
 use super::drop::DropLibfunc;
@@ -82,6 +83,7 @@ define_type_hierarchy! {
         StarkNet(StarkNetType),
         SegmentArena(SegmentArenaType),
         Snapshot(SnapshotType),
+        Bytes31(Bytes31Type),
     }, CoreTypeConcrete
 }
 
@@ -124,5 +126,6 @@ define_libfunc_hierarchy! {
         StarkNet(StarkNetLibfunc),
         Debug(DebugLibfunc),
         SnapshotTake(SnapshotTakeLibfunc),
+        Bytes31(Bytes31Libfunc),
     }, CoreConcreteLibfunc
 }

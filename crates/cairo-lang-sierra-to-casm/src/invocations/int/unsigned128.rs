@@ -55,7 +55,7 @@ fn build_u128_overflowing_add(
             hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
-            // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
+            // Here we know that 2**128 <= a + b < 2 * 2**128 - 1.
             tempvar wrapping_a_plus_b = a_plus_b - u128_limit;
             assert wrapping_a_plus_b = *(range_check++);
             jump Target;

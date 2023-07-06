@@ -6,6 +6,24 @@ use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, Sysca
 use traits::{Into, TryInto};
 use integer::U256TryIntoNonZero;
 
+/// Secp256{k/r}1 ECDSA signature.
+#[derive(Copy, Drop, PartialEq, Serde, storage_access::StorageAccess)]
+struct Signature {
+    r: u256,
+    s: u256,
+    // The parity of the y coordinate of the ec point whose x coordinate is `r`.
+    // `y_parity` == true means that the y coordinate is odd.
+    // Some places use non boolean v instead of y_parity.
+    // In that case, `signature_from_vrs` should be used.
+    y_parity: bool,
+}
+
+
+/// Creates an ECDSA signature from the v, r and s values.
+fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
+    Signature { r, s, y_parity: v % 2 == 1,  }
+}
+
 trait Secp256Trait<Secp256Point> {
     fn get_curve_size() -> u256;
     fn get_generator_point() -> Secp256Point;
@@ -25,17 +43,15 @@ trait Secp256PointTrait<Secp256Point> {
 
 /// Receives a signature and the signed message hash.
 /// Returns the public key associated with the signer, represented as a point on the curve.
-/// Note:
-///   Some places use non boolean values for v.
-///   In that case, `recover_public_key_u32` may be a better match.
 fn recover_public_key<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
-    msg_hash: u256, r: u256, s: u256, y_parity: bool
+    msg_hash: u256, signature: Signature
 ) -> Option<Secp256Point> {
+    let Signature{r, s, y_parity } = signature;
     let r_point = Secp256Impl::secp256_ec_get_point_from_x_syscall(x: r, :y_parity)
         .unwrap_syscall()?;
     let generator_point = Secp256Impl::get_generator_point();
@@ -57,20 +73,6 @@ fn recover_public_key<
     Option::Some(minus_point1.add(point2).unwrap_syscall())
 }
 
-/// Same as `recover_public_key` but receives `v` of type `u32` instead of `y_parity`.
-/// Uses the parity of `v` as `y_parity`.
-fn recover_public_key_u32<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
->(
-    msg_hash: u256, r: u256, s: u256, v: u32
-) -> Option<Secp256Point> {
-    let y_parity = v % 2 == 0;
-    recover_public_key(:msg_hash, :r, :s, :y_parity)
-}
-
 /// Computes the negation of a scalar modulo N (the size of the curve).
 fn secp256_ec_negate_scalar<
     Secp256Point,
@@ -84,36 +86,22 @@ fn secp256_ec_negate_scalar<
 
 
 /// Verifies a Secp256 ECDSA signature.
-/// Also verifies that r and s are in the range (0, N), where N is the size of the curve.
+/// Also verifies that r and s components of the signature are in the range (0, N),
+/// where N is the size of the curve.
 fn verify_eth_signature<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
-    msg_hash: u256, r: u256, s: u256, y_parity: bool, eth_address: EthAddress
+    msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) {
-    assert(is_signature_entry_valid::<Secp256Point>(r), 'Signature out of range');
-    assert(is_signature_entry_valid::<Secp256Point>(s), 'Signature out of range');
+    assert(is_signature_entry_valid::<Secp256Point>(signature.r), 'Signature out of range');
+    assert(is_signature_entry_valid::<Secp256Point>(signature.s), 'Signature out of range');
 
-    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :r, :s, :y_parity)
-        .unwrap();
+    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
     let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
     assert(eth_address == calculated_eth_address, 'Invalid signature');
-}
-
-/// Same as `verify_eth_signature` but receives `v` of type `u32` instead of `y_parity`.
-/// Uses the parity of `v` as `y_parity`.
-fn verify_eth_signature_u32<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
->(
-    msg_hash: u256, r: u256, s: u256, v: u32, eth_address: EthAddress
-) {
-    let y_parity = v % 2 == 0;
-    verify_eth_signature::<Secp256Point>(:msg_hash, :r, :s, :y_parity, :eth_address);
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.

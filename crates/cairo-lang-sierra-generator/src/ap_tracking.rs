@@ -132,7 +132,11 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
-        info.variables_used(self, remapping.values(), block_id);
+        info.variables_used(
+            self,
+            remapping.values().map(|VarUsage { var_id, .. }| var_id),
+            block_id,
+        );
     }
 
     fn merge_match(
@@ -191,7 +195,7 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
     fn info_from_return(
         &mut self,
         (block_id, _statement_index): StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         // TODO(ilya): Consider the following disabling of ap tracking.
 
@@ -200,14 +204,14 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
 
         let mut info = Self::Info { vars: Default::default() };
-        info.variables_used(self, vars.iter(), block_id);
+        info.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| var_id), block_id);
         info
     }
 
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _ap_tracking_configuration: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.");
     }

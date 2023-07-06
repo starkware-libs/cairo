@@ -182,7 +182,6 @@ fn analyze_contract<T: SierraIdReplacer>(
         .into_iter()
         .map(|f| get_selector_and_sierra_function(db, f, replacer))
         .collect();
-    assert!(constructors.len() <= 1, "Expected at most one constructor.");
 
     let contract_info = ContractInfo {
         externals,

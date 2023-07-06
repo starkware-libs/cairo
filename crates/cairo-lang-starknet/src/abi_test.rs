@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
@@ -6,6 +9,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 
 use crate::abi::AbiBuilder;
+use crate::plugin::StarkNetPlugin;
 
 #[test]
 fn test_abi() {
@@ -176,4 +180,45 @@ fn test_abi() {
             }
           ]"#}
     );
+}
+
+#[test]
+fn test_abi_failure() {
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .build()
+        .unwrap();
+    let module_id = setup_test_module(
+        db,
+        indoc! {"
+          #[derive(Drop, starknet::Event)]
+          struct A {
+          }
+
+          #[starknet::contract]
+          mod test_contract {
+              use super::A;
+
+              #[storage]
+              struct Storage {
+              }
+
+              #[event]
+              #[derive(Drop, starknet::Event)]
+              enum Event {
+                  A: A
+              }
+          }
+        "},
+    )
+    .unwrap()
+    .module_id;
+
+    let submodule_id = extract_matches!(
+        db.module_item_by_name(module_id, "test_contract".into()).unwrap().unwrap(),
+        ModuleItemId::Submodule
+    );
+    let err = AbiBuilder::submodule_as_contract_abi(db, submodule_id).unwrap_err();
+    assert_eq!(err.to_string(), "Event type must derive `starknet::Event`.");
 }

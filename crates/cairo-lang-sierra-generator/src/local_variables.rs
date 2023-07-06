@@ -147,7 +147,8 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     ) {
         let Ok(info) = info else {return;};
         self.block_callers.entry(target_block_id).or_default().push((block_id, remapping.clone()));
-        info.demand.apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, ((src), ()))));
+        info.demand
+            .apply_remapping(self, remapping.iter().map(|(dst, src)| (dst, (&src.var_id, ()))));
     }
 
     fn merge_match(
@@ -183,17 +184,17 @@ impl<'a> Analyzer<'_> for FindLocalsContext<'a> {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        vars: &[VariableId],
+        vars: &[VarUsage],
     ) -> Self::Info {
         let mut demand = LoweredDemand::default();
-        demand.variables_used(self, vars.iter().map(|var_id| (var_id, ())));
+        demand.variables_used(self, vars.iter().map(|VarUsage { var_id, .. }| (var_id, ())));
         Ok(AnalysisInfo { demand, known_ap_change: true })
     }
 
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _var: &VariableId,
+        _var: &VarUsage,
     ) -> Self::Info {
         unreachable!("Panics should have been stripped in a previous phase.")
     }

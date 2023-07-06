@@ -5,7 +5,9 @@ use itertools::Itertools;
 use crate::blocks::FlatBlocksBuilder;
 use crate::borrow_check::analysis::{Analyzer, BackAnalysis, StatementLocation};
 use crate::utils::{Rebuilder, RebuilderEx};
-use crate::{BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, VarRemapping, VariableId};
+use crate::{
+    BlockId, FlatBlock, FlatBlockEnd, FlatLowered, MatchInfo, VarRemapping, VarUsage, VariableId,
+};
 
 /// Reorganizes the blocks in lowered function.
 ///
@@ -119,14 +121,14 @@ impl Analyzer<'_> for TopSortContext {
     fn info_from_return(
         &mut self,
         _statement_location: StatementLocation,
-        _vars: &[VariableId],
+        _vars: &[VarUsage],
     ) -> Self::Info {
     }
 
     fn info_from_panic(
         &mut self,
         _statement_location: StatementLocation,
-        _data: &VariableId,
+        _data: &VarUsage,
     ) -> Self::Info {
     }
 }
