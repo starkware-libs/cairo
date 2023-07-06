@@ -653,9 +653,6 @@ impl SyntaxNodeFormat for SyntaxNode {
     }
 
     fn force_space_after(&self, db: &dyn SyntaxGroup) -> bool {
-        match self.kind(db) {
-            SyntaxKind::TokenMatchArrow => true,
-            _ => false,
-        }
+        matches!(self.kind(db), SyntaxKind::TokenMatchArrow)
     }
 }
