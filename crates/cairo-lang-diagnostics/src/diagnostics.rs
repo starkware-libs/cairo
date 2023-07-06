@@ -4,6 +4,7 @@ mod test;
 
 use std::sync::Arc;
 
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
@@ -28,6 +29,18 @@ impl DiagnosticLocation {
     /// Get the location of right after this diagnostic's location (with width 0).
     pub fn after(&self) -> Self {
         Self { file_id: self.file_id, span: self.span.after() }
+    }
+}
+
+impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
+        let file_name = self.file_id.file_name(db);
+        let marks = get_location_marks(db, self);
+        let pos = match self.span.start.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_name}:{pos}\n{marks}")
     }
 }
 
@@ -106,17 +119,11 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 }
 
 pub fn format_diagnostics(
-    db: &dyn FilesGroup,
+    db: &(dyn FilesGroup + 'static),
     message: &str,
     location: DiagnosticLocation,
 ) -> String {
-    let file_name = location.file_id.file_name(db);
-    let marks = get_location_marks(db, &location);
-    let pos = match location.span.start.position_in_file(db, location.file_id) {
-        Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-        None => "?".into(),
-    };
-    format!("error: {message}\n --> {file_name}:{pos}\n{marks}\n")
+    format!("error: {message}\n --> {:?}\n", location.debug(db))
 }
 
 /// A set of diagnostic entries that arose during a computation.
