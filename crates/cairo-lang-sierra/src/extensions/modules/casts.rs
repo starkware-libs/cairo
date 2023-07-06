@@ -1,3 +1,4 @@
+use super::bytes31::Bytes31Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
@@ -32,6 +33,7 @@ fn get_nbits(
         id if id == Uint32Type::ID => Ok(32),
         id if id == Uint64Type::ID => Ok(64),
         id if id == Uint128Type::ID => Ok(128),
+        id if id == Bytes31Type::ID => Ok(248),
         _ => Err(SpecializationError::UnsupportedGenericArg),
     }
 }
@@ -87,8 +89,10 @@ impl NamedLibfunc for DowncastLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let (from_ty, to_ty) = args_as_two_types(args)?;
+        let from_nbits = get_nbits(context, from_ty.clone())?;
+        let to_nbits = get_nbits(context, to_ty.clone())?;
 
-        let is_valid = get_nbits(context, from_ty.clone())? >= get_nbits(context, to_ty.clone())?;
+        let is_valid = from_nbits >= to_nbits && from_nbits <= 128;
         if !is_valid {
             return Err(SpecializationError::UnsupportedGenericArg);
         }

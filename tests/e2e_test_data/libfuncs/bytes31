@@ -149,3 +149,163 @@ store_temp<felt252>([1]) -> ([2]);
 return([2]);
 
 test::foo@0([0]: bytes31) -> (felt252);
+
+//! > ==========================================================================
+
+//! > upcast<u8, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u8) -> bytes31 {
+    integer::upcast::<u8, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u8 = u8;
+type bytes31 = bytes31;
+
+libfunc upcast<u8, bytes31> = upcast<u8, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u8, bytes31>([0]) -> ([1]);
+store_temp<bytes31>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u8) -> (bytes31);
+
+//! > ==========================================================================
+
+//! > upcast<u16, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u16) -> bytes31 {
+    integer::upcast::<u16, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u16 = u16;
+type bytes31 = bytes31;
+
+libfunc upcast<u16, bytes31> = upcast<u16, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u16, bytes31>([0]) -> ([1]);
+store_temp<bytes31>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u16) -> (bytes31);
+
+//! > ==========================================================================
+
+//! > upcast<u32, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u32) -> bytes31 {
+    integer::upcast::<u32, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u32 = u32;
+type bytes31 = bytes31;
+
+libfunc upcast<u32, bytes31> = upcast<u32, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u32, bytes31>([0]) -> ([1]);
+store_temp<bytes31>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u32) -> (bytes31);
+
+//! > ==========================================================================
+
+//! > upcast<u64, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u64) -> bytes31 {
+    integer::upcast::<u64, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u64 = u64;
+type bytes31 = bytes31;
+
+libfunc upcast<u64, bytes31> = upcast<u64, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u64, bytes31>([0]) -> ([1]);
+store_temp<bytes31>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u64) -> (bytes31);
+
+//! > ==========================================================================
+
+//! > upcast<u128, bytes31>
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(value: u128) -> bytes31 {
+    integer::upcast::<u128, bytes31>(value)
+}
+
+//! > casm
+[ap + 0] = [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type u128 = u128;
+type bytes31 = bytes31;
+
+libfunc upcast<u128, bytes31> = upcast<u128, bytes31>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+upcast<u128, bytes31>([0]) -> ([1]);
+store_temp<bytes31>([1]) -> ([2]);
+return([2]);
+
+test::foo@0([0]: u128) -> (bytes31);
