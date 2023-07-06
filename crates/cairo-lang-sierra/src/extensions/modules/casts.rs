@@ -1,5 +1,6 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+use super::bytes31::Bytes31Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
@@ -33,6 +34,7 @@ fn get_type_to_nbits_map(
         (Uint32Type::ID, 32),
         (Uint64Type::ID, 64),
         (Uint128Type::ID, 128),
+        (Bytes31Type::ID, 248),
     ]
     .into_iter()
     .filter_map(|(generic_type, n_bits)| {
@@ -111,7 +113,7 @@ impl NamedLibfunc for DowncastLibfunc {
         let (from_ty, to_ty) = args_as_two_types(args)?;
         let (from_nbits, to_nbits) = get_n_bits(context, &from_ty, &to_ty)?;
 
-        let is_valid = from_nbits >= to_nbits;
+        let is_valid = from_nbits >= to_nbits && from_nbits <= 128;
         if !is_valid {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
