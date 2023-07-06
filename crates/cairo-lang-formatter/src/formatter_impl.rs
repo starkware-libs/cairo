@@ -563,6 +563,7 @@ pub trait SyntaxNodeFormat {
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
     fn should_skip_terminal(&self, db: &dyn SyntaxGroup) -> bool;
+    fn force_space_after(&self, db: &dyn SyntaxGroup) -> bool;
 }
 
 pub struct FormatterImpl<'a> {
@@ -689,7 +690,9 @@ impl<'a> FormatterImpl<'a> {
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let text = syntax_node.text(self.db).unwrap();
-        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
+        if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after
+            || syntax_node.force_space_after(self.db)
+        {
             self.line_state.line_buffer.push_space();
         }
         self.line_state.force_no_space_after = no_space_after;
