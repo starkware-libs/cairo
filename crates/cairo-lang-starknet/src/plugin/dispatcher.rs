@@ -133,7 +133,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         let ret_type_ast = ty.ty(db);
                         let type_name = ret_type_ast.as_syntax_node().get_text(db);
                         format!(
-                            "
+                            "\
         option::OptionTrait::expect(
             serde::Serde::<{type_name}>::deserialize(ref ret_data),
             'Returned data too short',
@@ -287,6 +287,11 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     }
 }
 
+fn add_indent_multiline(text: &String) -> String {
+    let lines: Vec<String> = text.split("\n").map(|x| format!("    {x}")).collect();
+    lines.join("\n")
+}
+
 /// Returns the method implementation rewrite node for a declaration.
 fn declaration_method_impl(
     func_declaration: RewriteNode,
@@ -298,37 +303,43 @@ fn declaration_method_impl(
     unwrap: bool,
 ) -> RewriteNode {
     let deserialization_code = if ret_decode.is_empty() {
-        RewriteNode::Text(String::from(if unwrap {
-            "()\
-    "
-        } else {
-            "()"
-        }))
+        RewriteNode::Text("()".to_string())
     } else {
-        RewriteNode::Text(ret_decode)
+        RewriteNode::Text(
+            if unwrap {
+                ret_decode.clone()
+            } else {
+                add_indent_multiline(&ret_decode)
+            }
+        )
     };
     let return_code = RewriteNode::interpolate_patched(
         if unwrap {
-            "    let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-    $deserialization_code$"
+            "let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        $deserialization_code$"
         } else {
-            "    let mut ret_data = ret_data?;
-    Result::Ok($deserialization_code$)"
+            if ret_decode.is_empty() {
+                "let mut ret_data = ret_data?;
+        Result::Ok($deserialization_code$)"
+            } else {
+                "let mut ret_data = ret_data?;
+        Result::Ok(\n        $deserialization_code$\n        )"
+            }
         },
         [("deserialization_code".to_string(), deserialization_code)].into(),
     );
     RewriteNode::interpolate_patched(
         &formatdoc!(
             "$func_decl$ {{
-                let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
+                    let mut {CALLDATA_PARAM_NAME} = traits::Default::default();
             $serialization_code$
-                let mut ret_data = starknet::$syscall$(
-                    self.$member$,
-                    $entry_point_selector$,
-                    array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
-                );
-            $return_code$
-            }}
+                    let mut ret_data = starknet::$syscall$(
+                        self.$member$,
+                        $entry_point_selector$,
+                        array::ArrayTrait::span(@{CALLDATA_PARAM_NAME}),
+                    );
+                    $return_code$
+                }}
         "
         ),
         [
