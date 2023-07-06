@@ -11,7 +11,7 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
                 0.serialize(ref output);
                 x.serialize(ref output)
             },
-            Option::None => 1.serialize(ref output),
+            Option::None=> 1.serialize(ref output),
         }
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {

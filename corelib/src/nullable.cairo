@@ -17,7 +17,7 @@ trait NullableTrait<T> {
 impl NullableImpl<T> of NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T {
         match match_nullable(self) {
-            FromNullableResult::Null => panic_with_felt252('Attempted to deref null value'),
+            FromNullableResult::Null=> panic_with_felt252('Attempted to deref null value'),
             FromNullableResult::NotNull(value) => value.unbox(),
         }
     }
