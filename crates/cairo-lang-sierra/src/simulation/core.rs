@@ -349,6 +349,7 @@ pub fn simulate<
         CoreConcreteLibfunc::Felt252DictEntry(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint256(_) => unimplemented!(),
         CoreConcreteLibfunc::Uint512(_) => unimplemented!(),
+        CoreConcreteLibfunc::Bytes31(_) => unimplemented!(),
     }
 }
 

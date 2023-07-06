@@ -1,6 +1,7 @@
 mod array_test;
 mod bool_test;
 mod box_test;
+mod bytes31_test;
 mod cmp_test;
 mod dict_test;
 mod ec_test;
