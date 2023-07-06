@@ -1,3 +1,4 @@
+use super::bytes31::Bytes31Type;
 use super::int::signed::{Sint16Type, Sint32Type, Sint64Type, Sint8Type};
 use super::int::signed128::Sint128Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
@@ -96,6 +97,7 @@ fn get_int_info(
         id if id == Sint64Type::ID => IntTypeInfo { nbits: 64, signed: true },
         id if id == Uint128Type::ID => IntTypeInfo { nbits: 128, signed: false },
         id if id == Sint128Type::ID => IntTypeInfo { nbits: 128, signed: true },
+        id if id == Bytes31Type::ID => IntTypeInfo { nbits: 248, signed: false },
         _ => return Err(SpecializationError::UnsupportedGenericArg),
     })
 }
