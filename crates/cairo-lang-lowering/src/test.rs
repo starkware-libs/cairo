@@ -16,11 +16,13 @@ use crate::fmt::LoweredFormatter;
 use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
+use crate::optimizations::branch_inversion;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
+use crate::test::branch_inversion::branch_inversion;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::FlatLowered;
 cairo_lang_test_utils::test_file_test!(
@@ -137,7 +139,13 @@ fn test_function_lowering_phases(
     let mut after_reorder_statements1 = after_optimize_remappings1.clone();
     reorder_statements(&db, &mut after_reorder_statements1);
 
-    let mut after_optimize_matches = after_reorder_statements1.clone();
+    let mut after_branch_inversion = after_reorder_statements1.clone();
+    branch_inversion(&db, &mut after_branch_inversion);
+
+    let mut after_reorder_statements2 = after_branch_inversion.clone();
+    optimize_matches(&mut after_reorder_statements2);
+
+    let mut after_optimize_matches = after_reorder_statements2.clone();
     optimize_matches(&mut after_optimize_matches);
 
     let mut after_lower_implicits = after_optimize_matches.clone();
@@ -146,10 +154,10 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings2 = after_lower_implicits.clone();
     optimize_remappings(&mut after_optimize_remappings2);
 
-    let mut after_reorder_statements2 = after_optimize_remappings2.clone();
-    reorder_statements(&db, &mut after_reorder_statements2);
+    let mut after_reorder_statements3 = after_optimize_remappings2.clone();
+    reorder_statements(&db, &mut after_reorder_statements3);
 
-    let mut after_reorganize_blocks = after_reorder_statements2.clone();
+    let mut after_reorganize_blocks = after_reorder_statements3.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
@@ -170,10 +178,12 @@ fn test_function_lowering_phases(
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
         ("after_reorder_statements1".into(), formatted_lowered(&db, &after_reorder_statements1)),
+        ("after_branch_inversion".into(), formatted_lowered(&db, &after_branch_inversion)),
+        ("after_reorder_statements2".into(), formatted_lowered(&db, &after_reorder_statements2)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
-        ("after_reorder_statements2".into(), formatted_lowered(&db, &after_reorder_statements2)),
+        ("after_reorder_statements3".into(), formatted_lowered(&db, &after_reorder_statements3)),
         (
             "after_reorganize_blocks (final)".into(),
             formatted_lowered(&db, &after_reorganize_blocks),

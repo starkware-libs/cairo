@@ -1,5 +1,4 @@
 type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
 type Tuple<Unit> = Struct<ut@Tuple, Unit>;
 type core::panics::Panic = Struct<ut@core::panics::Panic>;
 type felt252 = felt252;
@@ -8,46 +7,14 @@ type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@Tuple, core::panics:
 type core::panics::PanicResult::<((),)> = Enum<ut@core::panics::PanicResult::<((),)>, Tuple<Unit>, Tuple<core::panics::Panic, Array<felt252>>>;
 
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc enum_init<core::bool, 1> = enum_init<core::bool, 1>;
-libfunc store_temp<core::bool> = store_temp<core::bool>;
-libfunc bool_not_impl = bool_not_impl;
-libfunc enum_match<core::bool> = enum_match<core::bool>;
-libfunc branch_align = branch_align;
-libfunc drop<Unit> = drop<Unit>;
 libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
-libfunc array_new<felt252> = array_new<felt252>;
-libfunc felt252_const<1> = felt252_const<1>;
-libfunc store_temp<felt252> = store_temp<felt252>;
-libfunc array_append<felt252> = array_append<felt252>;
-libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
-libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
-libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 
 struct_construct<Unit>() -> ([0]);
-enum_init<core::bool, 1>([0]) -> ([1]);
-store_temp<core::bool>([1]) -> ([1]);
-bool_not_impl([1]) -> ([2]);
-store_temp<core::bool>([2]) -> ([2]);
-enum_match<core::bool>([2]) { fallthrough([3]) 13([4]) };
-branch_align() -> ();
-drop<Unit>([3]) -> ();
-struct_construct<Unit>() -> ([5]);
-struct_construct<Tuple<Unit>>([5]) -> ([6]);
-enum_init<core::panics::PanicResult::<((),)>, 0>([6]) -> ([7]);
-store_temp<core::panics::PanicResult::<((),)>>([7]) -> ([8]);
-return([8]);
-branch_align() -> ();
-drop<Unit>([4]) -> ();
-array_new<felt252>() -> ([9]);
-felt252_const<1>() -> ([10]);
-store_temp<felt252>([10]) -> ([10]);
-array_append<felt252>([9], [10]) -> ([11]);
-struct_construct<core::panics::Panic>() -> ([12]);
-struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([12], [11]) -> ([13]);
-enum_init<core::panics::PanicResult::<((),)>, 1>([13]) -> ([14]);
-store_temp<core::panics::PanicResult::<((),)>>([14]) -> ([15]);
-return([15]);
+struct_construct<Tuple<Unit>>([0]) -> ([1]);
+enum_init<core::panics::PanicResult::<((),)>, 0>([1]) -> ([2]);
+store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([3]);
+return([3]);
 
 examples::testing::run_tests@0() -> (core::panics::PanicResult::<((),)>);
