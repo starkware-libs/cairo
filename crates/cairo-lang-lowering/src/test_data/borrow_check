@@ -357,3 +357,46 @@ error: Variable was previously moved. Trait has no implementation in context: co
 
 //! > lowering_flat
 Parameters: v0: test::NonCopy
+
+//! > ==========================================================================
+
+//! > Test recomposed struct var.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(mut x: MyStruct) -> MyStruct {
+  x.a += 1;
+  use_non_copy(x.b);
+  return x;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern type NonCopy;
+
+extern fn use_non_copy(x: NonCopy) nopanic;
+
+struct MyStruct {
+  a: u32,
+  b: NonCopy,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
+ --> lib.cairo:12:10
+  return x;
+         ^
+
+error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::NonCopy>. Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
+ --> lib.cairo:10:3
+  x.a += 1;
+  ^
+
+//! > lowering_flat
+Parameters: v0: test::MyStruct
