@@ -8,6 +8,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
+use itertools::Itertools;
 
 use super::aux_data::StarkNetABIAuxData;
 use super::consts::CALLDATA_PARAM_NAME;
@@ -287,11 +288,6 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     }
 }
 
-fn add_indent_multiline(text: &String) -> String {
-    let lines: Vec<String> = text.split("\n").map(|x| format!("    {x}")).collect();
-    lines.join("\n")
-}
-
 /// Returns the method implementation rewrite node for a declaration.
 fn declaration_method_impl(
     func_declaration: RewriteNode,
@@ -309,7 +305,7 @@ fn declaration_method_impl(
             if unwrap {
                 ret_decode.clone()
             } else {
-                add_indent_multiline(&ret_decode)
+                ret_decode.split("\n").map(|x| format!("    {x}")).join("\n")
             }
         )
     };
