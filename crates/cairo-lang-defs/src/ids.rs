@@ -480,7 +480,7 @@ impl TopLevelLanguageElementId for TraitFunctionId {
 // Struct items.
 // TODO(spapini): Override full_path for to include parents, for better debug.
 define_language_element_id!(MemberId, MemberLongId, ast::Member, lookup_intern_member, name);
-define_language_element_id!(VariantId, VariantLongId, ast::Member, lookup_intern_variant, name);
+define_language_element_id!(VariantId, VariantLongId, ast::Variant, lookup_intern_variant, name);
 
 define_language_element_id_as_enum! {
     /// Id for any variable definition.

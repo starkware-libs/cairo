@@ -5,7 +5,7 @@ use super::ast::{
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
     ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
-    TraitItemFunctionPtr,
+    TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
@@ -286,6 +286,12 @@ impl QueryAttrs for AttributeList {
     }
 }
 impl QueryAttrs for Member {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for Variant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
     }
