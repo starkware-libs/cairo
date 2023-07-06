@@ -1542,6 +1542,36 @@ extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 //   will not lead to Sierra errors.
 extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
 
+// Marks `FromType` as upcastable to `ToType`.
+// Do not add user code implementing this trait.
+trait Upcastable<FromType, ToType>;
+impl UpcastableU8U16 of Upcastable<u8, u16> {}
+impl UpcastableU8U32 of Upcastable<u8, u32> {}
+impl UpcastableU8U64 of Upcastable<u8, u64> {}
+impl UpcastableU8U128 of Upcastable<u8, u128> {}
+impl UpcastableU16U32 of Upcastable<u16, u32> {}
+impl UpcastableU16U64 of Upcastable<u16, u64> {}
+impl UpcastableU16U128 of Upcastable<u16, u128> {}
+impl UpcastableU32U64 of Upcastable<u32, u64> {}
+impl UpcastableU32U128 of Upcastable<u32, u128> {}
+impl UpcastableU64U128 of Upcastable<u64, u128> {}
+// Marks `FromType` as downcastable to `ToType`.
+// Do not add user code implementing this trait.
+trait Downcastable<FromType, ToType>;
+impl DowncastableU128U64 of Downcastable<u128, u64> {}
+impl DowncastableU128U32 of Downcastable<u128, u32> {}
+impl DowncastableU128U16 of Downcastable<u128, u16> {}
+impl DowncastableU128U8 of Downcastable<u128, u8> {}
+
+impl DowncastableU64U32 of Downcastable<u64, u32> {}
+impl DowncastableU64U16 of Downcastable<u64, u16> {}
+impl DowncastableU64U8 of Downcastable<u64, u8> {}
+
+impl DowncastableU32U16 of Downcastable<u32, u16> {}
+impl DowncastableU32U8 of Downcastable<u32, u8> {}
+
+impl DowncastableU16U8 of Downcastable<u16, u8> {}
+
 /// Default values
 impl U8Default of Default<u8> {
     #[inline(always)]
@@ -1622,50 +1652,16 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl U8IntoU16 of Into<u8, u16> {
-    fn into(self: u8) -> u16 {
+impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+    fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl U16TryIntoU8 of TryInto<u16, u8> {
-    fn try_into(self: u16) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU32 of Into<u8, u32> {
-    fn into(self: u8) -> u32 {
-        upcast(self)
-    }
-}
-
-impl U32TryIntoU8 of TryInto<u32, u8> {
-    fn try_into(self: u32) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU64 of Into<u8, u64> {
-    fn into(self: u8) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU8 of TryInto<u64, u8> {
-    fn try_into(self: u64) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU128 of Into<u8, u128> {
-    fn into(self: u8) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU8 of TryInto<u128, u8> {
-    fn try_into(self: u128) -> Option<u8> {
+impl DowncastableTryInto<
+    From, To, impl FromToDowncastable: Downcastable<From, To>
+> of TryInto<From, To> {
+    fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
 }
@@ -1688,42 +1684,6 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
     }
 }
 
-impl U16IntoU32 of Into<u16, u32> {
-    fn into(self: u16) -> u32 {
-        upcast(self)
-    }
-}
-
-impl U32TryIntoU16 of TryInto<u32, u16> {
-    fn try_into(self: u32) -> Option<u16> {
-        downcast(self)
-    }
-}
-
-impl U16IntoU64 of Into<u16, u64> {
-    fn into(self: u16) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU16 of TryInto<u64, u16> {
-    fn try_into(self: u64) -> Option<u16> {
-        downcast(self)
-    }
-}
-
-impl U16IntoU128 of Into<u16, u128> {
-    fn into(self: u16) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU16 of TryInto<u128, u16> {
-    fn try_into(self: u128) -> Option<u16> {
-        downcast(self)
-    }
-}
-
 impl U16IntoU256 of Into<u16, u256> {
     fn into(self: u16) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
@@ -1742,30 +1702,6 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
     }
 }
 
-impl U32IntoU64 of Into<u32, u64> {
-    fn into(self: u32) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU32 of TryInto<u64, u32> {
-    fn try_into(self: u64) -> Option<u32> {
-        downcast(self)
-    }
-}
-
-impl U32IntoU128 of Into<u32, u128> {
-    fn into(self: u32) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU32 of TryInto<u128, u32> {
-    fn try_into(self: u128) -> Option<u32> {
-        downcast(self)
-    }
-}
-
 impl U32IntoU256 of Into<u32, u256> {
     fn into(self: u32) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
@@ -1781,18 +1717,6 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
         }
 
         low.try_into()
-    }
-}
-
-impl U64IntoU128 of Into<u64, u128> {
-    fn into(self: u64) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU64 of TryInto<u128, u64> {
-    fn try_into(self: u128) -> Option<u64> {
-        downcast(self)
     }
 }
 
@@ -1831,7 +1755,6 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
         Option::Some(low)
     }
 }
-
 
 // === Zeroable ===
 
