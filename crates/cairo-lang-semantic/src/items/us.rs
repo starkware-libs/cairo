@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{LanguageElementId, UseId};
-use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
+use cairo_lang_diagnostics::{skip_diagnostic, Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -111,6 +111,25 @@ pub fn priv_use_semantic_data_cycle(
         resolved_item: err,
         resolver_data: Arc::new(ResolverData::new(module_file_id)),
     })
+}
+
+/// Query implementation of [SemanticGroup::use_visibility].
+pub fn use_visibility(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<ast::Visibility> {
+    let module_file_id = use_id.module_file_id(db.upcast());
+    let module_uses = db.module_uses(module_file_id.0)?;
+    let use_ast = module_uses.get(&use_id).to_maybe()?;
+    let use_path = ast::UsePath::Leaf(use_ast.clone());
+    let mut node = use_path.as_syntax_node();
+    let syntax_db = db.upcast();
+    while let Some(parent) = node.parent() {
+        match parent.kind(syntax_db) {
+            SyntaxKind::ItemUse => {
+                return Ok(ast::ItemUse::from_syntax_node(syntax_db, parent).visibility(syntax_db));
+            }
+            _ => node = parent,
+        }
+    }
+    Err(skip_diagnostic())
 }
 
 /// Query implementation of [crate::db::SemanticGroup::use_semantic_diagnostics].

@@ -1,5 +1,5 @@
 use array::{Span, ArrayTrait, SpanTrait, ArrayDrop};
-use integer::TryInto;
+use traits::TryInto;
 use option::OptionTrait;
 use starknet::SyscallResultTrait;
 

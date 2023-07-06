@@ -1,13 +1,13 @@
 pub mod traits;
-use traits::{
+pub use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
     TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
     TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue
 };
-use serde::Serde;
-use array::SpanTrait;
+pub use serde::Serde;
+pub use array::SpanTrait;
 
 #[derive(Copy, Drop)]
 pub enum bool {
@@ -202,48 +202,48 @@ pub extern fn drop<T>(obj: T) nopanic;
 
 // Boxes.
 pub mod box;
-use box::{Box, BoxTrait};
+pub use box::{Box, BoxTrait};
 
 // Nullable
 pub mod nullable;
-use nullable::{Nullable, match_nullable, null, nullable_from_box};
+pub use nullable::{Nullable, match_nullable, null, nullable_from_box};
 
 // Arrays.
 pub mod array;
-use array::{Array, ArrayTrait};
+pub use array::{Array, ArrayTrait};
 pub type usize = u32;
 
 // Span.
-use array::Span;
+pub use array::Span;
 
 
 // Dictionary.
 pub mod dict;
-use dict::{
+pub use dict::{
     Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
 };
 
 // Result.
 pub mod result;
-use result::Result;
+pub use result::Result;
 
 // Option.
 pub mod option;
-use option::Option;
+pub use option::Option;
 
 // Clone.
 pub mod clone;
-use clone::Clone;
+pub use clone::Clone;
 
 // EC.
 pub mod ec;
-use ec::{EcOp, EcPoint, EcState};
+pub use ec::{EcOp, EcPoint, EcState};
 
 pub mod ecdsa;
 
 // Integer.
 pub mod integer;
-use integer::{
+pub use integer::{
     NumericLiteral, u128, u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32,
     u32_const, u64, u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16,
     U16IntoFelt252, Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252,
@@ -259,7 +259,7 @@ pub mod cmp;
 
 // Gas.
 pub mod gas;
-use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
+pub use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
 
 
 // Panics.
@@ -290,27 +290,27 @@ pub mod serde;
 
 // Hash functions.
 pub mod hash;
-use hash::{pedersen, Pedersen};
+pub use hash::{pedersen, Pedersen};
 
 pub mod keccak;
 
 // Poseidon
 pub mod poseidon;
-use poseidon::Poseidon;
+pub use poseidon::Poseidon;
 
 // Debug.
 pub mod debug;
 
 // Starknet
 pub mod starknet;
-use starknet::System;
+pub use starknet::System;
 
 // Internals.
 pub mod internal;
 
 // Zeroable.
 pub mod zeroable;
-use zeroable::{Zeroable, NonZero};
+pub use zeroable::{Zeroable, NonZero};
 
 #[cfg(test)]
 pub mod test;

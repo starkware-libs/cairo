@@ -2,6 +2,7 @@
     ├── [36mitems[0m (kind: ItemList)
     │   ├── [36mchild #0[0m (kind: ItemUse)
     │   │   ├── [36mattributes[0m (kind: AttributeList)[95m [][0m
+    │   │   ├── [36mvisibility[0m (kind: VisibilityDefault)[95m [][0m
     │   │   ├── [34muse_kw[0m (kind: TokenUse): '[1;32muse[0m'
     │   │   ├── [36muse_path[0m (kind: UsePathSingle)
     │   │   │   ├── [36mident[0m (kind: PathSegmentSimple)

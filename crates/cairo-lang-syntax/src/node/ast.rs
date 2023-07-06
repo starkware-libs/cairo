@@ -10962,17 +10962,20 @@ pub struct ItemUse {
 }
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
-    pub const INDEX_USE_KW: usize = 1;
-    pub const INDEX_USE_PATH: usize = 2;
-    pub const INDEX_SEMICOLON: usize = 3;
+    pub const INDEX_VISIBILITY: usize = 1;
+    pub const INDEX_USE_KW: usize = 2;
+    pub const INDEX_USE_PATH: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         attributes: AttributeListGreen,
+        visibility: VisibilityGreen,
         use_kw: TerminalUseGreen,
         use_path: UsePathGreen,
         semicolon: TerminalSemicolonGreen,
     ) -> ItemUseGreen {
-        let children: Vec<GreenId> = vec![attributes.0, use_kw.0, use_path.0, semicolon.0];
+        let children: Vec<GreenId> =
+            vec![attributes.0, visibility.0, use_kw.0, use_path.0, semicolon.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         ItemUseGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ItemUse,
@@ -10984,14 +10987,17 @@ impl ItemUse {
     pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
         AttributeList::from_syntax_node(db, self.children[0].clone())
     }
+    pub fn visibility(&self, db: &dyn SyntaxGroup) -> Visibility {
+        Visibility::from_syntax_node(db, self.children[1].clone())
+    }
     pub fn use_kw(&self, db: &dyn SyntaxGroup) -> TerminalUse {
-        TerminalUse::from_syntax_node(db, self.children[1].clone())
+        TerminalUse::from_syntax_node(db, self.children[2].clone())
     }
     pub fn use_path(&self, db: &dyn SyntaxGroup) -> UsePath {
-        UsePath::from_syntax_node(db, self.children[2].clone())
+        UsePath::from_syntax_node(db, self.children[3].clone())
     }
     pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
-        TerminalSemicolon::from_syntax_node(db, self.children[3].clone())
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -11021,6 +11027,7 @@ impl TypedSyntaxNode for ItemUse {
             details: GreenNodeDetails::Node {
                 children: vec![
                     AttributeList::missing(db).0,
+                    Visibility::missing(db).0,
                     TerminalUse::missing(db).0,
                     UsePath::missing(db).0,
                     TerminalSemicolon::missing(db).0,

@@ -122,6 +122,8 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::us::priv_use_semantic_data)]
     #[salsa::cycle(items::us::priv_use_semantic_data_cycle)]
     fn priv_use_semantic_data(&self, use_id: UseId) -> Maybe<items::us::UseData>;
+    #[salsa::invoke(items::us::use_visibility)]
+    fn use_visibility(&self, use_id: UseId) -> Maybe<ast::Visibility>;
     /// Returns the semantic diagnostics of a use.
     #[salsa::invoke(items::us::use_semantic_diagnostics)]
     fn use_semantic_diagnostics(&self, use_id: UseId) -> Diagnostics<SemanticDiagnostic>;

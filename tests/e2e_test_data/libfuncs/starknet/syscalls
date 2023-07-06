@@ -168,7 +168,7 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo() -> starknet::SyscallResult<Box<starknet::ExecutionInfo>> {
-    starknet::info::get_execution_info_syscall()
+    starknet::syscalls::get_execution_info_syscall()
 }
 
 //! > casm

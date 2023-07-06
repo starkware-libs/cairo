@@ -116,9 +116,10 @@ impl ItemEx for UseId {
         db.use_resolver_data(*self)
     }
 
-    // TODO(spapini): Use need some reexport logic.
-    fn peek_visible_in(&self, _db: &dyn SemanticGroup, _module_id: ModuleId) -> Maybe<bool> {
-        Ok(true)
+    fn peek_visible_in(&self, db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<bool> {
+        let source_module_id = self.parent_module(db.upcast());
+        let visibility = db.use_visibility(*self)?;
+        Ok(peek_visible_in(db, &visibility, source_module_id, module_id))
     }
 }
 impl ItemEx for ImplAliasId {

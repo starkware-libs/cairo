@@ -548,6 +548,7 @@ pub fn get_spec() -> Vec<Node> {
     )
     .add_struct(StructBuilder::new("ItemUse")
         .node("attributes" ,"AttributeList")
+        .node("visibility", "Visibility")
         .node("use_kw", "TerminalUse")
         .key_node("use_path", "UsePath")
         .node("semicolon", "TerminalSemicolon")

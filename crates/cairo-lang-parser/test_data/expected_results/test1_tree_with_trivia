@@ -19,6 +19,7 @@
     │   │           └── child #0 (kind: TokenNewline).
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── use_kw (kind: TerminalUse)
     │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │   │   ├── token (kind: TokenUse): 'use'

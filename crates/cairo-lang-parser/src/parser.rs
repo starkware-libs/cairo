@@ -158,7 +158,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => {
                 Some(self.expect_function_with_body(attributes, visibility).into())
             }
-            SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
+            SyntaxKind::TerminalUse => Some(self.expect_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes, visibility).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_item_impl(attributes)),
             _ => {
@@ -406,11 +406,15 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is Use.
     /// Expected pattern: `use<Path>;`
-    fn expect_use(&mut self, attributes: AttributeListGreen) -> ItemUseGreen {
+    fn expect_use(
+        &mut self,
+        attributes: AttributeListGreen,
+        visibility: VisibilityGreen,
+    ) -> ItemUseGreen {
         let use_kw = self.take::<TerminalUse>();
         let use_path = self.parse_use_path();
         let semicolon = self.parse_token::<TerminalSemicolon>();
-        ItemUse::new_green(self.db, attributes, use_kw, use_path, semicolon)
+        ItemUse::new_green(self.db, attributes, visibility, use_kw, use_path, semicolon)
     }
 
     /// Returns a GreenId of a node with a UsePath kind or None if can't parse a UsePath.
@@ -752,7 +756,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalExtern => {
                 Some(self.expect_extern_impl_item(attributes, visibility))
             }
-            SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
+            SyntaxKind::TerminalUse => Some(self.expect_use(attributes, visibility).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes, visibility).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_impl_item_impl(attributes)),
             _ => {

@@ -207,7 +207,7 @@ impl<TUintTraits: UintTraits> UintOperationLibfunc<TUintTraits> {
     const OVERFLOWING_ADD: &'static str = TUintTraits::OVERFLOWING_ADD;
     const OVERFLOWING_SUB: &'static str = TUintTraits::OVERFLOWING_SUB;
     fn new(operator: IntOperator) -> Option<Self> {
-        Some(Self { operator, _phantom: PhantomData::default() })
+        Some(Self { operator, _phantom: PhantomData })
     }
 }
 impl<TUintTraits: UintTraits> GenericLibfunc for UintOperationLibfunc<TUintTraits> {

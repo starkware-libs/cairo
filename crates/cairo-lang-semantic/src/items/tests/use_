@@ -15,3 +15,59 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test reexport.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+use inner::myU32;
+fn foo(a: myU32) -> u32 {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+    pub use inner::myU32;
+    mod inner {
+        use u32 as myU32;
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test not visible reexport.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+use inner::myU32;
+fn foo(a: myU32) -> u32 {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+    use inner::myU32;
+    mod inner {
+        use u32 as myU32;
+    }
+}
+
+//! > expected_diagnostics
+error: Item "test::inner::myU32" is not visible
+ --> lib.cairo:7:12
+use inner::myU32;
+           ^***^
