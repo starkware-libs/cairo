@@ -1189,7 +1189,7 @@
       ],
       [
         34,
-        "function_call<user@test_contract::test_contract::test_contract::test>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::test>"
       ],
       [
         35,
@@ -1265,7 +1265,7 @@
       ],
       [
         53,
-        "function_call<user@test_contract::test_contract::test_contract::another_function>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::another_function>"
       ],
       [
         54,
@@ -1301,7 +1301,7 @@
       ],
       [
         62,
-        "function_call<user@test_contract::test_contract::test_contract::call_foo>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::call_foo>"
       ],
       [
         63,
@@ -1321,7 +1321,7 @@
       ],
       [
         67,
-        "function_call<user@test_contract::test_contract::test_contract::libcall_foo>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::libcall_foo>"
       ],
       [
         68,
@@ -1329,11 +1329,11 @@
       ],
       [
         69,
-        "function_call<user@test_contract::test_contract::test_contract::segment_arena_builtin>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::segment_arena_builtin>"
       ],
       [
         70,
-        "function_call<user@test_contract::test_contract::test_contract::l1_handle>"
+        "function_call<user@test_contract::test_contract::test_contract::Impl::l1_handle>"
       ],
       [
         71,
@@ -1899,7 +1899,7 @@
       ],
       [
         8,
-        "test_contract::test_contract::test_contract::test"
+        "test_contract::test_contract::test_contract::Impl::test"
       ],
       [
         9,
@@ -1911,7 +1911,7 @@
       ],
       [
         11,
-        "test_contract::test_contract::test_contract::another_function"
+        "test_contract::test_contract::test_contract::Impl::another_function"
       ],
       [
         12,
@@ -1923,7 +1923,7 @@
       ],
       [
         14,
-        "test_contract::test_contract::test_contract::call_foo"
+        "test_contract::test_contract::test_contract::Impl::call_foo"
       ],
       [
         15,
@@ -1931,15 +1931,15 @@
       ],
       [
         16,
-        "test_contract::test_contract::test_contract::libcall_foo"
+        "test_contract::test_contract::test_contract::Impl::libcall_foo"
       ],
       [
         17,
-        "test_contract::test_contract::test_contract::segment_arena_builtin"
+        "test_contract::test_contract::test_contract::Impl::segment_arena_builtin"
       ],
       [
         18,
-        "test_contract::test_contract::test_contract::l1_handle"
+        "test_contract::test_contract::test_contract::Impl::l1_handle"
       ],
       [
         19,

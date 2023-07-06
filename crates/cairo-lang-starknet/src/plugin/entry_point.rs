@@ -9,7 +9,8 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR,
+    CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, INCLUDE_ATTR, L1_HANDLER_ATTR,
+    RAW_OUTPUT_ATTR,
 };
 use super::utils::{is_felt252_span, is_ref_param};
 
@@ -211,19 +212,31 @@ pub fn has_external_attribute(
     item: &ast::Item,
 ) -> bool {
     let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else { return false; };
-    validate_external_v0(db, diagnostics, &attr);
+    validate_v0(db, diagnostics, &attr, EXTERNAL_ATTR);
     true
 }
 
-/// Assuming the attribute is EXTERNAL_ATTR, validate it's #[external(v0)].
-pub fn validate_external_v0(
+/// Checks if the item is marked with an include attribute. Also validates the attribute.
+pub fn has_include_attribute(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+) -> bool {
+    let Some(attr) = item.find_attr(db, INCLUDE_ATTR) else { return false; };
+    validate_v0(db, diagnostics, &attr, INCLUDE_ATTR);
+    true
+}
+
+/// Assuming the attribute is `name`, validate it's #[`name`(v0)].
+fn validate_v0(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     attr: &Attribute,
+    name: &str,
 ) {
     if !is_arg_v0(db, attr) {
         diagnostics.push(PluginDiagnostic {
-            message: "Only #[external(v0)] is supported.".to_string(),
+            message: format!("Only #[{name}(v0)] is supported."),
             stable_ptr: attr.stable_ptr().untyped(),
         });
     }
