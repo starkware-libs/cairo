@@ -109,21 +109,6 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
-<<<<<<< HEAD
-        // Find the Event type and add impls to ABI.
-        for impl_id in impls {
-            // Handle external impls.
-            if impl_id
-                .has_attr(db.upcast(), EXTERNAL_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                builder.add_impl(db, impl_id, storage_type)?;
-||||||| 87570bdf9
-        // Add impls to ABI.
-        for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
-            if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
-                builder.add_impl(db, id, storage_type)?;
-=======
         // Find the Event core trait.
         let starknet_module = core_submodule(db, "starknet");
         let event_module = extract_matches!(
@@ -135,25 +120,21 @@ impl AbiBuilder {
             ModuleItemId::Trait
         );
 
-        // Add impls to ABI.
-        for (id, imp) in db.module_impls(module_id).unwrap_or_default() {
-            if imp.has_attr(db.upcast(), EXTERNAL_ATTR) {
-                builder.add_impl(db, id, storage_type)?;
->>>>>>> origin/dev-v2.0.1
+        // Find the Event type and add impls to ABI.
+        for impl_id in impls {
+            if impl_id
+                .has_attr(db.upcast(), EXTERNAL_ATTR)
+                .map_err(|_| ABIError::CompilationError)?
+            {
+                builder.add_impl(db, impl_id, storage_type)?;
                 continue;
             }
-<<<<<<< HEAD
-
-            // Handle impls of starknet::Event.
-||||||| 87570bdf9
-=======
 
             // Only handle impls of starknet::Event.
-            if db.impl_def_trait(id)? != event_trait {
+            if db.impl_def_trait(impl_id)? != event_trait {
                 continue;
             }
 
->>>>>>> origin/dev-v2.0.1
             // Check if we have an Event derive plugin data on the impl.
             let module_file = impl_id.module_file_id(db.upcast());
             let generate_info =
