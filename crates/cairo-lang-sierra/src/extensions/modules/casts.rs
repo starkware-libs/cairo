@@ -1,5 +1,6 @@
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+use super::bytes31::Bytes31Type;
 use super::int::unsigned::{Uint16Type, Uint32Type, Uint64Type, Uint8Type};
 use super::int::unsigned128::Uint128Type;
 use super::range_check::RangeCheckType;
@@ -33,6 +34,7 @@ fn get_type_to_nbits_map(
         (Uint32Type::ID, 32),
         (Uint64Type::ID, 64),
         (Uint128Type::ID, 128),
+        (Bytes31Type::ID, 248),
     ]
     .into_iter()
     .filter_map(|(generic_type, n_bits)| {
