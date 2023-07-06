@@ -52,14 +52,14 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None => false,
+            Option::None=> false,
         }
     }
     #[inline(always)]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
-            Option::None => true,
+            Option::None=> true,
         }
     }
 }
