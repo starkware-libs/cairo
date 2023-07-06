@@ -3,7 +3,10 @@ use cairo_lang_defs::plugin::{
 };
 use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_semantic::plugin::DynPluginAuxData;
-use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{
+    self, GenericParam, ItemTrait, MaybeTraitBody, OptionReturnTypeClause,
+    OptionWrappedGenericParamList,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -55,6 +58,9 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let dispatcher_name = format!("{base_name}DispatcherTrait");
     let contract_caller_name = format!("{base_name}Dispatcher");
     let library_caller_name = format!("{base_name}LibraryDispatcher");
+
+    some_fnt(trait_ast, db);
+
     for item_ast in body.items(db).elements(db) {
         match item_ast {
             ast::TraitItem::Function(func) => {
@@ -275,4 +281,35 @@ fn dispatcher_signature(
         [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
     );
     func_declaration
+}
+
+// TODO Ongoing
+fn some_fnt(trait_ast: ItemTrait, db: &dyn SyntaxGroup) {
+    let some_vec = if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) =
+        trait_ast.generic_params(db)
+    {
+        gens.generic_params(db)
+            .elements(db)
+            .into_iter()
+            .filter_map(|generic_param| {
+                if let GenericParam::Impl(param_impl) = generic_param {
+                    Some(param_impl)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    } else {
+        vec![]
+    };
+    for item_impl in some_vec {
+        // TODO Need to resolve the trait AND         
+        // 1: Check trait exist
+        item_impl.trait_path(db).elements(db).into_iter().for_each(|e| {
+            todo!();
+        });
+        // 2: Need to extract all fn from the trait
+        println!("${:#?}", item_impl);
+    }
+    // Return some_vec and append to "dispatcher_signatures"
 }
