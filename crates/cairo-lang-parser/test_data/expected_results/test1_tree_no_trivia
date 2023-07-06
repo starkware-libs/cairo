@@ -8,6 +8,7 @@
     │   │   └── body (kind: TokenSemicolon): ';'
     │   ├── child #1 (kind: ItemUse)
     │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── visibility (kind: VisibilityDefault) []
     │   │   ├── use_kw (kind: TokenUse): 'use'
     │   │   ├── use_path (kind: UsePathSingle)
     │   │   │   ├── ident (kind: PathSegmentSimple)

@@ -15,3 +15,29 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test reexport.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+use inner::myU32;
+fn foo(a: myU32) -> u32 {
+    a
+}
+
+//! > function_name
+foo
+
+//! > module_code
+mod inner {
+    pub use inner::myU32;
+    mod inner {
+        use u32 as myU32;
+    }
+}
+
+//! > expected_diagnostics

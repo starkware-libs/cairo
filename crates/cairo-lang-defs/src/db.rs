@@ -140,6 +140,7 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<OrderedHashMap<ExternFunctionId, ast::ItemExternFunction>>;
     fn module_extern_functions_ids(&self, module_id: ModuleId) -> Maybe<Vec<ExternFunctionId>>;
+    fn use_visibility(&self, use_id: UseId) -> Maybe<ast::Visibility>;
     fn module_visibility(&self, submodule_id: SubmoduleId) -> Maybe<ast::Visibility>;
     fn constant_visibility(&self, constant_id: ConstantId) -> Maybe<ast::Visibility>;
     fn free_function_visibility(&self, free_function_id: FreeFunctionId) -> Maybe<ast::Visibility>;
@@ -267,7 +268,7 @@ pub struct ModuleData {
     items: Arc<Vec<ModuleItemId>>,
     constants: OrderedHashMap<ConstantId, ast::ItemConstant>,
     submodules: OrderedHashMap<SubmoduleId, ast::ItemModule>,
-    uses: OrderedHashMap<UseId, ast::UsePathLeaf>,
+    uses: OrderedHashMap<UseId, (ast::Visibility, ast::UsePathLeaf)>,
     free_functions: OrderedHashMap<FreeFunctionId, ast::FunctionWithBody>,
     structs: OrderedHashMap<StructId, ast::ItemStruct>,
     enums: OrderedHashMap<EnumId, ast::ItemEnum>,
@@ -373,11 +374,12 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::Submodule(item_id));
                 }
                 ast::Item::Use(us) => {
+                    let visibility = us.visibility(syntax_db);
                     let path_leaves = get_all_path_leafs(db.upcast(), us.use_path(syntax_db));
                     for path_leaf in path_leaves {
                         let path_leaf_id =
                             db.intern_use(UseLongId(module_file_id, path_leaf.stable_ptr()));
-                        res.uses.insert(path_leaf_id, path_leaf);
+                        res.uses.insert(path_leaf_id, (visibility.clone(), path_leaf));
                         items.push(ModuleItemId::Use(path_leaf_id));
                     }
                 }
@@ -518,7 +520,7 @@ pub fn module_uses(
     db: &dyn DefsGroup,
     module_id: ModuleId,
 ) -> Maybe<OrderedHashMap<UseId, ast::UsePathLeaf>> {
-    Ok(db.priv_module_data(module_id)?.uses)
+    Ok(db.priv_module_data(module_id)?.uses.into_iter().map(|(k, (_, u))| (k, u)).collect())
 }
 pub fn module_uses_ids(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<Vec<UseId>> {
     Ok(db.module_uses(module_id)?.keys().copied().collect())
@@ -616,6 +618,12 @@ pub fn module_extern_functions_ids(
     module_id: ModuleId,
 ) -> Maybe<Vec<ExternFunctionId>> {
     Ok(db.module_extern_functions(module_id)?.keys().copied().collect())
+}
+
+pub fn use_visibility(db: &dyn DefsGroup, use_id: UseId) -> Maybe<ast::Visibility> {
+    let parent_module_id = use_id.parent_module(db);
+    let (visibility, _) = &db.priv_module_data(parent_module_id)?.uses[use_id];
+    Ok(visibility.clone())
 }
 
 pub fn module_visibility(db: &dyn DefsGroup, submodule_id: SubmoduleId) -> Maybe<ast::Visibility> {
@@ -742,7 +750,7 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Constant(id) => data.constants[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Submodule(id) => data.submodules[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Use(id) => {
-            let use_leaf = &data.uses[id];
+            let (_, use_leaf) = &data.uses[id];
             match use_leaf.alias_clause(db) {
                 ast::OptionAliasClause::Empty(_) => use_leaf.ident(db).stable_ptr().untyped(),
                 ast::OptionAliasClause::AliasClause(alias) => {
