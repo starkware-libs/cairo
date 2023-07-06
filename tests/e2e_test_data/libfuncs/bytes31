@@ -1,3 +1,34 @@
+//! > bytes31_const libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo() -> bytes31 {
+    bytes31_const::<0x100>()
+}
+
+//! > casm
+[ap + 0] = 256, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type bytes31 = bytes31;
+
+libfunc bytes31_const<256> = bytes31_const<256>;
+libfunc store_temp<bytes31> = store_temp<bytes31>;
+
+bytes31_const<256>() -> ([0]);
+store_temp<bytes31>([0]) -> ([1]);
+return([1]);
+
+test::foo@0() -> (bytes31);
+
+//! > ==========================================================================
+
 //! > bytes31_try_from_felt252 libfunc
 
 //! > test_runner_name
