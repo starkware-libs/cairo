@@ -61,7 +61,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let mut members = vec![];
     for member in struct_ast.members(db).elements(db) {
         let member_name = RewriteNode::new_trimmed(member.name(db).as_syntax_node());
-        let member_kind = get_field_kind_for_member(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
+        let member_kind =
+            get_field_kind_for_member(db, &mut diagnostics, &member, EventFieldKind::DataSerde);
         members.push((member.name(db).text(db), member_kind));
 
         let member_for_append = RewriteNode::interpolate_patched(
@@ -225,7 +226,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let member_kind = get_field_kind_for_variant(db, &mut diagnostics, &variant, EventFieldKind::Nested);
+        let member_kind =
+            get_field_kind_for_variant(db, &mut diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
