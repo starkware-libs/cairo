@@ -42,7 +42,7 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
         match array_pop_front_consume(self) {
             Option::Some((arr, x)) => Option::Some((arr, x.unbox())),
-            Option::None(_) => Option::None(()),
+            Option::None => Option::None(()),
         }
     }
     #[inline(always)]
