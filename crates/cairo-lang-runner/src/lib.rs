@@ -107,7 +107,7 @@ impl From<Felt252> for Arg {
 
 /// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
 pub fn build_hints_dict<'b>(
-    instructions: impl Iterator<Item=&'b Instruction>,
+    instructions: impl Iterator<Item = &'b Instruction>,
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
     let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
     let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
