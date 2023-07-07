@@ -570,19 +570,20 @@
     │   │       │   │   │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'V1'
     │   │       │   │   │   │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   ├── lparen (kind: TerminalLParen)
-    │   │       │   │   │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   ├── token (kind: TokenLParen): '('
-    │   │       │   │   │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   ├── pattern (kind: TerminalUnderscore)
-    │   │       │   │   │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │   └── rparen (kind: TerminalRParen)
-    │   │       │   │   │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │   │   │       ├── token (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │   │   │       └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │   │   │           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │   │   │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │   │   │       ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       ├── pattern (kind: TerminalUnderscore)
+    │   │       │   │   │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       │   ├── token (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │       └── rparen (kind: TerminalRParen)
+    │   │       │   │   │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │   │   │           ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       │   │   │               └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │   │   ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │   │   │   ├── token (kind: TokenMatchArrow): '=>'
@@ -614,19 +615,20 @@
     │   │       │   │   │   │       │       │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │       │   │           ├── token (kind: TokenIdentifier): 'V2'
     │   │       │   │   │   │       │       │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   ├── lparen (kind: TerminalLParen)
-    │   │       │   │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   ├── token (kind: TokenLParen): '('
-    │   │       │   │   │   │       │       │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   ├── pattern (kind: TerminalUnderscore)
-    │   │       │   │   │   │       │       │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   │   ├── token (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │       │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │   └── rparen (kind: TerminalRParen)
-    │   │       │   │   │   │       │       │       ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │       │       │       ├── token (kind: TokenRParen): ')'
-    │   │       │   │   │   │       │       │       └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │   │       │       │           └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │       │       │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │       │       ├── lparen (kind: TerminalLParen)
+    │   │       │   │   │   │       │       │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   ├── token (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       ├── pattern (kind: TerminalUnderscore)
+    │   │       │   │   │   │       │       │       │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       │   ├── token (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │       │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │       └── rparen (kind: TerminalRParen)
+    │   │       │   │   │   │       │       │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │       │       │           ├── token (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       │       │               └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │       │       ├── arrow (kind: TerminalMatchArrow)
     │   │       │   │   │   │       │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │       │       │   ├── token (kind: TokenMatchArrow): '=>'

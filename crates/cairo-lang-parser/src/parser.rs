@@ -222,7 +222,7 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
         let lbrace = self.parse_token::<TerminalLBrace>();
-        let variants = self.parse_member_list();
+        let variants = self.parse_variant_list();
         let rbrace = self.parse_token::<TerminalRBrace>();
         ItemEnum::new_green(
             self.db,
@@ -1334,9 +1334,30 @@ impl<'a> Parser<'a> {
                         let lparen = self.take::<TerminalLParen>();
                         let pattern = self.parse_pattern();
                         let rparen = self.parse_token::<TerminalRParen>();
-                        PatternEnum::new_green(self.db, path, lparen, pattern, rparen).into()
+                        let inner_pattern =
+                            PatternEnumInnerPattern::new_green(self.db, lparen, pattern, rparen);
+                        PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
-                    _ => path.into(),
+                    _ => {
+                        let children = match self.db.lookup_intern_green(path.0).details {
+                            GreenNodeDetails::Node { children, width: _ } => children,
+                            _ => return None,
+                        };
+                        // If the path has more than 1 element assume it's a simplified Enum variant
+                        // Eg. MyEnum::A(()) ~ MyEnum::A
+                        // Multi-element path identifiers aren't allowed, for now this mechanism is
+                        // sufficient.
+                        match children.len() {
+                            // 0 => return None, - unreachable
+                            1 => path.into(),
+                            _ => PatternEnum::new_green(
+                                self.db,
+                                path,
+                                OptionPatternEnumInnerPatternEmpty::new_green(self.db).into(),
+                            )
+                            .into(),
+                        }
+                    }
                 }
             }
             SyntaxKind::TerminalLParen => {
@@ -1593,6 +1614,34 @@ impl<'a> Parser<'a> {
             should_stop: is_of_kind!(comma, rbrace, top_level),
         });
         Some(Member::new_green(self.db, attributes, name, type_clause))
+    }
+
+    /// Returns a GreenId of a node with kind VariantList.
+    fn parse_variant_list(&mut self) -> VariantListGreen {
+        VariantList::new_green(
+            self.db,
+            self.parse_separated_list::<Variant, TerminalComma, VariantListElementOrSeparatorGreen>(
+                Self::try_parse_variant,
+                is_of_kind!(rparen, block, lbrace, rbrace, top_level),
+                "variant",
+            ),
+        )
+    }
+
+    /// Returns a GreenId of a node with kind Member or None if a enum variant can't
+    /// be parsed.
+    fn try_parse_variant(&mut self) -> Option<VariantGreen> {
+        let attributes =
+            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+        let name = if attributes.is_some() {
+            self.parse_identifier()
+        } else {
+            self.try_parse_identifier()?
+        };
+        let attributes = attributes.unwrap_or_else(|| AttributeList::new_green(self.db, vec![]));
+
+        let type_clause = self.parse_option_type_clause();
+        Some(Variant::new_green(self.db, attributes, name, type_clause))
     }
 
     /// Expected pattern: `<PathSegment>(::<PathSegment>)*`

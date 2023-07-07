@@ -4,13 +4,14 @@ use cairo_lang_defs::ids::{EnumId, LanguageElementId, VariantId, VariantLongId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use itertools::enumerate;
 use smol_str::SmolStr;
 
 use super::generics::{semantic_generic_params, GenericParamsData};
+use crate::corelib::unit_ty;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
@@ -181,12 +182,12 @@ pub fn priv_enum_definition_data(
     let mut variant_semantic = OrderedHashMap::default();
     for (variant_idx, variant) in enumerate(enum_ast.variants(syntax_db).elements(syntax_db)) {
         let id = db.intern_variant(VariantLongId(module_file_id, variant.stable_ptr()));
-        let ty = resolve_type(
-            db,
-            &mut diagnostics,
-            &mut resolver,
-            &variant.type_clause(syntax_db).ty(syntax_db),
-        );
+        let ty = match variant.type_clause(syntax_db) {
+            ast::OptionTypeClause::Empty(_) => unit_ty(db),
+            ast::OptionTypeClause::TypeClause(type_clause) => {
+                resolve_type(db, &mut diagnostics, &mut resolver, &type_clause.ty(db.upcast()))
+            }
+        };
         let variant_name = variant.name(syntax_db).text(syntax_db);
         if let Some(_other_variant) = variants.insert(variant_name.clone(), id) {
             diagnostics.report(&variant, EnumVariantRedefinition { enum_id, variant_name });

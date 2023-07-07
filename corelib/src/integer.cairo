@@ -24,10 +24,7 @@ impl U128Serde of Serde<u128> {
     }
 }
 
-enum U128sFromFelt252Result {
-    Narrow: u128,
-    Wide: (u128, u128),
-}
+enum U128sFromFelt252Result {Narrow: u128, Wide: (u128, u128), }
 extern fn u128s_from_felt252(a: felt252) -> U128sFromFelt252Result implicits(RangeCheck) nopanic;
 
 #[panic_with('u128_from Overflow', u128_from_felt252)]
@@ -159,7 +156,7 @@ impl U128MulEq of MulEq<u128> {
 #[panic_with('u128 is 0', u128_as_non_zero)]
 fn u128_try_as_non_zero(a: u128) -> Option<NonZero<u128>> nopanic {
     match u128_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -381,7 +378,7 @@ extern fn u8_sqrt(value: u8) -> u8 implicits(RangeCheck) nopanic;
 
 impl U8Mul of Mul<u8> {
     fn mul(lhs: u8, rhs: u8) -> u8 {
-        u8_try_from_felt252(u16_to_felt252(u8_wide_mul(lhs, rhs))).expect('u8_mul Overflow')
+        u8_wide_mul(lhs, rhs).try_into().expect('u8_mul Overflow')
     }
 }
 impl U8MulEq of MulEq<u8> {
@@ -397,7 +394,7 @@ extern fn u8_safe_divmod(lhs: u8, rhs: NonZero<u8>) -> (u8, u8) implicits(RangeC
 #[panic_with('u8 is 0', u8_as_non_zero)]
 fn u8_try_as_non_zero(a: u8) -> Option<NonZero<u8>> nopanic {
     match u8_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -578,8 +575,7 @@ extern fn u16_sqrt(value: u16) -> u8 implicits(RangeCheck) nopanic;
 
 impl U16Mul of Mul<u16> {
     fn mul(lhs: u16, rhs: u16) -> u16 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u16_try_from_felt252(u32_to_felt252(u16_wide_mul(lhs, rhs))).expect('u16_mul Overflow')
+        u16_wide_mul(lhs, rhs).try_into().expect('u16_mul Overflow')
     }
 }
 impl U16MulEq of MulEq<u16> {
@@ -595,7 +591,7 @@ extern fn u16_safe_divmod(lhs: u16, rhs: NonZero<u16>) -> (u16, u16) implicits(R
 #[panic_with('u16 is 0', u16_as_non_zero)]
 fn u16_try_as_non_zero(a: u16) -> Option<NonZero<u16>> nopanic {
     match u16_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -776,8 +772,7 @@ extern fn u32_sqrt(value: u32) -> u16 implicits(RangeCheck) nopanic;
 
 impl U32Mul of Mul<u32> {
     fn mul(lhs: u32, rhs: u32) -> u32 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u32_try_from_felt252(u64_to_felt252(u32_wide_mul(lhs, rhs))).expect('u32_mul Overflow')
+        u32_wide_mul(lhs, rhs).try_into().expect('u32_mul Overflow')
     }
 }
 impl U32MulEq of MulEq<u32> {
@@ -793,7 +788,7 @@ extern fn u32_safe_divmod(lhs: u32, rhs: NonZero<u32>) -> (u32, u32) implicits(R
 #[panic_with('u32 is 0', u32_as_non_zero)]
 fn u32_try_as_non_zero(a: u32) -> Option<NonZero<u32>> nopanic {
     match u32_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -974,8 +969,7 @@ extern fn u64_sqrt(value: u64) -> u32 implicits(RangeCheck) nopanic;
 
 impl U64Mul of Mul<u64> {
     fn mul(lhs: u64, rhs: u64) -> u64 {
-        // TODO(orizi): Use direct conversion, instead of going through felt252.
-        u64_try_from_felt252(u128_to_felt252(u64_wide_mul(lhs, rhs))).expect('u64_mul Overflow')
+        u64_wide_mul(lhs, rhs).try_into().expect('u64_mul Overflow')
     }
 }
 impl U64MulEq of MulEq<u64> {
@@ -991,7 +985,7 @@ extern fn u64_safe_divmod(lhs: u64, rhs: NonZero<u64>) -> (u64, u64) implicits(R
 #[panic_with('u64 is 0', u64_as_non_zero)]
 fn u64_try_as_non_zero(a: u64) -> Option<NonZero<u64>> nopanic {
     match u64_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -1254,7 +1248,7 @@ extern fn u256_sqrt(a: u256) -> u128 implicits(RangeCheck) nopanic;
 #[panic_with('u256 is 0', u256_as_non_zero)]
 fn u256_try_as_non_zero(a: u256) -> Option<NonZero<u256>> nopanic {
     match u256_is_zero(a) {
-        IsZeroResult::Zero(()) => Option::None(()),
+        IsZeroResult::Zero=> Option::None(()),
         IsZeroResult::NonZero(x) => Option::Some(x),
     }
 }
@@ -1542,6 +1536,36 @@ extern fn upcast<FromType, ToType>(x: FromType) -> ToType nopanic;
 //   will not lead to Sierra errors.
 extern fn downcast<FromType, ToType>(x: FromType) -> Option<ToType> implicits(RangeCheck) nopanic;
 
+// Marks `FromType` as upcastable to `ToType`.
+// Do not add user code implementing this trait.
+trait Upcastable<FromType, ToType>;
+impl UpcastableU8U16 of Upcastable<u8, u16> {}
+impl UpcastableU8U32 of Upcastable<u8, u32> {}
+impl UpcastableU8U64 of Upcastable<u8, u64> {}
+impl UpcastableU8U128 of Upcastable<u8, u128> {}
+impl UpcastableU16U32 of Upcastable<u16, u32> {}
+impl UpcastableU16U64 of Upcastable<u16, u64> {}
+impl UpcastableU16U128 of Upcastable<u16, u128> {}
+impl UpcastableU32U64 of Upcastable<u32, u64> {}
+impl UpcastableU32U128 of Upcastable<u32, u128> {}
+impl UpcastableU64U128 of Upcastable<u64, u128> {}
+// Marks `FromType` as downcastable to `ToType`.
+// Do not add user code implementing this trait.
+trait Downcastable<FromType, ToType>;
+impl DowncastableU128U64 of Downcastable<u128, u64> {}
+impl DowncastableU128U32 of Downcastable<u128, u32> {}
+impl DowncastableU128U16 of Downcastable<u128, u16> {}
+impl DowncastableU128U8 of Downcastable<u128, u8> {}
+
+impl DowncastableU64U32 of Downcastable<u64, u32> {}
+impl DowncastableU64U16 of Downcastable<u64, u16> {}
+impl DowncastableU64U8 of Downcastable<u64, u8> {}
+
+impl DowncastableU32U16 of Downcastable<u32, u16> {}
+impl DowncastableU32U8 of Downcastable<u32, u8> {}
+
+impl DowncastableU16U8 of Downcastable<u16, u8> {}
+
 /// Default values
 impl U8Default of Default<u8> {
     #[inline(always)]
@@ -1622,50 +1646,16 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl U8IntoU16 of Into<u8, u16> {
-    fn into(self: u8) -> u16 {
+impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+    fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl U16TryIntoU8 of TryInto<u16, u8> {
-    fn try_into(self: u16) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU32 of Into<u8, u32> {
-    fn into(self: u8) -> u32 {
-        upcast(self)
-    }
-}
-
-impl U32TryIntoU8 of TryInto<u32, u8> {
-    fn try_into(self: u32) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU64 of Into<u8, u64> {
-    fn into(self: u8) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU8 of TryInto<u64, u8> {
-    fn try_into(self: u64) -> Option<u8> {
-        downcast(self)
-    }
-}
-
-impl U8IntoU128 of Into<u8, u128> {
-    fn into(self: u8) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU8 of TryInto<u128, u8> {
-    fn try_into(self: u128) -> Option<u8> {
+impl DowncastableTryInto<
+    From, To, impl FromToDowncastable: Downcastable<From, To>
+> of TryInto<From, To> {
+    fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
 }
@@ -1688,42 +1678,6 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
     }
 }
 
-impl U16IntoU32 of Into<u16, u32> {
-    fn into(self: u16) -> u32 {
-        upcast(self)
-    }
-}
-
-impl U32TryIntoU16 of TryInto<u32, u16> {
-    fn try_into(self: u32) -> Option<u16> {
-        downcast(self)
-    }
-}
-
-impl U16IntoU64 of Into<u16, u64> {
-    fn into(self: u16) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU16 of TryInto<u64, u16> {
-    fn try_into(self: u64) -> Option<u16> {
-        downcast(self)
-    }
-}
-
-impl U16IntoU128 of Into<u16, u128> {
-    fn into(self: u16) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU16 of TryInto<u128, u16> {
-    fn try_into(self: u128) -> Option<u16> {
-        downcast(self)
-    }
-}
-
 impl U16IntoU256 of Into<u16, u256> {
     fn into(self: u16) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
@@ -1742,30 +1696,6 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
     }
 }
 
-impl U32IntoU64 of Into<u32, u64> {
-    fn into(self: u32) -> u64 {
-        upcast(self)
-    }
-}
-
-impl U64TryIntoU32 of TryInto<u64, u32> {
-    fn try_into(self: u64) -> Option<u32> {
-        downcast(self)
-    }
-}
-
-impl U32IntoU128 of Into<u32, u128> {
-    fn into(self: u32) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU32 of TryInto<u128, u32> {
-    fn try_into(self: u128) -> Option<u32> {
-        downcast(self)
-    }
-}
-
 impl U32IntoU256 of Into<u32, u256> {
     fn into(self: u32) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
@@ -1781,18 +1711,6 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
         }
 
         low.try_into()
-    }
-}
-
-impl U64IntoU128 of Into<u64, u128> {
-    fn into(self: u64) -> u128 {
-        upcast(self)
-    }
-}
-
-impl U128TryIntoU64 of TryInto<u128, u64> {
-    fn try_into(self: u128) -> Option<u64> {
-        downcast(self)
     }
 }
 
@@ -1831,7 +1749,6 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
         Option::Some(low)
     }
 }
-
 
 // === Zeroable ===
 

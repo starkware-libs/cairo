@@ -8,7 +8,7 @@ use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::ast::{
-    AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList,
+    AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList, VariantList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -34,7 +34,7 @@ impl MacroPlugin for DerivePlugin {
                 db,
                 enum_ast.name(db),
                 enum_ast.attributes(db),
-                ExtraInfo::Enum(member_names(db, enum_ast.variants(db))),
+                ExtraInfo::Enum(variant_names(db, enum_ast.variants(db))),
             ),
             ast::Item::ExternType(extern_type_ast) => generate_derive_code_for_type(
                 db,
@@ -64,6 +64,10 @@ enum ExtraInfo {
 
 fn member_names(db: &dyn SyntaxGroup, members: MemberList) -> Vec<SmolStr> {
     members.elements(db).into_iter().map(|member| member.name(db).text(db)).collect()
+}
+
+fn variant_names(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<SmolStr> {
+    variants.elements(db).into_iter().map(|variant| variant.name(db).text(db)).collect()
 }
 
 fn extract_struct_extra_info(db: &dyn SyntaxGroup, struct_ast: &ItemStruct) -> ExtraInfo {

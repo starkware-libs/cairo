@@ -233,7 +233,9 @@ impl BlockUsages {
                 }
             }
             Pattern::EnumVariant(pat) => {
-                Self::handle_pattern(&pat.inner_pattern, current);
+                if let Some(inner_pattern) = &pat.inner_pattern {
+                    Self::handle_pattern(inner_pattern, current);
+                }
             }
             Pattern::Otherwise(_) => {}
         }

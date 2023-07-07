@@ -1033,8 +1033,14 @@ fn compute_pattern_semantic(
 
             // Compute inner pattern.
             let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
-            let inner_pattern =
-                compute_pattern_semantic(ctx, enum_pattern.pattern(syntax_db), inner_ty)?.into();
+
+            let inner_pattern: Option<Box<Pattern>> = match enum_pattern.pattern(syntax_db) {
+                ast::OptionPatternEnumInnerPattern::Empty(_) => None,
+                ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
+                    Some(compute_pattern_semantic(ctx, p.pattern(syntax_db), inner_ty)?.into())
+                }
+            };
+
             Pattern::EnumVariant(PatternEnumVariant {
                 variant: concrete_variant,
                 inner_pattern,

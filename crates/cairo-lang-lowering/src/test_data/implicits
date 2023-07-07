@@ -56,7 +56,7 @@ End:
 
 blk2:
 Statements:
-  (v52: core::RangeCheck, v13: core::option::Option::<core::integer::u64>) <- core::integer::U128TryIntoU64::try_into(v41, v3)
+  (v52: core::RangeCheck, v13: core::option::Option::<core::integer::u64>) <- core::integer::DowncastableTryInto::<core::integer::u128, core::integer::u64, core::integer::DowncastableU128U64>::try_into(v41, v3)
 End:
   Match(match_enum(v13) {
     Option::Some(v26) => blk3,

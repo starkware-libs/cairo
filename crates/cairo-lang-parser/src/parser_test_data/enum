@@ -6,7 +6,7 @@ test_partial_parser_tree
 //! > cairo_code
 enum MyEnum {
     A: felt252,
-    B(felt252),
+    B: (felt252),
     C: felt252,
     MissingComma
 }
@@ -17,15 +17,10 @@ ItemEnum
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Unexpected token, expected ':' followed by a type.
- --> dummy_file.cairo:3:6
-    B(felt252),
-     ^
-
-error: Unexpected token, expected ':' followed by a type.
- --> dummy_file.cairo:5:17
-    MissingComma
-                ^
+error: Missing token TokenComma.
+ --> dummy_file.cairo:3:16
+    B: (felt252),
+               ^
 
 //! > expected_tree
 └── Top level kind: ItemEnum
@@ -34,8 +29,8 @@ error: Unexpected token, expected ':' followed by a type.
     ├── name (kind: TokenIdentifier): 'MyEnum'
     ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
     ├── lbrace (kind: TokenLBrace): '{'
-    ├── variants (kind: MemberList)
-    │   ├── item #0 (kind: Member)
+    ├── variants (kind: VariantList)
+    │   ├── item #0 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'A'
     │   │   └── type_clause (kind: TypeClause)
@@ -44,14 +39,20 @@ error: Unexpected token, expected ':' followed by a type.
     │   │           └── item #0 (kind: PathSegmentSimple)
     │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #0 (kind: TokenComma): ','
-    │   ├── item #1 (kind: Member)
+    │   ├── item #1 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'B'
     │   │   └── type_clause (kind: TypeClause)
-    │   │       ├── colon: Missing
-    │   │       └── ty: Missing []
+    │   │       ├── colon (kind: TokenColon): ':'
+    │   │       └── ty (kind: ExprListParenthesized)
+    │   │           ├── lparen (kind: TokenLParen): '('
+    │   │           ├── expressions (kind: ExprList)
+    │   │           │   └── item #0 (kind: ExprPath)
+    │   │           │       └── item #0 (kind: PathSegmentSimple)
+    │   │           │           └── ident (kind: TokenIdentifier): 'felt252'
+    │   │           └── rparen (kind: TokenRParen): ')'
     │   ├── separator #1 (kind: TokenComma): ','
-    │   ├── item #2 (kind: Member)
+    │   ├── item #2 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── name (kind: TokenIdentifier): 'C'
     │   │   └── type_clause (kind: TypeClause)
@@ -60,10 +61,8 @@ error: Unexpected token, expected ':' followed by a type.
     │   │           └── item #0 (kind: PathSegmentSimple)
     │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #2 (kind: TokenComma): ','
-    │   └── item #3 (kind: Member)
+    │   └── item #3 (kind: Variant)
     │       ├── attributes (kind: AttributeList) []
     │       ├── name (kind: TokenIdentifier): 'MissingComma'
-    │       └── type_clause (kind: TypeClause)
-    │           ├── colon: Missing
-    │           └── ty: Missing []
+    │       └── type_clause (kind: OptionTypeClauseEmpty) []
     └── rbrace (kind: TokenRBrace): '}'

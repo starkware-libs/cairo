@@ -5470,17 +5470,13 @@ pub struct PatternEnum {
 }
 impl PatternEnum {
     pub const INDEX_PATH: usize = 0;
-    pub const INDEX_LPAREN: usize = 1;
-    pub const INDEX_PATTERN: usize = 2;
-    pub const INDEX_RPAREN: usize = 3;
+    pub const INDEX_PATTERN: usize = 1;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
-        lparen: TerminalLParenGreen,
-        pattern: PatternGreen,
-        rparen: TerminalRParenGreen,
+        pattern: OptionPatternEnumInnerPatternGreen,
     ) -> PatternEnumGreen {
-        let children: Vec<GreenId> = vec![path.0, lparen.0, pattern.0, rparen.0];
+        let children: Vec<GreenId> = vec![path.0, pattern.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
         PatternEnumGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::PatternEnum,
@@ -5492,14 +5488,8 @@ impl PatternEnum {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
-        TerminalLParen::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
-        Pattern::from_syntax_node(db, self.children[2].clone())
-    }
-    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
-        TerminalRParen::from_syntax_node(db, self.children[3].clone())
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPattern {
+        OptionPatternEnumInnerPattern::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -5521,9 +5511,7 @@ impl TypedSyntaxNode for PatternEnum {
             details: GreenNodeDetails::Node {
                 children: vec![
                     ExprPath::missing(db).0,
-                    TerminalLParen::missing(db).0,
-                    Pattern::missing(db).0,
-                    TerminalRParen::missing(db).0,
+                    OptionPatternEnumInnerPattern::missing(db).0,
                 ],
                 width: TextWidth::default(),
             },
@@ -5549,6 +5537,226 @@ impl TypedSyntaxNode for PatternEnum {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         PatternEnumPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct PatternEnumInnerPattern {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl PatternEnumInnerPattern {
+    pub const INDEX_LPAREN: usize = 0;
+    pub const INDEX_PATTERN: usize = 1;
+    pub const INDEX_RPAREN: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lparen: TerminalLParenGreen,
+        pattern: PatternGreen,
+        rparen: TerminalRParenGreen,
+    ) -> PatternEnumInnerPatternGreen {
+        let children: Vec<GreenId> = vec![lparen.0, pattern.0, rparen.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        PatternEnumInnerPatternGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PatternEnumInnerPattern,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl PatternEnumInnerPattern {
+    pub fn lparen(&self, db: &dyn SyntaxGroup) -> TerminalLParen {
+        TerminalLParen::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn pattern(&self, db: &dyn SyntaxGroup) -> Pattern {
+        Pattern::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rparen(&self, db: &dyn SyntaxGroup) -> TerminalRParen {
+        TerminalRParen::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternEnumInnerPatternPtr(pub SyntaxStablePtrId);
+impl PatternEnumInnerPatternPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PatternEnumInnerPatternGreen(pub GreenId);
+impl TypedSyntaxNode for PatternEnumInnerPattern {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::PatternEnumInnerPattern);
+    type StablePtr = PatternEnumInnerPatternPtr;
+    type Green = PatternEnumInnerPatternGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        PatternEnumInnerPatternGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::PatternEnumInnerPattern,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLParen::missing(db).0,
+                    Pattern::missing(db).0,
+                    TerminalRParen::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::PatternEnumInnerPattern,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::PatternEnumInnerPattern
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        PatternEnumInnerPatternPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum OptionPatternEnumInnerPattern {
+    Empty(OptionPatternEnumInnerPatternEmpty),
+    PatternEnumInnerPattern(PatternEnumInnerPattern),
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionPatternEnumInnerPatternPtr(pub SyntaxStablePtrId);
+impl OptionPatternEnumInnerPatternPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+impl From<OptionPatternEnumInnerPatternEmptyPtr> for OptionPatternEnumInnerPatternPtr {
+    fn from(value: OptionPatternEnumInnerPatternEmptyPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PatternEnumInnerPatternPtr> for OptionPatternEnumInnerPatternPtr {
+    fn from(value: PatternEnumInnerPatternPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<OptionPatternEnumInnerPatternEmptyGreen> for OptionPatternEnumInnerPatternGreen {
+    fn from(value: OptionPatternEnumInnerPatternEmptyGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<PatternEnumInnerPatternGreen> for OptionPatternEnumInnerPatternGreen {
+    fn from(value: PatternEnumInnerPatternGreen) -> Self {
+        Self(value.0)
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionPatternEnumInnerPatternGreen(pub GreenId);
+impl TypedSyntaxNode for OptionPatternEnumInnerPattern {
+    const OPTIONAL_KIND: Option<SyntaxKind> = None;
+    type StablePtr = OptionPatternEnumInnerPatternPtr;
+    type Green = OptionPatternEnumInnerPatternGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        panic!("No missing variant.");
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        match kind {
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty => OptionPatternEnumInnerPattern::Empty(
+                OptionPatternEnumInnerPatternEmpty::from_syntax_node(db, node),
+            ),
+            SyntaxKind::PatternEnumInnerPattern => {
+                OptionPatternEnumInnerPattern::PatternEnumInnerPattern(
+                    PatternEnumInnerPattern::from_syntax_node(db, node),
+                )
+            }
+            _ => panic!(
+                "Unexpected syntax kind {:?} when constructing {}.",
+                kind, "OptionPatternEnumInnerPattern"
+            ),
+        }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        match self {
+            OptionPatternEnumInnerPattern::Empty(x) => x.as_syntax_node(),
+            OptionPatternEnumInnerPattern::PatternEnumInnerPattern(x) => x.as_syntax_node(),
+        }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionPatternEnumInnerPatternPtr(self.as_syntax_node().0.stable_ptr)
+    }
+}
+impl OptionPatternEnumInnerPattern {
+    #[allow(clippy::match_like_matches_macro)]
+    pub fn is_variant(kind: SyntaxKind) -> bool {
+        match kind {
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty => true,
+            SyntaxKind::PatternEnumInnerPattern => true,
+            _ => false,
+        }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct OptionPatternEnumInnerPatternEmpty {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl OptionPatternEnumInnerPatternEmpty {
+    pub fn new_green(db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPatternEmptyGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        OptionPatternEnumInnerPatternEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl OptionPatternEnumInnerPatternEmpty {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionPatternEnumInnerPatternEmptyPtr(pub SyntaxStablePtrId);
+impl OptionPatternEnumInnerPatternEmptyPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct OptionPatternEnumInnerPatternEmptyGreen(pub GreenId);
+impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::OptionPatternEnumInnerPatternEmpty);
+    type StablePtr = OptionPatternEnumInnerPatternEmptyPtr;
+    type Green = OptionPatternEnumInnerPatternEmptyGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        OptionPatternEnumInnerPatternEmptyGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::OptionPatternEnumInnerPatternEmpty,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::OptionPatternEnumInnerPatternEmpty
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        OptionPatternEnumInnerPatternEmptyPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -7973,6 +8181,174 @@ impl TypedSyntaxNode for MemberList {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         MemberListPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Variant {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl Variant {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_TYPE_CLAUSE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        type_clause: OptionTypeClauseGreen,
+    ) -> VariantGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, type_clause.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        VariantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Variant,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl Variant {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn type_clause(&self, db: &dyn SyntaxGroup) -> OptionTypeClause {
+        OptionTypeClause::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantPtr(pub SyntaxStablePtrId);
+impl VariantPtr {
+    pub fn name_green(self, db: &dyn SyntaxGroup) -> TerminalIdentifierGreen {
+        let ptr = db.lookup_intern_stable_ptr(self.0);
+        if let SyntaxStablePtr::Child { key_fields, .. } = ptr {
+            TerminalIdentifierGreen(key_fields[0])
+        } else {
+            panic!("Unexpected key field query on root.");
+        }
+    }
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantGreen(pub GreenId);
+impl TypedSyntaxNode for Variant {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::Variant);
+    type StablePtr = VariantPtr;
+    type Green = VariantGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VariantGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::Variant,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    OptionTypeClause::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::Variant,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::Variant
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VariantPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct VariantList(ElementList<Variant, 2>);
+impl Deref for VariantList {
+    type Target = ElementList<Variant, 2>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl VariantList {
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        children: Vec<VariantListElementOrSeparatorGreen>,
+    ) -> VariantListGreen {
+        let width = children.iter().map(|id| db.lookup_intern_green(id.id()).width()).sum();
+        VariantListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VariantList,
+            details: GreenNodeDetails::Node {
+                children: children.iter().map(|x| x.id()).collect(),
+                width,
+            },
+        }))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantListPtr(pub SyntaxStablePtrId);
+impl VariantListPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub enum VariantListElementOrSeparatorGreen {
+    Separator(TerminalCommaGreen),
+    Element(VariantGreen),
+}
+impl From<TerminalCommaGreen> for VariantListElementOrSeparatorGreen {
+    fn from(value: TerminalCommaGreen) -> Self {
+        VariantListElementOrSeparatorGreen::Separator(value)
+    }
+}
+impl From<VariantGreen> for VariantListElementOrSeparatorGreen {
+    fn from(value: VariantGreen) -> Self {
+        VariantListElementOrSeparatorGreen::Element(value)
+    }
+}
+impl VariantListElementOrSeparatorGreen {
+    fn id(&self) -> GreenId {
+        match self {
+            VariantListElementOrSeparatorGreen::Separator(green) => green.0,
+            VariantListElementOrSeparatorGreen::Element(green) => green.0,
+        }
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct VariantListGreen(pub GreenId);
+impl TypedSyntaxNode for VariantList {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::VariantList);
+    type StablePtr = VariantListPtr;
+    type Green = VariantListGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        VariantListGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::VariantList,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        Self(ElementList::new(node))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        VariantListPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -10714,7 +11090,7 @@ impl ItemEnum {
         name: TerminalIdentifierGreen,
         generic_params: OptionWrappedGenericParamListGreen,
         lbrace: TerminalLBraceGreen,
-        variants: MemberListGreen,
+        variants: VariantListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ItemEnumGreen {
         let children: Vec<GreenId> =
@@ -10742,8 +11118,8 @@ impl ItemEnum {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[4].clone())
     }
-    pub fn variants(&self, db: &dyn SyntaxGroup) -> MemberList {
-        MemberList::from_syntax_node(db, self.children[5].clone())
+    pub fn variants(&self, db: &dyn SyntaxGroup) -> VariantList {
+        VariantList::from_syntax_node(db, self.children[5].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[6].clone())
@@ -10780,7 +11156,7 @@ impl TypedSyntaxNode for ItemEnum {
                     TerminalIdentifier::missing(db).0,
                     OptionWrappedGenericParamList::missing(db).0,
                     TerminalLBrace::missing(db).0,
-                    MemberList::missing(db).0,
+                    VariantList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: TextWidth::default(),
