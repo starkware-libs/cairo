@@ -74,6 +74,7 @@ pub struct RunResultStarknet {
 }
 
 /// The full result of a run.
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
@@ -81,7 +82,7 @@ pub struct RunResult {
 }
 
 /// The ran function return value.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
     Success(Vec<Felt252>),
@@ -106,7 +107,7 @@ impl From<Felt252> for Arg {
 
 /// Builds hints_dict required in cairo_vm::types::program::Program from instructions.
 pub fn build_hints_dict<'b>(
-    instructions: impl Iterator<Item = &'b Instruction>,
+    instructions: impl Iterator<Item=&'b Instruction>,
 ) -> (HashMap<usize, Vec<HintParams>>, HashMap<String, Hint>) {
     let mut hints_dict: HashMap<usize, Vec<HintParams>> = HashMap::new();
     let mut string_to_hint: HashMap<String, Hint> = HashMap::new();
