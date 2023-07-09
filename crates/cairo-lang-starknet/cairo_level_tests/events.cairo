@@ -34,7 +34,10 @@ mod contract_with_event {
 
     #[event]
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
-    enum Event {IncrementalEvent: IncrementalEvent, StaticEvent: StaticEvent, }
+    enum Event {
+        IncrementalEvent: IncrementalEvent,
+        StaticEvent: StaticEvent,
+    }
 
     #[constructor]
     fn constructor(ref self: ContractState) {
