@@ -73,11 +73,20 @@ impl SyntaxNodeFormat for SyntaxNode {
                         SyntaxKind::FunctionWithBody
                             | SyntaxKind::ItemExternFunction
                             | SyntaxKind::ExprFunctionCall
-                            | SyntaxKind::PatternEnum
                             | SyntaxKind::PatternStruct
                             | SyntaxKind::Attribute
                     )
                 ) =>
+            {
+                true
+            }
+            SyntaxKind::ExprPath
+                if matches!(parent_kind(db, self), Some(SyntaxKind::PatternEnum))
+                    && self
+                        .parent()
+                        .unwrap()
+                        .children(db)
+                        .any(|c| c.kind(db) == SyntaxKind::PatternEnumInnerPattern) =>
             {
                 true
             }
@@ -159,7 +168,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             },
             Some(SyntaxKind::ItemEnum) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
-                SyntaxKind::MemberList => Some(2),
+                SyntaxKind::VariantList => Some(2),
                 SyntaxKind::WrappedGenericParamList => Some(3),
                 _ => None,
             },
@@ -264,6 +273,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ImplicitsList
                 | SyntaxKind::ImplicitsClause
                 | SyntaxKind::MemberList
+                | SyntaxKind::VariantList
                 | SyntaxKind::ArgList
                 | SyntaxKind::Arg
                 | SyntaxKind::GenericArgList
@@ -384,7 +394,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     )),
                 },
-                SyntaxKind::MemberList => WrappingBreakLinePoints {
+                SyntaxKind::MemberList | SyntaxKind::VariantList => WrappingBreakLinePoints {
                     leading: Some(BreakLinePointProperties::new(
                         3,
                         BreakLinePointIndentation::IndentedWithTail,
@@ -496,7 +506,11 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::TerminalComma
                     if matches!(
                         parent_kind(db, self),
-                        Some(SyntaxKind::MemberList) | Some(SyntaxKind::MatchArms)
+                        Some(
+                            SyntaxKind::MemberList
+                                | SyntaxKind::VariantList
+                                | SyntaxKind::MatchArms
+                        )
                     ) =>
                 {
                     WrappingBreakLinePoints {
