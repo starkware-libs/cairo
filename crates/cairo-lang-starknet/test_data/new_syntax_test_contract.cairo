@@ -25,7 +25,10 @@ mod counter_contract {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {CounterIncreased: CounterIncreased, CounterDecreased: CounterDecreased }
+    enum Event {
+        CounterIncreased: CounterIncreased,
+        CounterDecreased: CounterDecreased
+    }
 
     #[derive(Drop, starknet::Event)]
     struct CounterIncreased {

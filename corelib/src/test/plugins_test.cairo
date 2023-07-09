@@ -5,7 +5,11 @@ use option::OptionTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 #[derive(Copy, Drop, Serde, PartialEq)]
-enum EnumForSerde {A, B: u32, C: u64, }
+enum EnumForSerde {
+    A,
+    B: u32,
+    C: u64,
+}
 
 #[test]
 fn test_derive_serde_enum() {

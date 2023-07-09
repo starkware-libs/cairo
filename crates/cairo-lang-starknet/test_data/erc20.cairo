@@ -38,7 +38,10 @@ mod erc_20 {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {Transfer: Transfer, Approval: Approval, }
+    enum Event {
+        Transfer: Transfer,
+        Approval: Approval,
+    }
     #[derive(Drop, starknet::Event)]
     struct Transfer {
         from: ContractAddress,
