@@ -65,7 +65,7 @@
       "\tOption::Some($1) => {",
       "\t\t$2",
       "\t},",
-      "\tOption::None(()) => {",
+      "\tOption::None => {",
       "\t\t$3",
       "\t},",
       "}"

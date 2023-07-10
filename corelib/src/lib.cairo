@@ -69,15 +69,15 @@ impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
-            bool::False(_) => !*rhs,
-            bool::True(_) => *rhs,
+            bool::False => !*rhs,
+            bool::True => *rhs,
         }
     }
     #[inline(always)]
     fn ne(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
-            bool::False(_) => *rhs,
-            bool::True(_) => !*rhs,
+            bool::False => *rhs,
+            bool::True => !*rhs,
         }
     }
 }

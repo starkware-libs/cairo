@@ -16,11 +16,11 @@ fn foo() -> felt252 {
 
    match opt {
         Option::Some(_) => one + two,
-        Option::None(_) => {
+        Option::None => {
             let four = 4;
             match opt {
                 Option::Some(_) => three + four,
-                Option::None(_) => one,
+                Option::None => one,
             }
         }
    }
@@ -194,7 +194,7 @@ fn foo() {
 
    match get_option() {
         Option::Some(_) => a,
-        Option::None(_) => false ^ b,
+        Option::None => false ^ b,
    };
 }
 

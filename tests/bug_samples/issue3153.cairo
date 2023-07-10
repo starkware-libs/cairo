@@ -13,7 +13,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         let intermediate: Option<felt252> = self.try_into();
         match intermediate {
             Option::Some(felt) => felt.try_into(),
-            Option::None(()) => Option::None(())
+            Option::None => Option::None(())
         }
     }
 }

@@ -75,7 +75,7 @@ foo
 fn bar<T, impl TDrop: Drop::<T>>(val: Option::<T>, val2: T) -> T {
     match val {
         Option::Some(x) => x,
-        Option::None(()) => val2,
+        Option::None => val2,
     }
 }
 
@@ -118,7 +118,6 @@ End:
 
 blk4:
 Statements:
-  () <- struct_destructure(v4)
 End:
   Goto(blk5, {v1 -> v5})
 
