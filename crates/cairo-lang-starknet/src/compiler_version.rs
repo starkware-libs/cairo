@@ -14,7 +14,7 @@ impl std::fmt::Display for VersionId {
 /// The version of the high level compiler that compiled the contract. Should be the same as the
 /// rust workspace version.
 pub fn current_compiler_version_id() -> VersionId {
-    VersionId { major: 2, minor: 0, patch: 0 }
+    VersionId { major: 2, minor: 0, patch: 2 }
 }
 
 /// The version of the Sierra compiler that compiled the contract.
