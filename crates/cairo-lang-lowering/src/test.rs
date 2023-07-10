@@ -30,7 +30,6 @@ cairo_lang_test_utils::test_file_test!(
     "src/test_data",
     {
         assignment :"assignment",
-        borrow_check :"borrow_check",
         call :"call",
         constant :"constant",
         destruct :"destruct",

@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "test.rs"]
+mod test;
+
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::Maybe;
 use itertools::{zip_eq, Itertools};

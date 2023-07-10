@@ -1,7 +1,7 @@
 //! > Basic borrow checking valid.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(x: ACopy, y: ADrop) {
@@ -41,12 +41,44 @@ Statements:
 End:
   Return(v6)
 
+//! > lowering
+Parameters: v0: test::ACopy, v1: test::ADrop
+blk0 (root):
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+End:
+  Match(match_enum(v3) {
+    bool::False(v5) => blk2,
+    bool::True(v4) => blk1,
+  })
+
+blk1:
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  () <- test::use_a_drop(v1)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  () <- test::use_a_copy(v0)
+  (v6: ()) <- struct_construct()
+End:
+  Return(v6)
+
 //! > ==========================================================================
 
 //! > Basic borrow checking failures.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(x: ACopy, y: ADrop) -> ADrop {
@@ -86,12 +118,41 @@ fn foo(x: ACopy, y: ADrop) -> ADrop {
 //! > lowering_flat
 Parameters: v0: test::ACopy, v1: test::ADrop
 
+//! > lowering
+Parameters: v0: test::ACopy, v1: test::ADrop
+blk0 (root):
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+End:
+  Match(match_enum(v3) {
+    bool::False(v5) => blk2,
+    bool::True(v4) => blk1,
+  })
+
+blk1:
+Statements:
+  () <- test::use_a_copy(v0)
+  () <- test::use_a_drop(v1)
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+End:
+  Return(v1)
+
 //! > ==========================================================================
 
 //! > Borrow checking with panic
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(ref x: ADrop, y: ADrop) {
@@ -150,12 +211,22 @@ Statements:
 End:
   Return(v10)
 
+//! > lowering
+Parameters: v0: test::ADrop, v1: test::ADrop
+blk0 (root):
+Statements:
+  () <- test::use_a_drop(v0)
+  (v2: ()) <- test::bar()
+  (v3: ()) <- struct_construct()
+End:
+  Return(v1, v3)
+
 //! > ==========================================================================
 
 //! > Borrow checking array
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(ref self: Query::<felt252>, value: felt252) {
@@ -187,12 +258,22 @@ Statements:
 End:
   Return(v5, v7)
 
+//! > lowering
+Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
+blk0 (root):
+Statements:
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
+  (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2, v1)
+  (v5: test::Query::<core::felt252>) <- struct_construct(v4)
+End:
+  Return(v5, v3)
+
 //! > ==========================================================================
 
 //! > Find drops.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo() {
@@ -224,12 +305,24 @@ Statements:
 End:
   Return(v17, v5)
 
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::integer::u256>) <- core::array::ArrayDefault::<core::integer::u256>::default()
+  (v1: core::felt252) <- 1u
+  (v2: core::integer::u256) <- core::integer::Felt252IntoU256::into(v1)
+  (v4: core::array::Array::<core::integer::u256>, v3: ()) <- core::array::ArrayImpl::<core::integer::u256>::append(v0, v2)
+  (v5: ()) <- struct_construct()
+End:
+  Return(v5)
+
 //! > ==========================================================================
 
 //! > Non destructible with panicable call.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(ref a: A) {
@@ -253,12 +346,23 @@ fn foo(ref a: A) {
 //! > lowering_flat
 Parameters: v0: test::A
 
+//! > lowering
+Parameters: v0: test::A
+blk0 (root):
+Statements:
+  (v1: core::felt252) <- 1u
+  (v2: core::felt252) <- 1u
+  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
+  (v4: ()) <- struct_construct()
+End:
+  Return(v0, v4)
+
 //! > ==========================================================================
 
 //! > Test pushing of moved var and returning moved variable
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(x: ADrop, mut y: ADrop) -> ADrop {
@@ -291,12 +395,40 @@ error: Variable was previously moved. Trait has no implementation in context: co
 //! > lowering_flat
 Parameters: v0: test::ADrop, v1: test::ADrop
 
+//! > lowering
+Parameters: v0: test::ADrop, v1: test::ADrop
+blk0 (root):
+Statements:
+  (v2: ()) <- struct_construct()
+  (v3: core::bool) <- bool::True(v2)
+End:
+  Match(match_enum(v3) {
+    bool::False(v5) => blk2,
+    bool::True(v4) => blk1,
+  })
+
+blk1:
+Statements:
+  () <- test::use_a_drop(v1)
+End:
+  Goto(blk3, {v1 -> v6})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v0 -> v6})
+
+blk3:
+Statements:
+End:
+  Return(v6)
+
 //! > ==========================================================================
 
 //! > Test panic with moved input.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo() {
@@ -324,12 +456,26 @@ error: Variable was previously moved. Trait has no implementation in context: co
 //! > lowering_flat
 Parameters:
 
+//! > lowering
+Parameters:
+blk0 (root):
+Statements:
+  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
+  (v1: core::felt252) <- 7310030899191440485u
+  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
+  (v4: core::felt252) <- 6450273u
+  (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3, v4)
+  (v7: core::panics::Panic) <- struct_construct()
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v3)
+End:
+  Panic(v8)
+
 //! > ==========================================================================
 
 //! > Test match_extern on moved var.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(x: NonCopy) -> Option<NonCopy> {
@@ -358,12 +504,41 @@ error: Variable was previously moved. Trait has no implementation in context: co
 //! > lowering_flat
 Parameters: v0: test::NonCopy
 
+//! > lowering
+Parameters: v0: test::NonCopy
+blk0 (root):
+Statements:
+  () <- test::use_non_copy(v0)
+End:
+  Match(match test::do_match_extern(v0) {
+    Option::Some(v1) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+  (v2: core::option::Option::<test::NonCopy>) <- Option::Some(v1)
+End:
+  Goto(blk3, {v2 -> v5})
+
+blk2:
+Statements:
+  (v3: ()) <- struct_construct()
+  (v4: core::option::Option::<test::NonCopy>) <- Option::None(v3)
+End:
+  Goto(blk3, {v4 -> v5})
+
+blk3:
+Statements:
+End:
+  Return(v5)
+
 //! > ==========================================================================
 
 //! > Test recomposed struct var.
 
 //! > test_runner_name
-test_function_lowering
+test_borrow_check
 
 //! > function
 fn foo(mut x: MyStruct) -> MyStruct {
@@ -400,3 +575,15 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
 
 //! > lowering_flat
 Parameters: v0: test::MyStruct
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::integer::u32) <- 1u
+  (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0)
+  (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2, v1)
+  () <- test::use_non_copy(v3)
+  (v6: test::MyStruct) <- struct_construct(v5, v3)
+End:
+  Return(v6)
