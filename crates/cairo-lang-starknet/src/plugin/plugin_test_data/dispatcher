@@ -214,6 +214,7 @@ impl IContractDispatcherSerde<> of serde::Serde::<IContractDispatcher<>> {
 storage_access_impl:
 
 impl StorageAccessIContractDispatcher of starknet::StorageAccess::<IContractDispatcher> {
+    #[inline(always)]
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
         let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
@@ -222,10 +223,12 @@ impl StorageAccessIContractDispatcher of starknet::StorageAccess::<IContractDisp
             }
         )
     }
+    #[inline(always)]
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
+    #[inline(always)]
     fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractDispatcher> {
         let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read_at_offset_internal(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
@@ -264,6 +267,7 @@ impl IContractLibraryDispatcherSerde<> of serde::Serde::<IContractLibraryDispatc
 storage_access_impl:
 
 impl StorageAccessIContractLibraryDispatcher of starknet::StorageAccess::<IContractLibraryDispatcher> {
+    #[inline(always)]
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
@@ -272,10 +276,12 @@ impl StorageAccessIContractLibraryDispatcher of starknet::StorageAccess::<IContr
             }
         )
     }
+    #[inline(always)]
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
+    #[inline(always)]
     fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractLibraryDispatcher> {
         let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read_at_offset_internal(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
@@ -314,6 +320,7 @@ impl IContractSafeLibraryDispatcherSerde<> of serde::Serde::<IContractSafeLibrar
 storage_access_impl:
 
 impl StorageAccessIContractSafeLibraryDispatcher of starknet::StorageAccess::<IContractSafeLibraryDispatcher> {
+    #[inline(always)]
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
@@ -322,10 +329,12 @@ impl StorageAccessIContractSafeLibraryDispatcher of starknet::StorageAccess::<IC
             }
         )
     }
+    #[inline(always)]
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
         starknet::SyscallResult::Ok(())
     }
+    #[inline(always)]
     fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
         let class_hash = starknet::StorageAccess::<starknet::ClassHash>::read_at_offset_internal(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(
@@ -364,6 +373,7 @@ impl IContractSafeDispatcherSerde<> of serde::Serde::<IContractSafeDispatcher<>>
 storage_access_impl:
 
 impl StorageAccessIContractSafeDispatcher of starknet::StorageAccess::<IContractSafeDispatcher> {
+    #[inline(always)]
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read(address_domain, base)?;
         starknet::SyscallResult::Ok(
@@ -372,10 +382,12 @@ impl StorageAccessIContractSafeDispatcher of starknet::StorageAccess::<IContract
             }
         )
     }
+    #[inline(always)]
     fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IContractSafeDispatcher) -> starknet::SyscallResult<()> {
         starknet::StorageAccess::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
         starknet::SyscallResult::Ok(())
     }
+    #[inline(always)]
     fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IContractSafeDispatcher> {
         let contract_address = starknet::StorageAccess::<starknet::ContractAddress>::read_at_offset_internal(address_domain, base, offset)?;
         starknet::SyscallResult::Ok(

@@ -109,6 +109,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let sa_impl = formatdoc!(
         "
         impl StorageAccess{struct_name} of starknet::StorageAccess::<{struct_name}> {{
+            #[inline(always)]
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
                 {reads_values}
@@ -118,11 +119,13 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                     }}
                 )
             }}
+            #[inline(always)]
             fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: \
          {struct_name}) -> starknet::SyscallResult<()> {{
                 {writes}
                 starknet::SyscallResult::Ok(())
             }}
+            #[inline(always)]
             fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, \
          offset: u8) -> starknet::SyscallResult<{struct_name}> {{
                 {reads_values_at_offset}
