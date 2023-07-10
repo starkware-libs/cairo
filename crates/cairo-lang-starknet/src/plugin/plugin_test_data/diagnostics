@@ -1986,6 +1986,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: felt252) {
@@ -1994,6 +1995,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }

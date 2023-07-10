@@ -196,6 +196,7 @@ fn handle_simple_storage_var(address: &str) -> String {
                 starknet::StorageAccess::<$type_name$>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }}
             fn write(ref self: ContractState, value: $type_name$) {{
@@ -204,6 +205,7 @@ fn handle_simple_storage_var(address: &str) -> String {
                 starknet::StorageAccess::<$type_name$>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }}
@@ -241,6 +243,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
                 starknet::StorageAccess::<$value_type$>::read(
                     address_domain,
                     self.address(key),
+                    0,
                 ).unwrap_syscall()
             }}
             fn write(ref self: ContractState, key: $key_type$, value: $value_type$) {{
@@ -249,6 +252,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
                 starknet::StorageAccess::<$value_type$>::write(
                     address_domain,
                     self.address(key),
+                    0,
                     value,
                 ).unwrap_syscall()
             }}

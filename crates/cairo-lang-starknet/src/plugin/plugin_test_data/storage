@@ -130,6 +130,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: felt252) {
@@ -138,6 +139,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -172,6 +174,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u8>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: u8) {
@@ -180,6 +183,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u8>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -214,6 +218,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u16>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: u16) {
@@ -222,6 +227,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u16>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -256,6 +262,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u32>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: u32) {
@@ -264,6 +271,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u32>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -298,6 +306,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u64>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: u64) {
@@ -306,6 +315,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u64>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -340,6 +350,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u128>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: u128) {
@@ -348,6 +359,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u128>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -382,6 +394,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<bool>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: bool) {
@@ -390,6 +403,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<bool>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -425,6 +439,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u128>::read(
                     address_domain,
                     self.address(key),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, key: felt252, value: u128) {
@@ -433,6 +448,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<u128>::write(
                     address_domain,
                     self.address(key),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -468,6 +484,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<bool>::read(
                     address_domain,
                     self.address(key),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, key: u128, value: bool) {
@@ -476,6 +493,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<bool>::write(
                     address_domain,
                     self.address(key),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -511,6 +529,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::read(
                     address_domain,
                     self.address(key),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, key: bool, value: felt252) {
@@ -519,6 +538,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<felt252>::write(
                     address_domain,
                     self.address(key),
+                    0,
                     value,
                 ).unwrap_syscall()
             }

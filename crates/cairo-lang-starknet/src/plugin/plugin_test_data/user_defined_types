@@ -27,22 +27,15 @@ mod test_contract {
         }
     }
     impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+        fn read(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::StorageAccess::read(address_domain, base)?
+                value: starknet::StorageAccess::read(address_domain, base, offset)?
             })
         }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::StorageAccess::write(address_domain, base, value.value)
+        fn write(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            starknet::StorageAccess::write(address_domain, base, offset, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
-        }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
-        }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
@@ -80,22 +73,15 @@ mod test_contract {
         }
     }
     impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
+        fn read(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::StorageAccess::read(address_domain, base)?
+                value: starknet::StorageAccess::read(address_domain, base, offset)?
             })
         }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::StorageAccess::write(address_domain, base, value.value)
+        fn write(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            starknet::StorageAccess::write(address_domain, base, offset, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
-        }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
-        }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
@@ -113,7 +99,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1329599320257538578850523391356788449669795141703595629323844053189765658355;
+const TEST_CLASS_HASH: felt252 = 519311852710723001230393978502180618541304193705113527994056314505718656840;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -184,6 +170,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<WrappedFelt252>::read(
                     address_domain,
                     self.address(),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, value: WrappedFelt252) {
@@ -192,6 +179,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<WrappedFelt252>::write(
                     address_domain,
                     self.address(),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
@@ -233,6 +221,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<WrappedFelt252>::read(
                     address_domain,
                     self.address(key),
+                    0,
                 ).unwrap_syscall()
             }
             fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252) {
@@ -241,6 +230,7 @@ use starknet::event::EventEmitter;
                 starknet::StorageAccess::<WrappedFelt252>::write(
                     address_domain,
                     self.address(key),
+                    0,
                     value,
                 ).unwrap_syscall()
             }
