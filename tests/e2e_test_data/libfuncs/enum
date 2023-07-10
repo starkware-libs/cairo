@@ -136,7 +136,7 @@ enum Option {
 fn foo(e: Option) -> felt252 {
     match e {
         Option::Some(_) => 0,
-        Option::None(_) => 1,
+        Option::None => 1,
     }
 }
 

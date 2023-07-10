@@ -154,7 +154,7 @@ block_generator_test
 fn foo(opt : Option<@felt252>) -> felt252 {
   match opt {
     Option::Some(x) => *x,
-    Option::None(_) => 0,
+    Option::None => 0,
   }
 }
 

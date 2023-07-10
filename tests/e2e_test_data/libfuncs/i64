@@ -154,7 +154,7 @@ use zeroable::NonZeroIntoImpl;
 use traits::Into;
 fn foo(a: i64) -> i64 {
     match integer::i64_is_zero(a) {
-        IsZeroResult::Zero(()) => 123_i64,
+        IsZeroResult::Zero => 123_i64,
         IsZeroResult::NonZero(x) => x.into(),
     }
 }

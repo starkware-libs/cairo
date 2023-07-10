@@ -41,7 +41,7 @@ fn keccak_u256s_le_inputs(mut input: Span<u256>) -> u256 {
             Option::Some(v) => {
                 keccak_add_u256_le(ref keccak_input, *v);
             },
-            Option::None(_) => {
+            Option::None => {
                 break ();
             },
         };
@@ -71,7 +71,7 @@ fn keccak_u256s_be_inputs(mut input: Span<u256>) -> u256 {
             Option::Some(v) => {
                 keccak_add_u256_be(ref keccak_input, *v);
             },
-            Option::None(_) => {
+            Option::None => {
                 break ();
             },
         };

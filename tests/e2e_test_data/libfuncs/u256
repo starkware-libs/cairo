@@ -158,7 +158,7 @@ use zeroable::NonZeroIntoImpl;
 use traits::Into;
 fn foo(a: u256) -> u256 {
     match integer::u256_is_zero(a) {
-        IsZeroResult::Zero(()) => u256{low: 0, high: 0},
+        IsZeroResult::Zero => u256{low: 0, high: 0},
         IsZeroResult::NonZero(x) => x.into(),
     }
 }

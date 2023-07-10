@@ -7,7 +7,7 @@ test_function_lowering_phases
 fn foo() {
   match Option::<felt252>::None(()) {
      Option::Some(_) => panic(Default::default()),
-     Option::None(_) => foo(),
+     Option::None => foo(),
   }
 }
 

@@ -10,7 +10,7 @@ fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<
             value.serialize(ref serialized);
             serialize_array_felt_helper(ref serialized, input);
         },
-        Option::None(_) => {},
+        Option::None => {},
     }
 }
 

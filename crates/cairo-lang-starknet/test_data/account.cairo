@@ -82,7 +82,7 @@ mod account {
                             .unwrap_syscall();
                         result.append(res);
                     },
-                    Option::None(()) => {
+                    Option::None => {
                         break; // Can't break result; because of 'variable was previously moved'
                     },
                 };

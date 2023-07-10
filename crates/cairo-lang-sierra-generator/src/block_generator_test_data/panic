@@ -18,7 +18,7 @@ use array::ArrayTrait;
 fn expect(opt: Option<felt252>) -> felt252 {
    match opt {
       Option::Some(x) => x,
-      Option::None(_) => no_inline_panic(),
+      Option::None => no_inline_panic(),
   }
 }
 
