@@ -57,6 +57,7 @@ impl Bytes31Impl of Bytes31Trait {
     // corrupt the ByteArray. Thus, this should be a private function. We can add masking but it would
     // be more expensive.
     fn split_bytes31(self: bytes31, len: u8, index: u8) -> (bytes31, bytes31) {
+        // TODO(yg): remove asserts, replace with assumptions. Can add a wrapper with asserts.
         assert(index <= len, 'index > len');
         assert(len <= BYTES_IN_BYTES31, 'len > 31');
 
