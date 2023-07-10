@@ -381,7 +381,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                             let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
                             Option::Some(
                                 {}
-                                else {{ return Option::None(()); }}
+                                else {{ return Option::None; }}
                             )
                         }}
                     }}

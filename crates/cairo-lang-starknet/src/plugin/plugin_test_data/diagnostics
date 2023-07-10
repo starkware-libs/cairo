@@ -165,7 +165,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -334,7 +334,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -475,7 +475,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -718,7 +718,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -889,7 +889,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -1051,7 +1051,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -1217,7 +1217,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -1403,7 +1403,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -1646,7 +1646,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -1844,7 +1844,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2063,7 +2063,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2300,7 +2300,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2584,7 +2584,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2736,7 +2736,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2887,7 +2887,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
     ) -> Option<MyEvent> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
@@ -2917,7 +2917,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-        Option::None(())
+        Option::None
     }
 }
 
