@@ -36,7 +36,7 @@ extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> 
 fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
     match ec_point_try_new_nz(:x, :y) {
         Option::Some(pt) => Option::Some(pt.into()),
-        Option::None => Option::None(()),
+        Option::None => Option::None,
     }
 }
 
@@ -50,7 +50,7 @@ extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(Ran
 fn ec_point_from_x(x: felt252) -> Option<EcPoint> {
     match ec_point_from_x_nz(:x) {
         Option::Some(pt) => Option::Some(pt.into()),
-        Option::None => Option::None(()),
+        Option::None => Option::None,
     }
 }
 

@@ -33,8 +33,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_ty,
-    unwrap_error_propagation_type, validate_literal,
+    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr,
+    unit_ty, unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -1630,20 +1630,33 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         }
     }
 
-    // Check if this is a constant.
     let resolved_item =
         ctx.resolver.resolve_concrete_path(ctx.diagnostics, path, NotFoundItemType::Identifier)?;
-    let ResolvedConcreteItem::Constant(constant_id) = resolved_item else {
-        return Err(
-            ctx.diagnostics.report(path, UnexpectedElement{
-                expected:vec![ElementKind::Variable, ElementKind::Constant],
-                actual: (&resolved_item).into(),
-            })
-        );
-    };
 
-    let ty = db.constant_semantic_data(constant_id)?.value.ty();
-    Ok(Expr::Constant(ExprConstant { constant_id, ty, stable_ptr: path.stable_ptr().into() }))
+    match resolved_item {
+        ResolvedConcreteItem::Constant(constant_id) => Ok(Expr::Constant(ExprConstant {
+            constant_id,
+            ty: db.constant_semantic_data(constant_id)?.value.ty(),
+            stable_ptr: path.stable_ptr().into(),
+        })),
+        ResolvedConcreteItem::Variant(variant) if variant.ty == unit_ty(db) => {
+            let stable_ptr = path.stable_ptr().into();
+            let concrete_enum_id = variant.concrete_enum_id;
+            Ok(semantic::Expr::EnumVariantCtor(semantic::ExprEnumVariantCtor {
+                variant,
+                value_expr: unit_expr(ctx, stable_ptr),
+                ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id))),
+                stable_ptr,
+            }))
+        }
+        resolved_item => Err(ctx.diagnostics.report(
+            path,
+            UnexpectedElement {
+                expected: vec![ElementKind::Variable, ElementKind::Constant],
+                actual: (&resolved_item).into(),
+            },
+        )),
+    }
 }
 
 /// Resolves a variable given a context and a simple name.

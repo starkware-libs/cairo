@@ -22,9 +22,9 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
         if variant == 0 {
             Option::Some(Option::Some(Serde::<T>::deserialize(ref serialized)?))
         } else if variant == 1 {
-            Option::Some(Option::None(()))
+            Option::Some(Option::None)
         } else {
-            Option::None(())
+            Option::None
         }
     }
 }

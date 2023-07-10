@@ -14,7 +14,7 @@ fn index_of_min<
     let mut min = match span.pop_front() {
         Option::Some(item) => *item,
         Option::None => {
-            return Option::None(());
+            return Option::None;
         },
     };
     loop {

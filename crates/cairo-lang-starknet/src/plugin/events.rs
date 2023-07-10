@@ -296,7 +296,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 ) -> Option<$enum_name$> {
                     let selector = *array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_variants$
-                    Option::None(())
+                    Option::None
                 }
             }
             $event_into_impls$
