@@ -11,6 +11,7 @@ use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion::branch_inversion;
+use crate::optimizations::literal_propagation::literal_propagation;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
@@ -48,6 +49,7 @@ fn test_branch_inversion(
     reorganize_blocks(&mut before);
 
     let mut after = before.clone();
+    literal_propagation(db, &mut after);
     branch_inversion(db, &mut after);
 
     OrderedHashMap::from([

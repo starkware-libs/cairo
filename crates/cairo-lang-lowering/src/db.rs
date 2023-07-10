@@ -19,6 +19,7 @@ use crate::implicits::lower_implicits;
 use crate::inline::{apply_inlining, PrivInlineData};
 use crate::lower::{lower_semantic_function, MultiLowering};
 use crate::optimizations::branch_inversion::branch_inversion;
+use crate::optimizations::literal_propagation::literal_propagation;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
@@ -350,6 +351,7 @@ fn concrete_function_with_body_lowered(
     // The call to `reorder_statements` before and after `branch_inversion` is intentional.
     // See description of `branch_inversion` for more details.
     reorder_statements(db, &mut lowered);
+    literal_propagation(db, &mut lowered);
     branch_inversion(db, &mut lowered);
     reorder_statements(db, &mut lowered);
     optimize_matches(&mut lowered);

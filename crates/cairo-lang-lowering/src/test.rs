@@ -17,6 +17,7 @@ use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
 use crate::optimizations::branch_inversion;
+use crate::optimizations::literal_propagation::literal_propagation;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
 use crate::optimizations::reorder_statements::reorder_statements;
@@ -139,6 +140,8 @@ fn test_function_lowering_phases(
     reorder_statements(&db, &mut after_reorder_statements1);
 
     let mut after_branch_inversion = after_reorder_statements1.clone();
+
+    literal_propagation(&db, &mut after_branch_inversion);
     branch_inversion(&db, &mut after_branch_inversion);
 
     let mut after_reorder_statements2 = after_branch_inversion.clone();
