@@ -587,3 +587,105 @@ Statements:
   (v6: test::MyStruct) <- struct_construct(v5, v3)
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > Test moved error on a reconstructed var.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(ref self: MyStruct) {
+    if self.b == 0 {
+        self.a = Default::default();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<u8>,
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::integer::u8>>
+ --> lib.cairo:7:5
+    if self.b == 0 {
+    ^**************^
+
+//! > lowering_flat
+Parameters: v0: test::Bla
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::integer::u8>, v2: core::integer::u8) <- struct_destructure(v0)
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2)
+  (v5: core::integer::u8) <- 0u
+  (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U8PartialEq::eq(v4, v7)
+  (v12: test::Bla) <- struct_construct(v1, v3)
+End:
+  Match(match_enum(v8) {
+    bool::False(v11) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::array::Array::<core::integer::u8>) <- core::array::ArrayDefault::<core::integer::u8>::default()
+  (v14: test::Bla) <- struct_construct(v10, v3)
+End:
+  Goto(blk3, {v14 -> v13})
+
+blk2:
+Statements:
+  (v15: test::Bla) <- struct_construct(v1, v3)
+End:
+  Goto(blk3, {v15 -> v13})
+
+blk3:
+Statements:
+  (v16: ()) <- struct_construct()
+End:
+  Return(v13, v16)
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::integer::u8>, v2: core::integer::u8) <- struct_destructure(v0)
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2)
+  (v5: core::integer::u8) <- 0u
+  (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5)
+  (v8: core::bool) <- core::integer::U8PartialEq::eq(v4, v7)
+  (v12: test::MyStruct) <- struct_construct(v1, v3)
+End:
+  Match(match_enum(v8) {
+    bool::False(v11) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::array::Array::<core::integer::u8>) <- core::array::ArrayDefault::<core::integer::u8>::default()
+  (v14: test::MyStruct) <- struct_construct(v10, v3)
+End:
+  Goto(blk3, {v14 -> v13})
+
+blk2:
+Statements:
+  (v15: test::MyStruct) <- struct_construct(v1, v3)
+End:
+  Goto(blk3, {v15 -> v13})
+
+blk3:
+Statements:
+  (v16: ()) <- struct_construct()
+End:
+  Return(v13, v16)
