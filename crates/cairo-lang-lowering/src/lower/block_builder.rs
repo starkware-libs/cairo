@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{LanguageElementId, MemberId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -62,9 +62,9 @@ impl BlockBuilder {
         }
     }
 
-    /// Binds a semantic variable to a lowered variable.
-    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
-        self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
+    /// Binds a semantic variable to a lowered var usage.
+    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var_usage: VarUsage) {
+        self.semantics.introduce(MemberPath::Var(semantic_var_id), var_usage.var_id);
         self.changed_semantics.insert(semantic_var_id);
     }
 
@@ -224,9 +224,13 @@ impl BlockBuilder {
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = self.get_semantic(ctx, *semantic, location).var_id;
-                    let var = ctx.variables[var].clone();
-                    ctx.variables.variables.alloc(var)
+                    let var_usage = self.get_semantic(
+                        ctx,
+                        *semantic,
+                        ctx.get_location(semantic.untyped_stable_ptr(ctx.db.upcast())),
+                    );
+                    let var = &ctx.variables[var_usage.var_id];
+                    ctx.new_var_usage(VarRequest { ty: var.ty, location: var_usage.location })
                 });
             }
         }
@@ -239,12 +243,12 @@ impl BlockBuilder {
         let following_block = ctx.blocks.alloc_empty();
 
         for sealed_block in sealed_blocks {
-            sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
+            sealed_block.finalize(ctx, following_block, &semantic_remapping);
         }
 
         // Apply remapping on builder.
-        for (semantic, var) in semantic_remapping.semantics {
-            self.put_semantic(semantic, var);
+        for (semantic, var_usage) in semantic_remapping.semantics {
+            self.put_semantic(semantic, var_usage);
         }
 
         let expr = match semantic_remapping.expr {
@@ -260,7 +264,7 @@ impl BlockBuilder {
 #[derive(Debug, Default)]
 pub struct SemanticRemapping {
     expr: Option<VariableId>,
-    semantics: OrderedHashMap<semantic::VarId, VariableId>,
+    semantics: OrderedHashMap<semantic::VarId, VarUsage>,
 }
 
 /// A sealed BlockBuilder, ready to be merged with sibling blocks to end the block.
@@ -279,7 +283,6 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-        location: LocationId,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
@@ -287,7 +290,10 @@ impl SealedBlockBuilder {
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
                 assert!(
                     remapping
-                        .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))
+                        .insert(
+                            remapped_var.var_id,
+                            builder.get_semantic(ctx, *semantic, remapped_var.location)
+                        )
                         .is_none()
                 );
             }

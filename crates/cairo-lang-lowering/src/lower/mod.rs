@@ -112,11 +112,11 @@ pub fn lower_function(
         .into_iter()
         .map(|param| {
             let location = ctx.get_location(param.stable_ptr().untyped());
-            let var = ctx.new_var(VarRequest { ty: param.ty(), location });
+            let var_usage = ctx.new_var_usage(VarRequest { ty: param.ty(), location });
             // TODO(spapini): Introduce member paths, not just base variables.
             let param_var = extract_matches!(param, ExprVarMemberPath::Var);
-            builder.put_semantic(param_var.var, var);
-            var
+            builder.put_semantic(param_var.var, var_usage);
+            var_usage.var_id
         })
         .collect_vec();
 
@@ -365,10 +365,11 @@ fn lower_single_pattern(
         }) => {
             let sem_var = semantic::Variable::Local(sem_var.clone());
             // Deposit the owned variable in the semantic variables store.
-            let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
+            let var_usage = lowered_expr.as_var_usage(ctx, builder)?;
             // Override variable location.
-            ctx.variables.variables[var].location = ctx.get_location(stable_ptr.untyped());
-            builder.put_semantic(sem_var.id(), var);
+            ctx.variables.variables[var_usage.var_id].location =
+                ctx.get_location(stable_ptr.untyped());
+            builder.put_semantic(sem_var.id(), var_usage);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
@@ -1391,7 +1392,7 @@ fn lower_expr_assignment(
         expr.debug(&ctx.expr_formatter)
     );
     let location = ctx.get_location(expr.stable_ptr.untyped());
-    let var = lower_expr(ctx, builder, expr.rhs)?.as_var_usage(ctx, builder)?.var_id;
+    let var = lower_expr_to_var_usage(ctx, builder, expr.rhs)?.var_id;
     builder.update_ref(ctx, &expr.ref_arg, var);
     Ok(LoweredExpr::Tuple { exprs: vec![], location })
 }
