@@ -9,7 +9,7 @@ fn foo(x: Option<(felt252, felt252)>) -> Option<felt252> {
         },
         // TODO(spapini): Replace with _.
         Option::None(o) => {
-            return Option::None(());
+            return Option::None;
         },
     }
 }

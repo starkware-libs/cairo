@@ -209,7 +209,58 @@
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   ├── child #3 (kind: StatementExpr)
+    │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TerminalLet)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── token (kind: TokenLet): 'let'
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           ├── token (kind: TokenIdentifier): 'v'
+    │   │       │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TerminalEq)
+    │   │       │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   ├── token (kind: TokenEq): '='
+    │   │       │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   ├── rhs (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │   │   └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   │       ├── token (kind: TokenIdentifier): 'bool'
+    │   │       │   │   │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │   ├── separator #0 (kind: TerminalColonColon)
+    │   │       │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   │   ├── token (kind: TokenColonColon): '::'
+    │   │       │   │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'True'
+    │   │       │   │   │   │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   ├── op (kind: TerminalEqEq)
+    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │   │   ├── token (kind: TokenEqEq): '=='
+    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   └── rhs (kind: TerminalFalse)
+    │   │       │   │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │       ├── token (kind: TokenFalse): 'false'
+    │   │       │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │       │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │       │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       │   │       ├── token (kind: TokenSemicolon): ';'
+    │   │       │   │       └── trailing_trivia (kind: Trivia)
+    │   │       │   │           └── child #0 (kind: TokenNewline).
+    │   │       │   ├── child #4 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: TerminalLiteralNumber)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia)
@@ -313,7 +364,7 @@
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   ├── child #4 (kind: StatementReturn)
+    │   │       │   ├── child #5 (kind: StatementReturn)
     │   │       │   │   ├── return_kw (kind: TerminalReturn)
     │   │       │   │   │   ├── leading_trivia (kind: Trivia)
     │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
@@ -343,7 +394,7 @@
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   └── child #5 (kind: StatementExpr)
+    │   │       │   └── child #6 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
     │   │       │       │   ├── lhs (kind: ExprPath)
     │   │       │       │   │   └── item #0 (kind: PathSegmentSimple)
