@@ -119,33 +119,48 @@ fn calculate_reverse_topological_ordering(
     program: &Program,
     ordering: &mut Vec<StatementIdx>,
     visited: &mut Vec<bool>,
-    idx: &StatementIdx,
+    idx0: &StatementIdx,
 ) -> Result<(), CostError> {
-    match visited.get(idx.0) {
-        Some(true) => {
-            return Ok(());
+    // A pair of (statement index, is_done).
+    // When the pair is popped out of the stack, `is_done=true` means that we've already visited
+    // all of its children, and we just need to add it to the ordering.
+    let mut stack = vec![(*idx0, false)];
+
+    while let Some((idx, is_done)) = stack.pop() {
+        if is_done {
+            // Adding element to ordering after visiting all children - therefore we have reverse
+            // topological ordering.
+            ordering.push(idx);
+            continue;
         }
-        Some(false) => {}
-        None => {
-            return Err(CostError::StatementOutOfBounds(*idx));
-        }
-    }
-    visited[idx.0] = true;
-    match program.get_statement(idx).unwrap() {
-        cairo_lang_sierra::program::Statement::Invocation(invocation) => {
-            for branch in &invocation.branches {
-                calculate_reverse_topological_ordering(
-                    program,
-                    ordering,
-                    visited,
-                    &idx.next(&branch.target),
-                )?;
+
+        // Check if we've already visited this statement. If we did, skip it.
+        match visited.get(idx.0) {
+            Some(true) => {
+                continue;
+            }
+            Some(false) => {}
+            None => {
+                return Err(CostError::StatementOutOfBounds(idx));
             }
         }
-        cairo_lang_sierra::program::Statement::Return(_) => {}
+
+        // Mark the statement as visited.
+        visited[idx.0] = true;
+
+        // Push the statement back to the stack, with `is_done=true` so that after visiting all
+        // of its children, we would add it to the ordering.
+        stack.push((idx, true));
+
+        match program.get_statement(&idx).unwrap() {
+            cairo_lang_sierra::program::Statement::Invocation(invocation) => {
+                for branch in invocation.branches.iter().rev() {
+                    stack.push((idx.next(&branch.target), false));
+                }
+            }
+            cairo_lang_sierra::program::Statement::Return(_) => {}
+        }
     }
-    // Adding element to ordering after visiting all children - therefore we have reverse
-    // topological ordering.
-    ordering.push(*idx);
+
     Ok(())
 }
