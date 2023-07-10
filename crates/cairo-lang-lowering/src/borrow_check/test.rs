@@ -32,15 +32,17 @@ fn test_borrow_check(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
 
     let lowering_diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
-    let lowered =
-        db.priv_function_with_body_lowering(function_id.function_with_body_id(db)).unwrap();
+    let lowering = if let Ok(lowered) =
+        db.priv_function_with_body_lowering(function_id.function_with_body_id(db))
+    {
+        format!("{:?}", lowered.debug(&LoweredFormatter { db, variables: &lowered.variables }))
+    } else {
+        "".into()
+    };
 
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
-        (
-            "lowering".into(),
-            format!("{:?}", lowered.debug(&LoweredFormatter { db, variables: &lowered.variables })),
-        ),
+        ("lowering".into(), lowering),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ])
 }

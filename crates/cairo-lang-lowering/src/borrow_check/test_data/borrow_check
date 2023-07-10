@@ -30,17 +30,6 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 
-//! > lowering_flat
-Parameters: v0: test::ACopy, v1: test::ADrop
-blk0 (root):
-Statements:
-  () <- test::use_a_copy(v0)
-  () <- test::use_a_drop(v1)
-  () <- test::use_a_copy(v0)
-  (v6: ()) <- struct_construct()
-End:
-  Return(v6)
-
 //! > lowering
 Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
@@ -115,9 +104,6 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
 
-//! > lowering_flat
-Parameters: v0: test::ACopy, v1: test::ADrop
-
 //! > lowering
 Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
@@ -185,32 +171,6 @@ use array::ArrayTrait;
 
 //! > lowering_diagnostics
 
-//! > lowering_flat
-Parameters: v0: test::ADrop, v1: test::ADrop
-blk0 (root):
-Statements:
-  () <- test::use_a_drop(v0)
-  (v4: core::panics::PanicResult::<((),)>) <- test::bar()
-End:
-  Match(match_enum(v4) {
-    PanicResult::Ok(v5) => blk1,
-    PanicResult::Err(v7) => blk2,
-  })
-
-blk1:
-Statements:
-  (v3: ()) <- struct_construct()
-  (v8: (test::ADrop, ())) <- struct_construct(v1, v3)
-  (v9: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Ok(v8)
-End:
-  Return(v9)
-
-blk2:
-Statements:
-  (v10: core::panics::PanicResult::<(test::ADrop, ())>) <- PanicResult::Err(v7)
-End:
-  Return(v10)
-
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
@@ -247,17 +207,6 @@ struct Query<T> {
 
 //! > lowering_diagnostics
 
-//! > lowering_flat
-Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
-blk0 (root):
-Statements:
-  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
-  (v6: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v2, v1)
-  (v5: test::Query::<core::felt252>) <- struct_construct(v6)
-  (v7: ()) <- struct_construct()
-End:
-  Return(v5, v7)
-
 //! > lowering
 Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
 blk0 (root):
@@ -292,18 +241,6 @@ use traits::Into;
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
-
-//! > lowering_flat
-Parameters: v11: core::RangeCheck
-blk0 (root):
-Statements:
-  (v8: core::array::Array::<core::integer::u256>) <- core::array::array_new::<core::integer::u256>()
-  (v1: core::felt252) <- 1u
-  (v17: core::RangeCheck, v7: core::integer::u256) <- core::integer::u256_from_felt252(v11, v1)
-  (v9: core::array::Array::<core::integer::u256>) <- core::array::array_append::<core::integer::u256>(v8, v7)
-  (v5: ()) <- struct_construct()
-End:
-  Return(v17, v5)
 
 //! > lowering
 Parameters:
@@ -342,9 +279,6 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:2:12
 fn foo(ref a: A) {
            ^
-
-//! > lowering_flat
-Parameters: v0: test::A
 
 //! > lowering
 Parameters: v0: test::A
@@ -391,10 +325,6 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return y;
          ^
-
-//! > lowering_flat
-Parameters: v0: test::ADrop, v1: test::ADrop
-
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
@@ -453,9 +383,6 @@ error: Variable was previously moved. Trait has no implementation in context: co
   panic(arr);
         ^*^
 
-//! > lowering_flat
-Parameters:
-
 //! > lowering
 Parameters:
 blk0 (root):
@@ -500,9 +427,6 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:8:19
   do_match_extern(x)
                   ^
-
-//! > lowering_flat
-Parameters: v0: test::NonCopy
 
 //! > lowering
 Parameters: v0: test::NonCopy
@@ -573,9 +497,6 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
   x.a += 1;
   ^
 
-//! > lowering_flat
-Parameters: v0: test::MyStruct
-
 //! > lowering
 Parameters: v0: test::MyStruct
 blk0 (root):
@@ -587,3 +508,48 @@ Statements:
   (v6: test::MyStruct) <- struct_construct(v5, v3)
 End:
   Return(v6)
+
+//! > ==========================================================================
+
+//! > Test moved error on a reconstructed var.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(ref self: MyStruct) {
+    let mut b = self.a;
+    b.append('invalidate `a`');
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use array::ArrayTrait;
+
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<felt252>,
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> lib.cairo:8:28
+fn foo(ref self: MyStruct) {
+                           ^
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0)
+  (v3: core::felt252) <- 2138404743268917614455006093664608u
+  (v5: core::array::Array::<core::felt252>, v4: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1, v3)
+  (v6: ()) <- struct_construct()
+  (v7: test::MyStruct) <- struct_construct(v1, v2)
+End:
+  Return(v7, v6)
