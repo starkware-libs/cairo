@@ -6,7 +6,7 @@ test_partial_parser_tree
 //! > cairo_code
 enum MyEnum {
     A: felt252,
-    B: (felt252),
+    B: felt252,
     C: felt252,
     MissingComma
 }
@@ -17,10 +17,6 @@ ItemEnum
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing token TokenComma.
- --> dummy_file.cairo:3:16
-    B: (felt252),
-               ^
 
 //! > expected_tree
 └── Top level kind: ItemEnum
@@ -44,13 +40,9 @@ error: Missing token TokenComma.
     │   │   ├── name (kind: TokenIdentifier): 'B'
     │   │   └── type_clause (kind: TypeClause)
     │   │       ├── colon (kind: TokenColon): ':'
-    │   │       └── ty (kind: ExprListParenthesized)
-    │   │           ├── lparen (kind: TokenLParen): '('
-    │   │           ├── expressions (kind: ExprList)
-    │   │           │   └── item #0 (kind: ExprPath)
-    │   │           │       └── item #0 (kind: PathSegmentSimple)
-    │   │           │           └── ident (kind: TokenIdentifier): 'felt252'
-    │   │           └── rparen (kind: TokenRParen): ')'
+    │   │       └── ty (kind: ExprPath)
+    │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │               └── ident (kind: TokenIdentifier): 'felt252'
     │   ├── separator #1 (kind: TokenComma): ','
     │   ├── item #2 (kind: Variant)
     │   │   ├── attributes (kind: AttributeList) []
