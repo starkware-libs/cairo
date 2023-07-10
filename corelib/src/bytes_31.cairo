@@ -53,13 +53,13 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
 #[generate_trait]
 impl Bytes31Impl of Bytes31Trait {
     // Splits a bytes31 into two bytes31s at the given index.
-    // Note: this function assumes `value` has no more than `len` bytes of data. If it has, it can
-    // corrupt the ByteArray. Thus, this should be a private function. We can add masking but it would
-    // be more expensive.
+    // Note: this function assumes that:
+    // 1. `self` has no more than `len` bytes of data.
+    // 2. index <= len.
+    // 3. len <= BYTES_IN_BYTES31.
+    // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
+    // private function. We could add masking/assertions but it would be more expensive.
     fn split_bytes31(self: bytes31, len: u8, index: u8) -> (bytes31, bytes31) {
-        assert(index <= len, 'index > len');
-        assert(len <= BYTES_IN_BYTES31, 'len > 31');
-
         if index == 0 {
             return (bytes31_const::<0>(), self);
         }
