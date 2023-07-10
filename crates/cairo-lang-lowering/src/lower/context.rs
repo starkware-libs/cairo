@@ -265,7 +265,11 @@ impl LoweredExpr {
                 let (original, snapshot) =
                     generators::Snapshot { input, location }.add(ctx, &mut builder.statements);
                 if let LoweredExpr::Member(member_path, _location) = &*expr {
-                    builder.update_ref(ctx, member_path, original);
+                    builder.update_ref(
+                        ctx,
+                        member_path,
+                        VarUsage { var_id: original, location: input.location },
+                    );
                 }
 
                 Ok(VarUsage { var_id: snapshot, location })
@@ -323,11 +327,13 @@ impl LoweredExprExternEnum {
                 let mut var_ids = vec![];
                 // Bind the ref parameters.
                 for member_path in &self.member_paths {
-                    let var =
-                        ctx.new_var(VarRequest { ty: member_path.ty(), location: self.location });
-                    var_ids.push(var);
+                    let var_usage = ctx.new_var_usage(VarRequest {
+                        ty: member_path.ty(),
+                        location: self.location,
+                    });
+                    var_ids.push(var_usage.var_id);
 
-                    subscope.update_ref(ctx, member_path, var);
+                    subscope.update_ref(ctx, member_path, var_usage);
                 }
 
                 let variant_vars = extern_facade_return_tys(ctx, concrete_variant.ty)
