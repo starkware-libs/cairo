@@ -24,6 +24,7 @@ use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::{define_short_id, extract_matches, try_extract_matches};
 use itertools::{chain, izip, Itertools};
 use smol_str::SmolStr;
+use syntax::node::ast::GenericArg;
 use syntax::node::db::SyntaxGroup;
 
 use super::enm::SemanticEnumEx;
@@ -41,6 +42,7 @@ use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
+use crate::expr::inference::solver::SolutionSet;
 use crate::expr::inference::{ImplVarId, InferenceData, InferenceResult};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
@@ -898,7 +900,12 @@ pub fn can_infer_impl_by_self(
     ) else {
         return false;
     };
-    get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr).is_ok()
+    // Find impls for it.
+    temp_inference.solve().ok();
+    matches!(
+        temp_inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
+        Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
+    )
 }
 
 /// Returns an impl of a given trait function with a given self_ty, as well as the number of
@@ -908,6 +915,7 @@ pub fn infer_impl_by_self(
     trait_function_id: TraitFunctionId,
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
+    generic_args_syntax: Option<Vec<GenericArg>>,
 ) -> Option<(FunctionId, usize)> {
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, n_snapshots)) =
@@ -920,12 +928,21 @@ pub fn infer_impl_by_self(
     else {
         return None;
     };
-    let Ok(_) = get_impl_at_context(ctx.db, lookup_context, concrete_trait_id, stable_ptr) else {
-        return None;
-    };
+
     let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
         ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function_id),
     );
+    let trait_func_generic_params =
+        ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id).unwrap();
+    let generic_args = ctx
+        .resolver
+        .resolve_generic_args(
+            ctx.diagnostics,
+            &trait_func_generic_params,
+            generic_args_syntax.unwrap_or_default(),
+            stable_ptr,
+        )
+        .unwrap();
 
     let impl_lookup_context = ctx.resolver.impl_lookup_context();
     let generic_function = ctx
@@ -941,10 +958,32 @@ pub fn infer_impl_by_self(
 
     Some((
         ctx.db.intern_function(FunctionLongId {
-            function: ConcreteFunction { generic_function, generic_args: vec![] },
+            function: ConcreteFunction { generic_function, generic_args },
         }),
         n_snapshots,
     ))
+}
+
+/// Returns all the trait functions that fits the given function name and can be called on a given
+/// type.
+pub fn filter_candidate_traits(
+    ctx: &mut ComputationContext<'_>,
+    self_ty: TypeId,
+    candidate_traits: Vec<TraitId>,
+    function_name: SmolStr,
+    stable_ptr: SyntaxStablePtrId,
+) -> Maybe<Vec<TraitFunctionId>> {
+    let mut candidates = Vec::new();
+    for trait_id in candidate_traits {
+        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
+            if name == function_name
+                && can_infer_impl_by_self(ctx, trait_function, self_ty, stable_ptr)
+            {
+                candidates.push(trait_function);
+            }
+        }
+    }
+    Ok(candidates)
 }
 
 /// Checks if there is at least one impl that can be inferred for a specific concrete trait.
