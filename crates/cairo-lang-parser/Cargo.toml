@@ -25,13 +25,7 @@ smol_str.workspace = true
 unescaper.workspace = true
 
 [dev-dependencies]
-<<<<<<< HEAD
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
-||||||| cf142a28e
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.1" }
-=======
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils", version = "2.0.2" }
->>>>>>> v2.0.2
 env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
