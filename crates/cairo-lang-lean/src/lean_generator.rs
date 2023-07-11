@@ -1,5 +1,4 @@
-use std::fmt::Debug;
-use std::{fs, cell};
+use std::{fs, rc, iter};
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
@@ -15,7 +14,7 @@ use cairo_lang_casm::builder::{
     AssertDesc,
     Var,
 };
-use cairo_lang_casm::instructions::InstructionBody;
+use cairo_lang_casm::instructions::{InstructionBody, Instruction};
 use cairo_lang_casm::operand::{ DerefOrImmediate, ResOperand, CellRef };
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::bigint::BigIntAsHex;
@@ -250,6 +249,11 @@ impl VarRebind {
         }
     }
 
+    pub fn get_next_name(&self, name: &str) -> String {
+        let count = self.vars.get(name).unwrap_or(&0);
+        format!("{}{}", name, make_subscript(*count + 1))
+    }
+
     pub fn rebind(&mut self, name: &str) -> usize {
         *self.vars.entry(name.to_string())
         .and_modify(|c| *c += 1)
@@ -339,6 +343,7 @@ fn deref_or_imm_to_lean(expr: &DerefOrImmediate, paren: bool) -> String {
 struct LeanFuncInfo<'a> {
     func_name: String,
     aux_info: &'a CasmBuilderAuxiliaryInfo,
+    casm_instructions: &'a Vec<Instruction>,
     ret_args: RetArgs,
 }
 
@@ -347,10 +352,10 @@ impl<'a> LeanFuncInfo<'a> {
         pub fn new(
             func_name: String,
             aux_info: &'a CasmBuilderAuxiliaryInfo,
-            cairo_program: &CairoProgram
+            cairo_program: &'a CairoProgram
         ) -> Self {
             let ret_args = LeanFuncInfo::make_ret_args(&aux_info, cairo_program);
-            Self { func_name, aux_info, ret_args }
+            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, ret_args }
         }
 
         pub fn is_range_check_var(&self, name: &str) -> bool {
@@ -429,6 +434,10 @@ impl<'a> LeanFuncInfo<'a> {
             None
         }
 
+        pub fn ret_arg_num(&self) -> usize {
+            self.ret_args.arg_names.len()
+        }
+
         pub fn implicit_ret_arg_num(&self) -> usize {
             self.ret_args.num_implicit_ret_args
         }
@@ -471,6 +480,17 @@ impl<'a> LeanFuncInfo<'a> {
             } else { false }
         }
 
+        // If this expression represents a range check, x = [<range check pointer>], returns
+        // the name of the range check pointer.
+        pub fn get_range_check_ptr_name(&self, expr: &ExprDesc) -> Option<&str> {
+            if expr.op != "*()" {
+                return None;
+            }
+            if let Some(str) = self.aux_info.var_names.get(&expr.var_a) {
+                if self.is_range_check_var(str) { Some(str) } else { None }
+            } else { None }
+        }
+
         // True if this expression increments the range check pointer.
         pub fn is_range_check_inc(&self, expr: &ExprDesc) -> bool {
             expr.op == "++" &&
@@ -479,13 +499,49 @@ impl<'a> LeanFuncInfo<'a> {
             } else { false }
         }
 
+        pub fn get_code_len(&self) -> usize {
+            self.casm_instructions.iter().fold(0, |len, instr| len + instr.body.op_size())
+        }
+
+        /// Returns the pc at the given casm position, under the assumption that pc = 0 at the first casm position.
+        pub fn get_pc_at(&self, casm_pos: usize) -> usize {
+            self.casm_instructions[0..casm_pos].iter().fold(0, |len, instr| len + instr.body.op_size())
+        }
+
+        /// Returns the number of positions by which to increase casm instruction position to reach
+        /// the target of the jump, where jump_pos and target are the positions of the instruction
+        /// descriptions of the jump and the target, respectively.
+        fn casm_jump(&self, jump_pos: usize, target: usize) -> usize {
+
+            self.aux_info.statements[jump_pos..target].iter().fold(
+                0,
+                |acc, s| {
+                    match s {
+                        // These instructions have no corresponding instruction in the casm.
+                        StatementDesc::Let(_) | StatementDesc::Label(_) => acc,
+                        StatementDesc::TempVar(var) | StatementDesc::LocalVar(var) =>
+                            if var.expr.is_some() { acc + 1 } else { acc },
+                        _ => acc + 1
+                    }
+                }
+            )
+        }
+
+        fn pc_jump(&self, casm_jump_pos: usize, casm_target: usize) -> usize {
+            self.casm_instructions[casm_jump_pos..casm_target].iter().fold(
+                0,
+                |pc, instr| {
+                    pc + instr.body.op_size()
+                }
+            )
+        }
+
 }
 
 // Rebinding variables and assignments
 
 fn rebind_var_assignment(
     var: &VarDesc,
-    lean_info: &LeanFuncInfo,
     rebind: &mut VarRebind,
 ) -> (String, Option<String>) {
     // Must rewrite variable names with the rebind subscripts before rebinding the lhs.
@@ -498,7 +554,6 @@ fn rebind_var_assignment(
 
 fn rebind_assignment(
     assignment: &AssertDesc,
-    lean_info: &LeanFuncInfo,
     rebind: &mut VarRebind,
 ) -> (String, String) {
     // Must rewrite the rhs before the lhs.
@@ -577,6 +632,8 @@ trait LeanGenerator {
         var: &VarDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     );
 
@@ -585,6 +642,8 @@ trait LeanGenerator {
         var: &VarDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     );
 
@@ -601,6 +660,26 @@ trait LeanGenerator {
         assign: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        rc_checks: &mut usize,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    );
+
+    fn generate_jmp(
+        &mut self,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    );
+
+    fn generate_jnz(
+        &mut self,
+        cond_var: &str,
+        label: &str,
+        rebind: &VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     );
 
@@ -611,6 +690,7 @@ trait LeanGenerator {
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
         indent: usize,
     ) -> usize;
 
@@ -630,6 +710,7 @@ trait LeanGenerator {
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
         rebind: &VarRebind,
+        rc_checks: usize,
         indent: usize,
     );
 
@@ -677,7 +758,7 @@ impl AutoSpecs {
         rebind: &mut VarRebind,
         indent: usize,
     ) {
-        let (var_name, expr) = rebind_var_assignment(var, lean_info, rebind);
+        let (var_name, expr) = rebind_var_assignment(var, rebind);
         self.push_spec(
             indent,
             &format!(
@@ -734,6 +815,8 @@ impl LeanGenerator for AutoSpecs {
         var: &VarDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
         self.generate_var(var, lean_info, rebind, indent);
@@ -744,6 +827,8 @@ impl LeanGenerator for AutoSpecs {
         var: &VarDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
         self.generate_var(var, lean_info, rebind, indent);
@@ -760,7 +845,7 @@ impl LeanGenerator for AutoSpecs {
         if lean_info.is_range_check_inc(&assign.expr) {
             return;
         }
-        let (lhs, rhs) = rebind_assignment(assign, lean_info, rebind);
+        let (lhs, rhs) = rebind_assignment(assign, rebind);
         self.push_spec(indent, &format!("∃ {lhs} : F, {lhs} = {rhs}"));
     }
 
@@ -769,6 +854,9 @@ impl LeanGenerator for AutoSpecs {
         assert: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        rc_checks: &mut usize,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
         if lean_info.is_range_check(&assert.expr) {
@@ -785,12 +873,34 @@ impl LeanGenerator for AutoSpecs {
         }
     }
 
+    fn generate_jmp(
+        &mut self,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        // Do nothing.
+    }
+
+    fn generate_jnz(
+        &mut self,
+        cond_var: &str,
+        label: &str,
+        rebind: &VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        // Do nothing.
+    }
+
     fn generate_branch_intro(
         &mut self,
         cond_var: &(String, Var),
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
         indent: usize,
     ) -> usize {
 
@@ -807,7 +917,7 @@ impl LeanGenerator for AutoSpecs {
             indent,
             &format!("({var_name} {op} 0", op = if is_eq { "=" } else { "≠" }));
 
-        indent
+        indent + 2
     }
 
     fn generate_branch_close(
@@ -817,6 +927,7 @@ impl LeanGenerator for AutoSpecs {
         rebind: &mut VarRebind,
         indent: usize,
     ) -> usize {
+        let indent = indent - 2;
         if is_eq {
             self.push_spec(indent, ") ∨");
             indent
@@ -835,9 +946,13 @@ impl LeanGenerator for AutoSpecs {
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
         rebind: &VarRebind,
+        rc_checks: usize,
         indent: usize,
     ) {
         let mut ret_arg_start = 0;
+
+        // We are only interested in the explicit arguments here.
+        let ret_arg_names = &ret_arg_names[lean_info.ret_args.num_implicit_ret_args..];
 
         if lean_info.ret_args.branch_id_pos.is_some() {
             // The first return argument is the branch ID
@@ -894,6 +1009,41 @@ impl AutoProof {
 
     fn append_proof(&mut self, more_proof: &Vec<String>) {
         self.main_proof.append(&mut more_proof.clone());
+    }
+
+    fn make_codes(&self, pc: usize, op_size: usize) -> String {
+        (pc..pc + op_size).map(|i| format!("hpc{}", i)).join(" ")
+    }
+
+    fn generate_var(
+        &mut self,
+        var: &VarDesc,
+        is_local: bool,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        let (var_name, expr) = rebind_var_assignment(var, rebind);
+        let has_expr = expr.is_some();
+        self.push_main(indent, &format!("-- {var_type} {var_name}", var_type = if is_local { "localvar" } else { "tempvar" }));
+        if has_expr {
+            self.push_main(indent, &format!("step_assert_eq {codes} with tv_{var_name},",
+                codes = self.make_codes(pc, op_size)));
+        }
+
+        self.push_main(indent, &format!("mkdef hl_{var_name} : {var_name} = {expr_str},",
+        expr_str = if let Some(expr) = expr { expr } else { cell_expr_to_lean(&var.var_expr, false) }));
+        self.push_main(indent,
+            &format!(
+                "have htv_{var_name} : {var_name} = {cell_expr},",
+                cell_expr = cell_expr_to_lean(&var.var_expr, false)));
+        if has_expr {
+            self.push_main(indent, "{ sorry },");
+        } else {
+            self.push_main(indent, "{ refl },");
+        }
+        self.push_final(0, &format!("use_only hl_{var_name},"));
     }
 }
 
@@ -958,7 +1108,7 @@ impl LeanGenerator for AutoProof {
             self.push_statement(
                 indent,
                 &format!(
-                    "∃ μ ≤ κ, rc_ensures mem (rc_bound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset})))",
+                    "∃ μ ≤ κ, rc_ensures mem (rc_bound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
                     rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()),
             );
@@ -988,29 +1138,34 @@ impl LeanGenerator for AutoProof {
         indent: usize,
     ) {
         self.push_main(indent, "apply ensures_of_ensuresb, intro νbound,");
-        self.push_main(indent, &format!("unpack_memory code_{func_name} at h_mem with ⟨"));
+        // unpack the memory
+        let mut line = format!("unpack_memory code_{func_name} at h_mem with ⟨");
+        for code_i in (0..lean_info.get_code_len()) {
+            if 95 < line.len() {
+                if code_i != 0 {
+                    line.push(',');
+                }
+                self.push_main(indent, &line);
+                line = "".into();
+            } else if code_i != 0 {
+                line.push_str(", ");
+            }
+            line.push_str(&format!("hpc{code_i}"));
+        }
+        line.push_str("⟩,");
+        self.push_main(indent, &line);
     }
 
     fn generate_temp_var(
         &mut self,
         var: &VarDesc,
-        lean_info: &LeanFuncInfo,
+        _lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
-        // xxxxxxxx not complete yet
-        let (var_name, expr) = rebind_var_assignment(var, lean_info, rebind);
-        let has_expr = expr.is_some();
-        self.push_main(indent, &format!("mkdef hl_{var_name} : {var_name} = {expr_str},",
-            expr_str = if let Some(expr) = expr { expr } else { cell_expr_to_lean(&var.var_expr, false) }));
-        if has_expr {
-            self.push_main(indent,
-                &format!(
-                    "have htv_{var_name} : {var_name} = {cell_expr},",
-                    cell_expr = cell_expr_to_lean(&var.var_expr, false)));
-            self.push_main(indent, "{ sorry },")
-        }
-        self.push_final(0, &format!("use_only hl_{var_name},"));
+        self.generate_var(var, false, rebind, pc, op_size, indent);
     }
 
     fn generate_local_var(
@@ -1018,9 +1173,11 @@ impl LeanGenerator for AutoProof {
         var: &VarDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
-        // xxxxxxxxxxxxx
+        self.generate_var(var, true, rebind, pc, op_size, indent);
     }
 
     fn generate_let(
@@ -1030,9 +1187,9 @@ impl LeanGenerator for AutoProof {
         rebind: &mut VarRebind,
         indent: usize,
     ) {
-        let (lhs, rhs) = rebind_assignment(assign, lean_info, rebind);
+        self.push_main(indent, "-- let");
+        let (lhs, rhs) = rebind_assignment(assign, rebind);
         self.push_main(indent, &format!("mkdef hl_{lhs} : {lhs} = {rhs},"));
-        // xxxxxxxxxxxxxxxx not complete yet
     }
 
     fn generate_assert(
@@ -1040,9 +1197,63 @@ impl LeanGenerator for AutoProof {
         assert: &AssertDesc,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        rc_checks: &mut usize,
+        pc: usize,
+        op_size: usize,
         indent: usize,
     ) {
-        // xxxxxxxxxxxxxxxx
+        let lhs =  rebind.get_var_name(&assert.lhs);
+        if lean_info.is_range_check(&assert.expr) {
+            self.push_main(indent, &format!("-- range check for {lhs}"));
+            self.push_main(indent, &format!("step_assert_eq {codes} with rc_{lhs},",
+                    codes = self.make_codes(pc, op_size)));
+
+            let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
+            // let next_rc_ptr = rebind.get_next_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
+
+            self.push_final(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"));
+            self.push_final(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"));
+
+            *rc_checks += 1;
+
+            //self.push_final(0, &format!("have rc_h_{next_rc_ptr} := range_checked_offset' rc_h_{rc_ptr},"));
+            //self.push_final(0, &format!("have rc_h_{next_rc_ptr}' := range_checked_add_right rc_h_{next_rc_ptr},"));
+
+        } else {
+            self.push_main(indent, "-- assert");
+            self.push_main(indent, &format!("step_assert_eq {codes} with ha{pc},",
+                    codes = self.make_codes(pc, op_size)));
+            let rhs = rebind.replace_var_names_in_expr(&assert.expr.expr);
+            self.push_main(indent, &format!("have a{pc} : {lhs} = {rhs},"));
+            self.push_main(indent, "{ sorry },");
+
+            self.push_final(0, &format!("use_only [a{pc}],"));
+        }
+    }
+
+    fn generate_jmp(
+        &mut self,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        self.push_main(indent, &format!("step_jump_imm {codes},",
+            codes = self.make_codes(pc, op_size)));
+    }
+
+    fn generate_jnz(
+        &mut self,
+        cond_var: &str,
+        label: &str,
+        rebind: &VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        let cond_var = rebind.get_var_name(cond_var);
+        self.push_main(indent, &format!("-- jump to {label} if {cond_var} != 0"));
+        self.push_main(indent, &format!("step_jnz {codes} with hcond{pc} hcond{pc},",
+            codes = self.make_codes(pc, op_size)));
     }
 
     fn generate_branch_intro(
@@ -1051,9 +1262,23 @@ impl LeanGenerator for AutoProof {
         is_eq: bool,
         lean_info: &LeanFuncInfo,
         rebind: &mut VarRebind,
+        pc: usize,
         indent: usize,
     ) -> usize {
-        // xxxxxxxxxxxxxx
+        let mut indent = indent;
+        let var_name = rebind.get_var_name(&cond_var.0);
+        if is_eq {
+            self.push_main(indent, "{");
+            indent += 2;
+        }
+
+        let op = if is_eq { "=" } else { "≠" };
+        self.push_main(indent,&format!("-- {var_name} {op} 0"));
+        self.push_main(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}, hcond{pc}], }},"));
+
+        self.push_final(0, if is_eq { "left," } else { "right," });
+        self.push_final(0, &format!("use_only [a{pc}],"));
+
         indent
     }
 
@@ -1064,8 +1289,13 @@ impl LeanGenerator for AutoProof {
         rebind: &mut VarRebind,
         indent: usize,
     ) -> usize {
-        // xxxxxxxxxxx
-        indent
+        if is_eq {
+            let indent = indent - 2;
+            self.push_main(indent, "},");
+            indent
+        } else {
+            indent
+        }
     }
 
     fn generate_return_args(
@@ -1075,9 +1305,78 @@ impl LeanGenerator for AutoProof {
         ret_exprs: &Vec<String>,
         lean_info: &LeanFuncInfo,
         rebind: &VarRebind,
+        rc_checks: usize,
         indent: usize,
     ) {
-        // xxxxxxxxxxxxxxxxx
+        let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
+        let mut rc_ret_name: String = "".into();
+        // The position in the casm at which the asserts for the return values start
+        // for this block. Assumes that each block has one assert per return argument
+        // and a jump or return at the end of the block.
+        let mut casm_pos = lean_info.casm_instructions.len() -
+            (lean_info.ret_args.branch_info.len() - branch_id) * (lean_info.ret_arg_num() + 1);
+        let mut pc = lean_info.get_pc_at(casm_pos);
+
+        self.push_main(indent, "-- return values");
+
+        for ret_name in ret_arg_names {
+            let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
+            let mut ret_name: String = ret_name.strip_prefix("ρ_").unwrap_or(ret_name).into();
+            let is_rc = 0 < rc_checks && rc_arg_name == ret_name;
+            if is_rc {
+                ret_name = rebind.get_next_name(&ret_name);
+                self.push_main(indent, "--   range check return value");
+            }
+
+            self.push_main(indent, &format!("step_assert_eq {codes} with ret_{ret_name},",
+                    codes = self.make_codes(pc, op_size)));
+            if is_rc {
+                self.push_main(indent, &format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {rc_checks},"));
+                self.push_main(indent, &format!("have htv_{ret_name}: {ret_name} = _,"));
+                self.push_main(indent, &format!("{{ apply eq.symm, apply eq.trans ret_{ret_name},"));
+                self.push_main(indent, &format!("simp only [hl_{ret_name}, hin_{rc_arg_name}] }},"));
+
+                rc_ret_name = ret_name;
+            } else {
+                self.push_final(0, &format!("use_only [ret_{ret_name}],"));
+            }
+
+            casm_pos += 1;
+            pc += op_size;
+        }
+
+        let last_instr = &lean_info.casm_instructions[casm_pos].body;
+        if let InstructionBody::Jump(instr) = last_instr {
+            let op_size = last_instr.op_size();
+            self.push_main(indent, &format!("step_jump_imm {codes},",
+                    codes = self.make_codes(pc, op_size)));
+        }
+
+        // Add the final return
+        pc = lean_info.get_code_len() - 1;
+        self.push_main(indent, &format!("step_ret {codes},",
+                codes = self.make_codes(pc, 1)));
+        self.push_main(indent, "step_done,");
+        self.push_main(indent, "use_only [rfl, rfl],");
+
+        if 0 < rc_checks {
+            self.push_main(indent, "-- range check condition");
+            self.push_main(indent, &format!("use_only ({rc_checks} + 0), split, norm_num1,"));
+            self.push_main(indent, "split,");
+            self.push_main(indent, &format!("arith_simps, use_only tv_{rc_ret_name},"));
+            self.push_main(indent, &format!("intro rc_h_{rc_arg_name},"));
+            self.push_main(indent, &format!("have rc_h_{rc_arg_name}' := range_checked_add_right rc_h_{rc_arg_name},"));
+        }
+
+        self.push_main(indent, &format!(
+            "suffices auto_spec: auto_spec_{func_name} mem _ {args} {ret_args},",
+            func_name = lean_info.func_name,
+            args = lean_info.get_arg_names().join(" "),
+            ret_args = iter::repeat('_').take(lean_info.explicit_ret_arg_num()).join(" ")
+        ));
+        self.push_main(indent, &format!(
+            "{{ apply auto_sound_{func_name}, apply auto_spec }},",
+            func_name = lean_info.func_name));
 
         // As a last step, add the final proof to the main proof (with indentation).
         for line in self.final_proof.clone() {
@@ -1122,29 +1421,51 @@ fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo) {
 
     lean_gen.generate_statement(func_name, lean_info, 0);
     lean_gen.generate_intro(func_name, lean_info, 2);
-    generate_auto_block(lean_gen, lean_info, &mut rebind, 0, 2);
+    generate_auto_block(lean_gen, lean_info, &mut rebind, 0, 0, 0, 0, 2);
 }
 
 fn generate_auto_block(
     lean_gen: &mut dyn LeanGenerator,
     lean_info: &LeanFuncInfo,
     rebind: &mut VarRebind,
+    mut rc_checks: usize,
     block_start: usize,
+    // Position in the list of casm instructions (this is not the same as the pc,
+    // as all instructions, whether they are compiled into one or two field
+    // elements, occupy a single position in this list).
+    casm_pos: usize,
+    // The pc, where 0 is the beginning of the function.
+    pc: usize,
     indent: usize
 ) {
+    let mut casm_pos = casm_pos;
+    let mut pc = pc;
     for (i, statement) in lean_info.aux_info.statements[block_start..].iter().enumerate() {
+        let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
         match statement {
             StatementDesc::TempVar(var) => {
-                lean_gen.generate_temp_var(var, lean_info, rebind, indent);
+                let op_size = if var.expr.is_some() { op_size } else { 0 };
+                lean_gen.generate_temp_var(var, lean_info, rebind, pc, op_size, indent);
+                if 0 < op_size {
+                    pc += op_size;
+                    casm_pos += 1;
+                }
             },
             StatementDesc::LocalVar(var) => {
-                lean_gen.generate_local_var(var, lean_info, rebind, indent);
+                let op_size = if var.expr.is_some() { op_size } else { 0 };
+                lean_gen.generate_local_var(var, lean_info, rebind, pc, op_size, indent);
+                if 0 < op_size {
+                    pc += op_size;
+                    casm_pos += 1;
+                }
             },
             StatementDesc::Let(assign) => {
                 lean_gen.generate_let(assign, lean_info, rebind, indent);
             },
             StatementDesc::Assert(assert) => {
-                lean_gen.generate_assert(assert, lean_info, rebind, indent);
+                lean_gen.generate_assert(assert, lean_info, rebind, &mut rc_checks, pc, op_size, indent);
+                pc += op_size;
+                casm_pos += 1;
             },
             StatementDesc::Jump(jump) => {
                 let pos = lean_info.aux_info.statements.iter().position(
@@ -1159,15 +1480,21 @@ fn generate_auto_block(
                 // The jump target may be a return branch name.
                 if pos.is_none() {
                     generate_auto_ret_block(
-                        lean_gen, lean_info, rebind, &jump.target, indent);
+                        lean_gen, lean_info, rebind, rc_checks, &jump.target, indent);
                     return;
                 }
 
-                let pos = pos.unwrap();
-                assert!(block_start + i < pos, "No backward jumps supported.");
+                let target = pos.unwrap();
+                assert!(block_start + i < target, "No backward jumps supported.");
+
+                let casm_jump = lean_info.casm_jump(block_start + i, target);
+                let pc_jump = lean_info.pc_jump(casm_pos, casm_pos + casm_jump);
 
                 match &jump.cond_var {
                     Some(cond_var) => {
+
+                        lean_gen.generate_jnz(&cond_var.0, &jump.target, rebind, pc, op_size, indent);
+
                         // Conditional jump, must generate both branches.
 
                         // First (equals zero) branch
@@ -1175,7 +1502,7 @@ fn generate_auto_block(
                         let mut branch = lean_gen.branch();
 
                         let indent = branch.generate_branch_intro(
-                                cond_var, true, lean_info, rebind, indent);
+                                cond_var, true, lean_info, rebind, pc, indent);
 
                         // Clone the rebind object before entering the branch, as the second branch
                         // should be independent of the rebinding accumulated in the first branch.
@@ -1183,8 +1510,11 @@ fn generate_auto_block(
                                 &mut *branch,
                                 lean_info,
                                 &mut rebind.clone(),
+                                rc_checks,
                                 block_start + i + 1,
-                                indent + 2);
+                                casm_pos + 1,
+                                pc + op_size,
+                                indent);
 
                         lean_gen.append_branch(&branch);
 
@@ -1194,37 +1524,55 @@ fn generate_auto_block(
                         // Second (not equals zero) branch
 
                         let indent = lean_gen.generate_branch_intro(
-                            cond_var, false, lean_info, rebind, indent);
+                            cond_var, false, lean_info, rebind, pc, indent);
 
                         generate_auto_block(
                             lean_gen,
                             lean_info,
                             rebind,
-                            pos + 1,
-                            indent + 2);
+                            rc_checks,
+                            target + 1,
+                            casm_pos + casm_jump,
+                            pc + pc_jump,
+                            indent);
 
                         lean_gen.generate_branch_close(
                             false, lean_info, rebind, indent);
                     },
                     _ => {
+
+                        lean_gen.generate_jmp(pc, op_size, indent);
+
                         // Unconditional jump, must generate only the target block.
-                        generate_auto_block(lean_gen, lean_info, rebind, pos + 1, indent);
+                        generate_auto_block(
+                            lean_gen,
+                            lean_info,
+                            rebind,
+                            rc_checks,
+                            target + 1,
+                            casm_pos + casm_jump,
+                            pc + pc_jump,
+                            indent);
                     }
                 };
                 return; // Remain code handled already in the branches.
             },
-            StatementDesc::ApPlus(step) => {}, // Do nothing
+            StatementDesc::ApPlus(step) => {
+                casm_pos += 1;
+                pc += op_size;
+            }, // Do nothing
             StatementDesc::Label(label) => {}, // Do nothing
         }
     }
 
-    generate_auto_ret_block(lean_gen, lean_info, rebind, "Fallthrough", indent);
+    generate_auto_ret_block(lean_gen, lean_info, rebind, rc_checks, "Fallthrough", indent);
 }
 
 fn generate_auto_ret_block(
     lean_gen: &mut dyn LeanGenerator,
     lean_info: &LeanFuncInfo,
     rebind: &VarRebind,
+    rc_checks: usize,
     ret_block_name: &str,
     indent: usize
 ) {
@@ -1232,11 +1580,11 @@ fn generate_auto_ret_block(
         |b| b.name == ret_block_name
     ).expect("Could not find return block.");
 
-    let ret_arg_names = lean_info.get_explicit_ret_arg_names();
+    let ret_arg_names = lean_info.get_all_ret_arg_names();
     let flat_exprs = lean_info.aux_info.return_args[branch_id].flat_exprs();
 
     lean_gen.generate_return_args(
-        branch_id, &ret_arg_names, &flat_exprs, lean_info, rebind, indent);
+        branch_id, &ret_arg_names, &flat_exprs, lean_info, rebind, rc_checks, indent);
 }
 
 pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) -> String {

@@ -1083,14 +1083,16 @@ macro_rules! casm_build_extend {
                     "*()",
                     None,
                 );
-                aux_info.add_let(
+                // Currently, we do not create intermediate variables for these steps,
+                // but this may change in the future.
+                /*aux_info.add_let(
                     stringify!($buffer),
                     $buffer,
                     &format!("{} + 1", stringify!($buffer)),
                     $buffer,
                     "++",
                     None,
-                );
+                );*/
             }
         }
         $crate::casm_build_extend!($builder, $($tok)*)
@@ -1208,14 +1210,16 @@ macro_rules! casm_build_extend {
         let buffer_expr = $builder.get_value($buffer, false);
         if let Some(aux_info) = &mut $builder.aux_info {
             aux_info.add_let(stringify!($dst), $dst, &format!("mem {}", stringify!($buffer)), $buffer, "*()", None);
-            aux_info.add_let(
+            // Currently, we do not create intermediate variables for these steps,
+            // but this may change in the future.
+            /*aux_info.add_let(
                 stringify!($buffer),
                 $buffer,
                 &format!("{} + 1", stringify!($buffer)),
                 $buffer,
                 "++",
                 None,
-            );
+            );*/
         }
         $crate::casm_build_extend!($builder, $($tok)*)
     };
