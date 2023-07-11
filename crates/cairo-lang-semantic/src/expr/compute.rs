@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 use ast::PathSegment;
-use cairo_lang_defs::ids::{FunctionTitleId, LanguageElementId, LocalVarLongId, MemberId, TraitId};
+use cairo_lang_defs::ids::{FunctionTitleId, LocalVarLongId, MemberId, TraitId};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -25,7 +25,6 @@ use smol_str::SmolStr;
 use super::inference::canonic::ResultNoErrEx;
 use super::inference::conform::InferenceConform;
 use super::inference::infers::InferenceEmbeddings;
-use super::inference::solver::SolutionSet;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
@@ -33,8 +32,8 @@ use super::pattern::{
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    get_index_operator_impl, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr,
-    unit_ty, unwrap_error_propagation_type, validate_literal,
+    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
@@ -42,18 +41,15 @@ use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
 use crate::items::enm::SemanticEnumEx;
+use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
-use crate::items::trt::ConcreteTraitGenericFunctionLongId;
 use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
 use crate::types::{peel_snapshots, resolve_type, wrap_in_snapshots, ConcreteTypeId};
-use crate::{
-    ConcreteFunction, FunctionLongId, GenericArgumentId, Mutability, Parameter, PatternStruct,
-    Signature,
-};
+use crate::{GenericArgumentId, Mutability, Parameter, PatternStruct, Signature};
 
 /// Expression with its id.
 #[derive(Debug, Clone)]
@@ -934,32 +930,95 @@ fn compute_expr_indexed_semantic(
     let syntax_db = ctx.db.upcast();
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let index_expr = compute_expr_semantic(ctx, &syntax.index_expr(syntax_db));
-    let (function, n_snapshots, expr_mutability) =
-        match get_index_operator_impl(ctx.db, expr.ty(), ctx, syntax.stable_ptr().untyped())? {
-            Ok(res) => res,
-            Err(err_kind) => {
-                return Err(ctx.diagnostics.report(syntax, err_kind));
+    let candidate_traits = vec!["Index", "IndexView"]
+        .iter()
+        .map(|trait_name| get_core_trait(ctx.db, (*trait_name).into()))
+        .collect();
+    let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
+        ctx,
+        candidate_traits,
+        "index".into(),
+        expr,
+        syntax.stable_ptr().untyped(),
+        None,
+        true,
+    )?;
+    expr_function_call(
+        ctx,
+        function_id,
+        vec![
+            NamedArg(fixed_expr, None, mutability),
+            NamedArg(index_expr, None, Mutability::Immutable),
+        ],
+        syntax.stable_ptr().into(),
+    )
+}
+
+/// Computes the data needed for a method function call, and similar exprs (index operator). Method
+/// call and Index operator differs in the diagnostics they emit. The function returns the
+/// function_id to call, the self argument, with snapshots added if needed, and the mutability of
+/// the self argument.
+fn compute_method_function_call_data(
+    ctx: &mut ComputationContext<'_>,
+    candidate_traits: Vec<TraitId>,
+    func_name: SmolStr,
+    self_expr: ExprAndId,
+    method_syntax: SyntaxStablePtrId,
+    generic_args_syntax: Option<Vec<ast::GenericArg>>,
+    is_index_call: bool,
+) -> Maybe<(FunctionId, ExprAndId, Mutability)> {
+    let self_ty = self_expr.ty();
+    let candidates = filter_candidate_traits(
+        ctx,
+        self_ty,
+        candidate_traits,
+        func_name.clone(),
+        self_expr.stable_ptr().untyped(),
+    )?;
+    let trait_function_id = match candidates[..] {
+        [] => {
+            if is_index_call {
+                return Err(ctx
+                    .diagnostics
+                    .report_by_ptr(method_syntax, NoImplementationOfIndexOperator(self_ty)));
+            } else {
+                return Err(ctx.diagnostics.report_by_ptr(
+                    method_syntax,
+                    NoSuchMethod { ty: self_ty, method_name: func_name },
+                ));
             }
-        };
-    let mut fixed_expr = expr;
+        }
+        [trait_function_id] => trait_function_id,
+        [trait_function_id0, trait_function_id1, ..] => {
+            if is_index_call {
+                return Err(ctx
+                    .diagnostics
+                    .report_by_ptr(method_syntax, MultipleImplementationOfIndexOperator(self_ty)));
+            } else {
+                return Err(ctx.diagnostics.report_by_ptr(
+                    method_syntax,
+                    AmbiguousTrait { trait_function_id0, trait_function_id1 },
+                ));
+            }
+        }
+    };
+    let (function_id, n_snapshots) =
+        infer_impl_by_self(ctx, trait_function_id, self_ty, method_syntax, generic_args_syntax)
+            .unwrap();
+
+    let signature = ctx.db.trait_function_signature(trait_function_id).unwrap();
+    let first_param = signature.params.into_iter().next().unwrap();
+    let mut fixed_expr = self_expr.clone();
     for _ in 0..n_snapshots {
         let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_expr.ty()));
         let expr = Expr::Snapshot(ExprSnapshot {
             inner: fixed_expr.id,
             ty,
-            stable_ptr: syntax.stable_ptr().into(),
+            stable_ptr: self_expr.stable_ptr(),
         });
         fixed_expr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
     }
-    expr_function_call(
-        ctx,
-        function,
-        vec![
-            NamedArg(fixed_expr, None, expr_mutability),
-            NamedArg(index_expr, None, Mutability::Immutable),
-        ],
-        syntax.stable_ptr().into(),
-    )
+    Ok((function_id, fixed_expr, first_param.mutability))
 }
 
 /// Computes the semantic model of a pattern, or None if invalid.
@@ -1425,111 +1484,20 @@ fn method_call_expr(
     };
     let func_name = segment.identifier(syntax_db);
     let generic_args_syntax = segment.generic_args(syntax_db);
-    let mut candidates = vec![];
-    let ty = ctx.reduce_ty(lexpr.ty());
     // Save some work.
     ctx.resolver.inference().solve().ok();
-    for trait_id in all_module_trait_ids(ctx)? {
-        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
-            if name != func_name {
-                continue;
-            }
-
-            // Check if trait function signature's first param can fit our expr type.
-            let mut inference_data = ctx.resolver.inference().clone_data();
-            let mut inference = inference_data.inference(ctx.db);
-            let lookup_context = ctx.resolver.impl_lookup_context();
-            let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
-            ) else {
-                continue;
-            };
-
-            // Find impls for it.
-            inference.solve().ok();
-            if !matches!(
-                inference.trait_solution_set(concrete_trait_id, lookup_context.clone()),
-                Ok(SolutionSet::Unique(_) | SolutionSet::Ambiguous(_))
-            ) {
-                continue;
-            }
-
-            candidates.push(trait_function);
-        }
-    }
-
-    let trait_function = match candidates[..] {
-        [] => {
-            return Err(ctx.diagnostics.report_by_ptr(
-                path.stable_ptr().untyped(),
-                NoSuchMethod { ty, method_name: func_name },
-            ));
-        }
-        [trait_function] => trait_function,
-        [trait_function_id0, trait_function_id1, ..] => {
-            return Err(ctx.diagnostics.report_by_ptr(
-                stable_ptr.untyped(),
-                AmbiguousTrait { trait_function_id0, trait_function_id1 },
-            ));
-        }
-    };
-
-    ctx.resolver.data.resolved_items.mark_generic(
-        ctx.db,
-        &segment,
-        ResolvedGenericItem::TraitFunction(trait_function),
-    );
-
-    let mut lookup_context = ctx.resolver.impl_lookup_context();
-    lookup_context.insert_module(trait_function.module_file_id(ctx.db.upcast()).0);
-    let (concrete_trait_id, n_snapshots) = ctx
-        .resolver
-        .inference()
-        .infer_concrete_trait_by_self(
-            trait_function,
-            ty,
-            &lookup_context,
-            Some(stable_ptr.untyped()),
-        )
-        .unwrap();
-    let signature = ctx.db.trait_function_signature(trait_function).unwrap();
-    let first_param = signature.params.into_iter().next().unwrap();
-    let concrete_trait_function_id = ctx.db.intern_concrete_trait_function(
-        ConcreteTraitGenericFunctionLongId::new(ctx.db, concrete_trait_id, trait_function),
-    );
-    let trait_func_generic_params =
-        ctx.db.concrete_trait_function_generic_params(concrete_trait_function_id)?;
-    let generic_args = ctx.resolver.resolve_generic_args(
-        ctx.diagnostics,
-        &trait_func_generic_params,
-        generic_args_syntax.unwrap_or_default(),
-        stable_ptr.untyped(),
+    let candidate_traits = all_module_trait_ids(ctx)?;
+    let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
+        ctx,
+        candidate_traits,
+        func_name,
+        lexpr,
+        path.stable_ptr().untyped(),
+        generic_args_syntax,
+        false,
     )?;
-
-    let impl_lookup_context = ctx.resolver.impl_lookup_context();
-    let generic_function = ctx
-        .resolver
-        .inference()
-        .infer_trait_generic_function(
-            concrete_trait_function_id,
-            &impl_lookup_context,
-            Some(path.stable_ptr().untyped()),
-        )
-        .map_err(|err| err.report(ctx.diagnostics, path.stable_ptr().untyped()))?;
-
-    let function_id = ctx.db.intern_function(FunctionLongId {
-        function: ConcreteFunction { generic_function, generic_args },
-    });
-
-    let mut fixed_lexpr = lexpr;
-    for _ in 0..n_snapshots {
-        let ty = ctx.db.intern_type(TypeLongId::Snapshot(fixed_lexpr.ty()));
-        let expr = Expr::Snapshot(ExprSnapshot { inner: fixed_lexpr.id, ty, stable_ptr });
-        fixed_lexpr = ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) };
-    }
-
     let named_args: Vec<_> = chain!(
-        [NamedArg(fixed_lexpr, None, first_param.mutability)],
+        [NamedArg(fixed_lexpr, None, mutability)],
         expr.arguments(syntax_db)
             .args(syntax_db)
             .elements(syntax_db)
