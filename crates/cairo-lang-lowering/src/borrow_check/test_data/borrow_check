@@ -95,6 +95,9 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
+note: Variable was moved here: lib.cairo:11:16
+    use_a_drop(y);
+               ^
  --> lib.cairo:14:3
   y
   ^
@@ -322,9 +325,13 @@ extern fn use_a_drop(x: ADrop) nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::ADrop>
+note: Variable was moved here: lib.cairo:7:16
+    use_a_drop(y);
+               ^
  --> lib.cairo:12:10
   return y;
          ^
+
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
@@ -379,6 +386,9 @@ use array::ArrayTrait;
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+note: Variable was moved here: inline_macros:8:3
+  b.append('bla');
+  ^
  --> inline_macros:10:9
   panic(arr);
         ^*^
@@ -424,6 +434,9 @@ extern fn do_match_extern(x: NonCopy) -> Option<NonCopy> nopanic;
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
+note: Variable was moved here: lib.cairo:7:16
+  use_non_copy(x);
+               ^
  --> lib.cairo:8:19
   do_match_extern(x)
                   ^
@@ -488,6 +501,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
+note: Variable was moved here: lib.cairo:11:16
+  use_non_copy(x.b);
+               ^
  --> lib.cairo:12:10
   return x;
          ^
@@ -538,6 +554,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+note: Variable was moved here: lib.cairo:10:5
+    b.append('invalidate `a`');
+    ^
  --> lib.cairo:8:28
 fn foo(ref self: MyStruct) {
                            ^

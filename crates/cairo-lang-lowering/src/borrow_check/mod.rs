@@ -66,12 +66,12 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         ));
     }
 
-    fn dup(&mut self, _position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
+    fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position.get(self.db),
-                VariableMoved { inference_error },
+                VariableMoved { inference_error,  move_location: position.get(self.db)},
             ));
         }
     }

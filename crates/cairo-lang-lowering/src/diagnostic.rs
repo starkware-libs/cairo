@@ -1,4 +1,5 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
@@ -9,6 +10,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use itertools::Itertools;
 
 use crate::Location;
+
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
@@ -57,8 +59,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved { inference_error } => {
-                format!("Variable was previously moved. {}", inference_error.format(db))
+            LoweringDiagnosticKind::VariableMoved { inference_error, move_location } => {
+                format!("Variable was previously moved. {}\nnote: Variable was moved here: {:?}", inference_error.format(db),
+                move_location.stable_location.diagnostic_location(db.upcast()).debug(db.upcast()))
             }
             LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
                 format!(
@@ -118,7 +121,7 @@ pub enum LoweringDiagnosticKind {
     NonZeroValueInMatch,
     // TODO(lior): Remove once supported.
     OnlyMatchZeroIsSupported,
-    VariableMoved { inference_error: InferenceError },
+    VariableMoved { inference_error: InferenceError, move_location: Location },
     VariableNotDropped { drop_err: InferenceError, destruct_err: InferenceError },
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
