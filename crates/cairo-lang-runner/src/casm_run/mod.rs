@@ -352,6 +352,7 @@ impl HintProcessorLogic for CairoHintProcessor<'_> {
         Ok(())
     }
 
+<<<<<<< HEAD
     /// Trait function to store hint in the hint processor by string.
     fn compile_hint(
         &self,
@@ -557,6 +558,220 @@ impl<'a> CairoHintProcessor<'a> {
                         system_buffer.write(Felt252::from(1))?;
                         system_buffer.write_arr(revert_reason.into_iter())?;
                     }
+||||||| 1003d5d14
+                        // Call the function.
+                        let Some(entry_point) = contract_info.externals.get(&selector) else
+                        {
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+                        let function = runner
+                            .sierra_program_registry
+                            .get_function(entry_point)
+                            .expect("Entrypoint exists, but not found.");
+                        let mut res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(*gas_counter),
+                                self.starknet_state.clone(),
+                            )
+                            .expect("Internal runner error.");
+
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+                        self.starknet_state = std::mem::take(&mut res.starknet_state);
+                        // Read the constructor return value.
+                        let res_data = match res.value {
+                            RunResultValue::Success(value) => {
+                                read_array_result_as_vec(&res.memory, &value)
+                            }
+                            RunResultValue::Panic(mut panic_data) => {
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+                            }
+                        };
+
+                        // Restore the contract address in the context.
+                        self.starknet_state.exec_info.caller_address = old_caller_address;
+                        self.starknet_state.exec_info.contract_address = old_contract_address;
+
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
+                    })?;
+                } else if selector == "LibraryCall".as_bytes() {
+                    check_handle_oog(6, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
+                        // Read inputs.
+                        let class_hash =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let selector =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+
+                        // Prepare runner for running the ctor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info = runner
+                            .starknet_contracts_info
+                            .get(&class_hash)
+                            .expect("Deployed contract not found in registry.");
+
+                        // Read calldata to a vector.
+                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
+
+                        // Call the function.
+                        let Some(entry_point) = contract_info.externals.get(&selector) else {
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+                        let function = runner
+                            .sierra_program_registry
+                            .get_function(entry_point)
+                            .expect("Entrypoint exists, but not found.");
+                        let mut res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(*gas_counter),
+                                self.starknet_state.clone(),
+                            )
+                            .expect("Internal runner error.");
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+
+                        self.starknet_state = std::mem::take(&mut res.starknet_state);
+                        // Read the constructor return value.
+                        let res_data = match res.value {
+                            RunResultValue::Success(value) => {
+                                read_array_result_as_vec(&res.memory, &value)
+                            }
+                            RunResultValue::Panic(mut panic_data) => {
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+                            }
+                        };
+
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
+                    })?;
+                } else {
+                    panic!("Unknown selector for system call!");
+=======
+                        // Call the function.
+                        let Some(entry_point) = contract_info.externals.get(&selector) else
+                        {
+                            // Restore the contract addresses in the context.
+                            self.starknet_state.exec_info.caller_address = old_caller_address;
+                            self.starknet_state.exec_info.contract_address = old_contract_address;
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+                        let function = runner
+                            .sierra_program_registry
+                            .get_function(entry_point)
+                            .expect("Entrypoint exists, but not found.");
+                        let mut res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(*gas_counter),
+                                self.starknet_state.clone(),
+                            )
+                            .expect("Internal runner error.");
+
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+                        self.starknet_state = std::mem::take(&mut res.starknet_state);
+                        // Read the constructor return value.
+                        let res_data = match res.value {
+                            RunResultValue::Success(value) => {
+                                read_array_result_as_vec(&res.memory, &value)
+                            }
+                            RunResultValue::Panic(mut panic_data) => {
+                                // Restore the contract addresses in the context.
+                                self.starknet_state.exec_info.caller_address = old_caller_address;
+                                self.starknet_state.exec_info.contract_address =
+                                    old_contract_address;
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+                            }
+                        };
+
+                        // Restore the contract address in the context.
+                        self.starknet_state.exec_info.caller_address = old_caller_address;
+                        self.starknet_state.exec_info.contract_address = old_contract_address;
+
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
+                    })?;
+                } else if selector == "LibraryCall".as_bytes() {
+                    check_handle_oog(6, &mut |vm, gas_counter| {
+                        deduct_gas!(gas_counter, 50);
+                        // Read inputs.
+                        let class_hash =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 2u32))?;
+                        let selector =
+                            get_double_deref_val(vm, cell, &(base_offset.clone() + 3u32))?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 4u32))?;
+                        let calldata_start_ptr = vm.get_relocatable(ptr)?;
+                        let ptr = get_ptr(vm, cell, &(base_offset.clone() + 5u32))?;
+                        let calldata_end_ptr = vm.get_relocatable(ptr)?;
+
+                        // Prepare runner for running the ctor.
+                        let runner = self.runner.expect("Runner is needed for starknet.");
+                        let contract_info = runner
+                            .starknet_contracts_info
+                            .get(&class_hash)
+                            .expect("Deployed contract not found in registry.");
+
+                        // Read calldata to a vector.
+                        let values = vm_get_range(vm, calldata_start_ptr, calldata_end_ptr)?;
+
+                        // Call the function.
+                        let Some(entry_point) = contract_info.externals.get(&selector) else {
+                            fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
+                        };
+                        let function = runner
+                            .sierra_program_registry
+                            .get_function(entry_point)
+                            .expect("Entrypoint exists, but not found.");
+                        let mut res = runner
+                            .run_function(
+                                function,
+                                &[Arg::Array(values)],
+                                Some(*gas_counter),
+                                self.starknet_state.clone(),
+                            )
+                            .expect("Internal runner error.");
+                        *gas_counter = res.gas_counter.unwrap().to_usize().unwrap();
+
+                        self.starknet_state = std::mem::take(&mut res.starknet_state);
+                        // Read the constructor return value.
+                        let res_data = match res.value {
+                            RunResultValue::Success(value) => {
+                                read_array_result_as_vec(&res.memory, &value)
+                            }
+                            RunResultValue::Panic(mut panic_data) => {
+                                fail_syscall!(panic_data, b"ENTRYPOINT_FAILED");
+                            }
+                        };
+
+                        let return_start = vm.add_memory_segment();
+                        let return_end = vm.load_data(
+                            return_start,
+                            &res_data.into_iter().map(MaybeRelocatable::Int).collect(),
+                        )?;
+                        Ok(SyscallResult::Success(vec![return_start.into(), return_end.into()]))
+                    })?;
+                } else {
+                    panic!("Unknown selector for system call!");
+>>>>>>> dev-v1.1.1
                 }
                 Ok(())
             };

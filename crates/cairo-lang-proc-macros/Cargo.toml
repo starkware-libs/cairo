@@ -14,6 +14,12 @@ normal = ["cairo-lang-debug"]
 
 [dependencies]
 # This is used only for docs.
+<<<<<<< HEAD
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.0.2" }
+||||||| 1003d5d14
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.1.0" }
+=======
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "1.1.1" }
+>>>>>>> dev-v1.1.1
 quote.workspace = true
 syn.workspace = true
