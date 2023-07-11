@@ -420,13 +420,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-casm"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -446,13 +440,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-compiler"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "cairo-lang-defs",
@@ -476,13 +464,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-debug"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-proc-macros",
  "cairo-lang-utils",
@@ -493,13 +475,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-defs"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-diagnostics",
@@ -520,13 +496,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-diagnostics"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -542,13 +512,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-eq-solver"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -562,13 +526,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-filesystem"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-utils",
@@ -583,13 +541,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-formatter"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "cairo-lang-diagnostics",
@@ -611,13 +563,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-language-server"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "cairo-lang-compiler",
@@ -649,13 +595,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-lowering"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -684,13 +624,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-parser"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
@@ -714,13 +648,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-plugins"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -744,13 +672,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-proc-macros"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "quote",
@@ -759,13 +681,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-project"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-filesystem",
  "cairo-lang-utils",
@@ -779,13 +695,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-runner"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "ark-ff",
@@ -822,13 +732,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-semantic"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "assert_matches",
  "cairo-lang-debug",
@@ -857,13 +761,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "assert_matches",
  "bimap",
@@ -891,13 +789,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-ap-change"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -913,13 +805,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-gas"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-eq-solver",
  "cairo-lang-sierra",
@@ -937,13 +823,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-generator"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-defs",
@@ -974,13 +854,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-sierra-to-casm"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "assert_matches",
  "cairo-felt",
@@ -1012,13 +886,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-starknet"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -1061,13 +929,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-debug",
  "cairo-lang-filesystem",
@@ -1085,13 +947,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-syntax-codegen"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "env_logger",
  "genco",
@@ -1101,13 +957,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-runner"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "anyhow",
  "cairo-felt",
@@ -1140,13 +990,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-test-utils"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "cairo-lang-utils",
  "env_logger",
@@ -1157,13 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "cairo-lang-utils"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "env_logger",
  "indexmap 1.9.3",
@@ -3239,13 +3077,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-<<<<<<< HEAD
 version = "2.0.2"
-||||||| 1003d5d14
-version = "1.1.0"
-=======
-version = "1.1.1"
->>>>>>> dev-v1.1.1
 dependencies = [
  "assert_matches",
  "cairo-felt",
