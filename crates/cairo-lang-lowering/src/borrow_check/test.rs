@@ -10,7 +10,7 @@ use crate::ids::ConcreteFunctionWithBodyId;
 use crate::test_utils::LoweringDatabaseForTesting;
 
 cairo_lang_test_utils::test_file_test!(
-    branch_inversion,
+    borrow_check,
     "src/borrow_check/test_data",
     {
         borrow_check :"borrow_check",
