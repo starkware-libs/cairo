@@ -88,3 +88,52 @@ error: Trait has no implementation in context: core::traits::Neg::<core::bool>
  --> lib.cairo:2:5
     -(1 == 2);
     ^*******^
+
+//! > ==========================================================================
+
+//! > Test index operator
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x1 = Struct1 { x: 0 };
+    let y1 = x1[0];
+    let x2 = Struct2 { x: 0 };
+    let y2 = x2[0];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct Struct1 {
+    x: felt252
+}
+struct Struct2 {
+    x: felt252
+}
+
+
+impl Struct2IndexView of IndexView<Struct2, usize, @felt252> {
+    fn index(self: @Struct2, index: usize) -> @felt252 {
+        self.x
+    }
+}
+impl Struct2Index of Index<Struct2, usize, felt252> {
+    fn index(ref self: Struct2, index: usize) -> felt252 {
+        self.x
+    }
+}
+
+//! > expected_diagnostics
+error: Type "test::Struct1" does not implement the "Index" trait nor the "IndexView" trait.
+ --> lib.cairo:21:14
+    let y1 = x1[0];
+             ^***^
+
+error: Type "test::Struct2" implements both the "Index" trait and the "IndexView" trait.
+ --> lib.cairo:23:14
+    let y2 = x2[0];
+             ^***^
