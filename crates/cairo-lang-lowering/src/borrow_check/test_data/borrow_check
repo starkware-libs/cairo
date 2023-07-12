@@ -325,6 +325,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return y;
          ^
+
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
@@ -538,9 +539,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
- --> lib.cairo:8:28
+ --> lib.cairo:8:12
 fn foo(ref self: MyStruct) {
-                           ^
+           ^**^
 
 //! > lowering
 Parameters: v0: test::MyStruct
