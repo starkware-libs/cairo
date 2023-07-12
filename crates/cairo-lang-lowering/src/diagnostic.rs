@@ -91,6 +91,9 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::MemberPathLoop => {
                 "Currently, loops must change the entire variable.".into()
             }
+            LoweringDiagnosticKind::UnexpectedError => {
+                "Unexpected error has occured, please open a bug report.".into()
+            }
         };
 
         itertools::chain!(self.location.notes.iter(), std::iter::once(&msg)).join(",\n")
@@ -123,6 +126,7 @@ pub enum LoweringDiagnosticKind {
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
     UnsupportedMatchArms,
+    UnexpectedError,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,

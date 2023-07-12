@@ -154,7 +154,7 @@ impl BlockBuilder {
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
                     location.get(ctx.db),
-                    LoweringDiagnosticKind::UnsupportedMatchArms,
+                    LoweringDiagnosticKind::UnexpectedError,
                 )
             })?;
 
