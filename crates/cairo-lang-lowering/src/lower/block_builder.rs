@@ -144,17 +144,12 @@ impl BlockBuilder {
         expr: VarUsage,
         location: LocationId,
     ) -> Maybe<()> {
-        let ref_vars = ctx
+        let refs = ctx
             .signature
             .extra_rets
             .clone()
             .iter()
-            .map(|member_path| {
-                self.semantics.get(
-                    BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                    &member_path.into(),
-                )
-            })
+            .map(|member_path| self.get_ref(ctx, member_path))
             .collect::<Option<Vec<_>>>()
             .ok_or_else(|| {
                 ctx.diagnostics.report_by_location(
@@ -163,16 +158,7 @@ impl BlockBuilder {
                 )
             })?;
 
-        self.finalize(
-            ctx,
-            FlatBlockEnd::Return(
-                chain!(
-                    ref_vars.iter().cloned().map(|var_id| VarUsage { var_id, location }),
-                    [expr]
-                )
-                .collect(),
-            ),
-        );
+        self.finalize(ctx, FlatBlockEnd::Return(chain!(refs, [expr]).collect()));
         Ok(())
     }
 
@@ -191,7 +177,8 @@ impl BlockBuilder {
         sealed_blocks: Vec<SealedBlockBuilder>,
         location: LocationId,
     ) -> LoweringResult<LoweredExpr> {
-        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location) else {
+        let Some((merged_expr, following_block)) = self.merge_sealed(ctx, sealed_blocks, location)
+        else {
             return Err(LoweringFlowError::Match(match_info));
         };
 
@@ -221,8 +208,8 @@ impl BlockBuilder {
         // Remap Variables from all blocks.
         for sealed_block in &sealed_blocks {
             let SealedBlockBuilder::GotoCallsite { builder: subscope, expr } = sealed_block else {
-            continue;
-        };
+                continue;
+            };
             n_reachable_blocks += 1;
             if let Some(var_usage) = expr {
                 semantic_remapping.expr.get_or_insert_with(|| {

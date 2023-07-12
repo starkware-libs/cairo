@@ -17,7 +17,7 @@ impl Felt252TryIntoEthAddress of TryInto<felt252, EthAddress> {
         if self.into() < ETH_ADDRESS_BOUND {
             Option::Some(EthAddress { address: self })
         } else {
-            Option::None(())
+            Option::None
         }
     }
 }

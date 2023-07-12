@@ -43,7 +43,7 @@ fn check_ecdsa_signature(
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
     let public_key_point = match ec::ec_point_from_x(public_key) {
         Option::Some(point) => point,
-        Option::None(()) => {
+        Option::None => {
             return false;
         },
     };
@@ -52,7 +52,7 @@ fn check_ecdsa_signature(
     // Note that this ensures that `r != 0`.
     let signature_r_point = match ec::ec_point_from_x(signature_r) {
         Option::Some(point) => point,
-        Option::None(()) => {
+        Option::None => {
             return false;
         },
     };
@@ -60,7 +60,7 @@ fn check_ecdsa_signature(
     // Retrieve the generator point.
     let gen_point = match ec_point_try_new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
-        Option::None(()) => {
+        Option::None => {
             return false;
         },
     };
@@ -75,7 +75,7 @@ fn check_ecdsa_signature(
 
     let sR: EcPoint = ec_mul(signature_r_point, signature_s);
     let sR_x = match ec_point_is_zero(sR) {
-        IsZeroResult::Zero(()) => {
+        IsZeroResult::Zero => {
             return false;
         },
         IsZeroResult::NonZero(pt) => {
@@ -87,7 +87,7 @@ fn check_ecdsa_signature(
     let zG: EcPoint = ec_mul(gen_point, message_hash);
     let rQ: EcPoint = ec_mul(public_key_point, signature_r);
     match ec_point_is_zero(zG + rQ) {
-        IsZeroResult::Zero(()) => {},
+        IsZeroResult::Zero => {},
         IsZeroResult::NonZero(pt) => {
             let (x, y) = ec_point_unwrap(pt);
             if (x == sR_x) {
@@ -97,7 +97,7 @@ fn check_ecdsa_signature(
     };
 
     match ec_point_is_zero(zG - rQ) {
-        IsZeroResult::Zero(()) => {},
+        IsZeroResult::Zero => {},
         IsZeroResult::NonZero(pt) => {
             let (x, y) = ec_point_unwrap(pt);
             if (x == sR_x) {

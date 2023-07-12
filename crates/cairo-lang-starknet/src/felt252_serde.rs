@@ -1,3 +1,5 @@
+use std::ops::{Shl, Shr};
+
 use cairo_lang_sierra::extensions::starknet::interoperability::ContractAddressTryFromFelt252Libfunc;
 use cairo_lang_sierra::extensions::starknet::secp256::Secp256GetPointFromXLibfunc;
 use cairo_lang_sierra::extensions::starknet::secp256k1::Secp256k1;
@@ -13,9 +15,9 @@ use cairo_lang_sierra::ids::{
     VarId,
 };
 use cairo_lang_sierra::program::{
-    BranchInfo, BranchTarget, ConcreteLibfuncLongId, ConcreteTypeLongId, Function,
-    FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program, Statement,
-    StatementIdx, TypeDeclaration,
+    BranchInfo, BranchTarget, ConcreteLibfuncLongId, ConcreteTypeLongId, DeclaredTypeInfo,
+    Function, FunctionSignature, GenericArg, Invocation, LibfuncDeclaration, Param, Program,
+    Statement, StatementIdx, TypeDeclaration,
 };
 use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -328,7 +330,11 @@ impl Felt252Serde for Program {
             if i as u64 != e.id.id {
                 return Err(Felt252SerdeError::OutOfOrderTypeDeclarationsForSerialization);
             }
-            e.long_id.serialize(output)?;
+            ConcreteTypeInfo {
+                long_id: e.long_id.clone(),
+                declared_type_info: e.declared_type_info.clone(),
+            }
+            .serialize(output)?;
         }
         // Libfunc declaration.
         self.libfunc_declarations.len().serialize(output)?;
@@ -366,11 +372,11 @@ impl Felt252Serde for Program {
         let (size, mut input) = usize::deserialize(input)?;
         let mut type_declarations = Vec::with_capacity(size);
         for i in 0..size {
-            let (long_id, next) = ConcreteTypeLongId::deserialize(input)?;
+            let (info, next) = ConcreteTypeInfo::deserialize(input)?;
             type_declarations.push(TypeDeclaration {
                 id: ConcreteTypeId::new(i as u64),
-                long_id,
-                declared_type_info: None,
+                long_id: info.long_id,
+                declared_type_info: info.declared_type_info,
             });
             input = next;
         }
@@ -409,10 +415,68 @@ impl Felt252Serde for Program {
     }
 }
 
-struct_serde! {
-    ConcreteTypeLongId {
-        generic_id: GenericTypeId,
-        generic_args: Vec<GenericArg>,
+/// Helper struct to serialize and deserialize a `ConcreteTypeLongId` and its optional
+/// `DeclaredTypeInfo`.
+struct ConcreteTypeInfo {
+    long_id: ConcreteTypeLongId,
+    declared_type_info: Option<DeclaredTypeInfo>,
+}
+
+const TYPE_INFO_MARKER: u64 = 0x8000000000000000;
+const TYPE_STORABLE: u64 = 0b0001;
+const TYPE_DROPPABLE: u64 = 0b0010;
+const TYPE_DUPLICATABLE: u64 = 0b0100;
+const TYPE_ZERO_SIZED: u64 = 0b1000;
+
+impl Felt252Serde for ConcreteTypeInfo {
+    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
+        self.long_id.generic_id.serialize(output)?;
+        let len = self.long_id.generic_args.len() as u128;
+        let decl_ti_value: u64 = match &self.declared_type_info {
+            Some(info) => {
+                // The marker guarantees that the type info value is not 0.
+                TYPE_INFO_MARKER
+                    | (if info.storable { TYPE_STORABLE } else { 0 })
+                    | (if info.droppable { TYPE_DROPPABLE } else { 0 })
+                    | (if info.duplicatable { TYPE_DUPLICATABLE } else { 0 })
+                    | (if info.zero_sized { TYPE_ZERO_SIZED } else { 0 })
+            }
+            None => 0,
+        };
+        ((BigInt::from(len) + BigInt::from(decl_ti_value).shl(128)) as BigInt).serialize(output)?;
+        for arg in &self.long_id.generic_args {
+            arg.serialize(output)?;
+        }
+        Ok(())
+    }
+
+    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
+        let (generic_id, input) = GenericTypeId::deserialize(input)?;
+        let (len_and_decl_ti_value, mut input) = BigInt::deserialize(input)?;
+        let len = (len_and_decl_ti_value.clone() & BigInt::from(u128::MAX)).to_usize().unwrap();
+        let decl_ti_value = (len_and_decl_ti_value.shr(128) as BigInt).to_u64().unwrap();
+        let mut generic_args = Vec::with_capacity(len);
+        for _ in 0..len {
+            let (arg, next) = GenericArg::deserialize(input)?;
+            generic_args.push(arg);
+            input = next;
+        }
+        Ok((
+            Self {
+                long_id: ConcreteTypeLongId { generic_id, generic_args },
+                declared_type_info: if decl_ti_value == 0 {
+                    None
+                } else {
+                    Some(DeclaredTypeInfo {
+                        storable: (decl_ti_value & TYPE_STORABLE) != 0,
+                        droppable: (decl_ti_value & TYPE_DROPPABLE) != 0,
+                        duplicatable: (decl_ti_value & TYPE_DUPLICATABLE) != 0,
+                        zero_sized: (decl_ti_value & TYPE_ZERO_SIZED) != 0,
+                    })
+                },
+            },
+            input,
+        ))
     }
 }
 

@@ -316,15 +316,17 @@ fn find_all_tests(
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
             let Ok(module_items) = db.module_items(*module_id) else {
-              continue;
-          };
-            tests.extend(
-              module_items.iter().filter_map(|item| {
-                  let ModuleItemId::FreeFunction(func_id) = item else { return None };
-                  let Ok(attrs) = db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id)) else { return None };
-                  Some((*func_id, try_extract_test_config(db.upcast(), attrs).unwrap()?))
-              }),
-          );
+                continue;
+            };
+            tests.extend(module_items.iter().filter_map(|item| {
+                let ModuleItemId::FreeFunction(func_id) = item else { return None };
+                let Ok(attrs) =
+                    db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
+                else {
+                    return None;
+                };
+                Some((*func_id, try_extract_test_config(db.upcast(), attrs).unwrap()?))
+            }));
         }
     }
     tests

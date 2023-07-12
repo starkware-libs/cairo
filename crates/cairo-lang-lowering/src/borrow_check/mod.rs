@@ -1,3 +1,7 @@
+#[cfg(test)]
+#[path = "test.rs"]
+mod test;
+
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::Maybe;
 use itertools::{zip_eq, Itertools};
@@ -51,10 +55,16 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
 
     fn drop_aux(&mut self, _position: (), var_id: VariableId, panic_state: PanicState) {
         let var = &self.lowered.variables[var_id];
-        let Err(drop_err) = var.droppable.clone() else { return; };
-        let Err(destruct_err) = var.destruct_impl.clone() else { return; };
+        let Err(drop_err) = var.droppable.clone() else {
+            return;
+        };
+        let Err(destruct_err) = var.destruct_impl.clone() else {
+            return;
+        };
         if matches!(panic_state, PanicState::EndsWithPanic) {
-            let Err(_panic_destruct_err) = var.panic_destruct_impl.clone() else { return; };
+            let Err(_panic_destruct_err) = var.panic_destruct_impl.clone() else {
+                return;
+            };
         }
         self.success = Err(self.diagnostics.report_by_location(
             var.location.get(self.db),

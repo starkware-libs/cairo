@@ -24,12 +24,12 @@ TypeDeclaration: TypeDeclaration = {
 }
 
 DeclaredTypeInfo: Option<DeclaredTypeInfo> = {
-    "with_info" "{"
+    "["
         "storable:" <storable:Bool> ","
-        "droppable:" <droppable:Bool> ","
-        "duplicatable:" <duplicatable:Bool> ","
-        "zero_sized:" <zero_sized:Bool> ","
-    "}"
+        "drop:" <droppable:Bool> ","
+        "dup:" <duplicatable:Bool> ","
+        "zero_sized:" <zero_sized:Bool>
+    "]"
     => Some(DeclaredTypeInfo {
         storable,
         droppable,

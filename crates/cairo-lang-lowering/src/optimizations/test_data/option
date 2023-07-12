@@ -8,7 +8,7 @@ fn foo() -> Option<u16> {
    let v = get_option();
    match v {
         Option::Some(_) => Option::Some(1_u16),
-        Option::None(_) => Option::None(()),
+        Option::None => Option::None(()),
    }
 }
 
@@ -145,12 +145,12 @@ fn foo(a: felt252) -> Option<u16> {
    let a = a + a;
    let v1 = match v {
         Option::Some(_) => Option::Some(1_u16),
-        Option::None(_) => Option::None(()),
+        Option::None => Option::None(()),
    };
    match v1 {
         // v1 is used after the match.
         Option::Some(_) => v1,
-        Option::None(_) => Option::Some(2_u16),
+        Option::None => Option::Some(2_u16),
    }
 }
 
@@ -332,7 +332,7 @@ fn foo() -> felt252 {
    let opt = get_option();
    match opt {
       Option::Some(x) => Option::Some(x + 3),
-      Option::None(()) => Option::None(())
+      Option::None => Option::None(())
    }.unwrap()
 }
 

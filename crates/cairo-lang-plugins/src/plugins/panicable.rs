@@ -69,13 +69,14 @@ fn generate_panicable_code(
 
     let signature = declaration.signature(db);
     let Some((inner_ty_text, success_variant, failure_variant)) =
-        extract_success_ty_and_variants(db, &signature) else {
+        extract_success_ty_and_variants(db, &signature)
+    else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
                 stable_ptr: signature.ret_ty(db).stable_ptr().untyped(),
-                message: "Currently only wrapping functions returning an Option<T> or \
-                    Result<T, E>".into(),
+                message: "Currently only wrapping functions returning an Option<T> or Result<T, E>"
+                    .into(),
             }],
             remove_original_item: false,
         };
@@ -186,8 +187,9 @@ fn parse_arguments(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<(SmolStr, S
         AttributeArg {
             variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(name), .. },
             ..
-        }
-    ] = &attr.args[..] else {
+        },
+    ] = &attr.args[..]
+    else {
         return None;
     };
 

@@ -11,8 +11,8 @@ use array::SpanTrait;
 
 #[derive(Copy, Drop)]
 enum bool {
-    False: (),
-    True: (),
+    False,
+    True,
 }
 
 impl BoolSerde of Serde<bool> {
@@ -69,15 +69,15 @@ impl BoolPartialEq of PartialEq<bool> {
     #[inline(always)]
     fn eq(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
-            bool::False(_) => !*rhs,
-            bool::True(_) => *rhs,
+            bool::False => !*rhs,
+            bool::True => *rhs,
         }
     }
     #[inline(always)]
     fn ne(lhs: @bool, rhs: @bool) -> bool {
         match lhs {
-            bool::False(_) => *rhs,
-            bool::True(_) => !*rhs,
+            bool::False => *rhs,
+            bool::True => !*rhs,
         }
     }
 }
@@ -181,7 +181,7 @@ extern fn felt252_is_zero(lhs: felt252) -> zeroable::IsZeroResult<felt252> nopan
 impl Felt252TryIntoNonZero of TryInto<felt252, NonZero<felt252>> {
     fn try_into(self: felt252) -> Option<NonZero<felt252>> {
         match felt252_is_zero(self) {
-            zeroable::IsZeroResult::Zero(()) => Option::None(()),
+            zeroable::IsZeroResult::Zero => Option::None,
             zeroable::IsZeroResult::NonZero(x) => Option::Some(x),
         }
     }
@@ -254,8 +254,7 @@ use integer::{
     u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
     u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
     Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
-    U128IntoFelt252, U16TryIntoU8, U32TryIntoU16, U64TryIntoU32, U128TryIntoU64, Felt252IntoU256,
-    Bitwise
+    U128IntoFelt252, Felt252IntoU256, Bitwise
 };
 
 // Math.

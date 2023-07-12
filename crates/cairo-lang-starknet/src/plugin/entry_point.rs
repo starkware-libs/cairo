@@ -64,7 +64,7 @@ pub fn generate_entry_point_wrapper(
     let mut ref_appends = Vec::new();
 
     let Some(first_param) = params.next() else {
-        return Err(vec![PluginDiagnostic{
+        return Err(vec![PluginDiagnostic {
             message: "The first paramater of an entry point must be `self`.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
         }]);
@@ -210,7 +210,9 @@ pub fn has_external_attribute(
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::Item,
 ) -> bool {
-    let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else { return false; };
+    let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else {
+        return false;
+    };
     validate_external_v0(db, diagnostics, &attr);
     true
 }

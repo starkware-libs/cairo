@@ -368,7 +368,7 @@ impl EventIsEvent of starknet::Event<Event> {
                 )?;
                 return Option::Some(Event::BestEventEver(val));
             }
-        Option::None(())
+        Option::None
     }
 }
 impl EventAwesomeEventIntoEvent of Into<AwesomeEvent, Event> {

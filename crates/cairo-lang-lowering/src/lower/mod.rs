@@ -244,7 +244,9 @@ fn lower_expr_block(
     log::trace!("Lowering a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
         let stmt = ctx.function_body.statements[*stmt_id].clone();
-        let Err(err) = lower_statement(ctx, builder, &stmt) else { continue; };
+        let Err(err) = lower_statement(ctx, builder, &stmt) else {
+            continue;
+        };
         if err.is_unreachable() {
             // If flow is not reachable anymore, no need to continue emitting statements.
             // TODO(spapini): We might want to report unreachable for expr that abruptly
@@ -697,7 +699,7 @@ fn perform_function_call(
                     ),
                     semantic::ConcreteTypeId::Enum
                 ),
-                input: call_result.returns[0],
+                input: VarUsage { var_id: call_result.returns[0].var_id, location },
                 arms: vec![],
                 location,
             })));
@@ -851,23 +853,31 @@ fn lower_expr_match(
                 ));
             }
 
-            let pattern_location =
-                ctx.get_location(enum_pattern.inner_pattern.stable_ptr().untyped());
+            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
+                Some(inner_pattern) => {
+                    let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
 
-            let var_id = ctx.new_var(VarRequest {
-                ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
-                location: pattern_location,
-            });
-            arm_var_ids.push(vec![var_id]);
-            let variant_expr =
-                LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
+                    let var_id = ctx.new_var(VarRequest {
+                        ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                        location: pattern_location,
+                    });
+                    arm_var_ids.push(vec![var_id]);
+                    let variant_expr =
+                        LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-            match lower_single_pattern(
-                ctx,
-                &mut subscope,
-                &enum_pattern.inner_pattern,
-                variant_expr,
-            ) {
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
+                }
+                None => {
+                    let var_id = ctx.new_var(VarRequest {
+                        ty: wrap_in_snapshots(ctx.db.upcast(), concrete_variant.ty, n_snapshots),
+                        location: ctx.get_location(enum_pattern.stable_ptr.untyped()),
+                    });
+                    arm_var_ids.push(vec![var_id]);
+                    Ok(())
+                }
+            };
+
+            match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.
                     lower_tail_expr(ctx, subscope, arm.expression)
@@ -944,12 +954,14 @@ fn lower_optimized_extern_match(
             match_extern_arm_ref_args_bind(ctx, &mut input_vars, &extern_enum, &mut subscope);
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
-            match lower_single_pattern(
-                ctx,
-                &mut subscope,
-                &enum_pattern.inner_pattern,
-                variant_expr,
-            ) {
+            let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
+                Some(inner_pattern) => {
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
+                }
+                None => Ok(()),
+            };
+
+            match lowering_inner_pattern_result {
                 Ok(_) => {
                     // Lower the arm expression.
                     lower_tail_expr(ctx, subscope, arm.expression)

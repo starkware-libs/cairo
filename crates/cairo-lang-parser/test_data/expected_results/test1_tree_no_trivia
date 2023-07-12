@@ -197,9 +197,10 @@
     │   │       │   │   │   │       │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │   │       │   │   │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
-    │   │       │   │   │   │       │   │   │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │   │   │   ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │   │   │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │   │   │       ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │   │   └── expression (kind: TokenLiteralNumber): '4'
     │   │       │   │   │   │       │   ├── separator #0 (kind: TokenComma): ','
@@ -211,9 +212,10 @@
     │   │       │   │   │   │       │       │   │   ├── separator #0 (kind: TokenColonColon): '::'
     │   │       │   │   │   │       │       │   │   └── item #1 (kind: PathSegmentSimple)
     │   │       │   │   │   │       │       │   │       └── ident (kind: TokenIdentifier): 'V2'
-    │   │       │   │   │   │       │       │   ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │   │       │       │   ├── pattern (kind: TokenUnderscore): '_'
-    │   │       │   │   │   │       │       │   └── rparen (kind: TokenRParen): ')'
+    │   │       │   │   │   │       │       │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │   │   │   │       │       │       ├── lparen (kind: TokenLParen): '('
+    │   │       │   │   │   │       │       │       ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │   │   │   │       │       │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │   │       │       ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │   │   │   │       │       └── expression (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   │       └── rbrace (kind: TokenRBrace): '}'
@@ -537,7 +539,129 @@
     │   │   │               │       └── rparen (kind: TokenRParen): ')'
     │   │   │               └── rparen (kind: TokenRParen): ')'
     │   │   └── rbrace (kind: TokenRBrace): '}'
-    │   ├── child #7 (kind: ItemTypeAlias)
+    │   ├── child #7 (kind: ItemEnum)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── enum_kw (kind: TokenEnum): 'enum'
+    │   │   ├── name (kind: TokenIdentifier): 'E'
+    │   │   ├── generic_params (kind: WrappedGenericParamList)
+    │   │   │   ├── langle (kind: TokenLT): '<'
+    │   │   │   ├── generic_params (kind: GenericParamList)
+    │   │   │   │   ├── item #0 (kind: GenericParamType)
+    │   │   │   │   │   └── name (kind: TokenIdentifier): 'A'
+    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   │   └── item #1 (kind: GenericParamType)
+    │   │   │   │       └── name (kind: TokenIdentifier): 'B'
+    │   │   │   └── rangle (kind: TokenGT): '>'
+    │   │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │   ├── variants (kind: VariantList)
+    │   │   │   ├── item #0 (kind: Variant)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── name (kind: TokenIdentifier): 'V1'
+    │   │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │   │       └── ty (kind: ExprPath)
+    │   │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │               └── ident (kind: TokenIdentifier): 'A'
+    │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   ├── item #1 (kind: Variant)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── name (kind: TokenIdentifier): 'V2'
+    │   │   │   │   └── type_clause (kind: TypeClause)
+    │   │   │   │       ├── colon (kind: TokenColon): ':'
+    │   │   │   │       └── ty (kind: ExprPath)
+    │   │   │   │           └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │               └── ident (kind: TokenIdentifier): 'B'
+    │   │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   │   ├── item #2 (kind: Variant)
+    │   │   │   │   ├── attributes (kind: AttributeList) []
+    │   │   │   │   ├── name (kind: TokenIdentifier): 'VEmpty'
+    │   │   │   │   └── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │   │   └── separator #2 (kind: TokenComma): ','
+    │   │   └── rbrace (kind: TokenRBrace): '}'
+    │   ├── child #8 (kind: FunctionWithBody)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── declaration (kind: FunctionDeclaration)
+    │   │   │   ├── function_kw (kind: TokenFunction): 'fn'
+    │   │   │   ├── name (kind: TokenIdentifier): 'match_e_enum'
+    │   │   │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │   │   │   └── signature (kind: FunctionSignature)
+    │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │   │       ├── parameters (kind: ParamList)
+    │   │   │       │   └── item #0 (kind: Param)
+    │   │   │       │       ├── modifiers (kind: ModifierList) []
+    │   │   │       │       ├── name (kind: TokenIdentifier): 'e'
+    │   │   │       │       └── type_clause (kind: TypeClause)
+    │   │   │       │           ├── colon (kind: TokenColon): ':'
+    │   │   │       │           └── ty (kind: ExprPath)
+    │   │   │       │               └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │                   └── ident (kind: TokenIdentifier): 'E'
+    │   │   │       ├── rparen (kind: TokenRParen): ')'
+    │   │   │       ├── ret_ty (kind: ReturnTypeClause)
+    │   │   │       │   ├── arrow (kind: TokenArrow): '->'
+    │   │   │       │   └── ty (kind: ExprPath)
+    │   │   │       │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │   │   │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │   │   │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │   │   └── body (kind: ExprBlock)
+    │   │       ├── lbrace (kind: TokenLBrace): '{'
+    │   │       ├── statements (kind: StatementList)
+    │   │       │   └── child #0 (kind: StatementExpr)
+    │   │       │       ├── expr (kind: ExprMatch)
+    │   │       │       │   ├── match_kw (kind: TokenMatch): 'match'
+    │   │       │       │   ├── expr (kind: ExprPath)
+    │   │       │       │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │       └── ident (kind: TokenIdentifier): 'e'
+    │   │       │       │   ├── lbrace (kind: TokenLBrace): '{'
+    │   │       │       │   ├── arms (kind: MatchArms)
+    │   │       │       │   │   ├── item #0 (kind: MatchArm)
+    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
+    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'V1'
+    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │       │   │   │   │       ├── pattern (kind: TokenUnderscore): '_'
+    │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '1'
+    │   │       │       │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │       │       │   │   ├── item #1 (kind: MatchArm)
+    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
+    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'V2'
+    │   │       │       │   │   │   │   └── pattern (kind: PatternEnumInnerPattern)
+    │   │       │       │   │   │   │       ├── lparen (kind: TokenLParen): '('
+    │   │       │       │   │   │   │       ├── pattern (kind: ExprPath)
+    │   │       │       │   │   │   │       │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │       │       └── ident (kind: TokenIdentifier): 'x'
+    │   │       │       │   │   │   │       └── rparen (kind: TokenRParen): ')'
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '2'
+    │   │       │       │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │       │       │   │   ├── item #2 (kind: MatchArm)
+    │   │       │       │   │   │   ├── pattern (kind: PatternEnum)
+    │   │       │       │   │   │   │   ├── path (kind: ExprPath)
+    │   │       │       │   │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │   │   └── ident (kind: TokenIdentifier): 'E'
+    │   │       │       │   │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │       │   │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'VEmpty'
+    │   │       │       │   │   │   │   └── pattern (kind: OptionPatternEnumInnerPatternEmpty) []
+    │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
+    │   │       │       │   │   │   └── expression (kind: TokenLiteralNumber): '0'
+    │   │       │       │   │   └── separator #2 (kind: TokenComma): ','
+    │   │       │       │   └── rbrace (kind: TokenRBrace): '}'
+    │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
+    │   │       └── rbrace (kind: TokenRBrace): '}'
+    │   ├── child #9 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Renamed'
@@ -553,7 +677,7 @@
     │   │   │   └── item #2 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'Other'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   ├── child #8 (kind: ItemTypeAlias)
+    │   ├── child #10 (kind: ItemTypeAlias)
     │   │   ├── attributes (kind: AttributeList) []
     │   │   ├── type_kw (kind: TokenType): 'type'
     │   │   ├── name (kind: TokenIdentifier): 'Generic'
@@ -583,7 +707,7 @@
     │   │   │           │               └── ident (kind: TokenIdentifier): 'T'
     │   │   │           └── rangle (kind: TokenGT): '>'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #9 (kind: ItemMissing) []
+    │   └── child #11 (kind: ItemMissing) []
     └── eof (kind: TokenEndOfFile).
 --------------------
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
@@ -607,7 +731,7 @@ error: Missing token TerminalRBrace.
              ^
 
 error: Missing tokens. Expected an item after attributes.
- --> test1.cairo:46:26
+ --> test1.cairo:60:26
 #[attribute_without_item]
                          ^
 

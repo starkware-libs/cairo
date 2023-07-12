@@ -74,6 +74,7 @@ pub struct RunResultStarknet {
 }
 
 /// The full result of a run.
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct RunResult {
     pub gas_counter: Option<Felt252>,
     pub memory: Vec<Option<Felt252>>,
@@ -81,7 +82,7 @@ pub struct RunResult {
 }
 
 /// The ran function return value.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum RunResultValue {
     /// Run ended successfully, returning the memory of the non-implicit returns.
     Success(Vec<Felt252>),
@@ -488,7 +489,9 @@ impl SierraCasmRunner {
         if self.metadata.gas_info.function_costs.is_empty() {
             return Ok(0);
         }
-        let Some(available_gas) = available_gas else { return Ok(0); };
+        let Some(available_gas) = available_gas else {
+            return Ok(0);
+        };
 
         // Compute the initial gas required by the function.
         let required_gas = self.metadata.gas_info.function_costs[func.id.clone()]

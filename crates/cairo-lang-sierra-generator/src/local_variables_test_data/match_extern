@@ -9,7 +9,7 @@ foo
 //! > function_code
 fn foo(x: felt252) -> felt252 {
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // y is not revoked, since it's the same as x, which is local.
@@ -18,7 +18,7 @@ fn foo(x: felt252) -> felt252 {
     }
     let x2 = x + x;
     match felt252_is_zero(x2) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             // x2 is revoked, since y is identical to x2.
@@ -185,7 +185,7 @@ fn foo(x: felt252) -> felt252 {
     let w1 = x + x;
 
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             revoke_ap();
             return 0;
@@ -196,7 +196,7 @@ fn foo(x: felt252) -> felt252 {
     let w2 = w1 + x;
 
     match felt252_is_zero(x) {
-        IsZeroResult::Zero(_) => 1,
+        IsZeroResult::Zero => 1,
         IsZeroResult::NonZero(y) => {
             // Same as above, without revoke_ap() and without an early return.
             2

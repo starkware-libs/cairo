@@ -4,7 +4,7 @@ use array::SpanTrait;
 
 enum Option<T> {
     Some: T,
-    None: (),
+    None,
 }
 
 impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<T>> {
@@ -14,7 +14,7 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
                 0.serialize(ref output);
                 x.serialize(ref output)
             },
-            Option::None(()) => 1.serialize(ref output),
+            Option::None => 1.serialize(ref output),
         }
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
@@ -22,9 +22,9 @@ impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<
         if variant == 0 {
             Option::Some(Option::Some(Serde::<T>::deserialize(ref serialized)?))
         } else if variant == 1 {
-            Option::Some(Option::None(()))
+            Option::Some(Option::None)
         } else {
-            Option::None(())
+            Option::None
         }
     }
 }
@@ -44,7 +44,7 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
     fn expect(self: Option<T>, err: felt252) -> T {
         match self {
             Option::Some(x) => x,
-            Option::None(_) => panic_with_felt252(err),
+            Option::None => panic_with_felt252(err),
         }
     }
     #[inline(always)]
@@ -55,14 +55,14 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
     fn is_some(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
     #[inline(always)]
     fn is_none(self: @Option<T>) -> bool {
         match self {
             Option::Some(_) => false,
-            Option::None(_) => true,
+            Option::None => true,
         }
     }
 }

@@ -199,7 +199,7 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
                 )?;
                 return Option::Some(MyEventEnum::B(val));
             }
-        Option::None(())
+        Option::None
     }
 }
 impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {

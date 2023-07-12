@@ -10,7 +10,7 @@ fn main() {
             Option::Some(v) => {
                 v
             },
-            Option::None(()) => {
+            Option::None => {
                 break 'hi';
             }
         };

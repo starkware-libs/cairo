@@ -35,14 +35,14 @@ impl ArrayImpl<T> of ArrayTrait<T> {
     fn pop_front(ref self: Array<T>) -> Option<T> nopanic {
         match array_pop_front(ref self) {
             Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
+            Option::None => Option::None,
         }
     }
     #[inline(always)]
     fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic {
         match array_pop_front_consume(self) {
             Option::Some((arr, x)) => Option::Some((arr, x.unbox())),
-            Option::None(_) => Option::None(()),
+            Option::None => Option::None,
         }
     }
     #[inline(always)]
@@ -99,7 +99,7 @@ fn serialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
             value.serialize(ref output);
             serialize_array_helper(input, ref output);
         },
-        Option::None(_) => {},
+        Option::None => {},
     }
 }
 
@@ -146,7 +146,7 @@ impl SpanImpl<T> of SpanTrait<T> {
         self = Span { snapshot };
         match item {
             Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
+            Option::None => Option::None,
         }
     }
     #[inline(always)]
@@ -156,7 +156,7 @@ impl SpanImpl<T> of SpanTrait<T> {
         self = Span { snapshot };
         match item {
             Option::Some(x) => Option::Some(x.unbox()),
-            Option::None(_) => Option::None(()),
+            Option::None => Option::None,
         }
     }
     #[inline(always)]
@@ -198,7 +198,7 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
                 Option::Some(v) => {
                     response.append(TClone::clone(v));
                 },
-                Option::None(_) => {
+                Option::None => {
                     break ();
                 },
             };

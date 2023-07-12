@@ -282,9 +282,7 @@ pub fn get_implicit_precedence<'a>(
     let mut attributes = attributes.iter().rev().filter(|attr| attr.id == "implicit_precedence");
 
     // Pick the last attribute if any.
-    let Some(attr) = attributes.next() else {
-        return Ok((ImplicitPrecedence::UNSPECIFIED, None))
-    };
+    let Some(attr) = attributes.next() else { return Ok((ImplicitPrecedence::UNSPECIFIED, None)) };
 
     // Report warnings for overriden attributes if any.
     for attr in attributes {
