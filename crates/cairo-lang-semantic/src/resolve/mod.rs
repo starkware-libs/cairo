@@ -444,7 +444,8 @@ impl<'db> Resolver<'db> {
                 // Find the relevant function in the trait.
                 let long_trait_id = self.db.lookup_intern_concrete_trait(*concrete_trait_id);
                 let trait_id = long_trait_id.trait_id;
-                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)? else {
+                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)?
+                else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
 
@@ -477,9 +478,8 @@ impl<'db> Resolver<'db> {
             ResolvedConcreteItem::Impl(impl_id) => {
                 let concrete_trait_id = self.db.impl_concrete_trait(*impl_id)?;
                 let trait_id = concrete_trait_id.trait_id(self.db);
-                let Some(trait_function_id) = self.db.trait_function_by_name(
-                    trait_id, ident,
-                )? else {
+                let Some(trait_function_id) = self.db.trait_function_by_name(trait_id, ident)?
+                else {
                     return Err(diagnostics.report(identifier, InvalidPath));
                 };
                 let generic_function_id = GenericFunctionId::Impl(ImplGenericFunctionId {

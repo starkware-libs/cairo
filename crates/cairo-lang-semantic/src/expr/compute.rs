@@ -1440,7 +1440,10 @@ fn method_call_expr(
             let mut inference = inference_data.inference(ctx.db);
             let lookup_context = ctx.resolver.impl_lookup_context();
             let Some((concrete_trait_id, _)) = inference.infer_concrete_trait_by_self(
-                trait_function, ty, &lookup_context,Some(stable_ptr.untyped())
+                trait_function,
+                ty,
+                &lookup_context,
+                Some(stable_ptr.untyped()),
             ) else {
                 continue;
             };
@@ -1746,8 +1749,9 @@ fn expr_function_call(
         args.push(if param.mutability == Mutability::Reference {
             // Verify the argument is a variable.
             let Some(ref_arg) = arg.as_member_path() else {
-                return Err(ctx.diagnostics.report_by_ptr(
-                    arg.stable_ptr().untyped(), RefArgNotAVariable));
+                return Err(ctx
+                    .diagnostics
+                    .report_by_ptr(arg.stable_ptr().untyped(), RefArgNotAVariable));
             };
             // Verify the variable argument is mutable.
             if !ctx.semantic_defs[&ref_arg.base_var()].is_mut() {
@@ -1940,8 +1944,8 @@ pub fn compute_statement_semantic(
                 }
             };
             let Some(flow_merge) = ctx.loop_flow_merge.as_mut() else {
-                            return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
-                        };
+                return Err(ctx.diagnostics.report(break_syntax, BreakOnlyAllowedInsideALoop));
+            };
             if let Err((current_ty, break_ty)) =
                 flow_merge.try_merge_types(&mut ctx.resolver.inference(), ctx.db, ty)
             {

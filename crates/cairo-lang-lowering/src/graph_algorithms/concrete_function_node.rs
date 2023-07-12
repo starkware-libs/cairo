@@ -15,8 +15,11 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
-            else { return vec![] };
+        let Ok(direct_callees) =
+            self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
+        else {
+            return vec![];
+        };
         direct_callees
             .into_iter()
             .map(|callee| ConcreteFunctionWithBodyNode { function_id: callee, db: self.db })
@@ -42,8 +45,12 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyPostPanicNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) = self.db.concrete_function_with_body_postpanic_direct_callees_with_body(self.function_id)
-            else { return vec![] };
+        let Ok(direct_callees) = self
+            .db
+            .concrete_function_with_body_postpanic_direct_callees_with_body(self.function_id)
+        else {
+            return vec![];
+        };
         direct_callees
             .into_iter()
             .map(|callee| ConcreteFunctionWithBodyPostPanicNode {

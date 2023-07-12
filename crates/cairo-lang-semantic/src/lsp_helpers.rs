@@ -22,8 +22,12 @@ pub fn methods_in_module(
     let mut result = Vec::new();
     for trait_id in db.module_traits_ids(module_id).unwrap_or_default() {
         for (_, trait_function) in db.trait_functions(trait_id).unwrap_or_default() {
-            let Ok(signature) = db.trait_function_signature(trait_function) else { continue; };
-            let Some(first_param) = signature.params.first() else { continue; };
+            let Ok(signature) = db.trait_function_signature(trait_function) else {
+                continue;
+            };
+            let Some(first_param) = signature.params.first() else {
+                continue;
+            };
             if first_param.name != "self" {
                 continue;
             }
