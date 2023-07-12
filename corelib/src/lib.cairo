@@ -28,6 +28,28 @@ impl BoolSerde of Serde<bool> {
     }
 }
 
+impl BoolIntoFelt252 of Into<bool, felt252> {
+    fn into(self: bool) -> felt252 {
+        if self {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+impl Felt252TryIntoBool of TryInto<felt252, bool> {
+    fn try_into(self: felt252) -> Option<bool> {
+        if self == 0 {
+            Option::Some(false)
+        } else if self == 1 {
+            Option::Some(true)
+        } else {
+            Option::None(())
+        }
+    }
+}
+
 extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
 impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
