@@ -428,8 +428,9 @@ impl LanguageServer for Backend {
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
                     trigger_characters: Some(vec![".".to_string()]),
-                    work_done_progress_options: Default::default(),
                     all_commit_characters: None,
+                    work_done_progress_options: Default::default(),
+                    completion_item: None,
                 }),
                 execute_command_provider: Some(ExecuteCommandOptions {
                     commands: vec!["cairo1.reload".to_string()],
@@ -468,7 +469,7 @@ impl LanguageServer for Backend {
             watchers: vec!["/**/*.cairo", "/**/Scarb.toml"]
                 .into_iter()
                 .map(|glob_pattern| FileSystemWatcher {
-                    glob_pattern: glob_pattern.to_string(),
+                    glob_pattern: GlobPattern::String(glob_pattern.to_string()),
                     kind: None,
                 })
                 .collect(),
