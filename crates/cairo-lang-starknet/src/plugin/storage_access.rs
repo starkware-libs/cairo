@@ -178,8 +178,12 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
         let variant_name = variant.name(db).text(db);
-        let variant_type =
-            variant.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
+        let variant_type = match variant.type_clause(db) {
+            ast::OptionTypeClause::Empty(_) => "()".to_string(),
+            ast::OptionTypeClause::TypeClause(tc) => {
+                tc.ty(db).as_syntax_node().get_text_without_trivia(db)
+            }
+        };
 
         if variant_type == "()" {
             match_idx.push(format!(
@@ -319,8 +323,7 @@ pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn Synt
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == "storage_access::StorageAccess"
-            {
+            if path.as_syntax_node().get_text_without_trivia(db) == "storage_access::StorageAccess" {
                 return true;
             }
         }

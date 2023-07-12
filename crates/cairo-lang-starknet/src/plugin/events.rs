@@ -194,10 +194,6 @@ fn get_field_kind_for_variant(
 
 /// Derive the `Event` trait for enums annotated with `derive(starknet::Event)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
-    if !derive_event_needed(&enum_ast, db) {
-        return PluginResult::default();
-    }
-
     let mut builder = PatchBuilder::new(db);
     let mut diagnostics = vec![];
     let enum_name = RewriteNode::new_trimmed(enum_ast.name(db).as_syntax_node());
