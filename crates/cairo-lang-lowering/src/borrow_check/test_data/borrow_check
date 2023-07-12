@@ -325,6 +325,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return y;
          ^
+
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
@@ -517,9 +518,9 @@ End:
 test_borrow_check
 
 //! > function
-fn foo(ref self: MyStruct) {
-    let mut b = self.a;
-    b.append('invalidate `a`');
+fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+    invalidate(s1.a);
+    invalidate(s2.a);
 }
 
 //! > function_name
@@ -527,6 +528,8 @@ foo
 
 //! > module_code
 use array::ArrayTrait;
+
+extern fn invalidate(a: Array<felt252>) nopanic;
 
 #[derive(Drop)]
 struct MyStruct {
@@ -538,18 +541,25 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
- --> lib.cairo:8:28
-fn foo(ref self: MyStruct) {
-                           ^
+ --> lib.cairo:10:30
+fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+                             ^^
+
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> lib.cairo:10:12
+fn foo(ref s1: MyStruct, ref s2: MyStruct) {
+           ^^
 
 //! > lowering
-Parameters: v0: test::MyStruct
+Parameters: v0: test::MyStruct, v1: test::MyStruct
 blk0 (root):
 Statements:
-  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0)
-  (v3: core::felt252) <- 2138404743268917614455006093664608u
-  (v5: core::array::Array::<core::felt252>, v4: ()) <- core::array::ArrayImpl::<core::felt252>::append(v1, v3)
+  (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0)
+  () <- test::invalidate(v2)
+  (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1)
+  () <- test::invalidate(v4)
   (v6: ()) <- struct_construct()
-  (v7: test::MyStruct) <- struct_construct(v1, v2)
+  (v7: test::MyStruct) <- struct_construct(v2, v3)
+  (v8: test::MyStruct) <- struct_construct(v4, v5)
 End:
-  Return(v7, v6)
+  Return(v7, v8, v6)
