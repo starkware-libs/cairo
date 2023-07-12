@@ -67,7 +67,7 @@
   },
   "Creates an interface": {
     "prefix": ["interface, abi"],
-    "body": ["#[starknet::interface]", "trait $1<TContractState> {", "$2", "}"],
+    "body": ["#[starknet::interface]", "trait $1<TContractState> {", "\t$2", "}"],
     "description": "Creates an interface"
   },
   "Creates a view function": {
