@@ -133,8 +133,8 @@ fn analyze_gas_statements<
     variable_values: &mut VariableValues,
 ) {
     let Statement::Invocation(invocation) = &context.program.get_statement(idx).unwrap() else {
-            return;
-        };
+        return;
+    };
     let libfunc_cost: Vec<BranchCost> = context.get_cost(&invocation.libfunc_id);
     let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
         specific_context,

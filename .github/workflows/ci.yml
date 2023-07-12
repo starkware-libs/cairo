@@ -47,7 +47,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2022-11-03
+          toolchain: nightly-2023-07-05
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install nextest
@@ -70,7 +70,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           components: rustfmt
-          toolchain: nightly-2022-11-03
+          toolchain: nightly-2023-07-05
       - uses: Swatinem/rust-cache@v2
       - run: scripts/rust_fmt.sh --check
 
@@ -101,14 +101,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         name: "Rust Toolchain Setup"
         with:
-          toolchain: nightly-2022-11-03
+          toolchain: nightly-2023-07-05
       - uses: Swatinem/rust-cache@v2
       - name: "Download and run cargo-udeps"
         run: |
           wget -O - -c https://github.com/est31/cargo-udeps/releases/download/v0.1.35/cargo-udeps-v0.1.35-x86_64-unknown-linux-gnu.tar.gz | tar -xz
           cargo-udeps-*/cargo-udeps udeps
         env:
-          RUSTUP_TOOLCHAIN: nightly-2022-11-03
+          RUSTUP_TOOLCHAIN: nightly-2023-07-05
 
   clippy:
     runs-on: ubuntu-latest

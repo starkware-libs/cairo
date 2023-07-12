@@ -244,7 +244,9 @@ fn lower_expr_block(
     log::trace!("Lowering a block.");
     for (i, stmt_id) in expr_block.statements.iter().enumerate() {
         let stmt = ctx.function_body.statements[*stmt_id].clone();
-        let Err(err) = lower_statement(ctx, builder, &stmt) else { continue; };
+        let Err(err) = lower_statement(ctx, builder, &stmt) else {
+            continue;
+        };
         if err.is_unreachable() {
             // If flow is not reachable anymore, no need to continue emitting statements.
             // TODO(spapini): We might want to report unreachable for expr that abruptly

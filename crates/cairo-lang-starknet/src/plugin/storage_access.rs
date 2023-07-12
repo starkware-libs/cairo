@@ -170,13 +170,11 @@ pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn Synt
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
         for arg in &attr.args {
-            let AttributeArg{
-                variant: AttributeArgVariant::Unnamed {
-                    value: ast::Expr::Path(path),
-                    ..
-                },
+            let AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
                 ..
-            } = arg else {
+            } = arg
+            else {
                 continue;
             };
             if path.as_syntax_node().get_text_without_trivia(db) == "storage_access::StorageAccess"
