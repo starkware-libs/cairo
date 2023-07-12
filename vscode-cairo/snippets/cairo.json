@@ -31,12 +31,7 @@
   },
   "Creates storage": {
     "prefix": "storage",
-    "body": [
-      "#[storage]",
-      "struct Storage {",
-      "\t$1: ${2},",
-      "}"
-    ],
+    "body": ["#[storage]", "struct Storage {", "\t$1: ${2},", "}"],
     "description": "Creates the storage struct"
   },
   "Creates the event dictionary": {
@@ -62,30 +57,17 @@
   },
   "Creates a function": {
     "prefix": "fn",
-    "body": [
-      "fn $1($2: ${3}) -> ${4} {",
-      "\t$5",
-      "}"
-    ],
+    "body": ["fn $1($2: ${3}) -> ${4} {", "\t$5", "}"],
     "description": "Creates a function"
   },
   "Creates an external function": {
     "prefix": ["external, fn"],
-    "body": [
-      "fn $1(ref self: ContractState, ) {",
-      "\t$5",
-      "}"
-    ],
+    "body": ["fn $1(ref self: ContractState, ) {", "\t$5", "}"],
     "description": "Creates an external function"
   },
   "Creates a view function": {
     "prefix": ["view", "fn"],
-    "body": [
-      "#[external]",
-      "fn $1(self: @ContractState, ) {",
-      "\t$5",
-      "}"
-    ],
+    "body": ["#[external]", "fn $1(self: @ContractState, ) {", "\t$5", "}"],
     "description": "Creates a view function"
   },
   "Match": {
@@ -118,11 +100,7 @@
   },
   "Creates a trait": {
     "prefix": "trait",
-    "body": [
-      "trait $1<T> {",
-      "\tfn $2($3: ${4}) -> ${5};",
-      "}"
-    ],
+    "body": ["trait $1<T> {", "\tfn $2($3: ${4}) -> ${5};", "}"],
     "description": "Creates a trait"
   },
 
@@ -149,12 +127,7 @@
   },
   "Impl a trait with ContractState": {
     "prefix": ["impl", "external"],
-    "body": [
-      "#[external(v0)]",
-      "impl $1 of $2<ContractState>{",
-      "\t$3",
-      "}"
-    ],
+    "body": ["#[external(v0)]", "impl $1 of $2<ContractState>{", "\t$3", "}"],
     "description": "Impl a trait with ContractState"
   },
   "Generate Trait": {
@@ -174,12 +147,7 @@
   },
   "Creates an Enum object": {
     "prefix": "enum",
-    "body": [
-      "#[derive(Copy, Drop, $1)]",
-      "enum $2 {",
-      "\t$3: ${4},",
-      "}"
-    ],
+    "body": ["#[derive(Copy, Drop, $1)]", "enum $2 {", "\t$3: ${4},", "}"],
     "description": "Creates an enum with default derive"
   },
   "Creates a test": {
