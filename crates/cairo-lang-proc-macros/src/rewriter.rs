@@ -80,7 +80,7 @@ fn emit_fields_semantic_object(fields: syn::Fields) -> (TokenStream2, TokenStrea
         let has_dont_rewrite_attr = field
             .attrs
             .iter()
-            .any(|a| a.path.segments.len() == 1 && a.path.segments[0].ident == "dont_rewrite");
+            .any(|a| a.path().segments.len() == 1 && a.path().segments[0].ident == "dont_rewrite");
         let rewrite_expr = if has_dont_rewrite_attr {
             quote! { #field_ident }
         } else {

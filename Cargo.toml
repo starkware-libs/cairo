@@ -55,7 +55,7 @@ anyhow = "1.0.66"
 ark-ff = "0.4.0-alpha.7"
 ark-secp256k1 = "0.4.0"
 ark-secp256r1 = "0.4.0"
-ark-std = "0.3.0"
+ark-std = "0.4.0"
 assert_matches = "1.5"
 bimap = "0.6.2"
 cairo-felt = "0.8.2"
@@ -66,30 +66,30 @@ const-fnv1a-hash = "1.1.0"
 convert_case = "0.6.0"
 derivative = "2.2.0"
 diffy = "0.3.0"
-env_logger = "0.9.3"
+env_logger = "0.10.0"
 genco = "0.17.0"
 good_lp = { version = "1.3.2", features = ["minilp"], default-features = false }
 id-arena = "2.2.1"
 ignore = "0.4.20"
-indexmap = { version = "1.9.1", features = ["serde"] }
+indexmap = { version = "2.0.0", features = ["serde"] }
 indoc = "2.0.1"
-itertools = "0.10.3"
+itertools = "0.11.0"
 keccak = "0.1.3"
-lalrpop-util = { version = "0.19.9", features = ["lexer"] }
+lalrpop-util = { version = "0.20.0", features = ["lexer"] }
 log = "0.4"
-lsp = { version = "0.93", package = "lsp-types" }
+lsp = { version = "0.94", package = "lsp-types" }
 num-bigint = "0.4"
 num-integer = "0.1"
 num-traits = "0.2"
 once_cell = "1.17.1"
 parity-scale-codec = "3.5.0"
 parity-scale-codec-derive = "3.1.4"
-path-clean = "0.1.0"
+path-clean = "1.0.1"
 pretty_assertions = "1.2.1"
 proc-macro2 = "1.0"
 quote = "1.0.21"
 rayon = "1.7.0"
-rstest = "0.16.0"
+rstest = "0.18.1"
 salsa = "0.16.1"
 scarb-metadata = "1.3.0"
 schemars = { version = "0.8.12", features = ["preserve_order"] }
@@ -97,8 +97,8 @@ serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0"
 sha3 = "0.10.6"
 smol_str = { version = "0.2.0", features = ["serde"] }
-syn = { version = "1.0.99", features = ["full", "extra-traits"] }
-test-case = "2.2.2"
+syn = { version = "2.0.25", features = ["full", "extra-traits"] }
+test-case = "3.1.0"
 test-case-macros = "2.2.2"
 test-log = "0.2.11"
 thiserror = "1.0.32"
@@ -108,7 +108,7 @@ time = { version = "0.3.20", features = [
     "local-offset",
 ] }
 tokio = { version = "1.18.2", features = ["full", "sync"] }
-toml = "0.4.2"
-tower-lsp = "0.17.0"
+toml = "0.7.6"
+tower-lsp = "0.19.0"
 unescaper = "0.1.1"
 xshell = "0.2.2"
