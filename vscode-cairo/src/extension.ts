@@ -106,15 +106,26 @@ async function findExecutableFromPathVar(name: string) {
 }
 
 async function findScarbExecutablePathInAsdfDir() {
-  if (os.platform() === "win32") return undefined;
+  if (os.platform() === "win32") {
+    return undefined;
+  }
 
-  const asdfDataDir = process.env.ASDF_DATA_DIR ?? `${process.env.HOME}/.asdf`;
+  let asdfDataDir = process.env.ASDF_DATA_DIR;
+  if (!asdfDataDir) {
+    const home = process.env.HOME;
+    if (!home) {
+      return undefined;
+    }
+    asdfDataDir = path.join(home, ".asdf");
+  }
   const scarbExecutablePath = path.join(asdfDataDir, "shims", "scarb");
 
-  return fs.promises
-    .access(scarbExecutablePath, fs.constants.X_OK)
-    .then(() => scarbExecutablePath)
-    .catch(() => undefined);
+  try {
+    await fs.promises.access(scarbExecutablePath, fs.constants.X_OK);
+    return scarbExecutablePath;
+  } catch (e) {
+    return undefined;
+  }
 }
 
 async function findScarbExecutablePath(
