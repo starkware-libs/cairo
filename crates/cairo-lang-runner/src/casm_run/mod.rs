@@ -273,13 +273,50 @@ macro_rules! fail_syscall {
     };
 }
 
+/// Gas Costs for syscalls.
+/// Mostly duplication of:
+/// `https://github.com/starkware-libs/blockifier/blob/main/crates/blockifier/src/abi/constants.rs`.
+mod gas_costs {
+    const STEP: usize = 100;
+    const RANGE_CHECK: usize = 70;
+
+    /// Entry point initial gas cost enforced by the compiler.
+    const ENTRY_POINT_INITIAL_BUDGET: usize = 100 * STEP;
+    /// OS gas costs.
+    const ENTRY_POINT: usize = ENTRY_POINT_INITIAL_BUDGET + 500 * STEP;
+    // The required gas for each syscall minus the base amount that was pre-charged (by the
+    // compiler).
+    pub const CALL_CONTRACT: usize = 10 * STEP + ENTRY_POINT;
+    pub const DEPLOY: usize = 200 * STEP + ENTRY_POINT;
+    pub const EMIT_EVENT: usize = 10 * STEP;
+    pub const GET_BLOCK_HASH: usize = 50 * STEP;
+    pub const GET_EXECUTION_INFO: usize = 10 * STEP;
+    pub const KECCAK: usize = 0;
+    pub const KECCAK_ROUND_COST: usize = 180000;
+    pub const LIBRARY_CALL: usize = CALL_CONTRACT;
+    pub const REPLACE_CLASS: usize = 50 * STEP;
+    pub const SECP256K1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
+    pub const SECP256K1_GET_POINT_FROM_X: usize = 260 * STEP + 29 * RANGE_CHECK;
+    pub const SECP256K1_GET_XY: usize = 24 * STEP + 9 * RANGE_CHECK;
+    pub const SECP256K1_MUL: usize = 121810 * STEP + 10739 * RANGE_CHECK;
+    pub const SECP256K1_NEW: usize = 340 * STEP + 36 * RANGE_CHECK;
+    pub const SECP256R1_ADD: usize = 254 * STEP + 29 * RANGE_CHECK;
+    pub const SECP256R1_GET_POINT_FROM_X: usize = 260 * STEP + 29 * RANGE_CHECK;
+    pub const SECP256R1_GET_XY: usize = 24 * STEP + 9 * RANGE_CHECK;
+    pub const SECP256R1_MUL: usize = 121810 * STEP + 10739 * RANGE_CHECK;
+    pub const SECP256R1_NEW: usize = 340 * STEP + 36 * RANGE_CHECK;
+    pub const SEND_MESSAGE_TO_L1: usize = 50 * STEP;
+    pub const STORAGE_READ: usize = 50 * STEP;
+    pub const STORAGE_WRITE: usize = 50 * STEP;
+}
+
 /// Deducts gas from the given gas counter, or fails the syscall if there is not enough gas.
 macro_rules! deduct_gas {
-    ($gas:ident, $amount:expr) => {
-        if *$gas < $amount {
+    ($gas:ident, $amount:ident) => {
+        if *$gas < gas_costs::$amount {
             fail_syscall!(b"Syscall out of gas");
         }
-        *$gas -= $amount;
+        *$gas -= gas_costs::$amount;
     };
 }
 
@@ -588,7 +625,7 @@ impl<'a> CairoHintProcessor<'a> {
             "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 let _to_address = system_buffer.next_felt252()?;
                 let _payload = system_buffer.next_arr()?;
-                deduct_gas!(gas_counter, 50);
+                deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
                 Ok(SyscallResult::Success(vec![]))
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -707,7 +744,7 @@ impl<'a> CairoHintProcessor<'a> {
         addr: Felt252,
         value: Felt252,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 1000);
+        deduct_gas!(gas_counter, STORAGE_WRITE);
         if !addr_domain.is_zero() {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
@@ -724,7 +761,7 @@ impl<'a> CairoHintProcessor<'a> {
         addr_domain: Felt252,
         addr: Felt252,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 100);
+        deduct_gas!(gas_counter, STORAGE_READ);
         if !addr_domain.is_zero() {
             // Only address_domain 0 is currently supported.
             fail_syscall!(b"Unsupported address domain");
@@ -745,7 +782,7 @@ impl<'a> CairoHintProcessor<'a> {
         gas_counter: &mut usize,
         _block_number: u64,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 100);
+        deduct_gas!(gas_counter, GET_BLOCK_HASH);
         // TODO(Arni, 28/5/2023): Replace the temporary return value with the required value.
         //      One design suggestion - to preform a storage read. Have an arbitrary, hardcoded
         //      (For example, addr=1) contain the mapping from block number to block hash.
@@ -758,7 +795,7 @@ impl<'a> CairoHintProcessor<'a> {
         gas_counter: &mut usize,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, GET_EXECUTION_INFO);
         let exec_info = &self.starknet_state.exec_info;
         let block_info = &exec_info.block_info;
         let tx_info = &exec_info.tx_info;
@@ -794,7 +831,7 @@ impl<'a> CairoHintProcessor<'a> {
         keys: Vec<Felt252>,
         data: Vec<Felt252>,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
@@ -810,7 +847,7 @@ impl<'a> CairoHintProcessor<'a> {
         _deploy_from_zero: Felt252,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, DEPLOY);
 
         // Assign an arbitrary address to the contract.
         let deployed_contract_address = self.starknet_state.get_next_id();
@@ -864,7 +901,7 @@ impl<'a> CairoHintProcessor<'a> {
         calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, CALL_CONTRACT);
 
         // Get the class hash of the contract.
         let Some(class_hash) = self.starknet_state.deployed_contracts.get(&contract_address) else {
@@ -918,7 +955,7 @@ impl<'a> CairoHintProcessor<'a> {
         calldata: Vec<Felt252>,
         vm: &mut dyn VMWrapper,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, LIBRARY_CALL);
         // Prepare runner for running the call.
         let runner = self.runner.expect("Runner is needed for starknet.");
         let contract_info = runner
@@ -946,7 +983,7 @@ impl<'a> CairoHintProcessor<'a> {
         gas_counter: &mut usize,
         new_class: Felt252,
     ) -> Result<SyscallResult, HintError> {
-        deduct_gas!(gas_counter, 50);
+        deduct_gas!(gas_counter, REPLACE_CLASS);
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
@@ -1082,12 +1119,13 @@ impl<'a> CairoHintProcessor<'a> {
 
 /// Executes the `keccak_syscall` syscall.
 fn keccak(gas_counter: &mut usize, data: Vec<Felt252>) -> Result<SyscallResult, HintError> {
+    deduct_gas!(gas_counter, KECCAK);
     if data.len() % 17 != 0 {
         fail_syscall!(b"Invalid keccak input size");
     }
     let mut state = [0u64; 25];
     for chunk in data.chunks(17) {
-        deduct_gas!(gas_counter, 5000);
+        deduct_gas!(gas_counter, KECCAK_ROUND_COST);
         for (i, val) in chunk.iter().enumerate() {
             state[i] ^= val.to_u64().unwrap();
         }
@@ -1108,7 +1146,7 @@ fn secp256k1_new(
     y: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256K1_NEW);
     let modulos = <secp256k1::Fq as PrimeField>::MODULUS.into();
     if x >= modulos || y >= modulos {
         fail_syscall!(b"Coordinates out of range");
@@ -1137,7 +1175,7 @@ fn secp256k1_add(
     p0_id: usize,
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256K1_ADD);
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p0 = &ec.ec_points[p0_id];
     let p1 = &ec.ec_points[p1_id];
@@ -1154,7 +1192,7 @@ fn secp256k1_mul(
     m: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256K1_MUL);
 
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
@@ -1171,7 +1209,7 @@ fn secp256k1_get_point_from_x(
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256K1_GET_POINT_FROM_X);
     if x >= <secp256k1::Fq as PrimeField>::MODULUS.into() {
         fail_syscall!(b"Coordinates out of range");
     }
@@ -1198,7 +1236,7 @@ fn secp256k1_get_xy(
     p_id: usize,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256K1_GET_XY);
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let pow_2_128 = BigUint::from(u128::MAX) + 1u32;
@@ -1234,7 +1272,7 @@ fn secp256r1_new(
     y: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
     let modulos = <secp256r1::Fq as PrimeField>::MODULUS.into();
     if x >= modulos || y >= modulos {
         fail_syscall!(b"Coordinates out of range");
@@ -1263,7 +1301,7 @@ fn secp256r1_add(
     p0_id: usize,
     p1_id: usize,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256R1_ADD);
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p0 = &ec.ec_points[p0_id];
     let p1 = &ec.ec_points[p1_id];
@@ -1280,7 +1318,7 @@ fn secp256r1_mul(
     m: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256R1_MUL);
 
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
@@ -1297,7 +1335,7 @@ fn secp256r1_get_point_from_x(
     y_parity: bool,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256R1_NEW);
     if x >= <secp256r1::Fq as PrimeField>::MODULUS.into() {
         fail_syscall!(b"Coordinates out of range");
     }
@@ -1323,7 +1361,7 @@ fn secp256r1_get_xy(
     p_id: usize,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
-    deduct_gas!(gas_counter, 500);
+    deduct_gas!(gas_counter, SECP256R1_GET_XY);
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
     let pow_2_128 = BigUint::from(u128::MAX) + 1u32;

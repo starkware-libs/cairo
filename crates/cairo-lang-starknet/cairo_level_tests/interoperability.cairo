@@ -79,7 +79,7 @@ fn test_flow() {
 }
 
 #[test]
-#[available_gas(300000)]
+#[available_gas(890000)]
 #[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED', ))]
 fn test_flow_out_of_gas() {
     // Set up.
