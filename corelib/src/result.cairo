@@ -22,19 +22,13 @@ impl ResultSerde<
         }
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<Result<R, E>> {
-        match serialized.pop_front() {
-            Option::Some(variant) => {
-                if *variant == 0 {
-                    Option::Some(Result::Ok(Serde::<R>::deserialize(ref serialized)?))
-                } else if *variant == 1 {
-                    Option::Some(Result::Err(Serde::<E>::deserialize(ref serialized)?))
-                } else {
-                    Option::None(())
-                }
-            },
-            Option::None(_) => {
-                Option::None(())
-            }
+        let variant = *serialized.pop_front()?;
+        if variant == 0 {
+            Option::Some(Result::Ok(Serde::<R>::deserialize(ref serialized)?))
+        } else if variant == 1 {
+            Option::Some(Result::Err(Serde::<E>::deserialize(ref serialized)?))
+        } else {
+            Option::None(())
         }
     }
 }
