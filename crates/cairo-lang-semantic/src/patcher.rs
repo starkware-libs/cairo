@@ -48,7 +48,9 @@ impl RewriteNode {
                 let mut new_children = Vec::new();
 
                 // Get the index of the leftmost nonempty child.
-                let Some(left_idx) = node.children(db).position(|child| child.width(db) != TextWidth::default()) else {
+                let Some(left_idx) =
+                    node.children(db).position(|child| child.width(db) != TextWidth::default())
+                else {
                     *self = RewriteNode::Modified(ModifiedNode { children: None });
                     return extract_matches!(self, RewriteNode::Modified);
                 };

@@ -674,8 +674,9 @@ impl LanguageServer for Backend {
             eprintln!("Hover {file_uri}");
             let file = file(db, file_uri);
             let position = params.text_document_position_params.position;
-            let Some((node, lookup_items)) =
-            get_node_and_lookup_items(db, file, position) else { return None; };
+            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
+                return None;
+            };
             let Some(lookup_item_id) = lookup_items.into_iter().next() else {
                 return None;
             };
@@ -714,16 +715,20 @@ impl LanguageServer for Backend {
             let file_uri = params.text_document_position_params.text_document.uri;
             let file = file(db, file_uri.clone());
             let position = params.text_document_position_params.position;
-            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {return None};
+            let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
+                return None;
+            };
             for lookup_item_id in lookup_items {
                 if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
                     continue;
                 }
                 let identifier =
                     ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-                let Some(item) = db.lookup_resolved_generic_item_by_ptr(
-                    lookup_item_id, identifier.stable_ptr())
-                else { continue; };
+                let Some(item) =
+                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+                else {
+                    continue;
+                };
 
                 let defs_db = db.upcast();
                 let (module_id, file_index, stable_ptr) = match item {
@@ -812,7 +817,8 @@ impl LanguageServer for Backend {
                 }));
             }
             None
-        }).await
+        })
+        .await
     }
 }
 

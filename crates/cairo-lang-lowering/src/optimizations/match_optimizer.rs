@@ -80,9 +80,13 @@ impl MatchOptimizerContext {
         info: &mut AnalysisInfo<'_>,
         statement_location: (BlockId, usize),
     ) -> bool {
-        let Statement::EnumConstruct(StatementEnumConstruct {
-            variant, input, output }) = stmt else { return false;};
-        let Some(ref mut candidate) = &mut info.candidate else {return false;};
+        let Statement::EnumConstruct(StatementEnumConstruct { variant, input, output }) = stmt
+        else {
+            return false;
+        };
+        let Some(ref mut candidate) = &mut info.candidate else {
+            return false;
+        };
         if *output != candidate.match_variable {
             return false;
         }
