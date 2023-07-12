@@ -19,21 +19,21 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
 struct Abc {
     a: u8,
     b: u16,
     c: u32,
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
 enum Efg {
     E: (),
     F: (),
     G: u256
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
 struct AbcEtc {
     a: u8,
     b: u16,
@@ -58,7 +58,7 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        data: AbcEtc, 
+        data: AbcEtc,
     }
 
     #[external(v0)]
@@ -88,7 +88,7 @@ fn write_read_struct() {
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc {
-            a: 1_u8, b: 2_u16, c: 3_u32, 
+            a: 1_u8, b: 2_u16, c: 3_u32,
         }, efg1: Efg::E(()), efg2: Efg::G(123_u256)
     };
 
