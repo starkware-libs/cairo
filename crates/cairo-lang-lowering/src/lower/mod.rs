@@ -1169,7 +1169,7 @@ fn lower_expr_member_access(
     let member_idx =
         members.iter().position(|(_, member)| member.id == expr.member).ok_or_else(|| {
             LoweringFlowError::Failed(
-                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchArms),
+                ctx.diagnostics.report(expr.stable_ptr.untyped(), UnexpectedError),
             )
         })?;
     if let Some(member_path) = &expr.member_path {
