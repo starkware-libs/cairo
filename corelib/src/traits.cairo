@@ -239,7 +239,7 @@ impl TupleSize2PartialEq<
     fn eq(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
         let (lhs0, lhs1) = lhs;
         let (rhs0, rhs1) = rhs;
-        (lhs0 == rhs0) && (lhs1 == rhs1)
+        lhs0 == rhs0 && lhs1 == rhs1
     }
     #[inline(always)]
     fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
@@ -259,7 +259,7 @@ impl TupleSize3PartialEq<
     fn eq(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
         let (lhs0, lhs1, lhs2) = lhs;
         let (rhs0, rhs1, rhs2) = rhs;
-        (lhs0 == rhs0) && (lhs1 == rhs1) && (lhs2 == rhs2)
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
     }
     #[inline(always)]
     fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
@@ -281,7 +281,7 @@ impl TupleSize4PartialEq<
     fn eq(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
         let (lhs0, lhs1, lhs2, lhs3) = lhs;
         let (rhs0, rhs1, rhs2, rhs3) = rhs;
-        (lhs0 == rhs0) && (lhs1 == rhs1) && (lhs2 == rhs2) && (lhs3 == rhs3)
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
     }
     #[inline(always)]
     fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
