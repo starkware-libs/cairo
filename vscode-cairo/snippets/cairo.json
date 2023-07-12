@@ -65,6 +65,11 @@
     "body": ["fn $1(ref self: ContractState, ) {", "\t$5", "}"],
     "description": "Creates an external function"
   },
+  "Creates an interface": {
+    "prefix": ["interface, abi"],
+    "body": ["#[starknet::interface]", "trait $1<TContractState> {", "$2", "}"],
+    "description": "Creates an interface"
+  },
   "Creates a view function": {
     "prefix": ["view", "fn"],
     "body": ["#[external]", "fn $1(self: @ContractState, ) {", "\t$5", "}"],
