@@ -97,9 +97,9 @@ error: Method `is_foo` not found on type "core::option::Option::<?0>". Did you i
       ^****^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
- --> lib.cairo:36:5
+ --> lib.cairo:36:7
     y.is_bar();
-    ^********^
+      ^****^
 
 error: Invalid member expression.
  --> lib.cairo:37:7
