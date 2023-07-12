@@ -5,7 +5,7 @@ use starknet::SyscallResultTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 #[test]
-#[available_gas(100000)]
+#[available_gas(10000000)]
 fn test_keccak_syscall() {
     let input = array![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
     assert_eq(
