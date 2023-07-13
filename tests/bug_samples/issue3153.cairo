@@ -54,13 +54,13 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
 
 impl ProposalStorageAccess of StorageAccess<Proposal> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Proposal> {
-        ProposalStorageAccess::read_at_offset_internal(address_domain, base, 0)
+        ProposalStorageAccess::read_at_offset(address_domain, base, 0)
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, value: Proposal) -> SyscallResult<()> {
-        ProposalStorageAccess::write_at_offset_internal(address_domain, base, 0, value)
+        ProposalStorageAccess::write_at_offset(address_domain, base, 0, value)
     }
-    fn read_at_offset_internal(
+    fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<Proposal> {
         let (proposer, last_updated_at) = unpack_proposal_fields(
@@ -71,7 +71,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         Result::Ok(Proposal { proposer, last_updated_at })
     }
 
-    fn write_at_offset_internal(
+    fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal
     ) -> SyscallResult<()> {
         let packed = pack_proposal_fields(value.proposer, value.last_updated_at);
@@ -80,7 +80,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         )
     }
 
-    fn size_internal(value: Proposal) -> u8 {
+    fn size() -> u8 {
         1
     }
 }
