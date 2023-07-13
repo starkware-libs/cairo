@@ -1796,7 +1796,7 @@
       ],
       [
         132,
-        "function_call<user@core::starknet::storage_access::StorageAccessU128::read>"
+        "function_call<user@core::starknet::storage_access::StorageValueU128::read>"
       ],
       [
         133,
@@ -1948,7 +1948,7 @@
       ],
       [
         170,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::StorageAccessIOtherContractDispatcher::read>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::StorageValueIOtherContractDispatcher::read>"
       ],
       [
         171,
@@ -2076,7 +2076,7 @@
       ],
       [
         202,
-        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::StorageAccessIOtherContractDispatcher::write>"
+        "function_call<user@new_syntax_test_contract::new_syntax_test_contract::StorageValueIOtherContractDispatcher::write>"
       ],
       [
         203,
@@ -2184,7 +2184,7 @@
       ],
       [
         229,
-        "function_call<user@core::starknet::storage_access::StorageAccessContractAddress::read>"
+        "function_call<user@core::starknet::storage_access::StorageValueContractAddress::read>"
       ],
       [
         230,
@@ -2426,7 +2426,7 @@
       ],
       [
         24,
-        "core::starknet::storage_access::StorageAccessU128::read"
+        "core::starknet::storage_access::StorageValueU128::read"
       ],
       [
         25,
@@ -2450,7 +2450,7 @@
       ],
       [
         30,
-        "new_syntax_test_contract::new_syntax_test_contract::StorageAccessIOtherContractDispatcher::read"
+        "new_syntax_test_contract::new_syntax_test_contract::StorageValueIOtherContractDispatcher::read"
       ],
       [
         31,
@@ -2470,7 +2470,7 @@
       ],
       [
         35,
-        "new_syntax_test_contract::new_syntax_test_contract::StorageAccessIOtherContractDispatcher::write"
+        "new_syntax_test_contract::new_syntax_test_contract::StorageValueIOtherContractDispatcher::write"
       ],
       [
         36,
@@ -2482,7 +2482,7 @@
       ],
       [
         38,
-        "core::starknet::storage_access::StorageAccessContractAddress::read"
+        "core::starknet::storage_access::StorageValueContractAddress::read"
       ],
       [
         39,

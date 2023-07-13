@@ -2776,7 +2776,7 @@
       ],
       [
         206,
-        "function_call<user@core::starknet::storage_access::StorageAccessContractAddress::read>"
+        "function_call<user@core::starknet::storage_access::StorageValueContractAddress::read>"
       ],
       [
         207,
@@ -3434,7 +3434,7 @@
       ],
       [
         39,
-        "core::starknet::storage_access::StorageAccessContractAddress::read"
+        "core::starknet::storage_access::StorageValueContractAddress::read"
       ],
       [
         40,

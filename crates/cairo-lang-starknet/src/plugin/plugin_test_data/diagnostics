@@ -1983,7 +1983,7 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<felt252>::read(
+                starknet::StorageValue::<felt252>::read(
                     address_domain,
                     self.address(),
                 ).unwrap_syscall()
@@ -1991,7 +1991,7 @@ use starknet::event::EventEmitter;
             fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<felt252>::write(
+                starknet::StorageValue::<felt252>::write(
                     address_domain,
                     self.address(),
                     value,
