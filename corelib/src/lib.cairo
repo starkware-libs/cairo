@@ -91,6 +91,12 @@ impl BoolFelt252DictValue of Felt252DictValue<bool> {
 }
 
 extern fn bool_to_felt252(a: bool) -> felt252 implicits() nopanic;
+impl BoolIntoFelt252 of Into<bool, felt252> {
+    #[inline(always)]
+    fn into(self: bool) -> felt252 implicits() nopanic {
+        bool_to_felt252(self)
+    }
+}
 
 // General purpose implicits.
 extern type RangeCheck;
