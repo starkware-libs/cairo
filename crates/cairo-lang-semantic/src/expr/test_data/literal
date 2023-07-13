@@ -14,7 +14,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::hash::Pedersen>
+error: Mismatched types. The type core::hash::Pedersen cannot be created from a numeric literal.
  --> lib.cairo:2:13
     let a = 'a'_Pedersen;
             ^**********^

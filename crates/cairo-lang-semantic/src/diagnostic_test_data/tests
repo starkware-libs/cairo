@@ -185,7 +185,7 @@ error: Unknown type.
     let b = 123_u129;
             ^******^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::zeroable::NonZero>
+error: Mismatched types. The type core::zeroable::NonZero cannot be created from a numeric literal.
  --> lib.cairo:7:13
     let b = 123_NonZero;
             ^*********^
