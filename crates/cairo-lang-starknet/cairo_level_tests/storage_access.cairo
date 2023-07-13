@@ -19,7 +19,7 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageValue)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct Abc {
     a: u8,
     b: u16,
@@ -31,8 +31,7 @@ struct TupleStructure {
     v1: u256,
     v2: u256,
 }
-impl TupleStructureStorageValuePacking of starknet::StorageValuePacking<TupleStructure,
-(felt252, felt252)> {
+impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt252, felt252)> {
     fn pack(value: TupleStructure) -> (felt252, felt252) {
         (value.v1.try_into().unwrap(), value.v2.try_into().unwrap())
     }
@@ -42,7 +41,7 @@ impl TupleStructureStorageValuePacking of starknet::StorageValuePacking<TupleStr
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageValue)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct AbcEtc {
     a: u8,
     b: u16,

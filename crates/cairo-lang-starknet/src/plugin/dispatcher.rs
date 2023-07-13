@@ -205,7 +205,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop, starknet::StorageValue, Serde)]
+            #[derive(Copy, Drop, starknet::Store, Serde)]
             struct {contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
@@ -214,7 +214,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $contract_caller_method_impls$
             }}
 
-            #[derive(Copy, Drop, starknet::StorageValue, Serde)]
+            #[derive(Copy, Drop, starknet::Store, Serde)]
             struct {library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
@@ -227,7 +227,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $safe_dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop, starknet::StorageValue, Serde)]
+            #[derive(Copy, Drop, starknet::Store, Serde)]
             struct {safe_library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
@@ -238,7 +238,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
 
 
-            #[derive(Copy, Drop, starknet::StorageValue, Serde)]
+            #[derive(Copy, Drop, starknet::Store, Serde)]
             struct {safe_contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
