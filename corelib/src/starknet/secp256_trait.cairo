@@ -7,7 +7,7 @@ use traits::{Into, TryInto};
 use integer::U256TryIntoNonZero;
 
 /// Secp256{k/r}1 ECDSA signature.
-#[derive(Copy, Drop, PartialEq, Serde, storage_access::StorageAccess)]
+#[derive(Copy, Drop, PartialEq, Serde, starknet::StorageValue)]
 struct Signature {
     r: u256,
     s: u256,

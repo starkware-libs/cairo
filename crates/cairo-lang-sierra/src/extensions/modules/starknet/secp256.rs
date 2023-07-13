@@ -79,7 +79,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256AddLibfunc<T> {
     ) -> Result<Vec<crate::ids::ConcreteTypeId>, SpecializationError> {
         let secp256_ec_point_type = context.get_concrete_type(T::TYPE_ID, &[])?;
 
-        // Point `p0`, point `p1`
+        // Point `p0`, point `p1`.
         Ok(vec![secp256_ec_point_type.clone(), secp256_ec_point_type])
     }
 
@@ -104,7 +104,7 @@ impl<T: Secp256Trait> SyscallGenericLibfunc for Secp256MulLibfunc<T> {
         Ok(vec![
             // Point `p`.
             context.get_concrete_type(T::TYPE_ID, &[])?,
-            // Scalar `m`.
+            // Scalar `scalar`.
             get_u256_type(context)?,
         ])
     }

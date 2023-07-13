@@ -1059,7 +1059,7 @@ impl U64BitOr of BitOr<u64> {
     }
 }
 
-#[derive(Copy, Drop, PartialEq, Serde, storage_access::StorageAccess)]
+#[derive(Copy, Drop, PartialEq, Serde, starknet::StorageValue)]
 struct u256 {
     low: u128,
     high: u128,

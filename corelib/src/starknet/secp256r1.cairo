@@ -56,9 +56,9 @@ extern fn secp256r1_new_syscall(
 extern fn secp256r1_add_syscall(
     p0: Secp256r1Point, p1: Secp256r1Point
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
-/// Computes the product of a secp256r1 EC point `p` by the given scalar `m`.
+/// Computes the product of a secp256r1 EC point `p` by the given scalar `scalar`.
 extern fn secp256r1_mul_syscall(
-    p: Secp256r1Point, m: u256
+    p: Secp256r1Point, scalar: u256
 ) -> SyscallResult<Secp256r1Point> implicits(GasBuiltin, System) nopanic;
 
 /// Computes the point on the secp256r1 curve that matches the given `x` coordinate, if such exists.

@@ -83,9 +83,9 @@ SmallE2ETestRunner
 
 //! > cairo
 fn foo(
-    p: starknet::secp256r1::Secp256r1Point, m: u256,
+    p: starknet::secp256r1::Secp256r1Point, scalar: u256,
 ) -> starknet::SyscallResult<starknet::secp256r1::Secp256r1Point> {
-    starknet::secp256r1::secp256r1_mul_syscall(p, m)
+    starknet::secp256r1::secp256r1_mul_syscall(p, scalar)
 }
 
 //! > casm
