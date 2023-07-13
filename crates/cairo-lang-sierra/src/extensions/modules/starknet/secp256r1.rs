@@ -20,6 +20,6 @@ impl Secp256Trait for Secp256r1 {
     const STR_ID_MUL: &'static str = "secp256r1_mul_syscall";
     const STR_ID_GET_POINT_FROM_X: &'static str = "secp256r1_get_point_from_x_syscall";
     const STR_ID_GET_XY: &'static str = "secp256r1_get_xy_syscall";
-    const TYPE_ID: GenericTypeId = GenericTypeId::new_inline("Secp256r1Point");
+    const TYPE_ID: GenericTypeId = Secp256r1PointType::ID;
     const TYPE_ID_STR: &'static str = "core::starknet::secp256r1::Secp256r1Point";
 }
