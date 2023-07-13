@@ -339,28 +339,31 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
             }).join("\n            ")}
         }
         ExtraInfo::Struct { members, type_generics, other_generics } => {
-            formatdoc! {"
+            let generics = format_generics(type_generics, other_generics);
+            let generics_impl = format_generics_with_trait(type_generics, other_generics, |t| {
+                format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>")
+            });
+            if members.is_empty() {
+                formatdoc! {"
+                    impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
+                        fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{ true }}
+                        fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{ false }}
+                    }}
+                "}
+            } else {
+                formatdoc! {"
                     impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
                         #[inline(always)]
                         fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             {}
-                            true
                         }}
                         #[inline(always)]
                         fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
-                ", members.iter().map(|member| {
-                            // TODO(orizi): Use `&&` when supported.
-                            format!("if lhs.{member} != rhs.{member} {{ return false; }}")
-                }).join("\n        "),
-                generics = format_generics(type_generics, other_generics),
-                // TODO(spapini): Remove the Destruct requirement by changing
-                // member borrowing logic to recognize snapshots.
-                generics_impl = format_generics_with_trait(type_generics, other_generics,
-                    |t| format!("impl {t}PartialEq: PartialEq<{t}>, \
-                        impl {t}Destruct: Destruct<{t}>"))
+                ", members.iter().map(|member| format!("lhs.{member} == rhs.{member}")).join(" && ")
+                }
             }
         }
         ExtraInfo::Extern => unreachable!(),

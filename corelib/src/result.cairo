@@ -1,8 +1,39 @@
 use array::ArrayTrait;
+use serde::Serde;
+use array::SpanTrait;
+
 enum Result<T, E> {
     Ok: T,
     Err: E,
 }
+
+impl ResultSerde<
+    R, E, impl RSerde: Serde<R>, impl ESerde: Serde<E>, impl RDrop: Drop<R>, impl EDrop: Drop<E>
+> of Serde<Result<R, E>> {
+    fn serialize(self: @Result<R, E>, ref output: Array<felt252>) {
+        match self {
+            Result::Ok(x) => {
+                0.serialize(ref output);
+                x.serialize(ref output)
+            },
+            Result::Err(y) => {
+                1.serialize(ref output);
+                y.serialize(ref output)
+            },
+        }
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<Result<R, E>> {
+        let variant = *serialized.pop_front()?;
+        if variant == 0 {
+            Option::Some(Result::Ok(Serde::<R>::deserialize(ref serialized)?))
+        } else if variant == 1 {
+            Option::Some(Result::Err(Serde::<E>::deserialize(ref serialized)?))
+        } else {
+            Option::None(())
+        }
+    }
+}
+
 trait ResultTrait<T, E> {
     /// If `val` is `Result::Ok(x)`, returns `x`. Otherwise, panics with `err`.
     fn expect<impl EDrop: Drop<E>>(self: Result<T, E>, err: felt252) -> T;

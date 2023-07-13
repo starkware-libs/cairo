@@ -231,3 +231,60 @@ impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0, 
         !(rhs == lhs)
     }
 }
+
+impl TupleSize2PartialEq<
+    E0, E1, impl E0PartialEq: PartialEq<E0>, impl E1PartialEq: PartialEq<E1>
+> of PartialEq<(E0, E1)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
+        let (lhs0, lhs1) = lhs;
+        let (rhs0, rhs1) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
+        !(rhs == lhs)
+    }
+}
+
+impl TupleSize3PartialEq<
+    E0,
+    E1,
+    E2,
+    impl E0PartialEq: PartialEq<E0>,
+    impl E1PartialEq: PartialEq<E1>,
+    impl E2PartialEq: PartialEq<E2>
+> of PartialEq<(E0, E1, E2)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
+        let (lhs0, lhs1, lhs2) = lhs;
+        let (rhs0, rhs1, rhs2) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
+        !(rhs == lhs)
+    }
+}
+
+impl TupleSize4PartialEq<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0PartialEq: PartialEq<E0>,
+    impl E1PartialEq: PartialEq<E1>,
+    impl E2PartialEq: PartialEq<E2>,
+    impl E3PartialEq: PartialEq<E3>
+> of PartialEq<(E0, E1, E2, E3)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
+        let (lhs0, lhs1, lhs2, lhs3) = lhs;
+        let (rhs0, rhs1, rhs2, rhs3) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
+        !(rhs == lhs)
+    }
+}
