@@ -169,8 +169,7 @@ pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn Synt
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == "storage_access::StorageAccess"
-            {
+            if path.as_syntax_node().get_text_without_trivia(db) == "starknet::StorageAccess" {
                 return true;
             }
         }
