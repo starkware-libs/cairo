@@ -1,5 +1,5 @@
 use starknet::{
-    StorageAccess, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
+    Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
     storage_address_from_base_and_offset
 };
 use integer::{
@@ -52,15 +52,15 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
     (proposer, last_updated_at)
 }
 
-impl ProposalStorageAccess of StorageAccess<Proposal> {
+impl ProposalStore of Store<Proposal> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Proposal> {
-        ProposalStorageAccess::read_at_offset_internal(address_domain, base, 0)
+        ProposalStore::read_at_offset(address_domain, base, 0)
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, value: Proposal) -> SyscallResult<()> {
-        ProposalStorageAccess::write_at_offset_internal(address_domain, base, 0, value)
+        ProposalStore::write_at_offset(address_domain, base, 0, value)
     }
-    fn read_at_offset_internal(
+    fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<Proposal> {
         let (proposer, last_updated_at) = unpack_proposal_fields(
@@ -71,7 +71,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         Result::Ok(Proposal { proposer, last_updated_at })
     }
 
-    fn write_at_offset_internal(
+    fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal
     ) -> SyscallResult<()> {
         let packed = pack_proposal_fields(value.proposer, value.last_updated_at);
@@ -80,7 +80,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         )
     }
 
-    fn size_internal(value: Proposal) -> u8 {
+    fn size() -> u8 {
         1
     }
 }

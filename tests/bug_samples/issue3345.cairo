@@ -1,4 +1,4 @@
-#[derive(Copy, Drop, starknet::StorageAccess)]
+#[derive(Copy, Drop, starknet::Store)]
 struct Node {
     left: u128,
     right: u128
@@ -17,7 +17,7 @@ mod example_failure {
 
     #[storage]
     struct Storage {
-        nodes: LegacyMap::<u128, Node>, 
+        nodes: LegacyMap::<u128, Node>,
     }
 
     #[generate_trait]

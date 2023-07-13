@@ -193,7 +193,7 @@ fn handle_simple_storage_var(address: &str) -> String {
             fn read(self: @ContractState) -> $type_name$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<$type_name$>::read(
+                starknet::Store::<$type_name$>::read(
                     address_domain,
                     self.address(),
                 ).unwrap_syscall()
@@ -201,7 +201,7 @@ fn handle_simple_storage_var(address: &str) -> String {
             fn write(ref self: ContractState, value: $type_name$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<$type_name$>::write(
+                starknet::Store::<$type_name$>::write(
                     address_domain,
                     self.address(),
                     value,
@@ -238,7 +238,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
             fn read(self: @ContractState, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<$value_type$>::read(
+                starknet::Store::<$value_type$>::read(
                     address_domain,
                     self.address(key),
                 ).unwrap_syscall()
@@ -246,7 +246,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
             fn write(ref self: ContractState, key: $key_type$, value: $value_type$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<$value_type$>::write(
+                starknet::Store::<$value_type$>::write(
                     address_domain,
                     self.address(key),
                     value,

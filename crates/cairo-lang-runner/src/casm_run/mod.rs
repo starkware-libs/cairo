@@ -1190,14 +1190,14 @@ fn secp256k1_add(
 fn secp256k1_mul(
     gas_counter: &mut usize,
     p_id: usize,
-    m: BigUint,
+    scalar: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_MUL);
 
     let ec = get_secp256k1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
-    let product = *p * secp256k1::Fr::from(m);
+    let product = *p * secp256k1::Fr::from(scalar);
     let id = ec.ec_points.len();
     ec.ec_points.push(product.into());
     Ok(SyscallResult::Success(vec![id.into()]))
@@ -1316,14 +1316,14 @@ fn secp256r1_add(
 fn secp256r1_mul(
     gas_counter: &mut usize,
     p_id: usize,
-    m: BigUint,
+    scalar: BigUint,
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_MUL);
 
     let ec = get_secp256r1_exec_scope(exec_scopes)?;
     let p = &ec.ec_points[p_id];
-    let product = *p * secp256r1::Fr::from(m);
+    let product = *p * secp256r1::Fr::from(scalar);
     let id = ec.ec_points.len();
     ec.ec_points.push(product.into());
     Ok(SyscallResult::Success(vec![id.into()]))

@@ -91,6 +91,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::MemberPathLoop => {
                 "Currently, loops must change the entire variable.".into()
             }
+            LoweringDiagnosticKind::UnexpectedError => {
+                "Unexpected error has occured, Please submit a full bug report. \
+                See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
+                ".into()
+            }
         };
 
         itertools::chain!(self.location.notes.iter(), std::iter::once(&msg)).join(",\n")
@@ -123,6 +128,7 @@ pub enum LoweringDiagnosticKind {
     DesnappingANonCopyableType { inference_error: InferenceError },
     UnsupportedMatchedValue,
     UnsupportedMatchArms,
+    UnexpectedError,
     UnsupportedMatchArmNotAVariant,
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,

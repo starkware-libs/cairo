@@ -19,11 +19,26 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct Abc {
     a: u8,
     b: u16,
     c: u32,
+}
+
+#[derive(Drop, Serde, PartialEq, Copy)]
+struct TupleStructure {
+    v1: u256,
+    v2: u256,
+}
+impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt252, felt252)> {
+    fn pack(value: TupleStructure) -> (felt252, felt252) {
+        (value.v1.try_into().unwrap(), value.v2.try_into().unwrap())
+    }
+    fn unpack(value: (felt252, felt252)) -> TupleStructure {
+        let (v1, v2) = value;
+        TupleStructure { v1: v1.into(), v2: v2.into(),  }
+    }
 }
 
 #[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
@@ -33,7 +48,7 @@ enum Efg {
     G: u256
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct AbcEtc {
     a: u8,
     b: u16,
@@ -47,6 +62,7 @@ struct AbcEtc {
     j: bool,
     k: EthAddress,
     abc: Abc,
+    ts: TupleStructure,
     efg1: Efg,
     efg2: Efg,
 }
@@ -58,7 +74,7 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        data: AbcEtc, 
+        data: AbcEtc,
     }
 
     #[external(v0)]
@@ -88,7 +104,9 @@ fn write_read_struct() {
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc {
-            a: 1_u8, b: 2_u16, c: 3_u32, 
+            a: 1_u8, b: 2_u16, c: 3_u32,
+        }, ts: TupleStructure {
+            v1: 1_u256, v2: 2_u256,
         }, efg1: Efg::E(()), efg2: Efg::G(123_u256)
     };
 

@@ -139,6 +139,16 @@ impl InferenceError {
                 "Const generic inference not yet supported.".into()
             }
             InferenceError::NoImplsFound { concrete_trait_id } => {
+                if concrete_trait_id.trait_id(db) == get_core_trait(db, "NumericLiteral".into()) {
+                    let generic_type = extract_matches!(
+                        concrete_trait_id.generic_args(db)[0],
+                        GenericArgumentId::Type
+                    );
+                    return format!(
+                        "Mismatched types. The type {:?} cannot be created from a numeric literal.",
+                        generic_type.debug(db)
+                    );
+                }
                 format!("Trait has no implementation in context: {:?}", concrete_trait_id.debug(db))
             }
             InferenceError::Ambiguity(ambiguity) => ambiguity.format(db),
