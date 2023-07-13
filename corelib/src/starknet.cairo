@@ -6,11 +6,11 @@ use traits::TryInto;
 use zeroable::Zeroable;
 
 // Re-imports
-// StorageValue
+// Store
 mod storage_access;
 use storage_access::{
-    StorageValue, StorageValuePacking, StorageAddress, StorageBaseAddress,
-    storage_base_address_const, storage_base_address_from_felt252, storage_address_from_base,
+    Store, StorePacking, StorageAddress, StorageBaseAddress, storage_base_address_const,
+    storage_base_address_from_felt252, storage_address_from_base,
     storage_address_from_base_and_offset, storage_address_to_felt252,
     storage_address_try_from_felt252
 };

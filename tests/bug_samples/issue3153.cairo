@@ -1,5 +1,5 @@
 use starknet::{
-    StorageValue, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
+    Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
     storage_address_from_base_and_offset
 };
 use integer::{
@@ -52,13 +52,13 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
     (proposer, last_updated_at)
 }
 
-impl ProposalStorageValue of StorageValue<Proposal> {
+impl ProposalStore of Store<Proposal> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Proposal> {
-        ProposalStorageValue::read_at_offset(address_domain, base, 0)
+        ProposalStore::read_at_offset(address_domain, base, 0)
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, value: Proposal) -> SyscallResult<()> {
-        ProposalStorageValue::write_at_offset(address_domain, base, 0, value)
+        ProposalStore::write_at_offset(address_domain, base, 0, value)
     }
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
