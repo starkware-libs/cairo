@@ -11,6 +11,7 @@ use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
 use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -57,9 +58,8 @@ pub fn dot_completions(
     }
 
     // Find members of the type.
-    if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) =
-        db.lookup_intern_type(ty)
-    {
+    let (_, long_ty) = peel_snapshots(db, ty);
+    if let TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)) = long_ty {
         db.concrete_struct_members(concrete_struct_id).ok()?.into_iter().for_each(
             |(name, member)| {
                 let completion = CompletionItem {

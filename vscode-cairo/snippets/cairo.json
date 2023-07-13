@@ -92,6 +92,11 @@
     ],
     "description": "Creates a trait"
   },
+  "Impl an interface": {
+    "prefix": "impl",
+    "body": ["impl $1 of $2<ContractState> {", "}"],
+    "description": "Creates a trait"
+  },
   "Print the selected item": {
     "prefix": "print",
     "body": ["use debug::PrintTrait;", "$TM_SELECTED_TEXT$1.print();"],
@@ -143,18 +148,8 @@
       "#[starknet::contract]",
       "",
       "mod $1 {",
+      "\t#[storage]",
       "\tstruct Storage {",
-      "\t\t$2: ${3,|felt252, u128, u64, u32, u16, u8, bool|}",
-      "\t}",
-      "",
-      "\t#[external]",
-      "\tfn $7($8: ${9|felt252, u128, u64, u32, u16, u8, bool|}) -> $10 {",
-      "\t\t$11",
-      "\t}",
-      "",
-      "\t#[external]",
-      "\tfn $12($13: ${14|felt252, u128, u64, u32, u16, u8, bool|} -> ${15|felt252, u128, u64, u32, u16, u8, bool|} {",
-      "\t\t$16",
       "\t}",
       "}",
       ""

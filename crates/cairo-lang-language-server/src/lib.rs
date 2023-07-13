@@ -24,7 +24,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -584,12 +584,22 @@ impl LanguageServer for Backend {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
-            let file = file(db, file_uri);
+            let file = file(db, file_uri.clone());
             let position = text_document_position.position;
+            // Get file summary and content.
+            let file_summary = db.file_summary(file).on_none(|| {
+                eprintln!("Completion failed. File '{file_uri}' does not exist.");
+            })?;
+            let content = db.file_content(file).on_none(|| {
+                eprintln!("Completion failed. File '{file_uri}' does not exist.");
+            })?;
+            let offset = position_to_offset(file_summary, position, &content)?;
+            if offset - TextOffset::default() == TextWidth::default() {
+                return None;
+            }
+            let offset = offset.sub_width(TextWidth::from_char('.'));
 
-            let completions = if params.context.and_then(|x| x.trigger_character).map(|x| x == *".")
-                == Some(true)
-            {
+            let completions = if offset.take_from(&content).starts_with('.') {
                 dot_completions(db, file, position)
             } else {
                 Some(vec![])
@@ -933,16 +943,7 @@ fn get_node_and_lookup_items(
     })?;
 
     // Find offset for position.
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        eprintln!("Hover failed. Position out of bounds.");
-    })?;
-    let mut chars_it = offset.take_from(&content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            eprintln!("Position does not exist.");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
+    let offset = position_to_offset(file_summary, position, &content)?;
     let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
 
     // Find module.
@@ -965,6 +966,24 @@ fn get_node_and_lookup_items(
             None => return Some((node, res)),
         }
     }
+}
+
+fn position_to_offset(
+    file_summary: Arc<FileSummary>,
+    position: Position,
+    content: &str,
+) -> Option<TextOffset> {
+    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
+        eprintln!("Hover failed. Position out of bounds.");
+    })?;
+    let mut chars_it = offset.take_from(content).chars();
+    for _ in 0..position.character {
+        let c = chars_it.next().on_none(|| {
+            eprintln!("Position does not exist.");
+        })?;
+        offset = offset.add_width(TextWidth::from_char(c));
+    }
+    Some(offset)
 }
 
 fn find_node_module(
