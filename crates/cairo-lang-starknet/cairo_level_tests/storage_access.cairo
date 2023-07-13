@@ -41,7 +41,7 @@ impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt2
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 enum Efg {
     E: (),
     F: (),
@@ -74,7 +74,7 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        data: AbcEtc,
+        data: AbcEtc, 
     }
 
     #[external(v0)]
@@ -104,9 +104,9 @@ fn write_read_struct() {
         j: true,
         k: 123_felt252.try_into().unwrap(),
         abc: Abc {
-            a: 1_u8, b: 2_u16, c: 3_u32,
-        }, ts: TupleStructure {
-            v1: 1_u256, v2: 2_u256,
+            a: 1_u8, b: 2_u16, c: 3_u32, 
+            }, ts: TupleStructure {
+            v1: 1_u256, v2: 2_u256, 
         }, efg1: Efg::E(()), efg2: Efg::G(123_u256)
     };
 
