@@ -6,7 +6,7 @@ use traits::{Into, TryInto};
 use zeroable::Zeroable;
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, storage_access::StorageAccess)]
+#[derive(Copy, Drop, starknet::StorageAccess)]
 struct EthAddress {
     address: felt252, 
 }
