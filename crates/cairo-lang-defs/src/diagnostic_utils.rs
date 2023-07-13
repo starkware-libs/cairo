@@ -1,7 +1,7 @@
 use cairo_lang_diagnostics::DiagnosticLocation;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 
 use crate::db::DefsGroup;
 use crate::ids::ModuleFileId;
@@ -19,6 +19,16 @@ impl StableLocation {
 
     pub fn from_ast<TNode: TypedSyntaxNode>(module_file_id: ModuleFileId, node: &TNode) -> Self {
         Self { module_file_id, stable_ptr: node.as_syntax_node().stable_ptr() }
+    }
+
+    /// Returns the [SyntaxNode] that corresponds to the [StableLocation].
+    pub fn syntax_node(&self, db: &dyn DefsGroup) -> SyntaxNode {
+        let file_id =
+            db.module_file(self.module_file_id).expect("Module in diagnostic does not exist");
+        db.file_syntax(file_id)
+            .expect("File for diagnostic not found")
+            .as_syntax_node()
+            .lookup_ptr(db.upcast(), self.stable_ptr)
     }
 
     /// Returns the [DiagnosticLocation] that corresponds to the [StableLocation].
