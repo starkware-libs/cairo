@@ -325,6 +325,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return y;
          ^
+
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
