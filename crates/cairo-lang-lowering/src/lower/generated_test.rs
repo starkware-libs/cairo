@@ -41,10 +41,9 @@ fn test_generated_function(
         writeln!(
             &mut writer,
             "{:?}",
-            multi_lowering.main_lowering.debug(&LoweredFormatter {
-                db,
-                variables: &multi_lowering.main_lowering.variables
-            })
+            multi_lowering
+                .main_lowering
+                .debug(&LoweredFormatter::new(db, &multi_lowering.main_lowering.variables))
         )
         .unwrap();
 
@@ -69,7 +68,7 @@ fn test_generated_function(
             writeln!(
                 &mut writer,
                 "{:?}",
-                lowering.debug(&LoweredFormatter { db, variables: &lowering.variables })
+                lowering.debug(&LoweredFormatter::new(db, &lowering.variables))
             )
             .unwrap();
         }
