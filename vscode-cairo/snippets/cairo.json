@@ -165,7 +165,7 @@
     "body": [
       "#[test]",
       "#[available_gas(2000000)]",
-      "fn test_$1() {",
+      "fn $1() {",
       "\t$2",
       "\tassert($3, '$4');",
       "}"
@@ -178,7 +178,7 @@
       "#[test]",
       "#[available_gas(2000000)]",
       "#[should_panic(expected: ('$1', ))]",
-      "fn test_$2() {",
+      "fn $2() {",
       "\t$3",
       "\tassert($4, '$5');",
       "}"
