@@ -53,7 +53,7 @@ pub struct DiagnosticAdded;
 
 pub fn skip_diagnostic() -> DiagnosticAdded {
     // TODO(lior): Consider adding a log here.
-    DiagnosticAdded::default()
+    DiagnosticAdded
 }
 
 /// Represents an arbitrary type T or a missing output due to an error whose diagnostic was properly
@@ -101,7 +101,7 @@ impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         self.leaves.push(diagnostic);
         self.count += 1;
-        DiagnosticAdded::default()
+        DiagnosticAdded
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
         self.count += diagnostics.len();
