@@ -192,27 +192,21 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }}",
         ));
         match_value.push(format!(
-            "{enum_name}::{variant_name}(x) => {{ \
-                starknet::Store::write(address_domain, base, {i})?; \
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, \
-                x)?; }}"
+            "{enum_name}::{variant_name}(x) => {{ starknet::Store::write(address_domain, base, \
+             {i})?; starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?; }}"
         ));
         match_value_at_offset.push(format!(
             "{enum_name}::{variant_name}(x) => {{ \
-                starknet::Store::write_at_offset(\
-                address_domain, base, offset, {i}\
-                )?; \
-                starknet::Store::write_at_offset(address_domain, base, \
-                offset + 1_u8, x)?; \
-            }}"
+             starknet::Store::write_at_offset(address_domain, base, offset, {i})?; \
+             starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?; }}"
         ));
 
         if match_size.is_empty() {
             match_size = format!("starknet::Store::<{variant_type}>::size()");
         } else {
-            match_size = format!("cmp::max(starknet::Store::<{variant_type}>::size(), {match_size})");
+            match_size =
+                format!("cmp::max(starknet::Store::<{variant_type}>::size(), {match_size})");
         }
-
     }
 
     let sa_impl = formatdoc!(
@@ -236,10 +230,9 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 }};
                 starknet::SyscallResult::Ok(())
             }}
-            fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, \
-         offset: u8) -> starknet::SyscallResult<{enum_name}> {{
-                let idx = \
-         starknet::Store::<felt252>::read_at_offset(address_domain, base, \
+            fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
+         -> starknet::SyscallResult<{enum_name}> {{
+                let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, \
          offset)?;
                 {match_idx_at_offset}
                 else {{
@@ -250,8 +243,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 }}
             }}
             #[inline(always)]
-            fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, \
-         offset: u8, value: {enum_name}) -> starknet::SyscallResult<()> {{
+            fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: \
+         u8, value: {enum_name}) -> starknet::SyscallResult<()> {{
                 match value {{
                     {match_value_at_offset}
                 }};
