@@ -1986,6 +1986,14 @@ impl<'a> Parser<'a> {
     /// this token means reporting an error and ignoring it and continuing the compilation as if it
     /// wasn't there.
     fn skip_token(&mut self, diagnostic_kind: ParserDiagnosticKind) {
+        if self.peek().kind == SyntaxKind::TerminalEndOfFile {
+            self.diagnostics.add(ParserDiagnostic {
+                file_id: self.file_id,
+                kind: diagnostic_kind,
+                span: TextSpan { start: self.offset, end: self.offset },
+            });
+            return;
+        }
         let terminal = self.take_raw();
 
         let diag_start = self.offset.add_width(
