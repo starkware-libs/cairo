@@ -10,7 +10,7 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use indoc::formatdoc;
 
-/// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::StorageAccess)`.
+/// Derive the `StorageValue` trait for structs annotated with `derive(starknet::StorageValue)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
     let mut reads_values = Vec::new();
     let mut reads_values_at_offset = Vec::new();
@@ -25,18 +25,18 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
         if i == 0 {
             reads_values.push(format!(
-                "let {field_name} = starknet::StorageAccess::<{field_type}>::read(address_domain, \
+                "let {field_name} = starknet::StorageValue::<{field_type}>::read(address_domain, \
                  base)?;"
             ));
             reads_values_at_offset.push(format!(
                 "let {field_name} = \
-                 starknet::StorageAccess::<{field_type}>::read_at_offset(address_domain, base, \
+                 starknet::StorageValue::<{field_type}>::read_at_offset(address_domain, base, \
                  offset)?;"
             ));
         } else {
             let subsequent_read = format!(
                 "let {field_name} = \
-                 starknet::StorageAccess::<{field_type}>::read_at_offset(address_domain, base, \
+                 starknet::StorageValue::<{field_type}>::read_at_offset(address_domain, base, \
                  current_offset)?;"
             );
             reads_values.push(subsequent_read.clone());
@@ -45,15 +45,15 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 reads_values.push(format!(
-                    "let mut current_offset = starknet::StorageAccess::<{field_type}>::size();"
+                    "let mut current_offset = starknet::StorageValue::<{field_type}>::size();"
                 ));
                 reads_values_at_offset.push(format!(
                     "let mut current_offset = offset + \
-                     starknet::StorageAccess::<{field_type}>::size();"
+                     starknet::StorageValue::<{field_type}>::size();"
                 ));
             } else {
                 let subsequent_read =
-                    format!("current_offset += starknet::StorageAccess::<{field_type}>::size();");
+                    format!("current_offset += starknet::StorageValue::<{field_type}>::size();");
                 reads_values.push(subsequent_read.clone());
                 reads_values_at_offset.push(subsequent_read);
             }
@@ -63,16 +63,16 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
         if i == 0 {
             writes.push(format!(
-                "starknet::StorageAccess::<{field_type}>::write(address_domain, base, \
+                "starknet::StorageValue::<{field_type}>::write(address_domain, base, \
                  value.{field_name})?;"
             ));
             writes_at_offset.push(format!(
-                "starknet::StorageAccess::<{field_type}>::write_at_offset(address_domain, base, \
+                "starknet::StorageValue::<{field_type}>::write_at_offset(address_domain, base, \
                  offset, value.{field_name})?;"
             ));
         } else {
             let subsequent_write = format!(
-                "starknet::StorageAccess::<{field_type}>::write_at_offset(address_domain, base, \
+                "starknet::StorageValue::<{field_type}>::write_at_offset(address_domain, base, \
                  current_offset, value.{field_name})?;"
             );
             writes.push(subsequent_write.clone());
@@ -82,25 +82,25 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 writes.push(format!(
-                    "let mut current_offset = starknet::StorageAccess::<{field_type}>::size();"
+                    "let mut current_offset = starknet::StorageValue::<{field_type}>::size();"
                 ));
                 writes_at_offset.push(format!(
                     "let mut current_offset = offset + \
-                     starknet::StorageAccess::<{field_type}>::size();"
+                     starknet::StorageValue::<{field_type}>::size();"
                 ));
             } else {
                 let subsequent_write =
-                    format!("current_offset += starknet::StorageAccess::<{field_type}>::size();");
+                    format!("current_offset += starknet::StorageValue::<{field_type}>::size();");
                 writes.push(subsequent_write.clone());
                 writes_at_offset.push(subsequent_write);
             }
         }
-        sizes.push(format!("starknet::StorageAccess::<{field_type}>::size()"));
+        sizes.push(format!("starknet::StorageValue::<{field_type}>::size()"));
     }
 
     let sa_impl = formatdoc!(
         "
-        impl StorageAccess{struct_name} of starknet::StorageAccess::<{struct_name}> {{
+        impl StorageValue{struct_name} of starknet::StorageValue::<{struct_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
                 {reads_values}
@@ -169,7 +169,7 @@ pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn Synt
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == "starknet::StorageAccess" {
+            if path.as_syntax_node().get_text_without_trivia(db) == "starknet::StorageValue" {
                 return true;
             }
         }

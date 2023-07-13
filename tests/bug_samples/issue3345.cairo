@@ -1,4 +1,4 @@
-#[derive(Copy, Drop, starknet::StorageAccess)]
+#[derive(Copy, Drop, starknet::StorageValue)]
 struct Node {
     left: u128,
     right: u128
