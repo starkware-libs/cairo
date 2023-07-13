@@ -36,13 +36,13 @@ mod test_contract {
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252StorageAccess::read_at_offset(address_domain, base, offset)
         }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252StorageAccess::write_at_offset(address_domain, base, offset, value)
         }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
@@ -89,13 +89,13 @@ mod test_contract {
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
             starknet::StorageAccess::write(address_domain, base, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252StorageAccess::read_at_offset(address_domain, base, offset)
         }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252StorageAccess::write_at_offset(address_domain, base, offset, value)
         }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
