@@ -402,3 +402,239 @@ impl StorageValueClassHash of StorageValue<ClassHash> {
         1_u8
     }
 }
+
+impl TupleSize0StorageValue of StorageValue<()> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<()> {
+        Result::Ok(())
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: ()) -> SyscallResult<()> {
+        Result::Ok(())
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<()> {
+        Result::Ok(())
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: ()
+    ) -> SyscallResult<()> {
+        Result::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        0
+    }
+}
+
+impl TupleSize1StorageValue<
+    E0, impl E0StorageValue: StorageValue<E0>, impl E0Drop: Drop<E0>
+> of StorageValue<(E0, )> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, )> {
+        Result::Ok((E0StorageValue::read(address_domain, base)?, ))
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: (E0, )) -> SyscallResult<()> {
+        let (e0, ) = value;
+        E0StorageValue::write(address_domain, base, e0)
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<(E0, )> {
+        Result::Ok((E0StorageValue::read_at_offset(address_domain, base, offset)?, ))
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0, )
+    ) -> SyscallResult<()> {
+        let (e0, ) = value;
+        E0StorageValue::write_at_offset(address_domain, base, offset, e0)
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        E0StorageValue::size()
+    }
+}
+
+impl TupleSize2StorageValue<
+    E0,
+    E1,
+    impl E0StorageValue: StorageValue<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1StorageValue: StorageValue<E1>,
+    impl E0Drop: Drop<E1>
+> of StorageValue<(E0, E1)> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1)> {
+        let e0 = E0StorageValue::read(address_domain, base)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1))
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: (E0, E1)) -> SyscallResult<()> {
+        let (e0, e1) = value;
+        E0StorageValue::write(address_domain, base, e0)?;
+        let offset = E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<(E0, E1)> {
+        let e0 = E0StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1))
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0, E1)
+    ) -> SyscallResult<()> {
+        let (e0, e1) = value;
+        E0StorageValue::write_at_offset(address_domain, base, offset, e0)?;
+        let offset = offset + E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        E0StorageValue::size() + E1StorageValue::size()
+    }
+}
+
+impl TupleSize3StorageValue<
+    E0,
+    E1,
+    E2,
+    impl E0StorageValue: StorageValue<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1StorageValue: StorageValue<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2StorageValue: StorageValue<E2>,
+    impl E2Drop: Drop<E2>
+> of StorageValue<(E0, E1, E2)> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2)> {
+        let e0 = E0StorageValue::read(address_domain, base)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E1StorageValue::size();
+        let e2 = E2StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1, e2))
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: u32, base: StorageBaseAddress, value: (E0, E1, E2)
+    ) -> SyscallResult<()> {
+        let (e0, e1, e2) = value;
+        E0StorageValue::write(address_domain, base, e0)?;
+        let offset = E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)?;
+        let offset = offset + E1StorageValue::size();
+        E2StorageValue::write_at_offset(address_domain, base, offset, e2)
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<(E0, E1, E2)> {
+        let e0 = E0StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E1StorageValue::size();
+        let e2 = E2StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1, e2))
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0, E1, E2)
+    ) -> SyscallResult<()> {
+        let (e0, e1, e2) = value;
+        E0StorageValue::write_at_offset(address_domain, base, offset, e0)?;
+        let offset = offset + E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)?;
+        let offset = offset + E1StorageValue::size();
+        E2StorageValue::write_at_offset(address_domain, base, offset, e2)
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        E0StorageValue::size() + E1StorageValue::size() + E2StorageValue::size()
+    }
+}
+
+impl TupleSize4StorageValue<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0StorageValue: StorageValue<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1StorageValue: StorageValue<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2StorageValue: StorageValue<E2>,
+    impl E2Drop: Drop<E2>,
+    impl E3StorageValue: StorageValue<E3>,
+    impl E3Drop: Drop<E3>
+> of StorageValue<(E0, E1, E2, E3)> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2, E3)> {
+        let e0 = E0StorageValue::read(address_domain, base)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E1StorageValue::size();
+        let e2 = E2StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E2StorageValue::size();
+        let e3 = E3StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1, e2, e3))
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: u32, base: StorageBaseAddress, value: (E0, E1, E2, E3)
+    ) -> SyscallResult<()> {
+        let (e0, e1, e2, e3) = value;
+        E0StorageValue::write(address_domain, base, e0)?;
+        let offset = E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)?;
+        let offset = offset + E1StorageValue::size();
+        E2StorageValue::write_at_offset(address_domain, base, offset, e2)?;
+        let offset = offset + E2StorageValue::size();
+        E3StorageValue::write_at_offset(address_domain, base, offset, e3)
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<(E0, E1, E2, E3)> {
+        let e0 = E0StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = E0StorageValue::size();
+        let e1 = E1StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E1StorageValue::size();
+        let e2 = E2StorageValue::read_at_offset(address_domain, base, offset)?;
+        let offset = offset + E2StorageValue::size();
+        let e3 = E3StorageValue::read_at_offset(address_domain, base, offset)?;
+        Result::Ok((e0, e1, e2, e3))
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0, E1, E2, E3)
+    ) -> SyscallResult<()> {
+        let (e0, e1, e2, e3) = value;
+        E0StorageValue::write_at_offset(address_domain, base, offset, e0)?;
+        let offset = offset + E0StorageValue::size();
+        E1StorageValue::write_at_offset(address_domain, base, offset, e1)?;
+        let offset = offset + E1StorageValue::size();
+        E2StorageValue::write_at_offset(address_domain, base, offset, e2)?;
+        let offset = offset + E2StorageValue::size();
+        E3StorageValue::write_at_offset(address_domain, base, offset, e3)
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        E0StorageValue::size()
+            + E1StorageValue::size()
+            + E2StorageValue::size()
+            + E3StorageValue::size()
+    }
+}
