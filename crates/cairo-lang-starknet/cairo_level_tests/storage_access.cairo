@@ -19,14 +19,14 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
 struct Abc {
     a: u8,
     b: u16,
     c: u32,
 }
 
-#[derive(Drop, Serde, PartialEq, Copy, storage_access::StorageAccess)]
+#[derive(Drop, Serde, PartialEq, Copy, starknet::StorageAccess)]
 struct AbcEtc {
     a: u8,
     b: u16,
