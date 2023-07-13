@@ -64,6 +64,45 @@ trait StorageValue<T> {
     fn size() -> u8;
 }
 
+trait StorageValuePacking<T, PackedT> {
+    fn pack(value: T) -> PackedT;
+    fn unpack(value: PackedT) -> T;
+}
+
+impl StorageValueUsingPacking<
+    T,
+    PackedT,
+    impl TPacking: StorageValuePacking<T, PackedT>,
+    impl PackedTStorageValue: StorageValue<PackedT>
+> of StorageValue<T> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<T> {
+        Result::Ok(TPacking::unpack(PackedTStorageValue::read(address_domain, base)?))
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: T) -> SyscallResult<()> {
+        PackedTStorageValue::write(address_domain, base, TPacking::pack(value))
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<T> {
+        Result::Ok(
+            TPacking::unpack(PackedTStorageValue::read_at_offset(address_domain, base, offset)?)
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: T
+    ) -> SyscallResult<()> {
+        PackedTStorageValue::write_at_offset(address_domain, base, offset, TPacking::pack(value))
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        PackedTStorageValue::size()
+    }
+}
+
 impl StorageValueFelt252 of StorageValue<felt252> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<felt252> {
