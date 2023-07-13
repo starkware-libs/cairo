@@ -126,8 +126,9 @@ fn build_u256_divmod(
         assert leftover = leftover * leftover;
         // Validate limb1.
         // We know that limb2 and limb3 should be 0.
-        // Therfore quotient1 or divisor1 should also be 0.
-        // We also know that quotient0*divisor1 and quotient1*divisor0 should be smaller than 2**128.
+        // Therefore quotient1 or divisor1 should also be 0.
+        // We also know that quotient0 * divisor1 and quotient1 * divisor0 should be smaller than
+        // 2**128.
         // Therefore the smaller of each pair must be smaller than 2**64.
         // So by checking this we can avoid wraparound on the prime.
         tempvar qd1_small;
