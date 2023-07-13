@@ -8,7 +8,8 @@ enum Result<T, E> {
 }
 
 impl ResultSerde<
-    R, E, impl RSerde: Serde<R>, impl ESerde: Serde<E>, impl RDrop: Drop<R>, impl EDrop: Drop<E>> of Serde<Result<R,E>> {
+    R, E, impl RSerde: Serde<R>, impl ESerde: Serde<E>, impl RDrop: Drop<R>, impl EDrop: Drop<E>
+> of Serde<Result<R, E>> {
     fn serialize(self: @Result<R, E>, ref output: Array<felt252>) {
         match self {
             Result::Ok(x) => {
