@@ -50,53 +50,51 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
     }
 }
 
-#[generate_trait]
-impl Bytes31Impl of Bytes31Trait {
-    // Splits a bytes31 into two bytes31s at the given index.
-    // Note: this function assumes that:
-    // 1. `self` has no more than `len` bytes of data.
-    // 2. index <= len.
-    // 3. len <= BYTES_IN_BYTES31.
-    // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
-    // private function. We could add masking/assertions but it would be more expensive.
-    fn split_bytes31(self: bytes31, len: u8, index: u8) -> (bytes31, bytes31) {
-        if index == 0 {
-            return (bytes31_const::<0>(), self);
-        }
-        if index == len {
-            return (self, bytes31_const::<0>());
-        }
-
-        let u256{low, high } = u256_from_felt252(self.into());
-
-        if index == BYTES_IN_U128 {
-            return (low.into(), high.into());
-        }
-
-        if len <= BYTES_IN_U128 {
-            let (quotient, remainder) = u128_safe_divmod(
-                low, one_shift_left_bytes_u128(index).try_into().unwrap()
-            );
-            return (remainder.into(), quotient.into());
-        }
-
-        // len > BYTES_IN_U128
-        if index < BYTES_IN_U128 {
-            let (low_quotient, low_remainder) = u128_safe_divmod(
-                low, one_shift_left_bytes_u128(index).try_into().unwrap()
-            );
-            let right = u128_to_felt252(high) * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
-                + u128_to_felt252(low_quotient);
-            return (low_remainder.into(), right.try_into().unwrap());
-        }
-
-        // len > BYTES_IN_U128 && index > BYTES_IN_U128
-        let (high_quotient, high_remainder) = u128_safe_divmod(
-            high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap()
-        );
-        let left = u128_to_felt252(high_remainder) * POW_2_128 + u128_to_felt252(low);
-        return (left.try_into().unwrap(), high_quotient.into());
+// Splits a bytes31 into two bytes31s at the given index.
+// The bytes31s are represented using felt252s to improve performance.
+// Note: this function assumes that:
+// 1. `word` is validly convertible to a bytes31 which has no more than `len` bytes of data.
+// 2. index <= len.
+// 3. len <= BYTES_IN_BYTES31.
+// If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
+// private function. We could add masking/assertions but it would be more expensive.
+fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
+    if index == 0 {
+        return (0, word);
     }
+    if index == len {
+        return (word, 0);
+    }
+
+    let u256{low, high } = u256_from_felt252(word);
+
+    if index == BYTES_IN_U128 {
+        return (low.into(), high.into());
+    }
+
+    if len <= BYTES_IN_U128 {
+        let (quotient, remainder) = u128_safe_divmod(
+            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+        );
+        return (remainder.into(), quotient.into());
+    }
+
+    // len > BYTES_IN_U128
+    if index < BYTES_IN_U128 {
+        let (low_quotient, low_remainder) = u128_safe_divmod(
+            low, one_shift_left_bytes_u128(index).try_into().unwrap()
+        );
+        let right = high.into() * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
+            + low_quotient.into();
+        return (low_remainder.into(), right);
+    }
+
+    // len > BYTES_IN_U128 && index > BYTES_IN_U128
+    let (high_quotient, high_remainder) = u128_safe_divmod(
+        high, one_shift_left_bytes_u128(index - BYTES_IN_U128).try_into().unwrap()
+    );
+    let left = high_remainder.into() * POW_2_128 + low.into();
+    return (left, high_quotient.into());
 }
 
 // Returns 1 << (8 * `n_bytes`) as felt252, where `n_bytes` must be < BYTES_IN_BYTES31.

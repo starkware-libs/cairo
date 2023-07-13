@@ -27,10 +27,7 @@ fn test_append_byte() {
 fn test_append_word() {
     let mut ba = Default::default();
 
-    ba
-        .append_word(
-            bytes31_const::<0x1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201>(), 30
-        );
+    ba.append_word(0x1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201, 30);
     let mut expected_data: Array<felt252> = Default::default();
     compare_byte_array(
         @ba,
@@ -39,22 +36,22 @@ fn test_append_word() {
         0x1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201
     );
 
-    ba.append_word(bytes31_const::<0x21201f>(), 3);
+    ba.append_word(0x21201f, 3);
     expected_data.append(0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201);
     compare_byte_array(@ba, expected_data.span(), 2, 0x2120);
 
-    ba.append_word(bytes31_const::<0x2322>(), 2);
+    ba.append_word(0x2322, 2);
     compare_byte_array(@ba, expected_data.span(), 4, 0x23222120);
 
     // Length is 0, so nothing is actually appended.
-    ba.append_word(bytes31_const::<0xffee>(), 0);
+    ba.append_word(0xffee, 0);
     compare_byte_array(@ba, expected_data.span(), 4, 0x23222120);
 
-    ba.append_word(bytes31_const::<0x3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524>(), 27);
+    ba.append_word(0x3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524, 27);
     expected_data.append(0x3e3d3c3b3a393837363534333231302f2e2d2c2b2a29282726252423222120);
     compare_byte_array(@ba, expected_data.span(), 0, 0);
 
-    ba.append_word(bytes31_const::<0x3f>(), 1);
+    ba.append_word(0x3f, 1);
     compare_byte_array(@ba, expected_data.span(), 1, 0x3f);
 }
 
@@ -271,56 +268,44 @@ fn compare_byte_array(
 
 fn test_byte_array_1() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1.append_word(bytes31_const::<0x01>(), 1);
+    ba1.append_word(0x01, 1);
     ba1
 }
 
 fn test_byte_array_2() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1.append_word(bytes31_const::<0x0201>(), 2);
+    ba1.append_word(0x0201, 2);
     ba1
 }
 
 fn test_byte_array_15() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1.append_word(bytes31_const::<0x0f0e0d0c0b0a090807060504030201>(), 15);
+    ba1.append_word(0x0f0e0d0c0b0a090807060504030201, 15);
     ba1
 }
 
 fn test_byte_array_30() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1
-        .append_word(
-            bytes31_const::<0x1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201>(), 30
-        );
+    ba1.append_word(0x1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201, 30);
     ba1
 }
 
 fn test_byte_array_31() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1
-        .append_word(
-            bytes31_const::<0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201>(), 31
-        );
+    ba1.append_word(0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201, 31);
     ba1
 }
 
 fn test_byte_array_32() -> ByteArray {
     let mut ba1 = Default::default();
-    ba1
-        .append_word(
-            bytes31_const::<0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201>(), 31
-        );
-    ba1.append_word(bytes31_const::<0x20>(), 1);
+    ba1.append_word(0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201, 31);
+    ba1.append_word(0x20, 1);
     ba1
 }
 
 fn test_byte_array_33() -> ByteArray {
     let mut ba2 = Default::default();
-    ba2
-        .append_word(
-            bytes31_const::<0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201>(), 31
-        );
-    ba2.append_word(bytes31_const::<0x2120>(), 2);
+    ba2.append_word(0x1f1e1d1c1b1a191817161514131211100f0e0d0c0b0a090807060504030201, 31);
+    ba2.append_word(0x2120, 2);
     ba2
 }
