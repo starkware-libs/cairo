@@ -173,7 +173,7 @@
     "description": "Creates an simple test"
   },
   "Creates a test that should panic": {
-    "prefix": ["panic", "test"],
+    "prefix": ["panic", "test", "should panic"],
     "body": [
       "#[test]",
       "#[available_gas(2000000)]",
