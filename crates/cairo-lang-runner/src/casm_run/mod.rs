@@ -878,8 +878,10 @@ impl<'a> CairoHintProcessor<'a> {
                     fail_syscall!(revert_reason, b"CONSTRUCTOR_FAILED");
                 }
             }
-        } else {
+        } else if calldata.len() == 0 {
             (Relocatable::from((0, 0)), Relocatable::from((0, 0)))
+        } else {
+            fail_syscall!(b"INVALID_CALLDATA_LEN");
         };
 
         // Set the class hash of the deployed contract.
