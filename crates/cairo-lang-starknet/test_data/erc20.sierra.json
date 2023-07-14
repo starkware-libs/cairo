@@ -214,11 +214,11 @@
     "0x4f",
     "0x51",
     "0x656d69745f6576656e745f73797363616c6c",
-    "0x53746f7261676556616c75655538202d206e6f6e207538",
+    "0x53746f72655538202d206e6f6e207538",
     "0x54",
     "0x75385f636f6e7374",
     "0x2679d68052ccd03a53755ca9169677965fbd93e489df62f5f40d4f03c24f7a4",
-    "0x53746f7261676556616c756555313238202d206e6f6e2075313238",
+    "0x53746f726555313238202d206e6f6e2075313238",
     "0x25b1ef8ee6544359221f3cf316f768360e83448109193bdcef77f52a79d95c4",
     "0xad292db4ff05a993c318438c1b6c8a8303266af2da151aa28ccece6726f1f1",
     "0xbf4c436d6f8521e5c6189511c75075de702ad597ce22c1786275e8e5167ec7",
@@ -3627,7 +3627,7 @@
       ],
       [
         217,
-        "function_call<user@core::starknet::storage_access::StorageValueU8::read>"
+        "function_call<user@core::starknet::storage_access::StoreU8::read>"
       ],
       [
         218,
@@ -3651,7 +3651,7 @@
       ],
       [
         223,
-        "function_call<user@core::integer::StorageValueu256::read>"
+        "function_call<user@core::integer::Storeu256::read>"
       ],
       [
         224,
@@ -3959,7 +3959,7 @@
       ],
       [
         300,
-        "function_call<user@core::integer::StorageValueu256::write>"
+        "function_call<user@core::integer::Storeu256::write>"
       ],
       [
         301,
@@ -4035,7 +4035,7 @@
       ],
       [
         319,
-        "felt252_const<7993384250542847882981489198721643573611695218582648120>"
+        "felt252_const<110930490496575599150170734222081291576>"
       ],
       [
         320,
@@ -4059,7 +4059,7 @@
       ],
       [
         325,
-        "function_call<user@core::starknet::storage_access::StorageValueU128::read>"
+        "function_call<user@core::starknet::storage_access::StoreU128::read>"
       ],
       [
         326,
@@ -4099,7 +4099,7 @@
       ],
       [
         335,
-        "felt252_const<34331323940443001904108331081886563608674525958940010332952801848>"
+        "felt252_const<476442828812030857794232422692155113556837216824>"
       ],
       [
         336,
@@ -4597,7 +4597,7 @@
       ],
       [
         54,
-        "core::starknet::storage_access::StorageValueU8::read"
+        "core::starknet::storage_access::StoreU8::read"
       ],
       [
         55,
@@ -4605,7 +4605,7 @@
       ],
       [
         56,
-        "core::integer::StorageValueu256::read"
+        "core::integer::Storeu256::read"
       ],
       [
         57,
@@ -4653,7 +4653,7 @@
       ],
       [
         68,
-        "core::integer::StorageValueu256::write"
+        "core::integer::Storeu256::write"
       ],
       [
         69,
@@ -4665,7 +4665,7 @@
       ],
       [
         71,
-        "core::starknet::storage_access::StorageValueU128::read"
+        "core::starknet::storage_access::StoreU128::read"
       ],
       [
         72,
