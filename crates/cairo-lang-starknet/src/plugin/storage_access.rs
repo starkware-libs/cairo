@@ -8,6 +8,7 @@ use cairo_lang_syntax::attribute::structured::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use indent::indent_by;
 use indoc::formatdoc;
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
@@ -173,32 +174,35 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }
         };
 
-        match_idx.push(format!(
-            "if idx == {i} {{ \
-                starknet::SyscallResult::Ok(\
-                    {enum_name}::{variant_name}(\
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?\
-                    )\
-                ) \
+        match_idx.push(formatdoc!(
+            "if idx == {i} {{
+                starknet::SyscallResult::Ok(
+                    {enum_name}::{variant_name}(
+                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                    )
+                )
             }}",
         ));
-        match_idx_at_offset.push(format!(
-            "if idx == {i} {{ \
-                starknet::SyscallResult::Ok(\
-                    {enum_name}::{variant_name}(\
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?\
-                    )\
-                ) \
+        match_idx_at_offset.push(formatdoc!(
+            "if idx == {i} {{
+                starknet::SyscallResult::Ok(
+                    {enum_name}::{variant_name}(
+                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                    )
+                )
             }}",
         ));
-        match_value.push(format!(
-            "{enum_name}::{variant_name}(x) => {{ starknet::Store::write(address_domain, base, \
-             {i})?; starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?; }}"
+        match_value.push(formatdoc!(
+            "{enum_name}::{variant_name}(x) => {{
+                starknet::Store::write(address_domain, base, {i})?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }}"
         ));
-        match_value_at_offset.push(format!(
-            "{enum_name}::{variant_name}(x) => {{ \
-             starknet::Store::write_at_offset(address_domain, base, offset, {i})?; \
-             starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?; }}"
+        match_value_at_offset.push(formatdoc!(
+            "{enum_name}::{variant_name}(x) => {{
+                starknet::Store::write_at_offset(address_domain, base, offset, {i})?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }}"
         ));
 
         if match_size.is_empty() {
@@ -255,12 +259,10 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 1_u8 + {match_size}
             }}
         }}",
-        enum_name = enum_name,
-        match_idx = match_idx.join("\n        else "),
-        match_idx_at_offset = match_idx_at_offset.join("\n        else "),
-        match_value = match_value.join(",\n            "),
-        match_value_at_offset = match_value_at_offset.join(",\n            "),
-        match_size = match_size
+        match_idx = indent_by(8, match_idx.join("\nelse ")),
+        match_idx_at_offset = indent_by(8, match_idx_at_offset.join("\nelse ")),
+        match_value = indent_by(12, match_value.join(",\n")),
+        match_value_at_offset = indent_by(12, match_value_at_offset.join(",\n")),
     );
 
     let diagnostics = vec![];
