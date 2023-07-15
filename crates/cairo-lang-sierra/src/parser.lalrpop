@@ -78,6 +78,8 @@ ConcreteLibfuncId: ConcreteLibfuncId = {
 
 FunctionId: FunctionId = {
     <id:ConcreteLabel> => FunctionId::from_string(id),
+    <id:ConcreteLabel> "[" <extra:BasicLabel> "]"  =>
+        FunctionId::from_string(format!("{id}[{extra}]")),
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 
