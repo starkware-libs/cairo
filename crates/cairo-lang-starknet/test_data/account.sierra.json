@@ -2589,7 +2589,7 @@
       ],
       [
         205,
-        "function_call<user@core::ec::ec_mul>"
+        "function_call<user@core::ec::EcPointImpl::mul>"
       ],
       [
         206,
@@ -3183,7 +3183,7 @@
       ],
       [
         26,
-        "core::ec::ec_mul"
+        "core::ec::EcPointImpl::mul"
       ],
       [
         27,
