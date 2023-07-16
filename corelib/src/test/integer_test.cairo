@@ -981,9 +981,8 @@ fn test_into_self_type() {
         'u128 into u128'
     );
     assert_eq(
-        @u256 {
-            low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        }.into(),
+        @u256 { low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF }
+            .into(),
         @u256 { high: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF, low: 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF },
         'u256 into u256'
     );
