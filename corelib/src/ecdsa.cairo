@@ -1,10 +1,7 @@
+use ec::EcPointTrait;
+use option::OptionTrait;
+use traits::{Into, TryInto};
 use zeroable::IsZeroResult;
-use ec::{
-    ec_mul, ec_neg, ec_point_from_x, ec_point_from_x_nz, ec_point_is_zero, ec_point_new,
-    ec_point_new_nz, ec_point_non_zero, ec_point_try_new, ec_point_try_new_nz, ec_point_unwrap,
-    ec_point_zero, ec_state_add_mul, ec_state_add, ec_state_finalize, ec_state_init,
-    ec_state_try_finalize_nz
-};
 
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
@@ -27,16 +24,10 @@ use ec::{
 fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
-    // TODO(lior): Change to || once short circuiting is supported.
-
     // Check that s != 0 (mod stark_curve::ORDER).
-    if (signature_s == 0) {
-        return false;
-    }
-    if (signature_s == ec::stark_curve::ORDER) {
-        return false;
-    }
-    if (signature_r == ec::stark_curve::ORDER) {
+    if signature_s == 0
+        || signature_s == ec::stark_curve::ORDER
+        || signature_r == ec::stark_curve::ORDER {
         return false;
     }
 
@@ -58,7 +49,7 @@ fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let gen_point = match ec_point_try_new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
+    let gen_point = match EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
         Option::None => {
             return false;
@@ -72,34 +63,33 @@ fn check_ecdsa_signature(
     // and check that:
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
-
-    let sR: EcPoint = ec_mul(signature_r_point, signature_s);
-    let sR_x = match ec_point_is_zero(sR) {
+    let sR: EcPoint = signature_r_point.mul(signature_s);
+    let sR_x = match sR.test_zero() {
         IsZeroResult::Zero => {
             return false;
         },
         IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+            let (x, y) = pt.coordinates();
             x
         },
     };
 
-    let zG: EcPoint = ec_mul(gen_point, message_hash);
-    let rQ: EcPoint = ec_mul(public_key_point, signature_r);
-    match ec_point_is_zero(zG + rQ) {
+    let zG: EcPoint = gen_point.mul(message_hash);
+    let rQ: EcPoint = public_key_point.mul(signature_r);
+    match (zG + rQ).test_zero() {
         IsZeroResult::Zero => {},
         IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+            let (x, y) = pt.coordinates();
             if (x == sR_x) {
                 return true;
             }
         },
     };
 
-    match ec_point_is_zero(zG - rQ) {
+    match (zG - rQ).test_zero() {
         IsZeroResult::Zero => {},
         IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+            let (x, y) = pt.coordinates();
             if (x == sR_x) {
                 return true;
             }

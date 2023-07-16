@@ -2,8 +2,8 @@
 //! curve.
 
 use array::ArrayTrait;
-use zeroable::IsZeroResult;
 use traits::Into;
+use zeroable::IsZeroResult;
 
 mod stark_curve {
     /// The STARK Curve is defined by the equation `y^2 = x^3 + ALPHA*x + BETA`.
@@ -26,23 +26,8 @@ type NonZeroEcPoint = NonZero<EcPoint>;
 /// Returns the zero point of the curve ("the point at infinity").
 extern fn ec_point_zero() -> EcPoint nopanic;
 /// Constructs a non-zero point from its (x, y) coordinates.
-///
-/// * `ec_point_try_new_nz` returns `None` if the point (x, y) is not on the curve.
-/// * `ec_point_new_nz` panics in that case.
-#[panic_with('not on EC', ec_point_new_nz)]
+/// Returns `None` if the point (x, y) is not on the curve.
 extern fn ec_point_try_new_nz(x: felt252, y: felt252) -> Option<NonZeroEcPoint> nopanic;
-
-#[inline(always)]
-fn ec_point_try_new(x: felt252, y: felt252) -> Option<EcPoint> {
-    match ec_point_try_new_nz(:x, :y) {
-        Option::Some(pt) => Option::Some(pt.into()),
-        Option::None => Option::None,
-    }
-}
-
-fn ec_point_new(x: felt252, y: felt252) -> EcPoint {
-    ec_point_new_nz(:x, :y).into()
-}
 
 extern fn ec_point_from_x_nz(x: felt252) -> Option<NonZeroEcPoint> implicits(RangeCheck) nopanic;
 
@@ -61,10 +46,12 @@ extern fn ec_neg(p: EcPoint) -> EcPoint nopanic;
 extern fn ec_point_is_zero(p: EcPoint) -> IsZeroResult<EcPoint> nopanic;
 
 /// Converts `p` to `NonZeroEcPoint`. Panics if `p` is the zero point.
-fn ec_point_non_zero(p: EcPoint) -> NonZeroEcPoint {
-    match ec_point_is_zero(p) {
-        IsZeroResult::Zero => panic_with_felt252('Zero point'),
-        IsZeroResult::NonZero(p_nz) => p_nz,
+impl EcPointTryIntoNonZero of TryInto<EcPoint, NonZeroEcPoint> {
+    fn try_into(self: EcPoint) -> Option<NonZeroEcPoint> {
+        match self.test_zero() {
+            IsZeroResult::Zero => Option::None,
+            IsZeroResult::NonZero(p_nz) => Option::Some(p_nz),
+        }
     }
 }
 
@@ -76,32 +63,83 @@ extern type EcState;
 
 /// Initializes an EC computation with the zero point.
 extern fn ec_state_init() -> EcState nopanic;
+
 /// Adds a point to the computation.
 extern fn ec_state_add(ref s: EcState, p: NonZeroEcPoint) nopanic;
+/// Adds the product p * m to the state.
+extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implicits(EcOp) nopanic;
 /// Finalizes the EC computation and returns the result (returns `None` if the result is the
 /// zero point).
 extern fn ec_state_try_finalize_nz(s: EcState) -> Option<NonZeroEcPoint> nopanic;
-/// Adds the product p * m to the state.
-extern fn ec_state_add_mul(ref s: EcState, m: felt252, p: NonZeroEcPoint) implicits(EcOp) nopanic;
 
-/// Finalizes the EC computation and returns the result.
-#[inline(always)]
-fn ec_state_finalize(s: EcState) -> EcPoint {
-    match ec_state_try_finalize_nz(s) {
-        Option::Some(pt) => pt.into(),
-        Option::None => ec_point_zero(),
+#[generate_trait]
+impl EcStateImpl of EcStateTrait {
+    /// Initializes an EC computation with the zero point.
+    fn init() -> EcState {
+        ec_state_init()
+    }
+    /// Adds a point to the computation.
+    #[inline(always)]
+    fn add(ref self: EcState, p: NonZeroEcPoint) {
+        ec_state_add(ref self, :p);
+    }
+    /// Adds the product p * m to the state.
+    #[inline(always)]
+    fn add_mul(ref self: EcState, m: felt252, p: NonZeroEcPoint) {
+        ec_state_add_mul(ref self, :m, :p);
+    }
+    #[inline(always)]
+    fn finalize_nz(self: EcState) -> Option<NonZeroEcPoint> {
+        ec_state_try_finalize_nz(self)
+    }
+    /// Finalizes the EC computation and returns the result.
+    #[inline(always)]
+    fn finalize(self: EcState) -> EcPoint {
+        match self.finalize_nz() {
+            Option::Some(p_nz) => p_nz.into(),
+            Option::None => ec_point_zero(),
+        }
     }
 }
 
-/// Computes the product of an EC point `p` by the given scalar `m`.
-fn ec_mul(p: EcPoint, m: felt252) -> EcPoint {
-    match ec_point_is_zero(p) {
-        IsZeroResult::Zero => p,
-        IsZeroResult::NonZero(p_nz) => {
-            let mut state = ec_state_init();
-            ec_state_add_mul(ref state, m, p_nz);
-            ec_state_finalize(state)
+#[generate_trait]
+impl EcPointImpl of EcPointTrait {
+    /// Creates a new EC point from its (x, y) coordinates.
+    #[inline(always)]
+    fn new(x: felt252, y: felt252) -> Option<EcPoint> {
+        Option::Some(ec_point_try_new_nz(:x, :y)?.into())
+    }
+    /// Creates a new EC point from its x coordinate.
+    #[inline(always)]
+    fn new_from_x(x: felt252) -> Option<EcPoint> {
+        Option::Some(ec_point_from_x_nz(:x)?.into())
+    }
+    /// Tests whether the given EC point is the zero point.
+    #[inline(always)]
+    fn test_zero(self: EcPoint) -> IsZeroResult<EcPoint> {
+        ec_point_is_zero(self)
+    }
+    /// Tests whether the given EC point is the zero point.
+    #[inline(always)]
+    fn coordinates(self: NonZeroEcPoint) -> (felt252, felt252) {
+        ec_point_unwrap(self)
+    }
+    /// Computes the product of an EC point `p` by the given scalar `m`.
+    fn mul(self: EcPoint, m: felt252) -> EcPoint {
+        match self.test_zero() {
+            IsZeroResult::Zero => self,
+            IsZeroResult::NonZero(self_nz) => {
+                let mut state = EcStateTrait::init();
+                state.add_mul(m, self_nz);
+                state.finalize()
+            }
         }
+    }
+}
+
+impl EcPointNeg of Neg<EcPoint> {
+    fn neg(a: EcPoint) -> EcPoint {
+        ec_neg(a)
     }
 }
 
@@ -109,22 +147,22 @@ impl EcPointAdd of Add<EcPoint> {
     /// Computes the sum of two points on the curve.
     // TODO(lior): Implement using a libfunc to make it more efficient.
     fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
-        let lhs_nz = match ec_point_is_zero(lhs) {
+        let lhs_nz = match lhs.test_zero() {
             IsZeroResult::Zero => {
                 return rhs;
             },
             IsZeroResult::NonZero(pt) => pt,
         };
-        let rhs_nz = match ec_point_is_zero(rhs) {
+        let rhs_nz = match rhs.test_zero() {
             IsZeroResult::Zero => {
                 return lhs;
             },
             IsZeroResult::NonZero(pt) => pt,
         };
         let mut state = ec_state_init();
-        ec_state_add(ref state, lhs_nz);
-        ec_state_add(ref state, rhs_nz);
-        ec_state_finalize(state)
+        state.add(lhs_nz);
+        state.add(rhs_nz);
+        state.finalize()
     }
 }
 
@@ -138,7 +176,7 @@ impl EcPointAddEq of AddEq<EcPoint> {
 impl EcPointSub of Sub<EcPoint> {
     /// Computes the difference between two points on the curve.
     fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
-        match ec_point_is_zero(rhs) {
+        match rhs.test_zero() {
             IsZeroResult::Zero => {
                 // lhs - 0 = lhs.
                 return lhs;
@@ -146,7 +184,7 @@ impl EcPointSub of Sub<EcPoint> {
             IsZeroResult::NonZero(_) => {},
         };
         // lhs - rhs = lhs + (-rhs).
-        lhs + ec_neg(rhs)
+        lhs + -rhs
     }
 }
 
