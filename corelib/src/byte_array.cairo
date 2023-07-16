@@ -11,9 +11,10 @@ use bytes_31::{
 use zeroable::NonZeroIntoImpl;
 
 const BYTES_IN_U128: u8 = 16;
+// TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
+const BYTES_IN_BYTES31_MINUS_ONE: u8 = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-// TODO(yg): consider storing felts instead of bytes31s.
 #[derive(Drop, Clone)]
 struct ByteArray {
     // Full "words" of 31 bytes each.
@@ -37,71 +38,54 @@ use debug::PrintTrait;
 impl ByteArrayImpl of ByteArrayTrait {
     // TODO(yuval): add a `new` function for initialization.
 
-    // Appends a single word of `num_bytes` bytes to the end of the ByteArray.
+    // Appends a single word of `len` bytes to the end of the ByteArray.
     // Note: this function assumes that:
-    // 1. `word` could be validly converted to a `bytes31` which has no more than `num_bytes` bytes
+    // 1. `word` could be validly converted to a `bytes31` which has no more than `len` bytes
     //    of data.
-    // 2. num_bytes <= BYTES_IN_BYTES31.
+    // 2. len <= BYTES_IN_BYTES31.
     // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
     // private function. We could add masking/assertions but it would be more expensive.
-    fn append_word(ref self: ByteArray, word: felt252, num_bytes: u8) {
-        if num_bytes == 0 {
+    fn append_word(ref self: ByteArray, word: felt252, len: u8) {
+        if len == 0 {
             return;
         }
 
-        let num_total_pending_bytes = self.pending_word_len + num_bytes;
-        if num_total_pending_bytes > BYTES_IN_BYTES31 {
+        if self.pending_word_len + len >= BYTES_IN_BYTES31 {
             let split_index = BYTES_IN_BYTES31 - self.pending_word_len;
-            let (first, second) = split_bytes31(:word, len: num_bytes, index: split_index);
+            let (first, second) = split_bytes31(:word, :len, index: split_index);
             let to_append = first * one_shift_left_bytes_felt252(self.pending_word_len)
                 + self.pending_word;
             self.data.append(to_append.try_into().unwrap());
             self.pending_word = second;
-            self.pending_word_len = num_bytes - split_index;
+            self.pending_word_len = len - split_index;
             return;
         }
 
-        self.append_word_inner(word, num_bytes);
+        self.append_word_fits_into_pending(word, len);
     }
 
-    // Appends a single word of `num_bytes` bytes to the end of the ByteArray, assuming there
-    // is enough space in the pending word (`self.pending_word_len + num_bytes <=
-    // BYTES_IN_BYTES31`).
+    // Appends a single word of `len` bytes to the end of the ByteArray, assuming there
+    // is enough space in the pending word (`self.pending_word_len + len < BYTES_IN_BYTES31`).
     //
     // `word` is of type felt252 but actually represents a bytes31.
     // It is represented as a felt252 to improve performance of building the byte array.
-    fn append_word_inner(ref self: ByteArray, word: felt252, num_bytes: u8) {
+    fn append_word_fits_into_pending(ref self: ByteArray, word: felt252, len: u8) {
         if self.pending_word_len == 0 {
-            if num_bytes == BYTES_IN_BYTES31 {
+            if len == BYTES_IN_BYTES31 {
                 self.data.append(word.try_into().unwrap());
                 return;
             } else {
                 self.pending_word = word;
-                self.pending_word_len = num_bytes;
+                self.pending_word_len = len;
                 return;
             }
         }
 
-        let num_total_pending_bytes = self.pending_word_len + num_bytes;
-        // TODO(yg): either:
-        // 1. remove this, change check in append_word to >= and leave `if index == len` in split_bytes31. Or:
-        // 2. leave this and the check in append_word, remove the `if index == len` in split_bytes31, and change doc of split_bytes31 to assume index < len (not <=).
-        if num_total_pending_bytes == BYTES_IN_BYTES31 {
-            let to_append = word * one_shift_left_bytes_felt252(self.pending_word_len)
-                + self.pending_word;
-
-            self.data.append(to_append.try_into().unwrap());
-            self.pending_word = 0;
-            self.pending_word_len = 0;
-            return;
-        }
-
-        // num_total_pending_bytes < BYTES_IN_BYTES31
         let to_append = word * one_shift_left_bytes_felt252(self.pending_word_len)
             + self.pending_word;
 
         self.pending_word = to_append;
-        self.pending_word_len = num_total_pending_bytes;
+        self.pending_word_len += len;
     }
 
     // Appends a byte array to the end of `self`.
@@ -143,7 +127,7 @@ impl ByteArrayImpl of ByteArrayTrait {
             pending_word_len: self_pending_word_len
         };
 
-        let num_total_pending_bytes = self.pending_word_len + *other.pending_word_len;
+        let total_pending_bytes = self.pending_word_len + *other.pending_word_len;
 
         // split_index in [1, 30].
         let split_index = BYTES_IN_BYTES31 - self.pending_word_len;
@@ -159,11 +143,11 @@ impl ByteArrayImpl of ByteArrayTrait {
                 };
             };
 
-            if num_total_pending_bytes > BYTES_IN_BYTES31 {
+            if total_pending_bytes >= BYTES_IN_BYTES31 {
                 self.append_split_index_medium(*other.pending_word);
-                self.pending_word_len = num_total_pending_bytes - BYTES_IN_BYTES31;
+                self.pending_word_len = total_pending_bytes - BYTES_IN_BYTES31;
             } else {
-                self.append_word_inner(*other.pending_word, *other.pending_word_len);
+                self.append_word_fits_into_pending(*other.pending_word, *other.pending_word_len);
             }
             return;
         }
@@ -180,11 +164,11 @@ impl ByteArrayImpl of ByteArrayTrait {
                 };
             };
 
-            if num_total_pending_bytes > BYTES_IN_BYTES31 {
+            if total_pending_bytes >= BYTES_IN_BYTES31 {
                 self.append_split_index_short(*other.pending_word, split_index);
-                self.pending_word_len = num_total_pending_bytes - BYTES_IN_BYTES31;
+                self.pending_word_len = total_pending_bytes - BYTES_IN_BYTES31;
             } else {
-                self.append_word_inner(*other.pending_word, *other.pending_word_len);
+                self.append_word_fits_into_pending(*other.pending_word, *other.pending_word_len);
             }
             return;
         }
@@ -201,24 +185,12 @@ impl ByteArrayImpl of ByteArrayTrait {
             };
         };
 
-        if num_total_pending_bytes > BYTES_IN_BYTES31 {
+        if total_pending_bytes >= BYTES_IN_BYTES31 {
             self.append_split_index_long(*other.pending_word, split_index);
-            self.pending_word_len = num_total_pending_bytes - BYTES_IN_BYTES31;
+            self.pending_word_len = total_pending_bytes - BYTES_IN_BYTES31;
         } else {
-            self.append_word_inner(*other.pending_word, *other.pending_word_len);
+            self.append_word_fits_into_pending(*other.pending_word, *other.pending_word_len);
         }
-    }
-
-    // A helper function to append a remainder to self, by:
-    // 1. completing `self.pending_word` to a full word using `complete_full_word`, assuming it's
-    //    validly convertible to a `bytes31` of length exactly `BYTES_IN_BYTES31 -
-    //    self.pending_word_len`.
-    // 2. Setting `self.pending_word` to `new_pending`.
-    fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
-        let to_append = complete_full_word * one_shift_left_bytes_felt252(self.pending_word_len)
-            + self.pending_word;
-        self.data.append(to_append.try_into().unwrap());
-        self.pending_word = new_pending;
     }
 
     // Concatenates two byte arrays and returns the result.
@@ -239,7 +211,7 @@ impl ByteArrayImpl of ByteArrayTrait {
         let new_pending = self.pending_word.into()
             + byte.into() * one_shift_left_bytes_felt252(self.pending_word_len);
 
-        if self.pending_word_len != BYTES_IN_BYTES31 - 1 {
+        if self.pending_word_len != BYTES_IN_BYTES31_MINUS_ONE {
             self.pending_word = new_pending;
             self.pending_word_len += 1;
             return;
@@ -252,6 +224,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 
     // Appends a single word to the end of `self`, given that the index of splitting `word` is < 16.
+    //
     // Note: this function doesn't update the new pending length of self. It's the caller's
     // responsibility.
     fn append_split_index_short(ref self: ByteArray, word: felt252, split_index: u8) {
@@ -268,6 +241,7 @@ impl ByteArrayImpl of ByteArrayTrait {
 
     // Appends a single word to the end of `self`, given that the index of splitting `word` is
     // exactly 16.
+    //
     // Note: this function doesn't update the new pending length of self. It's the caller's
     // responsibility.
     fn append_split_index_medium(ref self: ByteArray, word: felt252) {
@@ -276,6 +250,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 
     // Appends a single word to the end of `self`, given that the index of splitting `word` is > 16.
+    //
     // Note: this function doesn't update the new pending length of self. It's the caller's
     // responsibility.
     fn append_split_index_long(ref self: ByteArray, word: felt252, split_index: u8) {
@@ -288,19 +263,20 @@ impl ByteArrayImpl of ByteArrayTrait {
 
         self.append_split(left, high_quotient.into());
     }
-}
-// TODO(yg): this is a workaround, use self.append_split() instead... and remove.
-// fn append_split_workaround(
-//     ref data: Array<bytes31>,
-//     ref pending_word: bytes31,
-//     pending_word_len: u8,
-//     complete_full_word: felt252,
-//     new_pending: bytes31
-// ) {
-//     let felt_to_append = complete_full_word * one_shift_left_bytes_felt252(pending_word_len)
-//         + pending_word.into();
-//     data.append(felt_to_append.try_into().unwrap());
-//     pending_word = new_pending;
-// }
 
+    // A helper function to append a remainder to self, by:
+    // 1. completing `self.pending_word` to a full word using `complete_full_word`, assuming it's
+    //    validly convertible to a `bytes31` of length exactly `BYTES_IN_BYTES31 -
+    //    self.pending_word_len`.
+    // 2. Setting `self.pending_word` to `new_pending`.
+    //
+    // Note: this function doesn't update the new pending length of self. It's the caller's
+    // responsibility.
+    fn append_split(ref self: ByteArray, complete_full_word: felt252, new_pending: felt252) {
+        let to_append = complete_full_word * one_shift_left_bytes_felt252(self.pending_word_len)
+            + self.pending_word;
+        self.data.append(to_append.try_into().unwrap());
+        self.pending_word = new_pending;
+    }
+}
 
