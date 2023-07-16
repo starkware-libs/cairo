@@ -1,8 +1,12 @@
-use std::ops::Neg;
-use std::str::FromStr;
+#[cfg(not(feature = "std"))]
+use alloc::format;
+use core::ops::Neg;
+#[cfg(feature = "parity-scale-codec")]
+use core::str::FromStr;
 
 use num_bigint::BigInt;
 use num_traits::Num;
+#[cfg(feature = "parity-scale-codec")]
 use parity_scale_codec::{Decode, Encode};
 use test_case::test_case;
 
@@ -24,6 +28,7 @@ fn test_bigint_serde(s: &str, is_negative: bool) {
 }
 
 #[test]
+#[cfg(feature = "parity-scale-codec")]
 fn encode_bigint() {
     let bigint = BigIntAsHex {
         value: num_bigint::BigInt::from_str(

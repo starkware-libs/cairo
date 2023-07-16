@@ -879,7 +879,7 @@ fn lower_expr_match(
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-                    lower_single_pattern(ctx, &mut subscope, inner_pattern.clone(), variant_expr)
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
                 }
                 None => {
                     let var_id = ctx.new_var(VarRequest {

@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         cmd:
+          - nextest run -p cairo-lang-casm --no-default-features
           - nextest run -p cairo-lang-casm
           - nextest run -p cairo-lang-compiler
           - nextest run -p cairo-lang-debug
@@ -41,6 +42,12 @@ jobs:
           - nextest run -p cairo-lang-test-runner
           - nextest run -p cairo-lang-test-utils
           - nextest run -p cairo-lang-utils
+          - nextest run -p cairo-lang-utils --no-default-features
+          - nextest run -p cairo-lang-utils --no-default-features --features parity-scale-codec
+          - nextest run -p cairo-lang-vm-utils
+          - nextest run -p cairo-lang-vm-utils --no-default-features
+          - nextest run -p cairo-lang-casm-contract-class
+          - nextest run -p cairo-lang-casm-contract-class --no-default-features
           - test -p tests
     steps:
       - uses: actions/checkout@v3
@@ -120,6 +127,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: >
           scripts/clippy.sh
+
+  nostd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: >
+          cd ensure_no_std && cargo b -r
 
   docs:
     runs-on: ubuntu-latest

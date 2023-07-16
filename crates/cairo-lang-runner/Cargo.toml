@@ -13,7 +13,9 @@ ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
 ark-std.workspace = true
 cairo-felt.workspace = true
-cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.1.0-rc0" }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.1.0-rc0", features = [
+    "std",
+] }
 cairo-lang-compiler = { path = "../cairo-lang-compiler", version = "2.1.0-rc0" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.1.0-rc0" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.1.0-rc0" }
@@ -25,16 +27,21 @@ cairo-lang-sierra-ap-change = { path = "../cairo-lang-sierra-ap-change", version
 cairo-lang-sierra-gas = { path = "../cairo-lang-sierra-gas", version = "2.1.0-rc0" }
 cairo-lang-sierra-generator = { path = "../cairo-lang-sierra-generator", version = "2.1.0-rc0" }
 cairo-lang-sierra-to-casm = { path = "../cairo-lang-sierra-to-casm", version = "2.1.0-rc0" }
-cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.1.0-rc0" }
 cairo-lang-starknet = { path = "../cairo-lang-starknet", version = "2.1.0-rc0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0", features = [
+    "std",
+] }
+cairo-lang-vm-utils = { path = "../cairo-lang-vm-utils", features = [
+    "std",
+    "execute_core_hints",
+] }
+cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.1.0-rc0" }
 cairo-vm.workspace = true
 itertools.workspace = true
 keccak.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
-salsa.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]

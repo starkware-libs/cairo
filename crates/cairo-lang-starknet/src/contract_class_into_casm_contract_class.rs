@@ -1,9 +1,11 @@
 #[cfg(test)]
-#[path = "casm_contract_class_test.rs"]
-mod test;
+#[path = "contract_class_into_casm_contract_class_test.rs"]
+mod contract_class_into_casm_contract_class_test;
 
-use cairo_felt::Felt252;
-use cairo_lang_casm::hints::{Hint, PythonicHint};
+use cairo_lang_casm::hints::PythonicHint;
+use cairo_lang_casm_contract_class::{
+    CasmContractClass, CasmContractEntryPoint, CasmContractEntryPoints,
+};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
 use cairo_lang_sierra::extensions::ec::EcOpType;
@@ -24,16 +26,15 @@ use cairo_lang_sierra_to_casm::compiler::CompilationError;
 use cairo_lang_sierra_to_casm::metadata::{
     calc_metadata, MetadataComputationConfig, MetadataError,
 };
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
-use num_traits::Signed;
+use num_traits::{Num, Signed};
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
@@ -74,25 +75,6 @@ pub enum StarknetSierraCompilationError {
     EntryPointsOutOfOrder,
     #[error("Out of range value in serialization.")]
     ValueOutOfRange,
-}
-
-fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
-    opt_field.is_none()
-}
-
-/// Represents a contract in the Starknet network.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CasmContractClass {
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub prime: BigUint,
-    pub compiler_version: String,
-    pub bytecode: Vec<BigUintAsHex>,
-    pub hints: Vec<(usize, Vec<Hint>)>,
-
-    // Optional pythonic hints in a format that can be executed by the python vm.
-    #[serde(skip_serializing_if = "skip_if_none")]
-    pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
-    pub entry_points_by_type: CasmContractEntryPoints,
 }
 
 /// Context for resolving types.
@@ -221,23 +203,28 @@ impl TypeResolver<'_> {
     }
 }
 
-impl CasmContractClass {
+impl ContractClass {
     // TODO(ilya): Reduce the size of CompilationError.
     #[allow(clippy::result_large_err)]
-    pub fn from_contract_class(
-        contract_class: ContractClass,
+    pub fn into_casm_contract_class(
+        self,
         add_pythonic_hints: bool,
-    ) -> Result<Self, StarknetSierraCompilationError> {
-        let prime = Felt252::prime();
-        for felt252 in &contract_class.sierra_program {
+    ) -> Result<CasmContractClass, StarknetSierraCompilationError> {
+        let prime = BigUint::from_str_radix(
+            "800000000000011000000000000000000000000000000000000000000000001",
+            16,
+        )
+        .unwrap();
+
+        for felt252 in &self.sierra_program {
             if felt252.value >= prime {
                 return Err(StarknetSierraCompilationError::ValueOutOfRange);
             }
         }
 
-        let (_, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+        let (_, _, program) = sierra_from_felt252s(&self.sierra_program)?;
 
-        match &contract_class.entry_points_by_type.constructor.as_slice() {
+        match &self.entry_points_by_type.constructor.as_slice() {
             [] => {}
             [ContractEntryPoint { selector, .. }]
                 if selector == &*CONSTRUCTOR_ENTRY_POINT_SELECTOR => {}
@@ -247,9 +234,9 @@ impl CasmContractClass {
         };
 
         for entry_points in [
-            &contract_class.entry_points_by_type.constructor,
-            &contract_class.entry_points_by_type.external,
-            &contract_class.entry_points_by_type.l1_handler,
+            &self.entry_points_by_type.constructor,
+            &self.entry_points_by_type.external,
+            &self.entry_points_by_type.l1_handler,
         ] {
             // TODO(orizi): Use `is_sorted` when it becomes stable.
             if (1..entry_points.len())
@@ -260,9 +247,9 @@ impl CasmContractClass {
         }
 
         let entrypoint_ids = chain!(
-            &contract_class.entry_points_by_type.constructor,
-            &contract_class.entry_points_by_type.external,
-            &contract_class.entry_points_by_type.l1_handler,
+            &self.entry_points_by_type.constructor,
+            &self.entry_points_by_type.external,
+            &self.entry_points_by_type.l1_handler,
         )
         .map(|entrypoint| program.funcs[entrypoint.function_idx].id.clone());
         let metadata_computation_config = MetadataComputationConfig {
@@ -400,38 +387,17 @@ impl CasmContractClass {
         };
 
         let compiler_version = current_compiler_version_id().to_string();
-        Ok(Self {
+        Ok(CasmContractClass {
             prime,
             compiler_version,
             bytecode,
             hints,
             pythonic_hints,
             entry_points_by_type: CasmContractEntryPoints {
-                external: as_casm_entry_points(contract_class.entry_points_by_type.external)?,
-                l1_handler: as_casm_entry_points(contract_class.entry_points_by_type.l1_handler)?,
-                constructor: as_casm_entry_points(contract_class.entry_points_by_type.constructor)?,
+                external: as_casm_entry_points(self.entry_points_by_type.external)?,
+                l1_handler: as_casm_entry_points(self.entry_points_by_type.l1_handler)?,
+                constructor: as_casm_entry_points(self.entry_points_by_type.constructor)?,
             },
         })
     }
-}
-
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CasmContractEntryPoint {
-    /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
-    pub selector: BigUint,
-    /// The offset of the instruction that should be called within the contract bytecode.
-    pub offset: usize,
-    // list of builtins.
-    pub builtins: Vec<String>,
-}
-
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct CasmContractEntryPoints {
-    #[serde(rename = "EXTERNAL")]
-    pub external: Vec<CasmContractEntryPoint>,
-    #[serde(rename = "L1_HANDLER")]
-    pub l1_handler: Vec<CasmContractEntryPoint>,
-    #[serde(rename = "CONSTRUCTOR")]
-    pub constructor: Vec<CasmContractEntryPoint>,
 }

@@ -1,13 +1,19 @@
-use std::collections::hash_map::RandomState;
-use std::hash::{BuildHasher, Hash};
-use std::ops::Sub;
+use core::hash::{BuildHasher, Hash};
+use core::ops::Sub;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::hash_map::DefaultHashBuilder;
+#[cfg(feature = "std")]
+type DefaultHashBuilder = std::hash::BuildHasherDefault<std::collections::hash_map::DefaultHasher>;
 
 use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug)]
-pub struct OrderedHashSet<Key: Hash + Eq, S = RandomState>(IndexSet<Key, S>);
+pub struct OrderedHashSet<Key: Hash + Eq, S: core::hash::BuildHasher = DefaultHashBuilder>(
+    IndexSet<Key, S>,
+);
 
 pub type Iter<'a, Key> = indexmap::set::Iter<'a, Key>;
 
@@ -17,7 +23,7 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
     /// The hash set is initially created with a capacity of 0, so it will not allocate until it
     /// is first inserted into.
     pub fn new() -> Self {
-        Self(IndexSet::new())
+        Self(IndexSet::with_hasher(DefaultHashBuilder::default()))
     }
 
     /// Returns an iterator over the values of the set, in their order.
@@ -79,7 +85,7 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
         other: &'a OrderedHashSet<Key, S2>,
     ) -> indexmap::set::Difference<'a, Key, S2>
     where
-        S2: std::hash::BuildHasher,
+        S2: core::hash::BuildHasher,
     {
         self.0.difference(&other.0)
     }
@@ -110,7 +116,7 @@ impl<Key: Hash + Eq, S: BuildHasher> OrderedHashSet<Key, S> {
 
 impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
     type Item = Key;
-    type IntoIter = <IndexSet<Key> as IntoIterator>::IntoIter;
+    type IntoIter = <IndexSet<Key, DefaultHashBuilder> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -119,7 +125,7 @@ impl<Key: Hash + Eq> IntoIterator for OrderedHashSet<Key> {
 
 impl<'a, Key: Hash + Eq> IntoIterator for &'a OrderedHashSet<Key> {
     type Item = &'a Key;
-    type IntoIter = <&'a IndexSet<Key> as IntoIterator>::IntoIter;
+    type IntoIter = <&'a IndexSet<Key, DefaultHashBuilder> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
@@ -167,6 +173,6 @@ impl<K: Hash + Eq + Serialize> Serialize for OrderedHashSet<K> {
 }
 impl<'de, K: Hash + Eq + Deserialize<'de>> Deserialize<'de> for OrderedHashSet<K> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        IndexSet::<K, RandomState>::deserialize(deserializer).map(|s| OrderedHashSet(s))
+        IndexSet::<K, DefaultHashBuilder>::deserialize(deserializer).map(|s| OrderedHashSet(s))
     }
 }

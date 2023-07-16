@@ -1,7 +1,7 @@
-use std::fmt::Display;
+use core::fmt;
 
 use cairo_lang_utils::casts::IntoOrPanic;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::operand::{BinOpOperand, CellRef, DerefOrImmediate, Register, ResOperand};
 
@@ -14,8 +14,8 @@ pub enum ApChange {
     Known(usize),
     Unknown,
 }
-impl Display for ApChange {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for ApChange {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ApChange::Known(change) => write!(f, "ApChange::Known({change})"),
             ApChange::Unknown => write!(f, "ApChange::Unknown"),

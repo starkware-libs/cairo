@@ -1,3 +1,11 @@
+#[cfg(not(feature = "std"))]
+use no_std_imports::*;
+#[cfg(not(feature = "std"))]
+mod no_std_imports {
+    pub use alloc::string::ToString;
+    pub use alloc::vec;
+}
+
 use indoc::indoc;
 use test_log::test;
 

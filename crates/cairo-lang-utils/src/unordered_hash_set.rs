@@ -1,7 +1,11 @@
-use std::borrow::Borrow;
+use core::borrow::Borrow;
+use core::hash::Hash;
+use core::ops::Sub;
+#[cfg(feature = "std")]
 use std::collections::HashSet;
-use std::hash::Hash;
-use std::ops::Sub;
+
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
 
 /// A hash set that does not care about the order of insertion.
 /// In particular, it does not support iterating, in order to guarantee deterministic compilation.
