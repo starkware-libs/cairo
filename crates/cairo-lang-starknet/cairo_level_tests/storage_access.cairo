@@ -42,6 +42,13 @@ impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt2
 }
 
 #[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
+enum Efg {
+    E: (),
+    F: (),
+    G: u256
+}
+
+#[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct AbcEtc {
     a: u8,
     b: u16,
@@ -56,6 +63,8 @@ struct AbcEtc {
     k: EthAddress,
     abc: Abc,
     ts: TupleStructure,
+    efg1: Efg,
+    efg2: Efg,
 }
 
 
@@ -80,7 +89,7 @@ mod test_contract {
 }
 
 #[test]
-#[available_gas(2000000)]
+#[available_gas(10000000)]
 fn write_read_struct() {
     let x = AbcEtc {
         a: 1_u8,
@@ -98,7 +107,7 @@ fn write_read_struct() {
             a: 1_u8, b: 2_u16, c: 3_u32, 
             }, ts: TupleStructure {
             v1: 1_u256, v2: 2_u256, 
-        }
+        }, efg1: Efg::E(()), efg2: Efg::G(123_u256)
     };
 
     assert(test_contract::__external::set_data(serialized_element(*@x)).is_empty(), 'Not empty');
