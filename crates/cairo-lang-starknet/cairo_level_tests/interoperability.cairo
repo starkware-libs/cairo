@@ -160,13 +160,23 @@ mod contract_failed_entrypoint {
 
 #[test]
 #[available_gas(30000000)]
-#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED', ))]
-fn test_entrypoint_failed() {
-    let (address0, _) = deploy_syscall(
+fn test_non_empty_calldata_unexistent_constructor() {
+    let mut err = deploy_syscall(
         contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(),
         0,
         array![100].span(),
         false
+    )
+        .unwrap_err();
+    assert_eq(@err.pop_front().unwrap(), @'INVALID_CALLDATA_LEN', 'err == "INVALID_CALLDATA_LEN"');
+}
+
+#[test]
+#[available_gas(30000000)]
+#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED', ))]
+fn test_entrypoint_failed() {
+    let (address0, _) = deploy_syscall(
+        contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
     )
         .unwrap();
     let mut contract = IContractDispatcher { contract_address: address0 };
