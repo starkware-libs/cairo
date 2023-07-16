@@ -1,10 +1,7 @@
+use ec::EcPointTrait;
+use option::OptionTrait;
+use traits::{Into, TryInto};
 use zeroable::IsZeroResult;
-use ec::{
-    ec_mul, ec_neg, ec_point_from_x, ec_point_from_x_nz, ec_point_is_zero, ec_point_new,
-    ec_point_new_nz, ec_point_non_zero, ec_point_try_new, ec_point_try_new_nz, ec_point_unwrap,
-    ec_point_zero, ec_state_add_mul, ec_state_add, ec_state_finalize, ec_state_init,
-    ec_state_try_finalize_nz
-};
 
 // Checks if (`signature_r`, `signature_s`) is a valid ECDSA signature for the given `public_key`
 // on the given `message`.
@@ -27,21 +24,20 @@ use ec::{
 fn check_ecdsa_signature(
     message_hash: felt252, public_key: felt252, signature_r: felt252, signature_s: felt252
 ) -> bool {
-    // TODO(lior): Change to || once short circuiting is supported.
-
+    // TODO(orizi): Change to || once it does not prevent `a == 0` comparison optimization.
     // Check that s != 0 (mod stark_curve::ORDER).
-    if (signature_s == 0) {
+    if signature_s == 0 {
         return false;
     }
-    if (signature_s == ec::stark_curve::ORDER) {
+    if signature_s == ec::stark_curve::ORDER {
         return false;
     }
-    if (signature_r == ec::stark_curve::ORDER) {
+    if signature_r == ec::stark_curve::ORDER {
         return false;
     }
 
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
-    let public_key_point = match ec::ec_point_from_x(public_key) {
+    let public_key_point = match ec::EcPointTrait::new_from_x(public_key) {
         Option::Some(point) => point,
         Option::None => {
             return false;
@@ -50,7 +46,7 @@ fn check_ecdsa_signature(
 
     // Check that `r` is the x coordinate of a point on the curve and get such a point.
     // Note that this ensures that `r != 0`.
-    let signature_r_point = match ec::ec_point_from_x(signature_r) {
+    let signature_r_point = match EcPointTrait::new_from_x(signature_r) {
         Option::Some(point) => point,
         Option::None => {
             return false;
@@ -58,7 +54,7 @@ fn check_ecdsa_signature(
     };
 
     // Retrieve the generator point.
-    let gen_point = match ec_point_try_new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
+    let gen_point = match EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
         Option::None => {
             return false;
@@ -72,38 +68,37 @@ fn check_ecdsa_signature(
     // and check that:
     //   zG +/- rQ = +/- sR, or more efficiently that:
     //   (zG +/- rQ).x = sR.x.
-
-    let sR: EcPoint = ec_mul(signature_r_point, signature_s);
-    let sR_x = match ec_point_is_zero(sR) {
-        IsZeroResult::Zero => {
-            return false;
-        },
-        IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+    let sR: EcPoint = signature_r_point.mul(signature_s);
+    let sR_x = match sR.try_into() {
+        Option::Some(pt) => {
+            let (x, _) = ec::ec_point_unwrap(pt);
             x
         },
+        Option::None => {
+            return false;
+        },
     };
 
-    let zG: EcPoint = ec_mul(gen_point, message_hash);
-    let rQ: EcPoint = ec_mul(public_key_point, signature_r);
-    match ec_point_is_zero(zG + rQ) {
-        IsZeroResult::Zero => {},
-        IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+    let zG: EcPoint = gen_point.mul(message_hash);
+    let rQ: EcPoint = public_key_point.mul(signature_r);
+    match (zG + rQ).try_into() {
+        Option::Some(pt) => {
+            let (x, _) = ec::ec_point_unwrap(pt);
             if (x == sR_x) {
                 return true;
             }
         },
+        Option::None => {},
     };
 
-    match ec_point_is_zero(zG - rQ) {
-        IsZeroResult::Zero => {},
-        IsZeroResult::NonZero(pt) => {
-            let (x, y) = ec_point_unwrap(pt);
+    match (zG - rQ).try_into() {
+        Option::Some(pt) => {
+            let (x, _) = ec::ec_point_unwrap(pt);
             if (x == sR_x) {
                 return true;
             }
         },
+        Option::None => {},
     };
 
     return false;
