@@ -128,4 +128,29 @@ fn bar(
         fourth_arg: fourth_arg,
         fifth_arg: fifth_arg
     };
+    let y = Struct {
+        first_arg: SubStruct { first_arg: first_arg, second_arg: second_arg, third_arg: third_arg },
+        second_arg: SubStruct {
+            first_arg: first_arg,
+            second_arg: second_arg,
+            third_arg: third_arg,
+            fourth_arg: fourth_arg
+        }
+    };
+    let some_tuple = (
+        first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg
+    );
+    let rec_tuple = (
+        (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg),
+        (
+            first_arg,
+            second_arg,
+            third_arg,
+            fourth_arg,
+            fifth_arg,
+            sixth_arg,
+            seventh_arg,
+            eighth_arg
+        )
+    );
 }

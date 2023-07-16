@@ -279,6 +279,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::ArgListParenthesized
+                | SyntaxKind::ArgListBraced
                 | SyntaxKind::StatementList
                 | SyntaxKind::ItemList
                 | SyntaxKind::TraitItemList
