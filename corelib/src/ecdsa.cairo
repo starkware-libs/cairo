@@ -103,3 +103,43 @@ fn check_ecdsa_signature(
 
     return false;
 }
+
+/// Receives a signature and the signed message hash.
+/// Returns the public key associated with the signer.
+fn recover_public_key(
+    message_hash: felt252, signature_r: felt252, signature_s: felt252, y_parity: bool
+) -> Option<felt252> {
+    let mut signature_r_point = EcPointTrait::new_from_x(signature_r)?;
+    let (_, y) = signature_r_point.try_into()?.coordinates();
+    let y: u256 = y.into();
+    // If the actual the parity of the actual y is different than requested, flip the parity.
+    if (y.low & 1 == 1) != y_parity {
+        signature_r_point = -signature_r_point;
+    }
+
+    // Retrieve the generator point.
+    let gen_point = EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y)?;
+
+    // a Valid signature should satisfy:
+    // zG + rQ = sR.
+    // Where:
+    //   zG = z * G, z is the message and G is a generator of the EC.
+    //   rQ = r * Q, Q.x = public_key.
+    //   sR = s * R, where R.x = r and R.y is determined by y_parity.
+    //
+    // Hence:
+    //   rQ = sR - zG.
+    //   Q = (s/r)R - (z/r)G
+    // and we can recover the public key using:
+    //   Q.x = ((s/r)R - (z/r)G).x.
+    let r_nz: u256 = signature_r.into();
+    let r_nz = r_nz.try_into()?;
+    let ord_nz: u256 = ec::stark_curve::ORDER.into();
+    let ord_nz = ord_nz.try_into()?;
+    let s_div_r: felt252 = math::u256_div_mod_n(signature_s.into(), r_nz, ord_nz)?.try_into()?;
+    let z_div_r: felt252 = math::u256_div_mod_n(message_hash.into(), r_nz, ord_nz)?.try_into()?;
+    let s_div_rR: EcPoint = signature_r_point.mul(s_div_r);
+    let z_div_rG: EcPoint = gen_point.mul(z_div_r);
+    let (x, _) = (s_div_rR - z_div_rG).try_into()?.coordinates();
+    Option::Some(x)
+}
