@@ -1,5 +1,12 @@
+#[cfg(not(feature = "std"))]
+use alloc::{vec, vec::Vec};
+#[cfg(feature = "std")]
 use std::collections::HashSet;
 
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
+#[cfg(not(feature = "std"))]
+use hashbrown::HashSet;
 use itertools::chain;
 use test_case::test_case;
 use test_log::test;

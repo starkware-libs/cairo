@@ -5,7 +5,7 @@ edition.workspace = true
 repository.workspace = true
 license-file.workspace = true
 description = "Sierra representation."
-build = "src/build.rs" # LALRPOP preprocessing
+build = "src/build.rs"                 # LALRPOP preprocessing
 
 [build-dependencies]
 lalrpop = "0.20.0"

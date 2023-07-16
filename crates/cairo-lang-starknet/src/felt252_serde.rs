@@ -26,7 +26,7 @@ use num_bigint::{BigInt, BigUint, ToBigInt};
 use num_traits::ToPrimitive;
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::compiler_version::VersionId;
 use crate::contract::starknet_keccak;

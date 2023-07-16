@@ -16,7 +16,7 @@ use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUint
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::allowed_libfuncs::{

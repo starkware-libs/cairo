@@ -8,7 +8,7 @@ use cairo_lang_sierra_gas::{
     calc_gas_postcost_info, calc_gas_precost_info, compute_precost_info, CostError,
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 /// Metadata provided with a Sierra program to simplify the compilation to casm.
 pub struct Metadata {

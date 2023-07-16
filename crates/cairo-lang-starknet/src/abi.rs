@@ -19,7 +19,7 @@ use cairo_lang_utils::{extract_matches, try_extract_matches};
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{

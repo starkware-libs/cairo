@@ -37,10 +37,9 @@ use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
 use num_traits::ToPrimitive;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 pub mod casm_run;
-pub mod short_string;
 
 #[derive(Debug, Error)]
 pub enum RunnerError {

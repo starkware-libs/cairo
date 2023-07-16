@@ -19,7 +19,7 @@ use gas_info::GasInfo;
 use generate_equations::StatementFutureCost;
 use itertools::Itertools;
 use objects::CostInfoProvider;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 pub mod compute_costs;
 pub mod core_libfunc_cost;

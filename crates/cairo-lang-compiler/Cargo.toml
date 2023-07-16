@@ -23,7 +23,7 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
-thiserror.workspace = true
+thiserror-no-std.workspace = true
 
 [dev-dependencies]
 test-log.workspace = true

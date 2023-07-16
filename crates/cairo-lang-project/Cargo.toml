@@ -11,7 +11,7 @@ cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.1.0-rc
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 serde.workspace = true
 smol_str.workspace = true
-thiserror.workspace = true
+thiserror-no-std.workspace = true
 toml.workspace = true
 
 [dev-dependencies]

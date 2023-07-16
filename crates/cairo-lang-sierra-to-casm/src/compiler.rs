@@ -9,7 +9,7 @@ use cairo_lang_sierra::program::{BranchTarget, Invocation, Program, Statement, S
 use cairo_lang_sierra::program_registry::{ProgramRegistry, ProgramRegistryError};
 use cairo_lang_sierra_type_size::get_type_size_map;
 use itertools::zip_eq;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::annotations::{AnnotationError, ProgramAnnotations, StatementAnnotations};
 use crate::invocations::{

@@ -1,3 +1,6 @@
+#[cfg(not(feature = "std"))]
+use alloc::string::String;
+
 use cairo_felt::Felt252;
 
 /// Converts a bigint representing a felt252 to a Cairo short-string.

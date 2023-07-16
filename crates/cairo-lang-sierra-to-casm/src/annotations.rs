@@ -8,7 +8,7 @@ use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
 use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::environment::ap_tracking::update_ap_tracking;
 use crate::environment::frame_state::FrameStateError;

@@ -5,7 +5,7 @@ use std::fs;
 use cairo_lang_sierra::ids::GenericLibfuncId;
 use serde::Deserialize;
 use smol_str::SmolStr;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 use crate::contract_class::ContractClass;
 use crate::felt252_serde::sierra_from_felt252s;

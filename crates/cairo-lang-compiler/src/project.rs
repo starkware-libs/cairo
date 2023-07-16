@@ -8,7 +8,7 @@ use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 pub use cairo_lang_project::*;
 use cairo_lang_semantic::db::SemanticGroup;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror_no_std::Error, Debug)]
 pub enum ProjectError {
     #[error("Only files with .cairo extension can be compiled.")]
     BadFileExtension,

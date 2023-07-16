@@ -3,7 +3,7 @@ use std::fmt::Display;
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_utils::collection_arithmetics::add_maps;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum GasWalletError {

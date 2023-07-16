@@ -11,7 +11,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use core_libfunc_ap_change::InvocationApChangeInfoProvider;
 use generate_equations::{Effects, Var};
 use itertools::Itertools;
-use thiserror::Error;
+use thiserror_no_std::Error;
 
 pub mod ap_change_info;
 pub mod core_libfunc_ap_change;
