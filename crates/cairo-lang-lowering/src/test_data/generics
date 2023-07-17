@@ -1,12 +1,12 @@
-//! > Test extern function calling.
+//! > Test calling trait function.
 
 //! > test_runner_name
 test_function_lowering
 
 //! > function
 fn foo() {
-    5.foo(true);
-    MyTrait::foo(6, false);
+    immovable(5.foo(true));
+    immovable(MyTrait::foo(6, false));
 }
 
 //! > function_name
@@ -23,6 +23,8 @@ impl MyImpl of MyTrait::<felt252> {
     }
 }
 
+extern fn immovable<T>(t: T) -> T nopanic;
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -31,17 +33,19 @@ impl MyImpl of MyTrait::<felt252> {
 Parameters:
 blk0 (root):
 Statements:
+  (v0: core::felt252) <- 5u
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v0: core::felt252) <- 5u
-  (v9: (core::felt252, core::bool)) <- struct_construct(v0, v2)
-  (v5: ()) <- struct_construct()
-  (v6: core::bool) <- bool::False(v5)
-  (v4: core::felt252) <- 6u
-  (v10: (core::felt252, core::bool)) <- struct_construct(v4, v6)
-  (v8: ()) <- struct_construct()
+  (v13: (core::felt252, core::bool)) <- struct_construct(v0, v2)
+  (v4: core::felt252, v5: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v13)
+  (v6: core::felt252) <- 6u
+  (v7: ()) <- struct_construct()
+  (v8: core::bool) <- bool::False(v7)
+  (v14: (core::felt252, core::bool)) <- struct_construct(v6, v8)
+  (v10: core::felt252, v11: core::bool) <- test::immovable::<(core::felt252, core::bool)>(v14)
+  (v12: ()) <- struct_construct()
 End:
-  Return(v8)
+  Return(v12)
 
 //! > ==========================================================================
 

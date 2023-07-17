@@ -482,6 +482,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -539,7 +540,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
@@ -576,6 +576,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -633,7 +634,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
@@ -670,6 +670,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -727,7 +728,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
@@ -764,6 +764,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -817,7 +818,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
@@ -854,6 +854,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -907,7 +908,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {v34 -> v36, v35 -> v37})
 
@@ -944,6 +944,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -997,7 +998,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 
@@ -1034,6 +1034,7 @@ End:
 
 blk3:
 Statements:
+  (v19: ()) <- struct_destructure(v18)
   (v21: ((),)) <- struct_construct(v19)
   (v22: core::panics::PanicResult::<((),)>) <- PanicResult::Ok(v21)
 End:
@@ -1086,7 +1087,6 @@ End:
 
 blk11:
 Statements:
-  (v19: ()) <- struct_destructure(v18)
 End:
   Goto(blk10, {})
 

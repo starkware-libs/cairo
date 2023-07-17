@@ -201,7 +201,8 @@ test_function_generator
 
 //! > function
 fn foo(strct: MyStruct) -> felt252 {
-    let a = strct.a;
+    let MyStruct{a, b} = strct;
+    immovable(b);
     internal::revoke_ap_tracking();
     a
 }
@@ -212,9 +213,13 @@ foo
 //! > module_code
 struct MyStruct {
     a: felt252,
+    b: felt252,
 }
 
 impl MyStructDrop of Drop::<MyStruct>;
+
+#[inline(never)]
+fn immovable<T>(t: T) -> T { t }
 
 //! > semantic_diagnostics
 
@@ -223,12 +228,15 @@ impl MyStructDrop of Drop::<MyStruct>;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label1:
 disable_ap_tracking() -> ()
-struct_deconstruct<test::MyStruct>([0]) -> ([1])
+struct_deconstruct<test::MyStruct>([0]) -> ([1], [2])
+store_temp<felt252>([2]) -> ([4])
+function_call<user@test::immovable::<core::felt252>>([4]) -> ([3])
+drop<felt252>([3]) -> ()
 revoke_ap_tracking() -> ()
-store_temp<felt252>([1]) -> ([2])
-return([2])
+store_temp<felt252>([1]) -> ([5])
+return([5])
 
 //! > ==========================================================================
 
@@ -242,6 +250,7 @@ fn foo() -> felt252 {
 	let strct1 = MyStruct1{strct: MyStruct2{value: 12}};
     let strct2 = strct1.strct;
     let value = strct1.strct.value;
+    immovable(value);
     internal::revoke_ap_tracking();
     get_value_1(strct1) + get_value_2(strct2) + value
 }
@@ -267,6 +276,9 @@ fn get_value_2(strct: MyStruct2) -> felt252{
     strct.value
 }
 
+#[inline(never)]
+fn immovable<T>(t: T) -> T { t }
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -274,7 +286,7 @@ fn get_value_2(strct: MyStruct2) -> felt252{
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label2:
+label3:
 alloc_local<test::MyStruct2>() -> ([1])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
@@ -285,16 +297,20 @@ struct_deconstruct<test::MyStruct1>([4]) -> ([0])
 store_local<test::MyStruct2>([1], [0]) -> ([0])
 dup<test::MyStruct2>([0]) -> ([0], [5])
 struct_deconstruct<test::MyStruct2>([5]) -> ([6])
+dup<felt252>([6]) -> ([6], [8])
+store_temp<felt252>([8]) -> ([8])
+function_call<user@test::immovable::<core::felt252>>([8]) -> ([7])
+drop<felt252>([7]) -> ()
 revoke_ap_tracking() -> ()
-dup<felt252>([6]) -> ([6], [7])
-struct_construct<test::MyStruct2>([7]) -> ([8])
-struct_construct<test::MyStruct1>([8]) -> ([9])
-store_temp<test::MyStruct1>([9]) -> ([11])
-function_call<user@test::get_value_1>([11]) -> ([10])
-store_temp<test::MyStruct2>([0]) -> ([13])
-function_call<user@test::get_value_2>([13]) -> ([12])
-felt252_add([10], [12]) -> ([14])
-store_temp<felt252>([14]) -> ([14])
-felt252_add([14], [6]) -> ([15])
-store_temp<felt252>([15]) -> ([16])
-return([16])
+dup<felt252>([6]) -> ([6], [9])
+struct_construct<test::MyStruct2>([9]) -> ([10])
+struct_construct<test::MyStruct1>([10]) -> ([11])
+store_temp<test::MyStruct1>([11]) -> ([13])
+function_call<user@test::get_value_1>([13]) -> ([12])
+store_temp<test::MyStruct2>([0]) -> ([15])
+function_call<user@test::get_value_2>([15]) -> ([14])
+felt252_add([12], [14]) -> ([16])
+store_temp<felt252>([16]) -> ([16])
+felt252_add([16], [6]) -> ([17])
+store_temp<felt252>([17]) -> ([18])
+return([18])
