@@ -412,7 +412,7 @@ impl<'a> Parser<'a> {
                 }
             }
         } else {
-            let missing = self.skip_token_and_return_missing::<TerminalIdentifier>(
+            let missing = self.create_and_report_missing::<TerminalIdentifier>(
                 ParserDiagnosticKind::MissingPathSegment,
             );
             let ident = PathSegmentSimple::new_green(self.db, missing).into();
