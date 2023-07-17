@@ -35,7 +35,14 @@ fn test_borrow_check(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<
     let lowering = if let Ok(lowered) =
         db.priv_function_with_body_lowering(function_id.function_with_body_id(db))
     {
-        format!("{:?}", lowered.debug(&LoweredFormatter { db, variables: &lowered.variables }))
+        format!(
+            "{:?}",
+            lowered.debug(&LoweredFormatter {
+                db,
+                variables: &lowered.variables,
+                include_usage_location: true
+            })
+        )
     } else {
         "".into()
     };

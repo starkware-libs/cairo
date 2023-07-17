@@ -89,7 +89,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         expected_sierra_code.push('\n');
     }
 
-    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
+    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
     OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),

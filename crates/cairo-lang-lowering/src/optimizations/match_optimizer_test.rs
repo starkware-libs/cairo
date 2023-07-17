@@ -57,11 +57,11 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),
-            format!("{:?}", before.debug(&LoweredFormatter { db, variables: &before.variables })),
+            format!("{:?}", before.debug(&LoweredFormatter::new(db, &before.variables))),
         ),
         (
             "after".into(),
-            format!("{:?}", after.debug(&LoweredFormatter { db, variables: &after.variables })),
+            format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
         ),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ])
