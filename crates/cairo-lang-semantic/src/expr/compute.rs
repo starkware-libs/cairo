@@ -77,6 +77,7 @@ pub struct ComputationContext<'ctx> {
     signature: Option<&'ctx Signature>,
     environment: Box<Environment>,
     pub exprs: Arena<semantic::Expr>,
+    pub pats: Arena<semantic::Pattern>,
     pub statements: Arena<semantic::Statement>,
     /// Definitions of semantic variables.
     pub semantic_defs: UnorderedHashMap<semantic::VarId, semantic::Variable>,
@@ -99,6 +100,7 @@ impl<'ctx> ComputationContext<'ctx> {
             signature,
             environment: Box::new(environment),
             exprs: Arena::default(),
+            pats: Arena::default(),
             statements: Arena::default(),
             semantic_defs,
             loop_flow_merge: None,
@@ -632,6 +634,14 @@ fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
                 .ok();
         }
     }
+    for (_id, pat) in ctx.pats.iter_mut() {
+        *pat = ctx.resolver.inference().rewrite(pat.clone()).no_err();
+        if let Pattern::Literal(pat) = pat {
+            validate_literal(ctx.db, pat.literal.ty, pat.literal.value.clone())
+                .map_err(|err| ctx.diagnostics.report_by_ptr(pat.stable_ptr.untyped(), err))
+                .ok();
+        }
+    }
     for (_id, stmt) in ctx.statements.iter_mut() {
         *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
     }
@@ -742,7 +752,7 @@ fn compute_expr_match_semantic(
                 // for it.
                 let pattern =
                     compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
-                let variables = pattern.variables();
+                let variables = pattern.variables(&new_ctx.pats);
                 for v in variables {
                     let var_def = Variable::Local(v.var.clone());
                     // TODO(spapini): Wrap this in a function to couple with semantic_defs
@@ -771,7 +781,10 @@ fn compute_expr_match_semantic(
     let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
     let semantic_arms = pattern_and_exprs
         .into_iter()
-        .map(|(pattern, arm_expr)| MatchArm { pattern, expression: arm_expr.id })
+        .map(|(pattern, arm_expr)| MatchArm {
+            pattern: ctx.pats.alloc(pattern),
+            expression: arm_expr.id,
+        })
         .collect();
     Ok(Expr::Match(ExprMatch {
         matched_expr: expr.id,
@@ -1087,10 +1100,11 @@ fn compute_pattern_semantic(
             // Compute inner pattern.
             let inner_ty = wrap_in_snapshots(ctx.db, concrete_variant.ty, n_snapshots);
 
-            let inner_pattern: Option<Box<Pattern>> = match enum_pattern.pattern(syntax_db) {
+            let inner_pattern = match enum_pattern.pattern(syntax_db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
                 ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
-                    Some(compute_pattern_semantic(ctx, p.pattern(syntax_db), inner_ty)?.into())
+                    let pat = compute_pattern_semantic(ctx, p.pattern(syntax_db), inner_ty)?;
+                    Some(ctx.pats.alloc(pat))
                 }
             };
 
@@ -1179,7 +1193,7 @@ fn compute_pattern_semantic(
                             ty,
                             single.stable_ptr().into(),
                         );
-                        field_patterns.push((member, Box::new(pattern)));
+                        field_patterns.push((member, ctx.pats.alloc(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
                         let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))
@@ -1187,7 +1201,7 @@ fn compute_pattern_semantic(
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern =
                             compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
-                        field_patterns.push((member, Box::new(pattern)));
+                        field_patterns.push((member, ctx.pats.alloc(pattern)));
                     }
                     PatternStructParam::Tail(_) => {
                         has_tail = true;
@@ -1228,7 +1242,8 @@ fn compute_pattern_semantic(
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
                 let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
-                Ok(Box::new(compute_pattern_semantic(ctx, pattern_ast, ty)?))
+                let pat = compute_pattern_semantic(ctx, pattern_ast, ty)?;
+                Ok(ctx.pats.alloc(pat))
             });
             // If all are Some, collect into a Vec.
             let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
@@ -1242,7 +1257,7 @@ fn compute_pattern_semantic(
     };
     ctx.resolver
         .inference()
-        .conform_ty(pat.ty(ctx.db), ty)
+        .conform_ty(pat.ty(), ty)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
     Ok(pat)
 }
@@ -1834,7 +1849,7 @@ pub fn compute_statement_semantic(
             };
 
             let pattern = compute_pattern_semantic(ctx, let_syntax.pattern(syntax_db), ty)?;
-            let variables = pattern.variables();
+            let variables = pattern.variables(&ctx.pats);
             // TODO(yuval): allow unnamed variables. Add them here to
             // ctx.environment.unnamed_variables
             for v in variables {
@@ -1843,7 +1858,7 @@ pub fn compute_statement_semantic(
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
             semantic::Statement::Let(semantic::StatementLet {
-                pattern,
+                pattern: ctx.pats.alloc(pattern),
                 expr: rhs_expr_id,
                 stable_ptr: syntax.stable_ptr(),
             })

@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::Maybe;
@@ -319,6 +317,7 @@ pub fn lower_statement(
         semantic::Statement::Let(semantic::StatementLet { pattern, expr, stable_ptr: _ }) => {
             log::trace!("Lowering a let statement.");
             let lowered_expr = lower_expr(ctx, builder, *expr)?;
+            let pattern = ctx.function_body.pats[*pattern].clone();
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
         semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
@@ -354,7 +353,7 @@ pub fn lower_statement(
 fn lower_single_pattern(
     ctx: &mut LoweringContext<'_, '_>,
     builder: &mut BlockBuilder,
-    pattern: &semantic::Pattern,
+    pattern: semantic::Pattern,
     lowered_expr: LoweredExpr,
 ) -> Result<(), LoweringFlowError> {
     log::trace!("Lowering a single pattern.");
@@ -365,7 +364,7 @@ fn lower_single_pattern(
             var: sem_var,
             stable_ptr,
         }) => {
-            let sem_var = semantic::Variable::Local(sem_var.clone());
+            let sem_var = semantic::Variable::Local(sem_var);
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
             // Override variable location.
@@ -391,7 +390,9 @@ fn lower_single_pattern(
                         location: ctx.get_location(
                             required_members
                                 .get(&member.id)
-                                .map(|pattern| pattern.stable_ptr().untyped())
+                                .map(|pattern| {
+                                    ctx.function_body.pats[**pattern].stable_ptr().untyped()
+                                })
                                 .unwrap_or_else(|| structure.stable_ptr.untyped()),
                         ),
                     })
@@ -401,13 +402,15 @@ fn lower_single_pattern(
                 generator.add(ctx, &mut builder.statements).into_iter().zip(members.into_iter())
             {
                 if let Some(member_pattern) = required_members.remove(&member.id) {
+                    let member_pattern = ctx.function_body.pats[*member_pattern].clone();
+                    let stable_ptr = member_pattern.stable_ptr();
                     lower_single_pattern(
                         ctx,
                         builder,
                         member_pattern,
                         LoweredExpr::AtVariable(VarUsage {
                             var_id,
-                            location: ctx.get_location(member_pattern.stable_ptr().untyped()),
+                            location: ctx.get_location(stable_ptr.untyped()),
                         }),
                     )?;
                 }
@@ -417,12 +420,14 @@ fn lower_single_pattern(
             let outputs = if let LoweredExpr::Tuple { exprs, .. } = lowered_expr {
                 exprs
             } else {
-                let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), *ty);
+                let (n_snapshots, long_type_id) = peel_snapshots(ctx.db.upcast(), ty);
                 let reqs =
-                    zip_eq(field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
+                    zip_eq(&field_patterns, extract_matches!(long_type_id, TypeLongId::Tuple))
                         .map(|(pattern, ty)| VarRequest {
                             ty: wrap_in_snapshots(ctx.db.upcast(), ty, n_snapshots),
-                            location: ctx.get_location(pattern.deref().stable_ptr().untyped()),
+                            location: ctx.get_location(
+                                ctx.function_body.pats[*pattern].stable_ptr().untyped(),
+                            ),
                         })
                         .collect();
                 generators::StructDestructure {
@@ -442,7 +447,7 @@ fn lower_single_pattern(
                 .collect()
             };
             for (var, pattern) in zip_eq(outputs, field_patterns) {
-                lower_single_pattern(ctx, builder, pattern, var)?;
+                lower_single_pattern(ctx, builder, ctx.function_body.pats[pattern].clone(), var)?;
             }
         }
         semantic::Pattern::EnumVariant(_) => unreachable!(),
@@ -838,23 +843,25 @@ fn lower_expr_match(
         .map(|(concrete_variant, arm)| {
             let mut subscope = create_subscope_with_bound_refs(ctx, builder);
             let block_id = subscope.block_id;
+            let pattern = ctx.function_body.pats[arm.pattern].clone();
 
-            let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
+            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
-                LoweringFlowError::Failed(
-                    ctx.diagnostics
-                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-                )
-            })?;
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+                    )
+                })?;
             if &enum_pattern.variant != concrete_variant {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
-                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
+                        .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
                 ));
             }
 
             let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
                 Some(inner_pattern) => {
+                    let inner_pattern = ctx.function_body.pats[*inner_pattern].clone();
                     let pattern_location = ctx.get_location(inner_pattern.stable_ptr().untyped());
 
                     let var_id = ctx.new_var(VarRequest {
@@ -865,7 +872,7 @@ fn lower_expr_match(
                     let variant_expr =
                         LoweredExpr::AtVariable(VarUsage { var_id, location: pattern_location });
 
-                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
+                    lower_single_pattern(ctx, &mut subscope, inner_pattern.clone(), variant_expr)
                 }
                 None => {
                     let var_id = ctx.new_var(VarRequest {
@@ -935,18 +942,19 @@ fn lower_optimized_extern_match(
                 .map(|ty| ctx.new_var(VarRequest { ty, location }))
                 .collect_vec();
             arm_var_ids.push(input_vars.clone());
+            let pattern = ctx.function_body.pats[arm.pattern].clone();
 
-            let enum_pattern = try_extract_matches!(&arm.pattern, semantic::Pattern::EnumVariant)
+            let enum_pattern = try_extract_matches!(&pattern, semantic::Pattern::EnumVariant)
                 .ok_or_else(|| {
-                LoweringFlowError::Failed(
-                    ctx.diagnostics
-                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
-                )
-            })?;
+                    LoweringFlowError::Failed(
+                        ctx.diagnostics
+                            .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmNotAVariant),
+                    )
+                })?;
             if &enum_pattern.variant != concrete_variant {
                 return Err(LoweringFlowError::Failed(
                     ctx.diagnostics
-                        .report(arm.pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
+                        .report(pattern.stable_ptr().untyped(), UnsupportedMatchArmOutOfOrder),
                 ));
             }
 
@@ -955,9 +963,12 @@ fn lower_optimized_extern_match(
 
             let variant_expr = extern_facade_expr(ctx, concrete_variant.ty, input_vars, location);
             let lowering_inner_pattern_result = match &enum_pattern.inner_pattern {
-                Some(inner_pattern) => {
-                    lower_single_pattern(ctx, &mut subscope, inner_pattern, variant_expr)
-                }
+                Some(inner_pattern) => lower_single_pattern(
+                    ctx,
+                    &mut subscope,
+                    ctx.function_body.pats[*inner_pattern].clone(),
+                    variant_expr,
+                ),
                 None => Ok(()),
             };
 
@@ -997,21 +1008,25 @@ fn lower_expr_match_felt252(
     log::trace!("Lowering a match-felt252 expression.");
     let location = ctx.get_location(expr.stable_ptr.untyped());
     // Check that the match has the expected form.
-    let (literal, block0, block_otherwise) = if let [
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }),
-            expression: block0,
-        },
-        semantic::MatchArm {
-            pattern: semantic::Pattern::Otherwise(_),
-            expression: block_otherwise,
-        },
+    let [
+        semantic::MatchArm { pattern: pattern0, expression: block0 },
+        semantic::MatchArm { pattern: pattern1, expression: block_otherwise },
     ] = &expr.arms[..]
-    {
-        (literal, block0, block_otherwise)
-    } else {
+    else {
         return Err(LoweringFlowError::Failed(
             ctx.diagnostics.report(expr.stable_ptr.untyped(), OnlyMatchZeroIsSupported),
+        ));
+    };
+    let pattern0 = &ctx.function_body.pats[*pattern0];
+    let semantic::Pattern::Literal(semantic::PatternLiteral { literal, .. }) = pattern0 else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(pattern0.stable_ptr().untyped(), OnlyMatchZeroIsSupported),
+        ));
+    };
+    let pattern1 = &ctx.function_body.pats[*pattern1];
+    let semantic::Pattern::Otherwise(_) = pattern1 else {
+        return Err(LoweringFlowError::Failed(
+            ctx.diagnostics.report(pattern1.stable_ptr().untyped(), OnlyMatchZeroIsSupported),
         ));
     };
 

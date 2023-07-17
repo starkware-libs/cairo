@@ -920,6 +920,13 @@ pub trait SemanticGroup:
         function_id: FunctionWithBodyId,
         id: semantic::ExprId,
     ) -> semantic::Expr;
+    /// Assumes function and pattern are present.
+    #[salsa::invoke(items::function_with_body::pat_semantic)]
+    fn pat_semantic(
+        &self,
+        function_id: FunctionWithBodyId,
+        id: semantic::PatternId,
+    ) -> semantic::Pattern;
     /// Assumes function and statement are valid.
     #[salsa::invoke(items::function_with_body::statement_semantic)]
     fn statement_semantic(

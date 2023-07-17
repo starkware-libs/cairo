@@ -10,7 +10,8 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use semantic::ConcreteStructId;
+use id_arena::Arena;
+use semantic::{ConcreteStructId, PatternId};
 
 #[cfg(test)]
 #[path = "usage_test.rs"]
@@ -97,7 +98,7 @@ impl BlockUsages {
                     match &function_body.statements[*stmt] {
                         Statement::Let(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage);
-                            Self::handle_pattern(&stmt.pattern, &mut usage);
+                            Self::handle_pattern(&function_body.pats, stmt.pattern, &mut usage);
                         }
                         Statement::Expr(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
@@ -178,7 +179,7 @@ impl BlockUsages {
             Expr::Match(expr) => {
                 self.handle_expr(function_body, expr.matched_expr, current);
                 for arm in &expr.arms {
-                    Self::handle_pattern(&arm.pattern, current);
+                    Self::handle_pattern(&function_body.pats, arm.pattern, current);
                     self.handle_expr(function_body, arm.expression, current);
                 }
             }
@@ -216,7 +217,8 @@ impl BlockUsages {
         }
     }
 
-    fn handle_pattern(pat: &Pattern, current: &mut Usage) {
+    fn handle_pattern(arena: &Arena<semantic::Pattern>, pat: PatternId, current: &mut Usage) {
+        let pat = &arena[pat];
         match pat {
             Pattern::Literal(_) => {}
             Pattern::Variable(pat) => {
@@ -224,17 +226,17 @@ impl BlockUsages {
             }
             Pattern::Struct(pat) => {
                 for (_, pat) in &pat.field_patterns {
-                    Self::handle_pattern(pat, current);
+                    Self::handle_pattern(arena, *pat, current);
                 }
             }
             Pattern::Tuple(pat) => {
                 for pat in &pat.field_patterns {
-                    Self::handle_pattern(pat, current);
+                    Self::handle_pattern(arena, *pat, current);
                 }
             }
             Pattern::EnumVariant(pat) => {
                 if let Some(inner_pattern) = &pat.inner_pattern {
-                    Self::handle_pattern(inner_pattern, current);
+                    Self::handle_pattern(arena, *inner_pattern, current);
                 }
             }
             Pattern::Otherwise(_) => {}

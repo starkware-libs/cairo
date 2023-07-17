@@ -16,7 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::{SemanticDiagnosticKind, SemanticDiagnostics};
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::ResolverData;
-use crate::{semantic, ExprId, SemanticDiagnostic, TypeId};
+use crate::{semantic, ExprId, PatternId, SemanticDiagnostic, TypeId};
 
 // === Declaration ===
 
@@ -120,6 +120,7 @@ pub fn function_with_body_attributes(
 pub struct FunctionBodyData {
     pub diagnostics: Diagnostics<SemanticDiagnostic>,
     pub expr_lookup: UnorderedHashMap<ast::ExprPtr, ExprId>,
+    pub pat_lookup: UnorderedHashMap<ast::PatternPtr, PatternId>,
     pub resolver_data: Arc<ResolverData>,
     pub body: Arc<FunctionBody>,
 }
@@ -128,6 +129,7 @@ pub struct FunctionBodyData {
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct FunctionBody {
     pub exprs: Arena<semantic::Expr>,
+    pub pats: Arena<semantic::Pattern>,
     pub statements: Arena<semantic::Statement>,
     pub body_expr: semantic::ExprId,
 }
@@ -184,6 +186,15 @@ pub fn expr_semantic(
     db.function_body(function_id).unwrap().exprs.get(id).unwrap().clone()
 }
 
+/// Query implementation of [crate::db::SemanticGroup::pat_semantic].
+pub fn pat_semantic(
+    db: &dyn SemanticGroup,
+    function_id: FunctionWithBodyId,
+    id: semantic::PatternId,
+) -> semantic::Pattern {
+    db.function_body(function_id).unwrap().pats.get(id).unwrap().clone()
+}
+
 /// Query implementation of [crate::db::SemanticGroup::statement_semantic].
 pub fn statement_semantic(
     db: &dyn SemanticGroup,
@@ -208,6 +219,21 @@ pub trait SemanticExprLookup<'a>: Upcast<dyn SemanticGroup + 'a> {
             }
         };
         body_data?.expr_lookup.get(&ptr).copied().to_maybe()
+    }
+    fn lookup_pat_by_ptr(
+        &self,
+        function_id: FunctionWithBodyId,
+        ptr: ast::PatternPtr,
+    ) -> Maybe<PatternId> {
+        let body_data = match function_id {
+            FunctionWithBodyId::Free(free_function_id) => {
+                self.upcast().priv_free_function_body_data(free_function_id)
+            }
+            FunctionWithBodyId::Impl(impl_function_id) => {
+                self.upcast().priv_impl_function_body_data(impl_function_id)
+            }
+        };
+        body_data?.pat_lookup.get(&ptr).copied().to_maybe()
     }
 }
 impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticExprLookup<'a> for T {}
