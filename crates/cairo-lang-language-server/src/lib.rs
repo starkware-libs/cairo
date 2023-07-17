@@ -704,7 +704,9 @@ impl LanguageServer for Backend {
 
             // Build texts.
             let mut hints = Vec::new();
-            if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
+            if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
+                hints.push(MarkedString::String(hint));
+            } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
@@ -1061,6 +1063,38 @@ fn nearest_semantic_expr(
             {
                 let semantic_expr = db.expr_semantic(function_id, expr_id);
                 return Some(semantic_expr);
+            }
+        }
+        node = node.parent()?;
+    }
+}
+
+/// If the node is a pattern, retrieves a hover hint for it.
+fn get_pattern_hint(
+    db: &(dyn SemanticGroup + 'static),
+    function_id: FunctionWithBodyId,
+    node: SyntaxNode,
+) -> Option<String> {
+    let semantic_pattern = nearest_semantic_pat(db, node, function_id)?;
+    // Format the hover text.
+    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)))
+}
+
+/// Returns the semantic pattern for the current node.
+fn nearest_semantic_pat(
+    db: &dyn SemanticGroup,
+    mut node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<cairo_lang_semantic::Pattern> {
+    loop {
+        let syntax_db = db.upcast();
+        if ast::Pattern::is_variant(node.kind(syntax_db)) {
+            let pattern_node = ast::Pattern::from_syntax_node(syntax_db, node.clone());
+            if let Some(pattern_id) =
+                db.lookup_pattern_by_ptr(function_id, pattern_node.stable_ptr()).to_option()
+            {
+                let semantic_pattern = db.pattern_semantic(function_id, pattern_id);
+                return Some(semantic_pattern);
             }
         }
         node = node.parent()?;

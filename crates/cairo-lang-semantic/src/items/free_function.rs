@@ -229,15 +229,18 @@ pub fn priv_free_function_body_data(
     let function_body = function_syntax.body(db.upcast());
     let return_type = declaration.signature.return_type;
     let body_expr = compute_root_expr(&mut ctx, &function_body, return_type)?;
-    let ComputationContext { exprs, statements, resolver, .. } = ctx;
+    let ComputationContext { exprs, patterns, statements, resolver, .. } = ctx;
 
     let expr_lookup: UnorderedHashMap<_, _> =
         exprs.iter().map(|(expr_id, expr)| (expr.stable_ptr(), expr_id)).collect();
+    let pattern_lookup: UnorderedHashMap<_, _> =
+        patterns.iter().map(|(pattern_id, pattern)| (pattern.stable_ptr(), pattern_id)).collect();
     let resolver_data = Arc::new(resolver.data);
     Ok(FunctionBodyData {
         diagnostics: diagnostics.build(),
         expr_lookup,
+        pattern_lookup,
         resolver_data,
-        body: Arc::new(FunctionBody { exprs, statements, body_expr }),
+        body: Arc::new(FunctionBody { exprs, patterns, statements, body_expr }),
     })
 }

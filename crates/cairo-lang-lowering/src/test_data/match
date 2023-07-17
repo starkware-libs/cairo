@@ -157,9 +157,9 @@ foo
 
 //! > lowering_diagnostics
 error: Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.
- --> lib.cairo:3:3
-  match x {
-  ^*******^
+ --> lib.cairo:5:7
+      1 => 7,
+      ^
 
 //! > lowering_flat
 Parameters:
