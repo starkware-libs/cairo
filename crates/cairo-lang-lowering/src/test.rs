@@ -112,7 +112,9 @@ fn test_function_lowering_phases(
         inputs["module_code"].as_str(),
     )
     .split();
-    println!("{semantic_diagnostics}");
+    if !semantic_diagnostics.is_empty() {
+        panic!("Got semantic diagnostics: {semantic_diagnostics}");
+    }
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
 
