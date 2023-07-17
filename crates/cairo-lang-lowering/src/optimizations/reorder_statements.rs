@@ -101,35 +101,31 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
         statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        let var_to_move = match stmt {
-            Statement::Call(stmt) if self.call_can_be_moved(stmt) => {
-                assert_eq!(stmt.outputs.len(), 1, "Only calls with a single output can be moved");
-                stmt.outputs[0]
+        let mut immovable = matches!(stmt, Statement::Call(stmt) if !self.call_can_be_moved(stmt));
+        let mut optional_target_location = None;
+        for var_to_move in stmt.outputs() {
+            let Some((block_id, index)) = info.next_use.swap_remove(&var_to_move) else { continue };
+            if let Some((target_block_id, target_index)) = &mut optional_target_location {
+                *target_index = std::cmp::min(*target_index, index);
+                // If the output is used in multiple places we can't move their creation point.
+                immovable |= target_block_id != &block_id;
+            } else {
+                optional_target_location = Some((block_id, index));
             }
-            Statement::Literal(stmt) => stmt.output,
-            Statement::StructConstruct(stmt) if stmt.inputs.is_empty() => stmt.output,
-            Statement::StructDestructure(stmt)
-                if self.lowered.variables[stmt.input.var_id].droppable.is_ok()
-                    && stmt.outputs.iter().all(|var_id| !info.next_use.contains_key(var_id)) =>
-            {
-                self.statement_to_move.push((statement_location, None));
-                return;
+        }
+        if immovable {
+            for var_usage in stmt.inputs() {
+                info.next_use.insert(var_usage.var_id, statement_location);
             }
-            _ => {
-                for var_usage in stmt.inputs() {
-                    info.next_use.insert(var_usage.var_id, statement_location);
-                }
-                return;
-            }
-        };
+            return;
+        }
 
-        let optional_target_location = info.next_use.swap_remove(&var_to_move);
         if let Some(target_location) = optional_target_location {
             // If the statement is not removed add demand for its inputs.
             for var_usage in stmt.inputs() {
                 match info.next_use.entry(var_usage.var_id) {
                     indexmap::map::Entry::Occupied(mut e) => {
-                        // Since we don't know where `e.get()` and `target_locaton` converge
+                        // Since we don't know where `e.get()` and `target_location` converge
                         // we use `statement_location` as a conservative estimate.
                         &e.insert(statement_location)
                     }
@@ -138,7 +134,13 @@ impl Analyzer<'_> for ReorderStatementsContext<'_> {
             }
         }
 
-        self.statement_to_move.push((statement_location, optional_target_location));
+        let is_simple_move = optional_target_location.is_some();
+        // If a movable statement is unused, and all its inputs are droppable removing it is valid.
+        let is_removal_valid =
+            || stmt.inputs().iter().all(|v| self.lowered.variables[v.var_id].droppable.is_ok());
+        if is_simple_move || is_removal_valid() {
+            self.statement_to_move.push((statement_location, optional_target_location));
+        }
     }
 
     fn visit_goto(

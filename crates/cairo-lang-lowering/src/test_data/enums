@@ -5,7 +5,7 @@ test_function_lowering
 
 //! > function
 fn foo(a: felt252) -> MyEnum {
-    let x = true;
+    immovable(true);
     MyEnum::B({(); 5})
 }
 
@@ -19,6 +19,9 @@ enum MyEnum {
   C: Box::<((), felt252)>,
 }
 
+#[inline(never)]
+fn immovable<T>(t: T) -> T { t }
+
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
@@ -29,7 +32,8 @@ blk0 (root):
 Statements:
   (v1: ()) <- struct_construct()
   (v2: core::bool) <- bool::True(v1)
-  (v3: core::felt252) <- 5u
-  (v4: test::MyEnum) <- MyEnum::B(v3)
+  (v3: core::bool) <- test::immovable::<core::bool>(v2)
+  (v4: core::felt252) <- 5u
+  (v5: test::MyEnum) <- MyEnum::B(v4)
 End:
-  Return(v4)
+  Return(v5)
