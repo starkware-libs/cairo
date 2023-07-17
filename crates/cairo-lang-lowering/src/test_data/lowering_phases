@@ -702,8 +702,12 @@ End:
 blk8:
 Statements:
   (v0: ()) <- struct_construct()
+  (v1: core::option::Option::<core::felt252>) <- Option::None(v0)
 End:
-  Goto(blk2, {})
+  Match(match_enum(v1) {
+    Option::Some(v2) => blk1,
+    Option::None(v6) => blk2,
+  })
 
 blk9:
 Statements:
