@@ -6,7 +6,9 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 use ast::PathSegment;
-use cairo_lang_defs::ids::{FunctionTitleId, LocalVarLongId, MemberId, TraitFunctionId, TraitId};
+use cairo_lang_defs::ids::{
+    FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
+};
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -16,7 +18,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use cairo_lang_utils::{try_extract_matches, OptionHelper};
+use cairo_lang_utils::{extract_matches, try_extract_matches, OptionHelper};
 use id_arena::Arena;
 use itertools::{chain, zip_eq};
 use num_bigint::BigInt;
@@ -73,6 +75,7 @@ pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'ctx mut SemanticDiagnostics,
+    function: Option<FunctionWithBodyId>,
     pub resolver: Resolver<'ctx>,
     signature: Option<&'ctx Signature>,
     environment: Box<Environment>,
@@ -87,6 +90,7 @@ impl<'ctx> ComputationContext<'ctx> {
     pub fn new(
         db: &'ctx dyn SemanticGroup,
         diagnostics: &'ctx mut SemanticDiagnostics,
+        function: Option<FunctionWithBodyId>,
         resolver: Resolver<'ctx>,
         signature: Option<&'ctx Signature>,
         environment: Environment,
@@ -96,6 +100,7 @@ impl<'ctx> ComputationContext<'ctx> {
         Self {
             db,
             diagnostics,
+            function,
             resolver,
             signature,
             environment: Box::new(environment),
@@ -1621,6 +1626,11 @@ fn resolve_expr_path(ctx: &mut ComputationContext<'_>, path: &ast::ExprPath) -> 
         let identifier = ident_segment.ident(syntax_db);
         let variable_name = identifier.text(ctx.db.upcast());
         if let Some(res) = get_variable_by_name(ctx, &variable_name, path.stable_ptr().into()) {
+            let var = extract_matches!(res.clone(), Expr::Var);
+            ctx.resolver.data.resolved_items.generic.insert(
+                identifier.stable_ptr(),
+                ResolvedGenericItem::Variable(ctx.function.unwrap(), var.var),
+            );
             return Ok(res);
         }
     }
@@ -1663,8 +1673,16 @@ pub fn resolve_variable_by_name(
     stable_ptr: ast::ExprPtr,
 ) -> Maybe<Expr> {
     let variable_name = identifier.text(ctx.db.upcast());
-    get_variable_by_name(ctx, &variable_name, stable_ptr)
-        .ok_or_else(|| ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name }))
+    let res = get_variable_by_name(ctx, &variable_name, stable_ptr).ok_or_else(|| {
+        ctx.diagnostics.report(identifier, VariableNotFound { name: variable_name })
+    })?;
+    let var = extract_matches!(res.clone(), Expr::Var);
+
+    ctx.resolver.data.resolved_items.generic.insert(
+        identifier.stable_ptr(),
+        ResolvedGenericItem::Variable(ctx.function.unwrap(), var.var),
+    );
+    Ok(res)
 }
 
 /// Returns the requested variable from the environment if it exists. Returns None otherwise.

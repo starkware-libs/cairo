@@ -4,9 +4,9 @@ use std::vec;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, GenericKind, GenericParamId, ImplAliasId, ImplDefId, ImplFunctionId,
-    ImplFunctionLongId, LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
-    TraitId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
+    ImplFunctionId, ImplFunctionLongId, LanguageElementId, ModuleId, TopLevelLanguageElementId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -1417,6 +1417,7 @@ pub fn priv_impl_function_body_data(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
+        Some(FunctionWithBodyId::Impl(impl_function_id)),
         resolver,
         Some(&declaration.function_declaration_data.signature),
         environment,
