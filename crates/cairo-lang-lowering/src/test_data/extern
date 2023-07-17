@@ -483,15 +483,11 @@ End:
 
 blk1:
 Statements:
-  (v0: ()) <- struct_construct()
-  (v1: core::option::Option::<()>) <- Option::Some(v0)
 End:
   Goto(blk3, {v8 -> v12, v9 -> v13})
 
 blk2:
 Statements:
-  (v2: ()) <- struct_construct()
-  (v3: core::option::Option::<()>) <- Option::None(v2)
 End:
   Goto(blk3, {v10 -> v12, v11 -> v13})
 

@@ -6,14 +6,16 @@ test_function_lowering
 //! > function
 fn foo() {
     let a = (1,2);
-    let (x,y) = a;
-    let (x,y) = (1,2);
+    let (x,y) = immovable(a);
+    let (x,y) = immovable((1,2));
 }
 
 //! > function_name
 foo
 
 //! > module_code
+#[inline(never)]
+fn immovable<T>(t: T) -> T { t }
 
 //! > semantic_diagnostics
 
@@ -26,6 +28,11 @@ Statements:
   (v0: core::felt252) <- 1u
   (v1: core::felt252) <- 2u
   (v2: (core::felt252, core::felt252)) <- struct_construct(v0, v1)
-  (v7: ()) <- struct_construct()
+  (v3: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v2)
+  (v6: core::felt252) <- 1u
+  (v7: core::felt252) <- 2u
+  (v8: (core::felt252, core::felt252)) <- struct_construct(v6, v7)
+  (v9: (core::felt252, core::felt252)) <- test::immovable::<(core::felt252, core::felt252)>(v8)
+  (v12: ()) <- struct_construct()
 End:
-  Return(v7)
+  Return(v12)
