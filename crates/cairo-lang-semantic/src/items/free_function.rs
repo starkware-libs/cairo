@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{FreeFunctionId, FunctionTitleId, LanguageElementId};
+use cairo_lang_defs::ids::{
+    FreeFunctionId, FunctionTitleId, FunctionWithBodyId, LanguageElementId,
+};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -222,6 +224,7 @@ pub fn priv_free_function_body_data(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
+        Some(FunctionWithBodyId::Free(free_function_id)),
         resolver,
         Some(&declaration.signature),
         environment,

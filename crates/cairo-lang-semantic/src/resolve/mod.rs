@@ -584,6 +584,7 @@ impl<'db> Resolver<'db> {
             }
             ResolvedGenericItem::Variant(_) => panic!("Variant is not a module item."),
             ResolvedGenericItem::TraitFunction(_) => panic!("TraitFunction is not a module item."),
+            ResolvedGenericItem::Variable(_, _) => panic!("Variable is not a module item."),
         })
     }
 

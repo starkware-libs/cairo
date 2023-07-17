@@ -648,6 +648,7 @@ pub fn priv_trait_function_body_data(
     let mut ctx = ComputationContext::new(
         db,
         &mut diagnostics,
+        None,
         resolver,
         Some(&trait_function_declaration_data.signature),
         environment,
