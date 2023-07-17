@@ -1,7 +1,8 @@
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextOffset;
+use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::ast::{self};
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -26,11 +27,13 @@ pub struct SemanticTokensTraverser {
 impl SemanticTokensTraverser {
     pub fn find_semantic_tokens(
         &mut self,
-        db: &dyn SyntaxGroup,
+        db: &dyn SemanticGroup,
+        file_id: FileId,
         data: &mut Vec<SemanticToken>,
         node: SyntaxNode,
     ) {
-        let green_node = node.green_node(db);
+        let syntax_db = db.upcast();
+        let green_node = node.green_node(syntax_db);
         match green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
@@ -42,7 +45,7 @@ impl SemanticTokensTraverser {
                 let maybe_semantic_kind = self
                     .offset_to_kind_lookahead
                     .remove(&node.offset())
-                    .or_else(|| SemanticTokenKind::from_syntax_kind(green_node.kind));
+                    .or_else(|| SemanticTokenKind::from_syntax_node(db, file_id, node));
                 if let Some(semantic_kind) = maybe_semantic_kind {
                     let EncodedToken { delta_line, delta_start } = self.encoder.encode(width);
                     data.push(SemanticToken {
@@ -57,12 +60,12 @@ impl SemanticTokensTraverser {
                 }
             }
             syntax::node::green::GreenNodeDetails::Node { .. } => {
-                let children = node.children(db);
+                let children = node.children(syntax_db);
                 match green_node.kind {
                     SyntaxKind::Param => {
                         self.mark_future_token(
-                            ast::Param::from_syntax_node(db, node)
-                                .name(db)
+                            ast::Param::from_syntax_node(syntax_db, node)
+                                .name(syntax_db)
                                 .as_syntax_node()
                                 .offset(),
                             SemanticTokenKind::Parameter,
@@ -70,24 +73,24 @@ impl SemanticTokensTraverser {
                     }
                     SyntaxKind::FunctionWithBody => {
                         self.mark_future_token(
-                            ast::FunctionWithBody::from_syntax_node(db, node)
-                                .declaration(db)
-                                .name(db)
+                            ast::FunctionWithBody::from_syntax_node(syntax_db, node)
+                                .declaration(syntax_db)
+                                .name(syntax_db)
                                 .as_syntax_node()
                                 .offset(),
                             SemanticTokenKind::Function,
                         );
                     }
                     SyntaxKind::ItemStruct => self.mark_future_token(
-                        ast::ItemStruct::from_syntax_node(db, node)
-                            .name(db)
+                        ast::ItemStruct::from_syntax_node(syntax_db, node)
+                            .name(syntax_db)
                             .as_syntax_node()
                             .offset(),
                         SemanticTokenKind::Struct,
                     ),
                     SyntaxKind::ItemEnum => self.mark_future_token(
-                        ast::ItemEnum::from_syntax_node(db, node)
-                            .name(db)
+                        ast::ItemEnum::from_syntax_node(syntax_db, node)
+                            .name(syntax_db)
                             .as_syntax_node()
                             .offset(),
                         SemanticTokenKind::Enum,
@@ -95,7 +98,7 @@ impl SemanticTokensTraverser {
                     _ => {}
                 }
                 for child in children {
-                    self.find_semantic_tokens(db, data, child);
+                    self.find_semantic_tokens(db, file_id, data, child);
                 }
             }
         }
