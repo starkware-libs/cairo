@@ -112,6 +112,9 @@ fn test_function_lowering_phases(
         inputs["module_code"].as_str(),
     )
     .split();
+    if !semantic_diagnostics.is_empty() {
+        panic!("Got semantic diagnostics: {semantic_diagnostics}");
+    }
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
 
@@ -142,7 +145,7 @@ fn test_function_lowering_phases(
     branch_inversion(&db, &mut after_branch_inversion);
 
     let mut after_reorder_statements2 = after_branch_inversion.clone();
-    optimize_matches(&mut after_reorder_statements2);
+    reorder_statements(&db, &mut after_reorder_statements2);
 
     let mut after_optimize_matches = after_reorder_statements2.clone();
     optimize_matches(&mut after_optimize_matches);
