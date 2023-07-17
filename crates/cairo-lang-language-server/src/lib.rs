@@ -34,9 +34,11 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::resolve::ResolvedGenericItem;
+use cairo_lang_semantic::items::us::get_use_segments;
+use cairo_lang_semantic::resolve::{AsSegments, ResolvedGenericItem};
 use cairo_lang_semantic::SemanticDiagnostic;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -57,7 +59,7 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
-use crate::completions::dot_completions;
+use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 
 mod scarb_service;
@@ -427,7 +429,7 @@ impl LanguageServer for Backend {
                 )),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string()]),
+                    trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
                     all_commit_characters: None,
                     work_done_progress_options: Default::default(),
                     completion_item: None,
@@ -584,27 +586,49 @@ impl LanguageServer for Backend {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
-            let file = file(db, file_uri.clone());
+            let file = file(db, file_uri);
             let position = text_document_position.position;
-            // Get file summary and content.
-            let file_summary = db.file_summary(file).on_none(|| {
-                eprintln!("Completion failed. File '{file_uri}' does not exist.");
-            })?;
-            let content = db.file_content(file).on_none(|| {
-                eprintln!("Completion failed. File '{file_uri}' does not exist.");
-            })?;
-            let offset = position_to_offset(file_summary, position, &content)?;
-            if offset - TextOffset::default() == TextWidth::default() {
-                return None;
-            }
-            let offset = offset.sub_width(TextWidth::from_char('.'));
 
-            let completions = if offset.take_from(&content).starts_with('.') {
-                dot_completions(db, file, position)
-            } else {
-                Some(vec![])
+            let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file, position)
+            else {
+                return None;
             };
-            completions.map(CompletionResponse::Array)
+
+            // Find module.
+            let module_id = find_node_module(db, file, node.clone()).on_none(|| {
+                eprintln!("Hover failed. Failed to find module.");
+            })?;
+            let file_index = FileIndex(0);
+            let module_file_id = ModuleFileId(module_id, file_index);
+
+            // Skip trivia.
+            while ast::Trivium::is_variant(node.kind(db))
+                || node.kind(db) == SyntaxKind::Trivia
+                || node.kind(db).is_token()
+            {
+                node = node.parent().unwrap_or(node);
+            }
+
+            let trigger_kind =
+                params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
+
+            match completion_kind(db, node) {
+                CompletionKind::Dot(expr) => {
+                    dot_completions(db, lookup_items, expr).map(CompletionResponse::Array)
+                }
+                CompletionKind::ColonColon(segments) if !segments.is_empty() => {
+                    colon_colon_completions(db, module_file_id, lookup_items, segments)
+                        .map(CompletionResponse::Array)
+                }
+                _ if trigger_kind == CompletionTriggerKind::INVOKED => {
+                    Some(CompletionResponse::Array(generic_completions(
+                        db,
+                        module_file_id,
+                        lookup_items,
+                    )))
+                }
+                _ => None,
+            }
         })
         .await
     }
@@ -838,6 +862,110 @@ impl LanguageServer for Backend {
         })
         .await
     }
+}
+
+enum CompletionKind {
+    Dot(ast::ExprBinary),
+    ColonColon(Vec<PathSegment>),
+}
+
+fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
+    eprintln!("node.kind: {:#?}", node.kind(db));
+    match node.kind(db) {
+        SyntaxKind::TerminalDot => {
+            let parent = node.parent().unwrap();
+            if parent.kind(db) == SyntaxKind::ExprBinary {
+                return CompletionKind::Dot(ast::ExprBinary::from_syntax_node(db, parent));
+            }
+        }
+        SyntaxKind::TerminalColonColon => {
+            let parent = node.parent().unwrap();
+            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            if parent.kind(db) == SyntaxKind::ExprPath {
+                return completion_kind_from_path_node(db, parent);
+            }
+            let grandparent = parent.parent().unwrap();
+            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            if grandparent.kind(db) == SyntaxKind::ExprPath {
+                return completion_kind_from_path_node(db, grandparent);
+            }
+            let (use_ast, should_pop) = if parent.kind(db) == SyntaxKind::UsePathLeaf {
+                (ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, parent)), true)
+            } else if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
+                (ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, grandparent)), true)
+            } else if parent.kind(db) == SyntaxKind::UsePathSingle {
+                (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, parent)), false)
+            } else if grandparent.kind(db) == SyntaxKind::UsePathSingle {
+                (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, grandparent)), false)
+            } else {
+                eprintln!("Generic");
+                return CompletionKind::ColonColon(vec![]);
+            };
+            let mut segments = vec![];
+            let Ok(()) = get_use_segments(db.upcast(), &use_ast, &mut segments) else {
+                eprintln!("Generic");
+                return CompletionKind::ColonColon(vec![]);
+            };
+            if should_pop {
+                segments.pop();
+            }
+            eprintln!("ColonColon");
+            return CompletionKind::ColonColon(segments);
+        }
+        SyntaxKind::TerminalIdentifier => {
+            let parent = node.parent().unwrap();
+            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            let grandparent = parent.parent().unwrap();
+            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            if grandparent.kind(db) == SyntaxKind::ExprPath {
+                if grandparent.children(db).next().unwrap().stable_ptr() != parent.stable_ptr() {
+                    // Not first segment.
+                    eprintln!("Not first segment");
+                    return completion_kind_from_path_node(db, grandparent);
+                }
+                // First segment.
+                let grandgrandparent = grandparent.parent().unwrap();
+                eprintln!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
+                if grandgrandparent.kind(db) == SyntaxKind::ExprBinary {
+                    let expr = ast::ExprBinary::from_syntax_node(db, grandgrandparent.clone());
+                    if matches!(
+                        ast::ExprBinary::from_syntax_node(db, grandgrandparent).op(db),
+                        ast::BinaryOperator::Dot(_)
+                    ) {
+                        eprintln!("Dot");
+                        return CompletionKind::Dot(expr);
+                    }
+                }
+            }
+            if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
+                let use_ast = ast::UsePathLeaf::from_syntax_node(db, grandparent);
+                let mut segments = vec![];
+                let Ok(()) =
+                    get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast), &mut segments)
+                else {
+                    eprintln!("Generic");
+                    return CompletionKind::ColonColon(vec![]);
+                };
+                segments.pop();
+                eprintln!("ColonColon");
+                return CompletionKind::ColonColon(segments);
+            }
+        }
+        _ => (),
+    }
+    eprintln!("Generic");
+    CompletionKind::ColonColon(vec![])
+}
+
+fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
+    eprintln!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
+    let expr = ast::ExprPath::from_syntax_node(db, parent);
+    eprintln!("has_tail: {}", expr.has_tail(db));
+    let mut segments = expr.to_segments(db);
+    if expr.has_tail(db) {
+        segments.pop();
+    }
+    CompletionKind::ColonColon(segments)
 }
 
 /// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
