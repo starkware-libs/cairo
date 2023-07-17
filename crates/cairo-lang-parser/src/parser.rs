@@ -1609,8 +1609,7 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Member or None if a struct member/enum variant can't
-    /// be parsed.
+    /// Returns a GreenId of a node with kind Member or None if a struct member can't be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
         let attributes =
             self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
@@ -1639,11 +1638,10 @@ impl<'a> Parser<'a> {
         )
     }
 
-    /// Returns a GreenId of a node with kind Member or None if a enum variant can't
-    /// be parsed.
+    /// Returns a GreenId of a node with kind Variant or None if an enum variant can't be parsed.
     fn try_parse_variant(&mut self) -> Option<VariantGreen> {
         let attributes =
-            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+            self.try_parse_attribute_list("Enum variant", |x| x != SyntaxKind::TerminalHash);
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {
