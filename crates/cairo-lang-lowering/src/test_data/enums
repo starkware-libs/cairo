@@ -27,8 +27,6 @@ enum MyEnum {
 Parameters: v0: core::felt252
 blk0 (root):
 Statements:
-  (v1: ()) <- struct_construct()
-  (v2: core::bool) <- bool::True(v1)
   (v3: core::felt252) <- 5u
   (v4: test::MyEnum) <- MyEnum::B(v3)
 End:

@@ -28,11 +28,10 @@ struct MyStruct {
 Parameters:
 blk0 (root):
 Statements:
+  (v2: core::felt252) <- test::revoke_ap()
   (v0: ()) <- struct_construct()
   (v1: core::bool) <- bool::True(v0)
-  (v2: core::felt252) <- test::revoke_ap()
 End:
   Return(v1)
 
 //! > local_variables
-v1

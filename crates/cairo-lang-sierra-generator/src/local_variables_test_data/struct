@@ -36,19 +36,14 @@ blk0 (root):
 Statements:
   (v13: core::felt252) <- core::felt252_add(v0, v0)
   (v2: core::felt252) <- test::revoke_ap()
-  (v3: test::MyStruct) <- struct_construct(v0, v13)
-  (v4: core::felt252, v5: core::felt252) <- struct_destructure(v3)
-  (v6: core::felt252) <- 0u
-  (v7: test::MyStruct) <- struct_construct(v4, v6)
+  (v10: core::felt252) <- test::revoke_ap()
   (v8: core::felt252) <- 1u
   (v9: test::MyStruct) <- struct_construct(v0, v8)
-  (v10: core::felt252) <- test::revoke_ap()
   (v11: core::felt252, v12: core::felt252) <- struct_destructure(v9)
 End:
   Return(v11)
 
 //! > local_variables
-v9, v13
 
 //! > ==========================================================================
 
@@ -78,12 +73,11 @@ impl MyStructDrop of Drop::<MyStruct>;
 Parameters:
 blk0 (root):
 Statements:
+  () <- core::internal::revoke_ap_tracking()
   (v0: core::felt252) <- 12u
   (v1: test::MyStruct) <- struct_construct(v0)
   (v2: core::felt252) <- struct_destructure(v1)
-  () <- core::internal::revoke_ap_tracking()
 End:
   Return(v2)
 
 //! > local_variables
-v2
