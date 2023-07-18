@@ -60,7 +60,7 @@ Statements:
   () <- test::use_a_copy(v0{`x`})
   (v6: ()) <- struct_construct()
 End:
-  Return(v6)
+  Return(v6{`{`})
 
 //! > ==========================================================================
 
@@ -131,7 +131,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v1)
+  Return(v1{`y`})
 
 //! > ==========================================================================
 
@@ -179,7 +179,7 @@ Statements:
   (v2: ()) <- test::bar()
   (v3: ()) <- struct_construct()
 End:
-  Return(v1, v3)
+  Return(v1{`x`}, v3{`{`})
 
 //! > ==========================================================================
 
@@ -215,7 +215,7 @@ Statements:
   (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self`}, v1{`value`})
   (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self`})
 End:
-  Return(v5, v3)
+  Return(v5{`self`}, v3{`self.data.append(value)`})
 
 //! > ==========================================================================
 
@@ -252,7 +252,7 @@ Statements:
   (v4: core::array::Array::<core::integer::u256>, v3: ()) <- core::array::ArrayImpl::<core::integer::u256>::append(v0{`arr`}, v2{`1.into()`})
   (v5: ()) <- struct_construct()
 End:
-  Return(v5)
+  Return(v5{`{`})
 
 //! > ==========================================================================
 
@@ -289,7 +289,7 @@ Statements:
   (v3: core::felt252) <- core::Felt252Add::add(v1{`1`}, v2{`1`})
   (v4: ()) <- struct_construct()
 End:
-  Return(v0, v4)
+  Return(v0{`a`}, v4{`{`})
 
 //! > ==========================================================================
 
@@ -352,7 +352,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v6)
+  Return(v6{`y`})
 
 //! > ==========================================================================
 
@@ -396,7 +396,7 @@ Statements:
   (v7: core::panics::Panic) <- struct_construct()
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7{`panic(arr)`}, v3{`arr`})
 End:
-  Panic(v8)
+  Panic(v8{`panic(arr)`})
 
 //! > ==========================================================================
 
@@ -456,7 +456,7 @@ End:
 blk3:
 Statements:
 End:
-  Return(v5)
+  Return(v5{`do_match_extern(x)`})
 
 //! > ==========================================================================
 
@@ -508,7 +508,7 @@ Statements:
   () <- test::use_non_copy(v3{`x`})
   (v6: test::MyStruct) <- struct_construct(v5{`x`}, v3{`x`})
 End:
-  Return(v6)
+  Return(v6{`x`})
 
 //! > ==========================================================================
 
@@ -562,4 +562,4 @@ Statements:
   (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
   (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
 End:
-  Return(v7, v8, v6)
+  Return(v7{`s1`}, v8{`s2`}, v6{`{`})
