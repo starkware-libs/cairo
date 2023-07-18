@@ -38,8 +38,8 @@ impl SemanticTokenKind {
         let syntax_db = db.upcast();
         let kind = node.kind(syntax_db);
         match kind {
-            _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenIdentifier => {}
+            _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenNumber => return Some(SemanticTokenKind::Number),
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
