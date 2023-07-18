@@ -483,51 +483,51 @@ blk1:
 Statements:
   (v4: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v2, v3)
 End:
-  Goto(blk9, {v58 -> v67})
+  Goto(blk9, {v58 -> v74})
 
 blk2:
 Statements:
   (v9: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v7, v8)
 End:
-  Goto(blk9, {v59 -> v67})
+  Goto(blk9, {v59 -> v74})
 
 blk3:
 Statements:
   (v14: (core::felt252, (core::felt252, core::felt252))) <- struct_construct(v12, v13)
 End:
-  Goto(blk9, {v60 -> v67})
+  Goto(blk9, {v60 -> v74})
 
 blk4:
 Statements:
   (v19: (core::felt252, core::felt252)) <- struct_construct(v17, v18)
 End:
-  Goto(blk9, {v61 -> v67})
+  Goto(blk9, {v61 -> v74})
 
 blk5:
 Statements:
   (v24: (core::felt252, core::felt252)) <- struct_construct(v22, v23)
 End:
-  Goto(blk9, {v62 -> v67})
+  Goto(blk9, {v62 -> v74})
 
 blk6:
 Statements:
   (v28: (core::felt252,)) <- struct_construct(v27)
 End:
-  Goto(blk9, {v63 -> v67})
+  Goto(blk9, {v63 -> v74})
 
 blk7:
 Statements:
   (v32: (core::felt252,)) <- struct_construct(v31)
 End:
-  Goto(blk9, {v64 -> v67})
+  Goto(blk9, {v64 -> v74})
 
 blk8:
 Statements:
 End:
-  Goto(blk9, {v65 -> v67})
+  Goto(blk9, {v65 -> v74})
 
 blk9:
 Statements:
   (v56: ()) <- struct_construct()
 End:
-  Return(v67, v56)
+  Return(v74, v56)
