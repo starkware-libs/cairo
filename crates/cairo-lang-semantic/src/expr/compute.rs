@@ -1119,6 +1119,20 @@ fn compute_pattern_semantic(
             identifier.stable_ptr().into(),
         ),
         ast::Pattern::Struct(pattern_struct) => {
+            let pattern_ty = try_extract_matches!(
+                ctx.resolver.resolve_concrete_path(
+                    ctx.diagnostics,
+                    &pattern_struct.path(syntax_db),
+                    NotFoundItemType::Type
+                )?,
+                ResolvedConcreteItem::Type
+            )
+            .ok_or_else(|| ctx.diagnostics.report(&pattern_struct.path(syntax_db), NotAType))?;
+            ctx.resolver
+                .inference()
+                .conform_ty(pattern_ty, ctx.db.intern_type(peel_snapshots(ctx.db, ty).1))
+                .map_err(|err| err.report(ctx.diagnostics, stable_ptr))?;
+            let ty = ctx.reduce_ty(ty);
             // Peel all snapshot wrappers.
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
@@ -1130,7 +1144,7 @@ fn compute_pattern_semantic(
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
                     ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(&pattern_struct, UnexpectedEnumPattern { ty }))
+                    Err(ctx.diagnostics.report(&pattern_struct, UnexpectedStructPattern { ty }))
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);

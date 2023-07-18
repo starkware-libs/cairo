@@ -583,7 +583,3 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Unexpected type for enum pattern. "?0" is not an enum.
- --> lib.cairo:2:8
-   let u256 { low, high } = 123;
-       ^****************^
