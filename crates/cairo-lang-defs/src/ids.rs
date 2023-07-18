@@ -786,8 +786,8 @@ define_language_element_id_as_enum! {
     /// Semantic info lookups should be performed against these items.
     pub enum LookupItemId {
         ModuleItem(ModuleItemId),
+        TraitFunction(TraitFunctionId),
         // TODO(spapini): Replace with ImplItemId.
         ImplFunction(ImplFunctionId),
-        TraitFunction(TraitFunctionId),
     }
 }
