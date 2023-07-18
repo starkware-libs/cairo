@@ -194,7 +194,7 @@ fn test_function_lowering_phases(
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
-    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
+    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
     format!("{:?}", lowered.debug(&lowered_formatter))
 }
 

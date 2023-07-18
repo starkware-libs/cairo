@@ -35,29 +35,29 @@ Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
+  (v3: core::bool) <- bool::True(v2{`true`})
 End:
-  Match(match_enum(v3) {
+  Match(match_enum(v3{`true`}) {
     bool::False(v5) => blk2,
     bool::True(v4) => blk1,
   })
 
 blk1:
 Statements:
-  () <- test::use_a_copy(v0)
-  () <- test::use_a_drop(v1)
+  () <- test::use_a_copy(v0{`x`})
+  () <- test::use_a_drop(v1{`y`})
 End:
   Goto(blk3, {})
 
 blk2:
 Statements:
-  () <- test::use_a_drop(v1)
+  () <- test::use_a_drop(v1{`y`})
 End:
   Goto(blk3, {})
 
 blk3:
 Statements:
-  () <- test::use_a_copy(v0)
+  () <- test::use_a_copy(v0{`x`})
   (v6: ()) <- struct_construct()
 End:
   Return(v6)
@@ -109,17 +109,17 @@ Parameters: v0: test::ACopy, v1: test::ADrop
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
+  (v3: core::bool) <- bool::True(v2{`true`})
 End:
-  Match(match_enum(v3) {
+  Match(match_enum(v3{`true`}) {
     bool::False(v5) => blk2,
     bool::True(v4) => blk1,
   })
 
 blk1:
 Statements:
-  () <- test::use_a_copy(v0)
-  () <- test::use_a_drop(v1)
+  () <- test::use_a_copy(v0{`x`})
+  () <- test::use_a_drop(v1{`y`})
 End:
   Goto(blk3, {})
 
@@ -175,7 +175,7 @@ use array::ArrayTrait;
 Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
 Statements:
-  () <- test::use_a_drop(v0)
+  () <- test::use_a_drop(v0{`x`})
   (v2: ()) <- test::bar()
   (v3: ()) <- struct_construct()
 End:
@@ -211,9 +211,9 @@ struct Query<T> {
 Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0)
-  (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2, v1)
-  (v5: test::Query::<core::felt252>) <- struct_construct(v4)
+  (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0{`self`})
+  (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self.data`}, v1{`value`})
+  (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self`})
 End:
   Return(v5, v3)
 
@@ -248,8 +248,8 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::integer::u256>) <- core::array::ArrayDefault::<core::integer::u256>::default()
   (v1: core::felt252) <- 1u
-  (v2: core::integer::u256) <- core::integer::Felt252IntoU256::into(v1)
-  (v4: core::array::Array::<core::integer::u256>, v3: ()) <- core::array::ArrayImpl::<core::integer::u256>::append(v0, v2)
+  (v2: core::integer::u256) <- core::integer::Felt252IntoU256::into(v1{`1`})
+  (v4: core::array::Array::<core::integer::u256>, v3: ()) <- core::array::ArrayImpl::<core::integer::u256>::append(v0{`arr`}, v2{`1.into()`})
   (v5: ()) <- struct_construct()
 End:
   Return(v5)
@@ -286,7 +286,7 @@ blk0 (root):
 Statements:
   (v1: core::felt252) <- 1u
   (v2: core::felt252) <- 1u
-  (v3: core::felt252) <- core::Felt252Add::add(v1, v2)
+  (v3: core::felt252) <- core::Felt252Add::add(v1{`1`}, v2{`1`})
   (v4: ()) <- struct_construct()
 End:
   Return(v0, v4)
@@ -331,16 +331,16 @@ Parameters: v0: test::ADrop, v1: test::ADrop
 blk0 (root):
 Statements:
   (v2: ()) <- struct_construct()
-  (v3: core::bool) <- bool::True(v2)
+  (v3: core::bool) <- bool::True(v2{`true`})
 End:
-  Match(match_enum(v3) {
+  Match(match_enum(v3{`true`}) {
     bool::False(v5) => blk2,
     bool::True(v4) => blk1,
   })
 
 blk1:
 Statements:
-  () <- test::use_a_drop(v1)
+  () <- test::use_a_drop(v1{`y`})
 End:
   Goto(blk3, {v1 -> v6})
 
@@ -390,11 +390,11 @@ blk0 (root):
 Statements:
   (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
   (v1: core::felt252) <- 7310030899191440485u
-  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
+  (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0{`__array_builder_macro_result__`}, v1{`'err_code'`})
   (v4: core::felt252) <- 6450273u
-  (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3, v4)
+  (v6: core::array::Array::<core::felt252>, v5: ()) <- core::array::ArrayImpl::<core::felt252>::append(v3{`b`}, v4{`'bla'`})
   (v7: core::panics::Panic) <- struct_construct()
-  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v3)
+  (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7{`panic(arr)`}, v3{`arr`})
 End:
   Panic(v8)
 
@@ -433,23 +433,23 @@ error: Variable was previously moved. Trait has no implementation in context: co
 Parameters: v0: test::NonCopy
 blk0 (root):
 Statements:
-  () <- test::use_non_copy(v0)
+  () <- test::use_non_copy(v0{`x`})
 End:
-  Match(match test::do_match_extern(v0) {
+  Match(match test::do_match_extern(v0{`x`}) {
     Option::Some(v1) => blk1,
     Option::None => blk2,
   })
 
 blk1:
 Statements:
-  (v2: core::option::Option::<test::NonCopy>) <- Option::Some(v1)
+  (v2: core::option::Option::<test::NonCopy>) <- Option::Some(v1{`do_match_extern(x)`})
 End:
   Goto(blk3, {v2 -> v5})
 
 blk2:
 Statements:
   (v3: ()) <- struct_construct()
-  (v4: core::option::Option::<test::NonCopy>) <- Option::None(v3)
+  (v4: core::option::Option::<test::NonCopy>) <- Option::None(v3{`do_match_extern(x)`})
 End:
   Goto(blk3, {v4 -> v5})
 
@@ -496,17 +496,17 @@ error: Variable was previously moved. Trait has no implementation in context: co
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::NonCopy>. Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
  --> lib.cairo:10:3
   x.a += 1;
-  ^
+  ^*^
 
 //! > lowering
 Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::integer::u32) <- 1u
-  (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0)
-  (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2, v1)
-  () <- test::use_non_copy(v3)
-  (v6: test::MyStruct) <- struct_construct(v5, v3)
+  (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x`})
+  (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2{`x.a`}, v1{`1`})
+  () <- test::use_non_copy(v3{`x.b`})
+  (v6: test::MyStruct) <- struct_construct(v5{`x`}, v3{`x`})
 End:
   Return(v6)
 
@@ -554,12 +554,85 @@ fn foo(ref s1: MyStruct, ref s2: MyStruct) {
 Parameters: v0: test::MyStruct, v1: test::MyStruct
 blk0 (root):
 Statements:
-  (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0)
-  () <- test::invalidate(v2)
-  (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1)
-  () <- test::invalidate(v4)
+  (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0{`s1`})
+  () <- test::invalidate(v2{`s1.a`})
+  (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2`})
+  () <- test::invalidate(v4{`s2.a`})
   (v6: ()) <- struct_construct()
-  (v7: test::MyStruct) <- struct_construct(v2, v3)
-  (v8: test::MyStruct) <- struct_construct(v4, v5)
+  (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
+  (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
 End:
   Return(v7, v8, v6)
+
+//! > ==========================================================================
+
+//! > Test moved error on a reconstructed var due to lowered if.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(ref self: MyStruct) {
+    if self.b == 0 {
+       self.a = Default::default();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn invalidate(a: Array<felt252>) nopanic;
+
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<felt252>,
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> lib.cairo:8:8
+fn foo(ref self: MyStruct) {
+       ^****************^
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self`})
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self.b`})
+  (v5: core::integer::u8) <- 0u
+  (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
+  (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
+  (v12: test::MyStruct) <- struct_construct(v1{`if self.b == 0 {
+       self.a = Default::default();
+    }`}, v3{`if self.b == 0 {
+       self.a = Default::default();
+    }`})
+End:
+  Match(match_enum(v8{`self.b == 0`}) {
+    bool::False(v11) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  (v14: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+End:
+  Goto(blk3, {v14 -> v13})
+
+blk2:
+Statements:
+  (v15: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+End:
+  Goto(blk3, {v15 -> v13})
+
+blk3:
+Statements:
+  (v16: ()) <- struct_construct()
+End:
+  Return(v13, v16)

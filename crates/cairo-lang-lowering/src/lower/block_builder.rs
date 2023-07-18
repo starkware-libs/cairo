@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::MemberId;
+use cairo_lang_defs::ids::{LanguageElementId, MemberId};
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -240,7 +240,7 @@ impl BlockBuilder {
         let following_block = ctx.blocks.alloc_empty();
 
         for sealed_block in sealed_blocks {
-            sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
+            sealed_block.finalize(ctx, following_block, &semantic_remapping);
         }
 
         // Apply remapping on builder.
@@ -280,12 +280,12 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
-        location: LocationId,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
             for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
+                let location = ctx.get_location(semantic.untyped_stable_ptr(ctx.db.upcast()));
                 assert!(
                     remapping
                         .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))

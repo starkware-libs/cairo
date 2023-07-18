@@ -75,7 +75,7 @@ pub fn inner_lower_implicits(
     };
 
     // Start from root block.
-    lower_block_implicits(&mut ctx, root_block_id)?;
+    lower_function_blocks_implicits(&mut ctx, root_block_id)?;
 
     // Introduce new input variables in the root block.
     let implicit_vars = &ctx.implicit_vars_for_block[&root_block_id];
@@ -100,12 +100,11 @@ fn alloc_implicits(
         .collect_vec()
 }
 
-/// Adds implicits in a block.
-fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> {
-    if !ctx.visited.insert(block_id) {
-        return Ok(());
-    }
-
+/// Returns the implicits that are used in the statements of a block.
+fn block_body_implicits(
+    ctx: &mut Context<'_>,
+    block_id: BlockId,
+) -> Result<Vec<VarUsage>, cairo_lang_diagnostics::DiagnosticAdded> {
     let mut implicits = ctx
         .implicit_vars_for_block
         .entry(block_id)
@@ -137,72 +136,90 @@ fn lower_block_implicits(ctx: &mut Context<'_>, block_id: BlockId) -> Maybe<()> 
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
     }
-    // End.
-    let mut blocks_to_visit = vec![];
-    match &mut ctx.lowered.blocks[block_id].end {
-        FlatBlockEnd::Return(rets) => {
-            rets.splice(0..0, implicits.iter().cloned());
+    Ok(implicits)
+}
+
+/// Finds the implicits for a function's blocks starting from the root.
+fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId) -> Maybe<()> {
+    let mut blocks_to_visit = vec![root_block_id];
+    while let Some(block_id) = blocks_to_visit.pop() {
+        if !ctx.visited.insert(block_id) {
+            continue;
         }
-        FlatBlockEnd::Panic(_) => {
-            unreachable!("Panics should have been stripped in a previous phase.")
-        }
-        FlatBlockEnd::Goto(block_id, remapping) => {
-            let target_implicits = ctx
-                .implicit_vars_for_block
-                .entry(*block_id)
-                .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
-                .clone();
-            let old_remapping = std::mem::take(&mut remapping.remapping);
-            remapping.remapping = chain!(
-                zip_eq(target_implicits.into_iter().map(|var_usage| var_usage.var_id), implicits),
-                old_remapping
-            )
-            .collect();
-            blocks_to_visit.push(*block_id);
-        }
-        FlatBlockEnd::Match { info } => match info {
-            MatchInfo::Enum(stmt) => {
-                for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
-                    assert!(
-                        ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
-                        "Multiple jumps to arm blocks are not allowed."
-                    );
-                    blocks_to_visit.push(*block_id);
-                }
+        let implicits = block_body_implicits(ctx, block_id)?;
+        // End.
+        match &mut ctx.lowered.blocks[block_id].end {
+            FlatBlockEnd::Return(rets) => {
+                rets.splice(0..0, implicits.iter().cloned());
             }
-            MatchInfo::Extern(stmt) => {
-                let callee_implicits = ctx.db.function_implicits(stmt.function)?;
-
-                let indices =
-                    callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
-
-                let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
-                stmt.inputs.splice(0..0, implicit_input_vars);
-                let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
-
-                for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
-                    let mut arm_implicits = implicits.clone();
-                    let mut implicit_input_vars = vec![];
-                    for ty in callee_implicits.iter().copied() {
-                        let var = ctx.variables.new_var(VarRequest { ty, location });
-                        implicit_input_vars.push(var);
-                        let implicit_index = ctx.implicit_index[&ty];
-                        arm_implicits[implicit_index] = VarUsage { var_id: var, location };
+            FlatBlockEnd::Panic(_) => {
+                unreachable!("Panics should have been stripped in a previous phase.")
+            }
+            FlatBlockEnd::Goto(block_id, remapping) => {
+                let target_implicits = ctx
+                    .implicit_vars_for_block
+                    .entry(*block_id)
+                    .or_insert_with(|| {
+                        alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location)
+                    })
+                    .clone();
+                let old_remapping = std::mem::take(&mut remapping.remapping);
+                remapping.remapping = chain!(
+                    zip_eq(
+                        target_implicits.into_iter().map(|var_usage| var_usage.var_id),
+                        implicits
+                    ),
+                    old_remapping
+                )
+                .collect();
+                blocks_to_visit.push(*block_id);
+            }
+            FlatBlockEnd::Match { info } => {
+                blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
+                match info {
+                    MatchInfo::Enum(stmt) => {
+                        for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
+                            assert!(
+                                ctx.implicit_vars_for_block
+                                    .insert(*block_id, implicits.clone())
+                                    .is_none(),
+                                "Multiple jumps to arm blocks are not allowed."
+                            );
+                        }
                     }
-                    assert!(
-                        ctx.implicit_vars_for_block.insert(*block_id, arm_implicits).is_none(),
-                        "Multiple jumps to arm blocks are not allowed."
-                    );
+                    MatchInfo::Extern(stmt) => {
+                        let callee_implicits = ctx.db.function_implicits(stmt.function)?;
 
-                    var_ids.splice(0..0, implicit_input_vars);
-                    blocks_to_visit.push(*block_id);
+                        let indices =
+                            callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
+
+                        let implicit_input_vars = indices.iter().map(|i| implicits[*i]);
+                        stmt.inputs.splice(0..0, implicit_input_vars);
+                        let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
+
+                        for MatchArm { variant_id: _, block_id, var_ids } in stmt.arms.iter_mut() {
+                            let mut arm_implicits = implicits.clone();
+                            let mut implicit_input_vars = vec![];
+                            for ty in callee_implicits.iter().copied() {
+                                let var = ctx.variables.new_var(VarRequest { ty, location });
+                                implicit_input_vars.push(var);
+                                let implicit_index = ctx.implicit_index[&ty];
+                                arm_implicits[implicit_index] = VarUsage { var_id: var, location };
+                            }
+                            assert!(
+                                ctx.implicit_vars_for_block
+                                    .insert(*block_id, arm_implicits)
+                                    .is_none(),
+                                "Multiple jumps to arm blocks are not allowed."
+                            );
+
+                            var_ids.splice(0..0, implicit_input_vars);
+                        }
+                    }
                 }
             }
-        },
-        FlatBlockEnd::NotSet => unreachable!(),
-    }
-    for block_id in blocks_to_visit {
-        lower_block_implicits(ctx, block_id)?;
+            FlatBlockEnd::NotSet => unreachable!(),
+        }
     }
     Ok(())
 }
