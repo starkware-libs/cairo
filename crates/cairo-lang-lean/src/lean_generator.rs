@@ -1,4 +1,4 @@
-use std::{fs, rc, iter};
+use std::{fs, iter};
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
@@ -9,22 +9,23 @@ use cairo_lang_casm::builder::{
     CasmBuilderAuxiliaryInfo,
     RetBranchDesc,
     StatementDesc,
+    VarBaseDesc,
     ExprDesc,
     VarDesc,
     AssertDesc,
-    Var,
+    Var, JumpDesc,
 };
 use cairo_lang_casm::instructions::{InstructionBody, Instruction};
 use cairo_lang_casm::operand::{ DerefOrImmediate, ResOperand, CellRef };
 use cairo_lang_sierra_to_casm::compiler::CairoProgram;
 use cairo_lang_utils::bigint::BigIntAsHex;
 
-pub fn lean_code_file_name(func_name: &str) -> String {
-    String::from(func_name) + "_code.lean"
+pub fn lean_code_file_name(func_name: &str, with_suffix: bool) -> String {
+    String::from(func_name) + "_code" + if with_suffix { ".lean" } else { "" }
 }
 
-pub fn lean_soundness_file_name(func_name: &str) -> String {
-    String::from(func_name) + "_soundness.lean"
+pub fn lean_soundness_file_name(func_name: &str, with_suffix: bool) -> String {
+    String::from(func_name) + "_soundness" + if with_suffix { ".lean" } else { "" }
 }
 
 pub fn lean_verification_path(test_path: &Path) -> PathBuf {
@@ -49,7 +50,8 @@ fn make_subscript(idx: usize) -> String {
 }
 
 struct RetArgs {
-    branch_info: Vec<(usize, Option<usize>)>,
+    branch_num: usize,
+    arg_num: usize,
     arg_names: Vec<String>,
     branch_id_pos: Option<usize>,
     num_implicit_ret_args: usize,
@@ -91,11 +93,10 @@ impl RetArgs {
     }
 
     fn set_arg_names(&mut self, branch_desc: &Vec<RetBranchDesc>) {
-        if self.branch_info.len() == 0 {
+        if self.branch_num == 0 {
             return;
         }
-        let arg_num = self.branch_info[0].0;
-        self.arg_names = (0..arg_num).map(
+        self.arg_names = (0..self.arg_num).map(
             |pos| {
                 if let Some(branch_id_pos) = self.branch_id_pos {
                     if pos == branch_id_pos {
@@ -121,7 +122,7 @@ impl RetArgs {
     }
 
     pub fn set_implicit_ret_arg_num(&mut self) {
-        if 0 == self.branch_info.len() {
+        if 0 == self.branch_num {
             self.num_implicit_ret_args = 0;
             return;
         }
@@ -146,18 +147,19 @@ impl RetArgs {
 
 /// Identifies the statements at the end of the function which copy the return variables to the end
 /// of the stack. Returns a vector of tuples where the first element of the tuple is the number of statements in
-/// the branch return block and the second is the position of the branch ID return argument inside that block.
-fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> Vec<(usize, Option<usize>)> {
+/// the branch return block, the second is the position of the branch ID return argument inside that block, and the third
+/// indicates whether the block begins with a ap step (ap += <count>).
+fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> Vec<(usize, Option<usize>, bool)> {
     let mut count = 0;
     let mut branch_id_pos: Option<usize> = None;
-    let mut branch_counts: Vec<(usize, Option<usize>)> = Vec::new();
+    let mut branch_counts: Vec<(usize, Option<usize>, bool)> = Vec::new();
 
     let set_branch =
-        |branch_counts: &mut Vec<(usize, Option<usize>)>, count: &mut usize, branch_id_pos: &mut Option<usize>| {
+        |branch_counts: &mut Vec<(usize, Option<usize>, bool)>, count: &mut usize, branch_id_pos: &mut Option<usize>, ap_step: bool| {
             if *count != 0 {
                 match *branch_id_pos {
-                    Some(pos) => branch_counts.push((*count, Some(*count - pos - 1))),
-                    None => branch_counts.push((*count, None)),
+                    Some(pos) => branch_counts.push((*count, Some(*count - pos - 1), ap_step)),
+                    None => branch_counts.push((*count, None, ap_step)),
                 };
                 *count = 0;
                 *branch_id_pos = None;
@@ -168,10 +170,13 @@ fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProg
 
         let branch_num = aux_info.return_args.len() - 1 - branch_counts.len();
 
-        // A branch return block ends with a jmp or return.
+        // A branch return block begins with an ap += <step> or with the jmp or return at the end of the previous block.
         match &cairo_program.instructions[pos].body {
-            InstructionBody::Ret(_) | InstructionBody::Jump(_) | InstructionBody::AddAp(_) => {
-                set_branch(&mut branch_counts, &mut count, &mut branch_id_pos);
+            InstructionBody::AddAp(_) => {
+                set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, true);
+            },
+            InstructionBody::Ret(_) | InstructionBody::Jump(_) => {
+                set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false);
             },
             InstructionBody::AssertEq(assert_eq) => {
                 match &assert_eq.b {
@@ -188,13 +193,13 @@ fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProg
         }
     }
 
-    set_branch(&mut branch_counts, &mut count, &mut branch_id_pos);
+    set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false);
 
     branch_counts.reverse();
     branch_counts
 }
 
-fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>)>, branch_num: usize) {
+fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>, bool)>, branch_num: usize) {
     assert!(branch_num == ret_blocks.len(), "branch_num != ret_blocks.len()");
 
     if branch_num == 0 {
@@ -203,7 +208,7 @@ fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>)>, branch_num: usize)
 
     // check that all branches have the same number of statements
     let mut count = 0;
-    for (num, _) in ret_blocks {
+    for (num, _, _) in ret_blocks {
         if count == 0 {
             count = *num;
         } else {
@@ -212,7 +217,7 @@ fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>)>, branch_num: usize)
     }
     // check that all branches have the same branch ID position.
     let branch_id_pos = ret_blocks[0].1;
-    for (_, pos) in ret_blocks {
+    for (_, pos, _) in ret_blocks {
         match pos {
             Some(pos) => {
                 match branch_id_pos {
@@ -286,7 +291,7 @@ fn ref_to_lean(cell_ref: &CellRef, paren: bool) -> String {
     if cell_ref.offset == 0 {
         format!("σ.{reg}")
     } else if paren {
-        ref_to_lean(cell_ref, false)
+        format!("({})", ref_to_lean(cell_ref, false))
     } else if cell_ref.offset < 0 {
         format!("σ.{reg} - {offset}", offset = -cell_ref.offset)
     } else {
@@ -345,6 +350,7 @@ struct LeanFuncInfo<'a> {
     aux_info: &'a CasmBuilderAuxiliaryInfo,
     casm_instructions: &'a Vec<Instruction>,
     ret_args: RetArgs,
+    ret_branch_ap_steps: Vec<bool>,
 }
 
 impl<'a> LeanFuncInfo<'a> {
@@ -354,28 +360,33 @@ impl<'a> LeanFuncInfo<'a> {
             aux_info: &'a CasmBuilderAuxiliaryInfo,
             cairo_program: &'a CairoProgram
         ) -> Self {
-            let ret_args = LeanFuncInfo::make_ret_args(&aux_info, cairo_program);
-            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, ret_args }
+            let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program);
+            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, ret_args, ret_branch_ap_steps }
         }
 
         pub fn is_range_check_var(&self, name: &str) -> bool {
             name == "range_check"
         }
 
-        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> RetArgs {
+        pub fn is_const(&self, name: &str) -> bool {
+            self.aux_info.consts.iter().any(|c| c.name == name)
+        }
+
+        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> (RetArgs, Vec<bool>) {
             let ret_blocks = get_ret_blocks(aux_info, cairo_program);
             check_ret_blocks(&ret_blocks, aux_info.return_args.len());
 
             let branch_id_pos = if 0 < ret_blocks.len() { ret_blocks[0].1 } else { None };
             let mut ret_args = RetArgs {
-                branch_info: ret_blocks,
+                branch_num: ret_blocks.len(),
+                arg_num: if ret_blocks.len() == 0 { 0 } else { ret_blocks[0].0 },
                 arg_names: Vec::new(),
                 branch_id_pos: branch_id_pos,
                 num_implicit_ret_args: 0, // will be set later
             };
             ret_args.set_arg_names(&aux_info.return_args);
             ret_args.set_implicit_ret_arg_num();
-            ret_args
+            (ret_args, ret_blocks.iter().map(|b| b.2).collect())
         }
 
         pub fn has_args(&self) -> bool {
@@ -475,7 +486,7 @@ impl<'a> LeanFuncInfo<'a> {
         // True if this expression represents a range check: x = [<range check pointer>]
         pub fn is_range_check(&self, expr: &ExprDesc) -> bool {
             expr.op == "*()" &&
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a) {
+            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
                 self.is_range_check_var(str)
             } else { false }
         }
@@ -486,7 +497,7 @@ impl<'a> LeanFuncInfo<'a> {
             if expr.op != "*()" {
                 return None;
             }
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a) {
+            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
                 if self.is_range_check_var(str) { Some(str) } else { None }
             } else { None }
         }
@@ -494,7 +505,7 @@ impl<'a> LeanFuncInfo<'a> {
         // True if this expression increments the range check pointer.
         pub fn is_range_check_inc(&self, expr: &ExprDesc) -> bool {
             expr.op == "++" &&
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a) {
+            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
                 self.is_range_check_var(str)
             } else { false }
         }
@@ -558,7 +569,7 @@ fn rebind_assignment(
 ) -> (String, String) {
     // Must rewrite the rhs before the lhs.
     let rhs_str = rebind.replace_var_names_in_expr(&assignment.expr.expr);
-    (rebind.get_rebind_name(&assignment.lhs), rhs_str)
+    (rebind.get_rebind_name(&assignment.lhs.name), rhs_str)
 }
 
 // Soundness generation functions
@@ -566,10 +577,10 @@ fn rebind_assignment(
 fn generate_soundness_prelude(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import starkware.cairo.lean.semantics.soundness.prelude"));
-    prelude.push(format!("import .{}", lean_code_file_name(&lean_info.func_name[..])));
+    prelude.push(format!("import .{}", lean_code_file_name(&lean_info.func_name[..], false)));
     prelude.push(String::from("open tactic"));
     prelude.push(String::from(""));
-    prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F]"));
+    prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F] [prelude_hyps F]"));
     prelude.push(String::from("variable  mem : F → F"));
     prelude.push(String::from("variable  σ : register_state F"));
     prelude.push(String::from(""));
@@ -636,6 +647,40 @@ trait LeanGenerator {
         op_size: usize,
         indent: usize,
     );
+
+    fn generate_implicit_temp_var(
+        &mut self,
+        var_desc: &VarBaseDesc,
+        lean_info: &LeanFuncInfo,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    );
+
+    fn generate_assert_missing_vars(
+        &mut self,
+        assert: &AssertDesc,
+        lean_info: &LeanFuncInfo,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        if !rebind.vars.contains_key(&assert.lhs.name) && !lean_info.is_const(&assert.lhs.name) {
+            self.generate_implicit_temp_var(&assert.lhs, lean_info, rebind, pc, op_size, indent);
+        }
+
+        if !rebind.vars.contains_key(&assert.expr.var_a.name) && !lean_info.is_const(&assert.expr.var_a.name) {
+            self.generate_implicit_temp_var(&assert.expr.var_a, lean_info, rebind, pc, op_size, indent);
+        }
+
+        if let Some(var_desc) = &assert.expr.var_b {
+            if !rebind.vars.contains_key(&var_desc.name)  && !lean_info.is_const(&var_desc.name) {
+                self.generate_implicit_temp_var(&var_desc, lean_info, rebind, pc, op_size, indent);
+            }
+        }
+    }
 
     fn generate_local_var(
         &mut self,
@@ -713,6 +758,10 @@ trait LeanGenerator {
         rc_checks: usize,
         indent: usize,
     );
+
+    fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize);
+
+    fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize);
 
 }
 
@@ -822,6 +871,28 @@ impl LeanGenerator for AutoSpecs {
         self.generate_var(var, lean_info, rebind, indent);
     }
 
+    fn generate_implicit_temp_var(
+        &mut self,
+        var_desc: &VarBaseDesc,
+        lean_info: &LeanFuncInfo,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        self.generate_var(
+            &VarDesc {
+                name: var_desc.name.clone(),
+                var_id: var_desc.var_id,
+                var_expr: var_desc.var_expr.clone(),
+                expr: None,
+            },
+            lean_info,
+            rebind,
+            indent
+        );
+    }
+
     fn generate_local_var(
         &mut self,
         var: &VarDesc,
@@ -863,12 +934,12 @@ impl LeanGenerator for AutoSpecs {
             self.push_spec(
                 indent,
                 &format!("is_range_checked (rc_bound F) {var_name}",
-                    var_name = rebind.get_var_name(&assert.lhs)));
+                    var_name = rebind.get_var_name(&assert.lhs.name)));
         } else {
             self.push_spec(
                 indent,
                 &format!("{var_name} = {expr}",
-                    var_name = rebind.get_var_name(&assert.lhs),
+                    var_name = rebind.get_var_name(&assert.lhs.name),
                     expr = rebind.replace_var_names_in_expr(&assert.expr.expr)));
         }
     }
@@ -970,6 +1041,13 @@ impl LeanGenerator for AutoSpecs {
         }
     }
 
+    fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
+        // Do nothing.
+    }
+
+    fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize) {
+        self.push_spec(indent, "false");
+    }
 }
 
 struct AutoProof {
@@ -1040,10 +1118,11 @@ impl AutoProof {
                 cell_expr = cell_expr_to_lean(&var.var_expr, false)));
         if has_expr {
             self.push_main(indent, "{ sorry },");
+            self.push_final(0, &format!("use_only [{var_name}, hl_{var_name}],"));
         } else {
-            self.push_main(indent, "{ refl },");
+            self.push_main(indent, &format!("{{ exact hl_{var_name} }},"));
+            self.push_final(0, &format!("use_only {var_name},"));
         }
-        self.push_final(0, &format!("use_only hl_{var_name},"));
     }
 }
 
@@ -1070,7 +1149,7 @@ impl LeanGenerator for AutoProof {
         lean_info: &LeanFuncInfo,
         indent: usize,
     ) {
-        self.push_statement(indent, &format!("theorem sound_{func_name}"));
+        self.push_statement(indent, &format!("theorem auto_sound_{func_name}"));
 
         let mut indent = indent + 2;
 
@@ -1168,6 +1247,30 @@ impl LeanGenerator for AutoProof {
         self.generate_var(var, false, rebind, pc, op_size, indent);
     }
 
+    fn generate_implicit_temp_var(
+        &mut self,
+        var_desc: &VarBaseDesc,
+        lean_info: &LeanFuncInfo,
+        rebind: &mut VarRebind,
+        pc: usize,
+        op_size: usize,
+        indent: usize,
+    ) {
+        self.generate_var(
+            &VarDesc {
+                name: var_desc.name.clone(),
+                var_id: var_desc.var_id,
+                var_expr: var_desc.var_expr.clone(),
+                expr: None,
+            },
+            false,
+            rebind,
+            pc,
+            op_size,
+            indent
+        );
+    }
+
     fn generate_local_var(
         &mut self,
         var: &VarDesc,
@@ -1190,6 +1293,7 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, "-- let");
         let (lhs, rhs) = rebind_assignment(assign, rebind);
         self.push_main(indent, &format!("mkdef hl_{lhs} : {lhs} = {rhs},"));
+        self.push_final(0, &format!("use_only [{lhs}, hl_{lhs}],"));
     }
 
     fn generate_assert(
@@ -1202,23 +1306,18 @@ impl LeanGenerator for AutoProof {
         op_size: usize,
         indent: usize,
     ) {
-        let lhs =  rebind.get_var_name(&assert.lhs);
+        let lhs =  rebind.get_var_name(&assert.lhs.name);
         if lean_info.is_range_check(&assert.expr) {
             self.push_main(indent, &format!("-- range check for {lhs}"));
             self.push_main(indent, &format!("step_assert_eq {codes} with rc_{lhs},",
                     codes = self.make_codes(pc, op_size)));
 
             let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
-            // let next_rc_ptr = rebind.get_next_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
 
             self.push_final(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"));
             self.push_final(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"));
 
             *rc_checks += 1;
-
-            //self.push_final(0, &format!("have rc_h_{next_rc_ptr} := range_checked_offset' rc_h_{rc_ptr},"));
-            //self.push_final(0, &format!("have rc_h_{next_rc_ptr}' := range_checked_add_right rc_h_{next_rc_ptr},"));
-
         } else {
             self.push_main(indent, "-- assert");
             self.push_main(indent, &format!("step_assert_eq {codes} with ha{pc},",
@@ -1274,7 +1373,7 @@ impl LeanGenerator for AutoProof {
 
         let op = if is_eq { "=" } else { "≠" };
         self.push_main(indent,&format!("-- {var_name} {op} 0"));
-        self.push_main(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}, hcond{pc}], }},"));
+        self.push_main(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}], exact hcond{pc} }},"));
 
         self.push_final(0, if is_eq { "left," } else { "right," });
         self.push_final(0, &format!("use_only [a{pc}],"));
@@ -1310,14 +1409,28 @@ impl LeanGenerator for AutoProof {
     ) {
         let rc_arg_name = lean_info.get_range_check_arg_name().unwrap_or("".into());
         let mut rc_ret_name: String = "".into();
+
+        let num_later_ap_step = lean_info.ret_branch_ap_steps[branch_id + 1 ..].iter().filter(|x| **x).count();
         // The position in the casm at which the asserts for the return values start
         // for this block. Assumes that each block has one assert per return argument
-        // and a jump or return at the end of the block.
-        let mut casm_pos = lean_info.casm_instructions.len() -
-            (lean_info.ret_args.branch_info.len() - branch_id) * (lean_info.ret_arg_num() + 1);
+        // and a jump or return at the end of the block. In addition, each block may begin
+        // with an ap step.
+        let mut casm_pos = lean_info.casm_instructions.len()
+            - (lean_info.ret_args.branch_num - branch_id) * (lean_info.ret_arg_num() + 1)
+            - num_later_ap_step;
         let mut pc = lean_info.get_pc_at(casm_pos);
 
         self.push_main(indent, "-- return values");
+
+        if let Some(has_step) = lean_info.ret_branch_ap_steps.get(branch_id) {
+            if *has_step {
+                // The ap step is the first instruction in the block, before the asserts
+                let casm_pos = casm_pos - 1;
+                let pc = lean_info.get_pc_at(casm_pos);
+                let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
+                self.push_main(indent, &format!("step_advance_ap {codes},", codes = self.make_codes(pc, op_size)));
+            }
+        }
 
         for ret_name in ret_arg_names {
             let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
@@ -1363,7 +1476,7 @@ impl LeanGenerator for AutoProof {
             self.push_main(indent, "-- range check condition");
             self.push_main(indent, &format!("use_only ({rc_checks} + 0), split, norm_num1,"));
             self.push_main(indent, "split,");
-            self.push_main(indent, &format!("arith_simps, use_only tv_{rc_ret_name},"));
+            self.push_main(indent, &format!("arith_simps, use_only ret_{rc_ret_name},"));
             self.push_main(indent, &format!("intro rc_h_{rc_arg_name},"));
             self.push_main(indent, &format!("have rc_h_{rc_arg_name}' := range_checked_add_right rc_h_{rc_arg_name},"));
         }
@@ -1375,13 +1488,25 @@ impl LeanGenerator for AutoProof {
             ret_args = iter::repeat('_').take(lean_info.explicit_ret_arg_num()).join(" ")
         ));
         self.push_main(indent, &format!(
-            "{{ apply auto_sound_{func_name}, apply auto_spec }},",
+            "{{ apply sound_{func_name}, apply auto_spec }},",
             func_name = lean_info.func_name));
 
         // As a last step, add the final proof to the main proof (with indentation).
         for line in self.final_proof.clone() {
             self.push_main(indent, &line);
         }
+    }
+
+    fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
+        self.push_main(indent, &format!("step_advance_ap {codes},",
+                codes = self.make_codes(pc, op_size)));
+    }
+
+    fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize) {
+        self.push_main(indent, "-- fail");
+        self.push_main(indent, &format!("step_assert_eq {codes} with ha_fail,",
+                codes = self.make_codes(pc, op_size)));
+        self.push_main(indent, "exfalso, apply zero_ne_one (add_left_cancel (eq.trans _ ha_fail)), rw add_zero,");
     }
 
 }
@@ -1403,6 +1528,28 @@ fn generate_soundness_auto_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
     generate_auto(&mut auto_specs, lean_info);
 
     auto_specs.specs
+}
+
+fn generate_user_soundness_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
+    let func_name = &lean_info.func_name[..];
+    let args_str =
+        lean_info.get_arg_names().iter().chain(lean_info.get_explicit_ret_arg_names().iter()).join(" ");
+
+    let mut user_theorem: Vec<String> = Vec::new();
+    user_theorem.push(format!("theorem sound_{func_name}"));
+    user_theorem.push(String::from("    {mem : F → F}"));
+    user_theorem.push(String::from("    (κ : ℕ)"));
+    if 0 < args_str.len() {
+        user_theorem.push(format!("    ({args_str} : F)"));
+    }
+    let sep = if 0 < args_str.len() { " " } else { "" };
+    user_theorem.push(format!("    (h_auto : auto_spec_{func_name} mem κ{sep}{args_str}) :"));
+    user_theorem.push(format!("  spec_{func_name} mem κ{sep}{args_str} :="));
+    user_theorem.push("begin".into());
+    user_theorem.push("  trivial".into());
+    user_theorem.push("end".into());
+
+    user_theorem
 }
 
 fn generate_soundness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
@@ -1463,33 +1610,14 @@ fn generate_auto_block(
                 lean_gen.generate_let(assign, lean_info, rebind, indent);
             },
             StatementDesc::Assert(assert) => {
+                // If the variables used here were not yet declared, add them.
+                lean_gen.generate_assert_missing_vars(assert, lean_info, rebind, pc, op_size, indent);
+                // Generate the assert.
                 lean_gen.generate_assert(assert, lean_info, rebind, &mut rc_checks, pc, op_size, indent);
                 pc += op_size;
                 casm_pos += 1;
             },
             StatementDesc::Jump(jump) => {
-                let pos = lean_info.aux_info.statements.iter().position(
-                    |s|
-                        if let StatementDesc::Label(label) = s {
-                            label == &jump.target
-                        } else {
-                            false
-                        }
-                );
-
-                // The jump target may be a return branch name.
-                if pos.is_none() {
-                    generate_auto_ret_block(
-                        lean_gen, lean_info, rebind, rc_checks, &jump.target, indent);
-                    return;
-                }
-
-                let target = pos.unwrap();
-                assert!(block_start + i < target, "No backward jumps supported.");
-
-                let casm_jump = lean_info.casm_jump(block_start + i, target);
-                let pc_jump = lean_info.pc_jump(casm_pos, casm_pos + casm_jump);
-
                 match &jump.cond_var {
                     Some(cond_var) => {
 
@@ -1526,15 +1654,8 @@ fn generate_auto_block(
                         let indent = lean_gen.generate_branch_intro(
                             cond_var, false, lean_info, rebind, pc, indent);
 
-                        generate_auto_block(
-                            lean_gen,
-                            lean_info,
-                            rebind,
-                            rc_checks,
-                            target + 1,
-                            casm_pos + casm_jump,
-                            pc + pc_jump,
-                            indent);
+                        generate_jump_to_label(
+                            lean_gen, lean_info, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
 
                         lean_gen.generate_branch_close(
                             false, lean_info, rebind, indent);
@@ -1543,21 +1664,18 @@ fn generate_auto_block(
 
                         lean_gen.generate_jmp(pc, op_size, indent);
 
-                        // Unconditional jump, must generate only the target block.
-                        generate_auto_block(
-                            lean_gen,
-                            lean_info,
-                            rebind,
-                            rc_checks,
-                            target + 1,
-                            casm_pos + casm_jump,
-                            pc + pc_jump,
-                            indent);
+                        generate_jump_to_label(
+                            lean_gen, lean_info, rebind, rc_checks, jump, block_start + i, casm_pos, pc, indent);
                     }
                 };
-                return; // Remain code handled already in the branches.
+                return; // Remaining code handled already in the branches.
+            },
+            StatementDesc::Fail => {
+                lean_gen.generate_fail(pc, op_size, indent);
+                return; // Remaining code not reachable.
             },
             StatementDesc::ApPlus(step) => {
+
                 casm_pos += 1;
                 pc += op_size;
             }, // Do nothing
@@ -1566,6 +1684,50 @@ fn generate_auto_block(
     }
 
     generate_auto_ret_block(lean_gen, lean_info, rebind, rc_checks, "Fallthrough", indent);
+}
+
+fn generate_jump_to_label(
+    lean_gen: &mut dyn LeanGenerator,
+    lean_info: &LeanFuncInfo,
+    rebind: &mut VarRebind,
+    rc_checks: usize,
+    jump: &JumpDesc, // The jump instruction.
+    instr_pos: usize, // position of the Jump instruction in the aux_info instruction list
+    casm_pos: usize,
+    pc: usize,
+    indent: usize
+) {
+    let pos = lean_info.aux_info.statements.iter().position(
+        |s|
+            if let StatementDesc::Label(label) = s {
+                label == &jump.target
+            } else {
+                false
+            }
+    );
+
+    // The jump target may be a return branch name.
+    if pos.is_none() {
+        generate_auto_ret_block(
+            lean_gen, lean_info, rebind, rc_checks, &jump.target, indent);
+        return;
+    }
+
+    let target = pos.unwrap();
+    assert!(instr_pos < target, "No backward jumps supported.");
+
+    let casm_jump = lean_info.casm_jump(instr_pos, target);
+    let pc_jump = lean_info.pc_jump(casm_pos, casm_pos + casm_jump);
+
+    generate_auto_block(
+        lean_gen,
+        lean_info,
+        rebind,
+        rc_checks,
+        target + 1,
+        casm_pos + casm_jump,
+        pc + pc_jump,
+        indent);
 }
 
 fn generate_auto_ret_block(
@@ -1614,6 +1776,10 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
     // Generate the auto spec
     soundness.append(generate_soundness_auto_spec(&lean_info).as_mut());
 
+    // Generate the (placeholder) user soundness proof.
+    soundness.push(String::from(""));
+    soundness.append(generate_user_soundness_theorem(&lean_info).as_mut());
+
     // Gneerate the soundness proof
     soundness.push(String::from(""));
     soundness.append(generate_soundness_auto_theorem(&lean_info).as_mut());
@@ -1625,7 +1791,8 @@ pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: O
     let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
     let func_name = test_name.split_whitespace().next().unwrap();
     let lean_path = lean_verification_path(test_path);
-    let soundness_file_path = lean_file_path(&lean_path, &lean_soundness_file_name(func_name));
+    let soundness_file_path = lean_file_path(
+        &lean_path, &lean_soundness_file_name(func_name, true));
     fs::create_dir_all(lean_path)?;
     fs::write(soundness_file_path, soundness_str)
 }
@@ -1639,7 +1806,8 @@ pub fn generate_lean_casm(
 
     let func_name = test_name.split_whitespace().next().unwrap();
     let lean_path = lean_verification_path(test_path);
-    let code_file_path = lean_file_path(&lean_path, &lean_code_file_name(func_name));
+    let code_file_path = lean_file_path(
+        &lean_path, &lean_code_file_name(func_name, true));
 
     fs::create_dir_all(lean_path)?;
 
