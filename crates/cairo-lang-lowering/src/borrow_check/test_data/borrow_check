@@ -563,3 +563,76 @@ Statements:
   (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
 End:
   Return(v7, v8, v6)
+
+//! > ==========================================================================
+
+//! > Test moved error on a reconstructed var due to lowered if.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(ref self: MyStruct) {
+    if self.b == 0 {
+       self.a = Default::default();
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn invalidate(a: Array<felt252>) nopanic;
+
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<felt252>,
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
+ --> lib.cairo:8:8
+fn foo(ref self: MyStruct) {
+       ^****************^
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self`})
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self`})
+  (v5: core::integer::u8) <- 0u
+  (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
+  (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
+  (v12: test::MyStruct) <- struct_construct(v1{`if self.b == 0 {
+       self.a = Default::default();
+    }`}, v3{`if self.b == 0 {
+       self.a = Default::default();
+    }`})
+End:
+  Match(match_enum(v8{`self.b == 0`}) {
+    bool::False(v11) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  (v14: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+End:
+  Goto(blk3, {v14 -> v13})
+
+blk2:
+Statements:
+  (v15: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+End:
+  Goto(blk3, {v15 -> v13})
+
+blk3:
+Statements:
+  (v16: ()) <- struct_construct()
+End:
+  Return(v13, v16)
