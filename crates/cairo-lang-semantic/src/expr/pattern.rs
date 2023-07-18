@@ -1,4 +1,5 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use id_arena::Arena;
@@ -23,6 +24,7 @@ pub enum Pattern {
     Tuple(PatternTuple),
     EnumVariant(PatternEnumVariant),
     Otherwise(PatternOtherwise),
+    Missing(PatternMissing),
 }
 impl Pattern {
     pub fn ty(&self) -> semantic::TypeId {
@@ -33,6 +35,7 @@ impl Pattern {
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
             Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
+            Pattern::Missing(pattern_missing) => pattern_missing.ty,
         }
     }
 
@@ -55,7 +58,7 @@ impl Pattern {
                     None => vec![],
                 }
             }
-            Pattern::Literal(_) | Pattern::Otherwise(_) => vec![],
+            Pattern::Literal(_) | Pattern::Otherwise(_) | Pattern::Missing(_) => vec![],
         }
     }
 
@@ -67,6 +70,7 @@ impl Pattern {
             Pattern::Tuple(pat) => pat.stable_ptr.into(),
             Pattern::EnumVariant(pat) => pat.stable_ptr.into(),
             Pattern::Otherwise(pat) => pat.stable_ptr.into(),
+            Pattern::Missing(pat) => pat.stable_ptr.into(),
         }
     }
 }
@@ -140,4 +144,16 @@ pub struct PatternOtherwise {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::TerminalUnderscorePtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct PatternMissing {
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternPtr,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub diag_added: DiagnosticAdded,
 }
