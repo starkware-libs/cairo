@@ -1538,7 +1538,7 @@ fn member_access_expr(
                     lexpr.as_member_path().map(|parent| ExprVarMemberPath::Member {
                         parent: Box::new(parent),
                         member_id: member.id,
-                        stable_ptr: lexpr.stable_ptr(),
+                        stable_ptr: rhs_syntax.stable_ptr().into(),
                         concrete_struct_id,
                         ty: member.ty,
                     })
