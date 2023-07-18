@@ -4,7 +4,8 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::usage::MemberPath;
-use crate::VariableId;
+use crate::ids::LocationId;
+use crate::{VarUsage, VariableId};
 
 /// Maps member paths ([MemberPath]) to lowered variable ids.
 #[derive(Clone, Default, Debug)]
@@ -22,11 +23,11 @@ impl SemanticLoweringMapping {
         path: &MemberPath,
     ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, path)?;
-        Self::assemble_value(&mut ctx, value)
+        Self::assemble_value(&mut ctx, value).map(|usage| usage.var_id)
     }
 
-    pub fn introduce(&mut self, path: MemberPath, var: VariableId) {
-        self.scattered.insert(path, Value::Var(var));
+    pub fn introduce(&mut self, path: MemberPath, var: VariableId, location: LocationId) {
+        self.scattered.insert(path, Value::Var(var, location));
     }
 
     pub fn update<TContext: StructRecomposer>(
@@ -34,27 +35,29 @@ impl SemanticLoweringMapping {
         mut ctx: TContext,
         path: &MemberPath,
         var: VariableId,
+        location: LocationId,
     ) -> Option<()> {
         let value = self.break_into_value(&mut ctx, path)?;
-        *value = Value::Var(var);
+        *value = Value::Var(var, location);
         Some(())
     }
 
     fn assemble_value<TContext: StructRecomposer>(
         ctx: &mut TContext,
         value: &mut Value,
-    ) -> Option<VariableId> {
+    ) -> Option<VarUsage> {
         Some(match value {
-            Value::Var(var) => *var,
+            Value::Var(var, location) => VarUsage { var_id: *var, location: *location },
             Value::Scattered(scattered) => {
+                let location = scattered.location;
                 let members = scattered
                     .members
                     .iter_mut()
                     .map(|(_, value)| Self::assemble_value(ctx, value))
                     .collect::<Option<_>>()?;
                 let var = ctx.reconstruct(scattered.concrete_struct_id, members);
-                *value = Value::Var(var);
-                var
+                *value = Value::Var(var, location);
+                VarUsage { var_id: var, location }
             }
         })
     }
@@ -74,12 +77,21 @@ impl SemanticLoweringMapping {
 
         let parent_value = self.break_into_value(ctx, parent)?;
         match parent_value {
-            Value::Var(var) => {
-                let members = ctx.deconstruct(*concrete_struct_id, *var);
-                let members = OrderedHashMap::from_iter(
-                    members.into_iter().map(|(member_id, var)| (member_id, Value::Var(var))),
+            Value::Var(var, location) => {
+                let members = ctx.deconstruct(
+                    *concrete_struct_id,
+                    VarUsage { var_id: *var, location: *location },
                 );
-                let scattered = Scattered { concrete_struct_id: *concrete_struct_id, members };
+                let members = OrderedHashMap::from_iter(
+                    members
+                        .into_iter()
+                        .map(|(member_id, var)| (member_id, Value::Var(var, *location))),
+                );
+                let scattered = Scattered {
+                    concrete_struct_id: *concrete_struct_id,
+                    members,
+                    location: *location,
+                };
                 *parent_value = Value::Scattered(Box::new(scattered));
 
                 extract_matches!(parent_value, Value::Scattered).members.get_mut(member_id)
@@ -94,12 +106,12 @@ pub trait StructRecomposer {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,
-        value: VariableId,
+        value: VarUsage,
     ) -> OrderedHashMap<MemberId, VariableId>;
     fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,
-        members: Vec<VariableId>,
+        members: Vec<VarUsage>,
     ) -> VariableId;
     fn var_ty(&self, var: VariableId) -> semantic::TypeId;
 }
@@ -108,7 +120,7 @@ pub trait StructRecomposer {
 #[derive(Clone, Debug)]
 enum Value {
     /// The value of member path is stored in a lowered variable.
-    Var(VariableId),
+    Var(VariableId, LocationId),
     /// The value of the member path is not stored. It should be reconstructed from the member
     /// values.
     Scattered(Box<Scattered>),
@@ -119,4 +131,5 @@ enum Value {
 struct Scattered {
     concrete_struct_id: semantic::ConcreteStructId,
     members: OrderedHashMap<MemberId, Value>,
+    location: LocationId,
 }

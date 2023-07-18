@@ -213,7 +213,7 @@ blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0{`self`})
   (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self.data`}, v1{`value`})
-  (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self`})
+  (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self.data`})
 End:
   Return(v5, v3)
 
@@ -489,14 +489,14 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<test::NonCopy>
- --> lib.cairo:12:10
-  return x;
-         ^
+ --> lib.cairo:9:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::NonCopy>. Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
- --> lib.cairo:10:3
-  x.a += 1;
-  ^*^
+ --> lib.cairo:9:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -506,7 +506,7 @@ Statements:
   (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x`})
   (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2{`x.a`}, v1{`1`})
   () <- test::use_non_copy(v3{`x.b`})
-  (v6: test::MyStruct) <- struct_construct(v5{`x`}, v3{`x`})
+  (v6: test::MyStruct) <- struct_construct(v5{`x.a`}, v3{`x`})
 End:
   Return(v6)
 
@@ -594,9 +594,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
- --> lib.cairo:8:8
+ --> lib.cairo:8:12
 fn foo(ref self: MyStruct) {
-       ^****************^
+           ^**^
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -607,11 +607,7 @@ Statements:
   (v5: core::integer::u8) <- 0u
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
-  (v12: test::MyStruct) <- struct_construct(v1{`if self.b == 0 {
-       self.a = Default::default();
-    }`}, v3{`if self.b == 0 {
-       self.a = Default::default();
-    }`})
+  (v12: test::MyStruct) <- struct_construct(v1{`self`}, v3{`self.b`})
 End:
   Match(match_enum(v8{`self.b == 0`}) {
     bool::False(v11) => blk2,
@@ -621,13 +617,13 @@ End:
 blk1:
 Statements:
   (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
-  (v14: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+  (v14: test::MyStruct) <- struct_construct(v10{`self.a`}, v3{`self.b`})
 End:
   Goto(blk3, {v14 -> v13})
 
 blk2:
 Statements:
-  (v15: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+  (v15: test::MyStruct) <- struct_construct(v1{`self`}, v3{`self.b`})
 End:
   Goto(blk3, {v15 -> v13})
 

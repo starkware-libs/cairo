@@ -63,8 +63,13 @@ impl BlockBuilder {
     }
 
     /// Binds a semantic variable to a lowered variable.
-    pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
-        self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
+    pub fn put_semantic(
+        &mut self,
+        semantic_var_id: semantic::VarId,
+        var: VariableId,
+        location: LocationId,
+    ) {
+        self.semantics.introduce(MemberPath::Var(semantic_var_id), var, location);
         self.changed_semantics.insert(semantic_var_id);
     }
 
@@ -79,6 +84,7 @@ impl BlockBuilder {
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
             &member_path.into(),
             var,
+            location,
         );
         self.changed_semantics.insert(member_path.base_var());
     }
@@ -245,7 +251,11 @@ impl BlockBuilder {
 
         // Apply remapping on builder.
         for (semantic, var) in semantic_remapping.semantics {
-            self.put_semantic(semantic, var);
+            self.put_semantic(
+                semantic,
+                var,
+                ctx.get_location(semantic.untyped_stable_ptr(ctx.db.upcast())),
+            );
         }
 
         let expr = match semantic_remapping.expr {
@@ -318,40 +328,33 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
     fn deconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,
-        value: VariableId,
+        value: VarUsage,
     ) -> OrderedHashMap<MemberId, VariableId> {
         let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
         let var_reqs = members
             .iter()
-            .map(|member| VarRequest { ty: member.ty, location: self.location })
+            .map(|member| VarRequest { ty: member.ty, location: value.location })
             .collect();
-        let member_values =
-            generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
+        let member_values = generators::StructDestructure { input: value.var_id, var_reqs }
+            .add(self.ctx, self.statements);
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
     }
 
     fn reconstruct(
         &mut self,
         concrete_struct_id: semantic::ConcreteStructId,
-        members: Vec<VariableId>,
+        members: Vec<VarUsage>,
     ) -> VariableId {
         let ty = self
             .ctx
             .db
             .intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id)));
         // TODO(ilya): Is using the `self.location` correct here?
-        generators::StructConstruct {
-            inputs: members
-                .into_iter()
-                .map(|var_id| VarUsage { var_id, location: self.location })
-                .collect_vec(),
-            ty,
-            location: self.location,
-        }
-        .add(self.ctx, self.statements)
-        .var_id
+        generators::StructConstruct { inputs: members, ty, location: self.location }
+            .add(self.ctx, self.statements)
+            .var_id
     }
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {

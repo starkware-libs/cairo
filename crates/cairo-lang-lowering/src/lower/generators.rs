@@ -217,7 +217,7 @@ impl StructMemberAccess {
                 var_reqs: self
                     .member_tys
                     .into_iter()
-                    .map(|ty| VarRequest { ty, location: self.location })
+                    .map(|ty| VarRequest { ty, location: self.input.location })
                     .collect(),
             }
             .add(ctx, builder)

@@ -115,7 +115,7 @@ pub fn lower_function(
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
             // TODO(spapini): Introduce member paths, not just base variables.
             let param_var = extract_matches!(param, ExprVarMemberPath::Var);
-            builder.put_semantic(param_var.var, var);
+            builder.put_semantic(param_var.var, var, location);
             var
         })
         .collect_vec();
@@ -182,7 +182,7 @@ pub fn lower_loop_function(
         .map(|param| {
             let location = ctx.get_location(param.stable_ptr().untyped());
             let var = ctx.new_var(VarRequest { ty: param.ty(), location });
-            builder.semantics.introduce((&param).into(), var);
+            builder.semantics.introduce((&param).into(), var, location);
             var
         })
         .collect_vec();
@@ -369,8 +369,9 @@ fn lower_single_pattern(
             // Deposit the owned variable in the semantic variables store.
             let var = lowered_expr.as_var_usage(ctx, builder)?.var_id;
             // Override variable location.
-            ctx.variables.variables[var].location = ctx.get_location(stable_ptr.untyped());
-            builder.put_semantic(sem_var.id(), var);
+            let location = ctx.get_location(stable_ptr.untyped());
+            ctx.variables.variables[var].location = location;
+            builder.put_semantic(sem_var.id(), var, location);
             // TODO(spapini): Build semantic_defs in semantic model.
             ctx.semantic_defs.insert(sem_var.id(), sem_var);
         }
