@@ -212,7 +212,7 @@ Parameters: v0: test::Query::<core::felt252>, v1: core::felt252
 blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>) <- struct_destructure(v0{`self`})
-  (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self`}, v1{`value`})
+  (v4: core::array::Array::<core::felt252>, v3: ()) <- core::array::ArrayImpl::<core::felt252>::append(v2{`self.data`}, v1{`value`})
   (v5: test::Query::<core::felt252>) <- struct_construct(v4{`self`})
 End:
   Return(v5, v3)
@@ -496,7 +496,7 @@ error: Variable was previously moved. Trait has no implementation in context: co
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::NonCopy>. Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>.
  --> lib.cairo:10:3
   x.a += 1;
-  ^
+  ^*^
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -504,8 +504,8 @@ blk0 (root):
 Statements:
   (v1: core::integer::u32) <- 1u
   (v2: core::integer::u32, v3: test::NonCopy) <- struct_destructure(v0{`x`})
-  (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2{`x`}, v1{`1`})
-  () <- test::use_non_copy(v3{`x`})
+  (v5: core::integer::u32, v4: ()) <- core::integer::U32AddEq::add_eq(v2{`x.a`}, v1{`1`})
+  () <- test::use_non_copy(v3{`x.b`})
   (v6: test::MyStruct) <- struct_construct(v5{`x`}, v3{`x`})
 End:
   Return(v6)
@@ -555,9 +555,9 @@ Parameters: v0: test::MyStruct, v1: test::MyStruct
 blk0 (root):
 Statements:
   (v2: core::array::Array::<core::felt252>, v3: core::integer::u8) <- struct_destructure(v0{`s1`})
-  () <- test::invalidate(v2{`s1`})
+  () <- test::invalidate(v2{`s1.a`})
   (v4: core::array::Array::<core::felt252>, v5: core::integer::u8) <- struct_destructure(v1{`s2`})
-  () <- test::invalidate(v4{`s2`})
+  () <- test::invalidate(v4{`s2.a`})
   (v6: ()) <- struct_construct()
   (v7: test::MyStruct) <- struct_construct(v2{`s1`}, v3{`s1`})
   (v8: test::MyStruct) <- struct_construct(v4{`s2`}, v5{`s2`})
@@ -603,7 +603,7 @@ Parameters: v0: test::MyStruct
 blk0 (root):
 Statements:
   (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`self`})
-  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self`})
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`self.b`})
   (v5: core::integer::u8) <- 0u
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
