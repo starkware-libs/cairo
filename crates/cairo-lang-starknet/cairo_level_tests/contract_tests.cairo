@@ -113,9 +113,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_storage_at(
-        self: @ContractState, storage_address: StorageAddress
-    ) -> felt252 {
+    fn get_storage_at(self: @ContractState, storage_address: StorageAddress) -> felt252 {
         storage_read_syscall(0, storage_address).unwrap_syscall()
     }
 }
@@ -431,8 +429,7 @@ fn test_dispatcher_serde() {
 
     // Deserialize
     let mut serialized = calldata.span();
-    let contract1: ITestContractLibraryDispatcher = Serde::deserialize(ref serialized)
-        .unwrap();
+    let contract1: ITestContractLibraryDispatcher = Serde::deserialize(ref serialized).unwrap();
     assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
 }
 
@@ -442,7 +439,7 @@ fn test_legacy_mapping_custom_key() {
     let key_struct = test_contract::StructStorageKey { a: 10_u256, b: 100 };
     let key = test_contract::EnumStorageKey::C(key_struct);
     let expected_value: felt252 = 1000;
-    
+
     let mut args = Default::default();
     key.serialize(ref args);
     expected_value.serialize(ref args);
@@ -451,14 +448,14 @@ fn test_legacy_mapping_custom_key() {
     // sn_keccak("custom_mapping")
     let var_selector = 0x00b62a8ed0038652a980f5a8fd9c82aefbdacbcfa193887ef555f05e819f4bd3;
     // h(var_selector, h(h(h(2, a.low),a.high),struct.b))
-    let expected_address = pedersen(var_selector, pedersen(pedersen(pedersen(2,10),0),100));
-    
+    let expected_address = pedersen(var_selector, pedersen(pedersen(pedersen(2, 10), 0), 100));
+
     let actual_address = hash::LegacyHash::hash(var_selector, key);
     let mut args = Default::default();
     expected_address.serialize(ref args);
     let mut retdata = test_contract::__external::get_storage_at(args.span());
-    let actual_value: felt252 = Serde::deserialize(ref retdata).unwrap();  
-     
+    let actual_value: felt252 = Serde::deserialize(ref retdata).unwrap();
+
     assert_eq(@expected_address, @actual_address, 'unexpected addr by derived impl');
     assert_eq(@expected_value, @actual_value, 'not written to expected addr');
 }
