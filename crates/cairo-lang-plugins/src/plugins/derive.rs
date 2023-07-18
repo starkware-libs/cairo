@@ -182,6 +182,7 @@ fn generate_derive_code_for_type(
                         message: "Unsupported trait for derive for extern types.".into(),
                     })
                 }
+                "LegacyHash" => impls.push(get_legacy_hash_impl(&name, &extra_info)),
                 _ => {
                     // TODO(spapini): How to allow downstream derives while also
                     //  alerting the user when the derive doesn't exist?
@@ -364,6 +365,41 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                     }}
                 ", members.iter().map(|member| format!("lhs.{member} == rhs.{member}")).join(" && ")
                 }
+            }
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn get_legacy_hash_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+            impl LegacyHash{name} of hash::LegacyHash::<{name}> {{
+                    fn hash(state: felt252, value: {name}) -> felt252 {{
+                        match value {{
+                            {}
+                        }}
+                    }}
+                }}
+                ",
+                variants.iter().enumerate().map(|(idx, variant)| {
+                    format!("{name}::{variant}(x) => {{ hash::LegacyHash::hash(state, hash::LegacyHash::hash({idx}, x)) }},")
+                }).join("\n            ")
+            }
+        }
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
+            formatdoc! {"
+                impl LegacyHash{name}{generic_impls} of hash::LegacyHash::<{name}{generics}> {{
+                        fn hash(state: felt252, value: {name}{generics}) -> felt252 {{
+                            {hash}
+                        }}
+                    }}
+                    ",
+                    hash = members.iter().fold("state".to_string(), |acc, member| format!("hash::LegacyHash::hash({acc}, value.{member})")),
+                    generics = format_generics(type_generics, other_generics),
+                    generic_impls = format_generics_with_trait(type_generics, other_generics,
+                        |t| format!("impl LegacyHash{t}: hash::LegacyHash<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
         }
         ExtraInfo::Extern => unreachable!(),

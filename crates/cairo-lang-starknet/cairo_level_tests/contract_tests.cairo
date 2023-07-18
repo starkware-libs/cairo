@@ -5,13 +5,16 @@ use option::OptionTrait;
 use traits::{TryInto, Into};
 use zeroable::Zeroable;
 use clone::Clone;
+use hash::{LegacyHash, pedersen};
 use starknet::Event;
 use starknet::class_hash::Felt252TryIntoClassHash;
 use starknet::StorageAddress;
+use starknet::storage_access::StorageAddressSerde;
 use test::test_utils::{assert_eq, assert_ne};
-
+use serde::Serde;
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
+use core::debug::PrintTrait;
 
 #[starknet::interface]
 trait ITestContract {}
@@ -22,12 +25,27 @@ mod test_contract {
     use option::OptionTrait;
     use traits::Into;
     use starknet::StorageAddress;
+    use starknet::storage_read_syscall;
+
+    #[derive(Drop, LegacyHash, Serde)]
+    struct StructStorageKey {
+        a: u256,
+        b: felt252
+    }
+
+    #[derive(Drop, LegacyHash, Serde)]
+    enum EnumStorageKey {
+        A,
+        B: u256,
+        C: StructStorageKey
+    }
 
     #[storage]
     struct Storage {
         value: felt252,
         mapping: LegacyMap::<u128, bool>,
         large_mapping: LegacyMap::<u256, u256>,
+        custom_mapping: LegacyMap::<EnumStorageKey, felt252>
     }
 
     #[external(v0)]
@@ -63,6 +81,11 @@ mod test_contract {
     }
 
     #[external(v0)]
+    fn insert_custom(ref self: ContractState, key: EnumStorageKey, value: felt252) {
+        self.custom_mapping.write(key, value)
+    }
+
+    #[external(v0)]
     fn remove(ref self: ContractState, key: u128) {
         self.mapping.write(key, false)
     }
@@ -87,6 +110,13 @@ mod test_contract {
         self: @ContractState, storage_address: StorageAddress
     ) -> StorageAddress {
         storage_address
+    }
+
+    #[external(v0)]
+    fn get_storage_at(
+        self: @ContractState, storage_address: StorageAddress
+    ) -> felt252 {
+        storage_read_syscall(0, storage_address).unwrap_syscall()
     }
 }
 
@@ -190,8 +220,8 @@ fn read_large_first_value() {
 #[available_gas(300000)]
 fn write_read_large_value() {
     let mut args = Default::default();
-    serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
-    serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
+    Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
+    Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
     let mut retdata = test_contract::__external::set_large(args.span());
     assert(retdata.is_empty(), 'Array not empty');
     let mut retdata = test_contract::__external::get_large(
@@ -374,7 +404,7 @@ fn test_dispatcher_serde() {
 
     // Serialize
     let mut calldata = Default::default();
-    serde::Serde::serialize(@contract0, ref calldata);
+    Serde::serialize(@contract0, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == contract_address.into(),
@@ -383,7 +413,7 @@ fn test_dispatcher_serde() {
 
     // Deserialize
     let mut serialized = calldata.span();
-    let contract0: ITestContractDispatcher = serde::Serde::deserialize(ref serialized).unwrap();
+    let contract0: ITestContractDispatcher = Serde::deserialize(ref serialized).unwrap();
     assert(contract0.contract_address == contract_address, 'Deserialize to Dispatcher');
 
     // Library Dispatcher
@@ -392,7 +422,7 @@ fn test_dispatcher_serde() {
 
     // Serialize
     let mut calldata = Default::default();
-    serde::Serde::serialize(@contract1, ref calldata);
+    Serde::serialize(@contract1, ref calldata);
     let mut calldata_span = calldata.span();
     assert(
         calldata_span.len() == 1 || *calldata_span.pop_front().unwrap() == class_hash.into(),
@@ -401,7 +431,34 @@ fn test_dispatcher_serde() {
 
     // Deserialize
     let mut serialized = calldata.span();
-    let contract1: ITestContractLibraryDispatcher = serde::Serde::deserialize(ref serialized)
+    let contract1: ITestContractLibraryDispatcher = Serde::deserialize(ref serialized)
         .unwrap();
     assert(contract1.class_hash == class_hash, 'Deserialize to Dispatcher');
+}
+
+#[test]
+#[available_gas(30000000)]
+fn test_legacy_mapping_custom_key() {
+    let key_struct = test_contract::StructStorageKey { a: 10_u256, b: 100 };
+    let key = test_contract::EnumStorageKey::C(key_struct);
+    let expected_value: felt252 = 1000;
+    
+    let mut args = Default::default();
+    key.serialize(ref args);
+    expected_value.serialize(ref args);
+    test_contract::__external::insert_custom(args.span());
+
+    // sn_keccak("custom_mapping")
+    let var_selector = 0x00b62a8ed0038652a980f5a8fd9c82aefbdacbcfa193887ef555f05e819f4bd3;
+    // h(var_selector, h(h(h(2, a.low),a.high),struct.b))
+    let expected_address = pedersen(var_selector, pedersen(pedersen(pedersen(2,10),0),100));
+    
+    let actual_address = hash::LegacyHash::hash(var_selector, key);
+    let mut args = Default::default();
+    expected_address.serialize(ref args);
+    let mut retdata = test_contract::__external::get_storage_at(args.span());
+    let actual_value: felt252 = Serde::deserialize(ref retdata).unwrap();  
+     
+    assert_eq(@expected_address, @actual_address, 'unexpected addr by derived impl');
+    assert_eq(@expected_value, @actual_value, 'not written to expected addr');
 }
