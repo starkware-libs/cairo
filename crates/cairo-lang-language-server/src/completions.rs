@@ -132,9 +132,43 @@ pub fn colon_colon_completions(
                 ..CompletionItem::default()
             })
             .collect(),
-        ResolvedConcreteItem::Trait(_) => todo!(),
-        ResolvedConcreteItem::Impl(_) => todo!(),
-        ResolvedConcreteItem::Type(_) => todo!(),
+        ResolvedConcreteItem::Trait(item) => db
+            .trait_functions(item.trait_id(db))
+            .unwrap_or_default()
+            .iter()
+            .map(|(name, _)| CompletionItem {
+                label: name.to_string(),
+                kind: Some(CompletionItemKind::FUNCTION),
+                ..CompletionItem::default()
+            })
+            .collect(),
+        ResolvedConcreteItem::Impl(item) => item
+            .concrete_trait(db)
+            .map(|trait_id| {
+                db.trait_functions(trait_id.trait_id(db))
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|(name, _)| CompletionItem {
+                        label: name.to_string(),
+                        kind: Some(CompletionItemKind::FUNCTION),
+                        ..CompletionItem::default()
+                    })
+                    .collect()
+            })
+            .unwrap_or_default(),
+        ResolvedConcreteItem::Type(ty) => match db.lookup_intern_type(ty) {
+            TypeLongId::Concrete(ConcreteTypeId::Enum(enum_id)) => db
+                .enum_variants(enum_id.enum_id(db))
+                .unwrap_or_default()
+                .iter()
+                .map(|(name, _)| CompletionItem {
+                    label: name.to_string(),
+                    kind: Some(CompletionItemKind::ENUM_MEMBER),
+                    ..CompletionItem::default()
+                })
+                .collect(),
+            _ => vec![],
+        },
         _ => vec![],
     })
 }
