@@ -30,7 +30,8 @@ use super::inference::infers::InferenceEmbeddings;
 use super::inference::{Inference, InferenceError};
 use super::objects::*;
 use super::pattern::{
-    Pattern, PatternEnumVariant, PatternLiteral, PatternOtherwise, PatternTuple, PatternVariable,
+    Pattern, PatternEnumVariant, PatternLiteral, PatternMissing, PatternOtherwise, PatternTuple,
+    PatternVariable,
 };
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
@@ -64,6 +65,19 @@ impl Deref for ExprAndId {
 
     fn deref(&self) -> &Self::Target {
         &self.expr
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PatternAndId {
+    pub pattern: Pattern,
+    pub id: PatternId,
+}
+impl Deref for PatternAndId {
+    type Target = Pattern;
+
+    fn deref(&self) -> &Self::Target {
+        &self.pattern
     }
 }
 
@@ -756,7 +770,7 @@ fn compute_expr_match_semantic(
                 // Note that if the arm expr is a block, there will be *another* subscope
                 // for it.
                 let pattern =
-                    compute_pattern_semantic(new_ctx, syntax_arm.pattern(syntax_db), expr.ty())?;
+                    compute_pattern_semantic(new_ctx, &syntax_arm.pattern(syntax_db), expr.ty());
                 let variables = pattern.variables(&new_ctx.patterns);
                 for v in variables {
                     let var_def = Variable::Local(v.var.clone());
@@ -786,10 +800,7 @@ fn compute_expr_match_semantic(
     let pattern_and_exprs: Vec<_> = pattern_and_expr_options.into_iter().collect::<Maybe<_>>()?;
     let semantic_arms = pattern_and_exprs
         .into_iter()
-        .map(|(pattern, arm_expr)| MatchArm {
-            pattern: ctx.patterns.alloc(pattern),
-            expression: arm_expr.id,
-        })
+        .map(|(pattern, arm_expr)| MatchArm { pattern: pattern.id, expression: arm_expr.id })
         .collect();
     Ok(Expr::Match(ExprMatch {
         matched_expr: expr.id,
@@ -1037,10 +1048,30 @@ fn compute_method_function_call_data(
     Ok((function_id, fixed_expr, first_param.mutability))
 }
 
-/// Computes the semantic model of a pattern, or None if invalid.
-fn compute_pattern_semantic(
+/// Computes the semantic model of a pattern.
+/// Note that this pattern will always be "registered" in the arena, so it can be looked up in the
+/// language server.
+pub fn compute_pattern_semantic(
     ctx: &mut ComputationContext<'_>,
-    pattern_syntax: ast::Pattern,
+    syntax: &ast::Pattern,
+    ty: TypeId,
+) -> PatternAndId {
+    let pat = maybe_compute_pattern_semantic(ctx, syntax, ty);
+    let pat = pat.unwrap_or_else(|diag_added| {
+        Pattern::Missing(PatternMissing {
+            ty: TypeId::missing(ctx.db, diag_added),
+            stable_ptr: syntax.stable_ptr(),
+            diag_added,
+        })
+    });
+    let id = ctx.patterns.alloc(pat.clone());
+    PatternAndId { pattern: pat, id }
+}
+
+/// Computes the semantic model of a pattern, or None if invalid.
+fn maybe_compute_pattern_semantic(
+    ctx: &mut ComputationContext<'_>,
+    pattern_syntax: &ast::Pattern,
     ty: TypeId,
 ) -> Maybe<Pattern> {
     // TODO(spapini): Check for missing type, and don't reemit an error.
@@ -1052,14 +1083,14 @@ fn compute_pattern_semantic(
             Pattern::Otherwise(PatternOtherwise { ty, stable_ptr: otherwise_pattern.stable_ptr() })
         }
         ast::Pattern::Literal(literal_pattern) => {
-            let literal = literal_to_semantic(ctx, &literal_pattern)?;
+            let literal = literal_to_semantic(ctx, literal_pattern)?;
             Pattern::Literal(PatternLiteral {
                 literal,
                 stable_ptr: literal_pattern.stable_ptr().into(),
             })
         }
         ast::Pattern::ShortString(short_string_pattern) => {
-            let literal = short_string_to_semantic(ctx, &short_string_pattern)?;
+            let literal = short_string_to_semantic(ctx, short_string_pattern)?;
             Pattern::Literal(PatternLiteral {
                 literal,
                 stable_ptr: short_string_pattern.stable_ptr().into(),
@@ -1077,7 +1108,7 @@ fn compute_pattern_semantic(
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
                     ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(&enum_pattern, UnexpectedEnumPattern { ty }))
+                    Err(ctx.diagnostics.report(enum_pattern, UnexpectedEnumPattern { ty }))
                 })?;
 
             // Extract the enum variant from the path syntax.
@@ -1112,8 +1143,8 @@ fn compute_pattern_semantic(
             let inner_pattern = match enum_pattern.pattern(syntax_db) {
                 ast::OptionPatternEnumInnerPattern::Empty(_) => None,
                 ast::OptionPatternEnumInnerPattern::PatternEnumInnerPattern(p) => {
-                    let pattern = compute_pattern_semantic(ctx, p.pattern(syntax_db), inner_ty)?;
-                    Some(ctx.patterns.alloc(pattern))
+                    let pattern = compute_pattern_semantic(ctx, &p.pattern(syntax_db), inner_ty);
+                    Some(pattern.id)
                 }
             };
 
@@ -1128,7 +1159,7 @@ fn compute_pattern_semantic(
             // A path of length 1 is an identifier, which will result in a variable pattern.
             // Currently, other paths are not supported (and not clear if ever will be).
             if path.elements(syntax_db).len() > 1 {
-                return Err(ctx.diagnostics.report(&path, Unsupported));
+                return Err(ctx.diagnostics.report(path, Unsupported));
             }
             // TODO(spapini): Make sure this is a simple identifier. In particular, no generics.
             let identifier = path.elements(syntax_db)[0].identifier_ast(syntax_db);
@@ -1167,7 +1198,7 @@ fn compute_pattern_semantic(
                     // Don't add a diagnostic if the type is missing.
                     // A diagnostic should've already been added.
                     ty.check_not_missing(ctx.db)?;
-                    Err(ctx.diagnostics.report(&pattern_struct, UnexpectedStructPattern { ty }))
+                    Err(ctx.diagnostics.report(pattern_struct, UnexpectedStructPattern { ty }))
                 })?;
             let pattern_param_asts = pattern_struct.params(syntax_db).elements(syntax_db);
             let struct_id = concrete_struct_id.struct_id(ctx.db);
@@ -1176,7 +1207,7 @@ fn compute_pattern_semantic(
             let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
                 let member = members.swap_remove(&member_name).on_none(|| {
                     ctx.diagnostics.report(
-                        &pattern_struct,
+                        pattern_struct,
                         if used_members.contains(&member_name) {
                             StructMemberRedefinition { struct_id, member_name: member_name.clone() }
                         } else {
@@ -1209,8 +1240,8 @@ fn compute_pattern_semantic(
                             .to_maybe()?;
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern =
-                            compute_pattern_semantic(ctx, with_expr.pattern(syntax_db), ty)?;
-                        field_patterns.push((member, ctx.patterns.alloc(pattern)));
+                            compute_pattern_semantic(ctx, &with_expr.pattern(syntax_db), ty);
+                        field_patterns.push((member, pattern.id));
                     }
                     PatternStructParam::Tail(_) => {
                         has_tail = true;
@@ -1219,7 +1250,7 @@ fn compute_pattern_semantic(
             }
             if !has_tail {
                 for (member_name, _) in members {
-                    ctx.diagnostics.report(&pattern_struct, MissingMember { member_name });
+                    ctx.diagnostics.report(pattern_struct, MissingMember { member_name });
                 }
             }
             Pattern::Struct(PatternStruct {
@@ -1235,13 +1266,13 @@ fn compute_pattern_semantic(
             let (n_snapshots, long_ty) = peel_snapshots(ctx.db, ty);
 
             let tys = try_extract_matches!(long_ty, TypeLongId::Tuple).ok_or_else(|| {
-                ctx.diagnostics.report(&pattern_tuple, UnexpectedTuplePattern { ty })
+                ctx.diagnostics.report(pattern_tuple, UnexpectedTuplePattern { ty })
             })?;
 
             let patterns_ast = pattern_tuple.patterns(syntax_db).elements(syntax_db);
             if tys.len() != patterns_ast.len() {
                 return Err(ctx.diagnostics.report(
-                    &pattern_tuple,
+                    pattern_tuple,
                     WrongNumberOfGenericArguments {
                         expected: tys.len(),
                         actual: patterns_ast.len(),
@@ -1251,8 +1282,8 @@ fn compute_pattern_semantic(
             // Iterator of Option<Pattern?, for each field.
             let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
                 let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
-                let pattern = compute_pattern_semantic(ctx, pattern_ast, ty)?;
-                Ok(ctx.patterns.alloc(pattern))
+                let pattern = compute_pattern_semantic(ctx, &pattern_ast, ty);
+                Ok(pattern.id)
             });
             // If all are Some, collect into a Vec.
             let field_patterns: Vec<_> = pattern_options.collect::<Maybe<_>>()?;
@@ -1876,7 +1907,7 @@ pub fn compute_statement_semantic(
                 }
             };
 
-            let pattern = compute_pattern_semantic(ctx, let_syntax.pattern(syntax_db), ty)?;
+            let pattern = compute_pattern_semantic(ctx, &let_syntax.pattern(syntax_db), ty);
             let variables = pattern.variables(&ctx.patterns);
             // TODO(yuval): allow unnamed variables. Add them here to
             // ctx.environment.unnamed_variables
@@ -1886,7 +1917,7 @@ pub fn compute_statement_semantic(
                 ctx.semantic_defs.insert(var_def.id(), var_def);
             }
             semantic::Statement::Let(semantic::StatementLet {
-                pattern: ctx.patterns.alloc(pattern),
+                pattern: pattern.id,
                 expr: rhs_expr_id,
                 stable_ptr: syntax.stable_ptr(),
             })
