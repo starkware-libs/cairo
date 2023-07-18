@@ -13,9 +13,9 @@ use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_projec
 use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
-    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
-    SubmoduleLongId, TraitFunctionLongId, TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
+    ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
+    StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -588,7 +588,8 @@ impl LanguageServer for Backend {
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
             let file = file(db, file_uri);
-            let position = text_document_position.position;
+            let mut position = text_document_position.position;
+            position.character = position.character.saturating_sub(1);
 
             let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file, position)
             else {
@@ -1105,6 +1106,18 @@ fn lookup_item_from_ast(
             }
             res
         }
+        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
+            db.intern_type_alias(TypeAliasLongId(
+                module_file_id,
+                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))],
+        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
+            db.intern_impl_alias(ImplAliasLongId(
+                module_file_id,
+                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))],
         _ => vec![],
     }
 }

@@ -1528,6 +1528,12 @@ fn method_call_expr(
             trait_function_id1,
         },
     )?;
+    ctx.resolver.data.resolved_items.mark_concrete(
+        ctx.db,
+        &segment,
+        ResolvedConcreteItem::Function(function_id),
+    );
+
     let named_args: Vec<_> = chain!(
         [NamedArg(fixed_lexpr, None, mutability)],
         expr.arguments(syntax_db)
