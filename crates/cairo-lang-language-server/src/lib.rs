@@ -615,7 +615,7 @@ impl LanguageServer for Backend {
 
             match completion_kind(db, node) {
                 CompletionKind::Dot(expr) => {
-                    dot_completions(db, lookup_items, expr).map(CompletionResponse::Array)
+                    dot_completions(db, file, lookup_items, expr).map(CompletionResponse::Array)
                 }
                 CompletionKind::ColonColon(segments) if !segments.is_empty() => {
                     colon_colon_completions(db, module_file_id, lookup_items, segments)
