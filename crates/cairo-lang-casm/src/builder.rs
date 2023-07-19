@@ -817,7 +817,8 @@ impl CasmBuilderAuxiliaryInfo {
         self.return_args.push(RetBranchDesc {
             name: String::from(branch_name),
             exprs: vars.iter().map(|v| RetExprDesc {
-                names: v.iter().map(|var| self.var_names.get(var).unwrap().clone()).collect(),
+                names: v.iter().map(
+                    |var| self.var_names.get(var).unwrap_or(&String::from("ρ")).clone()).collect(),
             }).collect(),
         });
     }

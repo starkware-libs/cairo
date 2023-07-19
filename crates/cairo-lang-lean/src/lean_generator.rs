@@ -216,7 +216,7 @@ fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>, bool)>, branch_num: 
         }
     }
     // check that all branches have the same branch ID position.
-    let branch_id_pos = ret_blocks[0].1;
+    /*let branch_id_pos = ret_blocks[0].1;
     for (_, pos, _) in ret_blocks {
         match pos {
             Some(pos) => {
@@ -229,6 +229,30 @@ fn check_ret_blocks(ret_blocks: &Vec<(usize, Option<usize>, bool)>, branch_num: 
             },
             None => { assert!(branch_id_pos == None, "only some branches with branch ID position"); }
         }
+    }*/
+}
+
+fn get_branch_id_pos(ret_blocks: &Vec<(usize, Option<usize>, bool)>) -> Option<usize> {
+
+    if ret_blocks.len() == 0 {
+        return None;
+    }
+
+    match ret_blocks[0].1 {
+        Some(pos0) => {
+            for (_, id_branch_pos, _) in ret_blocks {
+                match id_branch_pos {
+                    Some(pos) => {
+                        if *pos != pos0 {
+                            return None;
+                        }
+                    },
+                    None => { return None; },
+                }
+            }
+            Some(pos0)
+        },
+        _ => { None }
     }
 }
 
@@ -376,7 +400,7 @@ impl<'a> LeanFuncInfo<'a> {
             let ret_blocks = get_ret_blocks(aux_info, cairo_program);
             check_ret_blocks(&ret_blocks, aux_info.return_args.len());
 
-            let branch_id_pos = if 0 < ret_blocks.len() { ret_blocks[0].1 } else { None };
+            let branch_id_pos = get_branch_id_pos(&ret_blocks);
             let mut ret_args = RetArgs {
                 branch_num: ret_blocks.len(),
                 arg_num: if ret_blocks.len() == 0 { 0 } else { ret_blocks[0].0 },
@@ -1749,12 +1773,30 @@ fn generate_auto_ret_block(
         branch_id, &ret_arg_names, &flat_exprs, lean_info, rebind, rc_checks, indent);
 }
 
+fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> bool {
+
+    if !test_name.ends_with("libfunc") {
+        return false;
+    }
+
+    !cairo_program.instructions.iter().any(
+        |instr| match instr.body {
+            InstructionBody::Call(_) => true,
+            _ => false
+         }
+    )
+}
+
 pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) -> String {
 
     let aux_info = match cairo_program.aux_info.as_ref() {
         Some(info) => info,
         _ => { return String::from("-- Could not find lean info."); }
     };
+
+    if !check_supported(test_name, aux_info, cairo_program) {
+        return "".into();
+    }
 
     let lean_info = LeanFuncInfo::new(
         test_name.split_whitespace().next().unwrap().to_string(),
