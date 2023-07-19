@@ -6,7 +6,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
 use lsp::SemanticTokenType;
 
@@ -32,6 +32,7 @@ pub enum SemanticTokenKind {
     Number,
     String,
     Field,
+    Annotation,
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node(
@@ -68,6 +69,9 @@ impl SemanticTokenKind {
         };
         node = node.parent().unwrap();
         let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
+        if identifier.text(syntax_db) == "super" {
+            return Some(SemanticTokenKind::Keyword);
+        }
 
         let parent_kind = node.parent().unwrap().kind(syntax_db);
         if ast::Item::is_variant(parent_kind) | matches!(parent_kind, SyntaxKind::AliasClause) {
@@ -75,6 +79,12 @@ impl SemanticTokenKind {
         }
         if matches!(parent_kind, SyntaxKind::StructArgSingle) {
             return Some(SemanticTokenKind::Field);
+        }
+        if matches!(parent_kind, SyntaxKind::FunctionDeclaration) {
+            return Some(SemanticTokenKind::Function);
+        }
+        if matches!(parent_kind, SyntaxKind::GenericParamType) {
+            return Some(SemanticTokenKind::TypeParameter);
         }
 
         // Identifier.
@@ -94,6 +104,7 @@ impl SemanticTokenKind {
                 SyntaxKind::Member => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::PatternIdentifier => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::Variant => return Some(SemanticTokenKind::EnumMember),
+                SyntaxKind::Attribute => return Some(SemanticTokenKind::Annotation),
                 _ => {}
             };
 
@@ -175,6 +186,7 @@ impl SemanticTokenKind {
             SemanticTokenKind::Number => 15,
             SemanticTokenKind::String => 16,
             SemanticTokenKind::Field => 17,
+            SemanticTokenKind::Annotation => 18,
         }
     }
     pub fn legend() -> Vec<SemanticTokenType> {
@@ -197,6 +209,7 @@ impl SemanticTokenKind {
             SemanticTokenType::NUMBER,
             SemanticTokenType::STRING,
             SemanticTokenType::PROPERTY,
+            SemanticTokenType::DECORATOR,
         ]
     }
 }

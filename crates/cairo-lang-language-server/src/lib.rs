@@ -546,6 +546,7 @@ impl LanguageServer for Backend {
 
         let file = file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
+        db.override_file_content(file, Some(Arc::new(params.text_document.text)));
         drop(db);
         self.refresh_diagnostics().await.ok();
     }
