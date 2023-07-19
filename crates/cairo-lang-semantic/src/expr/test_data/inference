@@ -564,3 +564,22 @@ fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > inference from struct pattern
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   let u256 { low, high } = 123;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
