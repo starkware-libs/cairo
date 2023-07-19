@@ -2,6 +2,7 @@
 #[path = "test.rs"]
 mod test;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::Maybe;
 use itertools::{zip_eq, Itertools};
@@ -72,11 +73,18 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         ));
     }
 
-    fn dup(&mut self, _position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
+    fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
-                next_usage_position.get(self.db),
+                next_usage_position.get(self.db).with_note(format!(
+                    "variable was previously used here:\n  --> {:?}",
+                    position
+                        .get(self.db)
+                        .stable_location
+                        .diagnostic_location(self.db.upcast())
+                        .debug(self.db.upcast())
+                )),
                 VariableMoved { inference_error },
             ));
         }

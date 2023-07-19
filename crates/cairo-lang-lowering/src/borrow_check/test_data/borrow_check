@@ -98,6 +98,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:14:3
   y
   ^
+note: variable was previously used here:
+  --> lib.cairo:11:16
+    use_a_drop(y);
+               ^
 
 error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::ACopy>. Trait has no implementation in context: core::traits::Destruct::<test::ACopy>.
  --> lib.cairo:8:8
@@ -325,6 +329,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return y;
          ^
+note: variable was previously used here:
+  --> lib.cairo:7:16
+    use_a_drop(y);
+               ^
 
 //! > lowering
 Parameters: v0: test::ADrop, v1: test::ADrop
@@ -383,6 +391,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> inline_macros:10:9
   panic(arr);
         ^*^
+note: variable was previously used here:
+  --> inline_macros:8:3
+  b.append('bla');
+  ^
 
 //! > lowering
 Parameters:
@@ -428,6 +440,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:8:19
   do_match_extern(x)
                   ^
+note: variable was previously used here:
+  --> lib.cairo:7:16
+  use_non_copy(x);
+               ^
 
 //! > lowering
 Parameters: v0: test::NonCopy
@@ -492,6 +508,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:12:10
   return x;
          ^
+note: variable was previously used here:
+  --> lib.cairo:11:16
+  use_non_copy(x.b);
+               ^*^
 
 //! > lowering
 Parameters: v0: test::MyStruct
@@ -538,11 +558,19 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:10:30
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
                              ^^
+note: variable was previously used here:
+  --> lib.cairo:12:16
+    invalidate(s2.a);
+               ^**^
 
 error: Variable was previously moved. Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
  --> lib.cairo:10:12
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
            ^^
+note: variable was previously used here:
+  --> lib.cairo:11:16
+    invalidate(s1.a);
+               ^**^
 
 //! > lowering
 Parameters: v0: test::MyStruct, v1: test::MyStruct
@@ -591,6 +619,10 @@ error: Variable was previously moved. Trait has no implementation in context: co
  --> lib.cairo:8:8
 fn foo(ref self: MyStruct) {
        ^****************^
+note: variable was previously used here:
+  --> lib.cairo:9:5
+    if self.b == 0 {
+    ^**************^
 
 //! > lowering
 Parameters: v0: test::MyStruct
