@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::{
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use itertools::Itertools;
 
 use crate::Location;
 
@@ -49,7 +48,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
     fn format(&self, db: &Self::DbType) -> String {
-        let msg = match &self.kind {
+        match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::NonZeroValueInMatch => {
                 "Match with a non-zero value is not supported.".into()
@@ -96,9 +95,17 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
                 ".into()
             }
-        };
+        }
+    }
 
-        itertools::chain!(self.location.notes.iter(), std::iter::once(&msg)).join(",\n")
+    fn notes(&self, _db: &Self::DbType) -> String {
+        let mut res = String::new();
+        // TODO: Add previous usage location note for VariableMoved.
+
+        for note in &self.location.notes {
+            res += &format!("note: {}\n", note);
+        }
+        res
     }
 
     #[allow(unreachable_patterns, clippy::single_match)]
