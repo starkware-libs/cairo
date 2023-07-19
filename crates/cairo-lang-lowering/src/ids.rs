@@ -354,6 +354,6 @@ impl LocationId {
         db: &dyn LoweringGroup,
         logic_name: &str,
     ) -> LocationId {
-        self.with_note(db, format!("while compiling auto-generated {logic_name}"))
+        self.with_note(db, format!("this error originates in auto-generated {logic_name} logic."))
     }
 }
