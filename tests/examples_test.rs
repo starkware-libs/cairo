@@ -11,7 +11,8 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::{CrateId, FlagId};
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
-use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, DUMMY_BUILTIN_GAS_COST};
+use cairo_lang_runner::{Arg, RunResultValue, SierraCasmRunner, token_gas_cost};
+use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::test_utils::build_metadata;
@@ -266,7 +267,7 @@ fn run_function(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
 #[case::hash_chain_gas(
     "hash_chain_gas",
-    &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * DUMMY_BUILTIN_GAS_COST),
+    &[3].map(Felt252::from), Some(100000), Some(9880 + 3 * token_gas_cost(CostTokenType::Pedersen)),
     RunResultValue::Success(vec![felt252_str!(
         "2dca1ad81a6107a9ef68c69f791bcdbda1df257aab76bd43ded73d96ed6227d", 16)]))]
 #[case::testing("testing", &[], None, None, RunResultValue::Success(vec![]))]
