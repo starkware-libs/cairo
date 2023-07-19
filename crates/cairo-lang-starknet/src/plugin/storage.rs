@@ -232,8 +232,9 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
 
         impl InternalContractStateImpl of InternalContractStateTrait {{
             fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<$key_type$>::hash({address}, key))
+                let base = pedersen::PedersenTrait::new({address});
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }}
             fn read(self: @ContractState, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
