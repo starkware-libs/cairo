@@ -19,6 +19,9 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
+    fn error_message(&self, db: &Self::DbType) -> String {
+        format_diagnostics(db.upcast(), &self.format(db), self.location(db))
+    }
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 pub struct DiagnosticLocation {
@@ -150,8 +153,7 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         let mut res = String::new();
         // Format leaves.
         for entry in &self.0.leaves {
-            let message = entry.format(db);
-            res += &format_diagnostics(db.upcast(), &message, entry.location(db));
+            res += &entry.error_message(db);
             res += "\n";
         }
         // Format subtrees.
