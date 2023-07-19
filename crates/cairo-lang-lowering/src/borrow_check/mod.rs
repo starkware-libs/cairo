@@ -67,8 +67,12 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
                 return;
             };
         }
+        let semantic_db = self.db.upcast();
         self.success = Err(self.diagnostics.report_by_location(
-            var.location.get(self.db),
+            var.location
+                .get(self.db)
+                .with_note(drop_err.format(semantic_db))
+                .with_note(destruct_err.format(semantic_db)),
             VariableNotDropped { drop_err, destruct_err },
         ));
     }
@@ -77,14 +81,17 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
-                next_usage_position.get(self.db).with_note(format!(
-                    "variable was previously used here:\n  --> {:?}",
-                    position
-                        .get(self.db)
-                        .stable_location
-                        .diagnostic_location(self.db.upcast())
-                        .debug(self.db.upcast())
-                )),
+                next_usage_position
+                    .get(self.db)
+                    .with_note(format!(
+                        "variable was previously used here:\n  --> {:?}",
+                        position
+                            .get(self.db)
+                            .stable_location
+                            .diagnostic_location(self.db.upcast())
+                            .debug(self.db.upcast())
+                    ))
+                    .with_note(inference_error.format(self.db.upcast())),
                 VariableMoved { inference_error },
             ));
         }
@@ -121,7 +128,9 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.duplicatable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location.get(self.db),
+                        var.location
+                            .get(self.db)
+                            .with_note(inference_error.format(self.db.upcast())),
                         DesnappingANonCopyableType { inference_error },
                     ));
                 }
