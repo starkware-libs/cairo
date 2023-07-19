@@ -11,42 +11,12 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop)]
+    #[derive(Drop, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
-    use array::ArrayTrait;
-    use array::SpanTrait;
     use hash::HashStateExTrait;
 
-    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
-            output.append(*self.value);
-        }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
-            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
-        }
-    }
-    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
-            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::Store::read(address_domain, base)?
-            })
-        }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::Store::write(address_domain, base, value.value)
-        }
-        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
-        }
-        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
-        }
-        fn size() -> u8 {
-            1_u8
-        }
-    }
     impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
         fn update_state(state: S, value: WrappedFelt252) -> S {
@@ -65,42 +35,12 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop)]
+    #[derive(Drop, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
-    use array::ArrayTrait;
-    use array::SpanTrait;
     use hash::HashStateExTrait;
 
-    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
-            output.append(*self.value);
-        }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
-            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
-        }
-    }
-    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
-            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::Store::read(address_domain, base)?
-            })
-        }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::Store::write(address_domain, base, value.value)
-        }
-        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
-        }
-        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
-        }
-        fn size() -> u8 {
-            1_u8
-        }
-    }
     impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
         fn update_state(state: S, value: WrappedFelt252) -> S {
@@ -115,7 +55,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 603878280309102207262570883936392153547126098811636877595015787136716000564;
+const TEST_CLASS_HASH: felt252 = 909856004779377492869494857279440546297578458948627382280663161907630834587;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -154,11 +94,7 @@ use starknet::event::EventEmitter;
     use var::InternalContractStateTrait as varContractStateTrait;
     mod var {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
         use super::HashStateExTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
         use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -203,11 +139,7 @@ use starknet::event::EventEmitter;
     use mapping::InternalContractStateTrait as mappingContractStateTrait;
     mod mapping {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
         use super::HashStateExTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
         use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -262,11 +194,7 @@ trait __abi<ContractState> {
 
 mod __external {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
         use super::HashStateExTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
         use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -279,11 +207,7 @@ mod __external {
 
 mod __l1_handler {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
         use super::HashStateExTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
         use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -296,11 +220,7 @@ mod __l1_handler {
 
 mod __constructor {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
         use super::HashStateExTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
         use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -315,7 +235,51 @@ mod __constructor {
 impls:
 
 impl WrappedFelt252Drop<> of Drop::<WrappedFelt252<>>;
+impl WrappedFelt252Serde<> of serde::Serde::<WrappedFelt252<>> {
+    fn serialize(self: @WrappedFelt252<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.value, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<WrappedFelt252<>> {
+        Option::Some(WrappedFelt252 {
+            value: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
 
+
+storage_access_impl:
+
+impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
+        let value = starknet::Store::<felt252>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            WrappedFelt252 {
+                value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write(address_domain, base, value.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+        let value = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            WrappedFelt252 {
+                value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<felt252>::size()
+    }
+}
 
 impls:
 
