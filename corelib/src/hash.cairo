@@ -1,139 +1,169 @@
 use traits::Into;
 use starknet::ContractAddress;
 
-extern type Pedersen;
-
-extern fn pedersen(a: felt252, b: felt252) -> felt252 implicits(Pedersen) nopanic;
-
-trait LegacyHash<T> {
-    fn hash(state: felt252, value: T) -> felt252;
+/// A trait for hash state accumulators.
+trait HashStateTrait<S> {
+    fn update(self: S, value: felt252) -> S;
+    fn finalize(self: S) -> felt252;
 }
 
-impl LegacyHashFelt252 of LegacyHash<felt252> {
-    fn hash(state: felt252, value: felt252) -> felt252 {
-        pedersen(state, value)
+/// A trait for values that can be hashed.
+trait Hash<T, S, impl SHashState: HashStateTrait<S>> {
+    /// Updates the hash state with the given value.
+    fn update_state(state: S, value: T) -> S;
+}
+
+/// Extension trait for hash state accumulators.
+trait HashStateExTrait<S, T> {
+    /// Updates the hash state with the given value.
+    fn update_with(self: S, value: T) -> S;
+}
+
+impl HashStateEx<
+    S, impl SHashState: HashStateTrait<S>, T, impl THash: Hash<T, S, SHashState>
+> of HashStateExTrait<S, T> {
+    #[inline(always)]
+    fn update_with(self: S, value: T) -> S {
+        THash::update_state(self, value)
     }
 }
 
-impl LegacyHashBool of LegacyHash<bool> {
-    fn hash(state: felt252, value: bool) -> felt252 {
-        LegacyHash::<felt252>::hash(state, if value {
-            1
-        } else {
-            0
-        })
+impl HashFelt252<S, impl SHashState: HashStateTrait<S>> of Hash<felt252, S, SHashState> {
+    fn update_state(state: S, value: felt252) -> S {
+        state.update(value)
     }
 }
 
-impl LegacyHashU8 of LegacyHash<u8> {
-    fn hash(state: felt252, value: u8) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashBool<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<bool, S, SHashState> {
+    fn update_state(state: S, value: bool) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashU16 of LegacyHash<u16> {
-    fn hash(state: felt252, value: u16) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashU8<S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>> of Hash<u8, S, SHashState> {
+    fn update_state(state: S, value: u8) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashU32 of LegacyHash<u32> {
-    fn hash(state: felt252, value: u32) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashU16<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<u16, S, SHashState> {
+    fn update_state(state: S, value: u16) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashU64 of LegacyHash<u64> {
-    fn hash(state: felt252, value: u64) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashU32<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<u32, S, SHashState> {
+    fn update_state(state: S, value: u32) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashU128 of LegacyHash<u128> {
-    fn hash(state: felt252, value: u128) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashU64<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<u64, S, SHashState> {
+    fn update_state(state: S, value: u64) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashU256 of LegacyHash<u256> {
-    fn hash(state: felt252, value: u256) -> felt252 {
-        let state = LegacyHash::<u128>::hash(state, value.low);
-        LegacyHash::<u128>::hash(state, value.high)
+impl HashU128<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<u128, S, SHashState> {
+    fn update_state(state: S, value: u128) -> S {
+        state.update(value.into())
     }
 }
 
-impl LegacyHashContractAddress of LegacyHash<starknet::ContractAddress> {
-    fn hash(state: felt252, value: starknet::ContractAddress) -> felt252 {
-        LegacyHash::<felt252>::hash(state, value.into())
+impl HashU256<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<u256, S, SHashState> {
+    fn update_state(state: S, value: u256) -> S {
+        state.update_with(value.low).update_with(value.high)
     }
 }
 
-impl TupleSize0LegacyHash of LegacyHash<()> {
-    fn hash(state: felt252, value: ()) -> felt252 {
+impl HashContractAddress<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<starknet::ContractAddress, S, SHashState> {
+    fn update_state(state: S, value: ContractAddress) -> S {
+        state.update(value.into())
+    }
+}
+
+impl TupleSize0Hash<S, impl SHashState: HashStateTrait<S>> of Hash<(), S, SHashState> {
+    fn update_state(state: S, value: ()) -> S {
         state
     }
 }
 
-impl TupleSize1LegacyHash<E0, impl E0LegacyHash: LegacyHash<E0>> of LegacyHash<(E0, )> {
-    fn hash(state: felt252, value: (E0, )) -> felt252 {
+impl TupleSize1Hash<
+    E0, S, impl E0Hash: Hash<E0, S, SHashState>, impl SHashState: HashStateTrait<S>
+> of Hash<(E0, ), S, SHashState> {
+    fn update_state(state: S, value: (E0, )) -> S {
         let (e0, ) = value;
-        E0LegacyHash::hash(state, e0)
+        state.update_with(e0)
     }
 }
 
-impl TupleSize2LegacyHash<
+impl TupleSize2Hash<
     E0,
     E1,
-    impl E0LegacyHash: LegacyHash<E0>,
-    impl E1LegacyHash: LegacyHash<E1>,
+    S,
+    impl SHashState: HashStateTrait<S>,
+    impl E0Hash: Hash<E0, S, SHashState>,
+    impl E1Hash: Hash<E1, S, SHashState>,
     impl E0Drop: Drop<E0>,
-    impl E1Drop: Drop<E1>
-> of LegacyHash<(E0, E1)> {
-    fn hash(state: felt252, value: (E0, E1, )) -> felt252 {
+    impl E1Drop: Drop<E1>,
+> of Hash<(E0, E1), S, SHashState> {
+    fn update_state(state: S, value: (E0, E1, )) -> S {
         let (e0, e1) = value;
-        let state = E0LegacyHash::hash(state, e0);
-        E1LegacyHash::hash(state, e1)
+        state.update_with(e0).update_with(e1)
     }
 }
 
-impl TupleSize3LegacyHash<
+impl TupleSize3Hash<
     E0,
     E1,
     E2,
-    impl E0LegacyHash: LegacyHash<E0>,
-    impl E1LegacyHash: LegacyHash<E1>,
-    impl E2LegacyHash: LegacyHash<E2>,
+    S,
+    impl SHashState: HashStateTrait<S>,
+    impl E0Hash: Hash<E0, S, SHashState>,
+    impl E1Hash: Hash<E1, S, SHashState>,
+    impl E2Hash: Hash<E2, S, SHashState>,
     impl E0Drop: Drop<E0>,
     impl E1Drop: Drop<E1>,
     impl E2Drop: Drop<E2>,
-> of LegacyHash<(E0, E1, E2)> {
-    fn hash(state: felt252, value: (E0, E1, E2)) -> felt252 {
+> of Hash<(E0, E1, E2), S, SHashState> {
+    fn update_state(state: S, value: (E0, E1, E2)) -> S {
         let (e0, e1, e2) = value;
-        let state = E0LegacyHash::hash(state, e0);
-        let state = E1LegacyHash::hash(state, e1);
-        E2LegacyHash::hash(state, e2)
+        state.update_with(e0).update_with(e1).update_with(e2)
     }
 }
 
-impl TupleSize4LegacyHash<
+impl TupleSize4Hash<
     E0,
     E1,
     E2,
     E3,
-    impl E0LegacyHash: LegacyHash<E0>,
-    impl E1LegacyHash: LegacyHash<E1>,
-    impl E2LegacyHash: LegacyHash<E2>,
-    impl E3LegacyHash: LegacyHash<E3>,
+    S,
+    impl SHashState: HashStateTrait<S>,
+    impl E0Hash: Hash<E0, S, SHashState>,
+    impl E1Hash: Hash<E1, S, SHashState>,
+    impl E2Hash: Hash<E2, S, SHashState>,
+    impl E3Hash: Hash<E3, S, SHashState>,
     impl E0Drop: Drop<E0>,
     impl E1Drop: Drop<E1>,
     impl E2Drop: Drop<E2>,
     impl E3Drop: Drop<E3>,
-> of LegacyHash<(E0, E1, E2, E3)> {
-    fn hash(state: felt252, value: (E0, E1, E2, E3)) -> felt252 {
+> of Hash<(E0, E1, E2, E3), S, SHashState> {
+    fn update_state(state: S, value: (E0, E1, E2, E3)) -> S {
         let (e0, e1, e2, e3) = value;
-        let state = E0LegacyHash::hash(state, e0);
-        let state = E1LegacyHash::hash(state, e1);
-        let state = E2LegacyHash::hash(state, e2);
-        E3LegacyHash::hash(state, e3)
+        state.update_with(e0).update_with(e1).update_with(e2).update_with(e3)
     }
 }
