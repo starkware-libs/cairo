@@ -17,6 +17,7 @@ mod test_contract {
     }
     use array::ArrayTrait;
     use array::SpanTrait;
+    use hash::HashStateExTrait;
 
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
@@ -46,10 +47,10 @@ mod test_contract {
             1_u8
         }
     }
-    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
+    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
-        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
-            hash::LegacyHash::hash(state, value.value)
+        fn update_state(state: S, value: WrappedFelt252) -> S {
+            state.update_with(value.value)
         }
     }
 }
@@ -70,6 +71,7 @@ mod test_contract {
     }
     use array::ArrayTrait;
     use array::SpanTrait;
+    use hash::HashStateExTrait;
 
     impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
         fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
@@ -99,10 +101,10 @@ mod test_contract {
             1_u8
         }
     }
-    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
+    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
-        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
-            hash::LegacyHash::hash(state, value.value)
+        fn update_state(state: S, value: WrappedFelt252) -> S {
+            state.update_with(value.value)
         }
     }
 }
@@ -113,7 +115,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1243623198958948520580646756853141118759553057893182087136995209187446689212;
+const TEST_CLASS_HASH: felt252 = 603878280309102207262570883936392153547126098811636877595015787136716000564;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -154,9 +156,10 @@ use starknet::event::EventEmitter;
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
+        use super::HashStateExTrait;
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252Store;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -202,9 +205,10 @@ use starknet::event::EventEmitter;
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
+        use super::HashStateExTrait;
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252Store;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -224,8 +228,9 @@ use starknet::event::EventEmitter;
 
         impl InternalContractStateImpl of InternalContractStateTrait {
             fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+                let base = hash::PedersenHashStateTrait::new(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4);
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }
             fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
@@ -259,9 +264,10 @@ mod __external {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
+        use super::HashStateExTrait;
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252Store;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -275,9 +281,10 @@ mod __l1_handler {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
+        use super::HashStateExTrait;
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252Store;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -291,9 +298,10 @@ mod __constructor {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
+        use super::HashStateExTrait;
         use super::WrappedFelt252Serde;
         use super::WrappedFelt252Store;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;

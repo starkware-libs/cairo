@@ -1,5 +1,5 @@
 use array::ArrayTrait;
-use hash::LegacyHash;
+use hash::pedersen;
 use integer::u256_from_felt252;
 use option::OptionTrait;
 
@@ -16,8 +16,8 @@ fn reproduce_bug() {
     let b = 2;
     let mut c = 0;
     if u256_from_felt252(a) < u256_from_felt252(b) {
-        c = LegacyHash::hash(a, b);
+        c = pedersen(a, b);
     } else {
-        c = LegacyHash::hash(b, a);
+        c = pedersen(b, a);
     }
 }

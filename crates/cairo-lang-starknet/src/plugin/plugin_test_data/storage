@@ -416,8 +416,9 @@ use starknet::event::EventEmitter;
 
         impl InternalContractStateImpl of InternalContractStateTrait {
             fn address(self: @ContractState, key: felt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<felt252>::hash(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc, key))
+                let base = hash::PedersenHashStateTrait::new(0x22ccfa174c52d0acc1e51ed6102f40f9e270cefc9a906ff2ee9a366c52db7bc);
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }
             fn read(self: @ContractState, key: felt252) -> u128 {
                 // Only address_domain 0 is currently supported.
@@ -459,8 +460,9 @@ use starknet::event::EventEmitter;
 
         impl InternalContractStateImpl of InternalContractStateTrait {
             fn address(self: @ContractState, key: u128) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<u128>::hash(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a, key))
+                let base = hash::PedersenHashStateTrait::new(0xaef662bd0e6cbe2fe1d8a16c45579f35b9c40069d967c414f98cd2e1975d7a);
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }
             fn read(self: @ContractState, key: u128) -> bool {
                 // Only address_domain 0 is currently supported.
@@ -502,8 +504,9 @@ use starknet::event::EventEmitter;
 
         impl InternalContractStateImpl of InternalContractStateTrait {
             fn address(self: @ContractState, key: bool) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<bool>::hash(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93, key))
+                let base = hash::PedersenHashStateTrait::new(0x11ddb648d7a85d8ff1f89f86feb50fd8bd26a25e6837cff5c3c38d8c3a0bb93);
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }
             fn read(self: @ContractState, key: bool) -> felt252 {
                 // Only address_domain 0 is currently supported.
