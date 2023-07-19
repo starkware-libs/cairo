@@ -104,3 +104,36 @@ impl ResultTraitImpl<T, E> of ResultTrait<T, E> {
 // Impls for generic types.
 impl ResultCopy<T, E, impl TCopy: Copy<T>, impl ECopy: Copy<E>> of Copy<Result<T, E>>;
 impl ResultDrop<T, E, impl TDrop: Drop<T>, impl EDrop: Drop<E>> of Drop<Result<T, E>>;
+
+impl ResultPartialEq<
+    T, E, impl TPartialEq: PartialEq<T>, impl EPartialEq: PartialEq<E>
+> of PartialEq<Result<T, E>> {
+    fn eq(lhs: @Result<T, E>, rhs: @Result<T, E>) -> bool {
+        match lhs {
+            Result::Ok(x) => {
+                match rhs {
+                    Result::Ok(y) => {
+                        x == y
+                    },
+                    Result::Err(_) => {
+                        false
+                    },
+                }
+            },
+            Result::Err(x) => {
+                match rhs {
+                    Result::Ok(_) => {
+                        false
+                    },
+                    Result::Err(y) => {
+                        x == y
+                    },
+                }
+            },
+        }
+    }
+    fn ne(lhs: @Result<T, E>, rhs: @Result<T, E>) -> bool {
+        !PartialEq::eq(lhs, rhs)
+    }
+}
+

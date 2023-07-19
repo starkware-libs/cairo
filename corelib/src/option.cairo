@@ -70,3 +70,33 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
 // Impls for generic types.
 impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>;
 impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>;
+
+impl OptionPartialEq<T, impl TPartialEq: PartialEq<T>> of PartialEq<Option<T>> {
+    fn eq(lhs: @Option<T>, rhs: @Option<T>) -> bool {
+        match lhs {
+            Option::Some(x) => {
+                match rhs {
+                    Option::Some(y) => {
+                        x == y
+                    },
+                    Option::None => {
+                        false
+                    },
+                }
+            },
+            Option::None => {
+                match lhs {
+                    Option::Some(_) => {
+                        false
+                    },
+                    Option::None => {
+                        true
+                    },
+                }
+            },
+        }
+    }
+    fn ne(lhs: @Option<T>, rhs: @Option<T>) -> bool {
+        !PartialEq::eq(lhs, rhs)
+    }
+}
