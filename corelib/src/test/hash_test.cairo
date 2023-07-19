@@ -4,7 +4,7 @@ use test::test_utils::{assert_eq, assert_ne};
 #[test]
 fn test_pedersen_hash() {
     assert_eq(
-        @hash::pedersen(1, 2),
+        @pedersen::pedersen(1, 2),
         @2592987851775965742543459319508348457290966253241455514226127639100457844774,
         'Wrong hash value'
     );
