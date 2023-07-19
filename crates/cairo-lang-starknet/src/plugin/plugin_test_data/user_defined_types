@@ -16,10 +16,10 @@ mod test_contract {
         value: felt252,
     }
 
-    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
+    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
-        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
-            hash::LegacyHash::hash(state, value.value)
+        fn update_state(state: S, value: WrappedFelt252) -> S {
+            state.update_with(value.value)
         }
     }
 }
@@ -39,10 +39,10 @@ mod test_contract {
         value: felt252,
     }
 
-    impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
+    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
         #[inline(always)]
-        fn hash(state: felt252, value: WrappedFelt252) -> felt252 {
-            hash::LegacyHash::hash(state, value.value)
+        fn update_state(state: S, value: WrappedFelt252) -> S {
+            state.update_with(value.value)
         }
     }
 }
@@ -53,7 +53,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1543758481510351290893079779129952235895398665497544807214103608330373509481;
+const TEST_CLASS_HASH: felt252 = 1753438874869180329743732822912416931509288777888292495823851748127419848060;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -92,7 +92,7 @@ use starknet::event::EventEmitter;
     use var::InternalContractStateTrait as varContractStateTrait;
     mod var {
         use super::WrappedFelt252;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -136,7 +136,7 @@ use starknet::event::EventEmitter;
     use mapping::InternalContractStateTrait as mappingContractStateTrait;
     mod mapping {
         use super::WrappedFelt252;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -156,8 +156,9 @@ use starknet::event::EventEmitter;
 
         impl InternalContractStateImpl of InternalContractStateTrait {
             fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
+                let base = pedersen::PedersenTrait::new(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4);
+                let state = hash::HashStateExTrait::update_with(base, key);
+                starknet::storage_base_address_from_felt252(hash::HashStateTrait::finalize(state))
             }
             fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
@@ -189,7 +190,7 @@ trait __abi<ContractState> {
 
 mod __external {
         use super::WrappedFelt252;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -201,7 +202,7 @@ mod __external {
 
 mod __l1_handler {
         use super::WrappedFelt252;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -213,7 +214,7 @@ mod __l1_handler {
 
 mod __constructor {
         use super::WrappedFelt252;
-        use super::WrappedFelt252LegacyHash;
+        use super::WrappedFelt252Hash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -302,3 +303,7 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+error: Method `update_with` not found on type "S". Did you import the correct trait and impl?
+ --> lib.cairo:16:19
+            state.update_with(value.value)
+                  ^*********^
