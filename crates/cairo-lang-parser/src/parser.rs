@@ -1253,7 +1253,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind ExprBlock.
     fn parse_block(&mut self) -> ExprBlockGreen {
-        let skipped_tokens = self.skip_until(is_of_kind!(lbrace, top_level, block));
+        let skipped_tokens = self.skip_until(is_of_kind!(rbrace, lbrace, top_level, block));
 
         if let Err(SkippedError(span)) = skipped_tokens {
             self.diagnostics.add(ParserDiagnostic {
@@ -1263,6 +1263,14 @@ impl<'a> Parser<'a> {
             });
         }
 
+        if is_of_kind!(rbrace, top_level)(self.peek().kind) {
+            return ExprBlock::new_green(
+                self.db,
+                self.create_and_report_missing_terminal::<TerminalLBrace>(),
+                StatementList::new_green(self.db, vec![]),
+                TerminalRBrace::missing(self.db),
+            );
+        }
         // Don't report diagnostic if one has already been reported.
         let lbrace = self.parse_token_ex::<TerminalLBrace>(skipped_tokens.is_ok());
         let statements = StatementList::new_green(
