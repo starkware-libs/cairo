@@ -547,10 +547,13 @@ fn get_core_concrete_trait(
 pub fn get_core_trait(db: &dyn SemanticGroup, name: SmolStr) -> TraitId {
     let core_module = db.core_module();
     // This should not fail if the corelib is present.
-    let use_id = extract_matches!(
-        db.module_item_by_name(core_module, name).unwrap().unwrap(),
+    let use_id = try_extract_matches!(
+        db.module_item_by_name(core_module, name.clone())
+            .unwrap_or_else(|_| panic!("Trait '{name}' was not found in core lib."))
+            .unwrap_or_else(|| panic!("Trait '{name}' was not found in core lib.")),
         ModuleItemId::Use
-    );
+    )
+    .unwrap_or_else(|| panic!("Trait '{name}' was not found in core lib."));
     let trait_id =
         extract_matches!(db.use_resolved_item(use_id).unwrap(), ResolvedGenericItem::Trait);
     trait_id
