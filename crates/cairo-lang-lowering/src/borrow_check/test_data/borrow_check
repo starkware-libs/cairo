@@ -607,11 +607,7 @@ Statements:
   (v5: core::integer::u8) <- 0u
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
-  (v12: test::MyStruct) <- struct_construct(v1{`if self.b == 0 {
-       self.a = Default::default();
-    }`}, v3{`if self.b == 0 {
-       self.a = Default::default();
-    }`})
+  (v12: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
 End:
   Match(match_enum(v8{`self.b == 0`}) {
     bool::False(v11) => blk2,

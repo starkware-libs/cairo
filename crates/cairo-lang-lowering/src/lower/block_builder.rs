@@ -225,7 +225,13 @@ impl BlockBuilder {
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = self.get_semantic(ctx, *semantic, location).var_id;
+                    let var = self
+                        .get_semantic(
+                            ctx,
+                            *semantic,
+                            ctx.get_location(semantic.untyped_stable_ptr(ctx.db.upcast())),
+                        )
+                        .var_id;
                     let var = ctx.variables[var].clone();
                     ctx.variables.variables.alloc(var)
                 });
