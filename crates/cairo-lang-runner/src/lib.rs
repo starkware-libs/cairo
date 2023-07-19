@@ -26,6 +26,7 @@ use cairo_lang_sierra_to_casm::metadata::{
 };
 use cairo_lang_sierra_type_size::{get_type_size_map, TypeSizeMap};
 use cairo_lang_starknet::contract::ContractInfo;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
@@ -90,8 +91,16 @@ pub enum RunResultValue {
     Panic(Vec<Felt252>),
 }
 
-// Dummy cost of a builtin invocation.
-pub const DUMMY_BUILTIN_GAS_COST: usize = 10000;
+// Approximated costs token types.
+fn token_gas_cost(token_type: CostTokenType) -> usize {
+    match token_type {
+        CostTokenType::Const => 1,
+        CostTokenType::Pedersen => 4130,
+        CostTokenType::Poseidon => 500,
+        CostTokenType::Bitwise => 594,
+        CostTokenType::EcOp => 4166,
+    }
+}
 
 /// An argument to a sierra function run,
 #[derive(Debug)]
@@ -228,7 +237,7 @@ impl SierraCasmRunner {
                     vm.insert_value(
                         (builtin_cost_segment + (token_type.offset_in_builtin_costs() as usize))
                             .unwrap(),
-                        Felt252::from(DUMMY_BUILTIN_GAS_COST),
+                        Felt252::from(token_gas_cost(*token_type)),
                     )
                     .map_err(|e| Box::new(e.into()))?;
                 }
@@ -484,30 +493,29 @@ impl SierraCasmRunner {
         func: &Function,
         available_gas: Option<usize>,
     ) -> Result<usize, RunnerError> {
-        // In case we don't have any costs - it means no equations were solved - so the gas builtin
-        // is irrelevant, and we can return any value.
-        if self.metadata.gas_info.function_costs.is_empty() {
-            return Ok(0);
-        }
         let Some(available_gas) = available_gas else {
             return Ok(0);
         };
 
-        // Compute the initial gas required by the function.
-        let required_gas = self.metadata.gas_info.function_costs[func.id.clone()]
-            .iter()
-            .map(|(cost_token_type, val)| {
-                let val_usize: usize = (*val).try_into().unwrap();
-                let token_cost = if *cost_token_type == CostTokenType::Const {
-                    1
-                } else {
-                    DUMMY_BUILTIN_GAS_COST
-                };
-                val_usize * token_cost
-            })
-            .sum();
+        // In case we don't have any costs - it means no equations were solved - so the gas builtin
+        // is irrelevant, and we can return any value.
+        let Some(required_gas) = self.initial_required_gas(func) else {
+            return Ok(0);
+        };
 
         available_gas.checked_sub(required_gas).ok_or(RunnerError::NotEnoughGasToCall)
+    }
+
+    pub fn initial_required_gas(&self, func: &Function) -> Option<usize> {
+        if self.metadata.gas_info.function_costs.is_empty() {
+            return None;
+        }
+        Some(
+            self.metadata.gas_info.function_costs[func.id.clone()]
+                .iter()
+                .map(|(token_type, val)| val.into_or_panic::<usize>() * token_gas_cost(*token_type))
+                .sum(),
+        )
     }
 
     /// Creates a list of instructions that will be appended to the program's bytecode.
