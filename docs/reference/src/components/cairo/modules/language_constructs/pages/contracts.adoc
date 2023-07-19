@@ -45,8 +45,8 @@ For example, for the storage member `x` above, access is done using `x::read()` 
 `x::write(value)`.
 
 Defining a mapping storage member is done using the `LegacyMap` "type" that is expanded by
-the Starknet plugin. The keys must implement the `LegacyHash` trait and the values must implement
-the `StorageAccess` trait.
+the Starknet plugin. The keys must implement the `Hash` trait and the values must implement the
+`StorageAccess` trait.
 Accessing such storage members is done using the `::read(key)` and
 `::write(key, value)` functions which are also automatically created by the Starknet plugin.
 For example, for the storage member `m` above, access is done using `m::read(key)` and
