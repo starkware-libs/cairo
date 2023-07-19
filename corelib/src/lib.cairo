@@ -295,9 +295,12 @@ mod serde;
 
 // Hash functions.
 mod hash;
-use hash::{pedersen, Pedersen};
 
 mod keccak;
+
+// Pedersen
+mod pedersen;
+use pedersen::Pedersen;
 
 // Poseidon
 mod poseidon;
