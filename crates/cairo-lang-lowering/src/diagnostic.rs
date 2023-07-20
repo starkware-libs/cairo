@@ -1,7 +1,8 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
-    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
+    DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, Diagnostics,
+    DiagnosticsBuilder,
 };
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
@@ -94,7 +95,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
         }
     }
 
-    fn notes(&self, _db: &Self::DbType) -> &[String] {
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &self.location.notes
     }
 

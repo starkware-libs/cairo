@@ -19,12 +19,13 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
-    fn notes(&self, _db: &Self::DbType) -> &[String] {
+    fn notes(&self, _db: &Self::DbType) -> &[DiagnosticNote] {
         &[]
     }
 
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {
     pub file_id: FileId,
     pub span: TextSpan,
@@ -45,6 +46,36 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
             None => "?".into(),
         };
         write!(f, "{file_name}:{pos}\n{marks}")
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DiagnosticNote {
+    pub text: String,
+    location: Option<DiagnosticLocation>,
+}
+impl DiagnosticNote {
+    pub fn text_only(text: String) -> Self {
+        Self { text, location: None }
+    }
+
+    pub fn with_location(text: String, location: DiagnosticLocation) -> Self {
+        Self { text, location: Some(location) }
+    }
+}
+
+impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+        db: &(dyn FilesGroup + 'static),
+    ) -> std::fmt::Result {
+        write!(f, "{}", self.text)?;
+        if let Some(location) = &self.location {
+            write!(f, "\n  --> ")?;
+            location.fmt(f, db)?;
+        }
+        Ok(())
     }
 }
 
@@ -152,12 +183,15 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
 
     pub fn format(&self, db: &TEntry::DbType) -> String {
         let mut res = String::new();
+
+        let files_db = db.upcast();
         // Format leaves.
         for entry in &self.0.leaves {
             let message = entry.format(db);
-            res += &format_diagnostics(db.upcast(), &message, entry.location(db));
+
+            res += &format_diagnostics(files_db, &message, entry.location(db));
             for note in entry.notes(db) {
-                res += &format!("note: {}\n", note);
+                res += &format!("note: {:?}\n", note.debug(files_db))
             }
             res += "\n";
         }
