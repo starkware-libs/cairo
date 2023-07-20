@@ -310,10 +310,12 @@ extern type Array<T, const N: usize>;
                      ^************^
 
 //! > lowering_diagnostics
-error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<test::Array::<core::felt252, 5>>. Trait has no implementation in context: core::traits::Destruct::<test::Array::<core::felt252, 5>>.
+error: Variable not dropped.
  --> lib.cairo:2:8
 fn foo(a : Array::<felt252, 5>) -> felt252 {
        ^
+note: Trait has no implementation in context: core::traits::Drop::<test::Array::<core::felt252, 5>>
+note: Trait has no implementation in context: core::traits::Destruct::<test::Array::<core::felt252, 5>>
 
 //! > lowering_flat
 Parameters: v0: test::Array::<core::felt252, 5>

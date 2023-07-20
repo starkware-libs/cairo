@@ -47,7 +47,7 @@ pub struct LoweringDiagnostic {
 impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
-    fn format(&self, db: &Self::DbType) -> String {
+    fn format(&self, _db: &Self::DbType) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::NonZeroValueInMatch => {
@@ -56,18 +56,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved { inference_error } => {
-                format!("Variable was previously moved. {}", inference_error.format(db))
+            LoweringDiagnosticKind::VariableMoved { .. } => {
+                "Variable was previously moved.".into()
             }
-            LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
-                format!(
-                    "Variable not dropped. {}. {}.",
-                    drop_err.format(db),
-                    destruct_err.format(db)
-                )
+            LoweringDiagnosticKind::VariableNotDropped { .. } => {
+                "Variable not dropped.".into()
             }
-            LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
-                format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
+            LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
+                "Cannot desnap a non copyable type.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
                                                                 Currently, only matches on enums \

@@ -1227,10 +1227,12 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
     fn foo<T>(ref self: ContractState, x: T) {
           ^*^
 
-error: Variable not dropped. Trait has no implementation in context: core::traits::Drop::<T>. Trait has no implementation in context: core::traits::Destruct::<T>.
+error: Variable not dropped.
  --> lib.cairo:6:40
     fn foo<T>(ref self: ContractState, x: T) {
                                        ^
+note: Trait has no implementation in context: core::traits::Drop::<T>
+note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
  --> contract:61:32
