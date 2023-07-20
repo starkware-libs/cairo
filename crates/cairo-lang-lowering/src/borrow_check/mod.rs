@@ -2,9 +2,8 @@
 #[path = "test.rs"]
 mod test;
 
-use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleFileId;
-use cairo_lang_diagnostics::Maybe;
+use cairo_lang_diagnostics::{DiagnosticNote, Maybe};
 use itertools::{zip_eq, Itertools};
 
 use self::analysis::{Analyzer, StatementLocation};
@@ -59,25 +58,19 @@ pub enum DropPosition {
     Diverge(LocationId),
 }
 impl DropPosition {
-    fn as_note(self, db: &dyn LoweringGroup) -> String {
-        match self {
-            Self::Panic(location) => format!(
-                "the variable needs to be dropped due to the potential panic here:\n  --> {:?}",
-                location
-                    .get(db)
-                    .stable_location
-                    .diagnostic_location(db.upcast())
-                    .debug(db.upcast()),
-            ),
-            Self::Diverge(location) => format!(
-                "the variable needs to be dropped due to the divergence here:\n  --> {:?}",
-                location
-                    .get(db)
-                    .stable_location
-                    .diagnostic_location(db.upcast())
-                    .debug(db.upcast()),
-            ),
-        }
+    fn as_note(self, db: &dyn LoweringGroup) -> DiagnosticNote {
+        let (text, location) = match self {
+            Self::Panic(location) => {
+                ("the variable needs to be dropped due to the potential panic here:", location)
+            }
+            Self::Diverge(location) => {
+                ("the variable needs to be dropped due to the divergence here:", location)
+            }
+        };
+        DiagnosticNote::with_location(
+            text.into(),
+            location.get(db).stable_location.diagnostic_location(db.upcast()),
+        )
     }
 }
 
@@ -111,12 +104,12 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
             location = location.with_note(drop_position.as_note(self.db));
         }
         let semantic_db = self.db.upcast();
-        location = location
-            .with_note(drop_err.format(semantic_db))
-            .with_note(destruct_err.format(semantic_db));
-        self.success = Err(self
-            .diagnostics
-            .report_by_location(location, VariableNotDropped { drop_err, destruct_err }));
+        self.success = Err(self.diagnostics.report_by_location(
+            location
+                .with_note(DiagnosticNote::text_only(drop_err.format(semantic_db)))
+                .with_note(DiagnosticNote::text_only(destruct_err.format(semantic_db))),
+            VariableNotDropped { drop_err, destruct_err },
+        ));
     }
 
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
@@ -125,15 +118,8 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
                     .get(self.db)
-                    .with_note(format!(
-                        "variable was previously used here:\n  --> {:?}",
-                        position
-                            .get(self.db)
-                            .stable_location
-                            .diagnostic_location(self.db.upcast())
-                            .debug(self.db.upcast())
-                    ))
-                    .with_note(inference_error.format(self.db.upcast())),
+                    .add_note_with_location(self.db, "variable was previously used here:", position)
+                    .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
                 VariableMoved { inference_error },
             ));
         }
@@ -173,9 +159,9 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.duplicatable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location
-                            .get(self.db)
-                            .with_note(inference_error.format(self.db.upcast())),
+                        var.location.get(self.db).with_note(DiagnosticNote::text_only(
+                            inference_error.format(self.db.upcast()),
+                        )),
                         DesnappingANonCopyableType { inference_error },
                     ));
                 }
