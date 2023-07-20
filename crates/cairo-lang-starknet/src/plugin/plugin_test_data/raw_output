@@ -108,16 +108,12 @@ mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
+                panic(array!['Input too long for arguments']);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -125,16 +121,12 @@ mod __external {
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
+                panic(array!['Input too long for arguments']);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -192,6 +184,56 @@ impl EventIsEvent of starknet::Event<Event> {
         
         Option::None
     }
+}
+
+
+
+inline_macros:
+
+
+mod __external {
+        use super::ArrayTrait;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            if !array::SpanTrait::is_empty(data) {
+                panic({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Input too long for arguments');
+            __array_builder_macro_result__
+        });
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::test_raw_output(ref contract_state, )
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            if !array::SpanTrait::is_empty(data) {
+                panic({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Input too long for arguments');
+            __array_builder_macro_result__
+        });
+            }
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::test_raw_output_with_spaces(ref contract_state, )
+        }
+        
 }
 
 //! > expected_diagnostics
