@@ -283,6 +283,10 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:2:12
 fn foo(ref a: A) {
            ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:3:4
+   1 + 1;
+   ^***^
 
 //! > lowering
 Parameters: v0: test::A
@@ -693,6 +697,10 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:10:3
   x.a = 17;
   ^*^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:11:3
+  x.a += 1;
+  ^******^
 
 //! > lowering
 Parameters: v0: test::MyStruct
