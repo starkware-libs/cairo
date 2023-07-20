@@ -334,4 +334,11 @@ impl MatchInfo {
             MatchInfo::Extern(s) => &s.arms,
         }
     }
+
+    pub fn location(&self) -> &LocationId {
+        match self {
+            MatchInfo::Enum(s) => &s.location,
+            MatchInfo::Extern(s) => &s.location,
+        }
+    }
 }

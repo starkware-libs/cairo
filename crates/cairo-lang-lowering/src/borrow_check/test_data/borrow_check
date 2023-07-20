@@ -107,6 +107,10 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
+note: variable need to be dropped before:
+  --> lib.cairo:9:3
+  if true {
+  ^*******^
 
 //! > lowering
 Parameters: v0: test::ACopy, v1: test::ADrop
@@ -283,6 +287,10 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:2:12
 fn foo(ref a: A) {
            ^
+note: variable need to be dropped before:
+  --> lib.cairo:3:4
+   1 + 1;
+   ^***^
 
 //! > lowering
 Parameters: v0: test::A
@@ -693,6 +701,10 @@ error: Variable not dropped. Trait has no implementation in context: core::trait
  --> lib.cairo:10:3
   x.a = 17;
   ^*^
+note: variable need to be dropped before:
+  --> lib.cairo:11:3
+  x.a += 1;
+  ^******^
 
 //! > lowering
 Parameters: v0: test::MyStruct

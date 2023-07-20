@@ -51,10 +51,17 @@ impl AuxCombine for PanicState {
 }
 
 impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
-    type IntroducePosition = ();
+    // Note that for the BorrowChecker `BorrowChecker` is also the position where the
+    // variable needs to be dropped.
+    type IntroducePosition = Option<LocationId>;
     type UsePosition = LocationId;
 
-    fn drop_aux(&mut self, _position: (), var_id: VariableId, panic_state: PanicState) {
+    fn drop_aux(
+        &mut self,
+        position: Option<LocationId>,
+        var_id: VariableId,
+        panic_state: PanicState,
+    ) {
         let var = &self.lowered.variables[var_id];
         let Err(drop_err) = var.droppable.clone() else {
             return;
@@ -67,10 +74,22 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
                 return;
             };
         }
-        self.success = Err(self.diagnostics.report_by_location(
-            var.location.get(self.db),
-            VariableNotDropped { drop_err, destruct_err },
-        ));
+
+        let mut location = var.location.get(self.db);
+        if let Some(divergence) = position {
+            location = location.with_note(format!(
+                "variable need to be dropped before:\n  --> {:?}",
+                divergence
+                    .get(self.db)
+                    .stable_location
+                    .diagnostic_location(self.db.upcast())
+                    .debug(self.db.upcast()),
+            ));
+        }
+
+        self.success = Err(self
+            .diagnostics
+            .report_by_location(location, VariableNotDropped { drop_err, destruct_err }));
     }
 
     fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
@@ -100,7 +119,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), ());
+        info.variables_introduced(self, &stmt.outputs(), None);
         match stmt {
             Statement::Call(stmt) => {
                 if let Ok(signature) = stmt.function.signature(self.db) {
@@ -111,7 +130,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                             ..Default::default()
                         };
                         *info = BorrowCheckerDemand::merge_demands(
-                            &[(panic_demand, ()), (info.clone(), ())],
+                            &[
+                                (panic_demand, Some(stmt.location)),
+                                (info.clone(), Some(stmt.location)),
+                            ],
                             self,
                         );
                     }
@@ -158,8 +180,8 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
                 let mut demand = demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ());
-                (demand, ())
+                demand.variables_introduced(self, &arm.var_ids, None);
+                (demand, Some(*match_info.location()))
             })
             .collect_vec();
         let mut demand = BorrowCheckerDemand::merge_demands(&arm_demands, self);
@@ -208,7 +230,7 @@ pub fn borrow_check(
         let mut analysis =
             BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
-        root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, ());
+        root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, None);
         let success = analysis.analyzer.success;
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 
