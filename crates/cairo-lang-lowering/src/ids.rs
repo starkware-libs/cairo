@@ -1,6 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::UnstableSalsaId;
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::{DiagnosticAdded, DiagnosticNote, Maybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::define_short_id;
@@ -344,7 +344,7 @@ impl LocationId {
     }
 
     // Adds a note to the location.
-    pub fn with_note(&self, db: &dyn LoweringGroup, note: String) -> LocationId {
+    pub fn with_note(&self, db: &dyn LoweringGroup, note: DiagnosticNote) -> LocationId {
         db.intern_location(self.get(db).with_note(note))
     }
 
@@ -354,6 +354,11 @@ impl LocationId {
         db: &dyn LoweringGroup,
         logic_name: &str,
     ) -> LocationId {
-        self.with_note(db, format!("this error originates in auto-generated {logic_name} logic."))
+        self.with_note(
+            db,
+            DiagnosticNote::text_only(format!(
+                "this error originates in auto-generated {logic_name} logic."
+            )),
+        )
     }
 }
