@@ -108,6 +108,10 @@ error: Variable not dropped.
  --> lib.cairo:8:8
 fn foo(x: ACopy, y: ADrop) -> ADrop {
        ^
+note: the variable needs to be dropped due to the divergence here:
+  --> lib.cairo:9:3
+  if true {
+  ^*******^
 note: Trait has no implementation in context: core::traits::Drop::<test::ACopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::ACopy>
 
@@ -286,6 +290,10 @@ error: Variable not dropped.
  --> lib.cairo:2:12
 fn foo(ref a: A) {
            ^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:3:4
+   1 + 1;
+   ^***^
 note: Trait has no implementation in context: core::traits::Drop::<test::A>
 note: Trait has no implementation in context: core::traits::Destruct::<test::A>
 
@@ -705,6 +713,10 @@ error: Variable not dropped.
  --> lib.cairo:10:3
   x.a = 17;
   ^*^
+note: the variable needs to be dropped due to the potential panic here:
+  --> lib.cairo:11:3
+  x.a += 1;
+  ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
 
