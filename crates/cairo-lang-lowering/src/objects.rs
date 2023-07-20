@@ -82,7 +82,7 @@ pub struct FlatLowered {
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
-    /// function paramaters, including implicits.
+    /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
 }
 
