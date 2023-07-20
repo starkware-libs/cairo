@@ -452,6 +452,10 @@ pub fn core_withdraw_gas(db: &dyn SemanticGroup) -> FunctionId {
     get_function_id(db, core_submodule(db, "gas"), "withdraw_gas".into(), vec![])
 }
 
+pub fn internal_require_implicit(db: &dyn SemanticGroup) -> GenericFunctionId {
+    get_generic_function_id(db, core_submodule(db, "internal"), "require_implicit".into())
+}
+
 /// Given a core library function name and its generic arguments, returns [FunctionId].
 pub fn get_core_function_id(
     db: &dyn SemanticGroup,

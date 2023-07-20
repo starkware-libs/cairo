@@ -179,17 +179,11 @@ pub fn generate_entry_point_wrapper(
     Ok(RewriteNode::interpolate_patched(
         "$implicit_precedence$
         fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             $arg_definitions$
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             $output_handling$
