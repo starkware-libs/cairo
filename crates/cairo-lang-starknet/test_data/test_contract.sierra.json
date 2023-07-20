@@ -2041,6 +2041,20 @@
       "state_mutability": "external"
     },
     {
+      "type": "enum",
+      "name": "core::bool",
+      "variants": [
+        {
+          "name": "False",
+          "type": "()"
+        },
+        {
+          "name": "True",
+          "type": "()"
+        }
+      ]
+    },
+    {
       "type": "struct",
       "name": "test_contract::test_contract::MyType",
       "members": [

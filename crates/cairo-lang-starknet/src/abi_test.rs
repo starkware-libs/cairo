@@ -138,6 +138,20 @@ fn test_abi() {
               "state_mutability": "external"
             },
             {
+              "type": "struct",
+              "name": "test::MyStruct::<core::integer::u128>",
+              "members": [
+                {
+                  "name": "a",
+                  "type": "core::integer::u128"
+                },
+                {
+                  "name": "b",
+                  "type": "core::felt252"
+                }
+              ]
+            },
+            {
               "type": "enum",
               "name": "test::MyEnum::<core::integer::u128>",
               "variants": [
