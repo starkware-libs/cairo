@@ -12,6 +12,7 @@ pub mod bitwise;
 pub mod boolean;
 pub mod boxing;
 pub mod branch_align;
+pub mod bytes31;
 pub mod casts;
 pub mod consts;
 pub mod debug;
@@ -33,12 +34,14 @@ pub mod poseidon;
 pub mod range_check;
 pub mod segment_arena;
 pub mod snapshot;
+pub mod span;
 pub mod squashed_felt252_dict;
 pub mod starknet;
 pub mod structure;
 pub mod try_from_felt252;
 pub mod unconditional_jump;
 pub mod uninitialized;
+pub mod utils;
 
 /// Helper for Unit type def.
 fn get_unit_type(

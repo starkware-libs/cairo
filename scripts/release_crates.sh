@@ -8,6 +8,7 @@ cargo publish --package cairo-lang-filesystem && \
 cargo publish --package cairo-lang-diagnostics && \
 cargo publish --package cairo-lang-project && \
 cargo publish --package cairo-lang-sierra && \
+cargo publish --package cairo-lang-sierra-type-size && \
 cargo publish --package cairo-lang-sierra-ap-change && \
 cargo publish --package cairo-lang-sierra-gas && \
 cargo publish --package cairo-lang-sierra-to-casm && \
@@ -24,4 +25,12 @@ cargo publish --package cairo-lang-compiler && \
 cargo publish --package cairo-lang-starknet && \
 cargo publish --package cairo-lang-runner && \
 cargo publish --package cairo-lang-test-runner && \
-cargo publish --package cairo-lang-language-server
+cargo publish --package cairo-lang-language-server && \
+cargo publish --package cairo-compile && \
+cargo publish --package cairo-format && \
+cargo publish --package cairo-language-server && \
+cargo publish --package cairo-run && \
+cargo publish --package cairo-test && \
+cargo publish --package sierra-compile && \
+cargo publish --package starknet-compile && \
+cargo publish --package starknet-sierra-compile

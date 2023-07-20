@@ -1,0 +1,18 @@
+use cairo_lang_sierra::extensions::int::signed128::Sint128Concrete;
+
+use super::{build_const, CompiledInvocation, CompiledInvocationBuilder, InvocationError};
+use crate::invocations::misc;
+
+/// Builds instructions for Sierra s128 operations.
+pub fn build(
+    libfunc: &Sint128Concrete,
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    match libfunc {
+        Sint128Concrete::IsZero(_) => misc::build_is_zero(builder),
+        Sint128Concrete::Const(libfunc) => build_const(libfunc, builder),
+        Sint128Concrete::FromFelt252(_) => todo!(),
+        Sint128Concrete::ToFelt252(_) => misc::build_identity(builder),
+        Sint128Concrete::Equal(_) => misc::build_cell_eq(builder),
+    }
+}

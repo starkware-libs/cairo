@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use cairo_lang_semantic::plugin::SemanticPlugin;
 
-use crate::plugins::{ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin};
+use crate::plugins::{
+    ConfigPlugin, DerivePlugin, GenerateTraitPlugin, InlineMacroPlugin, PanicablePlugin,
+};
 
 pub mod plugins;
 
@@ -17,5 +19,6 @@ pub fn get_default_plugins() -> Vec<Arc<dyn SemanticPlugin>> {
         Arc::new(GenerateTraitPlugin::default()),
         Arc::new(PanicablePlugin::default()),
         Arc::new(ConfigPlugin::default()),
+        Arc::new(InlineMacroPlugin),
     ]
 }

@@ -46,12 +46,17 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         enum_snapshot: "enum_snapshot",
         felt252_dict: "felt252_dict",
         felt252: "felt252",
-        gas: "gas",
+        i128: "i128",
+        i16: "i16",
+        i32: "i32",
+        i64: "i64",
+        i8: "i8",
         nullable: "nullable",
         poseidon: "poseidon",
         snapshot: "snapshot",
         u128: "u128",
         u16: "u16",
+        bytes31: "bytes31",
         u256: "u256",
         u32: "u32",
         u512: "u512",
@@ -65,7 +70,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     libfunc_e2e_skip_add_gas,
     "e2e_test_data/libfuncs",
     {
-        withdraw_gas_all: "withdraw_gas_all",
+        gas: "gas",
     },
     SmallE2ETestRunnerSkipAddGas
 );

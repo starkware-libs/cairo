@@ -9,10 +9,10 @@ use super::{
 };
 
 #[test]
-fn experimental_list_includes_all() {
+fn all_list_includes_all_supported() {
     let blocked_libfuncs = [
         "print",
-        "set_block_number",
+        "cheatcode",
         "set_block_timestamp",
         "set_caller_address",
         "set_contract_address",
@@ -24,6 +24,7 @@ fn experimental_list_includes_all() {
         "set_chain_id",
         "set_nonce",
         "set_signature",
+        "pop_log",
         "get_available_gas",
     ];
     pretty_assertions::assert_eq!(
@@ -42,7 +43,7 @@ fn experimental_list_includes_all() {
 }
 
 #[test]
-fn allowed_lists_include_only_valid_libfuncs() {
+fn libfunc_lists_include_only_supported_libfuncs() {
     let supported_ids = CoreLibfunc::supported_ids().into_iter().collect::<HashSet<_>>();
     for list_name in [
         BUILTIN_ALL_LIBFUNCS_LIST,
@@ -54,7 +55,7 @@ fn allowed_lists_include_only_valid_libfuncs() {
         for libfunc_id in allowed_libfuncs.allowed_libfuncs {
             assert!(
                 supported_ids.contains(&libfunc_id),
-                "libfunc {libfunc_id} is missing on list {list_name}."
+                "libfunc {libfunc_id} from list {list_name} is not supported."
             );
         }
     }

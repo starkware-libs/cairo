@@ -20,5 +20,5 @@ impl NoGenericArgsGenericType for SegmentArenaType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }

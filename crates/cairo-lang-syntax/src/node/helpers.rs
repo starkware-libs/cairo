@@ -2,10 +2,10 @@ use smol_str::SmolStr;
 
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
-    Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr, ItemExternType,
-    ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias, ItemUse, Member,
-    Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
-    TraitItemFunctionPtr,
+    ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
+    ItemExternType, ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
+    ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItemFunction,
+    TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
@@ -260,12 +260,38 @@ impl QueryAttrs for Item {
     }
 }
 
+impl QueryAttrs for ImplItem {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        match self {
+            ImplItem::Function(item) => item.attributes_elements(db),
+            ImplItem::Constant(item) => item.attributes_elements(db),
+            ImplItem::Module(item) => item.attributes_elements(db),
+            ImplItem::Use(item) => item.attributes_elements(db),
+            ImplItem::ExternFunction(item) => item.attributes_elements(db),
+            ImplItem::ExternType(item) => item.attributes_elements(db),
+            ImplItem::Trait(item) => item.attributes_elements(db),
+            ImplItem::Impl(item) => item.attributes_elements(db),
+            ImplItem::ImplAlias(item) => item.attributes_elements(db),
+            ImplItem::Struct(item) => item.attributes_elements(db),
+            ImplItem::Enum(item) => item.attributes_elements(db),
+            ImplItem::TypeAlias(item) => item.attributes_elements(db),
+            ImplItem::Missing(_) => vec![],
+        }
+    }
+}
+
 impl QueryAttrs for AttributeList {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.elements(db)
     }
 }
 impl QueryAttrs for Member {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
+impl QueryAttrs for Variant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)
     }

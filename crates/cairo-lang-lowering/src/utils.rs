@@ -4,12 +4,15 @@ use crate::{
     BlockId, FlatBlock, FlatBlockEnd, MatchArm, MatchEnumInfo, MatchExternInfo, MatchInfo,
     Statement, StatementCall, StatementDesnap, StatementEnumConstruct, StatementLiteral,
     StatementSnapshot, StatementStructConstruct, StatementStructDestructure, VarRemapping,
-    VariableId,
+    VarUsage, VariableId,
 };
 
 /// A rebuilder trait for rebuilding lowered representation.
 pub trait Rebuilder {
     fn map_var_id(&mut self, var: VariableId) -> VariableId;
+    fn map_var_usage(&mut self, var_usage: VarUsage) -> VarUsage {
+        VarUsage { var_id: self.map_var_id(var_usage.var_id), location: var_usage.location }
+    }
     fn map_block_id(&mut self, block: BlockId) -> BlockId;
     fn transform_statement(&mut self, _statement: &mut Statement) {}
     fn transform_remapping(&mut self, _remapping: &mut VarRemapping) {}
@@ -27,34 +30,34 @@ pub trait RebuilderEx: Rebuilder {
             }),
             Statement::Call(stmt) => Statement::Call(StatementCall {
                 function: stmt.function,
-                inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
+                inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
                 outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 location: stmt.location,
             }),
             Statement::StructConstruct(stmt) => {
                 Statement::StructConstruct(StatementStructConstruct {
-                    inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
+                    inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
                     output: self.map_var_id(stmt.output),
                 })
             }
             Statement::StructDestructure(stmt) => {
                 Statement::StructDestructure(StatementStructDestructure {
-                    input: self.map_var_id(stmt.input),
+                    input: self.map_var_usage(stmt.input),
                     outputs: stmt.outputs.iter().map(|v| self.map_var_id(*v)).collect(),
                 })
             }
             Statement::EnumConstruct(stmt) => Statement::EnumConstruct(StatementEnumConstruct {
                 variant: stmt.variant.clone(),
-                input: self.map_var_id(stmt.input),
+                input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
             Statement::Snapshot(stmt) => Statement::Snapshot(StatementSnapshot {
-                input: self.map_var_id(stmt.input),
+                input: self.map_var_usage(stmt.input),
                 output_original: self.map_var_id(stmt.output_original),
                 output_snapshot: self.map_var_id(stmt.output_snapshot),
             }),
             Statement::Desnap(stmt) => Statement::Desnap(StatementDesnap {
-                input: self.map_var_id(stmt.input),
+                input: self.map_var_usage(stmt.input),
                 output: self.map_var_id(stmt.output),
             }),
         };
@@ -65,9 +68,9 @@ pub trait RebuilderEx: Rebuilder {
     /// Apply map_var_id to all the variable in the `remapping`.
     fn rebuild_remapping(&mut self, remapping: &VarRemapping) -> VarRemapping {
         let mut remapping = VarRemapping {
-            remapping: OrderedHashMap::from_iter(
-                remapping.iter().map(|(dst, src)| (self.map_var_id(*dst), self.map_var_id(*src))),
-            ),
+            remapping: OrderedHashMap::from_iter(remapping.iter().map(|(dst, src_var_usage)| {
+                (self.map_var_id(*dst), self.map_var_usage(*src_var_usage))
+            })),
         };
         self.transform_remapping(&mut remapping);
         remapping
@@ -77,9 +80,9 @@ pub trait RebuilderEx: Rebuilder {
     fn rebuild_end(&mut self, end: &FlatBlockEnd) -> FlatBlockEnd {
         let mut end = match end {
             FlatBlockEnd::Return(returns) => FlatBlockEnd::Return(
-                returns.iter().map(|var_id| self.map_var_id(*var_id)).collect(),
+                returns.iter().map(|var_usage| self.map_var_usage(*var_usage)).collect(),
             ),
-            FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_id(*data)),
+            FlatBlockEnd::Panic(data) => FlatBlockEnd::Panic(self.map_var_usage(*data)),
             FlatBlockEnd::Goto(block_id, remapping) => {
                 FlatBlockEnd::Goto(self.map_block_id(*block_id), self.rebuild_remapping(remapping))
             }
@@ -88,7 +91,7 @@ pub trait RebuilderEx: Rebuilder {
                 info: match info {
                     MatchInfo::Extern(stmt) => MatchInfo::Extern(MatchExternInfo {
                         function: stmt.function,
-                        inputs: stmt.inputs.iter().map(|v| self.map_var_id(*v)).collect(),
+                        inputs: stmt.inputs.iter().map(|v| self.map_var_usage(*v)).collect(),
                         arms: stmt
                             .arms
                             .iter()
@@ -106,7 +109,7 @@ pub trait RebuilderEx: Rebuilder {
                     }),
                     MatchInfo::Enum(stmt) => MatchInfo::Enum(MatchEnumInfo {
                         concrete_enum_id: stmt.concrete_enum_id,
-                        input: self.map_var_id(stmt.input),
+                        input: self.map_var_usage(stmt.input),
                         arms: stmt
                             .arms
                             .iter()
@@ -120,6 +123,7 @@ pub trait RebuilderEx: Rebuilder {
                                     .collect(),
                             })
                             .collect(),
+                        location: stmt.location,
                     }),
                 },
             },

@@ -8,12 +8,13 @@ use cairo_lang_utils::extract_matches;
 
 use super::function_with_body::get_inline_config;
 use super::functions::{FunctionDeclarationData, GenericFunctionId, InlineConfiguration};
-use super::generics::semantic_generic_params;
+use super::generics::{semantic_generic_params, GenericParamsData};
 use crate::corelib::get_core_generic_function_id;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::Environment;
+use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
@@ -55,8 +56,45 @@ pub fn extern_function_declaration_generic_params(
     db: &dyn SemanticGroup,
     extern_function_id: ExternFunctionId,
 ) -> Maybe<Vec<semantic::GenericParam>> {
-    Ok(db.priv_extern_function_declaration_data(extern_function_id)?.generic_params)
+    Ok(db.extern_function_declaration_generic_params_data(extern_function_id)?.generic_params)
 }
+
+/// Query implementation of
+/// [crate::db::SemanticGroup::extern_function_declaration_generic_params_data].
+pub fn extern_function_declaration_generic_params_data(
+    db: &dyn SemanticGroup,
+    extern_function_id: ExternFunctionId,
+) -> Maybe<GenericParamsData> {
+    let syntax_db = db.upcast();
+    let module_file_id = extern_function_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let module_extern_functions = db.module_extern_functions(module_file_id.0)?;
+    let function_syntax = module_extern_functions.get(&extern_function_id).to_maybe()?;
+    let declaration = function_syntax.declaration(syntax_db);
+
+    // Generic params.
+    let mut resolver = Resolver::new(db, module_file_id);
+    let generic_params = semantic_generic_params(
+        db,
+        &mut diagnostics,
+        &mut resolver,
+        module_file_id,
+        &declaration.generic_params(syntax_db),
+    )?;
+    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
+        diagnostics.report_by_ptr(
+            param.stable_ptr(db.upcast()).untyped(),
+            ExternItemWithImplGenericsNotSupported,
+        );
+    }
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
+    resolver.inference().finalize().map(|(_, inference_err)| {
+        inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
+    });
+    let resolver_data = Arc::new(resolver.data);
+    Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
+}
+
 /// Query implementation of [crate::db::SemanticGroup::extern_function_declaration_implicits].
 pub fn extern_function_declaration_implicits(
     db: &dyn SemanticGroup,
@@ -103,21 +141,11 @@ pub fn priv_extern_function_declaration_data(
     let declaration = function_syntax.declaration(syntax_db);
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    let generic_params = semantic_generic_params(
-        db,
-        &mut diagnostics,
-        &mut resolver,
-        module_file_id,
-        &declaration.generic_params(syntax_db),
-        true,
-    )?;
-    if let Some(param) = generic_params.iter().find(|param| param.kind() == GenericKind::Impl) {
-        diagnostics.report_by_ptr(
-            param.stable_ptr(db.upcast()).untyped(),
-            ExternItemWithImplGenericsNotSupported,
-        );
-    }
+    let generic_params_data =
+        db.extern_function_declaration_generic_params_data(extern_function_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let mut environment = Environment::default();
     let signature_syntax = declaration.signature(syntax_db);
@@ -163,16 +191,10 @@ pub fn priv_extern_function_declaration_data(
 
     // Check fully resolved.
     if let Some((stable_ptr, inference_err)) = resolver.inference().finalize() {
-        inference_err.report(&mut diagnostics, stable_ptr);
+        inference_err
+            .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
-    let generic_params = resolver
-        .inference()
-        .rewrite(generic_params)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
-    let signature = resolver
-        .inference()
-        .rewrite(signature)
-        .map_err(|err| err.report(&mut diagnostics, function_syntax.stable_ptr().untyped()))?;
+    let signature = resolver.inference().rewrite(signature).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),

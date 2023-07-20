@@ -141,6 +141,20 @@ impl AttributeArg {
         let arg_stable_ptr = arg.stable_ptr();
         AttributeArg { variant, arg, arg_stable_ptr, modifiers }
     }
+
+    pub fn text(&self, db: &dyn SyntaxGroup) -> String {
+        match &self.variant {
+            AttributeArgVariant::Unnamed { value, .. } => {
+                value.as_syntax_node().get_text_without_trivia(db)
+            }
+            AttributeArgVariant::Named { value, name, .. } => {
+                format!("{}: {}", name, value.as_syntax_node().get_text_without_trivia(db))
+            }
+            AttributeArgVariant::FieldInitShorthand { name, .. } => {
+                format!(":{}", name)
+            }
+        }
+    }
 }
 
 impl Modifier {

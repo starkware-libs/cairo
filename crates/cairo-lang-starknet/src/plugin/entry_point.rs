@@ -1,6 +1,8 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_semantic::patcher::RewriteNode;
-use cairo_lang_syntax::node::ast::{self, FunctionWithBody, OptionReturnTypeClause};
+use cairo_lang_syntax::node::ast::{
+    self, Attribute, FunctionWithBody, OptionArgListParenthesized, OptionReturnTypeClause,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
@@ -19,12 +21,14 @@ pub enum EntryPointKind {
     L1Handler,
 }
 impl EntryPointKind {
-    /// Returns the entry point kind if the given function is indeed an entry point.
+    /// Returns the entry point kind if the given function is indeed marked as an entry point.
     pub fn try_from_function_with_body(
         db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
         item_function: &FunctionWithBody,
     ) -> Option<Self> {
-        if item_function.has_attr(db, EXTERNAL_ATTR) {
+        if has_external_attribute(db, diagnostics, &ast::Item::FreeFunction(item_function.clone()))
+        {
             Some(EntryPointKind::External)
         } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
@@ -59,23 +63,22 @@ pub fn generate_entry_point_wrapper(
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
 
-    let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
-
     let Some(first_param) = params.next() else {
-        return Err(vec![PluginDiagnostic{
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
+        return Err(vec![PluginDiagnostic {
+            message: "The first paramater of an entry point must be `self`.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
         }]);
     };
     if first_param.name(db).text(db) != "self" {
         return Err(vec![PluginDiagnostic {
-            message: format!("`{RAW_OUTPUT_ATTR}` functions must get a 'self' param."),
-            stable_ptr: sig.stable_ptr().untyped(),
+            message: "The first paramater of an entry point must be `self`.".into(),
+            stable_ptr: first_param.stable_ptr().untyped(),
         }]);
     };
     let is_snapshot = matches!(first_param.type_clause(db).ty(db), ast::Expr::Unary(_));
     // TODO(spapini): Check modifiers and type.
 
+    let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
     let input_data_short_err = "'Input too short for arguments'";
     for param in params {
         let arg_name = format!("__arg_{}", param.name(db).text(db));
@@ -145,12 +148,12 @@ pub fn generate_entry_point_wrapper(
         return Err(diagnostics);
     }
 
-    let storage_arg = if is_snapshot { "@storage" } else { "ref storage" };
+    let contract_state_arg = if is_snapshot { "@contract_state" } else { "ref contract_state" };
     let output_handling_string = if raw_output {
-        format!("$wrapped_name$({storage_arg}, {arg_names_str})")
+        format!("$wrapped_name$({contract_state_arg}, {arg_names_str})")
     } else {
         format!(
-            "{let_res}$wrapped_name$({storage_arg}, {arg_names_str});
+            "{let_res}$wrapped_name$({contract_state_arg}, {arg_names_str});
             let mut arr = array::array_new();
             // References.$ref_appends$
             // Result.{append_res}
@@ -188,7 +191,7 @@ pub fn generate_entry_point_wrapper(
                 panic(err_data);
             }
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
-            let mut storage = super::unsafe_new_storage();
+            let mut contract_state = super::unsafe_new_contract_state();
             $output_handling$
         }",
         [
@@ -199,4 +202,42 @@ pub fn generate_entry_point_wrapper(
         ]
         .into(),
     ))
+}
+
+/// Checks if the item is marked with an external attribute. Also validates the attribute.
+pub fn has_external_attribute(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+) -> bool {
+    let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else {
+        return false;
+    };
+    validate_external_v0(db, diagnostics, &attr);
+    true
+}
+
+/// Assuming the attribute is EXTERNAL_ATTR, validate it's #[external(v0)].
+pub fn validate_external_v0(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    attr: &Attribute,
+) {
+    if !is_arg_v0(db, attr) {
+        diagnostics.push(PluginDiagnostic {
+            message: "Only #[external(v0)] is supported.".to_string(),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
+}
+
+/// Checks if the only arg of the given attribute is "v0".
+fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
+    match attr.arguments(db) {
+        OptionArgListParenthesized::ArgListParenthesized(y) => {
+            matches!(&y.args(db).elements(db)[..],
+            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
+        }
+        OptionArgListParenthesized::Empty(_) => false,
+    }
 }

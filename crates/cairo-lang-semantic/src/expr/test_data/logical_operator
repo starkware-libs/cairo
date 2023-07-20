@@ -4,7 +4,7 @@
 test_function_diagnostics
 
 //! > function
-fn foo(a: bool, b: bool, c: bool) {
+fn foo(a: u128, b: u128, c: u128) -> bool {
     a && b || c
 }
 
@@ -14,12 +14,53 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Logical operators are not supported yet.
- --> lib.cairo:2:7
+error: Expected type "core::bool", found: "core::integer::u128".
+ --> lib.cairo:2:5
     a && b || c
-      ^^
+    ^
 
-error: Logical operators are not supported yet.
- --> lib.cairo:2:12
+error: Expected type "core::bool", found: "core::integer::u128".
+ --> lib.cairo:2:10
     a && b || c
-           ^^
+         ^
+
+error: Expected type "core::bool", found: "core::integer::u128".
+ --> lib.cairo:2:15
+    a && b || c
+              ^
+
+//! > ==========================================================================
+
+//! > Single sided if.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: bool, b: bool, c: bool) -> bool {
+    bar(a, b, c)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<S, T>(a: S, b: bool, c: T) -> bool {
+    a && Default::default() || c
+}
+
+//! > expected_diagnostics
+error: Expected type "core::bool", found: "S".
+ --> lib.cairo:2:5
+    a && Default::default() || c
+    ^
+
+error: Expected type "core::bool", found: "T".
+ --> lib.cairo:2:32
+    a && Default::default() || c
+                               ^
+
+error: Trait has no implementation in context: core::traits::Default::<core::bool>
+ --> lib.cairo:2:19
+    a && Default::default() || c
+                  ^*****^

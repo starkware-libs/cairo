@@ -302,6 +302,7 @@ impl<T: NoGenericArgsGenericLibfunc> SignatureOnlyGenericLibfunc for T {
 }
 
 /// Information regarding a parameter of the libfunc.
+#[derive(Clone)]
 pub struct ParamSignature {
     /// The type of the parameter.
     pub ty: ConcreteTypeId,
@@ -336,6 +337,14 @@ impl ParamSignature {
         self.allow_const = true;
         self
     }
+
+    /// Returns a modified version of [ParamSignature], with all attributes set.
+    pub fn with_allow_all(mut self) -> Self {
+        self.allow_add_const = true;
+        self.allow_deferred = true;
+        self.allow_const = true;
+        self
+    }
 }
 impl From<ConcreteTypeId> for ParamSignature {
     fn from(ty: ConcreteTypeId) -> Self {
@@ -346,7 +355,7 @@ impl From<ConcreteTypeId> for ParamSignature {
 /// Information regarding the reference created as an output of a library function.
 /// For example, whether the reference is equal to one of the parameters (as in the dup() function),
 /// or whether it's newly allocated local variable.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
     SameAsParam { param_idx: usize },
@@ -385,10 +394,19 @@ pub enum DeferredOutputKind {
 }
 
 /// Contains information regarding an output variable in a single branch.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputVarInfo {
     pub ty: ConcreteTypeId,
     pub ref_info: OutputVarReferenceInfo,
+}
+impl OutputVarInfo {
+    /// Convenience function to get the common OutputVarInfo for builtins.
+    pub fn new_builtin(builtin: ConcreteTypeId, param_idx: usize) -> Self {
+        Self {
+            ty: builtin,
+            ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst { param_idx }),
+        }
+    }
 }
 
 /// Contains information on the variables returned in a single libfunc branch

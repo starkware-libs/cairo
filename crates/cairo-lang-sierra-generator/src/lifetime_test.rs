@@ -60,8 +60,7 @@ fn check_variable_lifetime(
         ConcreteFunctionWithBodyId::from_semantic(db, test_function.concrete_function_id);
     let lowered_function = &*db.concrete_function_with_body_lowered(function_id).unwrap();
 
-    let lowered_formatter =
-        lowering::fmt::LoweredFormatter { db, variables: &lowered_function.variables };
+    let lowered_formatter = lowering::fmt::LoweredFormatter::new(db, &lowered_function.variables);
     let lowered_str = format!("{:?}", lowered_function.debug(&lowered_formatter));
 
     let AnalyzeApChangesResult { known_ap_change: _, local_variables, .. } =
@@ -77,17 +76,17 @@ fn check_variable_lifetime(
             let var_id = if location.statement_location.1 == statements.len() {
                 match &block.end {
                     lowering::FlatBlockEnd::Goto(_, remapping) => {
-                        *remapping.values().nth(location.idx).unwrap()
+                        remapping.values().nth(location.idx).unwrap().var_id
                     }
-                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx],
+                    lowering::FlatBlockEnd::Return(returns) => returns[location.idx].var_id,
                     lowering::FlatBlockEnd::Panic(_) => {
                         unreachable!("Panics should have been stripped in a previous phase.")
                     }
                     lowering::FlatBlockEnd::NotSet => unreachable!(),
-                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx],
+                    lowering::FlatBlockEnd::Match { info } => info.inputs()[location.idx].var_id,
                 }
             } else {
-                statements[location.statement_location.1].inputs()[location.idx]
+                statements[location.statement_location.1].inputs()[location.idx].var_id
             };
             format!("v{}: {location:?}", var_id.index())
         })

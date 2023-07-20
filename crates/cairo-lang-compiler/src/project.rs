@@ -22,7 +22,7 @@ pub enum ProjectError {
 
 /// Setup to 'db' to compile the file at the given path.
 /// Returns the id of the generated crate.
-fn setup_single_file_project(
+pub fn setup_single_file_project(
     db: &mut dyn SemanticGroup,
     path: &Path,
 ) -> Result<CrateId, ProjectError> {
@@ -89,6 +89,22 @@ pub fn setup_project(
     } else {
         Ok(vec![setup_single_file_project(db, path)?])
     }
+}
+
+/// Checks that the given path is a valid compiler path.
+pub fn check_compiler_path(single_file: bool, path: &Path) -> anyhow::Result<()> {
+    if path.is_file() {
+        if !single_file {
+            anyhow::bail!("The given path is a file, but --single-file was not supplied.");
+        }
+    } else if path.is_dir() {
+        if single_file {
+            anyhow::bail!("The given path is a directory, but --single-file was supplied.");
+        }
+    } else {
+        anyhow::bail!("The given path does not exist.");
+    }
+    Ok(())
 }
 
 pub fn get_main_crate_ids_from_project(

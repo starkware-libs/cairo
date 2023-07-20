@@ -1,8 +1,7 @@
 use super::unsigned128::{U128MulGuaranteeType, Uint128Type};
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
-    DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange,
-    SignatureSpecializationContext,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SierraApChange, SignatureSpecializationContext,
 };
 use crate::extensions::modules::get_u256_type;
 use crate::extensions::non_zero::nonzero_ty;
@@ -34,6 +33,8 @@ impl NoGenericArgsGenericLibfunc for Uint512DivmodU256Libfunc {
         let u512_ty = get_u512_type(context)?;
         let range_check_type = context.get_concrete_type(RangeCheckType::id(), &[])?;
         let guarantee_ty = context.get_concrete_type(U128MulGuaranteeType::id(), &[])?;
+        let guarantee_output_info =
+            OutputVarInfo { ty: guarantee_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs };
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(range_check_type.clone()).with_allow_add_const(),
@@ -41,31 +42,14 @@ impl NoGenericArgsGenericLibfunc for Uint512DivmodU256Libfunc {
                 ParamSignature::new(nonzero_ty(context, &u256_ty)?),
             ],
             vec![
-                OutputVarInfo {
-                    ty: range_check_type,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(range_check_type, 0),
                 OutputVarInfo { ty: u512_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
                 OutputVarInfo { ty: u256_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
-                OutputVarInfo {
-                    ty: guarantee_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                },
-                OutputVarInfo {
-                    ty: guarantee_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                },
-                OutputVarInfo {
-                    ty: guarantee_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                },
-                OutputVarInfo {
-                    ty: guarantee_ty.clone(),
-                    ref_info: OutputVarReferenceInfo::SimpleDerefs,
-                },
-                OutputVarInfo { ty: guarantee_ty, ref_info: OutputVarReferenceInfo::SimpleDerefs },
+                guarantee_output_info.clone(),
+                guarantee_output_info.clone(),
+                guarantee_output_info.clone(),
+                guarantee_output_info.clone(),
+                guarantee_output_info,
             ],
             SierraApChange::Known { new_vars_only: false },
         ))

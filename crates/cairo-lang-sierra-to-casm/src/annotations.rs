@@ -5,6 +5,7 @@ use cairo_lang_casm::ap_change::{ApChangeError, ApplyApChange};
 use cairo_lang_sierra::edit_state::{put_results, take_args};
 use cairo_lang_sierra::ids::{FunctionId, VarId};
 use cairo_lang_sierra::program::{BranchInfo, Function, StatementIdx};
+use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 use thiserror::Error;
@@ -22,7 +23,6 @@ use crate::references::{
     build_function_parameters_refs, check_types_match, IntroductionPoint,
     OutputReferenceValueIntroductionPoint, ReferenceValue, ReferencesError, StatementRefs,
 };
-use crate::type_sizes::TypeSizeMap;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum AnnotationError {
@@ -439,9 +439,8 @@ fn test_var_consistency(
         return true;
     }
     // If the variable is not ap-dependent it can always be merged.
-    // We consider empty variables as ap-dependent since we don't know their actual
-    // source.
-    if !actual.expression.cells.is_empty() && actual.expression.can_apply_unknown() {
+    // Note: This makes the assumption that empty variables are always mergable.
+    if actual.expression.can_apply_unknown() {
         return true;
     }
     // Ap tracking must be enabled when merging non-stack ap-dependent variables.

@@ -9,7 +9,7 @@ impl NoGenericArgsGenericType for Secp256k1PointType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = true;
     const DROPPABLE: bool = true;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 #[derive(Default)]
@@ -20,6 +20,6 @@ impl Secp256Trait for Secp256k1 {
     const STR_ID_MUL: &'static str = "secp256k1_mul_syscall";
     const STR_ID_GET_POINT_FROM_X: &'static str = "secp256k1_get_point_from_x_syscall";
     const STR_ID_GET_XY: &'static str = "secp256k1_get_xy_syscall";
-    const TYPE_ID: GenericTypeId = GenericTypeId::new_inline("Secp256k1Point");
+    const TYPE_ID: GenericTypeId = Secp256k1PointType::ID;
     const TYPE_ID_STR: &'static str = "core::starknet::secp256k1::Secp256k1Point";
 }

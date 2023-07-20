@@ -73,7 +73,7 @@ fn inv_mod<
             Option::Some(n.into() - s)
         }
     } else {
-        Option::None(())
+        Option::None
     }
 }
 

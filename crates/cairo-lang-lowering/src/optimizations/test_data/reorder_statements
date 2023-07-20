@@ -1,7 +1,7 @@
 //! > Check that literals are moved to the right arm.
 
 //! > test_runner_name
-test_delay_var_def
+test_reorder_statements
 
 //! > function
 fn foo() -> felt252 {
@@ -16,11 +16,11 @@ fn foo() -> felt252 {
 
    match opt {
         Option::Some(_) => one + two,
-        Option::None(_) => {
+        Option::None => {
             let four = 4;
             match opt {
                 Option::Some(_) => three + four,
-                Option::None(_) => one,
+                Option::None => one,
             }
         }
    }
@@ -74,9 +74,9 @@ End:
 
 blk4:
 Statements:
-  (v11: core::felt252) <- core::Felt252Add::add(v7, v8)
+  (v19: core::felt252) <- core::felt252_add(v7, v8)
 End:
-  Goto(blk9, {v11 -> v18})
+  Goto(blk9, {v19 -> v18})
 
 blk5:
 Statements:
@@ -89,9 +89,9 @@ End:
 
 blk6:
 Statements:
-  (v15: core::felt252) <- core::Felt252Add::add(v9, v13)
+  (v20: core::felt252) <- core::felt252_add(v9, v13)
 End:
-  Goto(blk8, {v15 -> v17})
+  Goto(blk8, {v20 -> v17})
 
 blk7:
 Statements:
@@ -143,9 +143,9 @@ End:
 blk4:
 Statements:
   (v8: core::felt252) <- 2u
-  (v11: core::felt252) <- core::Felt252Add::add(v7, v8)
+  (v19: core::felt252) <- core::felt252_add(v7, v8)
 End:
-  Goto(blk9, {v11 -> v18})
+  Goto(blk9, {v19 -> v18})
 
 blk5:
 Statements:
@@ -159,9 +159,9 @@ blk6:
 Statements:
   (v9: core::felt252) <- 3u
   (v13: core::felt252) <- 4u
-  (v15: core::felt252) <- core::Felt252Add::add(v9, v13)
+  (v20: core::felt252) <- core::felt252_add(v9, v13)
 End:
-  Goto(blk8, {v15 -> v17})
+  Goto(blk8, {v20 -> v17})
 
 blk7:
 Statements:
@@ -177,3 +177,99 @@ blk9:
 Statements:
 End:
   Return(v18)
+
+//! > ==========================================================================
+
+//! > Check that not statements are moved to the right arm or removed.
+
+//! > test_runner_name
+test_reorder_statements
+
+//! > function
+fn foo() {
+   let a = true;
+
+   let b = !a;
+   !!a;
+
+   match get_option() {
+        Option::Some(_) => a,
+        Option::None => false ^ b,
+   };
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn get_option() -> Option<u16> nopanic;
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > before
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+  (v11: core::bool) <- core::bool_not_impl(v1)
+  (v13: core::bool) <- core::bool_not_impl(v1)
+  (v14: core::bool) <- core::bool_not_impl(v13)
+End:
+  Match(match test::get_option() {
+    Option::Some(v5) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::False(v6)
+  (v12: core::bool) <- core::bool_xor_impl(v7, v11)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v10: ()) <- struct_construct()
+End:
+  Return(v10)
+
+//! > after
+Parameters:
+blk0 (root):
+Statements:
+  (v0: ()) <- struct_construct()
+  (v1: core::bool) <- bool::True(v0)
+End:
+  Match(match test::get_option() {
+    Option::Some(v5) => blk1,
+    Option::None => blk2,
+  })
+
+blk1:
+Statements:
+End:
+  Goto(blk3, {})
+
+blk2:
+Statements:
+  (v6: ()) <- struct_construct()
+  (v7: core::bool) <- bool::False(v6)
+  (v11: core::bool) <- core::bool_not_impl(v1)
+  (v12: core::bool) <- core::bool_xor_impl(v7, v11)
+End:
+  Goto(blk3, {})
+
+blk3:
+Statements:
+  (v10: ()) <- struct_construct()
+End:
+  Return(v10)

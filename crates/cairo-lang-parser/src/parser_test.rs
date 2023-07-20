@@ -310,6 +310,7 @@ cairo_lang_test_utils::test_file_test!(
     "src/parser_test_data",
     {
         exprs: "exprs",
+        enum_diagnostics: "enum_diagnostics",
         fn_: "fn",
         if_: "if",
         illegal_string_escapes: "illegal_string_escapes",

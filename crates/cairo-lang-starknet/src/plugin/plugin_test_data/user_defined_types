@@ -5,8 +5,8 @@ ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod TestContract {
-    #[starknet::storage]
+mod test_contract {
+    #[storage]
     struct Storage {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
@@ -26,23 +26,23 @@ mod TestContract {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
-    impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
+    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
         fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::StorageAccess::read(address_domain, base)?
+                value: starknet::Store::read(address_domain, base)?
             })
         }
         #[inline(always)]
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::StorageAccess::write(address_domain, base, value.value)
+            starknet::Store::write(address_domain, base, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
         }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
         }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
@@ -58,8 +58,8 @@ mod TestContract {
 lib.cairo:
 
 #[starknet::contract]
-mod TestContract {
-    #[starknet::storage]
+mod test_contract {
+    #[storage]
     struct Storage {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
@@ -79,23 +79,23 @@ mod TestContract {
             Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
         }
     }
-    impl WrappedFelt252StorageAccess of starknet::StorageAccess::<WrappedFelt252> {
+    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
         fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
             starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::StorageAccess::read(address_domain, base)?
+                value: starknet::Store::read(address_domain, base)?
             })
         }
         #[inline(always)]
         fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::StorageAccess::write(address_domain, base, value.value)
+            starknet::Store::write(address_domain, base, value.value)
         }
-        fn read_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252StorageAccess::read_at_offset_internal(address_domain, base, offset)
+        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
         }
-        fn write_at_offset_internal(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252StorageAccess::write_at_offset_internal(address_domain, base, offset, value)
+        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
         }
-        fn size_internal(value: WrappedFelt252) -> u8 {
+        fn size() -> u8 {
             1_u8
         }
     }
@@ -112,42 +112,50 @@ contract:
 use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
-const TEST_CLASS_HASH: felt252 = 108578726636102439894774569968838538675359079793382739284699675162916518508;
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1243623198958948520580646756853141118759553057893182087136995209187446689212;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
-    struct Storage {
-        var: var::Storage,
-        mapping: mapping::Storage,
+    struct ContractState {
+        var: var::ContractState,
+        mapping: mapping::ContractState,
     }
     #[inline(always)]
-    fn unsafe_new_storage() -> Storage {
-        Storage {
-            var: var::Storage{},
-            mapping: mapping::Storage{},
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            var: var::ContractState{},
+            mapping: mapping::ContractState{},
         }
     }
-    
-    #[derive(Drop, starknet::Event)] struct Event {}
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
 
-    impl StorageEventEmitter of EventEmitter<Storage, Event> {
-        fn emit(ref self: Storage, event: Event) {
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
-            let mut values = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_values(@event, ref keys, ref values);
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
             starknet::syscalls::emit_event_syscall(
                 array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@values),
+                array::ArrayTrait::span(@data),
             ).unwrap_syscall()
         }
     }
 
-    use var::InternalStorageTrait as varStorageTrait;
+    use var::InternalContractStateTrait as varContractStateTrait;
     mod var {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
         use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252Store;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -159,29 +167,29 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage) -> WrappedFelt252;
-            fn write(ref self: Storage, value: WrappedFelt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> WrappedFelt252;
+            fn write(ref self: ContractState, value: WrappedFelt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
             }
-            fn read(self: @Storage) -> WrappedFelt252 {
+            fn read(self: @ContractState) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<WrappedFelt252>::read(
+                starknet::Store::<WrappedFelt252>::read(
                     address_domain,
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, value: WrappedFelt252) {
+            fn write(ref self: ContractState, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<WrappedFelt252>::write(
+                starknet::Store::<WrappedFelt252>::write(
                     address_domain,
                     self.address(),
                     value,
@@ -189,13 +197,13 @@ use starknet::event::EventEmitter;
             }
         }
     }
-    use mapping::InternalStorageTrait as mappingStorageTrait;
+    use mapping::InternalContractStateTrait as mappingContractStateTrait;
     mod mapping {
         use super::WrappedFelt252;
         use super::ArrayTrait;
         use super::SpanTrait;
         use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252Store;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -207,30 +215,30 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct Storage {}
-        trait InternalStorageTrait {
-            fn address(self: @Storage, key: WrappedFelt252) -> starknet::StorageBaseAddress;
-            fn read(self: @Storage, key: WrappedFelt252) -> WrappedFelt252;
-            fn write(ref self: Storage, key: WrappedFelt252, value: WrappedFelt252);
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252;
+            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252);
         }
 
-        impl InternalStorageImpl of InternalStorageTrait {
-            fn address(self: @Storage, key: WrappedFelt252) -> starknet::StorageBaseAddress {
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
             }
-            fn read(self: @Storage, key: WrappedFelt252) -> WrappedFelt252 {
+            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<WrappedFelt252>::read(
+                starknet::Store::<WrappedFelt252>::read(
                     address_domain,
                     self.address(key),
                 ).unwrap_syscall()
             }
-            fn write(ref self: Storage, key: WrappedFelt252, value: WrappedFelt252) {
+            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::StorageAccess::<WrappedFelt252>::write(
+                starknet::Store::<WrappedFelt252>::write(
                     address_domain,
                     self.address(key),
                     value,
@@ -242,7 +250,7 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<Storage> {
+trait __abi<ContractState> {
     
     
 }
@@ -252,7 +260,7 @@ mod __external {
         use super::ArrayTrait;
         use super::SpanTrait;
         use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252Store;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -268,7 +276,7 @@ mod __l1_handler {
         use super::ArrayTrait;
         use super::SpanTrait;
         use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252Store;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -284,7 +292,7 @@ mod __constructor {
         use super::ArrayTrait;
         use super::SpanTrait;
         use super::WrappedFelt252Serde;
-        use super::WrappedFelt252StorageAccess;
+        use super::WrappedFelt252Store;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -303,25 +311,29 @@ impl WrappedFelt252Drop<> of Drop::<WrappedFelt252<>>;
 
 impls:
 
-impl StorageDrop<> of Drop::<Storage<>>;
+impl ContractStateDrop<> of Drop::<ContractState<>>;
 
 
 impls:
 
-impl EventDrop<> of Drop::<Event<>>;
+impl EventDrop of Drop::<Event>;
 
 
 event_impl:
 
 impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_values(
-        self: @Event, ref keys: Array<felt252>, ref values: Array<felt252>
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
     ) {
+        match self {
+        }
     }
     fn deserialize(
-        ref keys: Span<felt252>, ref values: Span<felt252>,
+        ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
-        Option::Some(Event {})
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
     }
 }
 

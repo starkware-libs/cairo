@@ -1,5 +1,5 @@
 use starknet::{
-    StorageAccess, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
+    Store, SyscallResult, StorageBaseAddress, storage_read_syscall, storage_write_syscall,
     storage_address_from_base_and_offset
 };
 use integer::{
@@ -13,7 +13,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
         let intermediate: Option<felt252> = self.try_into();
         match intermediate {
             Option::Some(felt) => felt.try_into(),
-            Option::None(()) => Option::None(())
+            Option::None => Option::None
         }
     }
 }
@@ -21,7 +21,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 const MASK_64: u256 = 0xFFFFFFFFFFFFFFFF;
 const MASK_160: u256 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
-const TWO_POW_160: u256 = 10000000000000000000000000000000000000000;
+const TWO_POW_160: u256 = 0x10000000000000000000000000000000000000000;
 
 #[derive(Copy, Drop, Serde)]
 struct Proposal {
@@ -52,15 +52,15 @@ fn unpack_proposal_fields(packed: felt252) -> (felt252, u64) {
     (proposer, last_updated_at)
 }
 
-impl ProposalStorageAccess of StorageAccess<Proposal> {
+impl ProposalStore of Store<Proposal> {
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Proposal> {
-        ProposalStorageAccess::read_at_offset_internal(address_domain, base, 0)
+        ProposalStore::read_at_offset(address_domain, base, 0)
     }
 
     fn write(address_domain: u32, base: StorageBaseAddress, value: Proposal) -> SyscallResult<()> {
-        ProposalStorageAccess::write_at_offset_internal(address_domain, base, 0, value)
+        ProposalStore::write_at_offset(address_domain, base, 0, value)
     }
-    fn read_at_offset_internal(
+    fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<Proposal> {
         let (proposer, last_updated_at) = unpack_proposal_fields(
@@ -71,7 +71,7 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         Result::Ok(Proposal { proposer, last_updated_at })
     }
 
-    fn write_at_offset_internal(
+    fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: Proposal
     ) -> SyscallResult<()> {
         let packed = pack_proposal_fields(value.proposer, value.last_updated_at);
@@ -80,22 +80,22 @@ impl ProposalStorageAccess of StorageAccess<Proposal> {
         )
     }
 
-    fn size_internal(value: Proposal) -> u8 {
+    fn size() -> u8 {
         1
     }
 }
 
 #[starknet::contract]
-mod TestContract {
+mod test_contract {
     use super::Proposal;
-    #[starknet::storage]
+    #[storage]
     struct Storage {
         _proposals: LegacyMap<u32, Proposal>,
         _single_proposal: Proposal
     }
 
-    #[starknet::external]
-    fn reproduce(ref self: Storage) {
+    #[external(v0)]
+    fn reproduce(ref self: ContractState) {
         self._single_proposal.read();
 
         self._proposals.write(1, Proposal { proposer: 0, last_updated_at: 0 });

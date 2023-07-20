@@ -35,7 +35,7 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size: _,
+            zero_sized: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -53,7 +53,13 @@ impl GenericTypeArgGenericType for Felt252DictTypeWrapped {
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }
@@ -84,12 +90,7 @@ impl SignatureOnlyGenericLibfunc for Felt252DictNewLibfunc {
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![ParamSignature::new(segment_arena_ty.clone()).with_allow_add_const()],
             vec![
-                OutputVarInfo {
-                    ty: segment_arena_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(segment_arena_ty, 0),
                 OutputVarInfo {
                     ty: context.get_wrapped_concrete_type(Felt252DictType::id(), ty)?,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
@@ -163,7 +164,7 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             storable,
             droppable,
             duplicatable,
-            size: _,
+            zero_sized: _,
         }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Checking for specific types allowed as dictionary values.
@@ -181,7 +182,13 @@ impl GenericTypeArgGenericType for Felt252DictEntryTypeWrapped {
             _ => false,
         };
         if allowed && storable && droppable && duplicatable {
-            Ok(TypeInfo { long_id, duplicatable: false, droppable: false, storable: true, size: 1 })
+            Ok(TypeInfo {
+                long_id,
+                duplicatable: false,
+                droppable: false,
+                storable: true,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

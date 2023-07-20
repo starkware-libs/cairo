@@ -357,6 +357,35 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
                 ret;
             "};
             "empty_enum")]
+#[test_case(indoc! {"
+            type felt252 = felt252;
+            type NonZeroFelt252 = NonZero<felt252>;
+            type Unit = Struct<ut@Tuple>;
+
+            libfunc branch_align = branch_align;
+            libfunc jump = jump;
+            libfunc felt252_is_zero = felt252_is_zero;
+            libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
+            libfunc revoke_ap_tracking = revoke_ap_tracking;
+
+            revoke_ap_tracking() -> ();
+            felt252_is_zero([1]) { fallthrough() 4([1]) };
+            branch_align() -> ();
+            jump() { 6() };
+            branch_align() -> ();
+            drop_nz_felt252([1]) -> ();
+            return ([2]);
+
+            test_program@0([1]: felt252, [2]: Unit) -> (Unit);
+        "},
+        false,
+        indoc! {"
+            jmp rel 4 if [fp + -3] != 0;
+            jmp rel 2;
+            ret;
+        "};
+        "merge unit param")]
+
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
     let program = ProgramParser::new().parse(sierra_code).unwrap();
     pretty_assertions::assert_eq!(
@@ -530,38 +559,6 @@ fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str)
                 test_program@0([1]: felt252) -> (felt252, felt252);
             "}, "#11: Inconsistent references annotations.";
             "Inconsistent references - different locations on stack")]
-#[test_case(indoc! {"
-                type felt252 = felt252;
-                type unit = Struct<ut@unit>;
-                type unit_pair = Struct<ut@unit_pair, unit, unit>;
-                type NonZeroFelt252 = NonZero<felt252>;
-
-                libfunc branch_align = branch_align;
-                libfunc felt252_dup = dup<felt252>;
-                libfunc jump = jump;
-                libfunc felt252_is_zero = felt252_is_zero;
-                libfunc store_temp_felt252 = store_temp<felt252>;
-                libfunc store_temp_unit_pair = store_temp<unit_pair>;
-                libfunc drop_nz_felt252 = drop<NonZeroFelt252>;
-                libfunc drop_unit = drop<unit>;
-                libfunc rename_unit = rename<unit>;
-                libfunc unit_pair_deconstruct = struct_deconstruct<unit_pair>;
-
-                store_temp_unit_pair([2]) -> ([2]);
-                unit_pair_deconstruct([2]) -> ([3], [4]);
-                felt252_is_zero([1]) { fallthrough() 7([1]) };
-                branch_align() -> ();
-                drop_unit([4]) -> ();
-                rename_unit([3]) -> ([4]);
-                jump() { 10() };
-                branch_align() -> (); // statement #7.
-                drop_nz_felt252([1]) -> ();
-                drop_unit([3]) -> ();
-                return ([4]); // The failed merge statement #10.
-
-                test_program@0([1]: felt252, [2]: unit_pair) -> (unit);
-            "}, "#10: Inconsistent references annotations.";
-            "Inconsistent references - merge on old variable not created at the same point")]
 #[test_case(indoc! {"
                 type felt252 = felt252;
                 type NonZeroFelt252 = NonZero<felt252>;

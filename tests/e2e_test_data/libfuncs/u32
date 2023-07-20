@@ -334,7 +334,7 @@ use zeroable::NonZeroIntoImpl;
 use traits::Into;
 fn foo(a: u32) -> u32 {
     match integer::u32_is_zero(a) {
-        IsZeroResult::Zero(()) => 1234_u32,
+        IsZeroResult::Zero => 1234_u32,
         IsZeroResult::NonZero(x) => x.into(),
     }
 }

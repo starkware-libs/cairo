@@ -1,23 +1,28 @@
 use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_defs::ids::LanguageElementId;
+use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
 use crate::destructs::add_destructs;
+use crate::diagnostic::{LoweringDiagnostic, LoweringDiagnosticKind};
 use crate::fmt::LoweredFormatter;
-use crate::ids::ConcreteFunctionWithBodyId;
+use crate::ids::{ConcreteFunctionWithBodyId, LocationId};
 use crate::implicits::lower_implicits;
 use crate::inline::apply_inlining;
-use crate::optimizations::delay_var_def::delay_var_def;
+use crate::optimizations::branch_inversion;
 use crate::optimizations::match_optimizer::optimize_matches;
 use crate::optimizations::remappings::optimize_remappings;
+use crate::optimizations::reorder_statements::reorder_statements;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
+use crate::test::branch_inversion::branch_inversion;
 use crate::test_utils::LoweringDatabaseForTesting;
 use crate::FlatLowered;
 cairo_lang_test_utils::test_file_test!(
@@ -25,7 +30,6 @@ cairo_lang_test_utils::test_file_test!(
     "src/test_data",
     {
         assignment :"assignment",
-        borrow_check :"borrow_check",
         call :"call",
         constant :"constant",
         destruct :"destruct",
@@ -36,6 +40,7 @@ cairo_lang_test_utils::test_file_test!(
         arm_pattern_destructure :"arm_pattern_destructure",
         if_ :"if",
         implicits :"implicits",
+        logical_operator :"logical_operator",
         loop_ :"loop",
         match_ :"match",
         members :"members",
@@ -107,6 +112,9 @@ fn test_function_lowering_phases(
         inputs["module_code"].as_str(),
     )
     .split();
+    if !semantic_diagnostics.is_empty() {
+        panic!("Got semantic diagnostics: {semantic_diagnostics}");
+    }
     let function_id =
         ConcreteFunctionWithBodyId::from_semantic(&db, test_function.concrete_function_id);
 
@@ -130,10 +138,16 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings1 = after_add_destructs.clone();
     optimize_remappings(&mut after_optimize_remappings1);
 
-    let mut after_delay_var_def1 = after_optimize_remappings1.clone();
-    delay_var_def(&mut after_delay_var_def1);
+    let mut after_reorder_statements1 = after_optimize_remappings1.clone();
+    reorder_statements(&db, &mut after_reorder_statements1);
 
-    let mut after_optimize_matches = after_delay_var_def1.clone();
+    let mut after_branch_inversion = after_reorder_statements1.clone();
+    branch_inversion(&db, &mut after_branch_inversion);
+
+    let mut after_reorder_statements2 = after_branch_inversion.clone();
+    reorder_statements(&db, &mut after_reorder_statements2);
+
+    let mut after_optimize_matches = after_reorder_statements2.clone();
     optimize_matches(&mut after_optimize_matches);
 
     let mut after_lower_implicits = after_optimize_matches.clone();
@@ -142,10 +156,10 @@ fn test_function_lowering_phases(
     let mut after_optimize_remappings2 = after_lower_implicits.clone();
     optimize_remappings(&mut after_optimize_remappings2);
 
-    let mut after_delay_var_def2 = after_optimize_remappings2.clone();
-    delay_var_def(&mut after_delay_var_def2);
+    let mut after_reorder_statements3 = after_optimize_remappings2.clone();
+    reorder_statements(&db, &mut after_reorder_statements3);
 
-    let mut after_reorganize_blocks = after_delay_var_def2.clone();
+    let mut after_reorganize_blocks = after_reorder_statements3.clone();
     reorganize_blocks(&mut after_reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
@@ -165,11 +179,13 @@ fn test_function_lowering_phases(
         ("after_lower_panics".into(), formatted_lowered(&db, &after_lower_panics)),
         ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
         ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
-        ("after_delay_var_def1".into(), formatted_lowered(&db, &after_delay_var_def1)),
+        ("after_reorder_statements1".into(), formatted_lowered(&db, &after_reorder_statements1)),
+        ("after_branch_inversion".into(), formatted_lowered(&db, &after_branch_inversion)),
+        ("after_reorder_statements2".into(), formatted_lowered(&db, &after_reorder_statements2)),
         ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
         ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
         ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
-        ("after_delay_var_def2".into(), formatted_lowered(&db, &after_delay_var_def2)),
+        ("after_reorder_statements3".into(), formatted_lowered(&db, &after_reorder_statements3)),
         (
             "after_reorganize_blocks (final)".into(),
             formatted_lowered(&db, &after_reorganize_blocks),
@@ -178,6 +194,38 @@ fn test_function_lowering_phases(
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
-    let lowered_formatter = LoweredFormatter { db, variables: &lowered.variables };
+    let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
     format!("{:?}", lowered.debug(&lowered_formatter))
+}
+
+#[test]
+fn test_diagnostics() {
+    let db = &mut LoweringDatabaseForTesting::default();
+    db.set_semantic_plugins(get_default_plugins());
+    let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
+    let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
+        .with_auto_generation_note(db, "withdraw_gas")
+        .with_auto_generation_note(db, "destructor")
+        .get(db);
+
+    let mut builder = DiagnosticsBuilder::new();
+
+    builder.add(LoweringDiagnostic {
+        location,
+        kind: LoweringDiagnosticKind::CannotInlineFunctionThatMightCallItself,
+    });
+
+    // TODO(ilya): Consider moving the notes to the end of the error message.
+    assert_eq!(
+        builder.build().format(db),
+        indoc::indoc! {"
+error: Cannot inline a function that might call itself.
+ --> lib.cairo:1:1
+fn test_func() { let mut a = 5; {
+^*******************************^
+note: this error originates in auto-generated withdraw_gas logic.
+note: this error originates in auto-generated destructor logic.
+
+"}
+    );
 }

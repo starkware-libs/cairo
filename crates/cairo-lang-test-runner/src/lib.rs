@@ -28,9 +28,11 @@ use cairo_lang_starknet::contract::{
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
+use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
 use itertools::{chain, Itertools};
+use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use test_config::{try_extract_test_config, TestConfig};
@@ -60,7 +62,7 @@ impl TestRunner {
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
     pub fn new(
-        path: &str,
+        path: &Path,
         filter: &str,
         include_ignored: bool,
         ignored: bool,
@@ -82,7 +84,7 @@ impl TestRunner {
         let main_crate_ids = setup_project(db, Path::new(&path))?;
 
         if DiagnosticsReporter::stderr().check(db) {
-            bail!("failed to compile: {}", path);
+            bail!("failed to compile: {}", path.display());
         }
 
         Ok(Self {
@@ -215,7 +217,14 @@ impl TestRunner {
 enum TestStatus {
     Success,
     Fail(RunResultValue),
-    Ignore,
+}
+
+/// The result of a ran test.
+struct TestResult {
+    /// The status of the run.
+    status: TestStatus,
+    /// The gas usage of the run if relevant.
+    gas_usage: Option<i64>,
 }
 
 /// Summary data of the ran tests.
@@ -248,13 +257,14 @@ pub fn run_tests(
     }));
     named_tests
         .into_par_iter()
-        .map(|(name, test)| -> anyhow::Result<(String, TestStatus)> {
+        .map(|(name, test)| -> anyhow::Result<(String, Option<TestResult>)> {
             if test.ignored {
-                return Ok((name, TestStatus::Ignore));
+                return Ok((name, None));
             }
+            let func = runner.find_function(name.as_str())?;
             let result = runner
-                .run_function(
-                    runner.find_function(name.as_str())?,
+                .run_function_with_starknet_context(
+                    func,
                     &[],
                     test.available_gas,
                     Default::default(),
@@ -262,21 +272,32 @@ pub fn run_tests(
                 .with_context(|| format!("Failed to run the function `{}`.", name.as_str()))?;
             Ok((
                 name,
-                match &result.value {
-                    RunResultValue::Success(_) => match test.expectation {
-                        TestExpectation::Success => TestStatus::Success,
-                        TestExpectation::Panics(_) => TestStatus::Fail(result.value),
-                    },
-                    RunResultValue::Panic(value) => match test.expectation {
-                        TestExpectation::Success => TestStatus::Fail(result.value),
-                        TestExpectation::Panics(panic_expectation) => match panic_expectation {
-                            PanicExpectation::Exact(expected) if value != &expected => {
-                                TestStatus::Fail(result.value)
-                            }
-                            _ => TestStatus::Success,
+                Some(TestResult {
+                    status: match &result.value {
+                        RunResultValue::Success(_) => match test.expectation {
+                            TestExpectation::Success => TestStatus::Success,
+                            TestExpectation::Panics(_) => TestStatus::Fail(result.value),
+                        },
+                        RunResultValue::Panic(value) => match test.expectation {
+                            TestExpectation::Success => TestStatus::Fail(result.value),
+                            TestExpectation::Panics(panic_expectation) => match panic_expectation {
+                                PanicExpectation::Exact(expected) if value != &expected => {
+                                    TestStatus::Fail(result.value)
+                                }
+                                _ => TestStatus::Success,
+                            },
                         },
                     },
-                },
+                    gas_usage: test
+                        .available_gas
+                        .zip(result.gas_counter)
+                        .map(|(before, after)| {
+                            before.into_or_panic::<i64>() - after.to_bigint().to_i64().unwrap()
+                        })
+                        .or_else(|| {
+                            runner.initial_required_gas(func).map(|gas| gas.into_or_panic::<i64>())
+                        }),
+                }),
             ))
         })
         .for_each(|r| {
@@ -292,15 +313,21 @@ pub fn run_tests(
                 }
             };
             let summary = wrapped_summary.as_mut().unwrap();
-            let (res_type, status_str) = match status {
-                TestStatus::Success => (&mut summary.passed, "ok".bright_green()),
-                TestStatus::Fail(run_result) => {
-                    summary.failed_run_results.push(run_result);
-                    (&mut summary.failed, "fail".bright_red())
+            let (res_type, status_str, gas_usage) = match status {
+                Some(TestResult { status: TestStatus::Success, gas_usage }) => {
+                    (&mut summary.passed, "ok".bright_green(), gas_usage)
                 }
-                TestStatus::Ignore => (&mut summary.ignored, "ignored".bright_yellow()),
+                Some(TestResult { status: TestStatus::Fail(run_result), gas_usage }) => {
+                    summary.failed_run_results.push(run_result);
+                    (&mut summary.failed, "fail".bright_red(), gas_usage)
+                }
+                None => (&mut summary.ignored, "ignored".bright_yellow(), None),
             };
-            println!("test {name} ... {status_str}",);
+            if let Some(gas_usage) = gas_usage {
+                println!("test {name} ... {status_str} (gas usage est.: {gas_usage})");
+            } else {
+                println!("test {name} ... {status_str}");
+            }
             res_type.push(name);
         });
     wrapped_summary.into_inner().unwrap()
@@ -316,15 +343,17 @@ fn find_all_tests(
         let modules = db.crate_modules(crate_id);
         for module_id in modules.iter() {
             let Ok(module_items) = db.module_items(*module_id) else {
-              continue;
-          };
-            tests.extend(
-              module_items.iter().filter_map(|item| {
-                  let ModuleItemId::FreeFunction(func_id) = item else { return None };
-                  let Ok(attrs) = db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id)) else { return None };
-                  Some((*func_id, try_extract_test_config(db.upcast(), attrs).unwrap()?))
-              }),
-          );
+                continue;
+            };
+            tests.extend(module_items.iter().filter_map(|item| {
+                let ModuleItemId::FreeFunction(func_id) = item else { return None };
+                let Ok(attrs) =
+                    db.function_with_body_attributes(FunctionWithBodyId::Free(*func_id))
+                else {
+                    return None;
+                };
+                Some((*func_id, try_extract_test_config(db.upcast(), attrs).unwrap()?))
+            }));
         }
     }
     tests

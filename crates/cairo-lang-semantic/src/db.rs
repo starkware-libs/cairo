@@ -14,17 +14,18 @@ use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
-use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ast::{self, TraitItemFunction};
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
 use crate::diagnostic::SemanticDiagnosticKind;
+use crate::expr::inference::{self, ImplVar, ImplVarId};
 use crate::items::constant::Constant;
 use crate::items::function_with_body::FunctionBody;
 use crate::items::functions::{ImplicitPrecedence, InlineConfiguration};
-use crate::items::generics::GenericParam;
+use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
@@ -92,6 +93,8 @@ pub trait SemanticGroup:
     fn intern_type(&self, id: types::TypeLongId) -> semantic::TypeId;
     #[salsa::interned]
     fn intern_literal(&self, id: literals::LiteralLongId) -> literals::LiteralId;
+    #[salsa::interned]
+    fn intern_impl_var(&self, id: ImplVar) -> ImplVarId;
 
     // Const.
     // ====
@@ -169,6 +172,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::structure::struct_generic_params)]
     fn struct_generic_params(&self, struct_id: StructId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of an enum.
+    #[salsa::invoke(items::structure::struct_generic_params_data)]
+    fn struct_generic_params_data(&self, struct_id: StructId) -> Maybe<GenericParamsData>;
     /// Returns the resolution resolved_items of a struct declaration.
     #[salsa::invoke(items::structure::struct_declaration_resolver_data)]
     fn struct_declaration_resolver_data(&self, structure_id: StructId) -> Maybe<Arc<ResolverData>>;
@@ -205,6 +211,12 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of an enum.
     #[salsa::invoke(items::enm::enum_generic_params)]
     fn enum_generic_params(&self, enum_id: EnumId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of an enum.
+    #[salsa::invoke(items::enm::enum_generic_params_data)]
+    fn enum_generic_params_data(&self, enum_id: EnumId) -> Maybe<GenericParamsData>;
+    /// Returns the attributes attached to an enum.
+    #[salsa::invoke(items::enm::enum_attributes)]
+    fn enum_attributes(&self, enum_id: EnumId) -> Maybe<Vec<Attribute>>;
     /// Returns the resolution resolved_items of an enum declaration.
     #[salsa::invoke(items::enm::enum_declaration_resolver_data)]
     fn enum_declaration_resolver_data(&self, enum_id: EnumId) -> Maybe<Arc<ResolverData>>;
@@ -246,6 +258,9 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_generic_params)]
     fn type_alias_generic_params(&self, enum_id: TypeAliasId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of a type alias.
+    #[salsa::invoke(items::type_alias::type_alias_generic_params_data)]
+    fn type_alias_generic_params_data(&self, enum_id: TypeAliasId) -> Maybe<GenericParamsData>;
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::type_alias::type_alias_resolver_data)]
     fn type_alias_resolver_data(&self, type_alias_id: TypeAliasId) -> Maybe<Arc<ResolverData>>;
@@ -270,7 +285,13 @@ pub trait SemanticGroup:
     fn impl_alias_resolved_impl(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplId>;
     /// Returns the generic parameters of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_generic_params)]
-    fn impl_alias_generic_params(&self, enum_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
+    fn impl_alias_generic_params(&self, impl_alias_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of a type alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_generic_params_data)]
+    fn impl_alias_generic_params_data(
+        &self,
+        impl_alias_id: ImplAliasId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolver_data)]
     fn impl_alias_resolver_data(&self, impl_alias_id: ImplAliasId) -> Maybe<Arc<ResolverData>>;
@@ -286,9 +307,18 @@ pub trait SemanticGroup:
     /// Returns the generic parameters of a trait.
     #[salsa::invoke(items::trt::trait_generic_params)]
     fn trait_generic_params(&self, trait_id: TraitId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of a trait.
+    #[salsa::invoke(items::trt::trait_generic_params_data)]
+    fn trait_generic_params_data(&self, trait_id: TraitId) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait.
     #[salsa::invoke(items::trt::trait_attributes)]
     fn trait_attributes(&self, trait_id: TraitId) -> Maybe<Vec<Attribute>>;
+    /// Returns the asts of the functions of a trait.
+    #[salsa::invoke(items::trt::trait_function_asts)]
+    fn trait_function_asts(
+        &self,
+        trait_id: TraitId,
+    ) -> Maybe<OrderedHashMap<TraitFunctionId, TraitItemFunction>>;
     /// Returns the resolution resolved_items of a trait.
     #[salsa::invoke(items::trt::trait_resolver_data)]
     fn trait_resolver_data(&self, trait_id: TraitId) -> Maybe<Arc<ResolverData>>;
@@ -298,7 +328,6 @@ pub trait SemanticGroup:
         &self,
         trait_id: TraitId,
     ) -> Maybe<items::trt::TraitDeclarationData>;
-
     /// Returns the semantic definition diagnostics of a trait.
     #[salsa::invoke(items::trt::trait_semantic_definition_diagnostics)]
     fn trait_semantic_definition_diagnostics(
@@ -343,6 +372,12 @@ pub trait SemanticGroup:
         &self,
         trait_function_id: TraitFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of a trait function.
+    #[salsa::invoke(items::trt::trait_function_generic_params_data)]
+    fn trait_function_generic_params_data(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the attributes of a trait function.
     #[salsa::invoke(items::trt::trait_function_attributes)]
     fn trait_function_attributes(
@@ -380,6 +415,25 @@ pub trait SemanticGroup:
         function_id: TraitFunctionId,
     ) -> Maybe<items::functions::FunctionDeclarationData>;
 
+    /// Returns the semantic diagnostics of a trait function definition (declaration + body).
+    #[salsa::invoke(items::trt::trait_function_body_diagnostics)]
+    fn trait_function_body_diagnostics(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the body of a trait function, if any.
+    #[salsa::invoke(items::trt::trait_function_body)]
+    fn trait_function_body(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<Arc<FunctionBody>>>;
+    /// Private query to compute data about a trait function definition (declaration + body)
+    #[salsa::invoke(items::trt::priv_trait_function_body_data)]
+    fn priv_trait_function_body_data(
+        &self,
+        trait_function_id: TraitFunctionId,
+    ) -> Maybe<Option<items::function_with_body::FunctionBodyData>>;
+
     // Concrete Trait function.
     // ========================
     /// Returns the generic params of a concrete trait function.
@@ -404,6 +458,14 @@ pub trait SemanticGroup:
         module_id: ModuleId,
         trait_lookup_constraint: items::imp::TraitFilter,
     ) -> Maybe<Vec<UninferredImpl>>;
+    // Returns the solution set for a canonical trait.
+    #[salsa::invoke(inference::solver::canonic_trait_solutions)]
+    #[salsa::cycle(inference::solver::canonic_trait_solutions_cycle)]
+    fn canonic_trait_solutions(
+        &self,
+        canonical_trait: inference::canonic::CanonicalTrait,
+        lookup_context: ImplLookupContext,
+    ) -> inference::InferenceResult<inference::solver::SolutionSet<inference::canonic::CanonicalImpl>>;
 
     // Impl.
     // =======
@@ -413,6 +475,15 @@ pub trait SemanticGroup:
         &self,
         impl_def_id: ImplDefId,
     ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns asts of the functions of an impl.
+    #[salsa::invoke(items::imp::impl_def_functions_asts)]
+    fn impl_def_functions_asts(
+        &self,
+        impl_def_id: ImplDefId,
+    ) -> Maybe<OrderedHashMap<ImplFunctionId, ast::FunctionWithBody>>;
+    /// Returns the generic parameters data of an impl.
+    #[salsa::invoke(items::imp::impl_def_generic_params_data)]
+    fn impl_def_generic_params_data(&self, impl_def_id: ImplDefId) -> Maybe<GenericParamsData>;
     /// Returns the generic parameters of an impl.
     #[salsa::invoke(items::imp::impl_def_generic_params)]
     fn impl_def_generic_params(&self, impl_def_id: ImplDefId) -> Maybe<Vec<GenericParam>>;
@@ -422,9 +493,15 @@ pub trait SemanticGroup:
     /// Returns the concrete trait that is implemented by the impl.
     #[salsa::invoke(items::imp::impl_def_concrete_trait)]
     fn impl_def_concrete_trait(&self, impl_def_id: ImplDefId) -> Maybe<ConcreteTraitId>;
+    /// Returns the attributes attached to the impl.
+    #[salsa::invoke(items::imp::impl_def_attributes)]
+    fn impl_def_attributes(&self, impl_def_id: ImplDefId) -> Maybe<Vec<Attribute>>;
     /// Returns the concrete trait that is implemented by the concrete impl.
     #[salsa::invoke(items::imp::impl_concrete_trait)]
     fn impl_concrete_trait(&self, impl_id: ImplId) -> Maybe<ConcreteTraitId>;
+    /// Returns the trait that is implemented by the impl.
+    #[salsa::invoke(items::imp::impl_def_trait)]
+    fn impl_def_trait(&self, impl_def_id: ImplDefId) -> Maybe<TraitId>;
     /// Private query to compute declaration data about an impl.
     #[salsa::invoke(items::imp::priv_impl_declaration_data)]
     #[salsa::cycle(items::imp::priv_impl_declaration_data_cycle)]
@@ -482,6 +559,12 @@ pub trait SemanticGroup:
         &self,
         impl_function_id: ImplFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of an impl function.
+    #[salsa::invoke(items::imp::impl_function_generic_params_data)]
+    fn impl_function_generic_params_data(
+        &self,
+        impl_function_id: ImplFunctionId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the attributes of an impl function.
     #[salsa::invoke(items::imp::impl_function_attributes)]
     fn impl_function_attributes(&self, impl_function_id: ImplFunctionId) -> Maybe<Vec<Attribute>>;
@@ -576,6 +659,12 @@ pub trait SemanticGroup:
         &self,
         free_function_id: FreeFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of a free function.
+    #[salsa::invoke(items::free_function::free_function_generic_params_data)]
+    fn free_function_generic_params_data(
+        &self,
+        free_function_id: FreeFunctionId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the resolution resolved_items of a free function's declaration.
     #[salsa::invoke(items::free_function::free_function_declaration_resolver_data)]
     fn free_function_declaration_resolver_data(
@@ -701,6 +790,12 @@ pub trait SemanticGroup:
         &self,
         extern_function_id: ExternFunctionId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of an extern function.
+    #[salsa::invoke(items::extern_function::extern_function_declaration_generic_params_data)]
+    fn extern_function_declaration_generic_params_data(
+        &self,
+        extern_function_id: ExternFunctionId,
+    ) -> Maybe<GenericParamsData>;
     /// Returns the explicit implicits of an extern function declaration.
     #[salsa::invoke(items::extern_function::extern_function_declaration_implicits)]
     fn extern_function_declaration_implicits(
@@ -742,6 +837,12 @@ pub trait SemanticGroup:
         &self,
         extern_type_id: ExternTypeId,
     ) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic params data of an extern type.
+    #[salsa::invoke(items::extern_type::extern_type_declaration_generic_params_data)]
+    fn extern_type_declaration_generic_params_data(
+        &self,
+        extern_type_id: ExternTypeId,
+    ) -> Maybe<GenericParamsData>;
 
     // Function Signature.
     // =================
@@ -776,8 +877,28 @@ pub trait SemanticGroup:
 
     // Generic param.
     // ==============
+    /// Query to compute data about a generic param.
+    #[salsa::invoke(items::generics::generic_param_data)]
+    #[salsa::cycle(items::generics::generic_param_data_cycle)]
+    fn generic_param_data(&self, generic_param: GenericParamId) -> Maybe<GenericParamData>;
+    /// Returns the semantic data of a generic param.
     #[salsa::invoke(items::generics::generic_param_semantic)]
     fn generic_param_semantic(&self, generic_param: GenericParamId) -> Maybe<GenericParam>;
+    /// Returns the semantic diagnostics of a generic param.
+    #[salsa::invoke(items::generics::generic_param_diagnostics)]
+    fn generic_param_diagnostics(
+        &self,
+        generic_param: GenericParamId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the resolver data of a generic param.
+    #[salsa::invoke(items::generics::generic_param_resolver_data)]
+    fn generic_param_resolver_data(
+        &self,
+        generic_param: GenericParamId,
+    ) -> Maybe<Arc<ResolverData>>;
+    /// Returns the trait a generic param impl should implement.
+    #[salsa::invoke(items::generics::generic_impl_param_trait)]
+    fn generic_impl_param_trait(&self, generic_param_id: GenericParamId) -> Maybe<TraitId>;
 
     // Concrete type.
     // ==============
@@ -899,7 +1020,8 @@ fn module_semantic_diagnostics(
     }
 
     diagnostics.extend(db.priv_module_semantic_data(module_id)?.diagnostics.clone());
-
+    // TODO(Gil): Aggregate diagnostics for subitems with semantic model (i.e. impl function, trait
+    // functions and generic params) directly and not via the parent item.
     for item in db.module_items(module_id)?.iter() {
         match item {
             ModuleItemId::Constant(const_id) => {
@@ -1091,6 +1213,7 @@ fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<Resol
             }
         },
         LookupItemId::ImplFunction(id) => vec![db.impl_function_resolver_data(id)],
+        LookupItemId::TraitFunction(id) => vec![db.trait_function_resolver_data(id)],
     }
     .into_iter()
     .flatten()

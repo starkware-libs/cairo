@@ -4,6 +4,7 @@ mod test;
 
 use std::sync::Arc;
 
+use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
@@ -18,6 +19,10 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     type DbType: Upcast<dyn FilesGroup> + ?Sized;
     fn format(&self, db: &Self::DbType) -> String;
     fn location(&self, db: &Self::DbType) -> DiagnosticLocation;
+    fn notes(&self, _db: &Self::DbType) -> &[String] {
+        &[]
+    }
+
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 pub struct DiagnosticLocation {
@@ -31,6 +36,18 @@ impl DiagnosticLocation {
     }
 }
 
+impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
+        let file_name = self.file_id.file_name(db);
+        let marks = get_location_marks(db, self);
+        let pos = match self.span.start.position_in_file(db, self.file_id) {
+            Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
+            None => "?".into(),
+        };
+        write!(f, "{file_name}:{pos}\n{marks}")
+    }
+}
+
 /// This struct is used to ensure that when an error occurs, a diagnostic is properly reported.
 ///
 /// It must not be constructed directly. Instead it is returned by [DiagnosticsBuilder::add]
@@ -40,7 +57,7 @@ pub struct DiagnosticAdded;
 
 pub fn skip_diagnostic() -> DiagnosticAdded {
     // TODO(lior): Consider adding a log here.
-    DiagnosticAdded::default()
+    DiagnosticAdded
 }
 
 /// Represents an arbitrary type T or a missing output due to an error whose diagnostic was properly
@@ -88,7 +105,7 @@ impl<TEntry: DiagnosticEntry> DiagnosticsBuilder<TEntry> {
     pub fn add(&mut self, diagnostic: TEntry) -> DiagnosticAdded {
         self.leaves.push(diagnostic);
         self.count += 1;
-        DiagnosticAdded::default()
+        DiagnosticAdded
     }
     pub fn extend(&mut self, diagnostics: Diagnostics<TEntry>) {
         self.count += diagnostics.len();
@@ -106,17 +123,11 @@ impl<TEntry: DiagnosticEntry> Default for DiagnosticsBuilder<TEntry> {
 }
 
 pub fn format_diagnostics(
-    db: &dyn FilesGroup,
+    db: &(dyn FilesGroup + 'static),
     message: &str,
     location: DiagnosticLocation,
 ) -> String {
-    let file_name = location.file_id.file_name(db);
-    let marks = get_location_marks(db, &location);
-    let pos = match location.span.start.position_in_file(db, location.file_id) {
-        Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
-        None => "?".into(),
-    };
-    format!("error: {message}\n --> {file_name}:{pos}\n{marks}\n")
+    format!("error: {message}\n --> {:?}\n", location.debug(db))
 }
 
 /// A set of diagnostic entries that arose during a computation.
@@ -145,6 +156,9 @@ impl<TEntry: DiagnosticEntry> Diagnostics<TEntry> {
         for entry in &self.0.leaves {
             let message = entry.format(db);
             res += &format_diagnostics(db.upcast(), &message, entry.location(db));
+            for note in entry.notes(db) {
+                res += &format!("note: {}\n", note);
+            }
             res += "\n";
         }
         // Format subtrees.

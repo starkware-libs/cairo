@@ -8,7 +8,7 @@ use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
 use cairo_lang_syntax::node::ast::{
-    AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList,
+    AttributeList, ItemStruct, MemberList, OptionWrappedGenericParamList, VariantList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -34,7 +34,7 @@ impl MacroPlugin for DerivePlugin {
                 db,
                 enum_ast.name(db),
                 enum_ast.attributes(db),
-                ExtraInfo::Enum(member_names(db, enum_ast.variants(db))),
+                ExtraInfo::Enum(variant_names(db, enum_ast.variants(db))),
             ),
             ast::Item::ExternType(extern_type_ast) => generate_derive_code_for_type(
                 db,
@@ -64,6 +64,10 @@ enum ExtraInfo {
 
 fn member_names(db: &dyn SyntaxGroup, members: MemberList) -> Vec<SmolStr> {
     members.elements(db).into_iter().map(|member| member.name(db).text(db)).collect()
+}
+
+fn variant_names(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<SmolStr> {
+    variants.elements(db).into_iter().map(|variant| variant.name(db).text(db)).collect()
 }
 
 fn extract_struct_extra_info(db: &dyn SyntaxGroup, struct_ast: &ItemStruct) -> ExtraInfo {
@@ -134,14 +138,14 @@ fn generate_derive_code_for_type(
         }
 
         for arg in attr.args {
-            let AttributeArg{
-                variant: AttributeArgVariant::Unnamed {
-                    value: ast::Expr::Path(path),
-                    value_stable_ptr,
-                    ..
-                },
+            let AttributeArg {
+                variant:
+                    AttributeArgVariant::Unnamed {
+                        value: ast::Expr::Path(path), value_stable_ptr, ..
+                    },
                 ..
-            } = arg else {
+            } = arg
+            else {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: arg.arg_stable_ptr.untyped(),
                     message: "Expected path.".into(),
@@ -162,6 +166,9 @@ fn generate_derive_code_for_type(
                 }
                 "Destruct" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_destruct_impl(&name, &extra_info))
+                }
+                "PanicDestruct" if !matches!(extra_info, ExtraInfo::Extern) => {
+                    impls.push(get_panic_destruct_impl(&name, &extra_info))
                 }
                 "PartialEq" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_partial_eq_impl(&name, &extra_info))
@@ -267,18 +274,54 @@ fn get_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
     }
 }
 
+fn get_panic_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            formatdoc! {"
+                    impl {name}PanicDestruct of PanicDestruct::<{name}> {{
+                        fn panic_destruct(self: {name}, ref panic: Panic) nopanic {{
+                            match self {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ", variants.iter().map(|variant| {
+                format!(
+                    "{name}::{variant}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),",
+                )
+            }).join("\n            ")}
+        }
+        ExtraInfo::Struct { members, type_generics, other_generics } => {
+            formatdoc! {"
+                    impl {name}PanicDestruct{generics_impl} of PanicDestruct::<{name}{generics}> {{
+                        fn panic_destruct(self: {name}{generics}, ref panic: Panic) nopanic {{
+                            {}
+                        }}
+                    }}
+                ", members.iter().map(|member| {
+                    format!("traits::PanicDestruct::panic_destruct(self.{member}, ref panic);")
+                }).join("\n        "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}PanicDestruct: PanicDestruct<{t}>"))
+            }
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
 fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
     match extra_info {
         ExtraInfo::Enum(variants) => {
             formatdoc! {"
                     impl {name}PartialEq of PartialEq::<{name}> {{
-                        fn eq(lhs: {name}, rhs: {name}) -> bool {{
+                        fn eq(lhs: @{name}, rhs: @{name}) -> bool {{
                             match lhs {{
                                 {}
                             }}
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}, rhs: {name}) -> bool {{
+                        fn ne(lhs: @{name}, rhs: @{name}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
@@ -296,28 +339,31 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
             }).join("\n            ")}
         }
         ExtraInfo::Struct { members, type_generics, other_generics } => {
-            formatdoc! {"
+            let generics = format_generics(type_generics, other_generics);
+            let generics_impl = format_generics_with_trait(type_generics, other_generics, |t| {
+                format!("impl {t}PartialEq: PartialEq<{t}>, impl {t}Destruct: Destruct<{t}>")
+            });
+            if members.is_empty() {
+                formatdoc! {"
+                    impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
+                        fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{ true }}
+                        fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{ false }}
+                    }}
+                "}
+            } else {
+                formatdoc! {"
                     impl {name}PartialEq{generics_impl} of PartialEq::<{name}{generics}> {{
                         #[inline(always)]
-                        fn eq(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn eq(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             {}
-                            true
                         }}
                         #[inline(always)]
-                        fn ne(lhs: {name}{generics}, rhs: {name}{generics}) -> bool {{
+                        fn ne(lhs: @{name}{generics}, rhs: @{name}{generics}) -> bool {{
                             !(lhs == rhs)
                         }}
                     }}
-                ", members.iter().map(|member| {
-                            // TODO(orizi): Use `&&` when supported.
-                            format!("if lhs.{member} != rhs.{member} {{ return false; }}")
-                }).join("\n        "),
-                generics = format_generics(type_generics, other_generics),
-                // TODO(spapini): Remove the Destruct requirement by changing
-                // member borrowing logic to recognize snapshots.
-                generics_impl = format_generics_with_trait(type_generics, other_generics,
-                    |t| format!("impl {t}PartialEq: PartialEq<{t}>, \
-                        impl {t}Destruct: Destruct<{t}>"))
+                ", members.iter().map(|member| format!("lhs.{member} == rhs.{member}")).join(" && ")
+                }
             }
         }
         ExtraInfo::Extern => unreachable!(),
@@ -338,7 +384,7 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                             let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
                             Option::Some(
                                 {}
-                                else {{ return Option::None(()); }}
+                                else {{ return Option::None; }}
                             )
                         }}
                     }}

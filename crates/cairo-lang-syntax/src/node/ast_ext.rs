@@ -28,12 +28,15 @@ impl TerminalFalse {
 impl TerminalLiteralNumber {
     /// Interpret this terminal as a [`BigInt`] number.
     pub fn numeric_value(&self, db: &dyn SyntaxGroup) -> Option<BigInt> {
-        let text = self.text(db);
+        self.numeric_value_and_suffix(db).map(|(value, _suffix)| value)
+    }
 
-        let text = match text.split_once('_') {
-            Some((text, _ty)) => text,
-            None => &text,
-        };
+    /// Interpret this terminal as a [`BigInt`] number and get the suffix if this literal has one.
+    pub fn numeric_value_and_suffix(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> Option<(BigInt, Option<SmolStr>)> {
+        let text = self.text(db);
 
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)
@@ -42,20 +45,27 @@ impl TerminalLiteralNumber {
         } else if let Some(num_no_prefix) = text.strip_prefix("0b") {
             (num_no_prefix, 2)
         } else {
-            (text, 10)
+            (text.as_str(), 10)
         };
 
-        BigInt::from_str_radix(text, radix).ok()
-    }
+        // Catch an edge case, where literal seems to have a suffix that is valid numeric part
+        // according to the radix. Interpret this as an untyped numer.
+        // Example: 0x1_f32 is interpreted as 0x1F32 without suffix.
+        if let Ok(value) = BigInt::from_str_radix(text, radix) {
+            Some((value, None))
+        } else {
+            let (text, suffix) = match text.rsplit_once('_') {
+                Some((text, suffix)) => {
+                    let suffix = if suffix.is_empty() { None } else { Some(suffix) };
+                    (text, suffix)
+                }
+                None => (text, None),
+            };
 
-    /// Get suffix from this literal if it has one.
-    pub fn suffix(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        let text = self.text(db);
-        let (_literal, ty) = text.rsplit_once('_')?;
-        if ty.is_empty() {
-            return None;
+            let value = BigInt::from_str_radix(text, radix).ok()?;
+            let suffix = suffix.map(SmolStr::new);
+            Some((value, suffix))
         }
-        Some(ty.into())
     }
 }
 

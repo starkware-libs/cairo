@@ -13,14 +13,20 @@ impl GenericTypeArgGenericType for SquashedFelt252DictTypeWrapped {
     fn calc_info(
         &self,
         long_id: crate::program::ConcreteTypeLongId,
-        TypeInfo { size, storable, droppable, .. }: TypeInfo,
+        TypeInfo { zero_sized, storable, droppable, .. }: TypeInfo,
     ) -> Result<TypeInfo, SpecializationError> {
         // Note: SquashedFelt252Dict is defined as non-duplicatable even if the inner type is
         // duplicatable to allow libfunc that adds entries to it (treat it similarly to an array).
         // TODO(Gil): the implementation support values of size 1. Remove when other sizes are
         // supported.
-        if storable && size == 1 {
-            Ok(TypeInfo { long_id, storable: true, droppable, duplicatable: false, size: 2 })
+        if storable && !zero_sized {
+            Ok(TypeInfo {
+                long_id,
+                storable: true,
+                droppable,
+                duplicatable: false,
+                zero_sized: false,
+            })
         } else {
             Err(SpecializationError::UnsupportedGenericArg)
         }

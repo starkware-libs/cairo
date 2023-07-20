@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
+use itertools::Itertools;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
@@ -9,7 +10,8 @@ use crate::objects::{
 };
 use crate::{
     FlatBlock, FlatBlockEnd, FlatLowered, MatchArm, MatchEnumInfo, MatchInfo, StatementDesnap,
-    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, Variable,
+    StatementEnumConstruct, StatementSnapshot, StatementStructConstruct, VarRemapping, VarUsage,
+    Variable,
 };
 
 /// Holds all the information needed for formatting lowered representations.
@@ -17,6 +19,12 @@ use crate::{
 pub struct LoweredFormatter<'db> {
     pub db: &'db dyn LoweringGroup,
     pub variables: &'db Arena<Variable>,
+    pub include_usage_location: bool,
+}
+impl<'db> LoweredFormatter<'db> {
+    pub fn new(db: &'db dyn LoweringGroup, variables: &'db Arena<Variable>) -> Self {
+        Self { db, variables, include_usage_location: false }
+    }
 }
 
 impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
@@ -24,7 +32,7 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarRemapping {
         let mut remapping = self.iter().peekable();
         write!(f, "{{")?;
         while let Some((dst, src)) = remapping.next() {
-            src.fmt(f, ctx)?;
+            src.var_id.fmt(f, ctx)?;
             write!(f, " -> ")?;
             dst.fmt(f, ctx)?;
             if remapping.peek().is_some() {
@@ -84,11 +92,11 @@ impl DebugWithDb<LoweredFormatter<'_>> for FlatBlockEnd {
         let outputs = match &self {
             FlatBlockEnd::Return(returns) => {
                 write!(f, "  Return(")?;
-                returns.clone()
+                returns.iter().map(|var_usage| var_usage.var_id).collect()
             }
             FlatBlockEnd::Panic(data) => {
                 write!(f, "  Panic(")?;
-                vec![*data]
+                vec![data.var_id]
             }
             FlatBlockEnd::Goto(block_id, remapping) => {
                 return write!(f, "  Goto({:?}, {:?})", block_id.debug(ctx), remapping.debug(ctx));
@@ -126,6 +134,27 @@ impl DebugWithDb<LoweredFormatter<'_>> for BlockId {
         _lowered: &LoweredFormatter<'_>,
     ) -> std::fmt::Result {
         write!(f, "blk{:?}", self.0)
+    }
+}
+
+impl DebugWithDb<LoweredFormatter<'_>> for VarUsage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>, ctx: &LoweredFormatter<'_>) -> std::fmt::Result {
+        write!(f, "v{:?}", self.var_id.index(),)?;
+        if ctx.include_usage_location {
+            write!(
+                f,
+                "{{`{}`}}",
+                self.location
+                    .get(ctx.db)
+                    .stable_location
+                    .syntax_node(ctx.db.upcast())
+                    .get_text_without_trivia(ctx.db.upcast())
+                    .lines()
+                    .map(|s| s.trim())
+                    .join(" ")
+            )?;
+        }
+        Ok(())
     }
 }
 

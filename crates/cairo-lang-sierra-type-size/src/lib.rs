@@ -1,22 +1,20 @@
-use std::collections::HashMap;
-
 use cairo_lang_sierra::extensions::core::{CoreLibfunc, CoreType, CoreTypeConcrete};
 use cairo_lang_sierra::extensions::starknet::StarkNetTypeConcrete;
 use cairo_lang_sierra::ids::ConcreteTypeId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra::program_registry::ProgramRegistry;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
-pub type TypeSizeMap = HashMap<ConcreteTypeId, i16>;
+pub type TypeSizeMap = UnorderedHashMap<ConcreteTypeId, i16>;
 
 /// Returns a mapping for the sizes of all types for the given program.
 pub fn get_type_size_map(
     program: &Program,
     registry: &ProgramRegistry<CoreType, CoreLibfunc>,
 ) -> Option<TypeSizeMap> {
-    let mut type_sizes = TypeSizeMap::new();
+    let mut type_sizes = TypeSizeMap::default();
     for declaration in &program.type_declarations {
-        let ty = registry.get_type(&declaration.id).ok()?;
-        let size = match ty {
+        let size = match registry.get_type(&declaration.id).ok()? {
             CoreTypeConcrete::Felt252(_)
             | CoreTypeConcrete::GasBuiltin(_)
             | CoreTypeConcrete::Bitwise(_)
@@ -28,6 +26,11 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Uint32(_)
             | CoreTypeConcrete::Uint64(_)
             | CoreTypeConcrete::Uint128(_)
+            | CoreTypeConcrete::Sint8(_)
+            | CoreTypeConcrete::Sint16(_)
+            | CoreTypeConcrete::Sint32(_)
+            | CoreTypeConcrete::Sint64(_)
+            | CoreTypeConcrete::Sint128(_)
             | CoreTypeConcrete::RangeCheck(_)
             | CoreTypeConcrete::Box(_)
             | CoreTypeConcrete::StarkNet(StarkNetTypeConcrete::System(_))
@@ -40,8 +43,10 @@ pub fn get_type_size_map(
             | CoreTypeConcrete::Poseidon(_)
             | CoreTypeConcrete::Felt252Dict(_)
             | CoreTypeConcrete::Felt252DictEntry(_)
-            | CoreTypeConcrete::SegmentArena(_) => Some(1),
+            | CoreTypeConcrete::SegmentArena(_)
+            | CoreTypeConcrete::Bytes31(_) => Some(1),
             CoreTypeConcrete::Array(_)
+            | CoreTypeConcrete::Span(_)
             | CoreTypeConcrete::EcPoint(_)
             | CoreTypeConcrete::SquashedFelt252Dict(_) => Some(2),
             CoreTypeConcrete::NonZero(wrapped_ty)
@@ -51,16 +56,19 @@ pub fn get_type_size_map(
             }
             CoreTypeConcrete::EcState(_) => Some(3),
             CoreTypeConcrete::Uint128MulGuarantee(_) => Some(4),
-            CoreTypeConcrete::Enum(enum_type) => Some(
-                1 + enum_type
-                    .variants
-                    .iter()
-                    .map(|variant| type_sizes[variant])
-                    .max()
-                    .unwrap_or_default(),
-            ),
+            CoreTypeConcrete::Enum(enum_type) => {
+                let mut size = 1;
+                for variant in &enum_type.variants {
+                    size = size.max(type_sizes.get(variant).cloned()? + 1);
+                }
+                Some(size)
+            }
             CoreTypeConcrete::Struct(struct_type) => {
-                Some(struct_type.members.iter().map(|member| type_sizes[member]).sum())
+                let mut size = 0;
+                for member in &struct_type.members {
+                    size += type_sizes.get(member).cloned()?;
+                }
+                Some(size)
             }
         }?;
         type_sizes.insert(declaration.id.clone(), size);

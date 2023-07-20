@@ -18,7 +18,7 @@ impl NoGenericArgsGenericType for PedersenType {
     const STORABLE: bool = true;
     const DUPLICATABLE: bool = false;
     const DROPPABLE: bool = false;
-    const SIZE: i16 = 1;
+    const ZERO_SIZED: bool = false;
 }
 
 define_libfunc_hierarchy! {
@@ -40,19 +40,15 @@ impl NoGenericArgsGenericLibfunc for PedersenHashLibfunc {
     ) -> Result<LibfuncSignature, SpecializationError> {
         let pedersen_ty = context.get_concrete_type(PedersenType::id(), &[])?;
         let felt252_ty = context.get_concrete_type(Felt252Type::id(), &[])?;
+        let felt252_param = ParamSignature::new(felt252_ty.clone());
         Ok(LibfuncSignature::new_non_branch_ex(
             vec![
                 ParamSignature::new(pedersen_ty.clone()).with_allow_add_const(),
-                ParamSignature::new(felt252_ty.clone()),
-                ParamSignature::new(felt252_ty.clone()),
+                felt252_param.clone(),
+                felt252_param,
             ],
             vec![
-                OutputVarInfo {
-                    ty: pedersen_ty,
-                    ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::AddConst {
-                        param_idx: 0,
-                    }),
-                },
+                OutputVarInfo::new_builtin(pedersen_ty, 0),
                 OutputVarInfo {
                     ty: felt252_ty,
                     ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),

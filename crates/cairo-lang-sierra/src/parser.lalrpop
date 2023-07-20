@@ -24,17 +24,17 @@ TypeDeclaration: TypeDeclaration = {
 }
 
 DeclaredTypeInfo: Option<DeclaredTypeInfo> = {
-    "with_info" "{"
+    "["
         "storable:" <storable:Bool> ","
-        "droppable:" <droppable:Bool> ","
-        "duplicatable:" <duplicatable:Bool> ","
-        "size:" <size:I16> ","
-    "}"
+        "drop:" <droppable:Bool> ","
+        "dup:" <duplicatable:Bool> ","
+        "zero_sized:" <zero_sized:Bool>
+    "]"
     => Some(DeclaredTypeInfo {
         storable,
         droppable,
         duplicatable,
-        size,
+        zero_sized,
     }),
     => None,
 }
@@ -78,6 +78,8 @@ ConcreteLibfuncId: ConcreteLibfuncId = {
 
 FunctionId: FunctionId = {
     <id:ConcreteLabel> => FunctionId::from_string(id),
+    <id:ConcreteLabel> "[" <extra:BasicLabel> "]"  =>
+        FunctionId::from_string(format!("{id}[{extra}]")),
     "[" <id:UnsignedInt> "]" => FunctionId::new(id),
 }
 

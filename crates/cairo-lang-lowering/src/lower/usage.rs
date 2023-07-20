@@ -87,6 +87,10 @@ impl BlockUsages {
                 current.usage.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
                 current.changes.insert((&expr.ref_arg).into(), expr.ref_arg.clone());
             }
+            Expr::LogicalOperator(expr) => {
+                self.handle_expr(function_body, expr.lhs, current);
+                self.handle_expr(function_body, expr.rhs, current);
+            }
             Expr::Block(expr) => {
                 let mut usage = Default::default();
                 for stmt in &expr.statements {
@@ -229,7 +233,9 @@ impl BlockUsages {
                 }
             }
             Pattern::EnumVariant(pat) => {
-                Self::handle_pattern(&pat.inner_pattern, current);
+                if let Some(inner_pattern) = &pat.inner_pattern {
+                    Self::handle_pattern(inner_pattern, current);
+                }
             }
             Pattern::Otherwise(_) => {}
         }

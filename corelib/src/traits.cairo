@@ -1,3 +1,5 @@
+use core::panics::Panic;
+
 trait Copy<T>;
 trait Drop<T>;
 
@@ -51,8 +53,16 @@ trait DivRem<T> {
 }
 
 trait PartialEq<T> {
-    fn eq(lhs: T, rhs: T) -> bool;
-    fn ne(lhs: T, rhs: T) -> bool;
+    fn eq(lhs: @T, rhs: @T) -> bool;
+    fn ne(lhs: @T, rhs: @T) -> bool;
+}
+impl PartialEqSnap<T, impl TEq: PartialEq<T>> of PartialEq<@T> {
+    fn eq(lhs: @@T, rhs: @@T) -> bool {
+        TEq::eq(*lhs, *rhs)
+    }
+    fn ne(lhs: @@T, rhs: @@T) -> bool {
+        TEq::ne(*lhs, *rhs)
+    }
 }
 
 // TODO(spapini): When associated types are supported, support the general trait BitAnd<X, Y>.
@@ -119,11 +129,20 @@ trait Index<C, I, V> {
 trait Destruct<T> {
     fn destruct(self: T) nopanic;
 }
-
 // TODO(spapini): Remove this, it can lead to multiple impls and unwanted Destruct implementation.
 impl DestructFromDrop<T, impl TDrop: Drop<T>> of Destruct<T> {
     #[inline(always)]
     fn destruct(self: T) nopanic {}
+}
+
+trait PanicDestruct<T> {
+    fn panic_destruct(self: T, ref panic: Panic) nopanic;
+}
+impl PanicDestructForDestruct<T, impl TDestruct: Destruct<T>> of PanicDestruct<T> {
+    #[inline(always)]
+    fn panic_destruct(self: T, ref panic: Panic) nopanic {
+        TDestruct::destruct(self);
+    }
 }
 
 trait Default<T> {
@@ -191,24 +210,81 @@ impl TupleSize4Drop<
 // Tuple PartialEq impls.
 impl TupleSize0PartialEq of PartialEq<()> {
     #[inline(always)]
-    fn eq(lhs: (), rhs: ()) -> bool {
+    fn eq(lhs: @(), rhs: @()) -> bool {
         true
     }
     #[inline(always)]
-    fn ne(lhs: (), rhs: ()) -> bool {
+    fn ne(lhs: @(), rhs: @()) -> bool {
         false
     }
 }
 
 impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0, )> {
     #[inline(always)]
-    fn eq(lhs: (E0, ), rhs: (E0, )) -> bool {
+    fn eq(lhs: @(E0, ), rhs: @(E0, )) -> bool {
         let (lhs, ) = lhs;
         let (rhs, ) = rhs;
         lhs == rhs
     }
     #[inline(always)]
-    fn ne(lhs: (E0, ), rhs: (E0, )) -> bool {
+    fn ne(lhs: @(E0, ), rhs: @(E0, )) -> bool {
+        !(rhs == lhs)
+    }
+}
+
+impl TupleSize2PartialEq<
+    E0, E1, impl E0PartialEq: PartialEq<E0>, impl E1PartialEq: PartialEq<E1>
+> of PartialEq<(E0, E1)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
+        let (lhs0, lhs1) = lhs;
+        let (rhs0, rhs1) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1), rhs: @(E0, E1)) -> bool {
+        !(rhs == lhs)
+    }
+}
+
+impl TupleSize3PartialEq<
+    E0,
+    E1,
+    E2,
+    impl E0PartialEq: PartialEq<E0>,
+    impl E1PartialEq: PartialEq<E1>,
+    impl E2PartialEq: PartialEq<E2>
+> of PartialEq<(E0, E1, E2)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
+        let (lhs0, lhs1, lhs2) = lhs;
+        let (rhs0, rhs1, rhs2) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1, E2), rhs: @(E0, E1, E2)) -> bool {
+        !(rhs == lhs)
+    }
+}
+
+impl TupleSize4PartialEq<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0PartialEq: PartialEq<E0>,
+    impl E1PartialEq: PartialEq<E1>,
+    impl E2PartialEq: PartialEq<E2>,
+    impl E3PartialEq: PartialEq<E3>
+> of PartialEq<(E0, E1, E2, E3)> {
+    #[inline(always)]
+    fn eq(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
+        let (lhs0, lhs1, lhs2, lhs3) = lhs;
+        let (rhs0, rhs1, rhs2, rhs3) = rhs;
+        lhs0 == rhs0 && lhs1 == rhs1 && lhs2 == rhs2 && lhs3 == rhs3
+    }
+    #[inline(always)]
+    fn ne(lhs: @(E0, E1, E2, E3), rhs: @(E0, E1, E2, E3)) -> bool {
         !(rhs == lhs)
     }
 }

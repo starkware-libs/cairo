@@ -21,7 +21,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     fn is_some(self: Option::<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
 }
@@ -67,7 +67,7 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     fn is_some(self: Option::<T>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
     fn is_bar(self: Option::<T>) -> bool { true }
@@ -76,7 +76,7 @@ impl AnotherOptionTraitImpl<T> of OptionTrait::<felt252> {
     fn is_some(self: Option::<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
-            Option::None(_) => false,
+            Option::None => false,
         }
     }
     fn is_bar(self: Option::<felt252>) -> bool { true }
@@ -97,16 +97,16 @@ error: Method `is_foo` not found on type "core::option::Option::<?0>". Did you i
       ^****^
 
 error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
- --> lib.cairo:36:5
+ --> lib.cairo:36:7
     y.is_bar();
-    ^********^
+      ^****^
 
 error: Invalid member expression.
  --> lib.cairo:37:7
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Trait `test::OptionTrait::<core::felt252>` has multiple implementations, in: "test::OptionTraitImpl", "test::AnotherOptionTraitImpl"
+error: Candidate impl test::AnotherOptionTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:34:7
     x.is_some();
       ^*****^

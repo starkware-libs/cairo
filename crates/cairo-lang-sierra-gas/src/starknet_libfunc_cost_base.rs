@@ -3,6 +3,7 @@ use std::vec;
 use cairo_lang_sierra::extensions::starknet::secp256::{
     Secp256ConcreteLibfunc, Secp256OpConcreteLibfunc,
 };
+use cairo_lang_sierra::extensions::starknet::testing::TestingConcreteLibfunc;
 use cairo_lang_sierra::extensions::starknet::StarkNetConcreteLibfunc;
 
 use crate::objects::ConstCost;
@@ -46,7 +47,9 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(4),
         StarkNetConcreteLibfunc::ReplaceClass(_) => syscall_cost(1),
         StarkNetConcreteLibfunc::SendMessageToL1(_) => syscall_cost(3),
-        StarkNetConcreteLibfunc::Testing(_) => vec![steps(1)],
+        StarkNetConcreteLibfunc::Testing(libfunc) => match libfunc {
+            TestingConcreteLibfunc::Cheatcode(_) => vec![steps(1)],
+        },
         StarkNetConcreteLibfunc::Secp256(libfunc) => {
             match libfunc {
                 Secp256ConcreteLibfunc::K1(libfunc) => match libfunc {
@@ -69,7 +72,7 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
 }
 
 /// Returns the costs for system calls.
-fn syscall_cost(arg_count: i32) -> Vec<ConstCost> {
-    let cost = ConstCost { steps: SYSTEM_CALL_STEPS + 5 + arg_count, holes: 0, range_checks: 0 };
+fn syscall_cost(arg_size: i32) -> Vec<ConstCost> {
+    let cost = ConstCost { steps: SYSTEM_CALL_STEPS + 5 + arg_size, holes: 0, range_checks: 0 };
     vec![cost.clone(), cost]
 }

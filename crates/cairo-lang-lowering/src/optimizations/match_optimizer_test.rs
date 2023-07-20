@@ -11,8 +11,8 @@ use crate::db::LoweringGroup;
 use crate::fmt::LoweredFormatter;
 use crate::ids::ConcreteFunctionWithBodyId;
 use crate::inline::apply_inlining;
-use crate::optimizations::delay_var_def::delay_var_def;
 use crate::optimizations::remappings::optimize_remappings;
+use crate::optimizations::reorder_statements::reorder_statements;
 use crate::panic::lower_panics;
 use crate::reorganize_blocks::reorganize_blocks;
 use crate::test_utils::LoweringDatabaseForTesting;
@@ -48,7 +48,7 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     before = lower_panics(db, function_id, &before).unwrap();
     reorganize_blocks(&mut before);
     optimize_remappings(&mut before);
-    delay_var_def(&mut before);
+    reorder_statements(db, &mut before);
 
     let mut after = before.clone();
     optimize_matches(&mut after);
@@ -57,11 +57,11 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),
-            format!("{:?}", before.debug(&LoweredFormatter { db, variables: &before.variables })),
+            format!("{:?}", before.debug(&LoweredFormatter::new(db, &before.variables))),
         ),
         (
             "after".into(),
-            format!("{:?}", after.debug(&LoweredFormatter { db, variables: &after.variables })),
+            format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
         ),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
     ])

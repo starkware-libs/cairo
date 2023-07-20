@@ -24,8 +24,7 @@ use crate::allowed_libfuncs::{
 };
 use crate::compiler_version::{self};
 use crate::contract::{
-    find_contracts, get_abi, get_module_functions, get_selector_and_sierra_function,
-    ContractDeclaration,
+    find_contracts, get_module_functions, get_selector_and_sierra_function, ContractDeclaration,
 };
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
@@ -94,7 +93,7 @@ pub fn compile_path(
 /// Runs StarkNet contract compiler on the specified contract.
 /// If no contract was specified, verify that there is only one.
 /// Otherwise, return an error.
-pub(crate) fn compile_contract_in_prepared_db(
+pub fn compile_contract_in_prepared_db(
     db: &RootDatabase,
     contract_path: Option<&str>,
     main_crate_ids: Vec<CrateId>,
@@ -183,7 +182,7 @@ fn compile_contract_with_prepared_and_checked_db(
     let entry_points_by_type = ContractEntryPoints {
         external: get_entry_points(db, &external, &replacer)?,
         l1_handler: get_entry_points(db, &l1_handler, &replacer)?,
-        /// TODO(orizi): Validate there is at most one constructor.
+        // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
     let contract_class = ContractClass {
@@ -197,7 +196,10 @@ fn compile_contract_with_prepared_and_checked_db(
         )),
         contract_class_version: DEFAULT_CONTRACT_CLASS_VERSION.to_string(),
         entry_points_by_type,
-        abi: Some(AbiBuilder::from_trait(db, get_abi(db, contract)?).with_context(|| "ABI error")?),
+        abi: Some(
+            AbiBuilder::submodule_as_contract_abi(db, contract.submodule_id)
+                .with_context(|| "Could not create ABI from contract submodule")?,
+        ),
     };
     Ok(contract_class)
 }

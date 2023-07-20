@@ -13,6 +13,7 @@ use crate::felt252_serde::Felt252Serde;
 use crate::test_utils::get_example_file_path;
 
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 fn test_felt252_serde(example_file_name: &str) {
     let sierra = ProgramParser::new()

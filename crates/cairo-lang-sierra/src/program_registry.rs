@@ -179,11 +179,17 @@ fn get_concrete_types_maps<TType: GenericType>(
         .iter()
         .filter_map(|declaration| {
             let TypeDeclaration { id, long_id, declared_type_info } = declaration;
-            let DeclaredTypeInfo { storable, droppable, duplicatable, size } =
+            let DeclaredTypeInfo { storable, droppable, duplicatable, zero_sized } =
                 declared_type_info.as_ref().cloned()?;
             Some((
                 id.clone(),
-                TypeInfo { long_id: long_id.clone(), storable, droppable, duplicatable, size },
+                TypeInfo {
+                    long_id: long_id.clone(),
+                    storable,
+                    droppable,
+                    duplicatable,
+                    zero_sized,
+                },
             ))
         })
         .collect();

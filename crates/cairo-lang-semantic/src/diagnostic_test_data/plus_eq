@@ -8,7 +8,7 @@ foo()
 
 //! > module_code
 fn foo() {
-    let mut x = 3;
+    let mut x:felt252 = 3;
     x += 4;
 }
 
@@ -82,7 +82,7 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Mismatched types. The type core::bool cannot be created from a numeric literal.
  --> lib.cairo:2:17
     let mut x = 3;
                 ^

@@ -15,6 +15,7 @@ use cairo_lang_sierra_ap_change::core_libfunc_ap_change::{
 };
 use cairo_lang_sierra_gas::core_libfunc_cost::{core_libfunc_cost, InvocationCostInfoProvider};
 use cairo_lang_sierra_gas::objects::ConstCost;
+use cairo_lang_sierra_type_size::TypeSizeMap;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, zip_eq, Itertools};
 use thiserror::Error;
@@ -28,12 +29,12 @@ use crate::references::{
     ReferenceValue,
 };
 use crate::relocations::{InstructionsWithRelocations, Relocation, RelocationEntry};
-use crate::type_sizes::TypeSizeMap;
 
 mod array;
 mod bitwise;
 mod boolean;
 mod boxing;
+mod bytes31;
 mod casts;
 mod debug;
 mod ec;
@@ -441,12 +442,17 @@ impl CompiledInvocationBuilder<'_> {
     ) -> CompiledInvocation {
         let CasmBuildResult { instructions, branches } =
             casm_builder.build(branch_extractions.map(|(name, _, _)| name));
-        itertools::assert_equal(
-            core_libfunc_ap_change(self.libfunc, &self),
-            branches
-                .iter()
-                .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change)),
-        );
+        let expected_ap_changes = core_libfunc_ap_change(self.libfunc, &self);
+        let actual_ap_changes = branches
+            .iter()
+            .map(|(state, _)| cairo_lang_sierra_ap_change::ApChange::Known(state.ap_change));
+        if !itertools::equal(expected_ap_changes.iter().cloned(), actual_ap_changes.clone()) {
+            panic!(
+                "Wrong ap changes for {}. Expected: {expected_ap_changes:?}, actual: \
+                 {actual_ap_changes:?}.",
+                self.invocation
+            );
+        }
         let gas_changes =
             core_libfunc_cost(&self.program_info.metadata.gas_info, &self.idx, self.libfunc, &self)
                 .into_iter()
@@ -573,7 +579,6 @@ pub fn compile_invocation(
         CompiledInvocationBuilder { program_info, invocation, libfunc, idx, refs, environment };
     match libfunc {
         CoreConcreteLibfunc::Felt252(libfunc) => felt252::build(libfunc, builder),
-        CoreConcreteLibfunc::Bitwise(_) => bitwise::build(builder),
         CoreConcreteLibfunc::Bool(libfunc) => boolean::build(libfunc, builder),
         CoreConcreteLibfunc::Cast(libfunc) => casts::build(libfunc, builder),
         CoreConcreteLibfunc::Ec(libfunc) => ec::build(libfunc, builder),
@@ -592,6 +597,11 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Uint128(libfunc) => int::unsigned128::build(libfunc, builder),
         CoreConcreteLibfunc::Uint256(libfunc) => int::unsigned256::build(libfunc, builder),
         CoreConcreteLibfunc::Uint512(libfunc) => int::unsigned512::build(libfunc, builder),
+        CoreConcreteLibfunc::Sint8(libfunc) => int::signed::build_sint(libfunc, builder),
+        CoreConcreteLibfunc::Sint16(libfunc) => int::signed::build_sint(libfunc, builder),
+        CoreConcreteLibfunc::Sint32(libfunc) => int::signed::build_sint(libfunc, builder),
+        CoreConcreteLibfunc::Sint64(libfunc) => int::signed::build_sint(libfunc, builder),
+        CoreConcreteLibfunc::Sint128(libfunc) => int::signed128::build(libfunc, builder),
         CoreConcreteLibfunc::Gas(libfunc) => gas::build(libfunc, builder),
         CoreConcreteLibfunc::BranchAlign(_) => misc::build_branch_align(builder),
         CoreConcreteLibfunc::Array(libfunc) => array::build(libfunc, builder),
@@ -615,6 +625,7 @@ pub fn compile_invocation(
         CoreConcreteLibfunc::Felt252DictEntry(libfunc) => {
             felt252_dict::build_entry(libfunc, builder)
         }
+        CoreConcreteLibfunc::Bytes31(libfunc) => bytes31::build(libfunc, builder),
     }
 }
 

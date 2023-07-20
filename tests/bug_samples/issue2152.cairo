@@ -8,10 +8,8 @@ use option::OptionTrait;
 fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
-        Option::None(_) => {
-            let mut data = Default::default();
-            data.append('OOG');
-            panic(data);
+        Option::None => {
+            panic(array!['OOG']);
         }
     }
     let a = 1;

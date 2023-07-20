@@ -3,10 +3,11 @@ use cairo_lang_casm::casm_build_extend;
 use cairo_lang_sierra::extensions::int::unsigned128::Uint128Concrete;
 use cairo_lang_sierra::extensions::int::IntOperator;
 use num_bigint::BigInt;
-use num_traits::One;
+use num_traits::{Num, One};
 
+use super::build_const;
 use crate::invocations::{
-    add_input_variables, get_non_fallthrough_statement_id, misc, CompiledInvocation,
+    add_input_variables, bitwise, get_non_fallthrough_statement_id, misc, CompiledInvocation,
     CompiledInvocationBuilder, CostValidationInfo, InvocationError,
 };
 
@@ -24,12 +25,13 @@ pub fn build(
         Uint128Concrete::GuaranteeMul(_) => build_u128_guarantee_mul(builder),
         Uint128Concrete::MulGuaranteeVerify(_) => build_u128_mul_guarantee_verify(builder),
         Uint128Concrete::IsZero(_) => misc::build_is_zero(builder),
-        Uint128Concrete::Const(libfunc) => super::unsigned::build_const(libfunc, builder),
+        Uint128Concrete::Const(libfunc) => build_const(libfunc, builder),
         Uint128Concrete::FromFelt252(_) => build_u128_from_felt252(builder),
         Uint128Concrete::ToFelt252(_) => misc::build_identity(builder),
         Uint128Concrete::Equal(_) => misc::build_cell_eq(builder),
         Uint128Concrete::SquareRoot(_) => super::unsigned::build_sqrt(builder),
         Uint128Concrete::ByteReverse(_) => build_u128_byte_reverse(builder),
+        Uint128Concrete::Bitwise(_) => bitwise::build(builder),
     }
 }
 
@@ -53,7 +55,7 @@ fn build_u128_overflowing_add(
             hint TestLessThan {lhs: a_plus_b, rhs: u128_limit} into {dst: no_overflow};
             jump NoOverflow if no_overflow != 0;
             // Overflow:
-            // Here we know that 2**128 <= a + b < 2 * (2**128 - 1).
+            // Here we know that 2**128 <= a + b < 2 * 2**128 - 1.
             tempvar wrapping_a_plus_b = a_plus_b - u128_limit;
             assert wrapping_a_plus_b = *(range_check++);
             jump Target;
@@ -466,10 +468,11 @@ pub fn build_u128_byte_reverse(
     // two 64-bit words.
 
     // Right align the value.
-    let shift = 1_u128 << (8 + 16 + 32 + 64);
     casm_build_extend! {casm_builder,
-        const shift_imm = shift;
-        tempvar result = temp / shift_imm;
+        // The inverse of `2**(8 + 16 + 32 + 64)` in the field.
+        const shift_inverse =
+            -BigInt::from_str_radix("800000000000011000000000000000000", 16).unwrap();
+        let result = temp * shift_inverse;
     }
 
     Ok(builder.build_from_casm_builder(

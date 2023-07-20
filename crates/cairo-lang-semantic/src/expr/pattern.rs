@@ -50,7 +50,10 @@ impl Pattern {
                 .flat_map(|pattern| pattern.variables())
                 .collect(),
             Pattern::EnumVariant(pattern_enum_variant) => {
-                pattern_enum_variant.inner_pattern.variables()
+                match &pattern_enum_variant.inner_pattern {
+                    Some(inner_pattern) => inner_pattern.variables(),
+                    None => vec![],
+                }
             }
             Pattern::Literal(_) | Pattern::Otherwise(_) => vec![],
         }
@@ -123,7 +126,7 @@ pub struct PatternTuple {
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
-    pub inner_pattern: Box<Pattern>,
+    pub inner_pattern: Option<Box<Pattern>>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]

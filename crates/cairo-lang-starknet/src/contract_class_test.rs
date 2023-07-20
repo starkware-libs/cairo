@@ -56,6 +56,7 @@ fn test_serialization() {
 }
 
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 fn test_full_contract_deserialization(example_file_name: &str) {
@@ -68,6 +69,7 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 /// that the resulted json is the same as in <test_case>.json.
 #[test_case("account")]
 #[test_case("test_contract")]
+#[test_case("new_syntax_test_contract")]
 #[test_case("minimal_contract")]
 #[test_case("hello_starknet")]
 #[test_case("erc20")]

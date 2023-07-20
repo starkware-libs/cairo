@@ -45,7 +45,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "()".
     let c : felt252 = (b = 5);
                       ^*****^
 
-error: Trait has no implementation in context: core::integer::NumericLiteral::<core::bool>
+error: Mismatched types. The type core::bool cannot be created from a numeric literal.
  --> lib.cairo:7:17
     let mut x = 1;
                 ^

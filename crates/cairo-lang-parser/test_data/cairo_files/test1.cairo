@@ -40,6 +40,20 @@ struct A<A, B> {
     member2: (bool, felt252, ())
 }
 
+enum E<A, B> {
+    V1: A,
+    V2: B,
+    VEmpty,
+}
+
+fn match_e_enum(e: E) -> felt252 {
+    match e {
+        E::V1(_) => 1,
+        E::V2(x) => 2,
+        E::VEmpty => 0,
+    }
+}
+
 type Renamed = submod::inner::Other;
 type Generic<T> = super::other::OtherGeneric::<T>;
 

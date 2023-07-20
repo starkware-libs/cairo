@@ -75,7 +75,24 @@
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs: Missing []
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #3 (kind: StatementExpr)
+    │   │       │   ├── child #3 (kind: StatementLet)
+    │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
+    │   │       │   │   ├── pattern (kind: ExprPath)
+    │   │       │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │       └── ident (kind: TokenIdentifier): 'v'
+    │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
+    │   │       │   │   ├── eq (kind: TokenEq): '='
+    │   │       │   │   ├── rhs (kind: ExprBinary)
+    │   │       │   │   │   ├── lhs (kind: ExprPath)
+    │   │       │   │   │   │   ├── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │   │   │   └── ident (kind: TokenIdentifier): 'bool'
+    │   │       │   │   │   │   ├── separator #0 (kind: TokenColonColon): '::'
+    │   │       │   │   │   │   └── item #1 (kind: PathSegmentSimple)
+    │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'True'
+    │   │       │   │   │   ├── op (kind: TokenEqEq): '=='
+    │   │       │   │   │   └── rhs (kind: TokenFalse): 'false'
+    │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   │       │   ├── child #4 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
     │   │       │   │   │   ├── lhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   │   ├── op (kind: TokenPlus): '+'
@@ -107,14 +124,14 @@
     │   │       │   │   │           │                   │       ├── identifier (kind: TokenIdentifier): '_gg'
     │   │       │   │   │           │                   │       └── arg_expr (kind: StructArgExpr)
     │   │       │   │   │           │                   │           ├── colon (kind: TokenColon): ':'
-    │   │       │   │   │           │                   │           └── expr (kind: ExprTuple)
+    │   │       │   │   │           │                   │           └── expr (kind: ExprListParenthesized)
     │   │       │   │   │           │                   │               ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │           │                   │               ├── expressions (kind: ExprList) []
     │   │       │   │   │           │                   │               └── rparen (kind: TokenRParen): ')'
     │   │       │   │   │           │                   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #4 (kind: StatementReturn)
+    │   │       │   ├── child #5 (kind: StatementReturn)
     │   │       │   │   ├── return_kw (kind: TokenReturn): 'return'
     │   │       │   │   ├── expr_clause (kind: ExprClause)
     │   │       │   │   │   └── expr (kind: ExprBinary)
@@ -124,7 +141,7 @@
     │   │       │   │   │       ├── op (kind: TokenEqEq): '=='
     │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '6'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   └── child #5 (kind: StatementExpr)
+    │   │       │   └── child #6 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
     │   │       │       │   ├── lhs (kind: ExprPath)
     │   │       │       │   │   └── item #0 (kind: PathSegmentSimple)
@@ -261,22 +278,22 @@ error: Missing tokens. Expected an expression.
            ^
 
 error: Missing tokens. Expected an expression.
- --> test2.cairo:13:14
+ --> test2.cairo:14:14
         x.a *+-. s.s * foo(1,3)
              ^
 
 error: Missing tokens. Expected an expression.
- --> test2.cairo:13:16
+ --> test2.cairo:14:16
         x.a *+-. s.s * foo(1,3)
                ^
 
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> test2.cairo:22:1
+ --> test2.cairo:23:1
 skipped tokens
 ^*****^
 
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> test2.cairo:22:9
+ --> test2.cairo:23:9
 skipped tokens
         ^****^
 
