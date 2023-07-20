@@ -82,7 +82,7 @@ pub struct FlatLowered {
     pub variables: Arena<Variable>,
     /// Arena of allocated lowered blocks.
     pub blocks: FlatBlocks,
-    /// function paramaters, including implicits.
+    /// function parameters, including implicits.
     pub parameters: Vec<VariableId>,
 }
 
@@ -332,6 +332,12 @@ impl MatchInfo {
         match self {
             MatchInfo::Enum(s) => &s.arms,
             MatchInfo::Extern(s) => &s.arms,
+        }
+    }
+    pub fn location(&self) -> &LocationId {
+        match self {
+            MatchInfo::Enum(s) => &s.location,
+            MatchInfo::Extern(s) => &s.location,
         }
     }
 }

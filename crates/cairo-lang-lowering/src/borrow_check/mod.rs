@@ -2,6 +2,7 @@
 #[path = "test.rs"]
 mod test;
 
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::Maybe;
 use itertools::{zip_eq, Itertools};
@@ -49,11 +50,49 @@ impl AuxCombine for PanicState {
     }
 }
 
+// Represents the item that caused the triggered the need for a drop.
+#[derive(Copy, Clone, Debug)]
+pub enum DropPosition {
+    // The trigger is a call to a panicable function.
+    Panic(LocationId),
+    // The trigger is a divergence in control flow.
+    Diverge(LocationId),
+}
+impl DropPosition {
+    fn as_note(self, db: &dyn LoweringGroup) -> String {
+        match self {
+            Self::Panic(location) => format!(
+                "the variable needs to be dropped due to the potential panic here:\n  --> {:?}",
+                location
+                    .get(db)
+                    .stable_location
+                    .diagnostic_location(db.upcast())
+                    .debug(db.upcast()),
+            ),
+            Self::Diverge(location) => format!(
+                "the variable needs to be dropped due to the divergence here:\n  --> {:?}",
+                location
+                    .get(db)
+                    .stable_location
+                    .diagnostic_location(db.upcast())
+                    .debug(db.upcast()),
+            ),
+        }
+    }
+}
+
 impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
-    type IntroducePosition = ();
+    // Note that for in BorrowChecker `IntroducePosition` is used to pass the cause of
+    // the drop.
+    type IntroducePosition = Option<DropPosition>;
     type UsePosition = LocationId;
 
-    fn drop_aux(&mut self, _position: (), var_id: VariableId, panic_state: PanicState) {
+    fn drop_aux(
+        &mut self,
+        opt_drop_position: Option<DropPosition>,
+        var_id: VariableId,
+        panic_state: PanicState,
+    ) {
         let var = &self.lowered.variables[var_id];
         let Err(drop_err) = var.droppable.clone() else {
             return;
@@ -66,17 +105,35 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
                 return;
             };
         }
-        self.success = Err(self.diagnostics.report_by_location(
-            var.location.get(self.db),
-            VariableNotDropped { drop_err, destruct_err },
-        ));
+
+        let mut location = var.location.get(self.db);
+        if let Some(drop_position) = opt_drop_position {
+            location = location.with_note(drop_position.as_note(self.db));
+        }
+        let semantic_db = self.db.upcast();
+        location = location
+            .with_note(drop_err.format(semantic_db))
+            .with_note(destruct_err.format(semantic_db));
+        self.success = Err(self
+            .diagnostics
+            .report_by_location(location, VariableNotDropped { drop_err, destruct_err }));
     }
 
-    fn dup(&mut self, _position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
+    fn dup(&mut self, position: LocationId, var_id: VariableId, next_usage_position: LocationId) {
         let var = &self.lowered.variables[var_id];
         if let Err(inference_error) = var.duplicatable.clone() {
             self.success = Err(self.diagnostics.report_by_location(
-                next_usage_position.get(self.db),
+                next_usage_position
+                    .get(self.db)
+                    .with_note(format!(
+                        "variable was previously used here:\n  --> {:?}",
+                        position
+                            .get(self.db)
+                            .stable_location
+                            .diagnostic_location(self.db.upcast())
+                            .debug(self.db.upcast())
+                    ))
+                    .with_note(inference_error.format(self.db.upcast())),
                 VariableMoved { inference_error },
             ));
         }
@@ -92,7 +149,7 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         _statement_location: StatementLocation,
         stmt: &Statement,
     ) {
-        info.variables_introduced(self, &stmt.outputs(), ());
+        info.variables_introduced(self, &stmt.outputs(), None);
         match stmt {
             Statement::Call(stmt) => {
                 if let Ok(signature) = stmt.function.signature(self.db) {
@@ -103,7 +160,10 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                             ..Default::default()
                         };
                         *info = BorrowCheckerDemand::merge_demands(
-                            &[(panic_demand, ()), (info.clone(), ())],
+                            &[
+                                (panic_demand, Some(DropPosition::Panic(stmt.location))),
+                                (info.clone(), Some(DropPosition::Panic(stmt.location))),
+                            ],
                             self,
                         );
                     }
@@ -113,7 +173,9 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
                 let var = &self.lowered.variables[stmt.output];
                 if let Err(inference_error) = var.duplicatable.clone() {
                     self.success = Err(self.diagnostics.report_by_location(
-                        var.location.get(self.db),
+                        var.location
+                            .get(self.db)
+                            .with_note(inference_error.format(self.db.upcast())),
                         DesnappingANonCopyableType { inference_error },
                     ));
                 }
@@ -150,8 +212,8 @@ impl<'a> Analyzer<'_> for BorrowChecker<'a> {
         let arm_demands = zip_eq(match_info.arms(), infos)
             .map(|(arm, demand)| {
                 let mut demand = demand.clone();
-                demand.variables_introduced(self, &arm.var_ids, ());
-                (demand, ())
+                demand.variables_introduced(self, &arm.var_ids, None);
+                (demand, Some(DropPosition::Diverge(*match_info.location())))
             })
             .collect_vec();
         let mut demand = BorrowCheckerDemand::merge_demands(&arm_demands, self);
@@ -200,7 +262,7 @@ pub fn borrow_check(
         let mut analysis =
             BackAnalysis { lowered: &*lowered, block_info: Default::default(), analyzer: checker };
         let mut root_demand = analysis.get_root_info();
-        root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, ());
+        root_demand.variables_introduced(&mut analysis.analyzer, &lowered.parameters, None);
         let success = analysis.analyzer.success;
         assert!(root_demand.finalize(), "Undefined variable should not happen at this stage");
 

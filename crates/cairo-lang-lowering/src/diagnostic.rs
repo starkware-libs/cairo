@@ -6,7 +6,6 @@ use cairo_lang_diagnostics::{
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use itertools::Itertools;
 
 use crate::Location;
 
@@ -48,8 +47,8 @@ pub struct LoweringDiagnostic {
 impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
-    fn format(&self, db: &Self::DbType) -> String {
-        let msg = match &self.kind {
+    fn format(&self, _db: &Self::DbType) -> String {
+        match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::NonZeroValueInMatch => {
                 "Match with a non-zero value is not supported.".into()
@@ -57,18 +56,14 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved { inference_error } => {
-                format!("Variable was previously moved. {}", inference_error.format(db))
+            LoweringDiagnosticKind::VariableMoved { .. } => {
+                "Variable was previously moved.".into()
             }
-            LoweringDiagnosticKind::VariableNotDropped { drop_err, destruct_err } => {
-                format!(
-                    "Variable not dropped. {}. {}.",
-                    drop_err.format(db),
-                    destruct_err.format(db)
-                )
+            LoweringDiagnosticKind::VariableNotDropped { .. } => {
+                "Variable not dropped.".into()
             }
-            LoweringDiagnosticKind::DesnappingANonCopyableType { inference_error } => {
-                format!("Cannot desnap a non copyable type. {}", inference_error.format(db))
+            LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
+                "Cannot desnap a non copyable type.".into()
             }
             LoweringDiagnosticKind::UnsupportedMatchedValue => "Unsupported matched value. \
                                                                 Currently, only matches on enums \
@@ -96,9 +91,11 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
                 ".into()
             }
-        };
+        }
+    }
 
-        itertools::chain!(self.location.notes.iter(), std::iter::once(&msg)).join(",\n")
+    fn notes(&self, _db: &Self::DbType) -> &[String] {
+        &self.location.notes
     }
 
     #[allow(unreachable_patterns, clippy::single_match)]

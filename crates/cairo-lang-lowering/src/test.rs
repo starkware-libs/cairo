@@ -219,12 +219,12 @@ fn test_diagnostics() {
     assert_eq!(
         builder.build().format(db),
         indoc::indoc! {"
-error: while compiling auto-generated withdraw_gas,
-while compiling auto-generated destructor,
-Cannot inline a function that might call itself.
+error: Cannot inline a function that might call itself.
  --> lib.cairo:1:1
 fn test_func() { let mut a = 5; {
 ^*******************************^
+note: this error originates in auto-generated withdraw_gas logic.
+note: this error originates in auto-generated destructor logic.
 
 "}
     );

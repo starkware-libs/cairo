@@ -1,6 +1,7 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::ConcreteVariant;
 use id_arena::Arena;
+use itertools::Itertools;
 
 use crate::db::LoweringGroup;
 use crate::objects::{
@@ -148,6 +149,9 @@ impl DebugWithDb<LoweredFormatter<'_>> for VarUsage {
                     .stable_location
                     .syntax_node(ctx.db.upcast())
                     .get_text_without_trivia(ctx.db.upcast())
+                    .lines()
+                    .map(|s| s.trim())
+                    .join(" ")
             )?;
         }
         Ok(())
