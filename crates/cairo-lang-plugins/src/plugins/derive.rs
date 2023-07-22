@@ -12,6 +12,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
@@ -34,7 +35,7 @@ impl MacroPlugin for DerivePlugin {
                 db,
                 enum_ast.name(db),
                 enum_ast.attributes(db),
-                ExtraInfo::Enum(variant_names(db, enum_ast.variants(db))),
+                ExtraInfo::Enum(variant_names_and_attributes(db, enum_ast.variants(db))),
             ),
             ast::Item::ExternType(extern_type_ast) => generate_derive_code_for_type(
                 db,
@@ -57,17 +58,32 @@ impl AsDynMacroPlugin for DerivePlugin {
 impl SemanticPlugin for DerivePlugin {}
 
 enum ExtraInfo {
-    Enum(Vec<SmolStr>),
+    Enum(Vec<VariantExtraInfo>),
     Struct { members: Vec<SmolStr>, type_generics: Vec<SmolStr>, other_generics: Vec<String> },
     Extern,
+}
+
+struct VariantExtraInfo {
+    name: SmolStr,
+    attribute_names: Vec<String>,
 }
 
 fn member_names(db: &dyn SyntaxGroup, members: MemberList) -> Vec<SmolStr> {
     members.elements(db).into_iter().map(|member| member.name(db).text(db)).collect()
 }
 
-fn variant_names(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<SmolStr> {
-    variants.elements(db).into_iter().map(|variant| variant.name(db).text(db)).collect()
+fn variant_names_and_attributes(
+    db: &dyn SyntaxGroup,
+    variants: VariantList,
+) -> Vec<VariantExtraInfo> {
+    variants
+        .elements(db)
+        .into_iter()
+        .map(|variant| VariantExtraInfo {
+            name: variant.name(db).text(db),
+            attribute_names: variant.attribute_names(db),
+        })
+        .collect()
 }
 
 fn extract_struct_extra_info(db: &dyn SyntaxGroup, struct_ast: &ItemStruct) -> ExtraInfo {
@@ -176,6 +192,15 @@ fn generate_derive_code_for_type(
                 "Serde" if !matches!(extra_info, ExtraInfo::Extern) => {
                     impls.push(get_serde_impl(&name, &extra_info))
                 }
+                "Default" if !matches!(extra_info, ExtraInfo::Extern) => {
+                    generate_default_impl(
+                        &name,
+                        &extra_info,
+                        value_stable_ptr.untyped(),
+                        &mut diagnostics,
+                        &mut impls,
+                    );
+                }
                 "Clone" | "Destruct" | "PartialEq" | "Serde" => {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: value_stable_ptr.untyped(),
@@ -216,7 +241,7 @@ fn get_clone_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         }}
                     }}
                 ", variants.iter().map(|variant| {
-                format!("{name}::{variant}(x) => {name}::{variant}(x.clone()),")
+                format!("{name}::{variant_name}(x) => {name}::{variant_name}(x.clone()),", variant_name = variant.name)
             }).join("\n            ")}
         }
         ExtraInfo::Struct { members, type_generics, other_generics } => {
@@ -252,7 +277,7 @@ fn get_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
                         }}
                     }}
                 ", variants.iter().map(|variant| {
-                format!("{name}::{variant}(x) => traits::Destruct::destruct(x),")
+                format!("{name}::{}(x) => traits::Destruct::destruct(x),", variant.name)
             }).join("\n            ")}
         }
         ExtraInfo::Struct { members, type_generics, other_generics } => {
@@ -287,7 +312,7 @@ fn get_panic_destruct_impl(name: &str, extra_info: &ExtraInfo) -> String {
                     }}
                 ", variants.iter().map(|variant| {
                 format!(
-                    "{name}::{variant}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),",
+                    "{name}::{}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),", variant.name
                 )
             }).join("\n            ")}
         }
@@ -327,12 +352,13 @@ fn get_partial_eq_impl(name: &str, extra_info: &ExtraInfo) -> String {
                     }}
                 ", variants.iter().map(|lhs_variant| {
                 format!(
-                    "{name}::{lhs_variant}(x) => match rhs {{\n                {}\n            }},",
-                    variants.iter().map(|rhs_variant|{
-                        if lhs_variant == rhs_variant {
-                            format!("{name}::{rhs_variant}(y) => x == y,")
+                    "{name}::{lhs_variant_name}(x) => match rhs {{\n                {match_body}\n            }},",
+                    lhs_variant_name = lhs_variant.name,
+                    match_body = variants.iter().map(|rhs_variant|{
+                        if lhs_variant.name == rhs_variant.name {
+                            format!("{name}::{rhs_variant_name}(y) => x == y,", rhs_variant_name = rhs_variant.name)
                         } else {
-                            format!("{name}::{rhs_variant}(y) => false,")
+                            format!("{name}::{rhs_variant_name}(y) => false,", rhs_variant_name = rhs_variant.name)
                         }
                     }).join("\n                "),
                 )
@@ -391,13 +417,15 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 ",
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
+                        "{name}::{variant_name}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
                         serde::Serde::serialize(x, ref output); }},",
+                        variant_name = variant.name
                     )
                 }).join("\n            "),
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
+                        "if idx == {idx} {{ {name}::{variant_name}(serde::Serde::deserialize(ref serialized)?) }}",
+                        variant_name = variant.name
                     )
                 }).join("\n            else "),
             }
@@ -421,6 +449,60 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo) -> String {
                 generics_impl = format_generics_with_trait(type_generics, other_generics,
                     |t| format!("impl {t}Serde: serde::Serde<{t}>, impl {t}Destruct: Destruct<{t}>"))
             }
+        }
+        ExtraInfo::Extern => unreachable!(),
+    }
+}
+
+fn generate_default_impl(
+    name: &str,
+    extra_info: &ExtraInfo,
+    diagnostics_ptr: SyntaxStablePtrId,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impls: &mut Vec<String>,
+) {
+    match extra_info {
+        ExtraInfo::Enum(variants) => {
+            let default_variants: Vec<&SmolStr> = variants
+                .iter()
+                .filter(|variant| variant.attribute_names.contains(&"default".into()))
+                .map(|variant| &variant.name)
+                .collect();
+
+            if default_variants.len() != 1 {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: diagnostics_ptr,
+                    message: "Exactly one variant must be anotated with #[default]".into(),
+                });
+            } else {
+                let default_impl_for_enum = formatdoc! {"
+                        impl {name}Default of Default::<{name}> {{
+                            fn default() -> {name} {{
+                                {}
+                            }}
+                        }}
+                    ",
+                    format!("{name}::{}(Default::default())", default_variants[0])
+                };
+                impls.push(default_impl_for_enum);
+            }
+        }
+        ExtraInfo::Struct { ref members, ref type_generics, ref other_generics } => {
+            let default_impl_for_struct = formatdoc! {"
+                    impl {name}Default{generics_impl} of Default::<{name}{generics}> {{
+                        fn default() -> {name} {{
+                            {name} {{
+                                {}
+                            }}
+                        }}
+                    }}
+                ",
+                members.iter().map(|member| format!("{member}: Default::default()")).join(",\n        "),
+                generics = format_generics(type_generics, other_generics),
+                generics_impl = format_generics_with_trait(type_generics, other_generics,
+                    |t| format!("impl {t}Destruct: Destruct<{t}>"))
+            };
+            impls.push(default_impl_for_struct);
         }
         ExtraInfo::Extern => unreachable!(),
     }

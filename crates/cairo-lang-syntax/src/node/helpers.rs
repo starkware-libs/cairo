@@ -164,6 +164,13 @@ pub trait QueryAttrs {
             .collect()
     }
 
+    fn attribute_names(&self, db: &dyn SyntaxGroup) -> Vec<String> {
+        self.attributes_elements(db)
+            .into_iter()
+            .map(|a| a.attr(db).as_syntax_node().get_text_without_trivia(db))
+            .collect()
+    }
+
     /// Find first attribute named exactly `attr` attached do this node.
     fn find_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> Option<Attribute> {
         self.query_attr(db, attr).into_iter().next()
