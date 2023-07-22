@@ -200,6 +200,13 @@ impl Felt252Default of Default<felt252> {
     }
 }
 
+impl BoolDefault of Default<bool> {
+    #[inline(always)]
+    fn default() -> bool nopanic {
+        bool::False
+    }
+}
+
 impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
     #[inline(always)]
     fn zero_default() -> felt252 nopanic {
