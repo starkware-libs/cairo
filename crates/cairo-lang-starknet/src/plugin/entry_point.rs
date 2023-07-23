@@ -79,9 +79,9 @@ pub fn generate_entry_point_wrapper(
     // TODO(spapini): Check modifiers and type.
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
-    let input_data_short_err = "'Input too short for arguments'";
     for param in params {
-        let arg_name = format!("__arg_{}", param.name(db).text(db));
+        let param_name = param.name(db).text(db);
+        let arg_name = format!("__arg_{}", param_name);
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
 
@@ -92,15 +92,15 @@ pub fn generate_entry_point_wrapper(
                 stable_ptr: param.modifiers(db).stable_ptr().untyped(),
             });
         }
-
+        let mut input_err = format!("`{param_name}` failed to deserialize");
+        input_err.truncate(31);
         let ref_modifier = if is_ref { "ref " } else { "" };
         arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
-        // TODO(yuval): use panicable version of deserializations when supported.
         let arg_definition = format!(
             "
             let {mut_modifier}{arg_name} =
-                serde::Serde::<{type_name}>::deserialize(ref data).expect({input_data_short_err});"
+                serde::Serde::<{type_name}>::deserialize(ref data).expect('{input_err}');"
         );
         arg_definitions.push(arg_definition);
 
