@@ -1,6 +1,6 @@
 use array::ArrayTrait;
 use keccak::keccak_u256s_be_inputs;
-use math::u256_div_mod_n;
+use math::{u256_mul_mod_n, inv_mod};
 use option::OptionTrait;
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
 use traits::{Into, TryInto};
@@ -61,10 +61,11 @@ fn recover_public_key<
     // where the divisions by `r` are modulo `N` (the size of the curve).
 
     let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
-    let r_nz = r.try_into().unwrap();
-    let u1 = u256_div_mod_n(msg_hash, r_nz, n_nz).unwrap();
+    let r_inv = inv_mod(r.try_into().unwrap(), n_nz).unwrap();
+
+    let u1 = u256_mul_mod_n(msg_hash, r_inv, n_nz);
     let minus_u1 = secp256_ec_negate_scalar::<Secp256Point>(u1);
-    let u2 = u256_div_mod_n(s, r_nz, n_nz).unwrap();
+    let u2 = u256_mul_mod_n(s, r_inv, n_nz);
 
     let minus_point1 = generator_point.mul(minus_u1).unwrap_syscall();
 

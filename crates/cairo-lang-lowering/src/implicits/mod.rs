@@ -12,7 +12,7 @@ use semantic::TypeId;
 use crate::blocks::Blocks;
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::graph_algorithms::strongly_connected_components::concrete_function_with_body_postpanic_scc;
-use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, LocationId};
+use crate::ids::{ConcreteFunctionWithBodyId, FunctionId, FunctionLongId, LocationId};
 use crate::lower::context::{VarRequest, VariableAllocator};
 use crate::{BlockId, FlatBlockEnd, FlatLowered, MatchArm, MatchInfo, Statement, VarUsage};
 
@@ -116,8 +116,19 @@ fn block_body_implicits(
             )
         })
         .clone();
-    for statement in &mut ctx.lowered.blocks[block_id].statements {
+    let require_implicits_libfunc_id =
+        semantic::corelib::internal_require_implicit(ctx.db.upcast());
+    let mut remove = vec![];
+    for (i, statement) in ctx.lowered.blocks[block_id].statements.iter_mut().enumerate() {
         if let Statement::Call(stmt) = statement {
+            if matches!(
+                stmt.function.lookup(ctx.db),
+                FunctionLongId::Semantic(func_id)
+                    if func_id.get_concrete(ctx.db.upcast()).generic_function == require_implicits_libfunc_id
+            ) {
+                remove.push(i);
+                continue;
+            }
             let callee_implicits = ctx.db.function_implicits(stmt.function)?;
             let location = stmt.location.with_auto_generation_note(ctx.db, "implicits");
 
@@ -135,6 +146,9 @@ fn block_body_implicits(
             }
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
+    }
+    for i in remove.into_iter().rev() {
+        ctx.lowered.blocks[block_id].statements.remove(i);
     }
     Ok(implicits)
 }
