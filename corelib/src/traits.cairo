@@ -288,3 +288,57 @@ impl TupleSize4PartialEq<
         !(rhs == lhs)
     }
 }
+
+// Tuple Default impls.
+impl TupleSize0Default of Default<()> {
+    fn default() -> () {
+        ()
+    }
+}
+
+impl TupleSize1Default<E0, impl E0Default: Default<E0>> of Default<(E0, )> {
+    fn default() -> (E0, ) {
+        (E0Default::default(), )
+    }
+}
+
+impl TupleSize2Default<
+    E0, E1, impl E0Default: Default<E0>, impl E0Drop: Drop<E0>, impl E1Default: Default<E1>
+> of Default<(E0, E1)> {
+    fn default() -> (E0, E1) {
+        (E0Default::default(), E1Default::default())
+    }
+}
+
+impl TupleSize3Default<
+    E0,
+    E1,
+    E2,
+    impl E0Default: Default<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1Default: Default<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2Default: Default<E2>
+> of Default<(E0, E1, E2)> {
+    fn default() -> (E0, E1, E2) {
+        (E0Default::default(), E1Default::default(), E2Default::default())
+    }
+}
+
+impl TupleSize4Default<
+    E0,
+    E1,
+    E2,
+    E3,
+    impl E0Default: Default<E0>,
+    impl E0Drop: Drop<E0>,
+    impl E1Default: Default<E1>,
+    impl E1Drop: Drop<E1>,
+    impl E2Default: Default<E2>,
+    impl E2Drop: Drop<E2>,
+    impl E3Default: Default<E3>
+> of Default<(E0, E1, E2, E3)> {
+    fn default() -> (E0, E1, E2, E3) {
+        (E0Default::default(), E1Default::default(), E2Default::default(), E3Default::default())
+    }
+}
