@@ -16,12 +16,6 @@ enum bool {
     True,
 }
 
-impl DefaultTupleSize0 of Default<()> {
-    fn default() -> () {
-        ()
-    }
-}
-
 impl BoolSerde of Serde<bool> {
     fn serialize(self: @bool, ref output: Array<felt252>) {
         if *self {
