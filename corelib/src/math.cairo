@@ -79,10 +79,13 @@ fn inv_mod<
 
 /// Returns `a / b (mod n)`, or None if `b` is not invertible modulo `n`.
 fn u256_div_mod_n(a: u256, b: NonZero<u256>, n: NonZero<u256>) -> Option<u256> {
-    let inv_b = inv_mod(b, n)?;
-    let quotient = u256_wide_mul(a, inv_b);
-    let (_, quotient_mod_n) = u512_safe_div_rem_by_u256(quotient, n);
-    Option::Some(quotient_mod_n)
+    Option::Some(u256_mul_mod_n(a, inv_mod(b, n)?, n))
+}
+
+/// Returns `a * b (mod n)`.
+fn u256_mul_mod_n(a: u256, b: u256, n: NonZero<u256>) -> u256 {
+    let (_, r) = u512_safe_div_rem_by_u256(u256_wide_mul(a, b), n);
+    r
 }
 
 // === Oneable ===
