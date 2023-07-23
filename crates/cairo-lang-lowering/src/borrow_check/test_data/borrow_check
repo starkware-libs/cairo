@@ -710,9 +710,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable not dropped.
- --> lib.cairo:10:3
-  x.a = 17;
-  ^*^
+ --> lib.cairo:9:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
 note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:11:3
   x.a += 1;
