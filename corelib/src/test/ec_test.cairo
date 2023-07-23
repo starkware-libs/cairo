@@ -1,47 +1,42 @@
-use core::traits::Into;
+use ec::{EcPointTrait, EcStateTrait};
 use option::OptionTrait;
-use ec::{
-    ec_mul, ec_neg, ec_point_from_x, ec_point_from_x_nz, ec_point_is_zero, ec_point_new,
-    ec_point_new_nz, ec_point_non_zero, ec_point_try_new, ec_point_try_new_nz, ec_point_unwrap,
-    ec_point_zero, ec_state_add_mul, ec_state_add, ec_state_finalize, ec_state_init,
-    ec_state_try_finalize_nz
-};
 use test::test_utils::{assert_eq, assert_ne};
+use traits::{Into, TryInto};
 
 #[test]
 #[should_panic]
 fn test_ec_from_zero() {
-    ec_point_from_x_nz(0).expect('Not on curve.');
+    EcPointTrait::new_from_x(0).expect('Not on curve.');
 }
 
 #[test]
 fn test_ec_operations() {
     // Beta + 2 is a square, and for x = 1 and alpha = 1, x^3 + alpha * x + beta = beta + 2.
     let beta_p2_root = 2487829544412206244690656897973144572467842667075005257202960243805141046681;
-    let p = ec_point_from_x(1).unwrap();
-    let p_nz = ec_point_non_zero(p);
-    let (x, y) = ec_point_unwrap(p_nz);
+    let p = EcPointTrait::new_from_x(1).unwrap();
+    let p_nz = p.try_into().unwrap();
+    let (x, y) = p_nz.coordinates();
     assert_eq(@x, @1, 'x != 1');
     assert(y == beta_p2_root || y == -beta_p2_root, 'y is wrong');
 
-    let mut state = ec_state_init();
-    ec_state_add(ref state, p_nz);
-    let q = ec_state_try_finalize_nz(state).expect('zero point');
-    let (qx, qy) = ec_point_unwrap(q);
+    let mut state = EcStateTrait::init();
+    state.add(p_nz);
+    let q = state.finalize_nz().expect('zero point');
+    let (qx, qy) = q.coordinates();
     assert_eq(@qx, @x, 'bad finalize x');
     assert_eq(@qy, @y, 'bad finalize y');
 
     // Try doing the same thing with the EC op builtin.
-    let mut state = ec_state_init();
-    ec_state_add_mul(ref state, 1, p_nz);
-    let q3 = ec_state_try_finalize_nz(state).expect('zero point');
-    let (qx, qy) = ec_point_unwrap(q3);
+    let mut state = EcStateTrait::init();
+    state.add_mul(1, p_nz);
+    let q3 = state.finalize_nz().expect('zero point');
+    let (qx, qy) = q3.coordinates();
     assert_eq(@qx, @x, 'bad EC op x');
     assert_eq(@qy, @y, 'bad EC op y');
 
     // Try computing `p + p` using the ec_mul function.
-    let double_p = ec_mul(p, 2);
-    let (double_x, double_y) = ec_point_unwrap(ec_point_non_zero(double_p));
+    let double_p = p.mul(2);
+    let (double_x, double_y) = double_p.try_into().unwrap().coordinates();
     let expected_double_y =
         3572434102142093425782752266058856056057826477682467661647843687948039943621;
     assert_eq(
@@ -52,15 +47,15 @@ fn test_ec_operations() {
     assert(double_y == expected_double_y || double_y == -expected_double_y, 'bad double y');
 
     // Compute `2p - p`.
-    let (sub_x, sub_y) = ec_point_unwrap(ec_point_non_zero(double_p - p));
+    let (sub_x, sub_y) = (double_p - p).try_into().unwrap().coordinates();
     assert_eq(@sub_x, @x, 'bad x for 2p - p');
     assert_eq(@sub_y, @y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert(ec_point_is_zero(p - p).into(), 'p - p did not return 0.');
+    assert((p - p).try_into().is_none(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
-    let (sub2_x, sub2_y) = ec_point_unwrap(ec_point_non_zero(ec_neg(p) - p));
+    let (sub2_x, sub2_y) = (-p - p).try_into().unwrap().coordinates();
     assert_eq(@sub2_x, @double_x, 'bad x for (-p) - p');
     assert_eq(@sub2_y, @-double_y, 'bad y for (-p) - p');
 }
@@ -68,13 +63,13 @@ fn test_ec_operations() {
 #[test]
 #[should_panic]
 fn test_bad_ec_point_creation() {
-    ec_point_new(0, 0);
+    EcPointTrait::new(0, 0).unwrap();
 }
 
 #[test]
 fn test_ec_point_finalization_zero() {
-    let state = ec_state_init();
-    let point_at_infinity = ec_state_try_finalize_nz(state);
+    let state = EcStateTrait::init();
+    let point_at_infinity = state.finalize_nz();
     assert(point_at_infinity.is_none(), 'Wrong point');
 }
 
@@ -116,12 +111,13 @@ fn test_ecdsa() {
 
 #[test]
 fn test_ec_mul() {
-    let p = ec_point_new(
+    let p = EcPointTrait::new(
         x: 336742005567258698661916498343089167447076063081786685068305785816009957563,
         y: 1706004133033694959518200210163451614294041810778629639790706933324248611779,
-    );
+    )
+        .unwrap();
     let m = 2713877091499598330239944961141122840311015265600950719674787125185463975936;
-    let (x, y) = ec_point_unwrap(ec_point_non_zero(ec_mul(p, m)));
+    let (x, y) = p.mul(m).try_into().unwrap().coordinates();
 
     assert_eq(
         @x,
