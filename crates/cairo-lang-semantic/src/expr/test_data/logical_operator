@@ -46,16 +46,16 @@ foo
 
 //! > module_code
 fn bar<S, T>(a: S, b: bool, c: T) -> bool {
-    a && Default::default() || c
+    a && b || c
 }
 
 //! > expected_diagnostics
 error: Expected type "core::bool", found: "S".
  --> lib.cairo:2:5
-    a && Default::default() || c
+    a && b || c
     ^
 
 error: Expected type "core::bool", found: "T".
- --> lib.cairo:2:32
-    a && Default::default() || c
-                               ^
+ --> lib.cairo:2:15
+    a && b || c
+              ^
