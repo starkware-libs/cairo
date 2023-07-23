@@ -73,7 +73,7 @@ libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
-libfunc felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243> = felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243>;
+libfunc felt252_const<665194289009856159938650746218081601589616364581288417402999044991187557> = felt252_const<665194289009856159938650746218081601589616364581288417402999044991187557>;
 libfunc snapshot_take<hello_starknet::hello_starknet::hello_starknet::ContractState> = snapshot_take<hello_starknet::hello_starknet::hello_starknet::ContractState>;
 libfunc drop<hello_starknet::hello_starknet::hello_starknet::ContractState> = drop<hello_starknet::hello_starknet::hello_starknet::ContractState>;
 libfunc function_call<user@hello_starknet::hello_starknet::hello_starknet::get_balance> = function_call<user@hello_starknet::hello_starknet::hello_starknet::get_balance>;
@@ -226,7 +226,7 @@ branch_align() -> ();
 drop<Unit>([12]) -> ();
 drop<core::array::Span::<core::felt252>>([8]) -> ();
 array_new<felt252>() -> ([73]);
-felt252_const<1979706721653833758925397712865600297316042839304765459608024204080243>() -> ([74]);
+felt252_const<665194289009856159938650746218081601589616364581288417402999044991187557>() -> ([74]);
 store_temp<felt252>([74]) -> ([74]);
 array_append<felt252>([73], [74]) -> ([75]);
 struct_construct<core::panics::Panic>() -> ([76]);

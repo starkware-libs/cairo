@@ -182,10 +182,10 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`arg` failed to deserialize');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`num` failed to deserialize');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -205,10 +205,10 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`arg` failed to deserialize');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`num` failed to deserialize');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -226,13 +226,13 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_contract_address =
-                serde::Serde::<ContractAddress>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<ContractAddress>::deserialize(ref data).expect('`contract_address` failed to de');
 
             let __arg_class_hash =
-                serde::Serde::<ClassHash>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<ClassHash>::deserialize(ref data).expect('`class_hash` failed to deserial');
 
             let __arg_storage_address =
-                serde::Serde::<StorageAddress>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<StorageAddress>::deserialize(ref data).expect('`storage_address` failed to des');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -265,13 +265,13 @@ mod __l1_handler {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_from_address =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`from_address` failed to deseri');
 
             let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`arg` failed to deserialize');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`num` failed to deserialize');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();

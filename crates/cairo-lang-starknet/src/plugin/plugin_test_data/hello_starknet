@@ -152,7 +152,7 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_amount =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data).expect('`amount` failed to deserialize');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
