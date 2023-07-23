@@ -9,10 +9,17 @@ use traits::{
 use serde::Serde;
 use array::SpanTrait;
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Default)]
 enum bool {
+    #[default]
     False,
     True,
+}
+
+impl DefaultTupleSize0 of Default<()> {
+    fn default() -> () {
+        ()
+    }
 }
 
 impl BoolSerde of Serde<bool> {
@@ -197,13 +204,6 @@ impl Felt252Default of Default<felt252> {
     #[inline(always)]
     fn default() -> felt252 nopanic {
         0
-    }
-}
-
-impl BoolDefault of Default<bool> {
-    #[inline(always)]
-    fn default() -> bool nopanic {
-        bool::False
     }
 }
 
