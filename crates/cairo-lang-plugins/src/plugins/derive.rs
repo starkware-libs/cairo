@@ -399,8 +399,10 @@ fn get_serde_impl(name: &str, extra_info: &ExtraInfo, db: &dyn SyntaxGroup) -> S
                 ",
                 variants.iter().enumerate().map(|(idx, variant)| {
                     format!(
-                        "{name}::{variant_name}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
-                        serde::Serde::serialize(x, ref output); }},",
+                        "{name}::{variant_name}(x) => {{
+                            serde::Serde::serialize(@{idx}, ref output); \
+                            serde::Serde::serialize(x, ref output); 
+                        }},",
                         variant_name = variant.name(db).text(db)
                     )
                 }).join("\n            "),
