@@ -3244,20 +3244,9 @@
   },
   "abi": [
     {
-      "type": "function",
-      "name": "__validate_declare__",
-      "inputs": [
-        {
-          "name": "class_hash",
-          "type": "core::felt252"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "core::felt252"
-        }
-      ],
-      "state_mutability": "view"
+      "type": "impl",
+      "name": "AccountContractImpl",
+      "interface_name": "core::starknet::account::AccountContract"
     },
     {
       "type": "struct",
@@ -3278,22 +3267,6 @@
       ]
     },
     {
-      "type": "function",
-      "name": "__validate__",
-      "inputs": [
-        {
-          "name": "calls",
-          "type": "core::array::Array::<core::starknet::account::Call>"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "core::felt252"
-        }
-      ],
-      "state_mutability": "external"
-    },
-    {
       "type": "struct",
       "name": "core::array::Span::<core::felt252>",
       "members": [
@@ -3304,20 +3277,58 @@
       ]
     },
     {
-      "type": "function",
-      "name": "__execute__",
-      "inputs": [
+      "type": "interface",
+      "name": "core::starknet::account::AccountContract",
+      "items": [
         {
-          "name": "calls",
-          "type": "core::array::Array::<core::starknet::account::Call>"
-        }
-      ],
-      "outputs": [
+          "type": "function",
+          "name": "__validate_declare__",
+          "inputs": [
+            {
+              "name": "class_hash",
+              "type": "core::felt252"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "view"
+        },
         {
-          "type": "core::array::Array::<core::array::Span::<core::felt252>>"
+          "type": "function",
+          "name": "__validate__",
+          "inputs": [
+            {
+              "name": "calls",
+              "type": "core::array::Array::<core::starknet::account::Call>"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "external"
+        },
+        {
+          "type": "function",
+          "name": "__execute__",
+          "inputs": [
+            {
+              "name": "calls",
+              "type": "core::array::Array::<core::starknet::account::Call>"
+            }
+          ],
+          "outputs": [
+            {
+              "type": "core::array::Array::<core::array::Span::<core::felt252>>"
+            }
+          ],
+          "state_mutability": "external"
         }
-      ],
-      "state_mutability": "external"
+      ]
     },
     {
       "type": "constructor",
