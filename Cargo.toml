@@ -113,3 +113,7 @@ toml = "0.7.6"
 tower-lsp = "0.19.0"
 unescaper = "0.1.1"
 xshell = "0.2.2"
+
+[profile.ci]
+inherits = "test"
+strip = "debuginfo"

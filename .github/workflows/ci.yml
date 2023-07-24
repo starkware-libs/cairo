@@ -8,8 +8,28 @@ on:
     types: [checks_requested]
 
 jobs:
-  parallel-tests:
+  build-test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          components: rustfmt
+          toolchain: nightly-2023-07-05
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@nextest
+      - name: nextest archive
+        run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file nextest-archive.tar.zst
+      - uses: actions/upload-artifact@v3
+        with:
+          name: nextest-archive
+          path: nextest-archive.tar.zst
+
+  test:
+    name: test ${{ matrix.partition }}/20
+    runs-on: ubuntu-latest
+    needs:
+      - build-test
     strategy:
       matrix:
         cmd:
@@ -48,31 +68,13 @@ jobs:
         with:
           components: rustfmt
           toolchain: nightly-2023-07-05
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      - name: Install nextest
-        uses: taiki-e/install-action@nextest
-      - run: |
-          cargo ${{ matrix.cmd }}
-  test:
-    if: ${{ always() }}
-    needs: parallel-tests
-    runs-on: ubuntu-latest
-    steps:
-      - if: needs.parallel-tests.result == 'success'
-        run: exit 0
-      - if: needs.parallel-tests.result != 'success'
-        run: exit 1
-  rustfmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
+      - uses: taiki-e/install-action@nextest
+      - uses: actions/download-artifact@v3
         with:
-          components: rustfmt
-          toolchain: nightly-2023-07-05
-      - uses: Swatinem/rust-cache@v2
-      - run: scripts/rust_fmt.sh --check
+          name: nextest-archive
+      - name: Running cargo ${{ matrix.cmd }}
+        run: cargo ${{ matrix.cmd }} --archive-file nextest-archive.tar.zst
+  
 
   # Checks all .cairo files in the repo are formatted correctly.
   cairofmt:
