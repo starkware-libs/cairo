@@ -1212,7 +1212,9 @@ fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<Resol
                 vec![db.extern_function_declaration_resolver_data(id)]
             }
         },
-        LookupItemId::ImplFunction(id) => vec![db.impl_function_resolver_data(id)],
+        LookupItemId::ImplFunction(id) => {
+            vec![db.impl_function_resolver_data(id), db.impl_function_body_resolver_data(id)]
+        }
         LookupItemId::TraitFunction(id) => vec![db.trait_function_resolver_data(id)],
     }
     .into_iter()
