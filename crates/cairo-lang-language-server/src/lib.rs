@@ -10,7 +10,7 @@ use std::sync::Arc;
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
@@ -710,6 +710,7 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
+        eprintln!("Goto definition");
         self.with_db(|db| {
             let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
@@ -828,74 +829,82 @@ fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
     node: SyntaxNode,
-) -> Option<LookupItemId> {
+) -> Vec<LookupItemId> {
     let syntax_db = db.upcast();
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => Some(LookupItemId::ModuleItem(ModuleItemId::Constant(
+        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
             db.intern_constant(ConstantLongId(
                 module_file_id,
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
+                vec![LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
                     module_file_id,
                     ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                ))))
+                )))]
             } else {
-                Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
+                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
                     FreeFunctionLongId(
                         module_file_id,
                         ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
                     ),
-                ))))
+                )))]
             }
         }
-        SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
+        SyntaxKind::ItemExternFunction => vec![LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
                 module_file_id,
                 ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
             ))),
-        )),
-        SyntaxKind::ItemExternType => Some(LookupItemId::ModuleItem(ModuleItemId::ExternType(
+        )],
+        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
             db.intern_extern_type(ExternTypeLongId(
                 module_file_id,
                 ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::ItemTrait => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
                 module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemImpl => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
                 module_file_id,
                 ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemStruct => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
                 module_file_id,
                 ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemEnum => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
                 module_file_id,
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
-        SyntaxKind::UsePathLeaf => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(UseLongId(
-                module_file_id,
-                ast::UsePathLeaf::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+        SyntaxKind::ItemUse => {
+            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
+            // items.
+            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
+            let path_leaves = get_all_path_leafs(db.upcast(), item_use.use_path(syntax_db));
+            let mut res = Vec::new();
+            for path_leaf in path_leaves {
+                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
+                let lookup_item_id =
+                    LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(use_long_id)));
+                res.push(lookup_item_id);
+            }
+            res
         }
-        _ => None,
+        _ => vec![],
     }
 }
 
@@ -946,7 +955,7 @@ fn get_node_and_lookup_items(
     // Find containing function.
     let mut item_node = node.clone();
     loop {
-        if let Some(item) = lookup_item_from_ast(db, module_file_id, item_node.clone()) {
+        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
             res.push(item);
         }
         match item_node.parent() {
