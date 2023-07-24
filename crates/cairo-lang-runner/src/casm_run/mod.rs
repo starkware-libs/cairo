@@ -1834,11 +1834,15 @@ pub fn execute_core_hint(
             let end = extract_relocatable(vm, end)?;
             while curr != end {
                 let value = vm.get_integer(curr)?;
-                if let Some(shortstring) = as_cairo_short_string(&value) {
-                    println!("[DEBUG]\t{shortstring: <31}\t(raw: {:#x}", value.to_bigint());
-                } else {
-                    println!("[DEBUG]\t{:<31}\t(raw: {:#x} ", ' ', value.to_bigint());
-                }
+                println!(
+                    "[DEBUG]\t{as_str: <31}\t(raw: {raw})",
+                    as_str = as_cairo_short_string(&value).unwrap_or_else(|| " ".to_string()),
+                    raw = if value.bits() > 64 {
+                        format!("{:#x}", value.to_bigint())
+                    } else {
+                        value.to_string()
+                    },
+                );
                 curr += 1;
             }
             println!();
