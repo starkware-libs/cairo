@@ -616,6 +616,7 @@ test_borrow_check
 fn foo(ref self: MyStruct) {
     if self.b == 0 {
        self.a = Default::default();
+       invalidate(self.a);
     }
 }
 
@@ -639,9 +640,9 @@ error: Variable was previously moved.
 fn foo(ref self: MyStruct) {
        ^****************^
 note: variable was previously used here:
-  --> lib.cairo:9:5
-    if self.b == 0 {
-    ^**************^
+  --> lib.cairo:11:19
+       invalidate(self.a);
+                  ^****^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
 
 //! > lowering
@@ -653,7 +654,6 @@ Statements:
   (v5: core::integer::u8) <- 0u
   (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
   (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`self.b`}, v7{`0`})
-  (v12: test::MyStruct) <- struct_construct(v1{`if self.b == 0 { self.a = Default::default(); }`}, v3{`if self.b == 0 { self.a = Default::default(); }`})
 End:
   Match(match_enum(v8{`self.b == 0`}) {
     bool::False(v11) => blk2,
@@ -663,21 +663,22 @@ End:
 blk1:
 Statements:
   (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
-  (v14: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+  () <- test::invalidate(v10{`self.a`})
+  (v13: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
 End:
-  Goto(blk3, {v14 -> v13})
+  Goto(blk3, {v13 -> v12})
 
 blk2:
 Statements:
-  (v15: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
+  (v14: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
 End:
-  Goto(blk3, {v15 -> v13})
+  Goto(blk3, {v14 -> v12})
 
 blk3:
 Statements:
-  (v16: ()) <- struct_construct()
+  (v15: ()) <- struct_construct()
 End:
-  Return(v13, v16)
+  Return(v12, v15)
 
 //! > ==========================================================================
 
@@ -710,9 +711,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable not dropped.
- --> lib.cairo:10:3
-  x.a = 17;
-  ^*^
+ --> lib.cairo:9:12
+fn foo(mut x: MyStruct) -> MyStruct {
+           ^
 note: the variable needs to be dropped due to the potential panic here:
   --> lib.cairo:11:3
   x.a += 1;

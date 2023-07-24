@@ -2,8 +2,10 @@ use cairo_lang_defs::ids::MemberId;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use semantic::{ConcreteTypeId, TypeLongId};
 
 use super::usage::MemberPath;
+use crate::db::LoweringGroup;
 use crate::VariableId;
 
 /// Maps member paths ([MemberPath]) to lowered variable ids.
@@ -23,6 +25,19 @@ impl SemanticLoweringMapping {
     ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
+    }
+
+    pub fn get_ty<TContext: StructRecomposer>(
+        &mut self,
+        ctx: &TContext,
+        path: &MemberPath,
+    ) -> Option<semantic::TypeId> {
+        Some(match self.scattered.get(path)? {
+            Value::Var(var) => ctx.var_ty(*var),
+            Value::Scattered(scattered) => ctx.db().intern_type(TypeLongId::Concrete(
+                ConcreteTypeId::Struct(scattered.concrete_struct_id),
+            )),
+        })
     }
 
     pub fn introduce(&mut self, path: MemberPath, var: VariableId) {
@@ -102,6 +117,7 @@ pub trait StructRecomposer {
         members: Vec<VariableId>,
     ) -> VariableId;
     fn var_ty(&self, var: VariableId) -> semantic::TypeId;
+    fn db(&self) -> &dyn LoweringGroup;
 }
 
 /// An intermediate value for a member path.

@@ -7,6 +7,7 @@ use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::chain;
 
 use crate::add_withdraw_gas::add_withdraw_gas;
 use crate::db::LoweringGroup;
@@ -123,74 +124,50 @@ fn test_function_lowering_phases(
         before_all.blocks.iter().all(|(_, b)| b.is_set()),
         "There should not be any unset blocks"
     );
-
-    let mut after_inlining = before_all.deref().clone();
-    apply_inlining(&db, function_id, &mut after_inlining).unwrap();
-
-    let mut after_add_withdraw_gas = after_inlining.clone();
-    add_withdraw_gas(&db, function_id, &mut after_add_withdraw_gas).unwrap();
-
-    let after_lower_panics = lower_panics(&db, function_id, &after_add_withdraw_gas).unwrap();
-
-    let mut after_add_destructs = after_lower_panics.clone();
-    add_destructs(&db, function_id, &mut after_add_destructs);
-
-    let mut after_optimize_remappings1 = after_add_destructs.clone();
-    optimize_remappings(&mut after_optimize_remappings1);
-
-    let mut after_reorder_statements1 = after_optimize_remappings1.clone();
-    reorder_statements(&db, &mut after_reorder_statements1);
-
-    let mut after_branch_inversion = after_reorder_statements1.clone();
-    branch_inversion(&db, &mut after_branch_inversion);
-
-    let mut after_reorder_statements2 = after_branch_inversion.clone();
-    reorder_statements(&db, &mut after_reorder_statements2);
-
-    let mut after_optimize_matches = after_reorder_statements2.clone();
-    optimize_matches(&mut after_optimize_matches);
-
-    let mut after_lower_implicits = after_optimize_matches.clone();
-    lower_implicits(&db, function_id, &mut after_lower_implicits);
-
-    let mut after_optimize_remappings2 = after_lower_implicits.clone();
-    optimize_remappings(&mut after_optimize_remappings2);
-
-    let mut after_reorder_statements3 = after_optimize_remappings2.clone();
-    reorder_statements(&db, &mut after_reorder_statements3);
-
-    let mut after_reorganize_blocks = after_reorder_statements3.clone();
-    reorganize_blocks(&mut after_reorganize_blocks);
+    let mut stage_states = OrderedHashMap::<String, String>::default();
+    let mut add_stage_state = |name: &str, lowered: &FlatLowered| {
+        stage_states.insert(name.into(), formatted_lowered(&db, lowered));
+    };
+    add_stage_state("before_all", &before_all);
+    let mut curr_state = before_all.deref().clone();
+    let mut apply_stage = |name: &str, stage: &dyn Fn(&mut FlatLowered)| {
+        (*stage)(&mut curr_state);
+        add_stage_state(name, &curr_state);
+    };
+    apply_stage("after_inlining", &|lowered| apply_inlining(&db, function_id, lowered).unwrap());
+    apply_stage("after_add_withdraw_gas", &|lowered| {
+        add_withdraw_gas(&db, function_id, lowered).unwrap()
+    });
+    apply_stage("after_lower_panics", &|lowered| {
+        *lowered = lower_panics(&db, function_id, lowered).unwrap();
+    });
+    apply_stage("after_add_destructs", &|lowered| add_destructs(&db, function_id, lowered));
+    apply_stage("after_optimize_remappings1", &optimize_remappings);
+    apply_stage("after_reorder_statements1", &|lowered| reorder_statements(&db, lowered));
+    apply_stage("after_branch_inversion", &|lowered| branch_inversion(&db, lowered));
+    apply_stage("after_reorder_statements2", &|lowered| reorder_statements(&db, lowered));
+    apply_stage("after_optimize_matches", &optimize_matches);
+    apply_stage("after_lower_implicits", &|lowered| lower_implicits(&db, function_id, lowered));
+    apply_stage("after_optimize_remappings2", &optimize_remappings);
+    apply_stage("after_reorder_statements3", &|lowered| reorder_statements(&db, lowered));
+    apply_stage("after_reorganize_blocks (final)", &reorganize_blocks);
 
     let after_all = db.concrete_function_with_body_lowered(function_id).unwrap();
 
     // This asserts that we indeed follow the logic of `concrete_function_with_body_lowered`.
     // If something is changed there, it should be changed here too.
-    assert_eq!(*after_all, after_reorganize_blocks);
+    assert_eq!(*after_all, curr_state);
 
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
-    OrderedHashMap::from([
-        ("semantic_diagnostics".into(), semantic_diagnostics),
-        ("lowering_diagnostics".into(), diagnostics.format(&db)),
-        ("before_all".into(), formatted_lowered(&db, &before_all)),
-        ("after_inlining".into(), formatted_lowered(&db, &after_inlining)),
-        ("after_add_withdraw_gas".into(), formatted_lowered(&db, &after_add_withdraw_gas)),
-        ("after_lower_panics".into(), formatted_lowered(&db, &after_lower_panics)),
-        ("after_add_destructs".into(), formatted_lowered(&db, &after_add_destructs)),
-        ("after_optimize_remappings1".into(), formatted_lowered(&db, &after_optimize_remappings1)),
-        ("after_reorder_statements1".into(), formatted_lowered(&db, &after_reorder_statements1)),
-        ("after_branch_inversion".into(), formatted_lowered(&db, &after_branch_inversion)),
-        ("after_reorder_statements2".into(), formatted_lowered(&db, &after_reorder_statements2)),
-        ("after_optimize_matches".into(), formatted_lowered(&db, &after_optimize_matches)),
-        ("after_lower_implicits".into(), formatted_lowered(&db, &after_lower_implicits)),
-        ("after_optimize_remappings2".into(), formatted_lowered(&db, &after_optimize_remappings2)),
-        ("after_reorder_statements3".into(), formatted_lowered(&db, &after_reorder_statements3)),
-        (
-            "after_reorganize_blocks (final)".into(),
-            formatted_lowered(&db, &after_reorganize_blocks),
-        ),
-    ])
+    OrderedHashMap::from_iter(chain!(
+        [
+            ("semantic_diagnostics".into(), semantic_diagnostics),
+            ("lowering_diagnostics".into(), diagnostics.format(&db)),
+        ]
+        .into_iter(),
+        stage_states.into_iter()
+    ))
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {

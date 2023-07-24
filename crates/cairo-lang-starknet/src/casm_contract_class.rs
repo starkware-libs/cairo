@@ -2,6 +2,7 @@
 #[path = "casm_contract_class_test.rs"]
 mod test;
 
+use cairo_felt::Felt252;
 use cairo_lang_casm::hints::{Hint, PythonicHint};
 use cairo_lang_sierra::extensions::array::ArrayType;
 use cairo_lang_sierra::extensions::bitwise::BitwiseType;
@@ -30,7 +31,7 @@ use convert_case::{Case, Casing};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use num_integer::Integer;
-use num_traits::{Num, Signed};
+use num_traits::Signed;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -227,12 +228,7 @@ impl CasmContractClass {
         contract_class: ContractClass,
         add_pythonic_hints: bool,
     ) -> Result<Self, StarknetSierraCompilationError> {
-        let prime = BigUint::from_str_radix(
-            "800000000000011000000000000000000000000000000000000000000000001",
-            16,
-        )
-        .unwrap();
-
+        let prime = Felt252::prime();
         for felt252 in &contract_class.sierra_program {
             if felt252.value >= prime {
                 return Err(StarknetSierraCompilationError::ValueOutOfRange);

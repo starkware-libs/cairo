@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
         .with_context(|| "Compilation failed without any diagnostics.")?;
     let replacer = DebugReplacer { db };
     if args.available_gas.is_none()
-        && sierra_program.type_declarations.iter().any(|decl| {
+        && sierra_program.libfunc_declarations.iter().any(|decl| {
             matches!(
                 decl.long_id.generic_id.0.as_str(),
                 WithdrawGasLibfunc::STR_ID

@@ -12,6 +12,7 @@ use super::generators;
 use super::generators::StatementsBuilder;
 use super::refs::{SemanticLoweringMapping, StructRecomposer};
 use super::usage::MemberPath;
+use crate::db::LoweringGroup;
 use crate::diagnostic::LoweringDiagnosticKind;
 use crate::ids::LocationId;
 use crate::{
@@ -114,6 +115,21 @@ impl BlockBuilder {
                 .expect("Use of undefined variable cannot happen after semantic phase."),
             location,
         }
+    }
+
+    /// Gets the type of a semantic variable.
+    pub fn get_ty(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        semantic_var_id: semantic::VarId,
+        location: LocationId,
+    ) -> semantic::TypeId {
+        self.semantics
+            .get_ty(
+                &BlockStructRecomposer { statements: &mut self.statements, ctx, location },
+                &MemberPath::Var(semantic_var_id),
+            )
+            .expect("Use of undefined variable cannot happen after semantic phase.")
     }
 
     /// Adds a statement to the block.
@@ -225,9 +241,8 @@ impl BlockBuilder {
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let var = self.get_semantic(ctx, *semantic, location).var_id;
-                    let var = ctx.variables[var].clone();
-                    ctx.variables.variables.alloc(var)
+                    let ty = self.get_ty(ctx, *semantic, location);
+                    ctx.new_var(VarRequest { ty, location })
                 });
             }
         }
@@ -323,10 +338,10 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
         let members = self.ctx.db.concrete_struct_members(concrete_struct_id).unwrap();
         let members = members.values().collect_vec();
         let member_ids = members.iter().map(|m| m.id);
-        let var_reqs = members
-            .iter()
-            .map(|member| VarRequest { ty: member.ty, location: self.location })
-            .collect();
+
+        let location = self.ctx.variables[value].location;
+        let var_reqs =
+            members.iter().map(|member| VarRequest { ty: member.ty, location }).collect();
         let member_values =
             generators::StructDestructure { input: value, var_reqs }.add(self.ctx, self.statements);
         OrderedHashMap::from_iter(zip_eq(member_ids, member_values))
@@ -356,5 +371,9 @@ impl<'a, 'b, 'c> StructRecomposer for BlockStructRecomposer<'a, 'b, 'c> {
 
     fn var_ty(&self, var: VariableId) -> semantic::TypeId {
         self.ctx.variables[var].ty
+    }
+
+    fn db(&self) -> &dyn LoweringGroup {
+        self.ctx.db
     }
 }

@@ -125,6 +125,7 @@ mod __l1_handler {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -133,14 +134,7 @@ mod __l1_handler {
 
             let __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
@@ -151,6 +145,7 @@ mod __l1_handler {
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
@@ -159,14 +154,7 @@ mod __l1_handler {
 
             let __arg_arg =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
@@ -177,17 +165,11 @@ mod __l1_handler {
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_no_params(ref contract_state, );
@@ -198,19 +180,13 @@ mod __l1_handler {
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_abc =
                 serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
@@ -221,19 +197,13 @@ mod __l1_handler {
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_from_address =
                 serde::Serde::<u128>::deserialize(ref data).expect('Input too short for arguments');
-            if !array::SpanTrait::is_empty(data) {
-                // Force the inclusion of `System` in the list of implicits.
-                starknet::use_system_implicit();
-
-                let mut err_data = array::array_new();
-                array::array_append(ref err_data, 'Input too long for arguments');
-                panic(err_data);
-            }
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
