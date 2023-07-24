@@ -8,71 +8,39 @@ on:
     types: [checks_requested]
 
 jobs:
-  parallel-tests:
+  build-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        cmd:
-          - nextest run -p cairo-lang-casm
-          - nextest run -p cairo-lang-compiler
-          - nextest run -p cairo-lang-debug
-          - nextest run -p cairo-lang-defs
-          - nextest run -p cairo-lang-diagnostics
-          - nextest run -p cairo-lang-eq-solver
-          - nextest run -p cairo-lang-filesystem
-          - nextest run -p cairo-lang-formatter
-          - nextest run -p cairo-lang-language-server
-          - nextest run -p cairo-lang-lowering
-          - nextest run -p cairo-lang-parser
-          - nextest run -p cairo-lang-plugins
-          - nextest run -p cairo-lang-proc-macros
-          - nextest run -p cairo-lang-project
-          - nextest run -p cairo-lang-runner
-          - nextest run -p cairo-lang-semantic
-          - nextest run -p cairo-lang-sierra
-          - nextest run -p cairo-lang-sierra-ap-change
-          - nextest run -p cairo-lang-sierra-gas
-          - nextest run -p cairo-lang-sierra-generator
-          - nextest run -p cairo-lang-sierra-to-casm
-          - nextest run -p cairo-lang-sierra-type-size
-          - test -p cairo-lang-starknet
-          - nextest run -p cairo-lang-syntax
-          - nextest run -p cairo-lang-syntax-codegen
-          - nextest run -p cairo-lang-test-runner
-          - nextest run -p cairo-lang-test-utils
-          - nextest run -p cairo-lang-utils
-          - test -p tests
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          components: rustfmt
-          toolchain: nightly-2023-07-05
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install nextest
-        uses: taiki-e/install-action@nextest
-      - run: |
-          cargo ${{ matrix.cmd }}
+      - uses: taiki-e/install-action@nextest
+      - name: nextest archive
+        run: cargo nextest archive --workspace --all-features --cargo-profile ci --archive-file nextest-archive.tar.zst
+      - uses: actions/upload-artifact@v3
+        with:
+          name: nextest-archive
+          path: nextest-archive.tar.zst
+
   test:
-    if: ${{ always() }}
-    needs: parallel-tests
+    name: test ${{ matrix.partition }}/20
     runs-on: ubuntu-latest
-    steps:
-      - if: needs.parallel-tests.result == 'success'
-        run: exit 0
-      - if: needs.parallel-tests.result != 'success'
-        run: exit 1
-  rustfmt:
-    runs-on: ubuntu-latest
+    needs:
+      - build-test
+    strategy:
+      fail-fast: false
+      matrix:
+        partition: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 ]
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@master
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@nextest
+      - uses: actions/download-artifact@v3
         with:
-          components: rustfmt
-          toolchain: nightly-2023-07-05
-      - uses: Swatinem/rust-cache@v2
-      - run: scripts/rust_fmt.sh --check
+          name: nextest-archive
+      - name: nextest partition ${{ matrix.partition }}/20
+        run: cargo nextest run --partition 'count:${{ matrix.partition }}/20' --archive-file nextest-archive.tar.zst
+  
 
   # Checks all .cairo files in the repo are formatted correctly.
   cairofmt:
