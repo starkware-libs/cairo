@@ -228,7 +228,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

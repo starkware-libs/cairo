@@ -681,6 +681,7 @@ dependencies = [
  "cairo-lang-test-utils",
  "cairo-lang-utils",
  "env_logger",
+ "indent",
  "indoc",
  "itertools 0.11.0",
  "num-bigint",
