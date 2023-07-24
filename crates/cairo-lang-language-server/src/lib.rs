@@ -10,7 +10,7 @@ use std::sync::Arc;
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
@@ -24,7 +24,7 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -584,12 +584,22 @@ impl LanguageServer for Backend {
             let text_document_position = params.text_document_position;
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
-            let file = file(db, file_uri);
+            let file = file(db, file_uri.clone());
             let position = text_document_position.position;
+            // Get file summary and content.
+            let file_summary = db.file_summary(file).on_none(|| {
+                eprintln!("Completion failed. File '{file_uri}' does not exist.");
+            })?;
+            let content = db.file_content(file).on_none(|| {
+                eprintln!("Completion failed. File '{file_uri}' does not exist.");
+            })?;
+            let offset = position_to_offset(file_summary, position, &content)?;
+            if offset - TextOffset::default() == TextWidth::default() {
+                return None;
+            }
+            let offset = offset.sub_width(TextWidth::from_char('.'));
 
-            let completions = if params.context.and_then(|x| x.trigger_character).map(|x| x == *".")
-                == Some(true)
-            {
+            let completions = if offset.take_from(&content).starts_with('.') {
                 dot_completions(db, file, position)
             } else {
                 Some(vec![])
@@ -710,6 +720,7 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
+        eprintln!("Goto definition");
         self.with_db(|db| {
             let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
@@ -828,74 +839,82 @@ fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
     node: SyntaxNode,
-) -> Option<LookupItemId> {
+) -> Vec<LookupItemId> {
     let syntax_db = db.upcast();
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => Some(LookupItemId::ModuleItem(ModuleItemId::Constant(
+        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
             db.intern_constant(ConstantLongId(
                 module_file_id,
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
+                vec![LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
                     module_file_id,
                     ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                ))))
+                )))]
             } else {
-                Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
+                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
                     FreeFunctionLongId(
                         module_file_id,
                         ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
                     ),
-                ))))
+                )))]
             }
         }
-        SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
+        SyntaxKind::ItemExternFunction => vec![LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
                 module_file_id,
                 ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
             ))),
-        )),
-        SyntaxKind::ItemExternType => Some(LookupItemId::ModuleItem(ModuleItemId::ExternType(
+        )],
+        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
             db.intern_extern_type(ExternTypeLongId(
                 module_file_id,
                 ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::ItemTrait => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
                 module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemImpl => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
                 module_file_id,
                 ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemStruct => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
                 module_file_id,
                 ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemEnum => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
                 module_file_id,
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
-        SyntaxKind::UsePathLeaf => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(UseLongId(
-                module_file_id,
-                ast::UsePathLeaf::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+        SyntaxKind::ItemUse => {
+            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
+            // items.
+            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
+            let path_leaves = get_all_path_leafs(db.upcast(), item_use.use_path(syntax_db));
+            let mut res = Vec::new();
+            for path_leaf in path_leaves {
+                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
+                let lookup_item_id =
+                    LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(use_long_id)));
+                res.push(lookup_item_id);
+            }
+            res
         }
-        _ => None,
+        _ => vec![],
     }
 }
 
@@ -924,16 +943,7 @@ fn get_node_and_lookup_items(
     })?;
 
     // Find offset for position.
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        eprintln!("Hover failed. Position out of bounds.");
-    })?;
-    let mut chars_it = offset.take_from(&content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            eprintln!("Position does not exist.");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
+    let offset = position_to_offset(file_summary, position, &content)?;
     let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
 
     // Find module.
@@ -946,7 +956,7 @@ fn get_node_and_lookup_items(
     // Find containing function.
     let mut item_node = node.clone();
     loop {
-        if let Some(item) = lookup_item_from_ast(db, module_file_id, item_node.clone()) {
+        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
             res.push(item);
         }
         match item_node.parent() {
@@ -956,6 +966,24 @@ fn get_node_and_lookup_items(
             None => return Some((node, res)),
         }
     }
+}
+
+fn position_to_offset(
+    file_summary: Arc<FileSummary>,
+    position: Position,
+    content: &str,
+) -> Option<TextOffset> {
+    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
+        eprintln!("Hover failed. Position out of bounds.");
+    })?;
+    let mut chars_it = offset.take_from(content).chars();
+    for _ in 0..position.character {
+        let c = chars_it.next().on_none(|| {
+            eprintln!("Position does not exist.");
+        })?;
+        offset = offset.add_width(TextWidth::from_char(c));
+    }
+    Some(offset)
 }
 
 fn find_node_module(

@@ -602,7 +602,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -619,7 +620,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -636,7 +638,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -801,7 +804,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -1117,7 +1121,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<T>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -1194,7 +1199,7 @@ note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
  --> contract:62:32
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<T>::deserialize(ref data)
                                ^
 
 error: Plugin diagnostic: Type annotations needed. Failed to infer ?8
@@ -1294,10 +1299,12 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_y =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
