@@ -19,7 +19,9 @@ use super::consts::{
     EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
     L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
-use super::entry_point::{generate_entry_point_wrapper, has_external_attribute, EntryPointKind};
+use super::entry_point::{
+    generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
+};
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -254,7 +256,8 @@ pub fn handle_contract_by_storage(
                 );
             }
             ast::Item::Impl(item_impl) => {
-                if !has_external_attribute(db, &mut diagnostics, &item) {
+                let is_external = has_external_attribute(db, &mut diagnostics, &item);
+                if !(is_external || has_include_attribute(db, &mut diagnostics, &item)) {
                     continue;
                 }
                 let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
@@ -262,18 +265,25 @@ pub fn handle_contract_by_storage(
                 };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
                 for item in body.items(db).elements(db) {
-                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, EXTERNAL_ATTR);
-                    forbid_attribute_in_external_impl(
-                        db,
-                        &mut diagnostics,
-                        &item,
-                        CONSTRUCTOR_ATTR,
-                    );
-                    forbid_attribute_in_external_impl(db, &mut diagnostics, &item, L1_HANDLER_ATTR);
+                    if is_external {
+                        for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
+                            forbid_attribute_in_external_impl(db, &mut diagnostics, &item, attr);
+                        }
+                    }
 
                     let ast::ImplItem::Function(item_function) = item else {
                         continue;
                     };
+                    let entry_point_kind =
+                        if is_external || item_function.has_attr(db, EXTERNAL_ATTR) {
+                            EntryPointKind::External
+                        } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
+                            EntryPointKind::Constructor
+                        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
+                            EntryPointKind::L1Handler
+                        } else {
+                            continue;
+                        };
                     let function_name = RewriteNode::new_trimmed(
                         item_function.declaration(db).name(db).as_syntax_node(),
                     );
@@ -286,7 +296,7 @@ pub fn handle_contract_by_storage(
                         .into(),
                     );
                     handle_entry_point(
-                        EntryPointKind::External,
+                        entry_point_kind,
                         &item_function,
                         function_name,
                         db,

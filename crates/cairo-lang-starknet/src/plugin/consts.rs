@@ -14,6 +14,7 @@ pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
+pub const INCLUDE_ATTR: &str = "include";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
