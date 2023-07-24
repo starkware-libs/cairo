@@ -120,14 +120,12 @@ fn test_expr_operator() {
         "FunctionCall(ExprFunctionCall { function: core::BoolNot::not, args: \
          [Value(FunctionCall(ExprFunctionCall { function: core::Felt252PartialEq::eq, args: \
          [Value(Snapshot(ExprSnapshot { inner: FunctionCall(ExprFunctionCall { function: \
-         core::Felt252Add::add, args: [Value(FunctionCall(ExprFunctionCall { function: \
-         core::Felt252Neg::neg, args: [Value(Literal(ExprLiteral { value: 5, ty: core::felt252 \
-         }))], ty: core::felt252 })), Value(FunctionCall(ExprFunctionCall { function: \
-         core::Felt252Mul::mul, args: [Value(Literal(ExprLiteral { value: 9, ty: core::felt252 \
-         })), Value(Literal(ExprLiteral { value: 3, ty: core::felt252 }))], ty: core::felt252 \
-         }))], ty: core::felt252 }), ty: @core::felt252 })), Value(Snapshot(ExprSnapshot { inner: \
-         Literal(ExprLiteral { value: 0, ty: core::felt252 }), ty: @core::felt252 }))], ty: \
-         core::bool }))], ty: core::bool })"
+         core::Felt252Add::add, args: [Value(Literal(ExprLiteral { value: -5, ty: core::felt252 \
+         })), Value(FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
+         [Value(Literal(ExprLiteral { value: 9, ty: core::felt252 })), Value(Literal(ExprLiteral \
+         { value: 3, ty: core::felt252 }))], ty: core::felt252 }))], ty: core::felt252 }), ty: \
+         @core::felt252 })), Value(Snapshot(ExprSnapshot { inner: Literal(ExprLiteral { value: 0, \
+         ty: core::felt252 }), ty: @core::felt252 }))], ty: core::bool }))], ty: core::bool })"
     );
 }
 

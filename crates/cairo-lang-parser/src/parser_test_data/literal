@@ -24,9 +24,13 @@ ExprPath
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprBinary)
     │   ├── lhs (kind: ExprBinary)
-    │   │   ├── lhs (kind: TokenLiteralNumber): '0x123'
+    │   │   ├── lhs (kind: LiteralNumber)
+    │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   │   └── number (kind: TokenNumber): '0x123'
     │   │   ├── op (kind: TokenPlus): '+'
-    │   │   └── rhs (kind: TokenLiteralNumber): '456'
+    │   │   └── rhs (kind: LiteralNumber)
+    │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       └── number (kind: TokenNumber): '456'
     │   ├── op (kind: TokenPlus): '+'
     │   └── rhs (kind: TokenShortString): ''abc''
     └── semicolon (kind: TokenSemicolon): ';'
@@ -59,11 +63,56 @@ ExprPath
     ├── eq (kind: TokenEq): '='
     ├── rhs (kind: ExprBinary)
     │   ├── lhs (kind: ExprBinary)
-    │   │   ├── lhs (kind: TokenLiteralNumber): '0x123_u8'
+    │   │   ├── lhs (kind: LiteralNumber)
+    │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   │   └── number (kind: TokenNumber): '0x123_u8'
     │   │   ├── op (kind: TokenPlus): '+'
-    │   │   └── rhs (kind: TokenLiteralNumber): '456_u256'
+    │   │   └── rhs (kind: LiteralNumber)
+    │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       └── number (kind: TokenNumber): '456_u256'
     │   ├── op (kind: TokenPlus): '+'
     │   └── rhs (kind: TokenShortString): ''abc'_u16'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test a syntax tree with literals with unary minuses
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+fn f() {
+    let a = -0x123_u8 + -456_u256 + -'abc'_u16;
+}
+
+//! > top_level_kind
+StatementLet
+
+//! > ignored_kinds
+ExprPath
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: StatementLet
+    ├── let_kw (kind: TokenLet): 'let'
+    ├── pattern (kind: ExprPath) <ignored>
+    ├── type_clause (kind: OptionTypeClauseEmpty) []
+    ├── eq (kind: TokenEq): '='
+    ├── rhs (kind: ExprBinary)
+    │   ├── lhs (kind: ExprBinary)
+    │   │   ├── lhs (kind: LiteralNumber)
+    │   │   │   ├── sign (kind: TokenMinus): '-'
+    │   │   │   └── number (kind: TokenNumber): '0x123_u8'
+    │   │   ├── op (kind: TokenPlus): '+'
+    │   │   └── rhs (kind: LiteralNumber)
+    │   │       ├── sign (kind: TokenMinus): '-'
+    │   │       └── number (kind: TokenNumber): '456_u256'
+    │   ├── op (kind: TokenPlus): '+'
+    │   └── rhs (kind: ExprUnary)
+    │       ├── op (kind: TokenMinus): '-'
+    │       └── expr (kind: TokenShortString): ''abc'_u16'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -145,68 +194,92 @@ error: Literal is not a valid number.
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0b1'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #1 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0b'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0b'
     │   └── semicolon: Missing
     ├── child #2 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '2'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #3 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0b1'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0b1'
     │   └── semicolon: Missing
     ├── child #4 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '2'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #5 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0o1'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0o1'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #6 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0o'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0o'
     │   └── semicolon: Missing
     ├── child #7 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '8'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '8'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #8 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0o7'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0o7'
     │   └── semicolon: Missing
     ├── child #9 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '8'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '8'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #10 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0xf'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #11 (kind: StatementLet)
     │   ├── let_kw (kind: TokenLet): 'let'
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0x'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0x'
     │   └── semicolon: Missing
     ├── child #12 (kind: StatementExpr)
     │   ├── expr (kind: ExprPath) <ignored>
@@ -216,7 +289,9 @@ error: Literal is not a valid number.
     │   ├── pattern (kind: ExprPath) <ignored>
     │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   ├── eq (kind: TokenEq): '='
-    │   ├── rhs (kind: TokenLiteralNumber): '0xf'
+    │   ├── rhs (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '0xf'
     │   └── semicolon: Missing
     └── child #14 (kind: StatementExpr)
         ├── expr (kind: ExprPath) <ignored>

@@ -139,7 +139,7 @@ impl<'a> Lexer<'a> {
         if self.peek() == Some('_') {
             self.take_while(|c| c.is_ascii_alphanumeric() || c == '_');
         }
-        TokenKind::LiteralNumber
+        TokenKind::Number
     }
 
     /// Takes a short string.
@@ -326,7 +326,7 @@ enum TokenKind {
     Identifier,
 
     // Literals.
-    LiteralNumber,
+    Number,
     ShortString,
 
     // Keywords.
@@ -414,7 +414,7 @@ fn token_kind_to_terminal_syntax_kind(kind: TokenKind) -> SyntaxKind {
         TokenKind::As => SyntaxKind::TerminalAs,
         TokenKind::Const => SyntaxKind::TerminalConst,
         TokenKind::Identifier => SyntaxKind::TerminalIdentifier,
-        TokenKind::LiteralNumber => SyntaxKind::TerminalLiteralNumber,
+        TokenKind::Number => SyntaxKind::TerminalNumber,
         TokenKind::ShortString => SyntaxKind::TerminalShortString,
         TokenKind::False => SyntaxKind::TerminalFalse,
         TokenKind::True => SyntaxKind::TerminalTrue,

@@ -30,7 +30,9 @@ ExprFunctionCall
     │           │   │           └── ident (kind: TokenIdentifier): 'felt252'
     │           │   ├── separator #0 (kind: TokenComma): ','
     │           │   └── item #1 (kind: GenericArgExpr)
-    │           │       └── value (kind: TokenLiteralNumber): '7'
+    │           │       └── value (kind: LiteralNumber)
+    │           │           ├── sign (kind: OptionTerminalMinusEmpty) []
+    │           │           └── number (kind: TokenNumber): '7'
     │           └── rangle (kind: TokenGT): '>'
     └── arguments (kind: ArgListParenthesized)
         ├── lparen (kind: TokenLParen): '('
@@ -38,7 +40,9 @@ ExprFunctionCall
         │   ├── item #0 (kind: Arg)
         │   │   ├── modifiers (kind: ModifierList) []
         │   │   └── arg_clause (kind: ArgClauseUnnamed)
-        │   │       └── value (kind: TokenLiteralNumber): '12'
+        │   │       └── value (kind: LiteralNumber)
+        │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+        │   │           └── number (kind: TokenNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
         │   ├── item #1 (kind: Arg)
         │   │   ├── modifiers (kind: ModifierList) []
@@ -48,7 +52,9 @@ ExprFunctionCall
         │   │           │   └── item #0 (kind: PathSegmentSimple)
         │   │           │       └── ident (kind: TokenIdentifier): 'a'
         │   │           ├── op (kind: TokenPlus): '+'
-        │   │           └── rhs (kind: TokenLiteralNumber): '3'
+        │   │           └── rhs (kind: LiteralNumber)
+        │   │               ├── sign (kind: OptionTerminalMinusEmpty) []
+        │   │               └── number (kind: TokenNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','
         │   └── item #2 (kind: Arg)
         │       ├── modifiers (kind: ModifierList)
@@ -89,7 +95,9 @@ ExprFunctionCall
         │   ├── item #0 (kind: Arg)
         │   │   ├── modifiers (kind: ModifierList) []
         │   │   └── arg_clause (kind: ArgClauseUnnamed)
-        │   │       └── value (kind: TokenLiteralNumber): '12'
+        │   │       └── value (kind: LiteralNumber)
+        │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
+        │   │           └── number (kind: TokenNumber): '12'
         │   ├── separator #0 (kind: TokenComma): ','
         │   ├── item #1 (kind: Arg)
         │   │   ├── modifiers (kind: ModifierList) []
@@ -101,7 +109,9 @@ ExprFunctionCall
         │   │           │   └── item #0 (kind: PathSegmentSimple)
         │   │           │       └── ident (kind: TokenIdentifier): 'a'
         │   │           ├── op (kind: TokenPlus): '+'
-        │   │           └── rhs (kind: TokenLiteralNumber): '3'
+        │   │           └── rhs (kind: LiteralNumber)
+        │   │               ├── sign (kind: OptionTerminalMinusEmpty) []
+        │   │               └── number (kind: TokenNumber): '3'
         │   ├── separator #1 (kind: TokenComma): ','
         │   └── item #2 (kind: Arg)
         │       ├── modifiers (kind: ModifierList) []

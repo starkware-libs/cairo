@@ -14,7 +14,7 @@ use crate::utils::SimpleParserDatabase;
 fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
     match kind {
         SyntaxKind::TerminalIdentifier => vec!["abc", "_az12f", "A90g5__"],
-        SyntaxKind::TerminalLiteralNumber => {
+        SyntaxKind::TerminalNumber => {
             vec![
                 "0",
                 "0xA2",
@@ -104,7 +104,7 @@ fn terminal_kind_to_text(kind: SyntaxKind) -> Vec<&'static str> {
 fn terminal_kinds() -> Vec<SyntaxKind> {
     vec![
         SyntaxKind::TerminalIdentifier,
-        SyntaxKind::TerminalLiteralNumber,
+        SyntaxKind::TerminalNumber,
         SyntaxKind::TerminalFalse,
         SyntaxKind::TerminalTrue,
         SyntaxKind::TerminalExtern,
@@ -183,11 +183,11 @@ fn need_separator(
     text1: &'static str,
 ) -> bool {
     if is_identifier_like(kind0)
-        && (is_identifier_like(kind1) || matches!(kind1, SyntaxKind::TerminalLiteralNumber))
+        && (is_identifier_like(kind1) || matches!(kind1, SyntaxKind::TerminalNumber))
     {
         return true;
     }
-    if kind0 == SyntaxKind::TerminalLiteralNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
+    if kind0 == SyntaxKind::TerminalNumber && (kind0 == kind1 || is_identifier_like(kind1)) {
         return true;
     }
     if kind0 == SyntaxKind::TerminalShortString
@@ -206,7 +206,7 @@ fn need_separator(
         || (text0 == "-" && (text1.starts_with('>') || text1.starts_with('=')))
         || ((text0 == "+" || text0 == "*" || text0 == "/" || text0 == "%")
             && text1.starts_with('='))
-        || (kind0 == SyntaxKind::TerminalLiteralNumber && kind0 == kind1)
+        || (kind0 == SyntaxKind::TerminalNumber && kind0 == kind1)
     {
         return true;
     }
@@ -401,7 +401,7 @@ fn test_cases() {
             },
             LexerTerminal {
                 text: "6".into(),
-                kind: SyntaxKind::TerminalLiteralNumber,
+                kind: SyntaxKind::TerminalNumber,
                 leading_trivia: vec![],
                 trailing_trivia: vec![]
             },

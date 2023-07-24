@@ -24,18 +24,26 @@ StatementList
 //! > expected_tree
 └── Top level kind: StatementList
     ├── child #0 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '1'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '1'
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     ├── child #1 (kind: StatementExpr)
     │   ├── expr (kind: ExprUnary)
     │   │   ├── op (kind: TokenNot): '!'
-    │   │   └── expr (kind: TokenLiteralNumber): '2'
+    │   │   └── expr (kind: LiteralNumber)
+    │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │       └── number (kind: TokenNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #2 (kind: StatementExpr)
-    │   ├── expr (kind: TokenLiteralNumber): '1'
+    │   ├── expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '1'
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     └── child #3 (kind: StatementExpr)
         ├── expr (kind: ExprUnary)
         │   ├── op (kind: TokenAt): '@'
-        │   └── expr (kind: TokenLiteralNumber): '2'
+        │   └── expr (kind: LiteralNumber)
+        │       ├── sign (kind: OptionTerminalMinusEmpty) []
+        │       └── number (kind: TokenNumber): '2'
         └── semicolon (kind: TokenSemicolon): ';'

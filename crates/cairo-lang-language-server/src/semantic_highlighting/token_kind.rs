@@ -25,7 +25,7 @@ impl SemanticTokenKind {
         Some(match kind {
             _ if kind.is_keyword_token() => SemanticTokenKind::Keyword,
             SyntaxKind::TokenIdentifier => SemanticTokenKind::Variable,
-            SyntaxKind::TokenLiteralNumber => SemanticTokenKind::Number,
+            SyntaxKind::TokenNumber => SemanticTokenKind::Number,
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
             | SyntaxKind::TokenOr
