@@ -237,6 +237,7 @@ macro_rules! add_expr_rewrites {
         }
 
         $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, PatternId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, StatementId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, ConstantId, $($exclude)*);
 
