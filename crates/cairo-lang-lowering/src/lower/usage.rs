@@ -19,7 +19,8 @@ mod test;
 
 /// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
 /// syntax pointers.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum MemberPath {
     Var(semantic::VarId),
     Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },

@@ -636,9 +636,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:8:8
+ --> lib.cairo:8:12
 fn foo(ref self: MyStruct) {
-       ^****************^
+           ^**^
 note: variable was previously used here:
   --> lib.cairo:11:19
        invalidate(self.a);
@@ -664,21 +664,20 @@ blk1:
 Statements:
   (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
   () <- test::invalidate(v10{`self.a`})
-  (v13: test::MyStruct) <- struct_construct(v10{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
 End:
-  Goto(blk3, {v13 -> v12})
+  Goto(blk3, {v10 -> v12})
 
 blk2:
 Statements:
-  (v14: test::MyStruct) <- struct_construct(v1{`ref self: MyStruct`}, v3{`ref self: MyStruct`})
 End:
-  Goto(blk3, {v14 -> v12})
+  Goto(blk3, {v1 -> v12})
 
 blk3:
 Statements:
-  (v15: ()) <- struct_construct()
+  (v13: ()) <- struct_construct()
+  (v14: test::MyStruct) <- struct_construct(v12{`self`}, v3{`self`})
 End:
-  Return(v12, v15)
+  Return(v14, v13)
 
 //! > ==========================================================================
 
