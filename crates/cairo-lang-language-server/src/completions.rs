@@ -2,6 +2,8 @@ use cairo_lang_defs::ids::{
     FunctionWithBodyId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
     TopLevelLanguageElementId, TraitFunctionId,
 };
+use cairo_lang_filesystem::ids::FileId;
+use cairo_lang_filesystem::span::TextOffset;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
@@ -16,7 +18,10 @@ use cairo_lang_semantic::types::peel_snapshots;
 use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use lsp::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
+
+use crate::{find_node_module, from_pos};
 
 pub fn generic_completions(
     db: &(dyn SemanticGroup + 'static),
@@ -174,7 +179,8 @@ pub fn colon_colon_completions(
 }
 
 pub fn dot_completions(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
+    file_id: FileId,
     lookup_items: Vec<LookupItemId>,
     expr: ast::ExprBinary,
 ) -> Option<Vec<CompletionItem>> {
@@ -200,11 +206,24 @@ pub fn dot_completions(
     }
 
     // Find relevant methods for type.
+    let offset = if let Some(ModuleId::Submodule(submodule_id)) =
+        find_node_module(db, file_id, expr.as_syntax_node())
+    {
+        let syntax = db.file_syntax(file_id).unwrap();
+        let module_def_ast =
+            ast::ItemModule::from_ptr(syntax_db, &syntax, submodule_id.stable_ptr(db.upcast()));
+        let body = extract_matches!(module_def_ast.body(syntax_db), ast::MaybeModuleBody::Some);
+        body.items(syntax_db).as_syntax_node().span_start_without_trivia(syntax_db)
+    } else {
+        TextOffset::default()
+    };
+    let position = from_pos(offset.position_in_file(db.upcast(), file_id).unwrap());
     let relevant_methods = find_methods_for_type(db, resolver, ty, stable_ptr);
 
     let mut completions = Vec::new();
     for trait_function in relevant_methods {
-        let Some(completion) = completion_for_method(db, module_id, trait_function) else {
+        let Some(completion) = completion_for_method(db, module_id, trait_function, position)
+        else {
             continue;
         };
         completions.push(completion);
@@ -233,6 +252,7 @@ fn completion_for_method(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     trait_function: TraitFunctionId,
+    position: Position,
 ) -> Option<CompletionItem> {
     let trait_id = trait_function.trait_id(db.upcast());
     let name = trait_function.name(db.upcast());
@@ -246,10 +266,7 @@ fn completion_for_method(
     // If the trait is not in scope, add a use statement.
     if !module_has_trait(db, module_id, trait_id)? {
         additional_text_edits.push(TextEdit {
-            range: Range::new(
-                Position { line: 0, character: 0 },
-                Position { line: 0, character: 0 },
-            ),
+            range: Range::new(position, position),
             new_text: format!("use {trait_full_path};\n"),
         });
     }
@@ -284,7 +301,7 @@ fn module_has_trait(
 
 /// Finds all methods that can be called on a type.
 fn find_methods_for_type(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
     mut resolver: Resolver<'_>,
     ty: cairo_lang_semantic::TypeId,
     stable_ptr: cairo_lang_syntax::node::ids::SyntaxStablePtrId,
