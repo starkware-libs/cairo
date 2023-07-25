@@ -76,7 +76,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
     ) -> std::fmt::Result {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
-            write!(f, "\n  --> ")?;
+            write!(f, ":\n  --> ")?;
             location.fmt(f, db)?;
         }
         Ok(())
