@@ -36,12 +36,14 @@ pub fn generic_completions(
     completions.extend(db.module_items(module_file_id.0).unwrap_or_default().iter().map(|item| {
         CompletionItem {
             label: item.name(db.upcast()).to_string(),
-            kind: Some(CompletionItemKind::MODULE),
+            kind: ResolvedGenericItem::from_module_item(db, *item)
+                .ok()
+                .map(resolved_generic_item_completion_kind),
             ..CompletionItem::default()
         }
     }));
 
-    // Local variables.
+    // Local variables and params.
     let Some(lookup_item_id) = lookup_items.into_iter().next() else {
         return completions;
     };
@@ -54,6 +56,17 @@ pub fn generic_completions(
             return completions;
         }
     };
+    let Ok(signature) = db.function_with_body_signature(function_id) else {
+        return completions;
+    };
+    for param in &signature.params {
+        completions.push(CompletionItem {
+            label: param.name.clone().into(),
+            kind: Some(CompletionItemKind::VARIABLE),
+            ..CompletionItem::default()
+        });
+    }
+
     let Ok(body) = db.function_body(function_id) else {
         return completions;
     };
@@ -67,6 +80,25 @@ pub fn generic_completions(
         }
     }
     completions
+}
+
+fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> CompletionItemKind {
+    match item {
+        ResolvedGenericItem::Constant(_) => CompletionItemKind::CONSTANT,
+        ResolvedGenericItem::Module(_) => CompletionItemKind::MODULE,
+        ResolvedGenericItem::GenericFunction(_) | ResolvedGenericItem::TraitFunction(_) => {
+            CompletionItemKind::FUNCTION
+        }
+        ResolvedGenericItem::GenericType(_) | ResolvedGenericItem::GenericTypeAlias(_) => {
+            CompletionItemKind::CLASS
+        }
+        ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
+            CompletionItemKind::CLASS
+        }
+        ResolvedGenericItem::Variant(_) => CompletionItemKind::ENUM_MEMBER,
+        ResolvedGenericItem::Trait(_) => CompletionItemKind::INTERFACE,
+        ResolvedGenericItem::Variable(_, _) => CompletionItemKind::VARIABLE,
+    }
 }
 
 pub fn colon_colon_completions(
@@ -94,7 +126,9 @@ pub fn colon_colon_completions(
             .iter()
             .map(|item| CompletionItem {
                 label: item.name(db.upcast()).to_string(),
-                kind: Some(CompletionItemKind::MODULE),
+                kind: ResolvedGenericItem::from_module_item(db, *item)
+                    .ok()
+                    .map(resolved_generic_item_completion_kind),
                 ..CompletionItem::default()
             })
             .collect(),
