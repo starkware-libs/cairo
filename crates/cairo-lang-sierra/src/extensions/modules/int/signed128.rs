@@ -1,4 +1,5 @@
-use super::signed::{SintOperationLibfunc, SintTraits};
+use super::signed::{SintDiffLibfunc, SintOperationLibfunc, SintTraits};
+use super::unsigned128::Uint128Type;
 use super::{
     IntConstLibfunc, IntEqualLibfunc, IntFromFelt252Libfunc, IntToFelt252Libfunc, IntTraits,
     IntType,
@@ -18,6 +19,7 @@ define_libfunc_hierarchy! {
         ToFelt252(IntToFelt252Libfunc<Sint128Traits>),
         FromFelt252(IntFromFelt252Libfunc<Sint128Traits>),
         Operation(SintOperationLibfunc<Sint128Traits>),
+        Diff(SintDiffLibfunc<Sint128Traits>),
         IsZero(IsZeroLibfunc<Sint128Traits>),
     }, Sint128Concrete
 }
@@ -28,6 +30,8 @@ pub struct Sint128Traits;
 impl SintTraits for Sint128Traits {
     const OVERFLOWING_ADD: &'static str = "i128_overflowing_add_impl";
     const OVERFLOWING_SUB: &'static str = "i128_overflowing_sub_impl";
+    const DIFF: &'static str = "i128_diff";
+    const UNSIGNED_INT_TYPE: GenericTypeId = <Uint128Type as NamedType>::ID;
 }
 
 impl IntTraits for Sint128Traits {

@@ -1942,6 +1942,27 @@ impl I8MulEq of MulEq<i8> {
     }
 }
 
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**8 + lhs - rhs)`.
+extern fn i8_diff(lhs: i8, rhs: i8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+impl I8PartialOrd of PartialOrd<i8> {
+    #[inline(always)]
+    fn le(lhs: i8, rhs: i8) -> bool {
+        i8_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i8, rhs: i8) -> bool {
+        i8_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i8, rhs: i8) -> bool {
+        i8_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i8, rhs: i8) -> bool {
+        i8_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i16;
 impl NumericLiterali16 of NumericLiteral<i16>;
@@ -2010,6 +2031,27 @@ impl I16MulEq of MulEq<i16> {
     #[inline(always)]
     fn mul_eq(ref self: i16, other: i16) {
         self = Mul::mul(self, other);
+    }
+}
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**16 + lhs - rhs)`.
+extern fn i16_diff(lhs: i16, rhs: i16) -> Result<u16, u16> implicits(RangeCheck) nopanic;
+impl I16PartialOrd of PartialOrd<i16> {
+    #[inline(always)]
+    fn le(lhs: i16, rhs: i16) -> bool {
+        i16_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i16, rhs: i16) -> bool {
+        i16_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i16, rhs: i16) -> bool {
+        i16_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i16, rhs: i16) -> bool {
+        i16_diff(rhs, lhs).into_is_err()
     }
 }
 
@@ -2084,6 +2126,27 @@ impl I32MulEq of MulEq<i32> {
     }
 }
 
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**32 + lhs - rhs)`.
+extern fn i32_diff(lhs: i32, rhs: i32) -> Result<u32, u32> implicits(RangeCheck) nopanic;
+impl I32PartialOrd of PartialOrd<i32> {
+    #[inline(always)]
+    fn le(lhs: i32, rhs: i32) -> bool {
+        i32_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i32, rhs: i32) -> bool {
+        i32_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i32, rhs: i32) -> bool {
+        i32_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i32, rhs: i32) -> bool {
+        i32_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i64;
 impl NumericLiterali64 of NumericLiteral<i64>;
@@ -2155,6 +2218,27 @@ impl I64MulEq of MulEq<i64> {
     }
 }
 
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**64 + lhs - rhs)`.
+extern fn i64_diff(lhs: i64, rhs: i64) -> Result<u64, u64> implicits(RangeCheck) nopanic;
+impl I64PartialOrd of PartialOrd<i64> {
+    #[inline(always)]
+    fn le(lhs: i64, rhs: i64) -> bool {
+        i64_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i64, rhs: i64) -> bool {
+        i64_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i64, rhs: i64) -> bool {
+        i64_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i64, rhs: i64) -> bool {
+        i64_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i128;
 impl NumericLiterali128 of NumericLiteral<i128>;
@@ -2210,5 +2294,27 @@ impl I128SubEq of SubEq<i128> {
     #[inline(always)]
     fn sub_eq(ref self: i128, other: i128) {
         self = Sub::sub(self, other);
+    }
+}
+
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
+extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
+impl I128PartialOrd of PartialOrd<i128> {
+    #[inline(always)]
+    fn le(lhs: i128, rhs: i128) -> bool {
+        i128_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i128, rhs: i128) -> bool {
+        i128_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i128, rhs: i128) -> bool {
+        i128_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i128, rhs: i128) -> bool {
+        i128_diff(rhs, lhs).into_is_err()
     }
 }

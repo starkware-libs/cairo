@@ -1,3 +1,4 @@
+use core::result::ResultTrait;
 use traits::{Into, TryInto};
 use core::traits::Default;
 use option::OptionTrait;
@@ -1146,6 +1147,15 @@ fn test_i8_operators() {
     assert_eq(@(2_i8 * -4_i8), @-8_i8, '2 * -4 == -8');
     assert_eq(@(-1_i8 * -3_i8), @3_i8, '-1 * -3 == 3');
     assert_eq(@(-2_i8 * -4_i8), @8_i8, '-2 * -4 == 8');
+    assert_lt(1_i8, 4_i8, '1 < 4');
+    assert_le(1_i8, 4_i8, '1 <= 4');
+    assert(!(4_i8 < 4_i8), '!(4 < 4)');
+    assert_le(5_i8, 5_i8, '5 <= 5');
+    assert(!(5_i8 <= 4_i8), '!(5 <= 8)');
+    assert_gt(5_i8, 2_i8, '5 > 2');
+    assert_ge(5_i8, 2_i8, '5 >= 2');
+    assert(!(3_i8 > 3_i8), '!(3 > 3)');
+    assert_ge(3_i8, 3_i8, '3 >= 3');
 }
 
 #[test]
@@ -1240,6 +1250,15 @@ fn test_i16_operators() {
     assert_eq(@(2_i16 * -4_i16), @-8_i16, '2 * -4 == -8');
     assert_eq(@(-1_i16 * -3_i16), @3_i16, '-1 * -3 == 3');
     assert_eq(@(-2_i16 * -4_i16), @8_i16, '-2 * -4 == 8');
+    assert_lt(1_i16, 4_i16, '1 < 4');
+    assert_le(1_i16, 4_i16, '1 <= 4');
+    assert(!(4_i16 < 4_i16), '!(4 < 4)');
+    assert_le(5_i16, 5_i16, '5 <= 5');
+    assert(!(5_i16 <= 4_i16), '!(5 <= 8)');
+    assert_gt(5_i16, 2_i16, '5 > 2');
+    assert_ge(5_i16, 2_i16, '5 >= 2');
+    assert(!(3_i16 > 3_i16), '!(3 > 3)');
+    assert_ge(3_i16, 3_i16, '3 >= 3');
 }
 
 #[test]
@@ -1334,6 +1353,15 @@ fn test_i32_operators() {
     assert_eq(@(2_i32 * -4_i32), @-8_i32, '2 * -4 == -8');
     assert_eq(@(-1_i32 * -3_i32), @3_i32, '-1 * -3 == 3');
     assert_eq(@(-2_i32 * -4_i32), @8_i32, '-2 * -4 == 8');
+    assert_lt(1_i32, 4_i32, '1 < 4');
+    assert_le(1_i32, 4_i32, '1 <= 4');
+    assert(!(4_i32 < 4_i32), '!(4 < 4)');
+    assert_le(5_i32, 5_i32, '5 <= 5');
+    assert(!(5_i32 <= 4_i32), '!(5 <= 8)');
+    assert_gt(5_i32, 2_i32, '5 > 2');
+    assert_ge(5_i32, 2_i32, '5 >= 2');
+    assert(!(3_i32 > 3_i32), '!(3 > 3)');
+    assert_ge(3_i32, 3_i32, '3 >= 3');
 }
 
 #[test]
@@ -1436,6 +1464,15 @@ fn test_i64_operators() {
     assert_eq(@(2_i64 * -4_i64), @-8_i64, '2 * -4 == -8');
     assert_eq(@(-1_i64 * -3_i64), @3_i64, '-1 * -3 == 3');
     assert_eq(@(-2_i64 * -4_i64), @8_i64, '-2 * -4 == 8');
+    assert_lt(1_i64, 4_i64, '1 < 4');
+    assert_le(1_i64, 4_i64, '1 <= 4');
+    assert(!(4_i64 < 4_i64), '!(4 < 4)');
+    assert_le(5_i64, 5_i64, '5 <= 5');
+    assert(!(5_i64 <= 4_i64), '!(5 <= 8)');
+    assert_gt(5_i64, 2_i64, '5 > 2');
+    assert_ge(5_i64, 2_i64, '5 >= 2');
+    assert(!(3_i64 > 3_i64), '!(3 > 3)');
+    assert_ge(3_i64, 3_i64, '3 >= 3');
 }
 
 #[test]
@@ -1530,6 +1567,15 @@ fn test_i128_operators() {
     assert_eq(@(-3_i128 + -6_i128), @-9_i128, '-3 + -6 == -9');
     assert_eq(@(-3_i128 - -1_i128), @-2_i128, '-3 - -1 == -2');
     assert_eq(@(-231_i128 - -131_i128), @-100_i128, '-231--131=-100');
+    assert_lt(1_i128, 4_i128, '1 < 4');
+    assert_le(1_i128, 4_i128, '1 <= 4');
+    assert(!(4_i128 < 4_i128), '!(4 < 4)');
+    assert_le(5_i128, 5_i128, '5 <= 5');
+    assert(!(5_i128 <= 4_i128), '!(5 <= 8)');
+    assert_gt(5_i128, 2_i128, '5 > 2');
+    assert_ge(5_i128, 2_i128, '5 >= 2');
+    assert(!(3_i128 > 3_i128), '!(3 > 3)');
+    assert_ge(3_i128, 3_i128, '3 >= 3');
 }
 
 #[test]
@@ -1578,4 +1624,23 @@ fn test_i128_add_overflow_2() {
 #[should_panic(expected: ('i128_add Underflow', ))]
 fn test_i128_add_underflow() {
     -0x64000000000000000000000000000000_i128 + -0x1e000000000000000000000000000000_i128;
+}
+
+#[test]
+fn test_signed_int_diff() {
+    assert_eq(@integer::i8_diff(3, 3).unwrap(), @0, 'i8: 3 - 3 == 0');
+    assert_eq(@integer::i8_diff(4, 3).unwrap(), @1, 'i8: 4 - 3 == 1');
+    assert_eq(@integer::i8_diff(3, 5).unwrap_err(), @~(2 - 1), 'i8: 3 - 5 == -2');
+    assert_eq(@integer::i16_diff(3, 3).unwrap(), @0, 'i16: 3 - 3 == 0');
+    assert_eq(@integer::i16_diff(4, 3).unwrap(), @1, 'i16: 4 - 3 == 1');
+    assert_eq(@integer::i16_diff(3, 5).unwrap_err(), @~(2 - 1), 'i16: 3 - 5 == -2');
+    assert_eq(@integer::i32_diff(3, 3).unwrap(), @0, 'i32: 3 - 3 == 0');
+    assert_eq(@integer::i32_diff(4, 3).unwrap(), @1, 'i32: 4 - 3 == 1');
+    assert_eq(@integer::i32_diff(3, 5).unwrap_err(), @~(2 - 1), 'i32: 3 - 5 == -2');
+    assert_eq(@integer::i64_diff(3, 3).unwrap(), @0, 'i64: 3 - 3 == 0');
+    assert_eq(@integer::i64_diff(4, 3).unwrap(), @1, 'i64: 4 - 3 == 1');
+    assert_eq(@integer::i64_diff(3, 5).unwrap_err(), @~(2 - 1), 'i64: 3 - 5 == -2');
+    assert_eq(@integer::i128_diff(3, 3).unwrap(), @0, 'i128: 3 - 3 == 0');
+    assert_eq(@integer::i128_diff(4, 3).unwrap(), @1, 'i128: 4 - 3 == 1');
+    assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }
