@@ -17,7 +17,7 @@ use cairo_lang_defs::ids::{
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
     TraitLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
@@ -1094,7 +1094,7 @@ fn file(db: &RootDatabase, uri: Url) -> FileId {
 }
 
 /// Gets the canonical URI for a file.
-fn get_uri(db: &RootDatabase, file_id: FileId) -> Url {
+fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
     let virtual_file = match db.lookup_intern_file(file_id) {
         FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
         FileLongId::Virtual(virtual_file) => virtual_file,
@@ -1106,19 +1106,45 @@ fn get_uri(db: &RootDatabase, file_id: FileId) -> Url {
     uri
 }
 
-/// Converts internal format diagnostics to LSP format.
+/// Converts an internal diagnsotic location to an LSP range.
+fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
+    let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
+    let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
+    Range { start, end }
+}
+
+/// Converts internal diagnostics to LSP format.
 fn get_diagnostics<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
 ) {
     for diagnostic in diagnostics.get_all() {
-        let location = diagnostic.location(db);
-        let message = diagnostic.format(db);
-        let start =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        let end =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        diags.push(Diagnostic { range: Range { start, end }, message, ..Diagnostic::default() });
+        let mut message = diagnostic.format(db);
+        let mut related_information = vec![];
+        for note in diagnostic.notes(db) {
+            if let Some(location) = &note.location {
+                related_information.push(DiagnosticRelatedInformation {
+                    location: Location {
+                        uri: get_uri(db.upcast(), location.file_id),
+                        range: get_range(db.upcast(), location),
+                    },
+                    message: note.text.clone(),
+                });
+            } else {
+                message += &format!("\nnote: {}", note.text);
+            }
+        }
+
+        diags.push(Diagnostic {
+            range: get_range(db.upcast(), &diagnostic.location(db)),
+            message,
+            related_information: if related_information.is_empty() {
+                None
+            } else {
+                Some(related_information)
+            },
+            ..Diagnostic::default()
+        });
     }
 }
