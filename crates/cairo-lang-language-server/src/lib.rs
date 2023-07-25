@@ -15,7 +15,7 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
-    TraitFunctionLongId, TraitLongId, UseLongId,
+    SubmoduleLongId, TraitFunctionLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -761,56 +761,74 @@ impl LanguageServer for Backend {
             let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
                 return None;
             };
-            for lookup_item_id in lookup_items {
-                if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                    continue;
-                }
-                let identifier =
-                    ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-
-                let (module_id, file_index, stable_ptr) = if let Some(item) =
-                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
-                {
-                    resolved_generic_item_def(db.upcast(), item)
-                } else if let Some(item) =
-                    db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
-                {
-                    let Some(res) = resolved_concrete_item_def(db.upcast(), item) else {
-                        continue;
-                    };
-                    res
-                } else {
-                    continue;
-                };
-
-                let file = if let Ok(files) = db.module_files(module_id) {
-                    files[file_index.0]
-                } else {
-                    return None;
-                };
-
-                let uri = get_uri(db, file);
-                let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                    syntax
-                } else {
-                    eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                    return None;
-                };
-                let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
-                let span = node.span_without_trivia(syntax_db);
-
-                let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
-                let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
-
-                return Some(GotoDefinitionResponse::Scalar(Location {
-                    uri,
-                    range: Range { start, end },
-                }));
+            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+                return None;
             }
-            None
+            let identifier =
+                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+            let (module_id, file_index, stable_ptr) =
+                find_definition(db, file, &identifier, &lookup_items)?;
+
+            let file = if let Ok(files) = db.module_files(module_id) {
+                files[file_index.0]
+            } else {
+                return None;
+            };
+
+            let uri = get_uri(db, file);
+            let syntax = if let Ok(syntax) = db.file_syntax(file) {
+                syntax
+            } else {
+                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                return None;
+            };
+            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+            let span = node.span_without_trivia(syntax_db);
+
+            let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
+            let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
+
+            Some(GotoDefinitionResponse::Scalar(Location { uri, range: Range { start, end } }))
         })
         .await
     }
+}
+
+fn find_definition(
+    db: &RootDatabase,
+    file: FileId,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<DefinitionResult> {
+    if let Some(parent) = identifier.as_syntax_node().parent() {
+        if parent.kind(db) == SyntaxKind::ItemModule {
+            let containing_module_id =
+                find_node_module(db, file, parent.clone()).on_none(|| {
+                    eprintln!("Hover failed. Failed to find module.");
+                })?;
+
+            let submodule_id = db.intern_submodule(SubmoduleLongId(
+                ModuleFileId(containing_module_id, FileIndex(0)),
+                ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
+            ));
+            return Some(resolved_generic_item_def(
+                db.upcast(),
+                ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
+            ));
+        }
+    }
+    for lookup_item_id in lookup_items.iter().copied() {
+        if let Some(item) =
+            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            return Some(resolved_generic_item_def(db.upcast(), item));
+        } else if let Some(item) =
+            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            return resolved_concrete_item_def(db.upcast(), item);
+        }
+    }
+    None
 }
 
 fn resolved_concrete_item_def(
@@ -838,10 +856,9 @@ fn resolved_concrete_item_def(
     }
 }
 
-fn resolved_generic_item_def(
-    db: &dyn DefsGroup,
-    item: ResolvedGenericItem,
-) -> (ModuleId, FileIndex, SyntaxStablePtrId) {
+type DefinitionResult = (ModuleId, FileIndex, SyntaxStablePtrId);
+
+fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> DefinitionResult {
     match item {
         ResolvedGenericItem::Constant(item) => {
             (item.parent_module(db), item.file_index(db), item.untyped_stable_ptr(db))
