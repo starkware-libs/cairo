@@ -1218,9 +1218,10 @@ fn secp256k1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)|
+        .map(
+            |(smaller, greater)|
             // Return the correct y coordinate based on the parity.
-            if smaller.0.is_odd() == y_parity { smaller } else { greater }
+            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
         )
         .map(|y| secp256k1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
@@ -1344,9 +1345,11 @@ fn secp256r1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)|
+        .map(
+            |(smaller, greater)|
             // Return the correct y coordinate based on the parity.
-            if smaller.0.is_odd() == y_parity { smaller } else { greater })
+            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
+        )
         .map(|y| secp256r1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
     let Some(p) = maybe_p else {
