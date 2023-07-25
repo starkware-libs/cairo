@@ -252,3 +252,32 @@ error: Break only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
     ^****^
+
+//! > ==========================================================================
+
+//! > Error propagation inside a loop.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        let res = Option::Some(true);
+        res?;
+        break;
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+error: `?` not allowed inside a `loop`.
+ --> lib.cairo:5:9
+        res?;
+        ^**^

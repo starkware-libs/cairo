@@ -908,6 +908,10 @@ fn compute_expr_error_propagate_semantic(
         syntax.stable_ptr().untyped(),
         UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate,
     )?;
+    // Disallow error propagation inside a loop.
+    if ctx.loop_flow_merge.is_some() {
+        ctx.diagnostics.report(syntax, SemanticDiagnosticKind::ErrorPropagateNotAllowedInsideALoop);
+    }
     let (_, func_err_variant) = unwrap_error_propagation_type(ctx.db, func_signature.return_type)
         .ok_or_else(|| {
         ctx.diagnostics.report(
