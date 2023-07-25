@@ -803,6 +803,11 @@ impl LanguageServer for Backend {
                         trait_function.file_index(defs_db),
                         trait_function.stable_ptr(defs_db).untyped(),
                     ),
+                    ResolvedGenericItem::Variable(item, var) => (
+                        item.parent_module(defs_db),
+                        item.file_index(defs_db),
+                        var.untyped_stable_ptr(defs_db),
+                    ),
                 };
 
                 let file = if let Ok(files) = db.module_files(module_id) {
