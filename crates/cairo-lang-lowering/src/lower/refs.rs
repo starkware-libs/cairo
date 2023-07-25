@@ -1,8 +1,9 @@
 use cairo_lang_defs::ids::MemberId;
+use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_semantic as semantic;
+use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use semantic::{ConcreteTypeId, TypeLongId};
 
 use super::usage::MemberPath;
 use crate::db::LoweringGroup;
@@ -14,8 +15,16 @@ pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
 }
 impl SemanticLoweringMapping {
-    pub fn contains_var(&mut self, var: &semantic::VarId) -> bool {
-        self.scattered.contains_key(&MemberPath::Var(*var))
+    pub fn contains_member_path(&mut self, mut member_path: MemberPath) -> bool {
+        loop {
+            if self.scattered.contains_key(&member_path) {
+                return true;
+            }
+            let MemberPath::Member { parent, .. } = member_path else {
+                return false;
+            };
+            member_path = *parent;
+        }
     }
 
     pub fn get<TContext: StructRecomposer>(
@@ -25,19 +34,6 @@ impl SemanticLoweringMapping {
     ) -> Option<VariableId> {
         let value = self.break_into_value(&mut ctx, path)?;
         Self::assemble_value(&mut ctx, value)
-    }
-
-    pub fn get_ty<TContext: StructRecomposer>(
-        &mut self,
-        ctx: &TContext,
-        path: &MemberPath,
-    ) -> Option<semantic::TypeId> {
-        Some(match self.scattered.get(path)? {
-            Value::Var(var) => ctx.var_ty(*var),
-            Value::Scattered(scattered) => ctx.db().intern_type(TypeLongId::Concrete(
-                ConcreteTypeId::Struct(scattered.concrete_struct_id),
-            )),
-        })
     }
 
     pub fn introduce(&mut self, path: MemberPath, var: VariableId) {
@@ -121,7 +117,8 @@ pub trait StructRecomposer {
 }
 
 /// An intermediate value for a member path.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 enum Value {
     /// The value of member path is stored in a lowered variable.
     Var(VariableId),
@@ -131,7 +128,8 @@ enum Value {
 }
 
 /// A value for an non-stored member path. Recursively holds the [Value] for the members.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 struct Scattered {
     concrete_struct_id: semantic::ConcreteStructId,
     members: OrderedHashMap<MemberId, Value>,

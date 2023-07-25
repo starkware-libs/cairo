@@ -193,6 +193,7 @@ pub fn lower_loop_function(
             call_loop_func(&mut ctx, signature, &mut builder, expr)
         })();
         let block_sealed = lowered_expr_to_block_scope_end(&mut ctx, builder, block_expr)?;
+
         match block_sealed {
             SealedBlockBuilder::GotoCallsite { mut builder, expr } => {
                 // Convert to a return.
