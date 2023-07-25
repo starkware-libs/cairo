@@ -201,11 +201,10 @@ blk0 (root):
 Statements:
   (v2: core::integer::u32) <- 5u
   (v3: test::B, v4: core::felt252) <- struct_destructure(v0)
-  (v6: core::integer::u32, v7: test::A, v5: test::A) <- test::foo[expr25](v2, v3, v1)
-  (v8: core::integer::u32, v9: core::integer::u128) <- struct_destructure(v3)
-  (v10: ()) <- struct_construct()
+  (v6: test::A, v7: test::B, v5: test::A) <- test::foo[expr25](v2, v3, v1)
+  (v8: ()) <- struct_construct()
 End:
-  Return(v7, v10)
+  Return(v6, v8)
 
 
 Generated lowering for source location:
@@ -221,7 +220,7 @@ Statements:
   (v7: core::bool) <- bool::True(v6)
 End:
   Match(match_enum(v7) {
-    bool::False(v16) => blk2,
+    bool::False(v14) => blk2,
     bool::True(v8) => blk1,
   })
 
@@ -232,9 +231,8 @@ Statements:
   (v11: core::felt252) <- 5u
   (v12: test::B) <- struct_construct(v0, v5)
   (v13: test::A) <- struct_construct(v12, v11)
-  (v14: core::integer::u32, v15: core::integer::u128) <- struct_destructure(v12)
 End:
-  Return(v14, v13, v13)
+  Return(v13, v12, v13)
 
 blk2:
 Statements:
@@ -243,11 +241,10 @@ End:
 
 blk3:
 Statements:
-  (v17: test::B) <- struct_construct(v0, v5)
-  (v19: core::integer::u32, v20: test::A, v18: test::A) <- test::foo[expr25](v0, v17, v2)
-  (v21: core::integer::u32, v22: core::integer::u128) <- struct_destructure(v17)
+  (v15: test::B) <- struct_construct(v0, v5)
+  (v17: test::A, v18: test::B, v16: test::A) <- test::foo[expr25](v0, v15, v2)
 End:
-  Return(v19, v20, v18)
+  Return(v17, v18, v16)
 
 //! > ==========================================================================
 

@@ -69,9 +69,9 @@ Block 11:12:
   Introductions: LocalVarId(test::x), 
 Block 8:2:
   Usage: LocalVarId(test::c), ParamId(test::a)::b, ParamId(test::b), 
-  Changes: ParamId(test::a)::b::c, ParamId(test::b), 
+  Changes: ParamId(test::b), ParamId(test::a)::b, 
   Introductions: LocalVarId(test::h), 
 Block 6:27:
   Usage: ParamId(test::b), ParamId(test::a)::b, 
-  Changes: ParamId(test::a)::b::c, ParamId(test::b), 
+  Changes: ParamId(test::b), ParamId(test::a)::b, 
   Introductions: LocalVarId(test::c),
