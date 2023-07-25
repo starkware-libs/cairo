@@ -7,6 +7,7 @@ use starknet::secp256_trait::{
     recover_public_key, verify_eth_signature, Secp256PointTrait, Signature
 };
 use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
+use test::test_utils::assert_eq;
 
 #[test]
 #[available_gas(100000000)]
@@ -74,4 +75,21 @@ fn test_verify_eth_signature_overflowing_signature_s() {
         get_message_and_signature();
     signature.s = Secp256r1Impl::get_curve_size() + 1;
     verify_eth_signature::<Secp256r1Point>(:msg_hash, :signature, :eth_address);
+}
+
+
+#[test]
+#[available_gas(100_000_000)]
+fn test_recover_public_key_y_even() {
+    let x: u256 = 0x502a43ce77c6f5c736a82f847fa95f8c2d483fe223b12b91047d83258a958b0f;
+    let y: u256 = 0xdb0a2e6710c71ba80afeb3abdf69d306ce729c7704f4ddf2eaaf0b76209fe1b0;
+    let r: u256 = 0x7380df4a623c5c2259a5e5f5b225d7265a9e24b3a13c101d1afddcf29e3cf8b2;
+    let s: u256 = 0x0d131afacdd17a4ea1b544bb3ade677ff8accbe7830e15b9c225e6031155946a;
+    let y_parity = false;
+    let message_hash: u256 = 0x28c7fff9aef4847a82cd64280434712a5b49205831b60eea6e70614077e672eb;
+    let recovered = recover_public_key::<Secp256r1Point>(message_hash, Signature { r, s, y_parity })
+        .unwrap();
+    let (recovered_x, recovered_y) = recovered.get_coordinates().unwrap_syscall();
+
+    assert_eq(@recovered_x, @x, 'Signature is not valid');
 }
