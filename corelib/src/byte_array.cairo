@@ -92,42 +92,21 @@ impl ByteArrayImpl of ByteArrayTrait {
     fn append(ref self: ByteArray, mut other: @ByteArray) {
         let mut other_data = other.data.span();
 
-        // TODO(yg): this is a workaround for a bug we need to resolve. After resolving, change all
-        // self_* to self.*.
-        let ByteArray{data: mut self_data,
-        pending_word: mut self_pending_word,
-        pending_word_len: mut self_pending_word_len } =
-            self;
-
-        if self_pending_word_len == 0 {
+        if self.pending_word_len == 0 {
             loop {
                 match other_data.pop_front() {
                     Option::Some(current_word) => {
-                        self_data.append(*current_word);
+                        self.data.append(*current_word);
                     },
                     Option::None => {
                         break;
                     }
                 };
             };
-            self_pending_word = *other.pending_word;
-            self_pending_word_len = *other.pending_word_len;
-
-            self =
-                ByteArray {
-                    data: self_data,
-                    pending_word: self_pending_word,
-                    pending_word_len: self_pending_word_len
-                };
+            self.pending_word = *other.pending_word;
+            self.pending_word_len = *other.pending_word_len;
             return;
         }
-
-        self =
-            ByteArray {
-                data: self_data,
-                pending_word: self_pending_word,
-                pending_word_len: self_pending_word_len
-            };
 
         let total_pending_bytes = self.pending_word_len + *other.pending_word_len;
 
