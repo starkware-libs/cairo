@@ -18,7 +18,8 @@ mod test;
 
 /// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
 /// syntax pointers.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum MemberPath {
     Var(semantic::VarId),
     Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
@@ -119,36 +120,27 @@ impl BlockUsages {
                     self.handle_expr(function_body, expr_id, &mut usage)
                 }
                 for (member_path, _) in usage.usage.clone() {
-                    // Prune introductions from usages.
-                    if usage.introductions.contains(&member_path.base_var()) {
+                    // Prune introductions and members of other usages from usages.
+                    if usage.introductions.contains(&member_path.base_var())
+                        || usage_member(&member_path, &usage.usage).is_some()
+                    {
                         usage.usage.swap_remove(&member_path);
-                        continue;
-                    }
-
-                    // Prune usages that are members of other usages.
-                    let mut current_path = member_path.clone();
-                    while let MemberPath::Member { parent, .. } = current_path {
-                        current_path = *parent.clone();
-                        if usage.usage.contains_key(&current_path) {
-                            usage.usage.swap_remove(&member_path);
-                            break;
-                        }
                     }
                 }
                 for (member_path, _) in usage.changes.clone() {
-                    // Prune introductions from changes.
-                    if usage.introductions.contains(&member_path.base_var()) {
+                    // Prune introductions and members of other changes from changes.
+                    if usage.introductions.contains(&member_path.base_var())
+                        || usage_member(&member_path, &usage.changes).is_some()
+                    {
                         usage.changes.swap_remove(&member_path);
-                    }
-
-                    // Prune changes that are members of other changes.
-                    let mut current_path = member_path.clone();
-                    while let MemberPath::Member { parent, .. } = current_path {
-                        current_path = *parent.clone();
-                        if usage.changes.contains_key(&current_path) {
-                            usage.changes.swap_remove(&member_path);
-                            break;
-                        }
+                    } else if let Some(including_usage) = usage_member(&member_path, &usage.usage) {
+                        // TODO(orizi): Instead of expanding the change to be the containing usage,
+                        // we could split the usage into all its members so we'd include the change.
+                        usage.changes.swap_remove(&member_path);
+                        usage.changes.insert(
+                            including_usage.clone(),
+                            usage.usage.get(including_usage).unwrap().clone(),
+                        );
                     }
                 }
 
@@ -238,6 +230,23 @@ impl BlockUsages {
                 }
             }
             Pattern::Otherwise(_) => {}
+        }
+    }
+}
+
+/// Returns the member path in `usage` that `path` is a member of, if any.
+fn usage_member<'a>(
+    mut path: &'a MemberPath,
+    usage: &'a OrderedHashMap<MemberPath, ExprVarMemberPath>,
+) -> Option<&'a MemberPath> {
+    loop {
+        if let MemberPath::Member { parent, .. } = path {
+            path = parent.as_ref();
+            if usage.contains_key(path) {
+                return Some(path);
+            }
+        } else {
+            return None;
         }
     }
 }
