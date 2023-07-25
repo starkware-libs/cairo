@@ -56,7 +56,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticNote {
     pub text: String,
-    location: Option<DiagnosticLocation>,
+    pub location: Option<DiagnosticLocation>,
 }
 impl DiagnosticNote {
     pub fn text_only(text: String) -> Self {
