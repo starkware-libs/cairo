@@ -3,6 +3,7 @@ import { SemanticTokensFeature } from "vscode-languageclient/lib/common/semantic
 import * as child_process from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import * as os from "os";
 
 import {
   LanguageClient,
@@ -104,6 +105,29 @@ async function findExecutableFromPathVar(name: string) {
   }
 }
 
+async function findScarbExecutablePathInAsdfDir() {
+  if (os.platform() === "win32") {
+    return undefined;
+  }
+
+  let asdfDataDir = process.env.ASDF_DATA_DIR;
+  if (!asdfDataDir) {
+    const home = process.env.HOME;
+    if (!home) {
+      return undefined;
+    }
+    asdfDataDir = path.join(home, ".asdf");
+  }
+  const scarbExecutablePath = path.join(asdfDataDir, "shims", "scarb");
+
+  try {
+    await fs.promises.access(scarbExecutablePath, fs.constants.X_OK);
+    return scarbExecutablePath;
+  } catch (e) {
+    return undefined;
+  }
+}
+
 async function findScarbExecutablePath(
   config: vscode.WorkspaceConfiguration,
   context: vscode.ExtensionContext
@@ -120,7 +144,10 @@ async function findScarbExecutablePath(
   }
 
   // Check PATH env var for scarb path.
-  return await findExecutableFromPathVar("scarb");
+  const envPath = await findExecutableFromPathVar("scarb");
+  if (envPath) return envPath;
+
+  return findScarbExecutablePathInAsdfDir();
 }
 
 function notifyScarbMissing(outputChannel: vscode.OutputChannel) {
