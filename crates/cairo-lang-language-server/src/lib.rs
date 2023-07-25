@@ -15,7 +15,7 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
     LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
-    TraitLongId, UseLongId,
+    TraitFunctionLongId, TraitLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -34,13 +34,14 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
-use cairo_lang_semantic::resolve::{AsSegments, ResolvedGenericItem};
-use cairo_lang_semantic::SemanticDiagnostic;
+use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::PathSegment;
-use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
@@ -766,77 +767,20 @@ impl LanguageServer for Backend {
                 }
                 let identifier =
                     ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-                let Some(item) =
-                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
-                else {
-                    continue;
-                };
 
-                let defs_db = db.upcast();
-                let (module_id, file_index, stable_ptr) = match item {
-                    ResolvedGenericItem::Constant(item) => (
-                        item.parent_module(defs_db),
-                        item.file_index(defs_db),
-                        item.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::Module(item) => {
-                        (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
-                    }
-                    ResolvedGenericItem::GenericFunction(item) => {
-                        let title = match item {
-                            GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
-                            GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
-                            GenericFunctionId::Impl(id) => {
-                                // Note: Only the trait title is returned.
-                                FunctionTitleId::Trait(id.function)
-                            }
-                        };
-                        (
-                            title.parent_module(defs_db),
-                            title.file_index(defs_db),
-                            title.untyped_stable_ptr(defs_db),
-                        )
-                    }
-                    ResolvedGenericItem::GenericType(generic_type) => (
-                        generic_type.parent_module(defs_db),
-                        generic_type.file_index(defs_db),
-                        generic_type.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::GenericTypeAlias(type_alias) => (
-                        type_alias.parent_module(defs_db),
-                        type_alias.file_index(defs_db),
-                        type_alias.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::GenericImplAlias(impl_alias) => (
-                        impl_alias.parent_module(defs_db),
-                        impl_alias.file_index(defs_db),
-                        impl_alias.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::Variant(variant) => (
-                        variant.id.parent_module(defs_db),
-                        variant.id.file_index(defs_db),
-                        variant.id.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::Trait(trt) => (
-                        trt.parent_module(defs_db),
-                        trt.file_index(defs_db),
-                        trt.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::Impl(imp) => (
-                        imp.parent_module(defs_db),
-                        imp.file_index(defs_db),
-                        imp.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::TraitFunction(trait_function) => (
-                        trait_function.parent_module(defs_db),
-                        trait_function.file_index(defs_db),
-                        trait_function.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::Variable(item, var) => (
-                        item.parent_module(defs_db),
-                        item.file_index(defs_db),
-                        var.untyped_stable_ptr(defs_db),
-                    ),
+                let (module_id, file_index, stable_ptr) = if let Some(item) =
+                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+                {
+                    resolved_generic_item_def(db.upcast(), item)
+                } else if let Some(item) =
+                    db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+                {
+                    let Some(res) = resolved_concrete_item_def(db.upcast(), item) else {
+                        continue;
+                    };
+                    res
+                } else {
+                    continue;
                 };
 
                 let file = if let Ok(files) = db.module_files(module_id) {
@@ -866,6 +810,90 @@ impl LanguageServer for Backend {
             None
         })
         .await
+    }
+}
+
+fn resolved_concrete_item_def(
+    db: &dyn SemanticGroup,
+    item: ResolvedConcreteItem,
+) -> Option<(ModuleId, FileIndex, SyntaxStablePtrId)> {
+    match item {
+        ResolvedConcreteItem::Type(ty) => {
+            if let TypeLongId::GenericParameter(param) = db.lookup_intern_type(ty) {
+                Some((
+                    param.parent_module(db.upcast()),
+                    param.file_index(db.upcast()),
+                    param.untyped_stable_ptr(db.upcast()),
+                ))
+            } else {
+                None
+            }
+        }
+        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => Some((
+            param.parent_module(db.upcast()),
+            param.file_index(db.upcast()),
+            param.untyped_stable_ptr(db.upcast()),
+        )),
+        _ => None,
+    }
+}
+
+fn resolved_generic_item_def(
+    db: &dyn DefsGroup,
+    item: ResolvedGenericItem,
+) -> (ModuleId, FileIndex, SyntaxStablePtrId) {
+    match item {
+        ResolvedGenericItem::Constant(item) => {
+            (item.parent_module(db), item.file_index(db), item.untyped_stable_ptr(db))
+        }
+        ResolvedGenericItem::Module(item) => {
+            (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
+        }
+        ResolvedGenericItem::GenericFunction(item) => {
+            let title = match item {
+                GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
+                GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
+                GenericFunctionId::Impl(id) => {
+                    // Note: Only the trait title is returned.
+                    FunctionTitleId::Trait(id.function)
+                }
+            };
+            (title.parent_module(db), title.file_index(db), title.untyped_stable_ptr(db))
+        }
+        ResolvedGenericItem::GenericType(generic_type) => (
+            generic_type.parent_module(db),
+            generic_type.file_index(db),
+            generic_type.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => (
+            type_alias.parent_module(db),
+            type_alias.file_index(db),
+            type_alias.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+            impl_alias.parent_module(db),
+            impl_alias.file_index(db),
+            impl_alias.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::Variant(variant) => (
+            variant.id.parent_module(db),
+            variant.id.file_index(db),
+            variant.id.stable_ptr(db).untyped(),
+        ),
+        ResolvedGenericItem::Trait(trt) => {
+            (trt.parent_module(db), trt.file_index(db), trt.stable_ptr(db).untyped())
+        }
+        ResolvedGenericItem::Impl(imp) => {
+            (imp.parent_module(db), imp.file_index(db), imp.stable_ptr(db).untyped())
+        }
+        ResolvedGenericItem::TraitFunction(trait_function) => (
+            trait_function.parent_module(db),
+            trait_function.file_index(db),
+            trait_function.stable_ptr(db).untyped(),
+        ),
+        ResolvedGenericItem::Variable(item, var) => {
+            (item.parent_module(db), item.file_index(db), var.untyped_stable_ptr(db))
+        }
     }
 }
 
@@ -1021,6 +1049,12 @@ fn lookup_item_from_ast(
                 module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
             ))))]
+        }
+        SyntaxKind::TraitItemFunction => {
+            vec![LookupItemId::TraitFunction(db.intern_trait_function(TraitFunctionLongId(
+                module_file_id,
+                ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))]
         }
         SyntaxKind::ItemImpl => {
             vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
