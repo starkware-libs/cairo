@@ -649,7 +649,12 @@ impl LanguageServer for Backend {
 
             let node = syntax.as_syntax_node();
             let mut data: Vec<SemanticToken> = Vec::new();
-            SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
+            SemanticTokensTraverser::default().find_semantic_tokens(
+                db.upcast(),
+                file,
+                &mut data,
+                node,
+            );
             Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
         })
         .await
@@ -1122,7 +1127,7 @@ fn position_to_offset(
 }
 
 fn find_node_module(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
     main_file: FileId,
     mut node: SyntaxNode,
 ) -> Option<ModuleId> {
