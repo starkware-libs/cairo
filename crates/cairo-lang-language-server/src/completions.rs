@@ -1,8 +1,9 @@
 use cairo_lang_defs::ids::{
-    LanguageElementId, ModuleId, TopLevelLanguageElementId, TraitFunctionId,
+    FunctionWithBodyId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
+    TopLevelLanguageElementId, TraitFunctionId,
 };
-use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -10,23 +11,107 @@ use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::lookup_item::{HasResolverData, LookupItemEx};
 use cairo_lang_semantic::lsp_helpers::TypeFilter;
-use cairo_lang_semantic::resolve::{ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use cairo_lang_semantic::types::peel_snapshots;
-use cairo_lang_semantic::{ConcreteTypeId, TypeLongId};
-use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_semantic::{ConcreteTypeId, Pattern, TypeLongId};
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use lsp::{CompletionItem, CompletionItemKind, Position, Range, TextEdit};
 
-use crate::get_node_and_lookup_items;
+pub fn generic_completions(
+    db: &(dyn SemanticGroup + 'static),
+    module_file_id: ModuleFileId,
+    lookup_items: Vec<LookupItemId>,
+) -> Vec<CompletionItem> {
+    let mut completions = vec![];
+
+    // Crates.
+    completions.extend(db.crate_roots().keys().map(|crate_id| CompletionItem {
+        label: db.lookup_intern_crate(*crate_id).0.into(),
+        kind: Some(CompletionItemKind::MODULE),
+        ..CompletionItem::default()
+    }));
+
+    // Module completions.
+    completions.extend(db.module_items(module_file_id.0).unwrap_or_default().iter().map(|item| {
+        CompletionItem {
+            label: item.name(db.upcast()).to_string(),
+            kind: Some(CompletionItemKind::MODULE),
+            ..CompletionItem::default()
+        }
+    }));
+
+    // Local variables.
+    let Some(lookup_item_id) = lookup_items.into_iter().next() else {
+        return completions;
+    };
+    let function_id = match lookup_item_id {
+        LookupItemId::ModuleItem(ModuleItemId::FreeFunction(free_function_id)) => {
+            FunctionWithBodyId::Free(free_function_id)
+        }
+        LookupItemId::ImplFunction(impl_function_id) => FunctionWithBodyId::Impl(impl_function_id),
+        _ => {
+            return completions;
+        }
+    };
+    let Ok(body) = db.function_body(function_id) else {
+        return completions;
+    };
+    for (_id, pat) in &body.patterns {
+        if let Pattern::Variable(var) = pat {
+            completions.push(CompletionItem {
+                label: var.name.clone().into(),
+                kind: Some(CompletionItemKind::VARIABLE),
+                ..CompletionItem::default()
+            });
+        }
+    }
+    completions
+}
+
+pub fn colon_colon_completions(
+    db: &(dyn SemanticGroup + 'static),
+    module_file_id: ModuleFileId,
+    lookup_items: Vec<LookupItemId>,
+    segments: Vec<PathSegment>,
+) -> Option<Vec<CompletionItem>> {
+    // Get a resolver in the current context.
+    let resolver_data = match lookup_items.into_iter().next() {
+        Some(item) => (*item.resolver_data(db).ok()?).clone(),
+        None => Resolver::new(db, module_file_id).data,
+    };
+    let mut resolver = Resolver::with_data(db, resolver_data);
+
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let item = resolver
+        .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
+        .ok()?;
+
+    Some(match item {
+        ResolvedConcreteItem::Module(module_id) => db
+            .module_items(module_id)
+            .unwrap_or_default()
+            .iter()
+            .map(|item| CompletionItem {
+                label: item.name(db.upcast()).to_string(),
+                kind: Some(CompletionItemKind::MODULE),
+                ..CompletionItem::default()
+            })
+            .collect(),
+        ResolvedConcreteItem::Trait(_) => todo!(),
+        ResolvedConcreteItem::Impl(_) => todo!(),
+        ResolvedConcreteItem::Type(_) => todo!(),
+        _ => vec![],
+    })
+}
 
 pub fn dot_completions(
     db: &(dyn SemanticGroup + 'static),
-    file: FileId,
-    position: Position,
+    lookup_items: Vec<LookupItemId>,
+    expr: ast::ExprBinary,
 ) -> Option<Vec<CompletionItem>> {
     let syntax_db = db.upcast();
     // Get a resolver in the current context.
-    let (_, lookup_items) = get_node_and_lookup_items(db, file, position)?;
     let lookup_item_id = lookup_items.into_iter().next()?;
     let function_with_body = lookup_item_id.function_with_body()?;
     let module_id = function_with_body.module_file_id(db.upcast()).0;
@@ -34,7 +119,7 @@ pub fn dot_completions(
     let resolver = Resolver::with_data(db, resolver_data.as_ref().clone());
 
     // Extract lhs node.
-    let node = extract_lhs_expr_for_method_completion(syntax_db, file, position)?;
+    let node = expr.lhs(syntax_db);
     let stable_ptr = node.stable_ptr().untyped();
     // Get its semantic model.
     let expr_id = db.lookup_expr_by_ptr(function_with_body, node.stable_ptr()).ok()?;
@@ -173,30 +258,4 @@ fn find_methods_for_type(
         }
     }
     relevant_methods
-}
-
-/// Extracts the lhs expression of a binary operator.
-fn extract_lhs_expr_for_method_completion(
-    db: &(dyn SemanticGroup + 'static),
-    file: FileId,
-    mut position: Position,
-) -> Option<ast::Expr> {
-    let syntax_db = db.upcast();
-
-    // Move the cursor to the left of the dot.
-    position.character -= 1;
-    let (node, _) = get_node_and_lookup_items(db, file, position)?;
-    let node = node.parent()?;
-    if node.kind(syntax_db) != SyntaxKind::TerminalDot {
-        eprintln!("Expected TerminalDot");
-        return None;
-    };
-    let node = node.parent()?;
-    if node.kind(syntax_db) != SyntaxKind::ExprBinary {
-        eprintln!("Not a binary operator");
-        return None;
-    };
-    let node = ast::ExprBinary::from_syntax_node(syntax_db, node);
-    let node = node.lhs(syntax_db);
-    Some(node)
 }
