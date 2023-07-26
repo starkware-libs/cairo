@@ -15,13 +15,17 @@ pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
 }
 impl SemanticLoweringMapping {
-    pub fn contains_member_path(&mut self, mut member_path: MemberPath) -> bool {
+    pub fn topmost_containing_member_path(
+        &mut self,
+        mut member_path: MemberPath,
+    ) -> Option<MemberPath> {
+        let mut res = None;
         loop {
             if self.scattered.contains_key(&member_path) {
-                return true;
+                res = Some(member_path.clone());
             }
             let MemberPath::Member { parent, .. } = member_path else {
-                return false;
+                return res;
             };
             member_path = *parent;
         }
