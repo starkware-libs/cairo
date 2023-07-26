@@ -2,6 +2,7 @@ use box::BoxTrait;
 use traits::Default;
 use traits::Felt252DictValue;
 
+#[derive(Copy, Drop)]
 extern type Nullable<T>;
 
 enum FromNullableResult<T> {
@@ -25,10 +26,6 @@ impl NullableImpl<T> of NullableTrait<T> {
         }
     }
 }
-
-// Impls for generic types
-impl NullableCopy<T, impl TCopy: Copy<T>> of Copy<Nullable<T>>;
-impl NullableDrop<T, impl TDrop: Drop<T>> of Drop<Nullable<T>>;
 
 impl NullableDefault<T> of Default<Nullable<T>> {
     #[inline(always)]

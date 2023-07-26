@@ -25,9 +25,9 @@ impl Felt252Zeroable of Zeroable<felt252> {
 
 // === NonZero ===
 
+#[derive(Copy, Drop)]
 extern type NonZero<T>;
-impl NonZeroTCopy<T, impl TCopy: Copy<T>> of Copy<NonZero<T>>;
-impl NonZeroTDrop<T, impl TDrop: Drop<T>> of Drop<NonZero<T>>;
+
 enum IsZeroResult<T> {
     Zero,
     NonZero: NonZero<T>,

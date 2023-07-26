@@ -5,7 +5,9 @@ use gas::withdraw_gas;
 use option::OptionTrait;
 use serde::Serde;
 
+#[derive(Drop)]
 extern type Array<T>;
+
 extern fn array_new<T>() -> Array<T> nopanic;
 extern fn array_append<T>(ref arr: Array<T>, value: T) nopanic;
 extern fn array_pop_front<T>(ref arr: Array<T>) -> Option<Box<T>> nopanic;
@@ -112,9 +114,6 @@ fn deserialize_array_helper<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>>(
     curr_output.append(TSerde::deserialize(ref serialized)?);
     deserialize_array_helper(ref serialized, curr_output, remaining - 1)
 }
-
-// Impls for common generic types
-impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>;
 
 // Span.
 struct Span<T> {
