@@ -52,3 +52,6 @@ env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+cairo-lang-casm-contract-class = { path = "../cairo-lang-casm-contract-class", version = "2.1.0-rc0", features = [
+    "serde",
+] }

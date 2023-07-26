@@ -7,39 +7,51 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 
 use cairo_lang_casm::hints::Hint;
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::BigUintAsHex;
+#[cfg(feature = "serde")]
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint};
 use num_bigint::BigUint;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Represents a contract in the Starknet network.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CasmContractClass {
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
+    )]
     pub prime: BigUint,
     pub compiler_version: String,
     pub bytecode: Vec<BigUintAsHex>,
     pub hints: Vec<(usize, Vec<Hint>)>,
 
     // Optional pythonic hints in a format that can be executed by the python vm.
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub pythonic_hints: Option<Vec<(usize, Vec<String>)>>,
     pub entry_points_by_type: CasmContractEntryPoints,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CasmContractEntryPoints {
-    #[serde(rename = "EXTERNAL")]
+    #[cfg_attr(feature = "serde", serde(rename = "EXTERNAL"))]
     pub external: Vec<CasmContractEntryPoint>,
-    #[serde(rename = "L1_HANDLER")]
+    #[cfg_attr(feature = "serde", serde(rename = "L1_HANDLER"))]
     pub l1_handler: Vec<CasmContractEntryPoint>,
-    #[serde(rename = "CONSTRUCTOR")]
+    #[cfg_attr(feature = "serde", serde(rename = "CONSTRUCTOR"))]
     pub constructor: Vec<CasmContractEntryPoint>,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CasmContractEntryPoint {
     /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
+    )]
     pub selector: BigUint,
     /// The offset of the instruction that should be called within the contract bytecode.
     pub offset: usize,

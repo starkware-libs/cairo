@@ -10,7 +10,7 @@ description = "Casm representaion of a starknet contract"
 cairo-lang-casm = { path = "../cairo-lang-casm", default-features = false }
 cairo-lang-utils = { path = "../cairo-lang-utils", default-features = false }
 num-bigint.workspace = true
-serde.workspace = true
+serde = { workspace = true, optional = true }
 itertools = { workspace = true, default-features = false }
 [features]
 default = ["std"]
@@ -18,5 +18,6 @@ std = [
     "cairo-lang-casm/std",
     "cairo-lang-utils/std",
     "num-bigint/std",
-    "serde/std",
+    "itertools/use_std",
 ]
+serde = ["serde/std"]
