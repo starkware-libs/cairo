@@ -29,7 +29,10 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/linebreaking.cairo"
 )]
 #[test_case("test_data/cairo_files/attrs.cairo", "test_data/expected_results/attrs.cairo")]
-#[test_case("test_data/cairo_files/use.cairo", "test_data/expected_results/use.cairo")]
+#[test_case(
+    "test_data/cairo_files/use_sorting.cairo",
+    "test_data/expected_results/use_sorting.cairo"
+)]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
@@ -43,7 +46,7 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
         diagnostics.format(db)
     ));
     let mut config = FormatterConfig::default();
-    if unformatted_filename.ends_with("use.cairo") {
+    if unformatted_filename.ends_with("use_sorting.cairo") {
         config.sorted = true;
     }
     let formatted_file = get_formatted_file(db, &syntax_root, config);
