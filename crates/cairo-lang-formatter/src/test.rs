@@ -29,6 +29,7 @@ impl Upcast<dyn FilesGroup> for DatabaseImpl {
     "test_data/expected_results/linebreaking.cairo"
 )]
 #[test_case("test_data/cairo_files/attrs.cairo", "test_data/expected_results/attrs.cairo")]
+#[test_case("test_data/cairo_files/use.cairo", "test_data/expected_results/use.cairo")]
 fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) {
     let db_val = SimpleParserDatabase::default();
     let db = &db_val;
@@ -41,7 +42,10 @@ fn format_and_compare_file(unformatted_filename: &str, expected_filename: &str) 
         "There were parsing errors while trying to format the code:\n{}",
         diagnostics.format(db)
     ));
-    let config = FormatterConfig::default();
+    let mut config = FormatterConfig::default();
+    if unformatted_filename.ends_with("use.cairo") {
+        config.sorted = true;
+    }
     let formatted_file = get_formatted_file(db, &syntax_root, config);
     let expected_file =
         fs::read_to_string(expected_filename).expect("Expected file does not exists.");

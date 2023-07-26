@@ -621,7 +621,13 @@ impl<'a> FormatterImpl<'a> {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
         let children = syntax_node.children(self.db);
         let n_children = children.len();
-        for (i, child) in children.enumerate() {
+        let cmp = syntax_node_sorting_fn(self.db);
+
+        let mut children_iter = children.enumerate().collect::<Vec<(usize, SyntaxNode)>>();
+        if self.config.sorted {
+            children_iter.sort_by(cmp);
+        }
+        for (i, child) in children_iter {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
@@ -706,6 +712,40 @@ impl<'a> FormatterImpl<'a> {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.force_no_space_after = true;
+        }
+    }
+}
+
+/// Returns a `cmp` function for sorting SyntaxNodes siblings prioritizing `mod` and `use` clauses
+fn syntax_node_sorting_fn<'a>(
+    db: &'a dyn SyntaxGroup,
+) -> impl FnMut(&(usize, SyntaxNode), &(usize, SyntaxNode)) -> Ordering + 'a {
+    |first, second| {
+        let ignored_nodes = [SyntaxKind::TerminalLBrace, SyntaxKind::TerminalRBrace];
+        if ignored_nodes.contains(&first.1.kind(db)) || ignored_nodes.contains(&second.1.kind(db)) {
+            return Ordering::Equal;
+        }
+
+        let first_text = first.clone().1.get_text_without_trivia(db);
+        let second_text: String = second.clone().1.get_text_without_trivia(db);
+
+        let first_is_use = first_text.starts_with("use ");
+        let first_is_mod = first_text.starts_with("mod ") && first_text.ends_with(";");
+        let second_is_use = second_text.starts_with("use ");
+        let second_is_mod = second_text.starts_with("mod ") && second_text.ends_with(";");
+
+        if (first_is_mod && second_is_mod) || (first_is_use && second_is_use) {
+            first_text.cmp(&second_text)
+        } else if first_is_mod {
+            Ordering::Less
+        } else if second_is_mod {
+            Ordering::Greater
+        } else if first_is_use {
+            Ordering::Less
+        } else if second_is_use {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
         }
     }
 }

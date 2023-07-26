@@ -59,6 +59,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
+    sorted: bool,
 }
 
 // Config params
@@ -67,12 +68,12 @@ const TAB_SIZE: usize = 4;
 const MAX_LINE_LENGTH: usize = 100;
 
 impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize) -> Self {
-        Self { tab_size, max_line_length }
+    pub fn new(tab_size: usize, max_line_length: usize, sorted: bool) -> Self {
+        Self { tab_size, max_line_length, sorted }
     }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH)
+        Self::new(TAB_SIZE, MAX_LINE_LENGTH, false)
     }
 }
