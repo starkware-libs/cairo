@@ -254,17 +254,20 @@ impl BlockBuilder {
                 });
             }
             for member_path in subscope.changed_member_paths.iter() {
-                if !self.semantics.contains_member_path(member_path.clone()) {
+                let Some(member_path) =
+                    self.semantics.topmost_containing_member_path(member_path.clone())
+                else {
                     // This variable is local to the subscope.
                     continue;
-                }
-                // Keep track of longest common prefix of all changed semantics.
+                };
+                // Only consider the topmost member path that is contained in the parent.
+                // This avoids edge cases regarding de/constructing structs.
 
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
                 semantic_remapping.member_path_value.entry(member_path.clone()).or_insert_with(
                     || {
-                        let ty = self.get_ty(ctx, member_path);
+                        let ty = self.get_ty(ctx, &member_path);
                         ctx.new_var(VarRequest { ty, location })
                     },
                 );
