@@ -17,17 +17,19 @@ cairo-lang-semantic = { path = "../cairo-lang-semantic", version = "2.1.0-rc0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 id-arena.workspace = true
-indexmap.workspace = true
-itertools.workspace = true
+indexmap = { workspace = true, features = ["std"] }
+itertools = { workspace = true, features = ["use_std"] }
 log.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+num-bigint = { workspace = true, features = ["std"] }
+num-traits = { workspace = true, features = ["std"] }
 salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
-cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
+    "testing",
+] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 env_logger.workspace = true
 indoc.workspace = true

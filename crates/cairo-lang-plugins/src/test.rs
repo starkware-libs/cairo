@@ -1,4 +1,3 @@
-#![cfg(feature = "serde")]
 use std::sync::Arc;
 
 use cairo_lang_defs::plugin::PluginGeneratedFile;

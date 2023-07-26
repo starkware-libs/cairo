@@ -26,7 +26,6 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [features]
-default = []
 serde = ["cairo-lang-project/serde"]
 
 [dev-dependencies]

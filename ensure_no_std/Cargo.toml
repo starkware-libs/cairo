@@ -4,12 +4,18 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false }
-cairo-lang-casm = { path = "../crates/cairo-lang-casm", default-features = false }
+cairo-lang-utils = { path = "../crates/cairo-lang-utils", default-features = false, features = [
+    "serde",
+] }
+cairo-lang-casm = { path = "../crates/cairo-lang-casm", default-features = false, features = [
+    "serde",
+] }
 cairo-lang-vm-utils = { path = "../crates/cairo-lang-vm-utils", default-features = false, features = [
     "execute_core_hints",
 ] }
-cairo-lang-casm-contract-class = { path = "../crates/cairo-lang-casm-contract-class", default-features = false }
+cairo-lang-casm-contract-class = { path = "../crates/cairo-lang-casm-contract-class", default-features = false, features = [
+    "serde",
+] }
 
 wee_alloc = "0.4.5"
 

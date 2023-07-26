@@ -9,7 +9,7 @@ description = "Compiler executable for the Sierra intemediate representation wit
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-serde.workspace = true
+serde = { workspace = true, features = ["std"] }
 serde_json.workspace = true
 
 cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.1.0-rc0", default-features = false }

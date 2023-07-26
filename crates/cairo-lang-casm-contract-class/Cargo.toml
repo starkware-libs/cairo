@@ -20,6 +20,6 @@ std = [
     "cairo-lang-utils/std",
     "num-bigint/std",
     "itertools/use_std",
-    "serde/std",
+    "serde?/std",
 ]
 serde = ["dep:serde", "cairo-lang-casm/serde"]

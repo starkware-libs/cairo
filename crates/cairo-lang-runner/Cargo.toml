@@ -8,11 +8,11 @@ description = "Basic cairo runner."
 
 [dependencies]
 anyhow.workspace = true
-ark-ff.workspace = true
+ark-ff = { workspace = true, features = ["std"] }
 ark-secp256k1.workspace = true
 ark-secp256r1.workspace = true
-ark-std.workspace = true
-cairo-felt.workspace = true
+ark-std = { workspace = true, features = ["std"] }
+cairo-felt = { workspace = true, features = ["std"] }
 cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.1.0-rc0", features = [
     "std",
 ] }
@@ -36,12 +36,12 @@ cairo-lang-vm-utils = { path = "../cairo-lang-vm-utils", features = [
     "execute_core_hints",
 ] }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.1.0-rc0" }
-cairo-vm.workspace = true
-itertools.workspace = true
+cairo-vm = { workspace = true, features = ["std"] }
+itertools = { workspace = true, features = ["use_std"] }
 keccak.workspace = true
-num-bigint.workspace = true
-num-integer.workspace = true
-num-traits.workspace = true
+num-bigint = { workspace = true, features = ["std"] }
+num-integer = { workspace = true, features = ["std"] }
+num-traits = { workspace = true, features = ["std"] }
 thiserror.workspace = true
 
 [dev-dependencies]

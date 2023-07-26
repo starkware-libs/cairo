@@ -16,8 +16,8 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 indent.workspace = true
 indoc.workspace = true
-itertools.workspace = true
-num-bigint.workspace = true
+itertools = { workspace = true, features = ["use_std"] }
+num-bigint = { workspace = true, features = ["std"] }
 salsa.workspace = true
 smol_str.workspace = true
 
@@ -33,7 +33,3 @@ indoc.workspace = true
 serde_json.workspace = true
 test-case.workspace = true
 test-log.workspace = true
-
-[features]
-default = []
-serde = []

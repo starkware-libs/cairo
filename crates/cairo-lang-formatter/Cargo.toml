@@ -16,7 +16,7 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 colored.workspace = true
 diffy.workspace = true
 ignore.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, features = ["use_std"] }
 log.workspace = true
 salsa.workspace = true
 smol_str.workspace = true

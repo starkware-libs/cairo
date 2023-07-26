@@ -27,7 +27,14 @@ test-log.workspace = true
 
 [features]
 default = ["std"]
-std = ["cairo-lang-utils/std"]
+std = [
+    "cairo-lang-utils/std",
+    "itertools/use_std",
+    "num-bigint/std",
+    "num-traits/std",
+    "parity-scale-codec?/std",
+    "serde?/std",
+]
 schemars = ["std", "dep:schemars", "cairo-lang-utils/schemars"]
 parity-scale-codec = [
     "dep:parity-scale-codec",

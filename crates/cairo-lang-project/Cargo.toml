@@ -9,7 +9,7 @@ description = "Cairo project specification. For example, crates and flags used f
 [dependencies]
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
-serde = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["std"] }
 smol_str.workspace = true
 thiserror.workspace = true
 toml.workspace = true
@@ -19,4 +19,4 @@ indoc.workspace = true
 test-log.workspace = true
 
 [features]
-serde = ["dep:serde", "smol_str/serde"]
+serde = ["dep:serde", "smol_str/serde", "cairo-lang-utils/serde"]

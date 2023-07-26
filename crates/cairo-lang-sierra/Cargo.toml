@@ -16,12 +16,12 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
 derivative.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, features = ["use_std"] }
 lalrpop-util.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+num-bigint = { workspace = true, features = ["std"] }
+num-traits = { workspace = true, features = ["std"] }
 salsa.workspace = true
-serde = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["std"] }
 sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true

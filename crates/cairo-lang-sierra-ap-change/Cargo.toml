@@ -11,7 +11,7 @@ cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.1.0-rc0"
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.1.0-rc0" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
-itertools.workspace = true
+itertools = { workspace = true, features = ["use_std"] }
 thiserror.workspace = true
 
 [dev-dependencies]

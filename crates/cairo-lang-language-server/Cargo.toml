@@ -27,7 +27,7 @@ log.workspace = true
 lsp.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
-serde = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["std"] }
 serde_json = { workspace = true, optional = true }
 smol_str.workspace = true
 tokio.workspace = true
@@ -37,7 +37,6 @@ tower-lsp.workspace = true
 test-log.workspace = true
 
 [features]
-default = []
 serde = [
     "dep:serde",
     "dep:serde_json",

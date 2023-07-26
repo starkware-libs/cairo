@@ -16,10 +16,10 @@ cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.1.0-rc0" }
 cairo-lang-syntax-codegen = { path = "../cairo-lang-syntax-codegen", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
 colored.workspace = true
-itertools.workspace = true
+itertools = { workspace = true, features = ["use_std"] }
 log.workspace = true
-num-bigint.workspace = true
-num-traits.workspace = true
+num-bigint = { workspace = true, features = ["std"] }
+num-traits = { workspace = true, features = ["std"] }
 salsa.workspace = true
 smol_str.workspace = true
 unescaper.workspace = true

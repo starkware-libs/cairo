@@ -39,7 +39,7 @@ std = [
     "num-bigint/std",
     "num-integer/std",
     "num-traits/std",
-    "serde/std",
+    "serde?/std",
     "cairo-felt/std",
     "parity-scale-codec?/std",
 ]
