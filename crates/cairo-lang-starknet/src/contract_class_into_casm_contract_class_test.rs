@@ -1,3 +1,4 @@
+#![cfg(feature = "serde")]
 use std::io::BufReader;
 
 use cairo_felt::Felt252;

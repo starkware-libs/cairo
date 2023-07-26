@@ -21,7 +21,7 @@ lalrpop-util.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
-serde.workspace = true
+serde = { workspace = true, optional = true }
 sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
@@ -34,3 +34,6 @@ indoc.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
+
+[features]
+serde = ["dep:serde", "smol_str/serde"]

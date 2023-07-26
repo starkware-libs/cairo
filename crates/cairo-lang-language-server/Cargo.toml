@@ -27,11 +27,20 @@ log.workspace = true
 lsp.workspace = true
 salsa.workspace = true
 scarb-metadata.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 smol_str.workspace = true
 tokio.workspace = true
 tower-lsp.workspace = true
 
 [dev-dependencies]
 test-log.workspace = true
+
+[features]
+default = []
+serde = [
+    "dep:serde",
+    "dep:serde_json",
+    "cairo-lang-filesystem/serde",
+    "cairo-lang-compiler/serde",
+]

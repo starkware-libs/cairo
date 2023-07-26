@@ -8,16 +8,21 @@ type DefaultHashBuilder = std::hash::BuildHasherDefault<std::collections::hash_m
 
 use indexmap::{Equivalent, IndexMap};
 use itertools::zip_eq;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// The default serde derived implementations require `S: Serialize / Deserialize`,
 /// but `S` is not actualy part of serialized object, so it should not be required.
 /// This attribute allow us to replace the content of the `where` clauses.
-#[serde(bound(
-    serialize = "Key: Serialize, Value: Serialize",
-    deserialize = "Key: Deserialize<'de>, Value: Deserialize<'de>"
-))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "Key: Serialize, Value: Serialize",
+        deserialize = "Key: Deserialize<'de>, Value: Deserialize<'de>"
+    ))
+)]
 pub struct OrderedHashMap<
     Key: Hash + Eq,
     Value,

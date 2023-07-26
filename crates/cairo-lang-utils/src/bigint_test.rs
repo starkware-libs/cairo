@@ -1,20 +1,26 @@
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "serde"))]
 use alloc::format;
+#[cfg(feature = "serde")]
 use core::ops::Neg;
 #[cfg(feature = "parity-scale-codec")]
 use core::str::FromStr;
 
+#[cfg(feature = "serde")]
 use num_bigint::BigInt;
+#[cfg(feature = "serde")]
 use num_traits::Num;
 #[cfg(feature = "parity-scale-codec")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "serde")]
 use test_case::test_case;
 
+#[cfg(any(feature = "serde", feature = "parity-scale-codec"))]
 use crate::bigint::BigIntAsHex;
 
 #[test_case("800000000000011000000000000000000000000000000000000000000000001", true; "positive")]
 #[test_case("800000000000011000000000000000000000000000000000000000000000001", false; "negative")]
 #[test_case("0", false; "zero")]
+#[cfg(feature = "serde")]
 fn test_bigint_serde(s: &str, is_negative: bool) {
     let mut num = BigIntAsHex { value: BigInt::from_str_radix(s, 16).unwrap() };
     if is_negative {

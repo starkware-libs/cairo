@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::indoc;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -25,16 +26,17 @@ pub enum EventData {
 }
 
 /// Describes how to serialize the event's field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum EventFieldKind {
     // Serialize to `keys` using `Serde`.
-    #[serde(rename = "key")]
+    #[cfg_attr(feature = "serde", serde(rename = "key"))]
     KeySerde,
     // Serialize to `data` using `Serde`.
-    #[serde(rename = "data")]
+    #[cfg_attr(feature = "serde", serde(rename = "data"))]
     DataSerde,
     // Serialize as a nested event.
-    #[serde(rename = "nested")]
+    #[cfg_attr(feature = "serde", serde(rename = "nested"))]
     Nested,
 }
 

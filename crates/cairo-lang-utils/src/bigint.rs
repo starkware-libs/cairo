@@ -4,26 +4,35 @@ mod test;
 
 #[cfg(all(feature = "parity-scale-codec", not(feature = "std")))]
 use alloc::vec::Vec;
-#[cfg(not(feature = "std"))]
+#[cfg(all(not(feature = "std"), feature = "serde"))]
 use alloc::{format, string::String};
+#[cfg(feature = "serde")]
 use core::ops::Neg;
 
-use num_bigint::{BigInt, BigUint, ToBigInt};
+#[cfg(feature = "serde")]
+use num_bigint::ToBigInt;
+use num_bigint::{BigInt, BigUint};
+#[cfg(feature = "serde")]
 use num_traits::{Num, Signed};
 #[cfg(feature = "parity-scale-codec")]
 use parity_scale_codec::{Decode, Encode};
-use serde::ser::Serializer;
-use serde::{Deserialize, Deserializer, Serialize};
+#[cfg(feature = "serde")]
+use serde::{ser::Serializer, Deserialize, Deserializer, Serialize};
 
 /// A wrapper for BigUint that serializes as hex.
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(transparent)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct BigUintAsHex {
     /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
+    )]
     pub value: BigUint,
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_from_str<'a, D>(s: &str) -> Result<BigUint, D::Error>
 where
     D: Deserializer<'a>,
@@ -35,6 +44,7 @@ where
     }
 }
 
+#[cfg(feature = "serde")]
 pub fn serialize_big_uint<S>(num: &BigUint, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -42,6 +52,7 @@ where
     serializer.serialize_str(&format!("{num:#x}"))
 }
 
+#[cfg(feature = "serde")]
 pub fn deserialize_big_uint<'a, D>(deserializer: D) -> Result<BigUint, D::Error>
 where
     D: Deserializer<'a>,
@@ -51,12 +62,16 @@ where
 }
 
 // A wrapper for BigInt that serializes as hex.
-#[derive(Default, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
-#[serde(transparent)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct BigIntAsHex {
     /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_int", deserialize_with = "deserialize_big_int")
+    )]
     #[cfg_attr(feature = "schemars", schemars(schema_with = "big_int_schema"))]
     pub value: BigInt,
 }
@@ -96,6 +111,7 @@ impl<T: Into<BigInt>> From<T> for BigIntAsHex {
     }
 }
 
+#[cfg(feature = "serde")]
 pub fn serialize_big_int<S>(num: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
@@ -107,6 +123,7 @@ where
     ))
 }
 
+#[cfg(feature = "serde")]
 pub fn deserialize_big_int<'a, D>(deserializer: D) -> Result<BigInt, D::Error>
 where
     D: Deserializer<'a>,

@@ -1,8 +1,10 @@
+#[cfg(feature = "serde")]
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use cairo_lang_compiler::db::RootDatabase;
+#[cfg(feature = "serde")]
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_defs::ids::TopLevelLanguageElementId;
@@ -12,22 +14,26 @@ use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
-use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint, BigUintAsHex};
+use cairo_lang_utils::bigint::BigUintAsHex;
+#[cfg(feature = "serde")]
+use cairo_lang_utils::bigint::{deserialize_big_uint, serialize_big_uint};
 use itertools::{chain, Itertools};
 use num_bigint::BigUint;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
-use crate::allowed_libfuncs::{
-    validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
-};
+use crate::allowed_libfuncs::AllowedLibfuncsError;
+#[cfg(feature = "serde")]
+use crate::allowed_libfuncs::{validate_compatible_sierra_version, ListSelector};
 use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_module_functions, get_selector_and_sierra_function, ContractDeclaration,
 };
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
+#[cfg(feature = "serde")]
 use crate::plugin::StarkNetPlugin;
 
 #[cfg(test)]
@@ -43,7 +49,8 @@ pub enum StarknetCompilationError {
 }
 
 /// Represents a contract in the Starknet network.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ContractClass {
     pub sierra_program: Vec<BigUintAsHex>,
     pub sierra_program_debug_info: Option<cairo_lang_sierra::debug_info::DebugInfo>,
@@ -54,20 +61,25 @@ pub struct ContractClass {
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ContractEntryPoints {
-    #[serde(rename = "EXTERNAL")]
+    #[cfg_attr(feature = "serde", serde(rename = "EXTERNAL"))]
     pub external: Vec<ContractEntryPoint>,
-    #[serde(rename = "L1_HANDLER")]
+    #[cfg_attr(feature = "serde", serde(rename = "L1_HANDLER"))]
     pub l1_handler: Vec<ContractEntryPoint>,
-    #[serde(rename = "CONSTRUCTOR")]
+    #[cfg_attr(feature = "serde", serde(rename = "CONSTRUCTOR"))]
     pub constructor: Vec<ContractEntryPoint>,
 }
 
-#[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ContractEntryPoint {
     /// A field element that encodes the signature of the called function.
-    #[serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")]
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "serialize_big_uint", deserialize_with = "deserialize_big_uint")
+    )]
     pub selector: BigUint,
     /// The idx of the user function declaration in the sierra program.
     pub function_idx: usize,
@@ -75,6 +87,7 @@ pub struct ContractEntryPoint {
 
 /// Compile the contract given by path.
 /// Errors if there is ambiguity.
+#[cfg(feature = "serde")]
 pub fn compile_path(
     path: &Path,
     contract_path: Option<&str>,
@@ -254,6 +267,7 @@ fn get_entry_points(
 }
 
 /// Compile Starknet crate (or specific contract in the crate).
+#[cfg(feature = "serde")]
 pub fn starknet_compile(
     crate_path: PathBuf,
     contract_path: Option<String>,

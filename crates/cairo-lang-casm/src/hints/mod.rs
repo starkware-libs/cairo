@@ -9,6 +9,7 @@ use cairo_lang_utils::bigint::BigIntAsHex;
 use indoc::formatdoc;
 #[cfg(feature = "parity-scale-codec")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::operand::{CellRef, DerefOrImmediate, ResOperand};
@@ -19,10 +20,11 @@ mod test;
 // Represents a cairo hint.
 // Note: Hint encoding should be backwards-compatible. This is an API guarantee.
 // For example, new variants should have new `index`.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
-#[serde(untagged)]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Hint {
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
     Core(CoreHintBase),
@@ -63,7 +65,8 @@ impl PythonicHint for Hint {
 }
 
 /// Represents a hint that triggers a system call.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 
@@ -81,10 +84,11 @@ pub enum StarknetHint {
 }
 
 // Represents a cairo core hint.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
-#[serde(untagged)]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum CoreHintBase {
     #[cfg_attr(feature = "parity-scale-codec", codec(index = 0))]
     Core(CoreHint),
@@ -103,7 +107,8 @@ impl From<DeprecatedHint> for CoreHintBase {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 
@@ -243,7 +248,8 @@ pub enum CoreHint {
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
 /// contracts.
-#[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 

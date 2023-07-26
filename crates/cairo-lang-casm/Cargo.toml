@@ -7,16 +7,12 @@ license-file.workspace = true
 description = "Cairo assembly encoding."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0", default-features = false, features = [
-    "parity-scale-codec",
-] }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0", default-features = false }
 indoc.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
-parity-scale-codec = { workspace = true, optional = true, features = [
-    "derive",
-] }
-serde.workspace = true
+parity-scale-codec = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 hashbrown.workspace = true
 thiserror-no-std.workspace = true
 # Optional feature
@@ -33,3 +29,8 @@ test-log.workspace = true
 default = ["std"]
 std = ["cairo-lang-utils/std"]
 schemars = ["std", "dep:schemars", "cairo-lang-utils/schemars"]
+parity-scale-codec = [
+    "dep:parity-scale-codec",
+    "cairo-lang-utils/parity-scale-codec",
+]
+serde = ["dep:serde", "cairo-lang-utils/serde"]

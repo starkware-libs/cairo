@@ -35,12 +35,21 @@ num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
 once_cell.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 sha3.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 indent.workspace = true
+
+[features]
+serde = [
+    "dep:serde",
+    "serde_json",
+    "cairo-lang-casm-contract-class/serde",
+    "cairo-lang-sierra/serde",
+    "cairo-lang-compiler/serde",
+]
 
 [dev-dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics" }
@@ -52,6 +61,3 @@ env_logger.workspace = true
 pretty_assertions.workspace = true
 test-case.workspace = true
 test-log.workspace = true
-cairo-lang-casm-contract-class = { path = "../cairo-lang-casm-contract-class", version = "2.1.0-rc0", features = [
-    "serde",
-] }

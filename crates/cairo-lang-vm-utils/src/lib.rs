@@ -7,9 +7,10 @@ extern crate alloc;
 use alloc::boxed::Box;
 
 use cairo_felt::Felt252;
-use cairo_lang_casm::operand::{
-    BinOpOperand, CellRef, DerefOrImmediate, Operation, Register, ResOperand,
-};
+#[cfg(feature = "execute_core_hints")]
+use cairo_lang_casm::operand::BinOpOperand;
+use cairo_lang_casm::operand::{CellRef, DerefOrImmediate, Operation, Register, ResOperand};
+#[cfg(feature = "execute_core_hints")]
 use cairo_lang_utils::extract_matches;
 use cairo_vm::types::relocatable::{MaybeRelocatable, Relocatable};
 use cairo_vm::vm::errors::vm_errors::VirtualMachineError;
@@ -39,6 +40,7 @@ mod my_macro {
 }
 
 /// Extracts a parameter assumed to be a buffer.
+#[cfg(feature = "execute_core_hints")]
 fn extract_buffer(buffer: &ResOperand) -> (&CellRef, Felt252) {
     let (cell, base_offset) = match buffer {
         ResOperand::Deref(cell) => (cell, 0.into()),

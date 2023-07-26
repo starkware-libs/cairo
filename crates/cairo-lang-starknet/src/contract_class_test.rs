@@ -1,3 +1,4 @@
+#![cfg(feature = "serde")]
 use cairo_lang_test_utils::compare_contents_or_fix_with_path;
 use indoc::indoc;
 use num_bigint::BigUint;

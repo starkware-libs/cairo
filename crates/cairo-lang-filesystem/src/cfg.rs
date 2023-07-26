@@ -1,6 +1,7 @@
 use std::fmt;
 
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smol_str::SmolStr;
 
@@ -41,6 +42,7 @@ impl fmt::Debug for Cfg {
     }
 }
 
+#[cfg(feature = "serde")]
 mod serde_ext {
     use serde::{Deserialize, Serialize};
     use smol_str::SmolStr;
@@ -53,6 +55,7 @@ mod serde_ext {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for Cfg {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let sd = if let Some(value) = &self.value {
@@ -64,6 +67,7 @@ impl Serialize for Cfg {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Cfg {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let sd = serde_ext::Cfg::deserialize(deserializer)?;
@@ -78,7 +82,8 @@ impl<'de> Deserialize<'de> for Cfg {
 ///
 /// Behaves like a multimap, i.e. it permits storing multiple values for the same key.
 /// This allows expressing, for example, the `feature` option that Rust/Cargo does.
-#[derive(Clone, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CfgSet(OrderedHashSet<Cfg>);
 
 impl CfgSet {
@@ -197,6 +202,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn serde() {
         let cfg = CfgSet::from_iter([
             Cfg::name("name"),

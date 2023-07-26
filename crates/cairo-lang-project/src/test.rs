@@ -1,8 +1,10 @@
+#![cfg(feature = "serde")]
 use indoc::indoc;
 
 use crate::ProjectConfigContent;
 
 #[test]
+
 fn test_serde() {
     let config = ProjectConfigContent {
         crate_roots: [("crate".into(), "dir".into())].into_iter().collect(),

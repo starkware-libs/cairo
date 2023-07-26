@@ -1,13 +1,18 @@
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
+#[cfg(feature = "serde")]
 use std::fs;
 
 use cairo_lang_sierra::ids::GenericLibfuncId;
+#[cfg(feature = "serde")]
 use serde::Deserialize;
+#[cfg(feature = "serde")]
 use smol_str::SmolStr;
 use thiserror::Error;
 
+#[cfg(feature = "serde")]
 use crate::contract_class::ContractClass;
+#[cfg(feature = "serde")]
 use crate::felt252_serde::sierra_from_felt252s;
 
 #[cfg(test)]
@@ -68,12 +73,14 @@ impl Display for ListSelector {
 }
 
 /// Represents a list of allowed sierra libfuncs.
-#[derive(Debug, PartialEq, Eq, Deserialize)]
+#[derive(Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Deserialize))]
 pub struct AllowedLibfuncs {
-    #[serde(deserialize_with = "deserialize_libfuncs_set::<_>")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_libfuncs_set::<_>"))]
     pub allowed_libfuncs: HashSet<GenericLibfuncId>,
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_libfuncs_set<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<HashSet<GenericLibfuncId>, D::Error> {
@@ -92,6 +99,7 @@ pub const BUILTIN_EXPERIMENTAL_LIBFUNCS_LIST: &str = "experimental";
 pub const BUILTIN_ALL_LIBFUNCS_LIST: &str = "all";
 
 /// Returns the sierra version corresponding to the given version id.
+#[cfg(feature = "serde")]
 pub fn lookup_allowed_libfuncs_list(
     list_selector: ListSelector,
 ) -> Result<AllowedLibfuncs, AllowedLibfuncsError> {
@@ -131,6 +139,7 @@ pub fn lookup_allowed_libfuncs_list(
 
 /// Checks that all the used libfuncs in the contract class are allowed in the contract class
 /// sierra version.
+#[cfg(feature = "serde")]
 pub fn validate_compatible_sierra_version(
     contract: &ContractClass,
     list_selector: ListSelector,

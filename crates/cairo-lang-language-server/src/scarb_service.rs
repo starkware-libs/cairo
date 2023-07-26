@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::{CrateLongId, Directory};
+#[cfg(feature = "serde")]
 use lsp::Url;
 use scarb_metadata::Metadata;
 
@@ -13,6 +14,7 @@ const SCARB_PROJECT_FILE_NAME: &str = "Scarb.toml";
 
 pub struct ScarbService {
     scarb_path: Option<PathBuf>,
+    #[allow(dead_code)]
     notification: NotificationService,
 }
 
@@ -22,6 +24,7 @@ impl ScarbService {
         ScarbService { scarb_path, notification }
     }
 
+    #[cfg(feature = "serde")]
     fn scarb_path(&self) -> Option<PathBuf> {
         self.scarb_path.clone()
     }
@@ -46,6 +49,7 @@ impl ScarbService {
         None
     }
 
+    #[cfg(feature = "serde")]
     fn get_scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
         let manifest_path = self
             .scarb_manifest_path(root_path)
@@ -62,6 +66,7 @@ impl ScarbService {
     }
 
     /// Reads Scarb project metadata from manifest file.
+    #[cfg(feature = "serde")]
     pub async fn scarb_metadata(&self, root_path: PathBuf) -> Result<Metadata> {
         self.notification.notify_resolving_start().await;
         let result = self.get_scarb_metadata(root_path);
@@ -69,6 +74,7 @@ impl ScarbService {
         result
     }
 
+    #[cfg(feature = "serde")]
     pub async fn crate_roots(&self, root_path: PathBuf) -> Result<Vec<(CrateLongId, Directory)>> {
         let metadata = self
             .scarb_metadata(root_path)
@@ -88,6 +94,7 @@ impl ScarbService {
         Ok(crate_roots)
     }
 
+    #[cfg(feature = "serde")]
     pub async fn corelib_path(&self, root_path: PathBuf) -> Result<Option<PathBuf>> {
         let metadata = self
             .scarb_metadata(root_path)
@@ -104,6 +111,7 @@ impl ScarbService {
     }
 }
 
+#[cfg(feature = "serde")]
 pub fn is_scarb_manifest_path(file_path: &Url) -> bool {
     file_path.path().ends_with(SCARB_PROJECT_FILE_NAME)
 }

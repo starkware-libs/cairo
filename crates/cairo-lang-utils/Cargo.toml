@@ -12,10 +12,8 @@ itertools.workspace = true
 num-bigint.workspace = true
 num-integer.workspace = true
 num-traits.workspace = true
-parity-scale-codec = { workspace = true, optional = true, default-features = false, features = [
-    "derive",
-] }
-serde.workspace = true
+parity-scale-codec = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 cairo-felt = { workspace = true, features = ["alloc"] }
 hashbrown.workspace = true
 
@@ -48,3 +46,4 @@ std = [
 env_logger = ["std", "dep:env_logger", "dep:time", "dep:log"]
 schemars = ["std", "dep:schemars"]
 testing = []
+serde = ["dep:serde", "hashbrown/serde", "indexmap/serde"]

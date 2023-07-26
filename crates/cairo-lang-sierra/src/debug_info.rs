@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
+#[cfg(feature = "serde")]
 use itertools::Itertools;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -13,21 +15,31 @@ use crate::program::{GenericArg, Program, Statement};
 mod test;
 
 /// Debug information for a Sierra program, to get readable names.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DebugInfo {
-    #[serde(
-        serialize_with = "serialize_map::<ConcreteTypeId, _>",
-        deserialize_with = "deserialize_map::<ConcreteTypeId, _>"
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            serialize_with = "serialize_map::<ConcreteTypeId, _>",
+            deserialize_with = "deserialize_map::<ConcreteTypeId, _>"
+        )
     )]
     pub type_names: HashMap<ConcreteTypeId, SmolStr>,
-    #[serde(
-        serialize_with = "serialize_map::<ConcreteLibfuncId, _>",
-        deserialize_with = "deserialize_map::<ConcreteLibfuncId, _>"
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            serialize_with = "serialize_map::<ConcreteLibfuncId, _>",
+            deserialize_with = "deserialize_map::<ConcreteLibfuncId, _>"
+        )
     )]
     pub libfunc_names: HashMap<ConcreteLibfuncId, SmolStr>,
-    #[serde(
-        serialize_with = "serialize_map::<FunctionId, _>",
-        deserialize_with = "deserialize_map::<FunctionId, _>"
+    #[cfg_attr(
+        feature = "serde",
+        serde(
+            serialize_with = "serialize_map::<FunctionId, _>",
+            deserialize_with = "deserialize_map::<FunctionId, _>"
+        )
     )]
     pub user_func_names: HashMap<FunctionId, SmolStr>,
 }
@@ -164,6 +176,7 @@ impl IdAsHashKey for FunctionId {
     }
 }
 
+#[cfg(feature = "serde")]
 fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
     m: &HashMap<Id, SmolStr>,
     serializer: S,
@@ -172,6 +185,7 @@ fn serialize_map<Id: IdAsHashKey, S: serde::Serializer>(
     v.serialize(serializer)
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_map<'de, Id: IdAsHashKey, D: serde::Deserializer<'de>>(
     deserializer: D,
 ) -> Result<HashMap<Id, SmolStr>, D::Error> {

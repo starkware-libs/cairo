@@ -7,11 +7,12 @@ license-file.workspace = true
 description = "Casm representaion of a starknet contract"
 
 [dependencies]
-cairo-lang-casm = { path = "../cairo-lang-casm", default-features = false }
-cairo-lang-utils = { path = "../cairo-lang-utils", default-features = false }
+cairo-lang-casm = { path = "../cairo-lang-casm", version = "2.1.0-rc0", default-features = false }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0", default-features = false }
+itertools.workspace = true
 num-bigint.workspace = true
 serde = { workspace = true, optional = true }
-itertools = { workspace = true, default-features = false }
+
 [features]
 default = ["std"]
 std = [
@@ -19,5 +20,6 @@ std = [
     "cairo-lang-utils/std",
     "num-bigint/std",
     "itertools/use_std",
+    "serde/std",
 ]
-serde = ["serde/std"]
+serde = ["dep:serde", "cairo-lang-casm/serde"]

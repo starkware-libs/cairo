@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
+#[cfg(feature = "serde")]
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_test_utils::test_lock;
@@ -32,6 +33,7 @@ static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
 });
 
 /// Returns the compiled test contract, with replaced ids.
+#[cfg(feature = "serde")]
 pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
     let path = get_example_file_path(example_file_name);
     let mut locked_db = test_lock(&SHARED_DB);

@@ -2,7 +2,6 @@ pub mod dict_manager;
 
 #[cfg(not(feature = "std"))]
 use alloc::{boxed::Box, vec};
-use core::cmp;
 use core::ops::Shl;
 
 use ark_ff::{Field, Fp256, MontBackend, MontConfig, PrimeField};
@@ -42,6 +41,8 @@ struct MemoryExecScope {
     /// The first free address in the segment.
     next_address: Relocatable,
 }
+
+// ---
 
 pub fn execute_core_hint_base(
     vm: &mut VirtualMachine,
@@ -288,7 +289,7 @@ pub fn execute_core_hint(
                     (if val.legendre().is_qr() { val } else { val * three_fq }).sqrt().unwrap();
                 let root0: BigUint = res.into_bigint().into();
                 let root1: BigUint = (-res).into_bigint().into();
-                let res_big_uint = cmp::min(root0, root1);
+                let res_big_uint = core::cmp::min(root0, root1);
                 Felt252::from(res_big_uint)
             })?;
         }
@@ -496,12 +497,13 @@ pub fn execute_core_hint(
             while curr != end {
                 let value = vm.get_integer(curr)?;
                 if let Some(shortstring) = as_cairo_short_string(&value) {
-                    log::debug!("{shortstring: <31}\t(raw: {:#x} \n", value.to_bigint());
+                    log::debug!("{shortstring: <31}\t(raw: {:#x}", value.to_bigint());
                 } else {
-                    log::debug!("{:<31}\t(raw: {:#x} ", " \n", value.to_bigint());
+                    log::debug!("{:<31}\t(raw: {:#x} ", ' ', value.to_bigint());
                 }
                 curr += 1;
             }
+            log::debug!("");
         }
         CoreHint::AllocConstantSize { size, dst } => {
             let object_size = get_val(vm, size)?.to_usize().expect("Object size too large.");

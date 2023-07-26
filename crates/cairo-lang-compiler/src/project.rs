@@ -73,6 +73,7 @@ pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config
 /// Setup the 'db' to compile the project in the given path.
 /// The path can be either a directory with cairo project file or a .cairo file.
 /// Returns the ids of the project crates.
+#[cfg(feature = "serde")]
 pub fn setup_project(
     db: &mut dyn SemanticGroup,
     path: &Path,

@@ -2,10 +2,13 @@
 #[cfg(test)]
 mod test;
 
-use std::path::{Path, PathBuf};
+#[cfg(feature = "serde")]
+use std::path::Path;
+use std::path::PathBuf;
 
 use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
@@ -18,6 +21,7 @@ pub enum DeserializationError {
     #[error("PathError")]
     PathError,
 }
+#[cfg(feature = "serde")]
 const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 
 /// Cairo project config, including its file content and metadata about the file.
@@ -30,11 +34,13 @@ pub struct ProjectConfig {
     pub content: ProjectConfigContent,
 }
 /// Contents of a Cairo project config file.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProjectConfigContent {
     pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
 }
 
+#[cfg(feature = "serde")]
 impl ProjectConfig {
     pub fn from_directory(directory: &Path) -> Result<Self, DeserializationError> {
         Self::from_file(&directory.join(PROJECT_FILE_NAME))

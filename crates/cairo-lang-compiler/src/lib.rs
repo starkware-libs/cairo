@@ -2,6 +2,7 @@
 //!
 //! This crate is responsible for compiling a Cairo project into a Sierra program.
 //! It is the main entry point for the compiler.
+#[cfg(feature = "serde")]
 use std::path::Path;
 use std::sync::Arc;
 
@@ -14,7 +15,9 @@ use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
 use crate::db::RootDatabase;
 use crate::diagnostics::DiagnosticsReporter;
-use crate::project::{get_main_crate_ids_from_project, setup_project, ProjectConfig};
+#[cfg(feature = "serde")]
+use crate::project::setup_project;
+use crate::project::{get_main_crate_ids_from_project, ProjectConfig};
 
 pub mod db;
 pub mod diagnostics;
@@ -55,6 +58,7 @@ pub type SierraProgram = Arc<Program>;
 /// # Returns
 /// * `Ok(SierraProgram)` - The compiled program.
 /// * `Err(anyhow::Error)` - Compilation failed.
+#[cfg(feature = "serde")]
 pub fn compile_cairo_project_at_path(
     path: &Path,
     compiler_config: CompilerConfig<'_>,

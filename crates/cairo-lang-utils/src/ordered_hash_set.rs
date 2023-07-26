@@ -8,6 +8,7 @@ type DefaultHashBuilder = std::hash::BuildHasherDefault<std::collections::hash_m
 
 use indexmap::{Equivalent, IndexSet};
 use itertools::zip_eq;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug)]
@@ -166,11 +167,14 @@ impl<'a, Key: Hash + Eq + Clone> Sub<&'a OrderedHashSet<Key>> for &'a OrderedHas
     }
 }
 
+#[cfg(feature = "serde")]
 impl<K: Hash + Eq + Serialize> Serialize for OrderedHashSet<K> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         self.0.serialize(serializer)
     }
 }
+
+#[cfg(feature = "serde")]
 impl<'de, K: Hash + Eq + Deserialize<'de>> Deserialize<'de> for OrderedHashSet<K> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         IndexSet::<K, DefaultHashBuilder>::deserialize(deserializer).map(|s| OrderedHashSet(s))

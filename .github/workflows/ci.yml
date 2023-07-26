@@ -13,24 +13,31 @@ jobs:
     strategy:
       matrix:
         cmd:
-          - nextest run -p cairo-lang-casm --no-default-features
           - nextest run -p cairo-lang-casm
+          - nextest run -p cairo-lang-casm --no-default-features
+          - nextest run -p cairo-lang-casm --no-default-features --features serde
           - nextest run -p cairo-lang-compiler
+          - nextest run -p cairo-lang-compiler --features serde
           - nextest run -p cairo-lang-debug
           - nextest run -p cairo-lang-defs
           - nextest run -p cairo-lang-diagnostics
           - nextest run -p cairo-lang-eq-solver
           - nextest run -p cairo-lang-filesystem
+          - nextest run -p cairo-lang-filesystem --features serde
           - nextest run -p cairo-lang-formatter
           - nextest run -p cairo-lang-language-server
+          - nextest run -p cairo-lang-language-server --features serde
           - nextest run -p cairo-lang-lowering
           - nextest run -p cairo-lang-parser
           - nextest run -p cairo-lang-plugins
+          - nextest run -p cairo-lang-plugins --features serde
           - nextest run -p cairo-lang-proc-macros
           - nextest run -p cairo-lang-project
+          - nextest run -p cairo-lang-project --features serde
           - nextest run -p cairo-lang-runner
           - nextest run -p cairo-lang-semantic
           - nextest run -p cairo-lang-sierra
+          - nextest run -p cairo-lang-sierra --features serde
           - nextest run -p cairo-lang-sierra-ap-change
           - nextest run -p cairo-lang-sierra-gas
           - nextest run -p cairo-lang-sierra-generator
@@ -40,14 +47,18 @@ jobs:
           - nextest run -p cairo-lang-syntax
           - nextest run -p cairo-lang-syntax-codegen
           - nextest run -p cairo-lang-test-runner
+          - nextest run -p cairo-lang-test-runner --features serde
           - nextest run -p cairo-lang-test-utils
           - nextest run -p cairo-lang-utils
           - nextest run -p cairo-lang-utils --no-default-features
           - nextest run -p cairo-lang-utils --no-default-features --features parity-scale-codec
+          - nextest run -p cairo-lang-utils --no-default-features --features serde
+          - nextest run -p cairo-lang-utils --no-default-features --all-features
           - nextest run -p cairo-lang-vm-utils
           - nextest run -p cairo-lang-vm-utils --no-default-features
           - nextest run -p cairo-lang-casm-contract-class
           - nextest run -p cairo-lang-casm-contract-class --no-default-features
+          - nextest run -p cairo-lang-casm-contract-class --no-default-features --features serde
           - test -p tests
     steps:
       - uses: actions/checkout@v3

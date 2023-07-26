@@ -1,14 +1,18 @@
-use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
+#[cfg(feature = "serde")]
+use std::{path::Path, sync::Arc};
 
 use anyhow::{bail, Context, Result};
 use cairo_felt::Felt252;
 use cairo_lang_compiler::db::RootDatabase;
+#[cfg(feature = "serde")]
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+#[cfg(feature = "serde")]
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FreeFunctionId, FunctionWithBodyId, ModuleItemId};
 use cairo_lang_diagnostics::ToOption;
+#[cfg(feature = "serde")]
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
@@ -26,6 +30,7 @@ use cairo_lang_starknet::contract::{
 };
 use cairo_lang_starknet::contract_class_into_casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
+#[cfg(feature = "serde")]
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -33,6 +38,7 @@ use cairo_lang_utils::short_string::as_cairo_short_string;
 use colored::Colorize;
 use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
+#[cfg(feature = "serde")]
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use test_config::{try_extract_test_config, TestConfig};
@@ -61,6 +67,7 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
+    #[cfg(feature = "serde")]
     pub fn new(
         path: &Path,
         filter: &str,

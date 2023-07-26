@@ -33,3 +33,11 @@ num-bigint.workspace = true
 num-traits.workspace = true
 rayon.workspace = true
 salsa.workspace = true
+
+[features]
+default = []
+serde = [
+    "cairo-lang-filesystem/serde",
+    "cairo-lang-compiler/serde",
+    "cairo-lang-starknet/serde",
+]

@@ -3,13 +3,15 @@ use core::fmt::Display;
 use cairo_lang_utils::bigint::BigIntAsHex;
 #[cfg(feature = "parity-scale-codec")]
 use parity_scale_codec::{Decode, Encode};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 #[path = "operand_test.rs"]
 mod test;
 
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub enum Register {
@@ -28,7 +30,8 @@ impl Display for Register {
 }
 
 // Represents the rhs operand of an assert equal InstructionBody.
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub enum ResOperand {
@@ -67,7 +70,8 @@ impl<T: Into<BigIntAsHex>> From<T> for ResOperand {
 }
 
 /// Represents an operand of the form [reg + offset].
-#[derive(Serialize, Deserialize, Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 
@@ -86,7 +90,8 @@ pub fn ap_cell_ref(offset: i16) -> CellRef {
     CellRef { register: Register::AP, offset }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub enum DerefOrImmediate {
@@ -114,7 +119,8 @@ impl From<CellRef> for DerefOrImmediate {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub enum Operation {
@@ -132,7 +138,8 @@ impl Display for Operation {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "schemars", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "parity-scale-codec", derive(Encode, Decode))]
 pub struct BinOpOperand {

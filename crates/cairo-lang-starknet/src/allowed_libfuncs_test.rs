@@ -1,3 +1,4 @@
+#![cfg(feature = "serde")]
 use std::collections::{BTreeSet, HashSet};
 
 use cairo_lang_sierra::extensions::core::CoreLibfunc;

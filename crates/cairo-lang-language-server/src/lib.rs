@@ -4,11 +4,15 @@
 
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
+#[cfg(feature = "serde")]
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::{bail, Error};
+use anyhow::bail;
+#[cfg(feature = "serde")]
+use anyhow::Error;
 use cairo_lang_compiler::db::RootDatabase;
+#[cfg(feature = "serde")]
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
 use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
@@ -18,18 +22,25 @@ use cairo_lang_defs::ids::{
     StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
+#[cfg(feature = "serde")]
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
+#[cfg(feature = "serde")]
+use cairo_lang_filesystem::db::init_dev_corelib;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
+    AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
+#[cfg(feature = "serde")]
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
+#[cfg(feature = "serde")]
+use cairo_lang_filesystem::ids::{CrateLongId, Directory};
+use cairo_lang_filesystem::ids::{FileId, FileLongId};
 use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_parser::ParserDiagnostic;
+#[cfg(feature = "serde")]
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
@@ -38,6 +49,7 @@ use cairo_lang_semantic::items::imp::ImplId;
 use cairo_lang_semantic::items::us::get_use_segments;
 use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
+#[cfg(feature = "serde")]
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
@@ -52,7 +64,9 @@ use lsp::notification::Notification;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
 use semantic_highlighting::SemanticTokensTraverser;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
 use serde_json::Value;
 use tower_lsp::jsonrpc::{Error as LSPError, Result as LSPResult};
 use tower_lsp::lsp_types::*;
@@ -60,7 +74,9 @@ use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
 use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
-use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
+#[cfg(feature = "serde")]
+use crate::scarb_service::is_scarb_manifest_path;
+use crate::scarb_service::ScarbService;
 
 mod scarb_service;
 mod semantic_highlighting;
@@ -68,8 +84,10 @@ mod semantic_highlighting;
 pub mod completions;
 pub mod vfs;
 
+#[cfg(feature = "serde")]
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
+#[cfg(feature = "serde")]
 pub async fn serve_language_service() {
     #[cfg(feature = "runtime-agnostic")]
     use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
@@ -108,6 +126,8 @@ impl std::panic::UnwindSafe for State {}
 pub struct NotificationService {
     pub client: Client,
 }
+
+#[cfg(feature = "serde")]
 impl NotificationService {
     pub fn new(client: Client) -> Self {
         Self { client }
@@ -135,6 +155,7 @@ fn from_pos(pos: TextPosition) -> Position {
     Position { line: pos.line as u32, character: pos.col as u32 }
 }
 impl Backend {
+    #[cfg(feature = "serde")]
     pub fn new(client: Client, db: RootDatabase) -> Self {
         let notification = NotificationService::new(client.clone());
         Self {
@@ -252,6 +273,7 @@ impl Backend {
     /// The value is set by the user under the `cairo1.corelibPath` key in client configuration.
     /// The value is not required to be set.
     /// The path may omit the `corelib/src` or `src` suffix.
+    #[cfg(feature = "serde")]
     async fn get_corelib_fallback_path(&self) -> Option<PathBuf> {
         const CORELIB_CONFIG_SECTION: &str = "cairo1.corelibPath";
         let item = vec![ConfigurationItem {
@@ -295,6 +317,7 @@ impl Backend {
 
     /// Tries to detect the crate root the config that contains a cairo file, and add it to the
     /// system.
+    #[cfg(feature = "serde")]
     async fn detect_crate_for(&self, db: &mut RootDatabase, file_path: &str) {
         let corelib_fallback = self.get_corelib_fallback_path().await;
         if self.scarb.is_scarb_project(file_path.into()) {
@@ -355,6 +378,7 @@ impl Backend {
     }
 
     /// Reload crate detection for all open files.
+    #[cfg(feature = "serde")]
     pub async fn reload(&self) -> LSPResult<()> {
         let mut db = self.db_mut().await;
         for file in self.state_mutex.lock().await.open_files.iter() {
@@ -373,9 +397,11 @@ impl Backend {
 #[derive(Debug)]
 pub struct ScarbPathMissing {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct ScarbPathMissingParams {}
 
+#[cfg(feature = "serde")]
 impl Notification for ScarbPathMissing {
     type Params = ScarbPathMissingParams;
     const METHOD: &'static str = "scarb/could-not-find-scarb-executable";
@@ -384,9 +410,11 @@ impl Notification for ScarbPathMissing {
 #[derive(Debug)]
 pub struct ScarbResolvingStart {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct ScarbResolvingStartParams {}
 
+#[cfg(feature = "serde")]
 impl Notification for ScarbResolvingStart {
     type Params = ScarbResolvingStartParams;
     const METHOD: &'static str = "scarb/resolving-start";
@@ -395,9 +423,11 @@ impl Notification for ScarbResolvingStart {
 #[derive(Debug)]
 pub struct ScarbResolvingFinish {}
 
-#[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Eq, PartialEq, Clone)]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 pub struct ScarbResolvingFinishParams {}
 
+#[cfg(feature = "serde")]
 impl Notification for ScarbResolvingFinish {
     type Params = ScarbResolvingFinishParams;
     const METHOD: &'static str = "scarb/resolving-finish";
@@ -464,6 +494,7 @@ impl LanguageServer for Backend {
         })
     }
 
+    #[cfg(feature = "serde")]
     async fn initialized(&self, _: InitializedParams) {
         // Register patterns for client file watcher.
         // This is used to detect changes to Scarb.toml and invalidate .cairo files.
@@ -494,7 +525,7 @@ impl LanguageServer for Backend {
     async fn did_change_workspace_folders(&self, _: DidChangeWorkspaceFoldersParams) {}
 
     async fn did_change_configuration(&self, _: DidChangeConfigurationParams) {}
-
+    #[cfg(feature = "serde")]
     async fn did_change_watched_files(&self, params: DidChangeWatchedFilesParams) {
         // Invalidate changed cairo files.
         let mut db = self.db_mut().await;
@@ -512,7 +543,7 @@ impl LanguageServer for Backend {
             }
         }
     }
-
+    #[cfg(feature = "serde")]
     async fn execute_command(&self, params: ExecuteCommandParams) -> LSPResult<Option<Value>> {
         let command = ServerCommands::try_from(params.command);
         if let Ok(cmd) = command {
@@ -531,7 +562,7 @@ impl LanguageServer for Backend {
 
         Ok(None)
     }
-
+    #[cfg(feature = "serde")]
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
         let mut db = self.db_mut().await;
         let uri = params.text_document.uri;
@@ -1261,6 +1292,7 @@ fn nearest_semantic_pat(
     }
 }
 
+#[cfg(feature = "serde")]
 fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId, Directory)>) {
     for (crate_long_id, crate_root) in crate_roots {
         let crate_id = db.intern_crate(crate_long_id);
@@ -1268,6 +1300,7 @@ fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId,
     }
 }
 
+#[cfg(feature = "serde")]
 fn is_cairo_file_path(file_path: &Url) -> bool {
     file_path.path().ends_with(".cairo")
 }
