@@ -241,6 +241,7 @@ impl BlockUsages {
                 }
             }
             Pattern::Otherwise(_) => {}
+            Pattern::Missing(_) => {}
         }
     }
 }

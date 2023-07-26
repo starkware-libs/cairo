@@ -458,6 +458,7 @@ fn lower_single_pattern(
         }
         semantic::Pattern::EnumVariant(_) => unreachable!(),
         semantic::Pattern::Otherwise(_) => {}
+        semantic::Pattern::Missing(_) => unreachable!("Missing pattern in semantic model."),
     }
     Ok(())
 }
