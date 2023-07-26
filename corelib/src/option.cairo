@@ -2,31 +2,10 @@ use array::ArrayTrait;
 use serde::Serde;
 use array::SpanTrait;
 
+#[derive(Copy, Drop, Serde, PartialEq)]
 enum Option<T> {
     Some: T,
     None,
-}
-
-impl OptionSerde<T, impl TSerde: Serde<T>, impl TDrop: Drop<T>> of Serde<Option<T>> {
-    fn serialize(self: @Option<T>, ref output: Array<felt252>) {
-        match self {
-            Option::Some(x) => {
-                0.serialize(ref output);
-                x.serialize(ref output)
-            },
-            Option::None => 1.serialize(ref output),
-        }
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
-        let variant = *serialized.pop_front()?;
-        if variant == 0 {
-            Option::Some(Option::Some(Serde::<T>::deserialize(ref serialized)?))
-        } else if variant == 1 {
-            Option::Some(Option::None)
-        } else {
-            Option::None
-        }
-    }
 }
 
 trait OptionTrait<T> {
@@ -66,7 +45,3 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 }
-
-// Impls for generic types.
-impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>;
-impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>;
