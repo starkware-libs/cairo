@@ -717,9 +717,9 @@ impl<'a> FormatterImpl<'a> {
 }
 
 /// Returns a `cmp` function for sorting SyntaxNodes siblings prioritizing `mod` and `use` clauses
-fn syntax_node_sorting_fn<'a>(
-    db: &'a dyn SyntaxGroup,
-) -> impl FnMut(&(usize, SyntaxNode), &(usize, SyntaxNode)) -> Ordering + 'a {
+fn syntax_node_sorting_fn(
+    db: &dyn SyntaxGroup,
+) -> impl FnMut(&(usize, SyntaxNode), &(usize, SyntaxNode)) -> Ordering + '_ {
     |first, second| {
         let ignored_nodes = [SyntaxKind::TerminalLBrace, SyntaxKind::TerminalRBrace];
         if ignored_nodes.contains(&first.1.kind(db)) || ignored_nodes.contains(&second.1.kind(db)) {
@@ -730,9 +730,9 @@ fn syntax_node_sorting_fn<'a>(
         let second_text: String = second.clone().1.get_text_without_trivia(db);
 
         let first_is_use = first_text.starts_with("use ");
-        let first_is_mod = first_text.starts_with("mod ") && first_text.ends_with(";");
+        let first_is_mod = first_text.starts_with("mod ") && first_text.ends_with(';');
         let second_is_use = second_text.starts_with("use ");
-        let second_is_mod = second_text.starts_with("mod ") && second_text.ends_with(";");
+        let second_is_mod = second_text.starts_with("mod ") && second_text.ends_with(';');
 
         if (first_is_mod && second_is_mod) || (first_is_use && second_is_use) {
             first_text.cmp(&second_text)
