@@ -4,7 +4,7 @@ use test_log::test;
 
 use super::TextOffset;
 use crate::db::FilesGroup;
-use crate::ids::{FileLongId, VirtualFile, VirtualFileKind};
+use crate::ids::{FileKind, FileLongId, VirtualFile};
 use crate::span::{TextPosition, TextWidth};
 use crate::test_utils::FilesDatabaseForTesting;
 
@@ -17,7 +17,7 @@ fn test_span() {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
-        kind: VirtualFileKind::Module,
+        kind: FileKind::Module,
     }));
     assert_eq!(
         TextOffset(TextWidth(0)).position_in_file(&db, file),
@@ -82,7 +82,7 @@ fn test_span_out_of_range() {
         parent: None,
         name: "name".into(),
         content: Arc::new(TEST_STRING.into()),
-        kind: VirtualFileKind::Module,
+        kind: FileKind::Module,
     }));
     TextOffset(TextWidth(TEST_STRING.len() as u32 + 1)).position_in_file(&db, file);
 }

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile, VirtualFileKind};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
@@ -38,7 +38,7 @@ fn setup() -> (FilesDatabaseForTesting, FileId) {
         parent: None,
         name: "dummy_file.sierra".into(),
         content: Arc::new("abcd\nefg.\n".into()),
-        kind: VirtualFileKind::Module,
+        kind: FileKind::Module,
     }));
     (db_val, file_id)
 }

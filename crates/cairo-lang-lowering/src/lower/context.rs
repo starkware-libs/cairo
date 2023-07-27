@@ -87,7 +87,7 @@ impl<'db> VariableAllocator<'db> {
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
         LocationId::from_stable_location(
             self.db,
-            StableLocation::new(self.module_file_id, stable_ptr),
+            StableLocation::new(self.module_file_id.file_id(self.db.upcast()).unwrap(), stable_ptr),
         )
     }
 }
@@ -175,7 +175,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             function_id,
             concrete_function_id,
             current_loop_expr: Option::None,
-            diagnostics: LoweringDiagnostics::new(module_file_id),
+            diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
             blocks: Default::default(),
         })
     }

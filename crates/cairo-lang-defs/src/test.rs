@@ -85,8 +85,7 @@ fn test_generic_item_id(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let module_file_id = ModuleFileId(module_id, FileIndex(0));
     let db = &db_val;
     let file_id = db.module_main_file(module_id).unwrap();
-    let syntax = db.file_syntax(file_id).unwrap();
-    let node = syntax.as_syntax_node();
+    let node = db.file_syntax(file_id).unwrap();
     let mut output = String::new();
 
     fn find_generics(

@@ -643,14 +643,11 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
+            let Ok(node) = db.file_syntax(file) else {
                 eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
                 return None;
             };
 
-            let node = syntax.as_syntax_node();
             let mut data: Vec<SemanticToken> = Vec::new();
             SemanticTokensTraverser::default().find_semantic_tokens(
                 db.upcast(),
@@ -670,21 +667,14 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
+            let Ok(node) = db.file_syntax(file) else {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
                 return None;
             };
             if !db.file_syntax_diagnostics(file).is_empty() {
-                eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
                 return None;
             }
-            let new_text = get_formatted_file(
-                db.upcast(),
-                &syntax.as_syntax_node(),
-                FormatterConfig::default(),
-            );
+            let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
             let file_summary = if let Some(summary) = db.file_summary(file) {
                 summary
@@ -778,13 +768,11 @@ impl LanguageServer for Backend {
             };
 
             let uri = get_uri(db, file);
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
+            let Ok(syntax) = db.file_syntax(file) else {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
                 return None;
             };
-            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+            let node = syntax.lookup_ptr(syntax_db, stable_ptr);
             let span = node.span_without_trivia(syntax_db);
 
             let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
@@ -1149,7 +1137,7 @@ fn get_node_and_lookup_items(
 
     // Find offset for position.
     let offset = position_to_offset(file_summary, position, &content)?;
-    let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
+    let node = syntax.lookup_offset(syntax_db, offset);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {

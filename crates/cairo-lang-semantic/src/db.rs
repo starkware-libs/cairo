@@ -1021,7 +1021,7 @@ fn module_semantic_diagnostics(
     let mut diagnostics = DiagnosticsBuilder::default();
     for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
         diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(module_file_id, plugin_diag.stable_ptr),
+            StableLocation::new(module_file_id.file_id(db.upcast())?, plugin_diag.stable_ptr),
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
@@ -1071,7 +1071,7 @@ fn module_semantic_diagnostics(
                         };
 
                         let stable_location = StableLocation::new(
-                            submodule_id.module_file_id(db.upcast()),
+                            submodule_id.module_file_id(db.upcast()).file_id(db.upcast())?,
                             submodule_id.stable_ptr(db.upcast()).untyped(),
                         );
                         diagnostics.add(SemanticDiagnostic::new(
@@ -1124,9 +1124,14 @@ fn map_diagnostics(
     }
 
     for diag in &original_diagnostics.0.leaves {
-        assert_eq!(diag.stable_location.module_file_id.0, module_id, "Unexpected module id.");
-        let file_index = diag.stable_location.module_file_id.1;
-        if let Some(file_info) = &generated_file_info[file_index.0] {
+        let module_files = db.module_files(module_id).unwrap_or_default();
+        // Find the position of file_id in module_files.
+        let Some(file_index) =
+            module_files.iter().position(|file_id| file_id == &diag.stable_location.file_id)
+        else {
+            continue;
+        };
+        if let Some(file_info) = &generated_file_info[file_index] {
             let opt_diag = file_info
                 .aux_data
                 .0
@@ -1138,7 +1143,7 @@ fn map_diagnostics(
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
                 let stable_location = StableLocation::new(
-                    file_info.origin,
+                    file_info.origin.file_id(db.upcast()).unwrap(),
                     db.intern_stable_ptr(SyntaxStablePtr::Root),
                 );
                 let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {

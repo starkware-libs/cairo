@@ -1,9 +1,9 @@
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::ModuleFileId;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, DiagnosticNote, Diagnostics,
     DiagnosticsBuilder,
 };
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
@@ -12,11 +12,11 @@ use crate::Location;
 
 pub struct LoweringDiagnostics {
     pub diagnostics: DiagnosticsBuilder<LoweringDiagnostic>,
-    pub module_file_id: ModuleFileId,
+    pub file_id: FileId,
 }
 impl LoweringDiagnostics {
-    pub fn new(module_file_id: ModuleFileId) -> Self {
-        Self { module_file_id, diagnostics: DiagnosticsBuilder::default() }
+    pub fn new(file_id: FileId) -> Self {
+        Self { file_id, diagnostics: DiagnosticsBuilder::default() }
     }
     pub fn build(self) -> Diagnostics<LoweringDiagnostic> {
         self.diagnostics.build()
@@ -26,10 +26,7 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(
-            Location::new(StableLocation::new(self.module_file_id, stable_ptr)),
-            kind,
-        )
+        self.report_by_location(Location::new(StableLocation::new(self.file_id, stable_ptr)), kind)
     }
     pub fn report_by_location(
         &mut self,

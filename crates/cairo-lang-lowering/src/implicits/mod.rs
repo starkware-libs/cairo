@@ -48,7 +48,10 @@ pub fn inner_lower_implicits(
     let module_file_id = semantic_function.module_file_id(db.upcast());
     let location = LocationId::from_stable_location(
         db,
-        StableLocation::new(module_file_id, semantic_function.untyped_stable_ptr(db.upcast())),
+        StableLocation::new(
+            module_file_id.file_id(db.upcast())?,
+            semantic_function.untyped_stable_ptr(db.upcast()),
+        ),
     );
     lowered.blocks.has_root()?;
     let root_block_id = BlockId::root();

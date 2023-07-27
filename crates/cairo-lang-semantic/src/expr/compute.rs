@@ -11,7 +11,7 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile, VirtualFileKind};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -92,7 +92,6 @@ pub struct NamedArg(ExprAndId, Option<ast::TerminalIdentifier>, Mutability);
 pub struct ComputationContext<'ctx> {
     pub db: &'ctx dyn SemanticGroup,
     pub diagnostics: &'ctx mut SemanticDiagnostics,
-    pub file_id: FileId,
     function: Option<FunctionWithBodyId>,
     pub resolver: Resolver<'ctx>,
     signature: Option<&'ctx Signature>,
@@ -115,11 +114,9 @@ impl<'ctx> ComputationContext<'ctx> {
     ) -> Self {
         let semantic_defs =
             environment.variables.values().by_ref().map(|var| (var.id(), var.clone())).collect();
-        let file_id = diagnostics.module_file_id.file_id(db.upcast()).unwrap();
         Self {
             db,
             diagnostics,
-            file_id,
             function,
             resolver,
             signature,
@@ -300,15 +297,15 @@ fn compute_expr_inline_macro_semantic(
 
     // Create a file
     let new_file = ctx.db.intern_file(FileLongId::Virtual(VirtualFile {
-        parent: Some(ctx.file_id),
+        parent: Some(ctx.diagnostics.file_id),
         name: "inline_macro.cairo".into(),
         content: Arc::new(code),
-        kind: VirtualFileKind::Expr,
+        kind: FileKind::Expr,
     }));
     let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
-    let old_file = std::mem::replace(&mut ctx.file_id, new_file);
+    let old_file = std::mem::replace(&mut ctx.diagnostics.file_id, new_file);
     let expr = compute_expr_semantic(ctx, &expr_syntax);
-    ctx.file_id = old_file;
+    ctx.diagnostics.file_id = old_file;
     Ok(expr.expr)
 }
 
