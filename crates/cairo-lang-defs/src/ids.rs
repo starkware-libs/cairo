@@ -128,7 +128,7 @@ macro_rules! define_language_element_id_partial {
             }
             fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
                 let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
-                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
+                StableLocation { file_id:module_file_id.file_id(db).unwrap(), stable_ptr: stable_ptr.untyped() }
             }
         }
     };
@@ -702,7 +702,7 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
         let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
         let file_id = db.module_file(*module_file_id).map_err(|_| std::fmt::Error)?;
-        let root = db.file_syntax(file_id).map_err(|_| std::fmt::Error)?;
+        let root = db.file_module_syntax(file_id).map_err(|_| std::fmt::Error)?;
         let text = ast::TerminalIdentifier::from_ptr(syntax_db, &root, *ptr).text(syntax_db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }

@@ -192,7 +192,7 @@ pub fn trait_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let module_traits = db.module_traits(module_file_id.0)?;
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
@@ -233,7 +233,7 @@ pub fn priv_trait_semantic_declaration_data(
 ) -> Maybe<TraitDeclarationData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -335,7 +335,7 @@ pub fn priv_trait_semantic_definition_data(
 ) -> Maybe<TraitDefinitionData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = trait_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -407,7 +407,7 @@ pub fn trait_function_generic_params_data(
 ) -> Maybe<GenericParamsData> {
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
@@ -482,7 +482,7 @@ pub fn priv_trait_function_declaration_data(
 ) -> Maybe<FunctionDeclarationData> {
     let syntax_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(db.upcast());
     let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
@@ -630,7 +630,7 @@ pub fn priv_trait_function_body_data(
 ) -> Maybe<Option<FunctionBodyData>> {
     let defs_db = db.upcast();
     let module_file_id = trait_function_id.module_file_id(defs_db);
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let trait_id = trait_function_id.trait_id(defs_db);
     let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];

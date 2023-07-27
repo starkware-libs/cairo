@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileLongId, VirtualFile, VirtualFileKind};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_filesystem::span::{TextSpan, TextWidth};
 use cairo_lang_filesystem::test_utils::FilesDatabaseForTesting;
 use indoc::indoc;
@@ -24,7 +24,7 @@ fn test_location_marks() {
         parent: None,
         name: "name".into(),
         content: Arc::new(content.into()),
-        kind: VirtualFileKind::Module,
+        kind: FileKind::Module,
     }));
     let summary = db.file_summary(file).unwrap();
     let second_line = summary.line_offsets[1];

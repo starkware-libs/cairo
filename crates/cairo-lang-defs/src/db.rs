@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{
-    CrateId, Directory, FileId, FileLongId, VirtualFile, VirtualFileKind,
-};
+use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -270,7 +268,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let syntax_db = db.upcast();
     let module_file = db.module_main_file(module_id)?;
 
-    let file_syntax = db.file_syntax(module_file)?;
+    let file_syntax = db.file_module_syntax(module_file)?;
     let mut main_file_info: Option<GeneratedFileInfo> = None;
     let item_asts = match module_id {
         ModuleId::CrateRoot(_) => file_syntax.items(syntax_db),
@@ -326,13 +324,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
-                        kind: VirtualFileKind::Module,
+                        kind: FileKind::Module,
                     }));
                     res.generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
                     }));
-                    module_queue.push_back((new_file, db.file_syntax(new_file)?.items(syntax_db)));
+                    module_queue
+                        .push_back((new_file, db.file_module_syntax(new_file)?.items(syntax_db)));
                 }
                 if remove_original_item {
                     break;

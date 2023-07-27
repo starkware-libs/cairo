@@ -1,7 +1,6 @@
 pub use config::*;
 pub use derive::*;
 pub use generate_trait::*;
-pub use inline_macro_plugin::*;
 pub use panicable::*;
 
 mod config;

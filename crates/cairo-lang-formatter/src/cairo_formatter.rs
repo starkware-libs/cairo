@@ -6,9 +6,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Result};
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{
-    FileId, FileLongId, VirtualFile, VirtualFileKind, CAIRO_FILE_EXTENSION,
-};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile, CAIRO_FILE_EXTENSION};
 use cairo_lang_parser::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 use diffy::{create_patch, PatchFormatter};
 use ignore::types::TypesBuilder;
@@ -114,7 +112,7 @@ impl FormattableInput for String {
             parent: None,
             name: "string_to_format".into(),
             content: Arc::new(self.clone()),
-            kind: VirtualFileKind::Module,
+            kind: FileKind::Module,
         })))
     }
 
@@ -131,7 +129,7 @@ impl FormattableInput for StdinFmt {
             parent: None,
             name: "<stdin>".into(),
             content: Arc::new(buffer),
-            kind: VirtualFileKind::Module,
+            kind: FileKind::Module,
         })))
     }
     fn overwrite_content(&self, content: String) -> Result<()> {

@@ -35,11 +35,11 @@ fn test_parser() {
 
     // Parse empty cairo file.
     let file_id = create_virtual_file(&db, "file.cairo", "");
-    let syntax_file = db.file_syntax(file_id).unwrap();
+    let syntax_file = db.file_module_syntax(file_id).unwrap();
     let diagnostics = db.file_syntax_diagnostics(file_id);
     assert_eq!(diagnostics.format(&db), "");
 
     let expected_syntax_file = build_empty_file_green_tree(db.upcast());
 
-    assert_eq!(*syntax_file, expected_syntax_file);
+    assert_eq!(syntax_file, expected_syntax_file);
 }
