@@ -117,6 +117,9 @@ macro_rules! insert_value_to_cellref {
 // Log type signature
 type Log = (Vec<Felt252>, Vec<Felt252>);
 
+// L2 to L1 message type signature
+type L2ToL1Message = (Felt252, Vec<Felt252>);
+
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
@@ -128,6 +131,8 @@ pub struct StarknetState {
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
     logs: HashMap<Felt252, VecDeque<Log>>,
+    /// A mapping from contract address to messages sent to L1.
+    l2_to_l1_messages: HashMap<Felt252, VecDeque<L2ToL1Message>>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -624,10 +629,11 @@ impl<'a> CairoHintProcessor<'a> {
                 self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
             }),
             "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                let _to_address = system_buffer.next_felt252()?;
-                let _payload = system_buffer.next_arr()?;
-                deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-                Ok(SyscallResult::Success(vec![]))
+                self.send_message_to_l1(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_arr()?
+                )
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
@@ -835,6 +841,19 @@ impl<'a> CairoHintProcessor<'a> {
         deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
+        Ok(SyscallResult::Success(vec![]))
+    }
+
+    /// Executes the `send_message_to_l1_event_syscall` syscall.
+    fn send_message_to_l1(
+        &mut self,
+        gas_counter: &mut usize,
+        to_address: Felt252,
+        payload: Vec<Felt252>,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
+        let contract = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state.l2_to_l1_messages.entry(contract).or_default().push_back((to_address, payload));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -1108,6 +1127,20 @@ impl<'a> CairoHintProcessor<'a> {
                     res_segment.write(data.len())?;
                     res_segment.write_data(data.iter())?;
                 }
+            }
+            "pop_l2_to_l1_message" => {
+                let contract_l2_to_l1_messages =
+                    self.starknet_state.l2_to_l1_messages.get_mut(&as_single_input(inputs)?);
+                if let Some((to_address, payload)) =
+                    contract_l2_to_l1_messages.and_then(
+                        |contract_l2_to_l1_messages| contract_l2_to_l1_messages.pop_front()
+                    )
+                {
+                    res_segment.write(to_address)?;
+                    res_segment.write(payload.len())?;
+                    res_segment.write_data(payload.iter())?;
+                }
+
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"

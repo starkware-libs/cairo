@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ ContractAddress, EthAddress };
 use array::ArrayTrait;
 use array::SpanTrait;
 use traits::Into;
@@ -80,4 +80,11 @@ fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>
 fn pop_log<T, impl TEvent: starknet::Event<T>>(address: ContractAddress) -> Option<T> {
     let (mut keys, mut data) = pop_log_raw(address)?;
     starknet::Event::deserialize(ref keys, ref data)
+}
+
+// TODO(Ilya): Decide if we limit the type of `to_address`.
+// Pop the earliest unpopped l2 to l1 message for the contract.
+fn pop_l2_to_l1_message(address: ContractAddress) -> Option<(felt252, Span<felt252>)> {
+    let mut l2_to_l1_message = cheatcode::<'pop_l2_to_l1_message'>(array![address.into()].span());
+    Option::Some((serde::Serde::deserialize(ref l2_to_l1_message)?, serde::Serde::deserialize(ref l2_to_l1_message)?, ))
 }
