@@ -52,6 +52,15 @@ impl SyntaxNode {
         };
         Self(Arc::new(inner))
     }
+    pub fn new_expr_root(db: &dyn SyntaxGroup, green: ast::ExprGreen) -> Self {
+        let inner = SyntaxNodeInner {
+            green: green.0,
+            offset: TextOffset::default(),
+            parent: None,
+            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
+        };
+        Self(Arc::new(inner))
+    }
     pub fn offset(&self) -> TextOffset {
         self.0.offset
     }

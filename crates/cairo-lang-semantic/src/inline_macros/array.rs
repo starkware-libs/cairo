@@ -10,12 +10,12 @@ impl InlineMacroPlugin for ArrayMacro {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        syntax: ast::ExprInlineMacro,
+        syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
         let ast::WrappedExprList::BracketedExprList(args) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, &syntax);
+            return unsupported_bracket_diagnostic(db, syntax);
         };
-        let args = args.elements(db);
+        let args = args.expressions(db).elements(db);
         let mut code = "{
             let mut __array_builder_macro_result__ = ArrayTrait::new();"
             .to_string();
@@ -29,6 +29,6 @@ impl InlineMacroPlugin for ArrayMacro {
             "\n            __array_builder_macro_result__
         }",
         );
-        InlinePluginResult { code, diagnostics: vec![] }
+        InlinePluginResult { code: Some(code), diagnostics: vec![] }
     }
 }

@@ -74,8 +74,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
 /// Result of plugin code generation.
 #[derive(Default)]
 pub struct InlinePluginResult {
-    /// Filename, content.
-    pub code: Option<PluginGeneratedFile>,
+    pub code: Option<String>,
     /// Diagnostics.
     pub diagnostics: Vec<PluginDiagnostic>,
 }
@@ -87,6 +86,6 @@ pub trait InlineMacroPlugin: std::fmt::Debug + Sync + Send {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        item_ast: ast::ExprInlineMacro,
+        item_ast: &ast::ExprInlineMacro,
     ) -> InlinePluginResult;
 }

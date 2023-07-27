@@ -22,8 +22,9 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
+use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
@@ -288,6 +289,11 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
+impl ModuleFileId {
+    pub fn file_id(&self, db: &dyn DefsGroup) -> Maybe<FileId> {
+        Ok(db.module_files(self.0)?[self.1.0])
+    }
+}
 
 define_language_element_id_as_enum! {
     #[toplevel]

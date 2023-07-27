@@ -12,19 +12,19 @@ impl InlineMacroPlugin for ConstevalIntMacro {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
-        syntax: ast::ExprInlineMacro,
+        syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
         let mut diagnostics = vec![];
         let ast::WrappedExprList::ParenthesizedExprList(args) = syntax.arguments(db) else {
-            return unsupported_bracket_diagnostic(db, &syntax);
+            return unsupported_bracket_diagnostic(db, syntax);
         };
-        let diagnostics = vec![];
-        let constant_expression = extract_consteval_macro_expression(db, args, &mut diagnostics);
+        let constant_expression =
+            extract_consteval_macro_expression(db, &args.expressions(db), &mut diagnostics);
         if constant_expression.is_none() {
             return InlinePluginResult { code: None, diagnostics };
         }
         let code = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
-        InlinePluginResult { code, diagnostics }
+        InlinePluginResult { code: code.map(|x| x.to_string()), diagnostics }
     }
 }
 
