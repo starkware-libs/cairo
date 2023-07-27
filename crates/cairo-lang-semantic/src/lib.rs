@@ -6,6 +6,7 @@ pub mod corelib;
 pub mod db;
 pub mod diagnostic;
 pub mod expr;
+mod inline_macros;
 pub mod items;
 pub mod literals;
 pub mod lookup_item;

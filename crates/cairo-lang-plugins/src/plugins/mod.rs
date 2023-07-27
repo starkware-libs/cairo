@@ -7,6 +7,4 @@ pub use panicable::*;
 mod config;
 mod derive;
 mod generate_trait;
-mod inline_macro_plugin;
-mod inline_macros;
 mod panicable;

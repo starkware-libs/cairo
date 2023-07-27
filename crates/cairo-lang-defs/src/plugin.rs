@@ -70,3 +70,23 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// with that name and content should be created.
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
 }
+
+/// Result of plugin code generation.
+#[derive(Default)]
+pub struct InlinePluginResult {
+    /// Filename, content.
+    pub code: Option<PluginGeneratedFile>,
+    /// Diagnostics.
+    pub diagnostics: Vec<PluginDiagnostic>,
+}
+
+pub trait InlineMacroPlugin: std::fmt::Debug + Sync + Send {
+    /// Generates code for an item. If no code should be generated returns None.
+    /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
+    /// with that name and content should be created.
+    fn generate_code(
+        &self,
+        db: &dyn SyntaxGroup,
+        item_ast: ast::ExprInlineMacro,
+    ) -> InlinePluginResult;
+}
