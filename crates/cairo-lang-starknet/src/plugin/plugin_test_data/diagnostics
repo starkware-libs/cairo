@@ -143,7 +143,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -306,7 +306,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -447,7 +447,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -491,8 +491,8 @@ error: Plugin diagnostic: Identifier not found.
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> impls:1:1
-impl ContractStateDrop<> of Drop::<ContractState<>>;
-^**************************************************^
+impl ContractStateDrop of Drop::<ContractState>;
+^**********************************************^
 
 //! > ==========================================================================
 
@@ -602,7 +602,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -619,7 +620,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -636,7 +638,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -672,7 +675,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -801,7 +804,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -837,7 +841,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -993,7 +997,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1117,7 +1121,8 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<T>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -1153,7 +1158,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1194,7 +1199,7 @@ note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
  --> contract:62:32
-                serde::Serde::<T>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<T>::deserialize(ref data)
                                ^
 
 error: Plugin diagnostic: Type annotations needed. Failed to infer ?8
@@ -1294,10 +1299,12 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_x =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_y =
-                serde::Serde::<(felt252, felt252)>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -1335,7 +1342,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1554,7 +1561,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1752,7 +1759,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1971,7 +1978,7 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -2208,7 +2215,7 @@ trait BTrait {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -2474,7 +2481,7 @@ trait ATrait {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -2656,7 +2663,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
@@ -2807,7 +2814,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

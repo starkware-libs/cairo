@@ -1,3 +1,4 @@
+use core::array::ArrayTrait;
 use traits::{Into, TryInto};
 use option::OptionTrait;
 use starknet::{
@@ -645,5 +646,142 @@ impl TupleSize4Store<
     #[inline(always)]
     fn size() -> u8 {
         E0Store::size() + E1Store::size() + E2Store::size() + E3Store::size()
+    }
+}
+
+
+impl ResultStore<
+    T, E, impl TStore: Store<T>, impl EStore: Store<E>, impl TDrop: Drop<T>, impl EDrop: Drop<E>, 
+> of Store<Result<T, E>> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
+        let idx = Store::<felt252>::read(address_domain, base)?;
+        if idx == 0 {
+            starknet::SyscallResult::Ok(
+                Result::Ok(Store::read_at_offset(address_domain, base, 1_u8)?)
+            )
+        } else if idx == 1 {
+            starknet::SyscallResult::Ok(
+                Result::Err(Store::read_at_offset(address_domain, base, 1_u8)?)
+            )
+        } else {
+            starknet::SyscallResult::Err(array!['Incorrect index:'])
+        }
+    }
+    #[inline(always)]
+    fn write(
+        address_domain: u32, base: StorageBaseAddress, value: Result<T, E>
+    ) -> SyscallResult<()> {
+        match value {
+            Result::Ok(x) => {
+                Store::write(address_domain, base, 0)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            Result::Err(x) => {
+                Store::write(address_domain, base, 1)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<Result<T, E>> {
+        let idx = Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 0 {
+            starknet::SyscallResult::Ok(
+                Result::Ok(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+            )
+        } else if idx == 1 {
+            starknet::SyscallResult::Ok(
+                Result::Err(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+            )
+        } else {
+            starknet::SyscallResult::Err(array!['Incorrect index:'])
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Result<T, E>
+    ) -> SyscallResult<()> {
+        match value {
+            Result::Ok(x) => {
+                Store::write(address_domain, base, 0)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            Result::Err(x) => {
+                Store::write(address_domain, base, 1)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1 + cmp::max(Store::<T>::size(), Store::<E>::size())
+    }
+}
+
+impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>, > of Store<Option<T>> {
+    #[inline(always)]
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
+        let idx = Store::<felt252>::read(address_domain, base)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                Option::Some(Store::read_at_offset(address_domain, base, 1_u8)?)
+            )
+        } else if idx == 0 {
+            starknet::SyscallResult::Ok(Option::None(()))
+        } else {
+            starknet::SyscallResult::Err(array!['Incorrect index:'])
+        }
+    }
+    #[inline(always)]
+    fn write(address_domain: u32, base: StorageBaseAddress, value: Option<T>) -> SyscallResult<()> {
+        match value {
+            Option::Some(x) => {
+                Store::write(address_domain, base, 1)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            Option::None(_) => {
+                Store::write(address_domain, base, 0)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn read_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8
+    ) -> SyscallResult<Option<T>> {
+        let idx = Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                Option::Some(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
+            )
+        } else if idx == 0 {
+            starknet::SyscallResult::Ok(Option::None(()))
+        } else {
+            starknet::SyscallResult::Err(array!['Incorrect index:'])
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: Option<T>
+    ) -> SyscallResult<()> {
+        match value {
+            Option::Some(x) => {
+                Store::write(address_domain, base, 1)?;
+                Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            Option::None(x) => {
+                Store::write(address_domain, base, 0)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1 + Store::<T>::size()
     }
 }

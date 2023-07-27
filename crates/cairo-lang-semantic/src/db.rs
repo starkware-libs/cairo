@@ -920,6 +920,13 @@ pub trait SemanticGroup:
         function_id: FunctionWithBodyId,
         id: semantic::ExprId,
     ) -> semantic::Expr;
+    /// Assumes function and pattern are present.
+    #[salsa::invoke(items::function_with_body::pattern_semantic)]
+    fn pattern_semantic(
+        &self,
+        function_id: FunctionWithBodyId,
+        id: semantic::PatternId,
+    ) -> semantic::Pattern;
     /// Assumes function and statement are valid.
     #[salsa::invoke(items::function_with_body::statement_semantic)]
     fn statement_semantic(
@@ -1212,8 +1219,12 @@ fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<Resol
                 vec![db.extern_function_declaration_resolver_data(id)]
             }
         },
-        LookupItemId::ImplFunction(id) => vec![db.impl_function_resolver_data(id)],
-        LookupItemId::TraitFunction(id) => vec![db.trait_function_resolver_data(id)],
+        LookupItemId::TraitFunction(id) => {
+            vec![db.trait_function_resolver_data(id)]
+        }
+        LookupItemId::ImplFunction(id) => {
+            vec![db.impl_function_resolver_data(id), db.impl_function_body_resolver_data(id)]
+        }
     }
     .into_iter()
     .flatten()

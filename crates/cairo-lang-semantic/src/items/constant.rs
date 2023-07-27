@@ -60,7 +60,7 @@ pub fn priv_constant_semantic_data(
     );
 
     let mut ctx =
-        ComputationContext::new(db, &mut diagnostics, resolver, None, Environment::default());
+        ComputationContext::new(db, &mut diagnostics, None, resolver, None, Environment::default());
     let value = compute_expr_semantic(&mut ctx, &const_ast.value(syntax_db));
     if let Err(err) = ctx.resolver.inference().conform_ty(value.ty(), const_type) {
         err.report(ctx.diagnostics, const_ast.stable_ptr().untyped());

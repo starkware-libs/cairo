@@ -341,7 +341,7 @@ impl<'db> Inference<'db> {
             };
 
             // Solution found. Assign it.
-            self.assign_impl(var, solution).unwrap();
+            self.assign_impl(var, solution)?;
 
             // Something changed.
             self.solved.push(var);

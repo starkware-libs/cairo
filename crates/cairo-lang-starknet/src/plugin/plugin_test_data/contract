@@ -182,10 +182,12 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -205,10 +207,12 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -226,13 +230,16 @@ mod __external {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_contract_address =
-                serde::Serde::<ContractAddress>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<ContractAddress>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_class_hash =
-                serde::Serde::<ClassHash>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<ClassHash>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
 
             let __arg_storage_address =
-                serde::Serde::<StorageAddress>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<StorageAddress>::deserialize(ref data)
+                    .expect('Failed to deserialize param #3');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -265,13 +272,16 @@ mod __l1_handler {
             gas::withdraw_gas().expect('Out of gas');
             
             let __arg_from_address =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
 
             let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data).expect('Input too short for arguments');
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #3');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
@@ -362,7 +372,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 impls:
 
-impl AwesomeEventDrop<> of Drop::<AwesomeEvent<>>;
+impl AwesomeEventDrop of Drop::<AwesomeEvent>;
 
 
 event_impl:
@@ -389,7 +399,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 impls:
 
-impl BestEventEverDrop<> of Drop::<BestEventEver<>>;
+impl BestEventEverDrop of Drop::<BestEventEver>;
 
 
 event_impl:
@@ -408,6 +418,6 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 //! > expected_diagnostics

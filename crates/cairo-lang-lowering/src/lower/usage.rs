@@ -10,7 +10,8 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
-use semantic::ConcreteStructId;
+use id_arena::Arena;
+use semantic::{ConcreteStructId, PatternId};
 
 #[cfg(test)]
 #[path = "usage_test.rs"]
@@ -18,7 +19,8 @@ mod test;
 
 /// Member path (e.g. a.b.c). Unlike [ExprVarMemberPath], this is not an expression, and has no
 /// syntax pointers.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[debug_db(ExprFormatter<'a>)]
 pub enum MemberPath {
     Var(semantic::VarId),
     Member { parent: Box<MemberPath>, member_id: MemberId, concrete_struct_id: ConcreteStructId },
@@ -97,7 +99,7 @@ impl BlockUsages {
                     match &function_body.statements[*stmt] {
                         Statement::Let(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage);
-                            Self::handle_pattern(&stmt.pattern, &mut usage);
+                            Self::handle_pattern(&function_body.patterns, stmt.pattern, &mut usage);
                         }
                         Statement::Expr(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
@@ -178,7 +180,7 @@ impl BlockUsages {
             Expr::Match(expr) => {
                 self.handle_expr(function_body, expr.matched_expr, current);
                 for arm in &expr.arms {
-                    Self::handle_pattern(&arm.pattern, current);
+                    Self::handle_pattern(&function_body.patterns, arm.pattern, current);
                     self.handle_expr(function_body, arm.expression, current);
                 }
             }
@@ -216,28 +218,30 @@ impl BlockUsages {
         }
     }
 
-    fn handle_pattern(pat: &Pattern, current: &mut Usage) {
-        match pat {
+    fn handle_pattern(arena: &Arena<semantic::Pattern>, pattern: PatternId, current: &mut Usage) {
+        let pattern = &arena[pattern];
+        match pattern {
             Pattern::Literal(_) => {}
-            Pattern::Variable(pat) => {
-                current.introductions.insert(VarId::Local(pat.var.id));
+            Pattern::Variable(pattern) => {
+                current.introductions.insert(VarId::Local(pattern.var.id));
             }
-            Pattern::Struct(pat) => {
-                for (_, pat) in &pat.field_patterns {
-                    Self::handle_pattern(pat, current);
+            Pattern::Struct(pattern) => {
+                for (_, pattern) in &pattern.field_patterns {
+                    Self::handle_pattern(arena, *pattern, current);
                 }
             }
-            Pattern::Tuple(pat) => {
-                for pat in &pat.field_patterns {
-                    Self::handle_pattern(pat, current);
+            Pattern::Tuple(pattern) => {
+                for pattern in &pattern.field_patterns {
+                    Self::handle_pattern(arena, *pattern, current);
                 }
             }
-            Pattern::EnumVariant(pat) => {
-                if let Some(inner_pattern) = &pat.inner_pattern {
-                    Self::handle_pattern(inner_pattern, current);
+            Pattern::EnumVariant(pattern) => {
+                if let Some(inner_pattern) = &pattern.inner_pattern {
+                    Self::handle_pattern(arena, *inner_pattern, current);
                 }
             }
             Pattern::Otherwise(_) => {}
+            Pattern::Missing(_) => {}
         }
     }
 }

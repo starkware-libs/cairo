@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
-    FreeFunctionId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
+    FunctionWithBodyId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
     SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
@@ -24,7 +24,7 @@ use thiserror::Error;
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
     CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
-    INTERFACE_ATTR, L1_HANDLER_ATTR,
+    INCLUDE_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -60,6 +60,9 @@ pub struct AbiBuilder {
 
     /// Mapping from an event type to its derive plugin emitted data.
     event_derive_data: HashMap<TypeId, EventData>,
+
+    /// The constructor for the contract.
+    ctor: Option<FunctionWithBodyId>,
 }
 
 impl AbiBuilder {
@@ -122,11 +125,13 @@ impl AbiBuilder {
 
         // Find the Event type and add impls to ABI.
         for impl_id in impls {
-            if impl_id
-                .has_attr(db.upcast(), EXTERNAL_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
+            if impl_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
                 builder.add_impl(db, impl_id, storage_type)?;
+                continue;
+            }
+
+            if impl_id.has_attr(db.upcast(), INCLUDE_ATTR)? {
+                builder.add_included_impl(db, impl_id, storage_type)?;
                 continue;
             }
 
@@ -154,39 +159,18 @@ impl AbiBuilder {
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
-        let mut ctor = None;
         for free_function_id in free_functions {
-            if free_function_id
-                .has_attr(db.upcast(), EXTERNAL_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                builder.add_free_function(db, free_function_id, storage_type)?;
-            } else if free_function_id
-                .has_attr(db.upcast(), CONSTRUCTOR_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                if ctor.is_some() {
-                    return Err(ABIError::MultipleConstructors);
-                } else {
-                    ctor = Some(free_function_id);
-                    builder.add_constructor(db, free_function_id, storage_type)?;
-                }
-            } else if free_function_id
-                .has_attr(db.upcast(), L1_HANDLER_ATTR)
-                .map_err(|_| ABIError::CompilationError)?
-            {
-                builder.add_l1_handler(db, free_function_id, storage_type)?;
-            }
+            builder.maybe_add_function_with_body(
+                db,
+                FunctionWithBodyId::Free(free_function_id),
+                storage_type,
+            )?;
         }
 
         // Add events to ABI.
         for enum_id in enums {
             let enm_name = enum_id.name(db.upcast());
-            if enm_name == EVENT_TYPE_NAME
-                && enum_id
-                    .has_attr(db.upcast(), EVENT_ATTR)
-                    .map_err(|_| ABIError::CompilationError)?
-            {
+            if enm_name == EVENT_TYPE_NAME && enum_id.has_attr(db.upcast(), EVENT_ATTR)? {
                 // Check that the enum has no generic parameters.
                 if !db.enum_generic_params(enum_id).unwrap_or_default().is_empty() {
                     return Err(ABIError::EventWithGenericParams);
@@ -211,8 +195,7 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         trait_id: TraitId,
     ) -> Result<Contract, ABIError> {
-        let generic_params =
-            db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?;
+        let generic_params = db.trait_generic_params(trait_id)?;
         let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
             return Err(ABIError::ExpectedOneGenericParam);
         };
@@ -230,8 +213,7 @@ impl AbiBuilder {
     /// Adds an interface to the ABI.
     fn add_interface(&mut self, db: &dyn SemanticGroup, trait_id: TraitId) -> Result<(), ABIError> {
         // Get storage type
-        let generic_params =
-            db.trait_generic_params(trait_id).map_err(|_| ABIError::CompilationError)?;
+        let generic_params = db.trait_generic_params(trait_id)?;
         let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
             return Err(ABIError::ExpectedOneGenericParam);
         };
@@ -274,14 +256,13 @@ impl AbiBuilder {
     ) -> Result<(), ABIError> {
         let impl_name = impl_def_id.name(db.upcast());
 
-        let trt =
-            db.impl_def_concrete_trait(impl_def_id).map_err(|_| ABIError::CompilationError)?;
+        let trt = db.impl_def_concrete_trait(impl_def_id)?;
         let trt_path = trt.full_path(db);
 
         // If the trait is marked as starknet::interface, add the interface. Otherwise, add the
         // functions as external functions.
         let trait_id = trt.trait_id(db);
-        if trait_id.has_attr(db, INTERFACE_ATTR).map_err(|_| ABIError::CompilationError)? {
+        if trait_id.has_attr(db, INTERFACE_ATTR)? {
             self.abi
                 .items
                 .push(Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path }));
@@ -293,16 +274,53 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds a free function to the ABI.
-    fn add_free_function(
+    /// Adds an impl to the ABI.
+    fn add_included_impl(
         &mut self,
         db: &dyn SemanticGroup,
-        free_function_id: FreeFunctionId,
+        impl_def_id: ImplDefId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name: String = free_function_id.name(db.upcast()).into();
-        let signature =
-            db.free_function_signature(free_function_id).map_err(|_| ABIError::CompilationError)?;
+        // Make sure trait is not marked as starknet::interface.
+        if db.impl_def_concrete_trait(impl_def_id)?.trait_id(db).has_attr(db, INTERFACE_ATTR)? {
+            return Err(ABIError::ContractInterfaceImplCannotBeIncluded);
+        }
+        for impl_function_id in db.impl_functions(impl_def_id).unwrap_or_default().values() {
+            self.maybe_add_function_with_body(
+                db,
+                FunctionWithBodyId::Impl(*impl_function_id),
+                storage_type,
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Adds a function to the ABI according to its attributes.
+    fn maybe_add_function_with_body(
+        &mut self,
+        db: &dyn SemanticGroup,
+        function_with_body_id: FunctionWithBodyId,
+        storage_type: TypeId,
+    ) -> Result<(), ABIError> {
+        if function_with_body_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
+            self.add_function_with_body(db, function_with_body_id, storage_type)?;
+        } else if function_with_body_id.has_attr(db.upcast(), CONSTRUCTOR_ATTR)? {
+            self.add_constructor(db, function_with_body_id, storage_type)?;
+        } else if function_with_body_id.has_attr(db.upcast(), L1_HANDLER_ATTR)? {
+            self.add_l1_handler(db, function_with_body_id, storage_type)?;
+        }
+        Ok(())
+    }
+
+    /// Adds a function to the ABI.
+    fn add_function_with_body(
+        &mut self,
+        db: &dyn SemanticGroup,
+        function_with_body_id: FunctionWithBodyId,
+        storage_type: TypeId,
+    ) -> Result<(), ABIError> {
+        let name: String = function_with_body_id.name(db.upcast()).into();
+        let signature = db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
@@ -318,12 +336,15 @@ impl AbiBuilder {
     fn add_constructor(
         &mut self,
         db: &dyn SemanticGroup,
-        free_function_id: FreeFunctionId,
+        function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name = free_function_id.name(db.upcast()).into();
-        let signature =
-            db.free_function_signature(free_function_id).map_err(|_| ABIError::CompilationError)?;
+        if self.ctor.is_some() {
+            return Err(ABIError::MultipleConstructors);
+        }
+        self.ctor = Some(function_with_body_id);
+        let name = function_with_body_id.name(db.upcast()).into();
+        let signature = db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
@@ -340,12 +361,11 @@ impl AbiBuilder {
     fn add_l1_handler(
         &mut self,
         db: &dyn SemanticGroup,
-        free_function_id: FreeFunctionId,
+        function_with_body_id: FunctionWithBodyId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        let name = free_function_id.name(db.upcast()).into();
-        let signature =
-            db.free_function_signature(free_function_id).map_err(|_| ABIError::CompilationError)?;
+        let name = function_with_body_id.name(db.upcast()).into();
+        let signature = db.function_with_body_signature(function_with_body_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
@@ -412,9 +432,7 @@ impl AbiBuilder {
         storage_type: TypeId,
     ) -> Result<Function, ABIError> {
         let name = trait_function_id.name(db.upcast()).into();
-        let signature = db
-            .trait_function_signature(trait_function_id)
-            .map_err(|_| ABIError::CompilationError)?;
+        let signature = db.trait_function_signature(trait_function_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
@@ -432,8 +450,7 @@ impl AbiBuilder {
         storage_type: TypeId,
     ) -> Result<Function, ABIError> {
         let name = impl_function_id.name(db.upcast()).into();
-        let signature =
-            db.impl_function_signature(impl_function_id).map_err(|_| ABIError::CompilationError)?;
+        let signature = db.impl_function_signature(impl_function_id)?;
 
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
@@ -642,6 +659,8 @@ pub enum ABIError {
     EntrypointMustHaveSelf,
     #[error("Entrypoint attribute must match the mutability of the self parameter")]
     AttributeMismatch,
+    #[error("Contract interfaces impls cannot be included.")]
+    ContractInterfaceImplCannotBeIncluded,
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {

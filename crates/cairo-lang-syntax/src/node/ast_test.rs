@@ -4,11 +4,11 @@ use test_log::test;
 
 use super::ast::{
     ExprBinary, ExprPath, PathSegmentGreen, PathSegmentSimple, SyntaxFileGreen, TerminalIdentifier,
-    TerminalLiteralNumber, TerminalPlus, TokenIdentifier, TokenLiteralNumber, TokenPlus,
-    TokenWhitespace, Trivia,
+    TerminalPlus, TokenIdentifier, TokenPlus, TokenWhitespace, Trivia,
 };
 use super::kind::SyntaxKind;
 use super::{SyntaxNode, Terminal, Token};
+use crate::node::ast::{LiteralNumber, OptionTerminalMinusEmpty, TerminalNumber, TokenNumber};
 use crate::node::test_utils::DatabaseForTesting;
 
 #[test]
@@ -101,7 +101,19 @@ fn test_ast() {
                 TextWidth::new_for_testing(1)
             ),
             (
-                SyntaxKind::TerminalLiteralNumber,
+                SyntaxKind::LiteralNumber,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(1)
+            ),
+            (
+                SyntaxKind::OptionTerminalMinusEmpty,
+                None,
+                TextOffset::default().add_width(TextWidth::new_for_testing(6)),
+                TextWidth::new_for_testing(0)
+            ),
+            (
+                SyntaxKind::TerminalNumber,
                 None,
                 TextOffset::default().add_width(TextWidth::new_for_testing(6)),
                 TextWidth::new_for_testing(1)
@@ -113,7 +125,7 @@ fn test_ast() {
                 TextWidth::new_for_testing(0)
             ),
             (
-                SyntaxKind::TokenLiteralNumber,
+                SyntaxKind::TokenNumber,
                 Some("5".into()),
                 TextOffset::default().add_width(TextWidth::new_for_testing(6)),
                 TextWidth::new_for_testing(1)
@@ -147,7 +159,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     let token_whitespace1 = TokenWhitespace::new_green(db, " ".into());
     let token_plus = TokenPlus::new_green(db, "+".into());
     let token_whitespace2 = TokenWhitespace::new_green(db, " ".into());
-    let token5 = TokenLiteralNumber::new_green(db, "5".into());
+    let token5 = TokenNumber::new_green(db, "5".into());
     assert_eq!(token_whitespace1, token_whitespace2);
     let no_trivia = Trivia::new_green(db, vec![]);
     let triviums = vec![token_whitespace1, token_whitespace2];
@@ -164,7 +176,9 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         token_plus,
         Trivia::new_green(db, vec![triviums[1].into()]),
     );
-    let terminal5 = TerminalLiteralNumber::new_green(db, no_trivia, token5, no_trivia);
+    let terminal5 = TerminalNumber::new_green(db, no_trivia, token5, no_trivia);
+    let number5 =
+        LiteralNumber::new_green(db, OptionTerminalMinusEmpty::new_green(db).into(), terminal5);
     let expr = ExprBinary::new_green(
         db,
         ExprPath::new_green(
@@ -173,7 +187,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         )
         .into(),
         terminal_plus.into(),
-        terminal5.into(),
+        number5.into(),
     );
     // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".

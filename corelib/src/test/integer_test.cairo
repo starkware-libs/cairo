@@ -1,3 +1,4 @@
+use core::result::ResultTrait;
 use traits::{Into, TryInto};
 use core::traits::Default;
 use option::OptionTrait;
@@ -1124,32 +1125,522 @@ fn test_u128_byte_reverse() {
 fn test_i8_operators() {
     assert_eq(@1_i8, @1_i8, '1 == 1');
     assert_ne(@1_i8, @2_i8, '1 != 2');
+    assert_eq(@0x7f_felt252.try_into().unwrap(), @0x7f_i8, '0x7f is not i8');
+    let v: Option<i8> = 0x80_felt252.try_into();
+    assert(v.is_none(), '0x80 is i8');
+    assert_eq(@-0x80_felt252.try_into().unwrap(), @-0x80_i8, '-0x80 is not i8');
+    let v: Option<i8> = -0x81_felt252.try_into();
+    assert(v.is_none(), '-0x81 is i8');
+    assert_eq(@(1_i8 + 3_i8), @4_i8, '1 + 3 == 4');
+    assert_eq(@(3_i8 + 6_i8), @9_i8, '3 + 6 == 9');
+    assert_eq(@(3_i8 - 1_i8), @2_i8, '3 - 1 == 2');
+    assert_eq(@(121_i8 - 21_i8), @100_i8, '121-21=100');
+    assert_eq(@(-1_i8 + -3_i8), @-4_i8, '-1 + -3 == -4');
+    assert_eq(@(-3_i8 + -6_i8), @-9_i8, '-3 + -6 == -9');
+    assert_eq(@(-3_i8 - -1_i8), @-2_i8, '-3 - -1 == -2');
+    assert_eq(@(-121_i8 - -21_i8), @-100_i8, '-121--21=-100');
+    assert_eq(@(1_i8 * 3_i8), @3_i8, '1 * 3 == 3');
+    assert_eq(@(2_i8 * 4_i8), @8_i8, '2 * 4 == 8');
+    assert_eq(@(-1_i8 * 3_i8), @-3_i8, '-1 * 3 == 3');
+    assert_eq(@(-2_i8 * 4_i8), @-8_i8, '-2 * 4 == 8');
+    assert_eq(@(1_i8 * -3_i8), @-3_i8, '1 * -3 == -3');
+    assert_eq(@(2_i8 * -4_i8), @-8_i8, '2 * -4 == -8');
+    assert_eq(@(-1_i8 * -3_i8), @3_i8, '-1 * -3 == 3');
+    assert_eq(@(-2_i8 * -4_i8), @8_i8, '-2 * -4 == 8');
+    assert_lt(1_i8, 4_i8, '1 < 4');
+    assert_le(1_i8, 4_i8, '1 <= 4');
+    assert(!(4_i8 < 4_i8), '!(4 < 4)');
+    assert_le(5_i8, 5_i8, '5 <= 5');
+    assert(!(5_i8 <= 4_i8), '!(5 <= 8)');
+    assert_gt(5_i8, 2_i8, '5 > 2');
+    assert_ge(5_i8, 2_i8, '5 >= 2');
+    assert(!(3_i8 > 3_i8), '!(3 > 3)');
+    assert_ge(3_i8, 3_i8, '3 >= 3');
 }
 
+#[test]
+#[should_panic(expected: ('i8_sub Underflow', ))]
+fn test_i8_sub_underflow_1() {
+    -0x80_i8 - 1_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_sub Underflow', ))]
+fn test_i8_sub_underflow_2() {
+    -0x80_i8 - 3_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_sub Underflow', ))]
+fn test_i8_sub_underflow_3() {
+    -0x7f_i8 - 3_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_sub Underflow', ))]
+fn test_i8_sub_underflow_4() {
+    -0x32_i8 - 0x7d_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_sub Overflow', ))]
+fn test_i8_sub_overflow() {
+    0x32_i8 - -0x7d_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_add Overflow', ))]
+fn test_i8_add_overflow_1() {
+    0x40_i8 + 0x40_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_add Overflow', ))]
+fn test_i8_add_overflow_2() {
+    0x64_i8 + 0x1e_i8;
+}
+
+#[test]
+#[should_panic(expected: ('i8_add Underflow', ))]
+fn test_i8_add_underflow() {
+    -0x64_i8 + -0x1e_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_mul_overflow_1() {
+    0x10_i8 * 0x10_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_mul_overflow_2() {
+    0x11_i8 * 0x10_i8;
+}
+
+#[test]
+#[should_panic]
+fn test_i8_mul_overflow_3() {
+    2_i8 * 0x40_i8;
+}
 
 #[test]
 fn test_i16_operators() {
     assert_eq(@1_i16, @1_i16, '1 == 1');
     assert_ne(@1_i16, @2_i16, '1 != 2');
+    assert_eq(@0x7fff_felt252.try_into().unwrap(), @0x7fff_i16, '0x7fff is not i16');
+    let v: Option<i16> = 0x8000_felt252.try_into();
+    assert(v.is_none(), '0x8000 is i16');
+    assert_eq(@-0x8000_felt252.try_into().unwrap(), @-0x8000_i16, '-0x8000 is not i16');
+    let v: Option<i16> = -0x8001_felt252.try_into();
+    assert(v.is_none(), '-0x8001 is i16');
+    assert_eq(@(1_i16 + 3_i16), @4_i16, '1 + 3 == 4');
+    assert_eq(@(3_i16 + 6_i16), @9_i16, '3 + 6 == 9');
+    assert_eq(@(3_i16 - 1_i16), @2_i16, '3 - 1 == 2');
+    assert_eq(@(231_i16 - 131_i16), @100_i16, '231-131=100');
+    assert_eq(@(-1_i16 + -3_i16), @-4_i16, '-1 + -3 == -4');
+    assert_eq(@(-3_i16 + -6_i16), @-9_i16, '-3 + -6 == -9');
+    assert_eq(@(-3_i16 - -1_i16), @-2_i16, '-3 - -1 == -2');
+    assert_eq(@(-231_i16 - -131_i16), @-100_i16, '-231--131=-100');
+    assert_eq(@(1_i16 * 3_i16), @3_i16, '1 * 3 == 3');
+    assert_eq(@(2_i16 * 4_i16), @8_i16, '2 * 4 == 8');
+    assert_eq(@(-1_i16 * 3_i16), @-3_i16, '-1 * 3 == 3');
+    assert_eq(@(-2_i16 * 4_i16), @-8_i16, '-2 * 4 == 8');
+    assert_eq(@(1_i16 * -3_i16), @-3_i16, '1 * -3 == -3');
+    assert_eq(@(2_i16 * -4_i16), @-8_i16, '2 * -4 == -8');
+    assert_eq(@(-1_i16 * -3_i16), @3_i16, '-1 * -3 == 3');
+    assert_eq(@(-2_i16 * -4_i16), @8_i16, '-2 * -4 == 8');
+    assert_lt(1_i16, 4_i16, '1 < 4');
+    assert_le(1_i16, 4_i16, '1 <= 4');
+    assert(!(4_i16 < 4_i16), '!(4 < 4)');
+    assert_le(5_i16, 5_i16, '5 <= 5');
+    assert(!(5_i16 <= 4_i16), '!(5 <= 8)');
+    assert_gt(5_i16, 2_i16, '5 > 2');
+    assert_ge(5_i16, 2_i16, '5 >= 2');
+    assert(!(3_i16 > 3_i16), '!(3 > 3)');
+    assert_ge(3_i16, 3_i16, '3 >= 3');
 }
 
+#[test]
+#[should_panic(expected: ('i16_sub Underflow', ))]
+fn test_i16_sub_underflow_1() {
+    -0x8000_i16 - 1_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_sub Underflow', ))]
+fn test_i16_sub_underflow_2() {
+    -0x8000_i16 - 3_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_sub Underflow', ))]
+fn test_i16_sub_underflow_3() {
+    -0x7fff_i16 - 3_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_sub Underflow', ))]
+fn test_i16_sub_underflow_4() {
+    -0x3200_i16 - 0x7d00_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_sub Overflow', ))]
+fn test_i16_sub_overflow() {
+    0x3200_i16 - -0x7d00_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_add Overflow', ))]
+fn test_i16_add_overflow_1() {
+    0x4000_i16 + 0x4000_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_add Overflow', ))]
+fn test_i16_add_overflow_2() {
+    0x6400_i16 + 0x1e00_i16;
+}
+
+#[test]
+#[should_panic(expected: ('i16_add Underflow', ))]
+fn test_i16_add_underflow() {
+    -0x6400_i16 + -0x1e00_i16;
+}
+
+#[test]
+#[should_panic]
+fn test_i16_mul_overflow_1() {
+    0x1000_i16 * 0x1000_i16;
+}
+
+#[test]
+#[should_panic]
+fn test_i16_mul_overflow_2() {
+    0x1100_i16 * 0x1000_i16;
+}
+
+#[test]
+#[should_panic]
+fn test_i16_mul_overflow_3() {
+    2_i16 * 0x4000_i16;
+}
 
 #[test]
 fn test_i32_operators() {
     assert_eq(@1_i32, @1_i32, '1 == 1');
     assert_ne(@1_i32, @2_i32, '1 != 2');
+    assert_eq(@0x7fffffff_felt252.try_into().unwrap(), @0x7fffffff_i32, '0x7fffffff is not i32');
+    let v: Option<i32> = 0x80000000_felt252.try_into();
+    assert(v.is_none(), '0x80000000 is i32');
+    assert_eq(@-0x80000000_felt252.try_into().unwrap(), @-0x80000000_i32, '-0x8000 is not i32');
+    let v: Option<i32> = -0x80000001_felt252.try_into();
+    assert(v.is_none(), '-0x80000001 is i32');
+    assert_eq(@(1_i32 + 3_i32), @4_i32, '1 + 3 == 4');
+    assert_eq(@(3_i32 + 6_i32), @9_i32, '3 + 6 == 9');
+    assert_eq(@(3_i32 - 1_i32), @2_i32, '3 - 1 == 2');
+    assert_eq(@(231_i32 - 131_i32), @100_i32, '231-131=100');
+    assert_eq(@(-1_i32 + -3_i32), @-4_i32, '-1 + -3 == -4');
+    assert_eq(@(-3_i32 + -6_i32), @-9_i32, '-3 + -6 == -9');
+    assert_eq(@(-3_i32 - -1_i32), @-2_i32, '-3 - -1 == -2');
+    assert_eq(@(-231_i32 - -131_i32), @-100_i32, '-231--131=-100');
+    assert_eq(@(1_i32 * 3_i32), @3_i32, '1 * 3 == 3');
+    assert_eq(@(2_i32 * 4_i32), @8_i32, '2 * 4 == 8');
+    assert_eq(@(-1_i32 * 3_i32), @-3_i32, '-1 * 3 == 3');
+    assert_eq(@(-2_i32 * 4_i32), @-8_i32, '-2 * 4 == 8');
+    assert_eq(@(1_i32 * -3_i32), @-3_i32, '1 * -3 == -3');
+    assert_eq(@(2_i32 * -4_i32), @-8_i32, '2 * -4 == -8');
+    assert_eq(@(-1_i32 * -3_i32), @3_i32, '-1 * -3 == 3');
+    assert_eq(@(-2_i32 * -4_i32), @8_i32, '-2 * -4 == 8');
+    assert_lt(1_i32, 4_i32, '1 < 4');
+    assert_le(1_i32, 4_i32, '1 <= 4');
+    assert(!(4_i32 < 4_i32), '!(4 < 4)');
+    assert_le(5_i32, 5_i32, '5 <= 5');
+    assert(!(5_i32 <= 4_i32), '!(5 <= 8)');
+    assert_gt(5_i32, 2_i32, '5 > 2');
+    assert_ge(5_i32, 2_i32, '5 >= 2');
+    assert(!(3_i32 > 3_i32), '!(3 > 3)');
+    assert_ge(3_i32, 3_i32, '3 >= 3');
 }
 
+#[test]
+#[should_panic(expected: ('i32_sub Underflow', ))]
+fn test_i32_sub_underflow_1() {
+    -0x80000000_i32 - 1_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_sub Underflow', ))]
+fn test_i32_sub_underflow_2() {
+    -0x80000000_i32 - 3_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_sub Underflow', ))]
+fn test_i32_sub_underflow_3() {
+    -0x7fffffff_i32 - 3_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_sub Underflow', ))]
+fn test_i32_sub_underflow_4() {
+    -0x32000000_i32 - 0x7d000000_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_sub Overflow', ))]
+fn test_i32_sub_overflow() {
+    0x32000000_i32 - -0x7d000000_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_add Overflow', ))]
+fn test_i32_add_overflow_1() {
+    0x40000000_i32 + 0x40000000_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_add Overflow', ))]
+fn test_i32_add_overflow_2() {
+    0x64000000_i32 + 0x1e000000_i32;
+}
+
+#[test]
+#[should_panic(expected: ('i32_add Underflow', ))]
+fn test_i32_add_underflow() {
+    -0x64000000_i32 + -0x1e000000_i32;
+}
+
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_1() {
+    0x10000000_i32 * 0x10000000_i32;
+}
+
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_2() {
+    0x11000000_i32 * 0x10000000_i32;
+}
+
+#[test]
+#[should_panic]
+fn test_i32_mul_overflow_3() {
+    2_i32 * 0x40000000_i32;
+}
 
 #[test]
 fn test_i64_operators() {
     assert_eq(@1_i64, @1_i64, '1 == 1');
     assert_ne(@1_i64, @2_i64, '1 != 2');
+    assert_eq(
+        @0x7fffffffffffffff_felt252.try_into().unwrap(),
+        @0x7fffffffffffffff_i64,
+        '0x7fffffffffffffff is not i64'
+    );
+    let v: Option<i64> = 0x8000000000000000_felt252.try_into();
+    assert(v.is_none(), '0x8000000000000000 is i64');
+    assert_eq(
+        @-0x8000000000000000_felt252.try_into().unwrap(),
+        @-0x8000000000000000_i64,
+        '-0x8000000000000000 is not i64'
+    );
+    let v: Option<i64> = (-0x8000000000000001_felt252).try_into();
+    assert(v.is_none(), '-0x8000000000000001 is i64');
+    assert_eq(@(1_i64 + 3_i64), @4_i64, '1 + 3 == 4');
+    assert_eq(@(3_i64 + 6_i64), @9_i64, '3 + 6 == 9');
+    assert_eq(@(3_i64 - 1_i64), @2_i64, '3 - 1 == 2');
+    assert_eq(@(231_i64 - 131_i64), @100_i64, '231-131=100');
+    assert_eq(@(-1_i64 + -3_i64), @-4_i64, '-1 + -3 == -4');
+    assert_eq(@(-3_i64 + -6_i64), @-9_i64, '-3 + -6 == -9');
+    assert_eq(@(-3_i64 - -1_i64), @-2_i64, '-3 - -1 == -2');
+    assert_eq(@(-231_i64 - -131_i64), @-100_i64, '-231--131=-100');
+    assert_eq(@(1_i64 * 3_i64), @3_i64, '1 * 3 == 3');
+    assert_eq(@(2_i64 * 4_i64), @8_i64, '2 * 4 == 8');
+    assert_eq(@(-1_i64 * 3_i64), @-3_i64, '-1 * 3 == 3');
+    assert_eq(@(-2_i64 * 4_i64), @-8_i64, '-2 * 4 == 8');
+    assert_eq(@(1_i64 * -3_i64), @-3_i64, '1 * -3 == -3');
+    assert_eq(@(2_i64 * -4_i64), @-8_i64, '2 * -4 == -8');
+    assert_eq(@(-1_i64 * -3_i64), @3_i64, '-1 * -3 == 3');
+    assert_eq(@(-2_i64 * -4_i64), @8_i64, '-2 * -4 == 8');
+    assert_lt(1_i64, 4_i64, '1 < 4');
+    assert_le(1_i64, 4_i64, '1 <= 4');
+    assert(!(4_i64 < 4_i64), '!(4 < 4)');
+    assert_le(5_i64, 5_i64, '5 <= 5');
+    assert(!(5_i64 <= 4_i64), '!(5 <= 8)');
+    assert_gt(5_i64, 2_i64, '5 > 2');
+    assert_ge(5_i64, 2_i64, '5 >= 2');
+    assert(!(3_i64 > 3_i64), '!(3 > 3)');
+    assert_ge(3_i64, 3_i64, '3 >= 3');
 }
 
+#[test]
+#[should_panic(expected: ('i64_sub Underflow', ))]
+fn test_i64_sub_underflow_1() {
+    -0x8000000000000000_i64 - 1_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_sub Underflow', ))]
+fn test_i64_sub_underflow_2() {
+    -0x8000000000000000_i64 - 3_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_sub Underflow', ))]
+fn test_i64_sub_underflow_3() {
+    -0x7fffffffffffffff_i64 - 3_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_sub Underflow', ))]
+fn test_i64_sub_underflow_4() {
+    -0x3200000000000000_i64 - 0x7d00000000000000_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_sub Overflow', ))]
+fn test_i64_sub_overflow() {
+    0x3200000000000000_i64 - -0x7d00000000000000_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_add Overflow', ))]
+fn test_i64_add_overflow_1() {
+    0x4000000000000000_i64 + 0x4000000000000000_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_add Overflow', ))]
+fn test_i64_add_overflow_2() {
+    0x6400000000000000_i64 + 0x1e00000000000000_i64;
+}
+
+#[test]
+#[should_panic(expected: ('i64_add Underflow', ))]
+fn test_i64_add_underflow() {
+    -0x6400000000000000_i64 + -0x1e00000000000000_i64;
+}
+
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_1() {
+    0x1000000000000000_i64 * 0x1000000000000000_i64;
+}
+
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_2() {
+    0x1100000000000000_i64 * 0x1000000000000000_i64;
+}
+
+#[test]
+#[should_panic]
+fn test_i64_mul_overflow_3() {
+    2_i64 * 0x4000000000000000_i64;
+}
 
 #[test]
 fn test_i128_operators() {
     assert_eq(@1_i128, @1_i128, '1 == 1');
     assert_ne(@1_i128, @2_i128, '1 != 2');
+    assert_eq(
+        @0x7fffffffffffffffffffffffffffffff_felt252.try_into().unwrap(),
+        @0x7fffffffffffffffffffffffffffffff_i128,
+        '0x7f..f is not i128'
+    );
+    let v: Option<i128> = 0x80000000000000000000000000000000_felt252.try_into();
+    assert(v.is_none(), '0x80..0 is i128');
+    assert_eq(
+        @-0x80000000000000000000000000000000_felt252.try_into().unwrap(),
+        @-0x80000000000000000000000000000000_i128,
+        '-0x80..0 is not i128'
+    );
+    let v: Option<i128> = (-0x80000000000000000000000000000001_felt252).try_into();
+    assert(v.is_none(), '-0x80..01 is i128');
+    assert_eq(@(1_i128 + 3_i128), @4_i128, '1 + 3 == 4');
+    assert_eq(@(3_i128 + 6_i128), @9_i128, '3 + 6 == 9');
+    assert_eq(@(3_i128 - 1_i128), @2_i128, '3 - 1 == 2');
+    assert_eq(@(231_i128 - 131_i128), @100_i128, '231-131=100');
+    assert_eq(@(-1_i128 + -3_i128), @-4_i128, '-1 + -3 == -4');
+    assert_eq(@(-3_i128 + -6_i128), @-9_i128, '-3 + -6 == -9');
+    assert_eq(@(-3_i128 - -1_i128), @-2_i128, '-3 - -1 == -2');
+    assert_eq(@(-231_i128 - -131_i128), @-100_i128, '-231--131=-100');
+    assert_lt(1_i128, 4_i128, '1 < 4');
+    assert_le(1_i128, 4_i128, '1 <= 4');
+    assert(!(4_i128 < 4_i128), '!(4 < 4)');
+    assert_le(5_i128, 5_i128, '5 <= 5');
+    assert(!(5_i128 <= 4_i128), '!(5 <= 8)');
+    assert_gt(5_i128, 2_i128, '5 > 2');
+    assert_ge(5_i128, 2_i128, '5 >= 2');
+    assert(!(3_i128 > 3_i128), '!(3 > 3)');
+    assert_ge(3_i128, 3_i128, '3 >= 3');
+}
+
+#[test]
+#[should_panic]
+fn test_i128_sub_underflow_1() {
+    -0x80000000000000000000000000000000_i128 - 1_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_sub Underflow', ))]
+fn test_i128_sub_underflow_2() {
+    -0x80000000000000000000000000000000_i128 - 3_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_sub Underflow', ))]
+fn test_i128_sub_underflow_3() {
+    -0x7fffffffffffffffffffffffffffffff_i128 - 3_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_sub Underflow', ))]
+fn test_i128_sub_underflow_4() {
+    -0x32000000000000000000000000000000_i128 - 0x7d000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_sub Overflow', ))]
+fn test_i128_sub_overflow() {
+    0x32000000000000000000000000000000_i128 - -0x7d000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_add Overflow', ))]
+fn test_i128_add_overflow_1() {
+    0x40000000000000000000000000000000_i128 + 0x40000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_add Overflow', ))]
+fn test_i128_add_overflow_2() {
+    0x64000000000000000000000000000000_i128 + 0x1e000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic(expected: ('i128_add Underflow', ))]
+fn test_i128_add_underflow() {
+    -0x64000000000000000000000000000000_i128 + -0x1e000000000000000000000000000000_i128;
+}
+
+#[test]
+fn test_signed_int_diff() {
+    assert_eq(@integer::i8_diff(3, 3).unwrap(), @0, 'i8: 3 - 3 == 0');
+    assert_eq(@integer::i8_diff(4, 3).unwrap(), @1, 'i8: 4 - 3 == 1');
+    assert_eq(@integer::i8_diff(3, 5).unwrap_err(), @~(2 - 1), 'i8: 3 - 5 == -2');
+    assert_eq(@integer::i16_diff(3, 3).unwrap(), @0, 'i16: 3 - 3 == 0');
+    assert_eq(@integer::i16_diff(4, 3).unwrap(), @1, 'i16: 4 - 3 == 1');
+    assert_eq(@integer::i16_diff(3, 5).unwrap_err(), @~(2 - 1), 'i16: 3 - 5 == -2');
+    assert_eq(@integer::i32_diff(3, 3).unwrap(), @0, 'i32: 3 - 3 == 0');
+    assert_eq(@integer::i32_diff(4, 3).unwrap(), @1, 'i32: 4 - 3 == 1');
+    assert_eq(@integer::i32_diff(3, 5).unwrap_err(), @~(2 - 1), 'i32: 3 - 5 == -2');
+    assert_eq(@integer::i64_diff(3, 3).unwrap(), @0, 'i64: 3 - 3 == 0');
+    assert_eq(@integer::i64_diff(4, 3).unwrap(), @1, 'i64: 4 - 3 == 1');
+    assert_eq(@integer::i64_diff(3, 5).unwrap_err(), @~(2 - 1), 'i64: 3 - 5 == -2');
+    assert_eq(@integer::i128_diff(3, 3).unwrap(), @0, 'i128: 3 - 3 == 0');
+    assert_eq(@integer::i128_diff(4, 3).unwrap(), @1, 'i128: 4 - 3 == 1');
+    assert_eq(@integer::i128_diff(3, 5).unwrap_err(), @~(2 - 1), 'i128: 3 - 5 == -2');
 }

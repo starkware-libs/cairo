@@ -9,7 +9,8 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use itertools::Itertools;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, RAW_OUTPUT_ATTR,
+    CONSTRUCTOR_ATTR, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, INCLUDE_ATTR, L1_HANDLER_ATTR,
+    RAW_OUTPUT_ATTR,
 };
 use super::utils::{is_felt252_span, is_ref_param};
 
@@ -57,13 +58,13 @@ pub fn generate_entry_point_wrapper(
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
-    let mut params = sig.parameters(db).elements(db).into_iter();
+    let mut params = sig.parameters(db).elements(db).into_iter().enumerate();
     let mut diagnostics = vec![];
     let mut arg_names = Vec::new();
     let mut arg_definitions = Vec::new();
     let mut ref_appends = Vec::new();
 
-    let Some(first_param) = params.next() else {
+    let Some((0, first_param)) = params.next() else {
         return Err(vec![PluginDiagnostic {
             message: "The first paramater of an entry point must be `self`.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
@@ -79,8 +80,7 @@ pub fn generate_entry_point_wrapper(
     // TODO(spapini): Check modifiers and type.
 
     let raw_output = function.has_attr(db, RAW_OUTPUT_ATTR);
-    let input_data_short_err = "'Input too short for arguments'";
-    for param in params {
+    for (param_idx, param) in params {
         let arg_name = format!("__arg_{}", param.name(db).text(db));
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
@@ -92,15 +92,14 @@ pub fn generate_entry_point_wrapper(
                 stable_ptr: param.modifiers(db).stable_ptr().untyped(),
             });
         }
-
         let ref_modifier = if is_ref { "ref " } else { "" };
         arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
-        // TODO(yuval): use panicable version of deserializations when supported.
         let arg_definition = format!(
             "
             let {mut_modifier}{arg_name} =
-                serde::Serde::<{type_name}>::deserialize(ref data).expect({input_data_short_err});"
+                serde::Serde::<{type_name}>::deserialize(ref data)
+                    .expect('Failed to deserialize param #{param_idx}');"
         );
         arg_definitions.push(arg_definition);
 
@@ -207,19 +206,33 @@ pub fn has_external_attribute(
     let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else {
         return false;
     };
-    validate_external_v0(db, diagnostics, &attr);
+    validate_v0(db, diagnostics, &attr, EXTERNAL_ATTR);
     true
 }
 
-/// Assuming the attribute is EXTERNAL_ATTR, validate it's #[external(v0)].
-pub fn validate_external_v0(
+/// Checks if the item is marked with an include attribute. Also validates the attribute.
+pub fn has_include_attribute(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+) -> bool {
+    let Some(attr) = item.find_attr(db, INCLUDE_ATTR) else {
+        return false;
+    };
+    validate_v0(db, diagnostics, &attr, INCLUDE_ATTR);
+    true
+}
+
+/// Assuming the attribute is `name`, validate it's #[`name`(v0)].
+fn validate_v0(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     attr: &Attribute,
+    name: &str,
 ) {
     if !is_arg_v0(db, attr) {
         diagnostics.push(PluginDiagnostic {
-            message: "Only #[external(v0)] is supported.".to_string(),
+            message: format!("Only #[{name}(v0)] is supported."),
             stable_ptr: attr.stable_ptr().untyped(),
         });
     }

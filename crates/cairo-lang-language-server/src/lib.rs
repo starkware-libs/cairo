@@ -10,21 +10,21 @@ use std::sync::Arc;
 use anyhow::{bail, Error};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::project::{setup_project, update_crate_roots_from_project_config};
-use cairo_lang_defs::db::DefsGroup;
+use cairo_lang_defs::db::{get_all_path_leafs, DefsGroup};
 use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
-    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplDefLongId, ImplFunctionLongId,
-    LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId, StructLongId,
-    TraitLongId, UseLongId,
+    FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
+    ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
+    StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
 };
-use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, ToOption};
+use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
-use cairo_lang_filesystem::span::{TextPosition, TextWidth};
+use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::diagnostic::LoweringDiagnostic;
@@ -34,11 +34,14 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::functions::GenericFunctionId;
-use cairo_lang_semantic::resolve::ResolvedGenericItem;
-use cairo_lang_semantic::SemanticDiagnostic;
+use cairo_lang_semantic::items::imp::ImplId;
+use cairo_lang_semantic::items::us::get_use_segments;
+use cairo_lang_semantic::resolve::{AsSegments, ResolvedConcreteItem, ResolvedGenericItem};
+use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
-use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
@@ -57,7 +60,7 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use vfs::{ProvideVirtualFileRequest, ProvideVirtualFileResponse};
 
-use crate::completions::dot_completions;
+use crate::completions::{colon_colon_completions, dot_completions, generic_completions};
 use crate::scarb_service::{is_scarb_manifest_path, ScarbService};
 
 mod scarb_service;
@@ -427,7 +430,7 @@ impl LanguageServer for Backend {
                 )),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string()]),
+                    trigger_characters: Some(vec![".".to_string(), ":".to_string()]),
                     all_commit_characters: None,
                     work_done_progress_options: Default::default(),
                     completion_item: None,
@@ -543,6 +546,7 @@ impl LanguageServer for Backend {
 
         let file = file(&db, uri.clone());
         self.state_mutex.lock().await.open_files.insert(file);
+        db.override_file_content(file, Some(Arc::new(params.text_document.text)));
         drop(db);
         self.refresh_diagnostics().await.ok();
     }
@@ -585,16 +589,49 @@ impl LanguageServer for Backend {
             let file_uri = text_document_position.text_document.uri;
             eprintln!("Complete {file_uri}");
             let file = file(db, file_uri);
-            let position = text_document_position.position;
+            let mut position = text_document_position.position;
+            position.character = position.character.saturating_sub(1);
 
-            let completions = if params.context.and_then(|x| x.trigger_character).map(|x| x == *".")
-                == Some(true)
-            {
-                dot_completions(db, file, position)
-            } else {
-                Some(vec![])
+            let Some((mut node, lookup_items)) = get_node_and_lookup_items(db, file, position)
+            else {
+                return None;
             };
-            completions.map(CompletionResponse::Array)
+
+            // Find module.
+            let module_id = find_node_module(db, file, node.clone()).on_none(|| {
+                eprintln!("Hover failed. Failed to find module.");
+            })?;
+            let file_index = FileIndex(0);
+            let module_file_id = ModuleFileId(module_id, file_index);
+
+            // Skip trivia.
+            while ast::Trivium::is_variant(node.kind(db))
+                || node.kind(db) == SyntaxKind::Trivia
+                || node.kind(db).is_token()
+            {
+                node = node.parent().unwrap_or(node);
+            }
+
+            let trigger_kind =
+                params.context.map(|it| it.trigger_kind).unwrap_or(CompletionTriggerKind::INVOKED);
+
+            match completion_kind(db, node) {
+                CompletionKind::Dot(expr) => {
+                    dot_completions(db, file, lookup_items, expr).map(CompletionResponse::Array)
+                }
+                CompletionKind::ColonColon(segments) if !segments.is_empty() => {
+                    colon_colon_completions(db, module_file_id, lookup_items, segments)
+                        .map(CompletionResponse::Array)
+                }
+                _ if trigger_kind == CompletionTriggerKind::INVOKED => {
+                    Some(CompletionResponse::Array(generic_completions(
+                        db,
+                        module_file_id,
+                        lookup_items,
+                    )))
+                }
+                _ => None,
+            }
         })
         .await
     }
@@ -615,7 +652,12 @@ impl LanguageServer for Backend {
 
             let node = syntax.as_syntax_node();
             let mut data: Vec<SemanticToken> = Vec::new();
-            SemanticTokensTraverser::default().find_semantic_tokens(db.upcast(), &mut data, node);
+            SemanticTokensTraverser::default().find_semantic_tokens(
+                db.upcast(),
+                file,
+                &mut data,
+                node,
+            );
             Some(SemanticTokensResult::Tokens(SemanticTokens { result_id: None, data }))
         })
         .await
@@ -694,7 +736,9 @@ impl LanguageServer for Backend {
 
             // Build texts.
             let mut hints = Vec::new();
-            if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
+            if let Some(hint) = get_pattern_hint(db, function_id, node.clone()) {
+                hints.push(MarkedString::String(hint));
+            } else if let Some(hint) = get_expr_hint(db, function_id, node.clone()) {
                 hints.push(MarkedString::String(hint));
             };
             if let Some(hint) = get_identifier_hint(db, lookup_item_id, node) {
@@ -710,6 +754,7 @@ impl LanguageServer for Backend {
         &self,
         params: GotoDefinitionParams,
     ) -> LSPResult<Option<GotoDefinitionResponse>> {
+        eprintln!("Goto definition");
         self.with_db(|db| {
             let syntax_db = db.upcast();
             let file_uri = params.text_document_position_params.text_document.uri;
@@ -718,108 +763,261 @@ impl LanguageServer for Backend {
             let Some((node, lookup_items)) = get_node_and_lookup_items(db, file, position) else {
                 return None;
             };
-            for lookup_item_id in lookup_items {
-                if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
-                    continue;
-                }
-                let identifier =
-                    ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-                let Some(item) =
-                    db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
-                else {
-                    continue;
-                };
-
-                let defs_db = db.upcast();
-                let (module_id, file_index, stable_ptr) = match item {
-                    ResolvedGenericItem::Constant(item) => (
-                        item.parent_module(defs_db),
-                        item.file_index(defs_db),
-                        item.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::Module(item) => {
-                        (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
-                    }
-                    ResolvedGenericItem::GenericFunction(item) => {
-                        let title = match item {
-                            GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
-                            GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
-                            GenericFunctionId::Impl(id) => {
-                                // Note: Only the trait title is returned.
-                                FunctionTitleId::Trait(id.function)
-                            }
-                        };
-                        (
-                            title.parent_module(defs_db),
-                            title.file_index(defs_db),
-                            title.untyped_stable_ptr(defs_db),
-                        )
-                    }
-                    ResolvedGenericItem::GenericType(generic_type) => (
-                        generic_type.parent_module(defs_db),
-                        generic_type.file_index(defs_db),
-                        generic_type.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::GenericTypeAlias(type_alias) => (
-                        type_alias.parent_module(defs_db),
-                        type_alias.file_index(defs_db),
-                        type_alias.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::GenericImplAlias(impl_alias) => (
-                        impl_alias.parent_module(defs_db),
-                        impl_alias.file_index(defs_db),
-                        impl_alias.untyped_stable_ptr(defs_db),
-                    ),
-                    ResolvedGenericItem::Variant(variant) => (
-                        variant.id.parent_module(defs_db),
-                        variant.id.file_index(defs_db),
-                        variant.id.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::Trait(trt) => (
-                        trt.parent_module(defs_db),
-                        trt.file_index(defs_db),
-                        trt.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::Impl(imp) => (
-                        imp.parent_module(defs_db),
-                        imp.file_index(defs_db),
-                        imp.stable_ptr(defs_db).untyped(),
-                    ),
-                    ResolvedGenericItem::TraitFunction(trait_function) => (
-                        trait_function.parent_module(defs_db),
-                        trait_function.file_index(defs_db),
-                        trait_function.stable_ptr(defs_db).untyped(),
-                    ),
-                };
-
-                let file = if let Ok(files) = db.module_files(module_id) {
-                    files[file_index.0]
-                } else {
-                    return None;
-                };
-
-                let uri = get_uri(db, file);
-                let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                    syntax
-                } else {
-                    eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                    return None;
-                };
-                let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
-                let span = node.span_without_trivia(syntax_db);
-
-                let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
-                let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
-
-                return Some(GotoDefinitionResponse::Scalar(Location {
-                    uri,
-                    range: Range { start, end },
-                }));
+            if node.kind(syntax_db) != SyntaxKind::TokenIdentifier {
+                return None;
             }
-            None
+            let identifier =
+                ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
+            let (module_id, file_index, stable_ptr) =
+                find_definition(db, file, &identifier, &lookup_items)?;
+
+            let file = if let Ok(files) = db.module_files(module_id) {
+                files[file_index.0]
+            } else {
+                return None;
+            };
+
+            let uri = get_uri(db, file);
+            let syntax = if let Ok(syntax) = db.file_syntax(file) {
+                syntax
+            } else {
+                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
+                return None;
+            };
+            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+            let span = node.span_without_trivia(syntax_db);
+
+            let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
+            let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
+
+            Some(GotoDefinitionResponse::Scalar(Location { uri, range: Range { start, end } }))
         })
         .await
     }
+}
+
+fn find_definition(
+    db: &RootDatabase,
+    file: FileId,
+    identifier: &ast::TerminalIdentifier,
+    lookup_items: &[LookupItemId],
+) -> Option<DefinitionResult> {
+    if let Some(parent) = identifier.as_syntax_node().parent() {
+        if parent.kind(db) == SyntaxKind::ItemModule {
+            let containing_module_id =
+                find_node_module(db, file, parent.clone()).on_none(|| {
+                    eprintln!("Hover failed. Failed to find module.");
+                })?;
+
+            let submodule_id = db.intern_submodule(SubmoduleLongId(
+                ModuleFileId(containing_module_id, FileIndex(0)),
+                ast::ItemModule::from_syntax_node(db, parent).stable_ptr(),
+            ));
+            return Some(resolved_generic_item_def(
+                db.upcast(),
+                ResolvedGenericItem::Module(ModuleId::Submodule(submodule_id)),
+            ));
+        }
+    }
+    for lookup_item_id in lookup_items.iter().copied() {
+        if let Some(item) =
+            db.lookup_resolved_generic_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            return Some(resolved_generic_item_def(db.upcast(), item));
+        } else if let Some(item) =
+            db.lookup_resolved_concrete_item_by_ptr(lookup_item_id, identifier.stable_ptr())
+        {
+            return resolved_concrete_item_def(db.upcast(), item);
+        }
+    }
+    None
+}
+
+fn resolved_concrete_item_def(
+    db: &dyn SemanticGroup,
+    item: ResolvedConcreteItem,
+) -> Option<(ModuleId, FileIndex, SyntaxStablePtrId)> {
+    match item {
+        ResolvedConcreteItem::Type(ty) => {
+            if let TypeLongId::GenericParameter(param) = db.lookup_intern_type(ty) {
+                Some((
+                    param.parent_module(db.upcast()),
+                    param.file_index(db.upcast()),
+                    param.untyped_stable_ptr(db.upcast()),
+                ))
+            } else {
+                None
+            }
+        }
+        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => Some((
+            param.parent_module(db.upcast()),
+            param.file_index(db.upcast()),
+            param.untyped_stable_ptr(db.upcast()),
+        )),
+        _ => None,
+    }
+}
+
+type DefinitionResult = (ModuleId, FileIndex, SyntaxStablePtrId);
+
+fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> DefinitionResult {
+    match item {
+        ResolvedGenericItem::Constant(item) => {
+            (item.parent_module(db), item.file_index(db), item.untyped_stable_ptr(db))
+        }
+        ResolvedGenericItem::Module(item) => {
+            (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
+        }
+        ResolvedGenericItem::GenericFunction(item) => {
+            let title = match item {
+                GenericFunctionId::Free(id) => FunctionTitleId::Free(id),
+                GenericFunctionId::Extern(id) => FunctionTitleId::Extern(id),
+                GenericFunctionId::Impl(id) => {
+                    // Note: Only the trait title is returned.
+                    FunctionTitleId::Trait(id.function)
+                }
+            };
+            (title.parent_module(db), title.file_index(db), title.untyped_stable_ptr(db))
+        }
+        ResolvedGenericItem::GenericType(generic_type) => (
+            generic_type.parent_module(db),
+            generic_type.file_index(db),
+            generic_type.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => (
+            type_alias.parent_module(db),
+            type_alias.file_index(db),
+            type_alias.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => (
+            impl_alias.parent_module(db),
+            impl_alias.file_index(db),
+            impl_alias.untyped_stable_ptr(db),
+        ),
+        ResolvedGenericItem::Variant(variant) => (
+            variant.id.parent_module(db),
+            variant.id.file_index(db),
+            variant.id.stable_ptr(db).untyped(),
+        ),
+        ResolvedGenericItem::Trait(trt) => {
+            (trt.parent_module(db), trt.file_index(db), trt.stable_ptr(db).untyped())
+        }
+        ResolvedGenericItem::Impl(imp) => {
+            (imp.parent_module(db), imp.file_index(db), imp.stable_ptr(db).untyped())
+        }
+        ResolvedGenericItem::TraitFunction(trait_function) => (
+            trait_function.parent_module(db),
+            trait_function.file_index(db),
+            trait_function.stable_ptr(db).untyped(),
+        ),
+        ResolvedGenericItem::Variable(item, var) => {
+            (item.parent_module(db), item.file_index(db), var.untyped_stable_ptr(db))
+        }
+    }
+}
+
+enum CompletionKind {
+    Dot(ast::ExprBinary),
+    ColonColon(Vec<PathSegment>),
+}
+
+fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
+    eprintln!("node.kind: {:#?}", node.kind(db));
+    match node.kind(db) {
+        SyntaxKind::TerminalDot => {
+            let parent = node.parent().unwrap();
+            if parent.kind(db) == SyntaxKind::ExprBinary {
+                return CompletionKind::Dot(ast::ExprBinary::from_syntax_node(db, parent));
+            }
+        }
+        SyntaxKind::TerminalColonColon => {
+            let parent = node.parent().unwrap();
+            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            if parent.kind(db) == SyntaxKind::ExprPath {
+                return completion_kind_from_path_node(db, parent);
+            }
+            let grandparent = parent.parent().unwrap();
+            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            if grandparent.kind(db) == SyntaxKind::ExprPath {
+                return completion_kind_from_path_node(db, grandparent);
+            }
+            let (use_ast, should_pop) = if parent.kind(db) == SyntaxKind::UsePathLeaf {
+                (ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, parent)), true)
+            } else if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
+                (ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, grandparent)), true)
+            } else if parent.kind(db) == SyntaxKind::UsePathSingle {
+                (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, parent)), false)
+            } else if grandparent.kind(db) == SyntaxKind::UsePathSingle {
+                (ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, grandparent)), false)
+            } else {
+                eprintln!("Generic");
+                return CompletionKind::ColonColon(vec![]);
+            };
+            let mut segments = vec![];
+            let Ok(()) = get_use_segments(db.upcast(), &use_ast, &mut segments) else {
+                eprintln!("Generic");
+                return CompletionKind::ColonColon(vec![]);
+            };
+            if should_pop {
+                segments.pop();
+            }
+            eprintln!("ColonColon");
+            return CompletionKind::ColonColon(segments);
+        }
+        SyntaxKind::TerminalIdentifier => {
+            let parent = node.parent().unwrap();
+            eprintln!("parent.kind: {:#?}", parent.kind(db));
+            let grandparent = parent.parent().unwrap();
+            eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
+            if grandparent.kind(db) == SyntaxKind::ExprPath {
+                if grandparent.children(db).next().unwrap().stable_ptr() != parent.stable_ptr() {
+                    // Not first segment.
+                    eprintln!("Not first segment");
+                    return completion_kind_from_path_node(db, grandparent);
+                }
+                // First segment.
+                let grandgrandparent = grandparent.parent().unwrap();
+                eprintln!("grandgrandparent.kind: {:#?}", grandgrandparent.kind(db));
+                if grandgrandparent.kind(db) == SyntaxKind::ExprBinary {
+                    let expr = ast::ExprBinary::from_syntax_node(db, grandgrandparent.clone());
+                    if matches!(
+                        ast::ExprBinary::from_syntax_node(db, grandgrandparent).op(db),
+                        ast::BinaryOperator::Dot(_)
+                    ) {
+                        eprintln!("Dot");
+                        return CompletionKind::Dot(expr);
+                    }
+                }
+            }
+            if grandparent.kind(db) == SyntaxKind::UsePathLeaf {
+                let use_ast = ast::UsePathLeaf::from_syntax_node(db, grandparent);
+                let mut segments = vec![];
+                let Ok(()) =
+                    get_use_segments(db.upcast(), &ast::UsePath::Leaf(use_ast), &mut segments)
+                else {
+                    eprintln!("Generic");
+                    return CompletionKind::ColonColon(vec![]);
+                };
+                segments.pop();
+                eprintln!("ColonColon");
+                return CompletionKind::ColonColon(segments);
+            }
+        }
+        _ => (),
+    }
+    eprintln!("Generic");
+    CompletionKind::ColonColon(vec![])
+}
+
+fn completion_kind_from_path_node(db: &RootDatabase, parent: SyntaxNode) -> CompletionKind {
+    eprintln!("completion_kind_from_path_node: {}", parent.clone().get_text_without_trivia(db));
+    let expr = ast::ExprPath::from_syntax_node(db, parent);
+    eprintln!("has_tail: {}", expr.has_tail(db));
+    let mut segments = expr.to_segments(db);
+    if expr.has_tail(db) {
+        segments.pop();
+    }
+    CompletionKind::ColonColon(segments)
 }
 
 /// If the ast node is a lookup item, return the corresponding id. Otherwise, return None.
@@ -828,74 +1026,100 @@ fn lookup_item_from_ast(
     db: &dyn SemanticGroup,
     module_file_id: ModuleFileId,
     node: SyntaxNode,
-) -> Option<LookupItemId> {
+) -> Vec<LookupItemId> {
     let syntax_db = db.upcast();
     // TODO(spapini): Handle trait items.
     match node.kind(syntax_db) {
-        SyntaxKind::ItemConstant => Some(LookupItemId::ModuleItem(ModuleItemId::Constant(
+        SyntaxKind::ItemConstant => vec![LookupItemId::ModuleItem(ModuleItemId::Constant(
             db.intern_constant(ConstantLongId(
                 module_file_id,
                 ast::ItemConstant::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::FunctionWithBody => {
             if is_grandparent_of_kind(syntax_db, &node, SyntaxKind::ImplBody) {
-                Some(LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
+                vec![LookupItemId::ImplFunction(db.intern_impl_function(ImplFunctionLongId(
                     module_file_id,
                     ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
-                ))))
+                )))]
             } else {
-                Some(LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
+                vec![LookupItemId::ModuleItem(ModuleItemId::FreeFunction(db.intern_free_function(
                     FreeFunctionLongId(
                         module_file_id,
                         ast::FunctionWithBody::from_syntax_node(syntax_db, node).stable_ptr(),
                     ),
-                ))))
+                )))]
             }
         }
-        SyntaxKind::ItemExternFunction => Some(LookupItemId::ModuleItem(
+        SyntaxKind::ItemExternFunction => vec![LookupItemId::ModuleItem(
             ModuleItemId::ExternFunction(db.intern_extern_function(ExternFunctionLongId(
                 module_file_id,
                 ast::ItemExternFunction::from_syntax_node(syntax_db, node).stable_ptr(),
             ))),
-        )),
-        SyntaxKind::ItemExternType => Some(LookupItemId::ModuleItem(ModuleItemId::ExternType(
+        )],
+        SyntaxKind::ItemExternType => vec![LookupItemId::ModuleItem(ModuleItemId::ExternType(
             db.intern_extern_type(ExternTypeLongId(
                 module_file_id,
                 ast::ItemExternType::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
-        ))),
+        ))],
         SyntaxKind::ItemTrait => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Trait(db.intern_trait(TraitLongId(
                 module_file_id,
                 ast::ItemTrait::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
+        }
+        SyntaxKind::TraitItemFunction => {
+            vec![LookupItemId::TraitFunction(db.intern_trait_function(TraitFunctionLongId(
+                module_file_id,
+                ast::TraitItemFunction::from_syntax_node(syntax_db, node).stable_ptr(),
+            )))]
         }
         SyntaxKind::ItemImpl => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Impl(db.intern_impl(ImplDefLongId(
                 module_file_id,
                 ast::ItemImpl::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemStruct => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Struct(db.intern_struct(StructLongId(
                 module_file_id,
                 ast::ItemStruct::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
         SyntaxKind::ItemEnum => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
+            vec![LookupItemId::ModuleItem(ModuleItemId::Enum(db.intern_enum(EnumLongId(
                 module_file_id,
                 ast::ItemEnum::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
+            ))))]
         }
-        SyntaxKind::UsePathLeaf => {
-            Some(LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(UseLongId(
+        SyntaxKind::ItemUse => {
+            // Item use is not a lookup item, so we need to collect all UseLeaf, which are lookup
+            // items.
+            let item_use = ast::ItemUse::from_syntax_node(db.upcast(), node);
+            let path_leaves = get_all_path_leafs(db.upcast(), item_use.use_path(syntax_db));
+            let mut res = Vec::new();
+            for path_leaf in path_leaves {
+                let use_long_id = UseLongId(module_file_id, path_leaf.stable_ptr());
+                let lookup_item_id =
+                    LookupItemId::ModuleItem(ModuleItemId::Use(db.intern_use(use_long_id)));
+                res.push(lookup_item_id);
+            }
+            res
+        }
+        SyntaxKind::ItemTypeAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TypeAlias(
+            db.intern_type_alias(TypeAliasLongId(
                 module_file_id,
-                ast::UsePathLeaf::from_syntax_node(syntax_db, node).stable_ptr(),
-            )))))
-        }
-        _ => None,
+                ast::ItemTypeAlias::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))],
+        SyntaxKind::ItemImplAlias => vec![LookupItemId::ModuleItem(ModuleItemId::ImplAlias(
+            db.intern_impl_alias(ImplAliasLongId(
+                module_file_id,
+                ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))],
+        _ => vec![],
     }
 }
 
@@ -924,16 +1148,7 @@ fn get_node_and_lookup_items(
     })?;
 
     // Find offset for position.
-    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
-        eprintln!("Hover failed. Position out of bounds.");
-    })?;
-    let mut chars_it = offset.take_from(&content).chars();
-    for _ in 0..position.character {
-        let c = chars_it.next().on_none(|| {
-            eprintln!("Position does not exist.");
-        })?;
-        offset = offset.add_width(TextWidth::from_char(c));
-    }
+    let offset = position_to_offset(file_summary, position, &content)?;
     let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
 
     // Find module.
@@ -946,7 +1161,7 @@ fn get_node_and_lookup_items(
     // Find containing function.
     let mut item_node = node.clone();
     loop {
-        if let Some(item) = lookup_item_from_ast(db, module_file_id, item_node.clone()) {
+        for item in lookup_item_from_ast(db, module_file_id, item_node.clone()) {
             res.push(item);
         }
         match item_node.parent() {
@@ -958,8 +1173,26 @@ fn get_node_and_lookup_items(
     }
 }
 
+fn position_to_offset(
+    file_summary: Arc<FileSummary>,
+    position: Position,
+    content: &str,
+) -> Option<TextOffset> {
+    let mut offset = *file_summary.line_offsets.get(position.line as usize).on_none(|| {
+        eprintln!("Hover failed. Position out of bounds.");
+    })?;
+    let mut chars_it = offset.take_from(content).chars();
+    for _ in 0..position.character {
+        let c = chars_it.next().on_none(|| {
+            eprintln!("Position does not exist.");
+        })?;
+        offset = offset.add_width(TextWidth::from_char(c));
+    }
+    Some(offset)
+}
+
 fn find_node_module(
-    db: &(dyn SemanticGroup + 'static),
+    db: &dyn SemanticGroup,
     main_file: FileId,
     mut node: SyntaxNode,
 ) -> Option<ModuleId> {
@@ -1039,6 +1272,38 @@ fn nearest_semantic_expr(
     }
 }
 
+/// If the node is a pattern, retrieves a hover hint for it.
+fn get_pattern_hint(
+    db: &(dyn SemanticGroup + 'static),
+    function_id: FunctionWithBodyId,
+    node: SyntaxNode,
+) -> Option<String> {
+    let semantic_pattern = nearest_semantic_pat(db, node, function_id)?;
+    // Format the hover text.
+    Some(format!("Type: `{}`", semantic_pattern.ty().format(db)))
+}
+
+/// Returns the semantic pattern for the current node.
+fn nearest_semantic_pat(
+    db: &dyn SemanticGroup,
+    mut node: SyntaxNode,
+    function_id: FunctionWithBodyId,
+) -> Option<cairo_lang_semantic::Pattern> {
+    loop {
+        let syntax_db = db.upcast();
+        if ast::Pattern::is_variant(node.kind(syntax_db)) {
+            let pattern_node = ast::Pattern::from_syntax_node(syntax_db, node.clone());
+            if let Some(pattern_id) =
+                db.lookup_pattern_by_ptr(function_id, pattern_node.stable_ptr()).to_option()
+            {
+                let semantic_pattern = db.pattern_semantic(function_id, pattern_id);
+                return Some(semantic_pattern);
+            }
+        }
+        node = node.parent()?;
+    }
+}
+
 fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId, Directory)>) {
     for (crate_long_id, crate_root) in crate_roots {
         let crate_id = db.intern_crate(crate_long_id);
@@ -1066,7 +1331,7 @@ fn file(db: &RootDatabase, uri: Url) -> FileId {
 }
 
 /// Gets the canonical URI for a file.
-fn get_uri(db: &RootDatabase, file_id: FileId) -> Url {
+fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
     let virtual_file = match db.lookup_intern_file(file_id) {
         FileLongId::OnDisk(path) => return Url::from_file_path(path).unwrap(),
         FileLongId::Virtual(virtual_file) => virtual_file,
@@ -1078,19 +1343,45 @@ fn get_uri(db: &RootDatabase, file_id: FileId) -> Url {
     uri
 }
 
-/// Converts internal format diagnostics to LSP format.
+/// Converts an internal diagnsotic location to an LSP range.
+fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
+    let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
+    let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
+    Range { start, end }
+}
+
+/// Converts internal diagnostics to LSP format.
 fn get_diagnostics<T: DiagnosticEntry>(
     db: &T::DbType,
     diags: &mut Vec<Diagnostic>,
     diagnostics: &Diagnostics<T>,
 ) {
     for diagnostic in diagnostics.get_all() {
-        let location = diagnostic.location(db);
-        let message = diagnostic.format(db);
-        let start =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        let end =
-            from_pos(location.span.start.position_in_file(db.upcast(), location.file_id).unwrap());
-        diags.push(Diagnostic { range: Range { start, end }, message, ..Diagnostic::default() });
+        let mut message = diagnostic.format(db);
+        let mut related_information = vec![];
+        for note in diagnostic.notes(db) {
+            if let Some(location) = &note.location {
+                related_information.push(DiagnosticRelatedInformation {
+                    location: Location {
+                        uri: get_uri(db.upcast(), location.file_id),
+                        range: get_range(db.upcast(), location),
+                    },
+                    message: note.text.clone(),
+                });
+            } else {
+                message += &format!("\nnote: {}", note.text);
+            }
+        }
+
+        diags.push(Diagnostic {
+            range: get_range(db.upcast(), &diagnostic.location(db)),
+            message,
+            related_information: if related_information.is_empty() {
+                None
+            } else {
+                Some(related_information)
+            },
+            ..Diagnostic::default()
+        });
     }
 }

@@ -20,7 +20,9 @@ ExprPath
 └── Top level kind: ExprIndexed
     ├── expr (kind: ExprPath) <ignored>
     ├── lbrack (kind: TokenLBrack): '['
-    ├── index_expr (kind: TokenLiteralNumber): '1'
+    ├── index_expr (kind: LiteralNumber)
+    │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   └── number (kind: TokenNumber): '1'
     └── rbrack (kind: TokenRBrack): ']'
 
 //! > ==========================================================================
@@ -107,6 +109,8 @@ ExprPath
     ├── index_expr (kind: ExprIndexed)
     │   ├── expr (kind: ExprPath) <ignored>
     │   ├── lbrack (kind: TokenLBrack): '['
-    │   ├── index_expr (kind: TokenLiteralNumber): '1'
+    │   ├── index_expr (kind: LiteralNumber)
+    │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
+    │   │   └── number (kind: TokenNumber): '1'
     │   └── rbrack (kind: TokenRBrack): ']'
     └── rbrack (kind: TokenRBrack): ']'
