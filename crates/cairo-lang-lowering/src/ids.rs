@@ -5,7 +5,7 @@ use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_utils::define_short_id;
 use defs::diagnostic_utils::StableLocation;
-use defs::ids::{FreeFunctionId, LanguageElementId};
+use defs::ids::FreeFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
@@ -192,12 +192,9 @@ impl ConcreteFunctionWithBodyId {
             ConcreteFunctionWithBodyLongId::Semantic(id) => id.stable_location(semantic_db),
             ConcreteFunctionWithBodyLongId::Generated(generated) => {
                 let parent_id = generated.parent.function_with_body_id(semantic_db);
-                StableLocation {
-                    file_id: parent_id.module_file_id(semantic_db.upcast()).file_id(db.upcast())?,
-                    stable_ptr: db.function_body(parent_id)?.exprs[generated.element]
-                        .stable_ptr()
-                        .untyped(),
-                }
+                StableLocation::new(
+                    db.function_body(parent_id)?.exprs[generated.element].stable_ptr().untyped(),
+                )
             }
         })
     }

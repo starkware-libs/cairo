@@ -44,8 +44,7 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
     }
     /// Report a diagnostic in the location after the given node (with width 0).
     pub fn report_after<TNode: TypedSyntaxNode>(
@@ -53,16 +52,14 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new_after(StableLocation::from_ast(self.file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
     }
     pub fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::new(self.file_id, stable_ptr), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
     }
 }
 

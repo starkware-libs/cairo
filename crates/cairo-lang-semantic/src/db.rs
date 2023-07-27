@@ -5,8 +5,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId,
-    LanguageElementId, LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId,
-    TypeAliasId, UseId, VariantId,
+    LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
+    VariantId,
 };
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
@@ -15,7 +15,6 @@ use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast::{self, TraitItemFunction};
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
@@ -1019,9 +1018,9 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
+    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
         diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(module_file_id.file_id(db.upcast())?, plugin_diag.stable_ptr),
+            StableLocation::new(plugin_diag.stable_ptr),
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
         ));
     }
@@ -1070,10 +1069,8 @@ fn module_semantic_diagnostics(
                             FileLongId::Virtual(_) => panic!("Expected OnDisk file."),
                         };
 
-                        let stable_location = StableLocation::new(
-                            submodule_id.module_file_id(db.upcast()).file_id(db.upcast())?,
-                            submodule_id.stable_ptr(db.upcast()).untyped(),
-                        );
+                        let stable_location =
+                            StableLocation::new(submodule_id.stable_ptr(db.upcast()).untyped());
                         diagnostics.add(SemanticDiagnostic::new(
                             stable_location,
                             SemanticDiagnosticKind::ModuleFileNotFound { path },
@@ -1126,8 +1123,9 @@ fn map_diagnostics(
     for diag in &original_diagnostics.0.leaves {
         let module_files = db.module_files(module_id).unwrap_or_default();
         // Find the position of file_id in module_files.
-        let Some(file_index) =
-            module_files.iter().position(|file_id| file_id == &diag.stable_location.file_id)
+        let Some(file_index) = module_files
+            .iter()
+            .position(|file_id| file_id == &diag.stable_location.file_id(db.upcast()))
         else {
             continue;
         };
@@ -1142,10 +1140,7 @@ fn map_diagnostics(
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
-                let stable_location = StableLocation::new(
-                    file_info.origin.file_id(db.upcast()).unwrap(),
-                    db.intern_stable_ptr(SyntaxStablePtr::Root),
-                );
+                let stable_location = diag.stable_location;
                 let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
                     diagnostic: plugin_diag,
                     original_diag: Box::new(diag.clone()),

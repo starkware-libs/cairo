@@ -1,3 +1,6 @@
+use std::path::PathBuf;
+
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_syntax::node::ast::{
     ItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
@@ -20,11 +23,13 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
         eof_token,
         Trivia::new_green(db, vec![]),
     );
+    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::default()));
     SyntaxFile::from_syntax_node(
         db,
         SyntaxNode::new_root(
             db,
-            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal),
+            file_id,
+            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal).0,
         ),
     )
 }
