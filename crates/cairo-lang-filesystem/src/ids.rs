@@ -44,10 +44,16 @@ pub enum FileLongId {
     Virtual(VirtualFile),
 }
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum VirtualFileKind {
+    Module,
+    Expr,
+}
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
     pub content: Arc<String>,
+    pub kind: VirtualFileKind,
 }
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
 impl FileId {
