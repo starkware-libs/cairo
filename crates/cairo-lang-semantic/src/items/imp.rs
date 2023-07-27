@@ -991,11 +991,11 @@ pub fn get_impl_at_context(
     db: &dyn SemanticGroup,
     lookup_context: ImplLookupContext,
     concrete_trait_id: ConcreteTraitId,
-    stable_ptr: SyntaxStablePtrId,
+    stable_ptr: Option<SyntaxStablePtrId>,
 ) -> InferenceResult<ImplId> {
     let mut inference_data = InferenceData::new();
     let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, Some(stable_ptr), lookup_context)?;
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
     if let Some((_, err)) = inference.finalize() {
         return Err(err);
     };

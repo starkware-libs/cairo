@@ -46,10 +46,8 @@ pub fn priv_module_semantic_data(
         };
 
         if items.insert(name.clone(), *item).is_some() {
-            let stable_location = StableLocation::new(
-                item.module_file_id(def_db).file_id(db.upcast())?,
-                db.module_item_name_stable_ptr(module_id, *item)?,
-            );
+            let stable_location =
+                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item)?);
             let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
             diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }

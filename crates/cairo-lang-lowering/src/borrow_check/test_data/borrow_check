@@ -402,11 +402,11 @@ use array::ArrayTrait;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> inline_macros:10:9
+ --> lib.cairo:7:9
   panic(arr);
         ^*^
 note: variable was previously used here:
-  --> inline_macros:8:3
+  --> lib.cairo:5:3
   b.append('bla');
   ^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>

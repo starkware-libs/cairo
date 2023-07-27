@@ -83,7 +83,7 @@ impl<'a> Parser<'a> {
             diagnostics,
         };
         let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, green))
+        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
 
     /// Parses a file expr.
@@ -114,7 +114,7 @@ impl<'a> Parser<'a> {
                 span,
             });
         }
-        Expr::from_syntax_node(db, SyntaxNode::new_expr_root(db, green))
+        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.

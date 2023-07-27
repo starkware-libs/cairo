@@ -44,8 +44,7 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
     }
     /// Report a diagnostic in the location after the given node (with width 0).
     pub fn report_after<TNode: TypedSyntaxNode>(
@@ -53,16 +52,14 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new_after(StableLocation::from_ast(self.file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
     }
     pub fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::new(self.file_id, stable_ptr), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
     }
 }
 
@@ -501,7 +498,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, original_diag: _ } => {
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
                 // TODO(spapini): Support nested diagnostics.
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
@@ -615,8 +612,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             location = location.after();
         }
         match &self.kind {
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
-                DiagnosticLocation { span: diagnostic.span, ..location }
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, file_id, .. } => {
+                DiagnosticLocation { span: diagnostic.span, file_id: *file_id }
             }
             _ => location,
         }
@@ -853,6 +850,7 @@ pub enum SemanticDiagnosticKind {
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     WrappedPluginDiagnostic {
+        file_id: FileId,
         diagnostic: PluginMappedDiagnostic,
         original_diag: Box<SemanticDiagnostic>,
     },
