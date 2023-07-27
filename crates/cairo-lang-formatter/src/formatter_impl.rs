@@ -4,8 +4,9 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
+use syntax::node::ast::MaybeModuleBody;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -619,19 +620,16 @@ impl<'a> FormatterImpl<'a> {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
 
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-        let children = syntax_node.children(self.db);
+        let mut children: Vec<SyntaxNode> = syntax_node.children(self.db).collect();
         let n_children = children.len();
-        let cmp = syntax_node_sorting_fn(self.db);
-
-        let mut children_iter = children.enumerate().collect::<Vec<(usize, SyntaxNode)>>();
-        if self.config.sorted {
-            children_iter.sort_by(cmp);
+        if self.config.sort_module_level_items {
+            children.sort_by_key(|c| MovableNode::new(self.db, c));
         }
-        for (i, child) in children_iter {
+        for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
-            self.format_node(&child, no_space_after && i == n_children - 1);
+            self.format_node(child, no_space_after && i == n_children - 1);
 
             self.empty_lines_allowance = allowed_empty_between;
         }
@@ -716,36 +714,45 @@ impl<'a> FormatterImpl<'a> {
     }
 }
 
-/// Returns a `cmp` function for sorting SyntaxNodes siblings prioritizing `mod` and `use` clauses
-fn syntax_node_sorting_fn(
-    db: &dyn SyntaxGroup,
-) -> impl FnMut(&(usize, SyntaxNode), &(usize, SyntaxNode)) -> Ordering + '_ {
-    |first, second| {
-        let ignored_nodes = [SyntaxKind::TerminalLBrace, SyntaxKind::TerminalRBrace];
-        if ignored_nodes.contains(&first.1.kind(db)) || ignored_nodes.contains(&second.1.kind(db)) {
-            return Ordering::Equal;
+#[derive(PartialEq, Eq)]
+enum MovableNode {
+    ItemModule(String),
+    ItemUse(String),
+    Immovable,
+}
+impl MovableNode {
+    fn new(db: &dyn SyntaxGroup, node: &SyntaxNode) -> Self {
+        match node.kind(db) {
+            SyntaxKind::ItemModule => {
+                let item = ast::ItemModule::from_syntax_node(db, node.clone());
+                if matches!(item.body(db), MaybeModuleBody::None(_)) {
+                    Self::ItemModule(item.name(db).text(db).to_string())
+                } else {
+                    Self::Immovable
+                }
+            }
+            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db)),
+            _ => Self::Immovable,
         }
-
-        let first_text = first.clone().1.get_text_without_trivia(db);
-        let second_text: String = second.clone().1.get_text_without_trivia(db);
-
-        let first_is_use = first_text.starts_with("use ");
-        let first_is_mod = first_text.starts_with("mod ") && first_text.ends_with(';');
-        let second_is_use = second_text.starts_with("use ");
-        let second_is_mod = second_text.starts_with("mod ") && second_text.ends_with(';');
-
-        if (first_is_mod && second_is_mod) || (first_is_use && second_is_use) {
-            first_text.cmp(&second_text)
-        } else if first_is_mod {
-            Ordering::Less
-        } else if second_is_mod {
-            Ordering::Greater
-        } else if first_is_use {
-            Ordering::Less
-        } else if second_is_use {
-            Ordering::Greater
-        } else {
-            Ordering::Equal
-        }
+    }
+}
+impl PartialOrd for MovableNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match (self, other) {
+            (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
+            (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
+            | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
+            (_, MovableNode::Immovable) | (MovableNode::ItemModule(_), MovableNode::ItemUse(_)) => {
+                Ordering::Less
+            }
+            (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
+                Ordering::Greater
+            }
+        })
+    }
+}
+impl Ord for MovableNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
     }
 }

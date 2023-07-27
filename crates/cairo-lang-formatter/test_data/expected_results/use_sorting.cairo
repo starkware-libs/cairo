@@ -1,13 +1,16 @@
 use openzeppelin::introspection::first;
 use openzeppelin::introspection::interface;
 
-
 #[starknet::contract]
 mod SRC5 {
+    mod F;
+    mod G;
+
     use A;
 
     use openzeppelin::introspection::first;
     use openzeppelin::introspection::interface;
+    use openzeppelin::introspection::{interface, AB};
     use starknet::ArrayTrait;
 
     #[storage]
