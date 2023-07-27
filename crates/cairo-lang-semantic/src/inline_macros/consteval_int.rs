@@ -1,43 +1,30 @@
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{InlineMacroPlugin, InlinePluginResult, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
 
-use crate::plugins::{InlineMacro, InlineMacroExpanderData};
+use super::unsupported_bracket_diagnostic;
 
+#[derive(Debug)]
 pub struct ConstevalIntMacro;
 
-impl InlineMacro for ConstevalIntMacro {
-    fn append_macro_code(
+impl InlineMacroPlugin for ConstevalIntMacro {
+    fn generate_code(
         &self,
-        macro_expander_data: &mut InlineMacroExpanderData,
         db: &dyn SyntaxGroup,
-        macro_arguments: &ast::ExprList,
-    ) {
-        let constant_expression = extract_consteval_macro_expression(
-            db,
-            macro_arguments,
-            &mut macro_expander_data.diagnostics,
-        );
+        syntax: ast::ExprInlineMacro,
+    ) -> InlinePluginResult {
+        let mut diagnostics = vec![];
+        let ast::WrappedExprList::ParenthesizedExprList(args) = syntax.arguments(db) else {
+            return unsupported_bracket_diagnostic(db, &syntax);
+        };
+        let diagnostics = vec![];
+        let constant_expression = extract_consteval_macro_expression(db, args, &mut diagnostics);
         if constant_expression.is_none() {
-            return;
+            return InlinePluginResult { code: None, diagnostics };
         }
-        if let Some(new_value) = compute_constant_expr(
-            db,
-            &constant_expression.unwrap(),
-            &mut macro_expander_data.diagnostics,
-        ) {
-            macro_expander_data.result_code.push_str(&new_value.to_string());
-            macro_expander_data.code_changed = true;
-        }
-    }
-
-    fn is_bracket_type_allowed(
-        &self,
-        db: &dyn SyntaxGroup,
-        macro_ast: &ast::ExprInlineMacro,
-    ) -> bool {
-        matches!(macro_ast.arguments(db), ast::WrappedExprList::ParenthesizedExprList(_))
+        let code = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
+        InlinePluginResult { code, diagnostics }
     }
 }
 
