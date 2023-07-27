@@ -237,6 +237,7 @@ macro_rules! add_expr_rewrites {
         }
 
         $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, PatternId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, StatementId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, ConstantId, $($exclude)*);
 
@@ -273,6 +274,7 @@ macro_rules! add_expr_rewrites {
         $crate::prune_single!(__regular_helper, PatternTuple, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternEnumVariant, $($exclude)*);
         $crate::prune_single!(__regular_helper, PatternOtherwise, $($exclude)*);
+        $crate::prune_single!(__regular_helper, PatternMissing, $($exclude)*);
         $crate::prune_single!(__regular_helper, LocalVariable, $($exclude)*);
         $crate::prune_single!(__regular_helper, Member, $($exclude)*);
         $crate::prune_single!(__regular_helper, Constant, $($exclude)*);

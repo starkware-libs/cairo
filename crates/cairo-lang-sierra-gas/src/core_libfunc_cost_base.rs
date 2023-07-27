@@ -619,11 +619,20 @@ fn sint_libfunc_cost<TSintTraits: SintTraits + IsZeroTraits + IntMulTraits>(
         }
         SintConcrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 4, holes: 0, range_checks: 2 }.into(),
-                ConstCost { steps: 10, holes: 0, range_checks: 3 }.into(),
+                ConstCost { steps: 5, holes: 0, range_checks: 2 }.into(),
+                ConstCost { steps: 12, holes: 0, range_checks: 3 }.into(),
             ]
         }
         SintConcrete::IsZero(_) => vec![ConstCost::steps(1).into(), ConstCost::steps(1).into()],
+        SintConcrete::Operation(_) => vec![
+            ConstCost { steps: 6, holes: 0, range_checks: 2 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+        ],
+        SintConcrete::Diff(_) => vec![
+            (ConstCost { steps: 3, holes: 0, range_checks: 1 }).into(),
+            (ConstCost { steps: 5, holes: 0, range_checks: 1 }).into(),
+        ],
     }
 }
 
@@ -636,8 +645,8 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
         }
         Sint128Concrete::FromFelt252(_) => {
             vec![
-                ConstCost { steps: 2, holes: 0, range_checks: 1 }.into(),
-                ConstCost { steps: 11, holes: 0, range_checks: 3 }.into(),
+                ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
+                ConstCost { steps: 12, holes: 0, range_checks: 3 }.into(),
             ]
         }
         Sint128Concrete::IsZero(_) => {
@@ -646,6 +655,15 @@ fn s128_libfunc_cost(libfunc: &Sint128Concrete) -> Vec<BranchCost> {
         Sint128Concrete::Equal(_) => {
             vec![steps(2).into(), steps(3).into()]
         }
+        Sint128Concrete::Operation(_) => vec![
+            ConstCost { steps: 4, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 6, holes: 0, range_checks: 1 }.into(),
+        ],
+        Sint128Concrete::Diff(_) => vec![
+            ConstCost { steps: 3, holes: 0, range_checks: 1 }.into(),
+            ConstCost { steps: 5, holes: 0, range_checks: 1 }.into(),
+        ],
     }
 }
 

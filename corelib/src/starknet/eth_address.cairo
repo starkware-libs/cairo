@@ -6,7 +6,7 @@ use traits::{Into, TryInto};
 use zeroable::Zeroable;
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, starknet::Store)]
+#[derive(Copy, Drop, starknet::Store, PartialEq)]
 struct EthAddress {
     address: felt252, 
 }
@@ -55,16 +55,6 @@ impl EthAddressZeroable of Zeroable<EthAddress> {
     #[inline(always)]
     fn is_non_zero(self: EthAddress) -> bool {
         !self.is_zero()
-    }
-}
-impl EthAddressPartialEq of PartialEq<EthAddress> {
-    #[inline(always)]
-    fn eq(lhs: @EthAddress, rhs: @EthAddress) -> bool {
-        *lhs.address == *rhs.address
-    }
-    #[inline(always)]
-    fn ne(lhs: @EthAddress, rhs: @EthAddress) -> bool {
-        !(lhs == rhs)
     }
 }
 

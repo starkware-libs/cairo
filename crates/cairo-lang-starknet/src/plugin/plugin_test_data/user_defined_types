@@ -226,12 +226,12 @@ mod __constructor {
 
 impls:
 
-impl WrappedFelt252Drop<> of Drop::<WrappedFelt252<>>;
-impl WrappedFelt252Serde<> of serde::Serde::<WrappedFelt252<>> {
-    fn serialize(self: @WrappedFelt252<>, ref output: array::Array<felt252>) {
+impl WrappedFelt252Drop of Drop::<WrappedFelt252>;
+impl WrappedFelt252Serde of Serde::<WrappedFelt252> {
+    fn serialize(self: @WrappedFelt252, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.value, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<WrappedFelt252<>> {
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<WrappedFelt252> {
         Option::Some(WrappedFelt252 {
             value: serde::Serde::deserialize(ref serialized)?,
         })
@@ -275,7 +275,7 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 
 impls:
 
-impl ContractStateDrop<> of Drop::<ContractState<>>;
+impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

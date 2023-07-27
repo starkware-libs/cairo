@@ -1505,9 +1505,19 @@ impl U256TryIntoFelt252 of TryInto<u256, felt252> {
         )
     }
 }
+impl Felt252TryIntoI8 of TryInto<felt252, i8> {
+    fn try_into(self: felt252) -> Option<i8> {
+        i8_try_from_felt252(self)
+    }
+}
 impl I8IntoFelt252 of Into<i8, felt252> {
     fn into(self: i8) -> felt252 {
         i8_to_felt252(self)
+    }
+}
+impl Felt252TryIntoI16 of TryInto<felt252, i16> {
+    fn try_into(self: felt252) -> Option<i16> {
+        i16_try_from_felt252(self)
     }
 }
 impl I16IntoFelt252 of Into<i16, felt252> {
@@ -1515,14 +1525,29 @@ impl I16IntoFelt252 of Into<i16, felt252> {
         i16_to_felt252(self)
     }
 }
+impl Felt252TryIntoI32 of TryInto<felt252, i32> {
+    fn try_into(self: felt252) -> Option<i32> {
+        i32_try_from_felt252(self)
+    }
+}
 impl I32IntoFelt252 of Into<i32, felt252> {
     fn into(self: i32) -> felt252 {
         i32_to_felt252(self)
     }
 }
+impl Felt252TryIntoI64 of TryInto<felt252, i64> {
+    fn try_into(self: felt252) -> Option<i64> {
+        i64_try_from_felt252(self)
+    }
+}
 impl I64IntoFelt252 of Into<i64, felt252> {
     fn into(self: i64) -> felt252 {
         i64_to_felt252(self)
+    }
+}
+impl Felt252TryIntoI128 of TryInto<felt252, i128> {
+    fn try_into(self: felt252) -> Option<i128> {
+        i128_try_from_felt252(self)
     }
 }
 impl I128IntoFelt252 of Into<i128, felt252> {
@@ -1839,10 +1864,18 @@ impl U256Zeroable of Zeroable<u256> {
     }
 }
 
+enum SignedIntegerResult<T> {
+    InRange: T,
+    Underflow: T,
+    Overflow: T,
+}
+impl SignedIntegerResultDrop<T, impl TDrop: Drop<T>> of Drop<SignedIntegerResult<T>>;
+
 #[derive(Copy, Drop)]
 extern type i8;
 impl NumericLiterali8 of NumericLiteral<i8>;
 extern fn i8_const<value>() -> i8 nopanic;
+extern fn i8_try_from_felt252(a: felt252) -> Option<i8> implicits(RangeCheck) nopanic;
 extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
 
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
@@ -1859,10 +1892,82 @@ impl I8PartialEq of PartialEq<i8> {
     }
 }
 
+extern fn i8_overflowing_add_impl(
+    lhs: i8, rhs: i8
+) -> SignedIntegerResult<i8> implicits(RangeCheck) nopanic;
+extern fn i8_overflowing_sub_impl(
+    lhs: i8, rhs: i8
+) -> SignedIntegerResult<i8> implicits(RangeCheck) nopanic;
+impl I8Add of Add<i8> {
+    fn add(lhs: i8, rhs: i8) -> i8 {
+        match i8_overflowing_add_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_add Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_add Overflow'),
+        }
+    }
+}
+impl I8AddEq of AddEq<i8> {
+    #[inline(always)]
+    fn add_eq(ref self: i8, other: i8) {
+        self = Add::add(self, other);
+    }
+}
+impl I8Sub of Sub<i8> {
+    fn sub(lhs: i8, rhs: i8) -> i8 {
+        match i8_overflowing_sub_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i8_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i8_sub Overflow'),
+        }
+    }
+}
+impl I8SubEq of SubEq<i8> {
+    #[inline(always)]
+    fn sub_eq(ref self: i8, other: i8) {
+        self = Sub::sub(self, other);
+    }
+}
+
+extern fn i8_wide_mul(lhs: i8, rhs: i8) -> i16 implicits() nopanic;
+impl I8Mul of Mul<i8> {
+    fn mul(lhs: i8, rhs: i8) -> i8 {
+        i8_try_from_felt252(i16_to_felt252(i8_wide_mul(lhs, rhs))).expect('i8_mul Overflow')
+    }
+}
+impl I8MulEq of MulEq<i8> {
+    #[inline(always)]
+    fn mul_eq(ref self: i8, other: i8) {
+        self = Mul::mul(self, other);
+    }
+}
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**8 + lhs - rhs)`.
+extern fn i8_diff(lhs: i8, rhs: i8) -> Result<u8, u8> implicits(RangeCheck) nopanic;
+impl I8PartialOrd of PartialOrd<i8> {
+    #[inline(always)]
+    fn le(lhs: i8, rhs: i8) -> bool {
+        i8_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i8, rhs: i8) -> bool {
+        i8_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i8, rhs: i8) -> bool {
+        i8_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i8, rhs: i8) -> bool {
+        i8_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i16;
 impl NumericLiterali16 of NumericLiteral<i16>;
 extern fn i16_const<value>() -> i16 nopanic;
+extern fn i16_try_from_felt252(a: felt252) -> Option<i16> implicits(RangeCheck) nopanic;
 extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
@@ -1879,10 +1984,82 @@ impl I16PartialEq of PartialEq<i16> {
     }
 }
 
+extern fn i16_overflowing_add_impl(
+    lhs: i16, rhs: i16
+) -> SignedIntegerResult<i16> implicits(RangeCheck) nopanic;
+extern fn i16_overflowing_sub_impl(
+    lhs: i16, rhs: i16
+) -> SignedIntegerResult<i16> implicits(RangeCheck) nopanic;
+impl I16Add of Add<i16> {
+    fn add(lhs: i16, rhs: i16) -> i16 {
+        match i16_overflowing_add_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_add Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_add Overflow'),
+        }
+    }
+}
+impl I16AddEq of AddEq<i16> {
+    #[inline(always)]
+    fn add_eq(ref self: i16, other: i16) {
+        self = Add::add(self, other);
+    }
+}
+impl I16Sub of Sub<i16> {
+    fn sub(lhs: i16, rhs: i16) -> i16 {
+        match i16_overflowing_sub_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i16_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i16_sub Overflow'),
+        }
+    }
+}
+impl I16SubEq of SubEq<i16> {
+    #[inline(always)]
+    fn sub_eq(ref self: i16, other: i16) {
+        self = Sub::sub(self, other);
+    }
+}
+
+extern fn i16_wide_mul(lhs: i16, rhs: i16) -> i32 implicits() nopanic;
+impl I16Mul of Mul<i16> {
+    fn mul(lhs: i16, rhs: i16) -> i16 {
+        i16_try_from_felt252(i32_to_felt252(i16_wide_mul(lhs, rhs))).expect('i16_mul Overflow')
+    }
+}
+impl I16MulEq of MulEq<i16> {
+    #[inline(always)]
+    fn mul_eq(ref self: i16, other: i16) {
+        self = Mul::mul(self, other);
+    }
+}
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**16 + lhs - rhs)`.
+extern fn i16_diff(lhs: i16, rhs: i16) -> Result<u16, u16> implicits(RangeCheck) nopanic;
+impl I16PartialOrd of PartialOrd<i16> {
+    #[inline(always)]
+    fn le(lhs: i16, rhs: i16) -> bool {
+        i16_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i16, rhs: i16) -> bool {
+        i16_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i16, rhs: i16) -> bool {
+        i16_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i16, rhs: i16) -> bool {
+        i16_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i32;
 impl NumericLiterali32 of NumericLiteral<i32>;
 extern fn i32_const<value>() -> i32 nopanic;
+extern fn i32_try_from_felt252(a: felt252) -> Option<i32> implicits(RangeCheck) nopanic;
 extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
 
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
@@ -1899,10 +2076,82 @@ impl I32PartialEq of PartialEq<i32> {
     }
 }
 
+extern fn i32_overflowing_add_impl(
+    lhs: i32, rhs: i32
+) -> SignedIntegerResult<i32> implicits(RangeCheck) nopanic;
+extern fn i32_overflowing_sub_impl(
+    lhs: i32, rhs: i32
+) -> SignedIntegerResult<i32> implicits(RangeCheck) nopanic;
+impl I32Add of Add<i32> {
+    fn add(lhs: i32, rhs: i32) -> i32 {
+        match i32_overflowing_add_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_add Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_add Overflow'),
+        }
+    }
+}
+impl I32AddEq of AddEq<i32> {
+    #[inline(always)]
+    fn add_eq(ref self: i32, other: i32) {
+        self = Add::add(self, other);
+    }
+}
+impl I32Sub of Sub<i32> {
+    fn sub(lhs: i32, rhs: i32) -> i32 {
+        match i32_overflowing_sub_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i32_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i32_sub Overflow'),
+        }
+    }
+}
+impl I32SubEq of SubEq<i32> {
+    #[inline(always)]
+    fn sub_eq(ref self: i32, other: i32) {
+        self = Sub::sub(self, other);
+    }
+}
+
+extern fn i32_wide_mul(lhs: i32, rhs: i32) -> i64 implicits() nopanic;
+impl I32Mul of Mul<i32> {
+    fn mul(lhs: i32, rhs: i32) -> i32 {
+        i32_try_from_felt252(i64_to_felt252(i32_wide_mul(lhs, rhs))).expect('i32_mul Overflow')
+    }
+}
+impl I32MulEq of MulEq<i32> {
+    #[inline(always)]
+    fn mul_eq(ref self: i32, other: i32) {
+        self = Mul::mul(self, other);
+    }
+}
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**32 + lhs - rhs)`.
+extern fn i32_diff(lhs: i32, rhs: i32) -> Result<u32, u32> implicits(RangeCheck) nopanic;
+impl I32PartialOrd of PartialOrd<i32> {
+    #[inline(always)]
+    fn le(lhs: i32, rhs: i32) -> bool {
+        i32_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i32, rhs: i32) -> bool {
+        i32_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i32, rhs: i32) -> bool {
+        i32_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i32, rhs: i32) -> bool {
+        i32_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i64;
 impl NumericLiterali64 of NumericLiteral<i64>;
 extern fn i64_const<value>() -> i64 nopanic;
+extern fn i64_try_from_felt252(a: felt252) -> Option<i64> implicits(RangeCheck) nopanic;
 extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
 
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
@@ -1919,10 +2168,82 @@ impl I64PartialEq of PartialEq<i64> {
     }
 }
 
+extern fn i64_overflowing_add_impl(
+    lhs: i64, rhs: i64
+) -> SignedIntegerResult<i64> implicits(RangeCheck) nopanic;
+extern fn i64_overflowing_sub_impl(
+    lhs: i64, rhs: i64
+) -> SignedIntegerResult<i64> implicits(RangeCheck) nopanic;
+impl I64Add of Add<i64> {
+    fn add(lhs: i64, rhs: i64) -> i64 {
+        match i64_overflowing_add_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_add Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_add Overflow'),
+        }
+    }
+}
+impl I64AddEq of AddEq<i64> {
+    #[inline(always)]
+    fn add_eq(ref self: i64, other: i64) {
+        self = Add::add(self, other);
+    }
+}
+impl I64Sub of Sub<i64> {
+    fn sub(lhs: i64, rhs: i64) -> i64 {
+        match i64_overflowing_sub_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i64_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i64_sub Overflow'),
+        }
+    }
+}
+impl I64SubEq of SubEq<i64> {
+    #[inline(always)]
+    fn sub_eq(ref self: i64, other: i64) {
+        self = Sub::sub(self, other);
+    }
+}
+
+extern fn i64_wide_mul(lhs: i64, rhs: i64) -> i128 implicits() nopanic;
+impl I64Mul of Mul<i64> {
+    fn mul(lhs: i64, rhs: i64) -> i64 {
+        i64_try_from_felt252(i128_to_felt252(i64_wide_mul(lhs, rhs))).expect('i64_mul Overflow')
+    }
+}
+impl I64MulEq of MulEq<i64> {
+    #[inline(always)]
+    fn mul_eq(ref self: i64, other: i64) {
+        self = Mul::mul(self, other);
+    }
+}
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**64 + lhs - rhs)`.
+extern fn i64_diff(lhs: i64, rhs: i64) -> Result<u64, u64> implicits(RangeCheck) nopanic;
+impl I64PartialOrd of PartialOrd<i64> {
+    #[inline(always)]
+    fn le(lhs: i64, rhs: i64) -> bool {
+        i64_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i64, rhs: i64) -> bool {
+        i64_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i64, rhs: i64) -> bool {
+        i64_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i64, rhs: i64) -> bool {
+        i64_diff(rhs, lhs).into_is_err()
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i128;
 impl NumericLiterali128 of NumericLiteral<i128>;
 extern fn i128_const<value>() -> i128 nopanic;
+extern fn i128_try_from_felt252(a: felt252) -> Option<i128> implicits(RangeCheck) nopanic;
 extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
@@ -1936,5 +2257,64 @@ impl I128PartialEq of PartialEq<i128> {
     #[inline(always)]
     fn ne(lhs: @i128, rhs: @i128) -> bool {
         !(*lhs == *rhs)
+    }
+}
+
+extern fn i128_overflowing_add_impl(
+    lhs: i128, rhs: i128
+) -> SignedIntegerResult<i128> implicits(RangeCheck) nopanic;
+extern fn i128_overflowing_sub_impl(
+    lhs: i128, rhs: i128
+) -> SignedIntegerResult<i128> implicits(RangeCheck) nopanic;
+impl I128Add of Add<i128> {
+    fn add(lhs: i128, rhs: i128) -> i128 {
+        match i128_overflowing_add_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_add Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_add Overflow'),
+        }
+    }
+}
+impl I128AddEq of AddEq<i128> {
+    #[inline(always)]
+    fn add_eq(ref self: i128, other: i128) {
+        self = Add::add(self, other);
+    }
+}
+impl I128Sub of Sub<i128> {
+    fn sub(lhs: i128, rhs: i128) -> i128 {
+        match i128_overflowing_sub_impl(lhs, rhs) {
+            SignedIntegerResult::InRange(result) => result,
+            SignedIntegerResult::Underflow(_) => panic_with_felt252('i128_sub Underflow'),
+            SignedIntegerResult::Overflow(_) => panic_with_felt252('i128_sub Overflow'),
+        }
+    }
+}
+impl I128SubEq of SubEq<i128> {
+    #[inline(always)]
+    fn sub_eq(ref self: i128, other: i128) {
+        self = Sub::sub(self, other);
+    }
+}
+
+
+/// If `lhs` >= `rhs` returns `Ok(lhs - rhs)` else returns `Err(2**128 + lhs - rhs)`.
+extern fn i128_diff(lhs: i128, rhs: i128) -> Result<u128, u128> implicits(RangeCheck) nopanic;
+impl I128PartialOrd of PartialOrd<i128> {
+    #[inline(always)]
+    fn le(lhs: i128, rhs: i128) -> bool {
+        i128_diff(rhs, lhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn ge(lhs: i128, rhs: i128) -> bool {
+        i128_diff(lhs, rhs).into_is_ok()
+    }
+    #[inline(always)]
+    fn lt(lhs: i128, rhs: i128) -> bool {
+        i128_diff(lhs, rhs).into_is_err()
+    }
+    #[inline(always)]
+    fn gt(lhs: i128, rhs: i128) -> bool {
+        i128_diff(rhs, lhs).into_is_err()
     }
 }

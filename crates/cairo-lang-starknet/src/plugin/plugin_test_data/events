@@ -45,23 +45,22 @@ enum MyEventEnum {
 
 impls:
 
-impl APartialEq<> of PartialEq::<A<>> {
-    #[inline(always)]
-    fn eq(lhs: @A<>, rhs: @A<>) -> bool {
+impl APartialEq of PartialEq::<A> {
+    fn eq(lhs: @A, rhs: @A) -> bool {
         lhs.x == rhs.x && lhs.data == rhs.data
     }
     #[inline(always)]
-    fn ne(lhs: @A<>, rhs: @A<>) -> bool {
+    fn ne(lhs: @A, rhs: @A) -> bool {
         !(lhs == rhs)
     }
 }
-impl ADrop<> of Drop::<A<>>;
-impl ASerde<> of serde::Serde::<A<>> {
-    fn serialize(self: @A<>, ref output: array::Array<felt252>) {
+impl ADrop of Drop::<A>;
+impl ASerde of Serde::<A> {
+    fn serialize(self: @A, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.x, ref output);
         serde::Serde::serialize(self.data, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<A<>> {
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<A> {
         Option::Some(A {
             x: serde::Serde::deserialize(ref serialized)?,
             data: serde::Serde::deserialize(ref serialized)?,
@@ -94,22 +93,21 @@ impl AIsEvent of starknet::Event<A> {
 
 impls:
 
-impl BPartialEq<> of PartialEq::<B<>> {
-    #[inline(always)]
-    fn eq(lhs: @B<>, rhs: @B<>) -> bool {
+impl BPartialEq of PartialEq::<B> {
+    fn eq(lhs: @B, rhs: @B) -> bool {
         lhs.x == rhs.x
     }
     #[inline(always)]
-    fn ne(lhs: @B<>, rhs: @B<>) -> bool {
+    fn ne(lhs: @B, rhs: @B) -> bool {
         !(lhs == rhs)
     }
 }
-impl BDrop<> of Drop::<B<>>;
-impl BSerde<> of serde::Serde::<B<>> {
-    fn serialize(self: @B<>, ref output: array::Array<felt252>) {
+impl BDrop of Drop::<B>;
+impl BSerde of Serde::<B> {
+    fn serialize(self: @B, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.x, ref output)
     }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<B<>> {
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<B> {
         Option::Some(B {
             x: serde::Serde::deserialize(ref serialized)?,
         })

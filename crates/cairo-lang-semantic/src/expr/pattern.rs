@@ -1,11 +1,12 @@
 use cairo_lang_debug::DebugWithDb;
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::ast;
+use id_arena::Arena;
 use smol_str::SmolStr;
 
 use super::fmt::ExprFormatter;
-use crate::db::SemanticGroup;
-use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable};
+use crate::{semantic, ConcreteStructId, ExprLiteral, LocalVariable, PatternId};
 
 /// Semantic representation of a Pattern.
 /// A pattern is a way to "destructure" values. A pattern may introduce new variables that are bound
@@ -23,9 +24,10 @@ pub enum Pattern {
     Tuple(PatternTuple),
     EnumVariant(PatternEnumVariant),
     Otherwise(PatternOtherwise),
+    Missing(PatternMissing),
 }
 impl Pattern {
-    pub fn ty(&self, _db: &dyn SemanticGroup) -> semantic::TypeId {
+    pub fn ty(&self) -> semantic::TypeId {
         match self {
             Pattern::Literal(literal) => literal.literal.ty,
             Pattern::Variable(variable) => variable.var.ty,
@@ -33,40 +35,42 @@ impl Pattern {
             Pattern::Tuple(pattern_tuple) => pattern_tuple.ty,
             Pattern::EnumVariant(pattern_enum_variant) => pattern_enum_variant.ty,
             Pattern::Otherwise(pattern_otherwise) => pattern_otherwise.ty,
+            Pattern::Missing(pattern_missing) => pattern_missing.ty,
         }
     }
 
-    pub fn variables(&self) -> Vec<&PatternVariable> {
+    pub fn variables(&self, arena: &Arena<Pattern>) -> Vec<PatternVariable> {
         match self {
-            Pattern::Variable(variable) => vec![variable],
+            Pattern::Variable(variable) => vec![variable.clone()],
             Pattern::Struct(pattern_struct) => pattern_struct
                 .field_patterns
                 .iter()
-                .flat_map(|(_member, pattern)| pattern.variables())
+                .flat_map(|(_member, pattern)| arena[*pattern].variables(arena))
                 .collect(),
             Pattern::Tuple(pattern_tuple) => pattern_tuple
                 .field_patterns
                 .iter()
-                .flat_map(|pattern| pattern.variables())
+                .flat_map(|pattern| arena[*pattern].variables(arena))
                 .collect(),
             Pattern::EnumVariant(pattern_enum_variant) => {
                 match &pattern_enum_variant.inner_pattern {
-                    Some(inner_pattern) => inner_pattern.variables(),
+                    Some(inner_pattern) => arena[*inner_pattern].variables(arena),
                     None => vec![],
                 }
             }
-            Pattern::Literal(_) | Pattern::Otherwise(_) => vec![],
+            Pattern::Literal(_) | Pattern::Otherwise(_) | Pattern::Missing(_) => vec![],
         }
     }
 
     pub fn stable_ptr(&self) -> ast::PatternPtr {
         match self {
-            Pattern::Literal(pat) => pat.stable_ptr,
-            Pattern::Variable(pat) => pat.stable_ptr,
-            Pattern::Struct(pat) => pat.stable_ptr.into(),
-            Pattern::Tuple(pat) => pat.stable_ptr.into(),
-            Pattern::EnumVariant(pat) => pat.stable_ptr.into(),
-            Pattern::Otherwise(pat) => pat.stable_ptr.into(),
+            Pattern::Literal(pattern) => pattern.stable_ptr,
+            Pattern::Variable(pattern) => pattern.stable_ptr,
+            Pattern::Struct(pattern) => pattern.stable_ptr.into(),
+            Pattern::Tuple(pattern) => pattern.stable_ptr.into(),
+            Pattern::EnumVariant(pattern) => pattern.stable_ptr.into(),
+            Pattern::Otherwise(pattern) => pattern.stable_ptr.into(),
+            Pattern::Missing(pattern) => pattern.stable_ptr,
         }
     }
 }
@@ -101,7 +105,7 @@ impl DebugWithDb<ExprFormatter<'_>> for PatternVariable {
 pub struct PatternStruct {
     pub concrete_struct_id: ConcreteStructId,
     // TODO(spapini): This should be ConcreteMember, when available.
-    pub field_patterns: Vec<(semantic::Member, Box<Pattern>)>,
+    pub field_patterns: Vec<(semantic::Member, PatternId)>,
     pub ty: semantic::TypeId,
     #[dont_rewrite]
     pub n_snapshots: usize,
@@ -114,7 +118,7 @@ pub struct PatternStruct {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternTuple {
-    pub field_patterns: Vec<Box<Pattern>>,
+    pub field_patterns: Vec<PatternId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -126,7 +130,7 @@ pub struct PatternTuple {
 #[debug_db(ExprFormatter<'a>)]
 pub struct PatternEnumVariant {
     pub variant: semantic::ConcreteVariant,
-    pub inner_pattern: Option<Box<Pattern>>,
+    pub inner_pattern: Option<PatternId>,
     pub ty: semantic::TypeId,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
@@ -140,4 +144,16 @@ pub struct PatternOtherwise {
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::TerminalUnderscorePtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct PatternMissing {
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::PatternPtr,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub diag_added: DiagnosticAdded,
 }

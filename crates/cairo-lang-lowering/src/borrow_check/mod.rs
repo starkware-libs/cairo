@@ -61,10 +61,10 @@ impl DropPosition {
     fn as_note(self, db: &dyn LoweringGroup) -> DiagnosticNote {
         let (text, location) = match self {
             Self::Panic(location) => {
-                ("the variable needs to be dropped due to the potential panic here:", location)
+                ("the variable needs to be dropped due to the potential panic here", location)
             }
             Self::Diverge(location) => {
-                ("the variable needs to be dropped due to the divergence here:", location)
+                ("the variable needs to be dropped due to the divergence here", location)
             }
         };
         DiagnosticNote::with_location(
@@ -118,7 +118,7 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
             self.success = Err(self.diagnostics.report_by_location(
                 next_usage_position
                     .get(self.db)
-                    .add_note_with_location(self.db, "variable was previously used here:", position)
+                    .add_note_with_location(self.db, "variable was previously used here", position)
                     .with_note(DiagnosticNote::text_only(inference_error.format(self.db.upcast()))),
                 VariableMoved { inference_error },
             ));

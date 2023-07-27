@@ -56,7 +56,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticNote {
     pub text: String,
-    location: Option<DiagnosticLocation>,
+    pub location: Option<DiagnosticLocation>,
 }
 impl DiagnosticNote {
     pub fn text_only(text: String) -> Self {
@@ -76,7 +76,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticNote {
     ) -> std::fmt::Result {
         write!(f, "{}", self.text)?;
         if let Some(location) = &self.location {
-            write!(f, "\n  --> ")?;
+            write!(f, ":\n  --> ")?;
             location.fmt(f, db)?;
         }
         Ok(())

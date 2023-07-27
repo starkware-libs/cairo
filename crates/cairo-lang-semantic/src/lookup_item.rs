@@ -61,8 +61,8 @@ impl HasResolverData for LookupItemId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         match self {
             LookupItemId::ModuleItem(item) => item.resolver_data(db),
-            LookupItemId::ImplFunction(item) => item.resolver_data(db),
             LookupItemId::TraitFunction(item) => item.resolver_data(db),
+            LookupItemId::ImplFunction(item) => item.resolver_data(db),
         }
     }
 }
@@ -149,14 +149,14 @@ impl HasResolverData for TraitId {
     }
 }
 
-impl HasResolverData for ImplFunctionId {
-    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        db.impl_function_resolver_data(*self)
-    }
-}
-
 impl HasResolverData for TraitFunctionId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         db.trait_function_resolver_data(*self)
+    }
+}
+
+impl HasResolverData for ImplFunctionId {
+    fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
+        db.impl_function_resolver_data(*self)
     }
 }

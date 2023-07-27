@@ -1,9 +1,7 @@
 mod traits;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
-    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop,
-    TupleSize0PartialEq, TupleSize1Copy, TupleSize1Drop, TupleSize1PartialEq, TupleSize2Copy,
-    TupleSize2Drop, TupleSize3Copy, TupleSize3Drop, TupleSize4Copy, TupleSize4Drop, Not, Neg, Into,
+    PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
@@ -162,7 +160,7 @@ extern fn felt252_mul(lhs: felt252, rhs: felt252) -> felt252 nopanic;
 impl Felt252Neg of Neg<felt252> {
     #[inline(always)]
     fn neg(a: felt252) -> felt252 {
-        a * felt252_const::<-1>()
+        a * -1
     }
 }
 

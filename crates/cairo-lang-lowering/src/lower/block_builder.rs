@@ -1,4 +1,4 @@
-use cairo_lang_defs::ids::{LanguageElementId, MemberId};
+use cairo_lang_defs::ids::MemberId;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_semantic as semantic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -25,7 +25,7 @@ pub struct BlockBuilder {
     /// A store for semantic variables, owning their OwnedVariable instances.
     pub semantics: SemanticLoweringMapping,
     /// The semantic variables that are added/changed in this block.
-    changed_semantics: OrderedHashSet<semantic::VarId>,
+    changed_member_paths: OrderedHashSet<MemberPath>,
     /// Current sequence of lowered statements emitted.
     pub statements: StatementsBuilder,
     /// The block id to use for this block when it's finalized.
@@ -36,7 +36,7 @@ impl BlockBuilder {
     pub fn root(_ctx: &mut LoweringContext<'_, '_>, block_id: BlockId) -> Self {
         BlockBuilder {
             semantics: Default::default(),
-            changed_semantics: Default::default(),
+            changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
         }
@@ -46,7 +46,7 @@ impl BlockBuilder {
     pub fn child_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
-            changed_semantics: Default::default(),
+            changed_member_paths: Default::default(),
             statements: Default::default(),
             block_id,
         }
@@ -57,7 +57,7 @@ impl BlockBuilder {
     pub fn sibling_block_builder(&self, block_id: BlockId) -> BlockBuilder {
         BlockBuilder {
             semantics: self.semantics.clone(),
-            changed_semantics: self.changed_semantics.clone(),
+            changed_member_paths: self.changed_member_paths.clone(),
             statements: Default::default(),
             block_id,
         }
@@ -66,7 +66,7 @@ impl BlockBuilder {
     /// Binds a semantic variable to a lowered variable.
     pub fn put_semantic(&mut self, semantic_var_id: semantic::VarId, var: VariableId) {
         self.semantics.introduce(MemberPath::Var(semantic_var_id), var);
-        self.changed_semantics.insert(semantic_var_id);
+        self.changed_member_paths.insert(MemberPath::Var(semantic_var_id));
     }
 
     pub fn update_ref(
@@ -76,12 +76,22 @@ impl BlockBuilder {
         var: VariableId,
     ) {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
+        self.update_ref_raw(ctx, member_path.into(), var, location);
+    }
+
+    pub fn update_ref_raw(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        member_path: MemberPath,
+        var: VariableId,
+        location: LocationId,
+    ) {
         self.semantics.update(
             BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-            &member_path.into(),
+            &member_path,
             var,
         );
-        self.changed_semantics.insert(member_path.base_var());
+        self.changed_member_paths.insert(member_path);
     }
 
     pub fn get_ref(
@@ -90,10 +100,19 @@ impl BlockBuilder {
         member_path: &ExprVarMemberPath,
     ) -> Option<VarUsage> {
         let location = ctx.get_location(member_path.stable_ptr().untyped());
+        self.get_ref_raw(ctx, &member_path.into(), location)
+    }
+
+    pub fn get_ref_raw(
+        &mut self,
+        ctx: &mut LoweringContext<'_, '_>,
+        member_path: &MemberPath,
+        location: LocationId,
+    ) -> Option<VarUsage> {
         self.semantics
             .get(
                 BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                &member_path.into(),
+                member_path,
             )
             .map(|var_id| VarUsage { var_id, location })
     }
@@ -121,15 +140,16 @@ impl BlockBuilder {
     pub fn get_ty(
         &mut self,
         ctx: &mut LoweringContext<'_, '_>,
-        semantic_var_id: semantic::VarId,
-        location: LocationId,
+        member_path: &MemberPath,
     ) -> semantic::TypeId {
-        self.semantics
-            .get_ty(
-                &BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                &MemberPath::Var(semantic_var_id),
-            )
-            .expect("Use of undefined variable cannot happen after semantic phase.")
+        match member_path {
+            MemberPath::Var(var) => ctx.semantic_defs[var].ty(),
+            MemberPath::Member { member_id, concrete_struct_id, .. } => {
+                ctx.db.concrete_struct_members(*concrete_struct_id).unwrap()
+                    [member_id.name(ctx.db.upcast())]
+                .ty
+            }
+        }
     }
 
     /// Adds a statement to the block.
@@ -233,17 +253,35 @@ impl BlockBuilder {
                     ctx.variables.variables.alloc(var)
                 });
             }
-            for semantic in subscope.changed_semantics.iter() {
-                if !self.semantics.contains_var(semantic) {
+            for member_path in subscope.changed_member_paths.iter() {
+                let Some(member_path) =
+                    self.semantics.topmost_containing_member_path(member_path.clone())
+                else {
                     // This variable is local to the subscope.
                     continue;
-                }
+                };
+                // Only consider the topmost member path that is contained in the parent.
+                // This avoids edge cases regarding de/constructing structs.
+
                 // This variable belongs to an outer builder, and it is changed in at least one
                 // branch. It should be remapped.
-                semantic_remapping.semantics.entry(*semantic).or_insert_with(|| {
-                    let ty = self.get_ty(ctx, *semantic, location);
-                    ctx.new_var(VarRequest { ty, location })
-                });
+                semantic_remapping.member_path_value.entry(member_path.clone()).or_insert_with(
+                    || {
+                        let ty = self.get_ty(ctx, &member_path);
+                        ctx.new_var(VarRequest { ty, location })
+                    },
+                );
+            }
+        }
+
+        // Prune parents from semantic_remapping.
+        for member_path in semantic_remapping.member_path_value.keys().cloned().collect_vec() {
+            let mut current = member_path.clone();
+            while let MemberPath::Member { parent, .. } = current {
+                if semantic_remapping.member_path_value.contains_key(&*parent) {
+                    semantic_remapping.member_path_value.swap_remove(&member_path);
+                }
+                current = *parent;
             }
         }
 
@@ -255,12 +293,12 @@ impl BlockBuilder {
         let following_block = ctx.blocks.alloc_empty();
 
         for sealed_block in sealed_blocks {
-            sealed_block.finalize(ctx, following_block, &semantic_remapping);
+            sealed_block.finalize(ctx, following_block, &semantic_remapping, location);
         }
 
         // Apply remapping on builder.
-        for (semantic, var) in semantic_remapping.semantics {
-            self.put_semantic(semantic, var);
+        for (semantic, var) in semantic_remapping.member_path_value {
+            self.update_ref_raw(ctx, semantic, var, location);
         }
 
         let expr = match semantic_remapping.expr {
@@ -276,7 +314,7 @@ impl BlockBuilder {
 #[derive(Debug, Default)]
 pub struct SemanticRemapping {
     expr: Option<VariableId>,
-    semantics: OrderedHashMap<semantic::VarId, VariableId>,
+    member_path_value: OrderedHashMap<MemberPath, VariableId>,
 }
 
 /// A sealed BlockBuilder, ready to be merged with sibling blocks to end the block.
@@ -295,15 +333,18 @@ impl SealedBlockBuilder {
         ctx: &mut LoweringContext<'_, '_>,
         target: BlockId,
         semantic_remapping: &SemanticRemapping,
+        location: LocationId,
     ) {
         if let SealedBlockBuilder::GotoCallsite { mut builder, expr } = self {
             let mut remapping = VarRemapping::default();
             // Since SemanticRemapping should have unique variable ids, these asserts will pass.
-            for (semantic, remapped_var) in semantic_remapping.semantics.iter() {
-                let location = ctx.get_location(semantic.untyped_stable_ptr(ctx.db.upcast()));
+            for (semantic, remapped_var) in semantic_remapping.member_path_value.iter() {
                 assert!(
                     remapping
-                        .insert(*remapped_var, builder.get_semantic(ctx, *semantic, location))
+                        .insert(
+                            *remapped_var,
+                            builder.get_ref_raw(ctx, semantic, location).unwrap()
+                        )
                         .is_none()
                 );
             }
