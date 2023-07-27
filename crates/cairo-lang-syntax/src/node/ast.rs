@@ -4827,6 +4827,7 @@ pub enum WrappedExprList {
     BracketedExprList(ExprListBracketed),
     ParenthesizedExprList(ExprListParenthesized),
     BracedExprList(ExprListBraced),
+    Missing(WrappedExprListMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct WrappedExprListPtr(pub SyntaxStablePtrId);
@@ -4850,6 +4851,11 @@ impl From<ExprListBracedPtr> for WrappedExprListPtr {
         Self(value.0)
     }
 }
+impl From<WrappedExprListMissingPtr> for WrappedExprListPtr {
+    fn from(value: WrappedExprListMissingPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ExprListBracketedGreen> for WrappedExprListGreen {
     fn from(value: ExprListBracketedGreen) -> Self {
         Self(value.0)
@@ -4865,6 +4871,11 @@ impl From<ExprListBracedGreen> for WrappedExprListGreen {
         Self(value.0)
     }
 }
+impl From<WrappedExprListMissingGreen> for WrappedExprListGreen {
+    fn from(value: WrappedExprListMissingGreen) -> Self {
+        Self(value.0)
+    }
+}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct WrappedExprListGreen(pub GreenId);
 impl TypedSyntaxNode for WrappedExprList {
@@ -4872,7 +4883,7 @@ impl TypedSyntaxNode for WrappedExprList {
     type StablePtr = WrappedExprListPtr;
     type Green = WrappedExprListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        panic!("No missing variant.");
+        WrappedExprListGreen(WrappedExprListMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
@@ -4886,6 +4897,9 @@ impl TypedSyntaxNode for WrappedExprList {
             SyntaxKind::ExprListBraced => {
                 WrappedExprList::BracedExprList(ExprListBraced::from_syntax_node(db, node))
             }
+            SyntaxKind::WrappedExprListMissing => {
+                WrappedExprList::Missing(WrappedExprListMissing::from_syntax_node(db, node))
+            }
             _ => {
                 panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "WrappedExprList")
             }
@@ -4896,6 +4910,7 @@ impl TypedSyntaxNode for WrappedExprList {
             WrappedExprList::BracketedExprList(x) => x.as_syntax_node(),
             WrappedExprList::ParenthesizedExprList(x) => x.as_syntax_node(),
             WrappedExprList::BracedExprList(x) => x.as_syntax_node(),
+            WrappedExprList::Missing(x) => x.as_syntax_node(),
         }
     }
     fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
@@ -4912,8 +4927,66 @@ impl WrappedExprList {
             SyntaxKind::ExprListBracketed => true,
             SyntaxKind::ExprListParenthesized => true,
             SyntaxKind::ExprListBraced => true,
+            SyntaxKind::WrappedExprListMissing => true,
             _ => false,
         }
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct WrappedExprListMissing {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl WrappedExprListMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> WrappedExprListMissingGreen {
+        let children: Vec<GreenId> = vec![];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        WrappedExprListMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedExprListMissing,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl WrappedExprListMissing {}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedExprListMissingPtr(pub SyntaxStablePtrId);
+impl WrappedExprListMissingPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct WrappedExprListMissingGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedExprListMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedExprListMissing);
+    type StablePtr = WrappedExprListMissingPtr;
+    type Green = WrappedExprListMissingGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        WrappedExprListMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedExprListMissing,
+            details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::WrappedExprListMissing,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::WrappedExprListMissing
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
+        Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        WrappedExprListMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

@@ -131,6 +131,16 @@ impl InlineMacroExpanderData {
                 ast::WrappedExprList::BracketedExprList(expr_list) => expr_list.expressions(db),
                 ast::WrappedExprList::ParenthesizedExprList(expr_list) => expr_list.expressions(db),
                 ast::WrappedExprList::BracedExprList(expr_list) => expr_list.expressions(db),
+                ast::WrappedExprList::Missing(_) => {
+                    self.diagnostics.push(PluginDiagnostic {
+                        stable_ptr: macro_ast.stable_ptr().untyped(),
+                        message: format!(
+                            "Missing body for macro {}",
+                            macro_ast.path(db).as_syntax_node().get_text(db)
+                        ),
+                    });
+                    return None;
+                }
             })
         } else {
             self.diagnostics.push(PluginDiagnostic {
