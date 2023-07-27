@@ -264,6 +264,9 @@ fn gen_list_code(name: String, element_type: String) -> rust::Tokens {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
+            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+                $(&name)::from_syntax_node(db, self.0.lookup(db))
+            }
         }
         $common_code
     }
@@ -311,6 +314,9 @@ fn gen_separated_list_code(
         impl $(&ptr_name) {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
+            }
+            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+                $(&name)::from_syntax_node(db, self.0.lookup(db))
             }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -361,9 +367,6 @@ fn gen_common_list_code(name: &str, green_name: &str, ptr_name: &str) -> rust::T
             }
             fn as_syntax_node(&self) -> SyntaxNode{
                 self.node.clone()
-            }
-            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn stable_ptr(&self) -> Self::StablePtr {
                 $ptr_name(self.node.0.stable_ptr)
@@ -429,6 +432,9 @@ fn gen_enum_code(
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
+            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+                $(&name)::from_syntax_node(db, self.0.lookup(db))
+            }
         }
         $ptr_conversions
         $green_conversions
@@ -455,9 +461,6 @@ fn gen_enum_code(
                 match self {
                     $(for v in &variants => $(&name)::$(&v.name)(x) => x.as_syntax_node(),)
                 }
-            }
-            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn stable_ptr(&self) -> Self::StablePtr {
                 $(&ptr_name)(self.as_syntax_node().0.stable_ptr)
@@ -502,6 +505,9 @@ fn gen_token_code(name: String) -> rust::Tokens {
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
+            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+                $(&name)::from_syntax_node(db, self.0.lookup(db))
+            }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
@@ -528,9 +534,6 @@ fn gen_token_code(name: String) -> rust::Tokens {
                         SyntaxKind::$(&name)
                     ),
                 }
-            }
-            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()
@@ -643,6 +646,9 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             pub fn untyped(&self) -> SyntaxStablePtrId {
                 self.0
             }
+            pub fn lookup(&self, db: &dyn SyntaxGroup) -> $(&name) {
+                $(&name)::from_syntax_node(db, self.0.lookup(db))
+            }
         }
         #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
         pub struct $(&green_name)(pub GreenId);
@@ -666,9 +672,6 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
                 let children = node.children(db).collect();
                 Self { node, children }
-            }
-            fn from_ptr(db: &dyn SyntaxGroup, root: &SyntaxFile, ptr: Self::StablePtr) -> Self {
-                Self::from_syntax_node(db, root.as_syntax_node().lookup_ptr(db, ptr.0))
             }
             fn as_syntax_node(&self) -> SyntaxNode {
                 self.node.clone()

@@ -2,6 +2,7 @@ use core::hash::Hash;
 use std::fmt::Display;
 use std::sync::Arc;
 
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use smol_str::SmolStr;
 
@@ -43,24 +44,16 @@ struct SyntaxNodeInner {
     stable_ptr: SyntaxStablePtrId,
 }
 impl SyntaxNode {
-    pub fn new_root(db: &dyn SyntaxGroup, green: ast::SyntaxFileGreen) -> Self {
+    pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
         let inner = SyntaxNodeInner {
-            green: green.0,
+            green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
+            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root(file_id, green)),
         };
         Self(Arc::new(inner))
     }
-    pub fn new_expr_root(db: &dyn SyntaxGroup, green: ast::ExprGreen) -> Self {
-        let inner = SyntaxNodeInner {
-            green: green.0,
-            offset: TextOffset::default(),
-            parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root),
-        };
-        Self(Arc::new(inner))
-    }
+
     pub fn offset(&self) -> TextOffset {
         self.0.offset
     }
@@ -98,25 +91,6 @@ impl SyntaxNode {
     }
     pub fn stable_ptr(&self) -> SyntaxStablePtrId {
         self.0.stable_ptr
-    }
-
-    /// Lookups a syntax node using a stable syntax pointer.
-    /// Should only be called on the root from which the stable pointer was generated.
-    pub fn lookup_ptr(&self, db: &dyn SyntaxGroup, stable_ptr: SyntaxStablePtrId) -> SyntaxNode {
-        assert!(self.0.parent.is_none(), "May only be called on the root.");
-        let ptr = db.lookup_intern_stable_ptr(stable_ptr);
-        match ptr {
-            SyntaxStablePtr::Root => self.clone(),
-            SyntaxStablePtr::Child { parent, .. } => {
-                let parent = self.lookup_ptr(db, parent);
-                for child in parent.children(db) {
-                    if child.stable_ptr() == stable_ptr {
-                        return child;
-                    }
-                }
-                unreachable!();
-            }
-        }
     }
 
     /// Gets the inner token from a terminal SyntaxNode. If the given node is not a terminal,
@@ -244,7 +218,6 @@ pub trait TypedSyntaxNode {
     fn missing(db: &dyn SyntaxGroup) -> Self::Green;
     // TODO(spapini): Make this return an Option, if the kind is wrong.
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self;
-    fn from_ptr(db: &dyn SyntaxGroup, root: &ast::SyntaxFile, node: Self::StablePtr) -> Self;
     fn as_syntax_node(&self) -> SyntaxNode;
     fn stable_ptr(&self) -> Self::StablePtr;
 }

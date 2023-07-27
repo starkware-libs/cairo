@@ -20,11 +20,11 @@ pub trait ParserGroup: SyntaxGroup + Upcast<dyn SyntaxGroup> + FilesGroup {
     /// Should only be used internally.
     /// Parses a file and returns the result and the generated [ParserDiagnostic].
     fn priv_file_syntax_data(&self, file_id: FileId) -> SyntaxData;
-    /// Parses a file and returns its AST.
+    /// Parses a file and returns its SyntaxNode.
     fn file_syntax(&self, file_id: FileId) -> Maybe<SyntaxNode>;
-    /// Parses a file and returns its AST.
+    /// Parses a file and returns its AST as a root SyntaxFile.
     fn file_module_syntax(&self, file_id: FileId) -> Maybe<SyntaxFile>;
-    /// Parses a file and returns its AST.
+    /// Parses a file and returns its AST as an expression.
     fn file_expr_syntax(&self, file_id: FileId) -> Maybe<Expr>;
     /// Returns the parser diagnostics for this file.
     fn file_syntax_diagnostics(&self, file_id: FileId) -> Diagnostics<ParserDiagnostic>;

@@ -26,7 +26,7 @@ impl LoweringDiagnostics {
         stable_ptr: SyntaxStablePtrId,
         kind: LoweringDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.report_by_location(Location::new(StableLocation::new(self.file_id, stable_ptr)), kind)
+        self.report_by_location(Location::new(StableLocation::new(stable_ptr)), kind)
     }
     pub fn report_by_location(
         &mut self,

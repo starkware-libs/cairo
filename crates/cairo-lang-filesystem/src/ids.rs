@@ -43,6 +43,7 @@ pub enum FileLongId {
     OnDisk(PathBuf),
     Virtual(VirtualFile),
 }
+/// Whether the file holds syntax for a module or for an expression.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum FileKind {
     Module,

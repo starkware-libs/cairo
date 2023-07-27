@@ -3,7 +3,6 @@ use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, 
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::node::ast;
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 
@@ -360,19 +359,14 @@ pub fn type_info(
     ty: TypeId,
 ) -> Maybe<TypeInfo> {
     // Dummy stable pointer for type inference variables, since inference is disabled.
-    let stable_ptr = db.intern_stable_ptr(SyntaxStablePtr::Root);
     let droppable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), stable_ptr);
+        get_impl_at_context(db, lookup_context.clone(), concrete_drop_trait(db, ty), None);
     let duplicatable =
-        get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), stable_ptr);
-    let destruct_impl = get_impl_at_context(
-        db,
-        lookup_context.clone(),
-        concrete_destruct_trait(db, ty),
-        stable_ptr,
-    );
+        get_impl_at_context(db, lookup_context.clone(), concrete_copy_trait(db, ty), None);
+    let destruct_impl =
+        get_impl_at_context(db, lookup_context.clone(), concrete_destruct_trait(db, ty), None);
     let panic_destruct_impl =
-        get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), stable_ptr);
+        get_impl_at_context(db, lookup_context, concrete_panic_destruct_trait(db, ty), None);
     Ok(TypeInfo { droppable, duplicatable, destruct_impl, panic_destruct_impl })
 }
 

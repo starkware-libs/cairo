@@ -1,3 +1,7 @@
+use std::path::PathBuf;
+
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::FileLongId;
 use cairo_lang_filesystem::span::{TextOffset, TextWidth};
 use pretty_assertions::assert_eq;
 use test_log::test;
@@ -147,7 +151,7 @@ fn test_stable_ptr() {
     let root = setup(db);
     for node in root.descendants(db) {
         let ptr = node.stable_ptr();
-        let looked_up_node = root.lookup_ptr(db, ptr);
+        let looked_up_node = ptr.lookup(db);
         assert_eq!(node, looked_up_node);
     }
 }
@@ -192,5 +196,6 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // SyntaxNode::new_root only accepts ast::SyntaxFileGreen, but we only have an expression.
     // This is a hack to crate a green id of "SyntaxFile" from "Expr".
     let root = SyntaxFileGreen(expr.0);
-    SyntaxNode::new_root(db, root)
+    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::default()));
+    SyntaxNode::new_root(db, file_id, root.0)
 }

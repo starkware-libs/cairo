@@ -267,16 +267,8 @@ fn generic_param_generic_params_list(
     let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
         panic!()
     };
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
 
-    let file_id = db.module_file(module_file_id)?;
-    let root = db.file_module_syntax(file_id)?;
-
-    let generic_param_list = ast::OptionWrappedGenericParamList::from_ptr(
-        db.upcast(),
-        &root,
-        ast::OptionWrappedGenericParamListPtr(parent),
-    );
+    let generic_param_list = ast::OptionWrappedGenericParamListPtr(parent).lookup(db.upcast());
     Ok(generic_param_list)
 }
 
