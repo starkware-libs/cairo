@@ -40,7 +40,6 @@ pub fn test_expand_plugin(
 
     let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, cairo_code);
     assert!(diagnostics.is_empty(), "Unexpected diagnostics:\n{}", diagnostics.format(db));
-    let file_syntax_node = syntax_file.as_syntax_node();
     let plugins = get_default_plugins();
     let mut generated_items: Vec<String> = Vec::new();
     let mut diagnostic_items: Vec<String> = Vec::new();
@@ -51,7 +50,7 @@ pub fn test_expand_plugin(
             let result = plugin.clone().as_dyn_macro_plugin().generate_code(db, item.clone());
 
             diagnostic_items.extend(result.diagnostics.iter().map(|diag| {
-                let syntax_node = file_syntax_node.lookup_ptr(db, diag.stable_ptr);
+                let syntax_node = diag.stable_ptr.lookup(db);
 
                 let location =
                     DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db) };

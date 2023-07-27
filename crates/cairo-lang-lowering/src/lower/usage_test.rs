@@ -3,7 +3,6 @@ use std::fmt::Write;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::LanguageElementId;
-use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
@@ -34,7 +33,6 @@ fn test_function_usage(inputs: &OrderedHashMap<String, String>) -> OrderedHashMa
     .split();
 
     let file_id = db.module_file(test_function.function_id.module_file_id(db)).unwrap();
-    let file_sytnax = db.file_syntax(file_id).unwrap();
 
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     let function_def =
@@ -44,7 +42,7 @@ fn test_function_usage(inputs: &OrderedHashMap<String, String>) -> OrderedHashMa
     let mut usages_str = String::new();
     for (expr_id, usage) in usages.block_usages.iter() {
         let stable_ptr = function_def.exprs[*expr_id].stable_ptr();
-        let node = file_sytnax.lookup_ptr(db, stable_ptr.untyped());
+        let node = stable_ptr.untyped().lookup(db);
         let position = node.span_start_without_trivia(db).position_in_file(db, file_id).unwrap();
 
         writeln!(usages_str, "Block {}:{}:", position.line, position.col).unwrap();
