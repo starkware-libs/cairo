@@ -6,6 +6,7 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
+use smol_str::SmolStr;
 use syntax::node::ast::MaybeModuleBody;
 use syntax::node::kind::SyntaxKind;
 
@@ -714,10 +715,11 @@ impl<'a> FormatterImpl<'a> {
     }
 }
 
+/// Represents a sortable SyntaxNode.
 #[derive(PartialEq, Eq)]
 enum MovableNode {
-    ItemModule(String),
-    ItemUse(String),
+    ItemModule(SmolStr),
+    ItemUse(SmolStr),
     Immovable,
 }
 impl MovableNode {
@@ -726,12 +728,12 @@ impl MovableNode {
             SyntaxKind::ItemModule => {
                 let item = ast::ItemModule::from_syntax_node(db, node.clone());
                 if matches!(item.body(db), MaybeModuleBody::None(_)) {
-                    Self::ItemModule(item.name(db).text(db).to_string())
+                    Self::ItemModule(item.name(db).text(db))
                 } else {
                     Self::Immovable
                 }
             }
-            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db)),
+            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
             _ => Self::Immovable,
         }
     }
