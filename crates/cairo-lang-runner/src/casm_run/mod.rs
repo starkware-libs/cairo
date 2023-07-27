@@ -1140,7 +1140,6 @@ impl<'a> CairoHintProcessor<'a> {
                     res_segment.write(payload.len())?;
                     res_segment.write_data(payload.iter())?;
                 }
-
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
                 "Unknown cheatcode selector: {selector}"
