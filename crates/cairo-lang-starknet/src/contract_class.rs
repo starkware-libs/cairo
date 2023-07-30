@@ -82,7 +82,7 @@ pub fn compile_path(
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;

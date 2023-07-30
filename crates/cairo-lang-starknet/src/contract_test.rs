@@ -15,7 +15,7 @@ use crate::plugin::StarkNetPlugin;
 fn test_contract_resolving() {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .build()
         .unwrap();
     let crate_id = setup_test_crate(

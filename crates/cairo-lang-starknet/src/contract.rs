@@ -7,7 +7,6 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -50,7 +49,7 @@ pub fn starknet_keccak(data: &[u8]) -> BigUint {
 /// Finds the inline modules annotated as contracts in the given crate_ids and
 /// returns the corresponding ContractDeclarations.
 pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<ContractDeclaration> {
-    let mut contracts = vec![];
+    let mut contract_declarations = vec![];
     for crate_id in crate_ids {
         let modules = db.crate_modules(*crate_id);
         for module_id in modules.iter() {
@@ -75,27 +74,24 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
                 let Some(generated_file_info) = generated_file_info else {
                     continue;
                 };
-                let Some(mapper) =
-                    generated_file_info.aux_data.0.as_any().downcast_ref::<DynPluginAuxData>()
-                else {
-                    continue;
-                };
-                let Some(aux_data) = mapper.0.as_any().downcast_ref::<StarkNetContractAuxData>()
-                else {
-                    continue;
-                };
-
-                for contract_name in &aux_data.contracts {
-                    if let ModuleId::Submodule(submodule_id) = *module_id {
-                        contracts.push(ContractDeclaration { submodule_id });
-                    } else {
-                        panic!("Contract `{contract_name}` was not found.");
+                for aux_data in &generated_file_info.aux_data {
+                    let Some(StarkNetContractAuxData { contracts }) =
+                        aux_data.0.as_any().downcast_ref()
+                    else {
+                        continue;
+                    };
+                    for contract_name in contracts {
+                        if let ModuleId::Submodule(submodule_id) = *module_id {
+                            contract_declarations.push(ContractDeclaration { submodule_id });
+                        } else {
+                            panic!("Contract `{contract_name}` was not found.");
+                        }
                     }
                 }
             }
         }
     }
-    contracts
+    contract_declarations
 }
 
 /// Returns the list of functions in a given module.

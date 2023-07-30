@@ -4,6 +4,7 @@ use std::sync::Arc;
 use cairo_lang_diagnostics::{Maybe, ToMaybe};
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_filesystem::patches::Patches;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -19,12 +20,7 @@ use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup:
-    FilesGroup
-    + SyntaxGroup
-    + Upcast<dyn SyntaxGroup>
-    + ParserGroup
-    + Upcast<dyn FilesGroup>
-    + HasMacroPlugins
+    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
 {
     #[salsa::interned]
     fn intern_constant(&self, id: ConstantLongId) -> ConstantId;
@@ -64,6 +60,11 @@ pub trait DefsGroup:
     fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
+
+    // Plugins.
+    // ========
+    #[salsa::input]
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -146,10 +147,6 @@ pub trait DefsGroup:
         &self,
         module_id: ModuleId,
     ) -> Maybe<Vec<(ModuleFileId, PluginDiagnostic)>>;
-}
-
-pub trait HasMacroPlugins {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
@@ -237,9 +234,10 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Vec<ModuleId>> {
 /// Information about the generation of a virtual file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GeneratedFileInfo {
-    pub aux_data: DynGeneratedFileAuxData,
+    pub aux_data: Vec<DynGeneratedFileAuxData>,
     /// The module and file index from which the current file was generated.
     pub origin: ModuleFileId,
+    pub patches: Arc<Patches>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -329,6 +327,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     res.generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
+                        patches: Arc::new(generated.patches),
                     }));
                     module_queue
                         .push_back((new_file, db.file_module_syntax(new_file)?.items(syntax_db)));

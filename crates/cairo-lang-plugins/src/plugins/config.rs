@@ -1,11 +1,8 @@
 use std::ops::Deref;
 use std::sync::Arc;
 
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -42,7 +39,8 @@ impl MacroPlugin for ConfigPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
                     content: data.result_code.clone(),
-                    aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+                    patches: Default::default(),
+                    aux_data: vec![],
                 }),
                 diagnostics: data.diagnostics,
                 remove_original_item: true,
@@ -52,15 +50,6 @@ impl MacroPlugin for ConfigPlugin {
         }
     }
 }
-impl AsDynMacroPlugin for ConfigPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for ConfigPlugin {}
 
 /// Helper for the [`ConfigPlugin`] that accumulates the code of the item, while dropping items not
 /// matching the configuration.

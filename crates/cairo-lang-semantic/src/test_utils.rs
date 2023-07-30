@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
-use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -14,7 +13,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 
-use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use crate::db::{SemanticDatabase, SemanticGroup};
 use crate::items::functions::GenericFunctionId;
 use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
@@ -27,7 +26,7 @@ impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_semantic_plugins(vec![]);
+        res.set_macro_plugins(vec![]);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
@@ -56,11 +55,6 @@ impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {
 impl Upcast<dyn SemanticGroup> for SemanticDatabaseForTesting {
     fn upcast(&self) -> &(dyn SemanticGroup + 'static) {
         self
-    }
-}
-impl HasMacroPlugins for SemanticDatabaseForTesting {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.get_macro_plugins()
     }
 }
 

@@ -20,7 +20,7 @@ impl Default for ExpandContractTestRunner {
         Self {
             db: RootDatabase::builder()
                 .detect_corelib()
-                .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+                .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
                 .build()
                 .unwrap(),
         }
