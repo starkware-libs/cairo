@@ -271,3 +271,15 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
+impl U128Add of Add<ByteArray> {
+    #[inline]
+    fn add(lhs: ByteArray, rhs: ByteArray) -> ByteArray {
+        ByteArrayTrait::concat(@lhs, @rhs)
+    }
+}
+impl ByteArrayAddEq of AddEq<ByteArray> {
+    #[inline]
+    fn add_eq(ref self: ByteArray, other: ByteArray) {
+        self.append(@other);
+    }
+}

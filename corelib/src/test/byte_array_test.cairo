@@ -68,6 +68,22 @@ fn test_append() {
     compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
 }
 
+// Same as test_append, but with `+=` instead of `append`.
+#[test]
+#[available_gas(1000000)]
+fn test_add_eq() {
+    let mut ba1 = test_byte_array_32();
+    let ba2 = test_byte_array_32();
+
+    ba1 += ba2;
+
+    let expected_data = array![
+        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+    ];
+    compare_byte_array(@ba1, expected_data.span(), 2, 0x1f20);
+}
+
 #[test]
 #[available_gas(1000000)]
 fn test_concat() {
@@ -75,6 +91,22 @@ fn test_concat() {
     let ba2 = test_byte_array_32();
 
     let ba3 = ByteArrayTrait::concat(@ba1, @ba2);
+
+    let expected_data = array![
+        0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
+        0x200102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e
+    ];
+    compare_byte_array(@ba3, expected_data.span(), 2, 0x1f20);
+}
+
+// Same as test_concat, but with `+` instead of `concat`.
+#[test]
+#[available_gas(1000000)]
+fn test_add() {
+    let ba1 = test_byte_array_32();
+    let ba2 = test_byte_array_32();
+
+    let ba3 = ba1 + ba2;
 
     let expected_data = array![
         0x0102030405060708091a0b0c0d0e0f101112131415161718191a1b1c1d1e1f,
