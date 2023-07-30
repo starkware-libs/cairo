@@ -27,7 +27,6 @@ impl MacroPlugin for ConfigPlugin {
         let mut data = ConfigMacroHelper {
             cfg_set: db.cfg_set(),
             result_code: String::new(),
-            code_changed: false,
             diagnostics: Vec::new(),
         };
         if data.should_drop(db, &item_ast) {
@@ -37,8 +36,8 @@ impl MacroPlugin for ConfigPlugin {
                 remove_original_item: true,
             };
         }
-        data.traverse(db, item_ast.as_syntax_node());
-        if data.code_changed {
+        if data.is_rewrite_needed_for_item(db, &item_ast) {
+            data.traverse(db, item_ast.as_syntax_node());
             PluginResult {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
@@ -68,7 +67,6 @@ impl SemanticPlugin for ConfigPlugin {}
 struct ConfigMacroHelper {
     cfg_set: Arc<CfgSet>,
     result_code: String,
-    code_changed: bool,
     diagnostics: Vec<PluginDiagnostic>,
 }
 impl ConfigMacroHelper {
@@ -105,11 +103,59 @@ impl ConfigMacroHelper {
         list: List,
     ) {
         for item in list.elements(db) {
-            if self.should_drop(db, &item) {
-                self.code_changed = true;
-            } else {
+            if !self.should_drop(db, &item) {
                 self.traverse(db, item.as_syntax_node())
             }
+        }
+    }
+
+    /// Checks if any items within the trait should be dropped.
+    /// This is a more shallow lookup than full travese.
+    fn is_rewrite_needed_for_trait(&mut self, db: &dyn SyntaxGroup, item: &ast::ItemTrait) -> bool {
+        match item.body(db) {
+            ast::MaybeTraitBody::Some(body) => {
+                body.items(db).elements(db).into_iter().any(|item| self.should_drop(db, &item))
+            }
+            ast::MaybeTraitBody::None(_) => false,
+        }
+    }
+
+    /// Checks if any items within the impl should be dropped.
+    /// This is a more shallow lookup than full travese.
+    fn is_rewrite_needed_for_impl(&mut self, db: &dyn SyntaxGroup, item: &ast::ItemImpl) -> bool {
+        match item.body(db) {
+            ast::MaybeImplBody::Some(body) => {
+                body.items(db).elements(db).into_iter().any(|item| self.should_drop(db, &item))
+            }
+            ast::MaybeImplBody::None(_) => false,
+        }
+    }
+
+    /// Checks if any items within the module should be dropped.
+    /// This is a more shallow lookup than full travese.
+    fn is_rewrite_needed_for_module(
+        &mut self,
+        db: &dyn SyntaxGroup,
+        item: &ast::ItemModule,
+    ) -> bool {
+        match item.body(db) {
+            ast::MaybeModuleBody::Some(body) => {
+                body.items(db).elements(db).into_iter().any(|item| {
+                    self.should_drop(db, &item) || self.is_rewrite_needed_for_item(db, &item)
+                })
+            }
+            ast::MaybeModuleBody::None(_) => false,
+        }
+    }
+
+    /// Checks if any items within this item should be dropped.
+    /// This is a more shallow lookup than full travese.
+    fn is_rewrite_needed_for_item(&mut self, db: &dyn SyntaxGroup, item: &ast::Item) -> bool {
+        match item {
+            ast::Item::Module(module_item) => self.is_rewrite_needed_for_module(db, module_item),
+            ast::Item::Trait(trait_item) => self.is_rewrite_needed_for_trait(db, trait_item),
+            ast::Item::Impl(impl_item) => self.is_rewrite_needed_for_impl(db, impl_item),
+            _ => false,
         }
     }
 
