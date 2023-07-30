@@ -21,7 +21,7 @@ struct Signature {
 
 /// Creates an ECDSA signature from the v, r and s values.
 fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
-    Signature { r, s, y_parity: v % 2 == 1,  }
+    Signature { r, s, y_parity: v % 2 == 1, }
 }
 
 trait Secp256Trait<Secp256Point> {

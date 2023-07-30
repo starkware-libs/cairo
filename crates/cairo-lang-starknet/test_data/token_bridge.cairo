@@ -54,14 +54,14 @@ mod token_bridge {
     // * l1_bridge_address is the new l1 bridge address.
     #[derive(Drop, starknet::Event)]
     struct L1BridgeSet {
-        l1_bridge_address: EthAddress, 
+        l1_bridge_address: EthAddress,
     }
 
     // An event that is emitted when set_l2_token is called.
     // * l2_token_address is the new l2 token address.
     #[derive(Drop, starknet::Event)]
     struct L2TokenSet {
-        l2_token_address: ContractAddress, 
+        l2_token_address: ContractAddress,
     }
 
     // An event that is emitted when initiate_withdraw is called.

@@ -1,11 +1,11 @@
 #[derive(Copy, Drop)]
 struct A {
-    value: felt252, 
+    value: felt252,
 }
 
 #[derive(Copy, Drop)]
 struct B {
-    a: A, 
+    a: A,
 }
 
 
