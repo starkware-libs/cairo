@@ -319,11 +319,14 @@ use zeroable::{Zeroable, NonZero};
 
 // bytes31.
 mod bytes_31;
-use bytes_31::{bytes31, bytes31_const, Bytes31IntoFelt252, Felt252TryIntoBytes31};
+use bytes_31::{
+    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
+    Felt252TryIntoBytes31
+};
 
 // BytesArray.
 mod byte_array;
-use byte_array::{ByteArray, ByteArrayTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 
 #[cfg(test)]
 mod test;
