@@ -7,6 +7,8 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use smol_str::SmolStr;
 
+use crate::patcher::Patches;
+
 /// A trait for arbitrary data that a macro generates along with a generated file.
 pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {
     fn as_any(&self) -> &dyn Any;
@@ -42,7 +44,9 @@ pub struct PluginGeneratedFile {
     pub content: String,
     /// A diagnostics mapper, to allow more readable diagnostics that originate in plugin generated
     /// virtual files.
-    pub aux_data: DynGeneratedFileAuxData,
+    pub patches: Patches,
+    /// Arbitrary data that the plugin generates along with the file.
+    pub aux_data: Option<DynGeneratedFileAuxData>,
 }
 
 /// Result of plugin code generation.

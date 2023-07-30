@@ -23,7 +23,7 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_function_usage(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
-    db.set_semantic_plugins(get_default_plugins());
+    db.set_macro_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),

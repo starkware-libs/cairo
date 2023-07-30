@@ -25,7 +25,7 @@ static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
-            .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
             .build()
             .unwrap(),
     )

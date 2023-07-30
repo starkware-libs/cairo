@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
-use cairo_lang_semantic::plugin::TrivialPluginAuxData;
+use cairo_lang_defs::plugin::{PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -147,7 +144,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+            patches: Default::default(),
+            aux_data: None,
         }),
         diagnostics,
         remove_original_item: false,
@@ -271,7 +269,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+            patches: Default::default(),
+            aux_data: None,
         }),
         diagnostics,
         remove_original_item: false,

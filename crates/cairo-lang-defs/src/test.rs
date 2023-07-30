@@ -15,32 +15,28 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches, Upcast};
 use indoc::indoc;
 
-use crate::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use crate::db::{DefsDatabase, DefsGroup};
 use crate::ids::{
     FileIndex, GenericParamLongId, ModuleFileId, ModuleId, ModuleItemId, SubmoduleLongId,
 };
 use crate::plugin::{
-    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginDiagnostic,
-    PluginGeneratedFile, PluginResult,
+    GeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
-    plugins: Vec<Arc<dyn MacroPlugin>>,
 }
 impl salsa::Database for DatabaseForTesting {}
 impl Default for DatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self {
-            storage: Default::default(),
-            plugins: vec![
-                Arc::new(FooToBarPlugin),
-                Arc::new(RemoveOrigPlugin),
-                Arc::new(DummyPlugin),
-            ],
-        };
+        let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
+        res.set_macro_plugins(vec![
+            Arc::new(FooToBarPlugin),
+            Arc::new(RemoveOrigPlugin),
+            Arc::new(DummyPlugin),
+        ]);
         res
     }
 }
@@ -62,11 +58,6 @@ impl Upcast<dyn FilesGroup> for DatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
-    }
-}
-impl HasMacroPlugins for DatabaseForTesting {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.plugins.clone()
     }
 }
 
@@ -229,7 +220,8 @@ impl MacroPlugin for DummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt".into(),
                         content: format!("fn f(x:{}){{}}", struct_ast.name(db).text(db)),
-                        aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+                        patches: Default::default(),
+                        aux_data: None,
                     }),
                     diagnostics: vec![],
                     remove_original_item,
@@ -239,7 +231,8 @@ impl MacroPlugin for DummyPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "virt2".into(),
                     content: "extern type B;".into(),
-                    aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+                    patches: Default::default(),
+                    aux_data: None,
                 }),
                 diagnostics: vec![PluginDiagnostic {
                     stable_ptr: free_function_ast.stable_ptr().untyped(),
@@ -338,7 +331,8 @@ impl MacroPlugin for FooToBarPlugin {
             code: Some(PluginGeneratedFile {
                 name: "virt".into(),
                 content: "fn bar() {}".to_string(),
-                aux_data: DynGeneratedFileAuxData::new(DummyAuxData),
+                patches: Default::default(),
+                aux_data: None,
             }),
             diagnostics: vec![],
             remove_original_item: false,

@@ -2,10 +2,8 @@
 mod test;
 
 pub mod consts;
-use std::sync::Arc;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -55,12 +53,3 @@ impl MacroPlugin for StarkNetPlugin {
         }
     }
 }
-impl AsDynMacroPlugin for StarkNetPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for StarkNetPlugin {}
