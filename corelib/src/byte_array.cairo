@@ -180,6 +180,10 @@ impl ByteArrayImpl of ByteArrayTrait {
         self.pending_word_len = 0;
     }
 
+    fn len(self: @ByteArray) -> usize {
+        self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
+    }
+
     // === Helpers ===
 
     // Appends a single word of `len` bytes to the end of the ByteArray, assuming there
