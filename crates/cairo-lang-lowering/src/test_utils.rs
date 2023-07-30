@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
@@ -9,7 +9,8 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_utils::Upcast;
 
 use crate::db::{LoweringDatabase, LoweringGroup};
@@ -24,11 +25,12 @@ use crate::db::{LoweringDatabase, LoweringGroup};
 )]
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
+    green_interner: RwLock<GreenInterner>,
 }
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), green_interner: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
@@ -49,6 +51,11 @@ impl Upcast<dyn FilesGroup> for LoweringDatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for LoweringDatabaseForTesting {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 impl Upcast<dyn DefsGroup> for LoweringDatabaseForTesting {

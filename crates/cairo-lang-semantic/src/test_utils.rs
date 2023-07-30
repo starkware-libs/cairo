@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
@@ -10,7 +10,8 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_parser::db::ParserDatabase;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 
@@ -21,11 +22,12 @@ use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
+    green_interner: RwLock<GreenInterner>,
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
 impl Default for SemanticDatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), green_interner: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(vec![]);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
@@ -46,6 +48,11 @@ impl Upcast<dyn FilesGroup> for SemanticDatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for SemanticDatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for SemanticDatabaseForTesting {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 impl Upcast<dyn DefsGroup> for SemanticDatabaseForTesting {

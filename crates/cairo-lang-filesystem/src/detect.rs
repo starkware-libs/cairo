@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+#[allow(clippy::reversed_empty_ranges)]
 pub fn detect_corelib() -> Option<PathBuf> {
     macro_rules! try_path {
         ($base:expr, $up:expr) => {{
@@ -27,6 +28,7 @@ pub fn detect_corelib() -> Option<PathBuf> {
         try_path!(&dir, 2);
         try_path!(&dir, 3);
     }
+    try_path!(Path::new("/home/spapini/workspace/cairo2_1"), 0);
 
     None
 }

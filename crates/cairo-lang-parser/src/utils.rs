@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+use std::sync::RwLock;
 
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{init_files_group, FilesDatabase, FilesGroup};
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::SyntaxFile;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::Upcast;
 
@@ -17,11 +19,12 @@ use crate::ParserDiagnostic;
 #[salsa::database(ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SimpleParserDatabase {
     storage: salsa::Storage<SimpleParserDatabase>,
+    green_interner: RwLock<GreenInterner>,
 }
 impl salsa::Database for SimpleParserDatabase {}
 impl Default for SimpleParserDatabase {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), green_interner: Default::default() };
         init_files_group(&mut res);
         res
     }
@@ -35,6 +38,11 @@ impl Upcast<dyn SyntaxGroup> for SimpleParserDatabase {
 impl Upcast<dyn FilesGroup> for SimpleParserDatabase {
     fn upcast(&self) -> &(dyn FilesGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for SimpleParserDatabase {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 

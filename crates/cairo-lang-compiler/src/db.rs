@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
@@ -17,7 +17,8 @@ use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_utils::Upcast;
 
 use crate::project::update_crate_roots_from_project_config;
@@ -33,16 +34,20 @@ use crate::project::update_crate_roots_from_project_config;
 )]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
+    green_interner: Arc<RwLock<GreenInterner>>,
 }
 impl salsa::Database for RootDatabase {}
 impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
-        salsa::Snapshot::new(RootDatabase { storage: self.storage.snapshot() })
+        salsa::Snapshot::new(RootDatabase {
+            storage: self.storage.snapshot(),
+            green_interner: Default::default(),
+        })
     }
 }
 impl RootDatabase {
     fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), green_interner: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(plugins);
         res
@@ -58,7 +63,10 @@ impl RootDatabase {
 
     /// Snapshots the db for read only.
     pub fn snapshot(&self) -> RootDatabase {
-        RootDatabase { storage: self.storage.snapshot() }
+        RootDatabase {
+            storage: self.storage.snapshot(),
+            green_interner: self.green_interner.clone(),
+        }
     }
 }
 
@@ -154,6 +162,11 @@ impl Upcast<dyn FilesGroup> for RootDatabase {
 impl Upcast<dyn SyntaxGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for RootDatabase {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 impl Upcast<dyn DefsGroup> for RootDatabase {

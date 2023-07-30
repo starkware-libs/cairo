@@ -10,6 +10,8 @@ description = "Cairo syntax representation."
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.1.0-rc0" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.1.0-rc0" }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc0" }
+fxhash.workspace = true
+itertools.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true

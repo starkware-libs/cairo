@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::ModuleId;
@@ -14,7 +14,8 @@ use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_utils::{Upcast, UpcastMut};
 use salsa::{InternId, InternKey};
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -35,11 +36,12 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 )]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
+    green_interner: RwLock<GreenInterner>,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl Default for SierraGenDatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+        let mut res = Self { storage: Default::default(), green_interner: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
@@ -65,6 +67,11 @@ impl UpcastMut<dyn FilesGroup> for SierraGenDatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for SierraGenDatabaseForTesting {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 impl Upcast<dyn DefsGroup> for SierraGenDatabaseForTesting {

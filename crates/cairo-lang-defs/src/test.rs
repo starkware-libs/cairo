@@ -1,5 +1,5 @@
 use std::fmt::Write as _;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
@@ -7,7 +7,8 @@ use cairo_lang_filesystem::db::{
 };
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
-use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::green::GreenInterner;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
@@ -27,6 +28,7 @@ use crate::plugin::{
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
+    green_interner: RwLock<GreenInterner>,
     plugins: Vec<Arc<dyn MacroPlugin>>,
 }
 impl salsa::Database for DatabaseForTesting {}
@@ -39,6 +41,7 @@ impl Default for DatabaseForTesting {
                 Arc::new(RemoveOrigPlugin),
                 Arc::new(DummyPlugin),
             ],
+            green_interner: Default::default(),
         };
         init_files_group(&mut res);
         res
@@ -62,6 +65,11 @@ impl Upcast<dyn FilesGroup> for DatabaseForTesting {
 impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
     fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
         self
+    }
+}
+impl HasGreenInterner for DatabaseForTesting {
+    fn get_interner(&self) -> &RwLock<GreenInterner> {
+        &self.green_interner
     }
 }
 impl HasMacroPlugins for DatabaseForTesting {

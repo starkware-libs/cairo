@@ -11,7 +11,7 @@ use crate::ids::FileId;
 /// Byte length of a utf8 string.
 // Note: The wrapped value is private to make sure no one gets confused with non utf8 sizes.
 #[derive(Copy, Clone, Default, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TextWidth(u32);
+pub struct TextWidth(pub u32);
 impl TextWidth {
     pub fn from_char(c: char) -> Self {
         Self(c.len_utf8() as u32)
