@@ -36,7 +36,6 @@ use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use serde::Serialize;
-use serde_json;
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -176,14 +175,13 @@ impl TestRunner {
           .collect_vec();
         let filtered_out = total_tests_count - named_tests.len();
         let contracts_info = get_contracts_info(db, self.main_crate_ids.clone(), &replacer)?;
-        //let TestsSummary { passed, failed, ignored, failed_run_results } =
         let tests_summary =
             run_tests(named_tests, sierra_program, function_set_costs, contracts_info)?;
 
         if !self.export.is_empty() {
             let serialized = serde_json::to_string_pretty(&tests_summary.export).unwrap();
             std::fs::write(self.export.as_str(), &serialized)
-                .expect(format!("Unable to write {}", &self.export).as_str());
+                .unwrap_or_else(|_| panic!("Unable to write {}", &self.export));
         }
         if tests_summary.failed.is_empty() {
             println!(
@@ -362,11 +360,8 @@ pub fn run_tests(
                         RunResultValue::Panic(values) => {
                             let mut messages = Vec::<String>::new();
                             for value in &values {
-                                match as_cairo_short_string(value) {
-                                    Some(as_string) => {
-                                        messages.push(as_string);
-                                    }
-                                    None => {}
+                                if let Some(as_string) = as_cairo_short_string(value) {
+                                    messages.push(as_string);
                                 }
                             }
                             messages

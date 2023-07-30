@@ -29,7 +29,7 @@ struct Args {
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
-     /// Path to export tests results as JSON
+    /// Path to export tests results as JSON
     #[arg(short, long, default_value_t = String::default())]
     export: String,
 }
