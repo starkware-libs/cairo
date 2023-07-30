@@ -39,7 +39,7 @@ pub fn priv_type_alias_semantic_data(
     type_alias_id: TypeAliasId,
 ) -> Maybe<TypeAliasData> {
     let module_file_id = type_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -80,7 +80,7 @@ pub fn priv_type_alias_semantic_data_cycle(
     type_alias_id: &TypeAliasId,
 ) -> Maybe<TypeAliasData> {
     let module_file_id = type_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
@@ -128,7 +128,7 @@ pub fn type_alias_generic_params_data(
     type_alias_id: TypeAliasId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = type_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let module_type_aliases = db.module_type_aliases(module_file_id.0)?;
     let type_alias_ast = module_type_aliases.get(&type_alias_id).to_maybe()?;
     let syntax_db = db.upcast();

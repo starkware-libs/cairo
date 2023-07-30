@@ -4,12 +4,14 @@
 
 use std::collections::HashMap;
 use std::ops::Deref;
+use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
@@ -43,6 +45,7 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
+use crate::inline_macros::get_inline_macro_plugin;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -260,11 +263,50 @@ pub fn maybe_compute_expr_semantic(
         ast::Expr::If(expr_if) => compute_expr_if_semantic(ctx, expr_if),
         ast::Expr::Loop(expr_loop) => compute_expr_loop_semantic(ctx, expr_loop),
         ast::Expr::ErrorPropagate(expr) => compute_expr_error_propagate_semantic(ctx, expr),
-        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) | ast::Expr::InlineMacro(_) => {
+        ast::Expr::InlineMacro(expr) => compute_expr_inline_macro_semantic(ctx, expr),
+        ast::Expr::Missing(_) | ast::Expr::FieldInitShorthand(_) => {
             Err(ctx.diagnostics.report(syntax, Unsupported))
         }
         ast::Expr::Indexed(expr) => compute_expr_indexed_semantic(ctx, expr),
     }
+}
+
+fn compute_expr_inline_macro_semantic(
+    ctx: &mut ComputationContext<'_>,
+    syntax: &ast::ExprInlineMacro,
+) -> Maybe<Expr> {
+    let syntax_db = ctx.db.upcast();
+
+    let macro_name = syntax.path(syntax_db).as_syntax_node().get_text(syntax_db).trim().to_string();
+    let Some(macro_plugin) = get_inline_macro_plugin(&macro_name) else {
+        return Err(ctx
+            .diagnostics
+            .report(syntax, InlineMacroNotFound { macro_name: macro_name.into() }));
+    };
+
+    let result = macro_plugin.generate_code(syntax_db, syntax);
+    for diagnostic in result.diagnostics {
+        ctx.diagnostics.report(syntax, PluginDiagnostic(diagnostic));
+    }
+
+    let Some(code) = result.code else {
+        return Err(ctx
+            .diagnostics
+            .report(syntax, InlineMacroFailed { macro_name: macro_name.into() }));
+    };
+
+    // Create a file
+    let new_file = ctx.db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: Some(ctx.diagnostics.file_id),
+        name: "inline_macro.cairo".into(),
+        content: Arc::new(code),
+        kind: FileKind::Expr,
+    }));
+    let expr_syntax = ctx.db.file_expr_syntax(new_file)?;
+    let old_file = std::mem::replace(&mut ctx.diagnostics.file_id, new_file);
+    let expr = compute_expr_semantic(ctx, &expr_syntax);
+    ctx.diagnostics.file_id = old_file;
+    Ok(expr.expr)
 }
 
 fn compute_expr_unary_semantic(

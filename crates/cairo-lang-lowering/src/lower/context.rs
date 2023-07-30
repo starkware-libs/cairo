@@ -85,10 +85,7 @@ impl<'db> VariableAllocator<'db> {
 
     /// Retrieves the LocationId of a stable syntax pointer in the current function file.
     pub fn get_location(&self, stable_ptr: SyntaxStablePtrId) -> LocationId {
-        LocationId::from_stable_location(
-            self.db,
-            StableLocation::new(self.module_file_id, stable_ptr),
-        )
+        LocationId::from_stable_location(self.db, StableLocation::new(stable_ptr))
     }
 }
 impl<'db> Index<VariableId> for VariableAllocator<'db> {
@@ -175,7 +172,7 @@ impl<'a, 'db> LoweringContext<'a, 'db> {
             function_id,
             concrete_function_id,
             current_loop_expr: Option::None,
-            diagnostics: LoweringDiagnostics::new(module_file_id),
+            diagnostics: LoweringDiagnostics::new(module_file_id.file_id(db.upcast())?),
             blocks: Default::default(),
         })
     }

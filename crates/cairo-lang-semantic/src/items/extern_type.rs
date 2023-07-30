@@ -51,7 +51,7 @@ pub fn extern_type_declaration_generic_params_data(
     extern_type_id: ExternTypeId,
 ) -> Maybe<GenericParamsData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let module_extern_types = db.module_extern_types(module_file_id.0)?;
     let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
 
@@ -83,7 +83,7 @@ pub fn priv_extern_type_declaration_data(
     extern_type_id: ExternTypeId,
 ) -> Maybe<ExternTypeDeclarationData> {
     let module_file_id = extern_type_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let module_extern_types = db.module_extern_types(module_file_id.0)?;
     let type_syntax = module_extern_types.get(&extern_type_id).to_maybe()?;
 

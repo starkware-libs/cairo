@@ -83,7 +83,38 @@ impl<'a> Parser<'a> {
             diagnostics,
         };
         let green = parser.parse_syntax_file();
-        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, green))
+        SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
+    }
+
+    /// Parses a file expr.
+    pub fn parse_file_expr(
+        db: &'a dyn SyntaxGroup,
+        diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
+        file_id: FileId,
+        text: &'a str,
+    ) -> Expr {
+        let mut lexer = Lexer::from_text(db, file_id, text);
+        let next_terminal = lexer.next().unwrap();
+        let mut parser = Parser {
+            db,
+            file_id,
+            lexer,
+            next_terminal,
+            pending_trivia: Vec::new(),
+            offset: Default::default(),
+            current_width: Default::default(),
+            last_trivia_length: Default::default(),
+            diagnostics,
+        };
+        let green = parser.parse_expr();
+        if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
+            parser.diagnostics.add(ParserDiagnostic {
+                file_id: parser.file_id,
+                kind: ParserDiagnosticKind::SkippedElement { element_name: "end of expr".into() },
+                span,
+            });
+        }
+        Expr::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
     }
 
     /// Returns a GreenId of an ExprMissing and adds a diagnostic describing it.

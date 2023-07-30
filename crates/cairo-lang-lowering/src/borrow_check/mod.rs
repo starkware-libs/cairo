@@ -247,7 +247,7 @@ pub fn borrow_check(
     module_file_id: ModuleFileId,
     lowered: &mut FlatLowered,
 ) {
-    let mut diagnostics = LoweringDiagnostics::new(module_file_id);
+    let mut diagnostics = LoweringDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
     if lowered.blocks.has_root().is_ok() {

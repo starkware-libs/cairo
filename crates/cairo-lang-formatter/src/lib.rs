@@ -8,7 +8,7 @@ pub mod node_properties;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -48,6 +48,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         parent: None,
         name: "string_to_format".into(),
         content: Arc::new(content.clone()),
+        kind: FileKind::Module,
     }));
     let mut diagnostics = DiagnosticsBuilder::new();
     let syntax_root =

@@ -1,3 +1,5 @@
+use cairo_lang_filesystem::ids::FileId;
+
 use super::ids::{GreenId, SyntaxStablePtrId};
 use super::kind::SyntaxKind;
 
@@ -12,7 +14,7 @@ use super::kind::SyntaxKind;
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SyntaxStablePtr {
     /// The root node of the tree.
-    Root,
+    Root(FileId, GreenId),
     /// A child node.
     Child {
         /// The parent of the node.

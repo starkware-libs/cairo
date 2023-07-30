@@ -43,11 +43,18 @@ pub enum FileLongId {
     OnDisk(PathBuf),
     Virtual(VirtualFile),
 }
+/// Whether the file holds syntax for a module or for an expression.
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum FileKind {
+    Module,
+    Expr,
+}
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct VirtualFile {
     pub parent: Option<FileId>,
     pub name: SmolStr,
     pub content: Arc<String>,
+    pub kind: FileKind,
 }
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
 impl FileId {
@@ -60,6 +67,12 @@ impl FileId {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
             FileLongId::Virtual(vf) => vf.name.to_string(),
+        }
+    }
+    pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
+        match db.lookup_intern_file(self) {
+            FileLongId::OnDisk(_) => FileKind::Module,
+            FileLongId::Virtual(vf) => vf.kind.clone(),
         }
     }
 }

@@ -185,7 +185,7 @@ pub fn generic_param_data(
 ) -> Maybe<GenericParamData> {
     let syntax_db: &dyn SyntaxGroup = db.upcast();
     let module_file_id = generic_param_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let generic_item_id = generic_param_id.generic_item(db.upcast());
     // Right now, generic consts are allowed only in extern types.
     let allow_consts = matches!(generic_item_id, GenericItemId::ExternFunc(_));
@@ -242,7 +242,9 @@ pub fn generic_param_data_cycle(
     _cycle: &[String],
     generic_param_id: &GenericParamId,
 ) -> Maybe<GenericParamData> {
-    let diagnostics = &mut SemanticDiagnostics::new(generic_param_id.module_file_id(db.upcast()));
+    let diagnostics = &mut SemanticDiagnostics::new(
+        generic_param_id.module_file_id(db.upcast()).file_id(db.upcast())?,
+    );
     Err(diagnostics.report_by_ptr(
         generic_param_id.stable_ptr(db.upcast()).untyped(),
         SemanticDiagnosticKind::ImplRequirmentCycle,
@@ -265,16 +267,8 @@ fn generic_param_generic_params_list(
     let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
         panic!()
     };
-    let module_file_id = generic_param_id.module_file_id(db.upcast());
 
-    let file_id = db.module_file(module_file_id)?;
-    let root = db.file_syntax(file_id)?;
-
-    let generic_param_list = ast::OptionWrappedGenericParamList::from_ptr(
-        db.upcast(),
-        &root,
-        ast::OptionWrappedGenericParamListPtr(parent),
-    );
+    let generic_param_list = ast::OptionWrappedGenericParamListPtr(parent).lookup(db.upcast());
     Ok(generic_param_list)
 }
 
@@ -303,7 +297,7 @@ pub fn generic_impl_param_trait(
     let syntax = extract_matches!(generic_param_syntax, ast::GenericParam::Impl);
     let trait_path_syntax = syntax.trait_path(syntax_db);
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let mut resolver = Resolver::new(db, module_file_id);
 
     resolver

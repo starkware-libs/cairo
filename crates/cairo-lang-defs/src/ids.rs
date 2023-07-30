@@ -22,8 +22,9 @@
 // Call sites, variable usages, assignments, etc. are NOT definitions.
 
 use cairo_lang_debug::debug::DebugWithDb;
-use cairo_lang_filesystem::ids::CrateId;
+use cairo_lang_diagnostics::Maybe;
 pub use cairo_lang_filesystem::ids::UnstableSalsaId;
+use cairo_lang_filesystem::ids::{CrateId, FileId};
 use cairo_lang_syntax::node::ast::TerminalIdentifierGreen;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, NameGreen};
@@ -126,8 +127,8 @@ macro_rules! define_language_element_id_partial {
                 self.stable_ptr(db).untyped()
             }
             fn stable_location(&self, db: &dyn DefsGroup) -> StableLocation {
-                let $long_id(module_file_id, stable_ptr) = db.$lookup(*self);
-                StableLocation { module_file_id, stable_ptr: stable_ptr.untyped() }
+                let $long_id(_module_file_id, stable_ptr) = db.$lookup(*self);
+                StableLocation::new(stable_ptr.untyped())
             }
         }
     };
@@ -288,6 +289,11 @@ impl DebugWithDb<dyn DefsGroup> for ModuleId {
 pub struct FileIndex(pub usize);
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub struct ModuleFileId(pub ModuleId, pub FileIndex);
+impl ModuleFileId {
+    pub fn file_id(&self, db: &dyn DefsGroup) -> Maybe<FileId> {
+        Ok(db.module_files(self.0)?[self.1.0])
+    }
+}
 
 define_language_element_id_as_enum! {
     #[toplevel]
@@ -603,7 +609,7 @@ impl GenericItemId {
                         };
 
                         match db.lookup_intern_stable_ptr(parent2) {
-                            SyntaxStablePtr::Root => GenericItemId::FreeFunc(
+                            SyntaxStablePtr::Root(_, _) => GenericItemId::FreeFunc(
                                 db.intern_free_function(FreeFunctionLongId(
                                     module_file,
                                     ast::FunctionWithBodyPtr(parent0),
@@ -695,9 +701,7 @@ impl DebugWithDb<dyn DefsGroup> for LocalVarLongId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn DefsGroup) -> std::fmt::Result {
         let syntax_db = db.upcast();
         let LocalVarLongId(module_file_id, ptr) = self;
-        let file_id = db.module_file(*module_file_id).map_err(|_| std::fmt::Error)?;
-        let root = db.file_syntax(file_id).map_err(|_| std::fmt::Error)?;
-        let text = ast::TerminalIdentifier::from_ptr(syntax_db, &root, *ptr).text(syntax_db);
+        let text = ptr.lookup(syntax_db).text(syntax_db);
         write!(f, "LocalVarId({}::{})", module_file_id.0.full_path(db), text)
     }
 }

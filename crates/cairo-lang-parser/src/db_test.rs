@@ -1,3 +1,4 @@
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ast::{
     ItemList, SyntaxFile, TerminalEndOfFile, TokenEndOfFile, Trivia,
 };
@@ -12,7 +13,7 @@ use crate::db::ParserGroup;
 use crate::test_utils::create_virtual_file;
 use crate::utils::SimpleParserDatabase;
 
-fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
+fn build_empty_file_green_tree(db: &dyn SyntaxGroup, file_id: FileId) -> SyntaxFile {
     let eof_token = TokenEndOfFile::new_green(db, SmolStr::from(""));
     let eof_terminal = TerminalEndOfFile::new_green(
         db,
@@ -24,7 +25,8 @@ fn build_empty_file_green_tree(db: &dyn SyntaxGroup) -> SyntaxFile {
         db,
         SyntaxNode::new_root(
             db,
-            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal),
+            file_id,
+            SyntaxFile::new_green(db, ItemList::new_green(db, vec![]), eof_terminal).0,
         ),
     )
 }
@@ -35,11 +37,11 @@ fn test_parser() {
 
     // Parse empty cairo file.
     let file_id = create_virtual_file(&db, "file.cairo", "");
-    let syntax_file = db.file_syntax(file_id).unwrap();
+    let syntax_file = db.file_module_syntax(file_id).unwrap();
     let diagnostics = db.file_syntax_diagnostics(file_id);
     assert_eq!(diagnostics.format(&db), "");
 
-    let expected_syntax_file = build_empty_file_green_tree(db.upcast());
+    let expected_syntax_file = build_empty_file_green_tree(db.upcast(), file_id);
 
-    assert_eq!(*syntax_file, expected_syntax_file);
+    assert_eq!(syntax_file, expected_syntax_file);
 }

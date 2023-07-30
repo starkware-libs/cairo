@@ -43,7 +43,6 @@ use cairo_lang_syntax::node::ast::PathSegment;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::stable_ptr::SyntaxStablePtr;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -643,14 +642,11 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
+            let Ok(node) = db.file_syntax(file) else {
                 eprintln!("Semantic analysis failed. File '{file_uri}' does not exist.");
                 return None;
             };
 
-            let node = syntax.as_syntax_node();
             let mut data: Vec<SemanticToken> = Vec::new();
             SemanticTokensTraverser::default().find_semantic_tokens(
                 db.upcast(),
@@ -670,21 +666,14 @@ impl LanguageServer for Backend {
         self.with_db(|db| {
             let file_uri = params.text_document.uri;
             let file = file(db, file_uri.clone());
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
+            let Ok(node) = db.file_syntax(file) else {
                 eprintln!("Formatting failed. File '{file_uri}' does not exist.");
                 return None;
             };
             if !db.file_syntax_diagnostics(file).is_empty() {
-                eprintln!("Formatting failed. File '{file_uri}' has syntax errors.");
                 return None;
             }
-            let new_text = get_formatted_file(
-                db.upcast(),
-                &syntax.as_syntax_node(),
-                FormatterConfig::default(),
-            );
+            let new_text = get_formatted_file(db.upcast(), &node, FormatterConfig::default());
 
             let file_summary = if let Some(summary) = db.file_summary(file) {
                 summary
@@ -768,29 +757,20 @@ impl LanguageServer for Backend {
             }
             let identifier =
                 ast::TerminalIdentifier::from_syntax_node(syntax_db, node.parent().unwrap());
-            let (module_id, file_index, stable_ptr) =
-                find_definition(db, file, &identifier, &lookup_items)?;
+            let stable_ptr = find_definition(db, file, &identifier, &lookup_items)?;
+            let found_file = stable_ptr.file_id(syntax_db);
+            let found_uri = get_uri(db, found_file);
 
-            let file = if let Ok(files) = db.module_files(module_id) {
-                files[file_index.0]
-            } else {
-                return None;
-            };
-
-            let uri = get_uri(db, file);
-            let syntax = if let Ok(syntax) = db.file_syntax(file) {
-                syntax
-            } else {
-                eprintln!("Formatting failed. File '{file_uri}' does not exist.");
-                return None;
-            };
-            let node = syntax.as_syntax_node().lookup_ptr(syntax_db, stable_ptr);
+            let node = stable_ptr.lookup(syntax_db);
             let span = node.span_without_trivia(syntax_db);
 
-            let start = from_pos(span.start.position_in_file(db.upcast(), file).unwrap());
-            let end = from_pos(span.end.position_in_file(db.upcast(), file).unwrap());
+            let start = from_pos(span.start.position_in_file(db.upcast(), found_file).unwrap());
+            let end = from_pos(span.end.position_in_file(db.upcast(), found_file).unwrap());
 
-            Some(GotoDefinitionResponse::Scalar(Location { uri, range: Range { start, end } }))
+            Some(GotoDefinitionResponse::Scalar(Location {
+                uri: found_uri,
+                range: Range { start, end },
+            }))
         })
         .await
     }
@@ -801,7 +781,7 @@ fn find_definition(
     file: FileId,
     identifier: &ast::TerminalIdentifier,
     lookup_items: &[LookupItemId],
-) -> Option<DefinitionResult> {
+) -> Option<SyntaxStablePtrId> {
     if let Some(parent) = identifier.as_syntax_node().parent() {
         if parent.kind(db) == SyntaxKind::ItemModule {
             let containing_module_id =
@@ -836,37 +816,38 @@ fn find_definition(
 fn resolved_concrete_item_def(
     db: &dyn SemanticGroup,
     item: ResolvedConcreteItem,
-) -> Option<(ModuleId, FileIndex, SyntaxStablePtrId)> {
+) -> Option<SyntaxStablePtrId> {
     match item {
         ResolvedConcreteItem::Type(ty) => {
             if let TypeLongId::GenericParameter(param) = db.lookup_intern_type(ty) {
-                Some((
-                    param.parent_module(db.upcast()),
-                    param.file_index(db.upcast()),
-                    param.untyped_stable_ptr(db.upcast()),
-                ))
+                Some(param.untyped_stable_ptr(db.upcast()))
             } else {
                 None
             }
         }
-        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => Some((
-            param.parent_module(db.upcast()),
-            param.file_index(db.upcast()),
-            param.untyped_stable_ptr(db.upcast()),
-        )),
+        ResolvedConcreteItem::Impl(ImplId::GenericParameter(param)) => {
+            Some(param.untyped_stable_ptr(db.upcast()))
+        }
         _ => None,
     }
 }
 
-type DefinitionResult = (ModuleId, FileIndex, SyntaxStablePtrId);
-
-fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> DefinitionResult {
+fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> SyntaxStablePtrId {
     match item {
-        ResolvedGenericItem::Constant(item) => {
-            (item.parent_module(db), item.file_index(db), item.untyped_stable_ptr(db))
-        }
-        ResolvedGenericItem::Module(item) => {
-            (item, FileIndex(0), db.intern_stable_ptr(SyntaxStablePtr::Root))
+        ResolvedGenericItem::Constant(item) => item.untyped_stable_ptr(db),
+        ResolvedGenericItem::Module(module_id) => {
+            // Check if the module is an inline submodule.
+            if let ModuleId::Submodule(submodule_id) = module_id {
+                if let ast::MaybeModuleBody::Some(submodule_id) =
+                    submodule_id.stable_ptr(db.upcast()).lookup(db.upcast()).body(db.upcast())
+                {
+                    // Inline module.
+                    return submodule_id.stable_ptr().untyped();
+                }
+            }
+            let module_file = db.module_main_file(module_id).unwrap();
+            let file_syntax = db.file_module_syntax(module_file).unwrap();
+            file_syntax.as_syntax_node().stable_ptr()
         }
         ResolvedGenericItem::GenericFunction(item) => {
             let title = match item {
@@ -877,42 +858,18 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> D
                     FunctionTitleId::Trait(id.function)
                 }
             };
-            (title.parent_module(db), title.file_index(db), title.untyped_stable_ptr(db))
+            title.untyped_stable_ptr(db)
         }
-        ResolvedGenericItem::GenericType(generic_type) => (
-            generic_type.parent_module(db),
-            generic_type.file_index(db),
-            generic_type.untyped_stable_ptr(db),
-        ),
-        ResolvedGenericItem::GenericTypeAlias(type_alias) => (
-            type_alias.parent_module(db),
-            type_alias.file_index(db),
-            type_alias.untyped_stable_ptr(db),
-        ),
-        ResolvedGenericItem::GenericImplAlias(impl_alias) => (
-            impl_alias.parent_module(db),
-            impl_alias.file_index(db),
-            impl_alias.untyped_stable_ptr(db),
-        ),
-        ResolvedGenericItem::Variant(variant) => (
-            variant.id.parent_module(db),
-            variant.id.file_index(db),
-            variant.id.stable_ptr(db).untyped(),
-        ),
-        ResolvedGenericItem::Trait(trt) => {
-            (trt.parent_module(db), trt.file_index(db), trt.stable_ptr(db).untyped())
+        ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
+        ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db).untyped(),
+        ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db).untyped(),
+        ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db).untyped(),
+        ResolvedGenericItem::TraitFunction(trait_function) => {
+            trait_function.stable_ptr(db).untyped()
         }
-        ResolvedGenericItem::Impl(imp) => {
-            (imp.parent_module(db), imp.file_index(db), imp.stable_ptr(db).untyped())
-        }
-        ResolvedGenericItem::TraitFunction(trait_function) => (
-            trait_function.parent_module(db),
-            trait_function.file_index(db),
-            trait_function.stable_ptr(db).untyped(),
-        ),
-        ResolvedGenericItem::Variable(item, var) => {
-            (item.parent_module(db), item.file_index(db), var.untyped_stable_ptr(db))
-        }
+        ResolvedGenericItem::Variable(_item, var) => var.untyped_stable_ptr(db),
     }
 }
 
@@ -1149,7 +1106,7 @@ fn get_node_and_lookup_items(
 
     // Find offset for position.
     let offset = position_to_offset(file_summary, position, &content)?;
-    let node = syntax.as_syntax_node().lookup_offset(syntax_db, offset);
+    let node = syntax.lookup_offset(syntax_db, offset);
 
     // Find module.
     let module_id = find_node_module(db, file, node.clone()).on_none(|| {
