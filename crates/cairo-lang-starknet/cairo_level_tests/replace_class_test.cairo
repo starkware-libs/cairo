@@ -21,7 +21,7 @@ mod contract_a {
 
     #[storage]
     struct Storage {
-        value: u128, 
+        value: u128,
     }
 
     #[constructor]
@@ -46,7 +46,7 @@ trait IWithFoo<TContractState> {
 mod contract_b {
     #[storage]
     struct Storage {
-        value: u128, 
+        value: u128,
     }
 
     #[external(v0)]

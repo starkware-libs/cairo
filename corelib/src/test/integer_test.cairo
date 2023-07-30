@@ -1159,49 +1159,49 @@ fn test_i8_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow', ))]
+#[should_panic(expected: ('i8_sub Underflow',))]
 fn test_i8_sub_underflow_1() {
     -0x80_i8 - 1_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow', ))]
+#[should_panic(expected: ('i8_sub Underflow',))]
 fn test_i8_sub_underflow_2() {
     -0x80_i8 - 3_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow', ))]
+#[should_panic(expected: ('i8_sub Underflow',))]
 fn test_i8_sub_underflow_3() {
     -0x7f_i8 - 3_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Underflow', ))]
+#[should_panic(expected: ('i8_sub Underflow',))]
 fn test_i8_sub_underflow_4() {
     -0x32_i8 - 0x7d_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_sub Overflow', ))]
+#[should_panic(expected: ('i8_sub Overflow',))]
 fn test_i8_sub_overflow() {
     0x32_i8 - -0x7d_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Overflow', ))]
+#[should_panic(expected: ('i8_add Overflow',))]
 fn test_i8_add_overflow_1() {
     0x40_i8 + 0x40_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Overflow', ))]
+#[should_panic(expected: ('i8_add Overflow',))]
 fn test_i8_add_overflow_2() {
     0x64_i8 + 0x1e_i8;
 }
 
 #[test]
-#[should_panic(expected: ('i8_add Underflow', ))]
+#[should_panic(expected: ('i8_add Underflow',))]
 fn test_i8_add_underflow() {
     -0x64_i8 + -0x1e_i8;
 }
@@ -1262,49 +1262,49 @@ fn test_i16_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow', ))]
+#[should_panic(expected: ('i16_sub Underflow',))]
 fn test_i16_sub_underflow_1() {
     -0x8000_i16 - 1_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow', ))]
+#[should_panic(expected: ('i16_sub Underflow',))]
 fn test_i16_sub_underflow_2() {
     -0x8000_i16 - 3_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow', ))]
+#[should_panic(expected: ('i16_sub Underflow',))]
 fn test_i16_sub_underflow_3() {
     -0x7fff_i16 - 3_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Underflow', ))]
+#[should_panic(expected: ('i16_sub Underflow',))]
 fn test_i16_sub_underflow_4() {
     -0x3200_i16 - 0x7d00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_sub Overflow', ))]
+#[should_panic(expected: ('i16_sub Overflow',))]
 fn test_i16_sub_overflow() {
     0x3200_i16 - -0x7d00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Overflow', ))]
+#[should_panic(expected: ('i16_add Overflow',))]
 fn test_i16_add_overflow_1() {
     0x4000_i16 + 0x4000_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Overflow', ))]
+#[should_panic(expected: ('i16_add Overflow',))]
 fn test_i16_add_overflow_2() {
     0x6400_i16 + 0x1e00_i16;
 }
 
 #[test]
-#[should_panic(expected: ('i16_add Underflow', ))]
+#[should_panic(expected: ('i16_add Underflow',))]
 fn test_i16_add_underflow() {
     -0x6400_i16 + -0x1e00_i16;
 }
@@ -1365,49 +1365,49 @@ fn test_i32_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow', ))]
+#[should_panic(expected: ('i32_sub Underflow',))]
 fn test_i32_sub_underflow_1() {
     -0x80000000_i32 - 1_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow', ))]
+#[should_panic(expected: ('i32_sub Underflow',))]
 fn test_i32_sub_underflow_2() {
     -0x80000000_i32 - 3_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow', ))]
+#[should_panic(expected: ('i32_sub Underflow',))]
 fn test_i32_sub_underflow_3() {
     -0x7fffffff_i32 - 3_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Underflow', ))]
+#[should_panic(expected: ('i32_sub Underflow',))]
 fn test_i32_sub_underflow_4() {
     -0x32000000_i32 - 0x7d000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_sub Overflow', ))]
+#[should_panic(expected: ('i32_sub Overflow',))]
 fn test_i32_sub_overflow() {
     0x32000000_i32 - -0x7d000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Overflow', ))]
+#[should_panic(expected: ('i32_add Overflow',))]
 fn test_i32_add_overflow_1() {
     0x40000000_i32 + 0x40000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Overflow', ))]
+#[should_panic(expected: ('i32_add Overflow',))]
 fn test_i32_add_overflow_2() {
     0x64000000_i32 + 0x1e000000_i32;
 }
 
 #[test]
-#[should_panic(expected: ('i32_add Underflow', ))]
+#[should_panic(expected: ('i32_add Underflow',))]
 fn test_i32_add_underflow() {
     -0x64000000_i32 + -0x1e000000_i32;
 }
@@ -1476,49 +1476,49 @@ fn test_i64_operators() {
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow', ))]
+#[should_panic(expected: ('i64_sub Underflow',))]
 fn test_i64_sub_underflow_1() {
     -0x8000000000000000_i64 - 1_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow', ))]
+#[should_panic(expected: ('i64_sub Underflow',))]
 fn test_i64_sub_underflow_2() {
     -0x8000000000000000_i64 - 3_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow', ))]
+#[should_panic(expected: ('i64_sub Underflow',))]
 fn test_i64_sub_underflow_3() {
     -0x7fffffffffffffff_i64 - 3_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Underflow', ))]
+#[should_panic(expected: ('i64_sub Underflow',))]
 fn test_i64_sub_underflow_4() {
     -0x3200000000000000_i64 - 0x7d00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_sub Overflow', ))]
+#[should_panic(expected: ('i64_sub Overflow',))]
 fn test_i64_sub_overflow() {
     0x3200000000000000_i64 - -0x7d00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Overflow', ))]
+#[should_panic(expected: ('i64_add Overflow',))]
 fn test_i64_add_overflow_1() {
     0x4000000000000000_i64 + 0x4000000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Overflow', ))]
+#[should_panic(expected: ('i64_add Overflow',))]
 fn test_i64_add_overflow_2() {
     0x6400000000000000_i64 + 0x1e00000000000000_i64;
 }
 
 #[test]
-#[should_panic(expected: ('i64_add Underflow', ))]
+#[should_panic(expected: ('i64_add Underflow',))]
 fn test_i64_add_underflow() {
     -0x6400000000000000_i64 + -0x1e00000000000000_i64;
 }
@@ -1585,43 +1585,43 @@ fn test_i128_sub_underflow_1() {
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow', ))]
+#[should_panic(expected: ('i128_sub Underflow',))]
 fn test_i128_sub_underflow_2() {
     -0x80000000000000000000000000000000_i128 - 3_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow', ))]
+#[should_panic(expected: ('i128_sub Underflow',))]
 fn test_i128_sub_underflow_3() {
     -0x7fffffffffffffffffffffffffffffff_i128 - 3_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Underflow', ))]
+#[should_panic(expected: ('i128_sub Underflow',))]
 fn test_i128_sub_underflow_4() {
     -0x32000000000000000000000000000000_i128 - 0x7d000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_sub Overflow', ))]
+#[should_panic(expected: ('i128_sub Overflow',))]
 fn test_i128_sub_overflow() {
     0x32000000000000000000000000000000_i128 - -0x7d000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Overflow', ))]
+#[should_panic(expected: ('i128_add Overflow',))]
 fn test_i128_add_overflow_1() {
     0x40000000000000000000000000000000_i128 + 0x40000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Overflow', ))]
+#[should_panic(expected: ('i128_add Overflow',))]
 fn test_i128_add_overflow_2() {
     0x64000000000000000000000000000000_i128 + 0x1e000000000000000000000000000000_i128;
 }
 
 #[test]
-#[should_panic(expected: ('i128_add Underflow', ))]
+#[should_panic(expected: ('i128_add Underflow',))]
 fn test_i128_add_underflow() {
     -0x64000000000000000000000000000000_i128 + -0x1e000000000000000000000000000000_i128;
 }
