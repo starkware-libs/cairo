@@ -13,14 +13,14 @@ struct ExecutionInfo {
     entry_point_selector: felt252,
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Serde)]
 struct BlockInfo {
     block_number: u64,
     block_timestamp: u64,
     sequencer_address: ContractAddress,
 }
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Serde)]
 struct TxInfo {
     // The version of the transaction. It is fixed (currently, 1) in the OS, and should be
     // signed by the account contract.
