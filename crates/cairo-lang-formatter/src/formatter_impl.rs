@@ -4,8 +4,10 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
+use smol_str::SmolStr;
+use syntax::node::ast::MaybeModuleBody;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -619,13 +621,16 @@ impl<'a> FormatterImpl<'a> {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
 
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-        let children = syntax_node.children(self.db);
+        let mut children: Vec<SyntaxNode> = syntax_node.children(self.db).collect();
         let n_children = children.len();
-        for (i, child) in children.enumerate() {
+        if self.config.sort_module_level_items {
+            children.sort_by_key(|c| MovableNode::new(self.db, c));
+        }
+        for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
-            self.format_node(&child, no_space_after && i == n_children - 1);
+            self.format_node(child, no_space_after && i == n_children - 1);
 
             self.empty_lines_allowance = allowed_empty_between;
         }
@@ -707,5 +712,49 @@ impl<'a> FormatterImpl<'a> {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.force_no_space_after = true;
         }
+    }
+}
+
+/// Represents a sortable SyntaxNode.
+#[derive(PartialEq, Eq)]
+enum MovableNode {
+    ItemModule(SmolStr),
+    ItemUse(SmolStr),
+    Immovable,
+}
+impl MovableNode {
+    fn new(db: &dyn SyntaxGroup, node: &SyntaxNode) -> Self {
+        match node.kind(db) {
+            SyntaxKind::ItemModule => {
+                let item = ast::ItemModule::from_syntax_node(db, node.clone());
+                if matches!(item.body(db), MaybeModuleBody::None(_)) {
+                    Self::ItemModule(item.name(db).text(db))
+                } else {
+                    Self::Immovable
+                }
+            }
+            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
+            _ => Self::Immovable,
+        }
+    }
+}
+impl PartialOrd for MovableNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match (self, other) {
+            (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
+            (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
+            | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
+            (_, MovableNode::Immovable) | (MovableNode::ItemModule(_), MovableNode::ItemUse(_)) => {
+                Ordering::Less
+            }
+            (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
+                Ordering::Greater
+            }
+        })
+    }
+}
+impl Ord for MovableNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
     }
 }

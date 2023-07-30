@@ -54,12 +54,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::OnlyMatchZeroIsSupported => {
                 "Only match zero (match ... { 0 => ..., _ => ... }) is currently supported.".into()
             }
-            LoweringDiagnosticKind::VariableMoved { .. } => {
-                "Variable was previously moved.".into()
-            }
-            LoweringDiagnosticKind::VariableNotDropped { .. } => {
-                "Variable not dropped.".into()
-            }
+            LoweringDiagnosticKind::VariableMoved { .. } => "Variable was previously moved.".into(),
+            LoweringDiagnosticKind::VariableNotDropped { .. } => "Variable not dropped.".into(),
             LoweringDiagnosticKind::DesnappingANonCopyableType { .. } => {
                 "Cannot desnap a non copyable type.".into()
             }
@@ -87,7 +83,8 @@ impl DiagnosticEntry for LoweringDiagnostic {
             LoweringDiagnosticKind::UnexpectedError => {
                 "Unexpected error has occured, Please submit a full bug report. \
                 See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
-                ".into()
+                "
+                .into()
             }
         }
     }
