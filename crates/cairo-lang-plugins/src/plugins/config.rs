@@ -37,7 +37,18 @@ impl MacroPlugin for ConfigPlugin {
                 remove_original_item: true,
             };
         }
-        data.traverse(db, item_ast.as_syntax_node());
+        match item_ast {
+            ast::Item::Module(module_item) => {
+                data.traverse(db, module_item.as_syntax_node());
+            }
+            ast::Item::Trait(trait_item) => {
+                data.traverse(db, trait_item.as_syntax_node());
+            }
+            ast::Item::Impl(impl_item) => {
+                data.traverse(db, impl_item.as_syntax_node());
+            }
+            _ => {},
+        }
         if data.code_changed {
             PluginResult {
                 code: Some(PluginGeneratedFile {
