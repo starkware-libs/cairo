@@ -243,6 +243,19 @@ fn test_concat_pending_sum_up_to_more_than_word_gt16() {
     );
 }
 
+#[test]
+#[available_gas(1000000)]
+fn test_len() {
+    let ba: ByteArray = Default::default();
+    assert(ba.len() == 0, 'wrong ByteArray len');
+
+    let mut ba = test_byte_array_33();
+    assert(ba.len() == 33, 'wrong ByteArray len');
+
+    ba.append(@test_byte_array_30());
+    assert(ba.len() == 63, 'wrong ByteArray len');
+}
+
 // ========= Test helper functions =========
 
 use debug::PrintTrait;
