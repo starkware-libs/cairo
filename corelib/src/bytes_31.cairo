@@ -2,8 +2,8 @@ use traits::{Into, TryInto};
 use option::OptionTrait;
 use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
 
-const BYTES_IN_BYTES31: u8 = 31;
-const BYTES_IN_U128: u8 = 16;
+const BYTES_IN_BYTES31: usize = 31;
+const BYTES_IN_U128: usize = 16;
 const POW_2_128: felt252 = 0x100000000000000000000000000000000;
 
 #[derive(Copy, Drop)]
@@ -65,7 +65,7 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
 // 3. len <= BYTES_IN_BYTES31.
 // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
 // private function. We could add masking/assertions but it would be more expansive.
-fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
+fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {
         return (0, word);
     }
@@ -110,7 +110,7 @@ fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
 // Note: if `n_bytes >= BYTES_IN_BYTES31`, the behavior is undefined. If one wants to assert that in
 // the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31` because if
 // `n_bytes > 31` then `n_bytes - 16 > 15` and `one_shift_left_bytes_u128` would panic.
-fn one_shift_left_bytes_felt252(n_bytes: u8) -> felt252 {
+fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
     if n_bytes < BYTES_IN_U128 {
         one_shift_left_bytes_u128(n_bytes).into()
     } else {
@@ -121,7 +121,7 @@ fn one_shift_left_bytes_felt252(n_bytes: u8) -> felt252 {
 // Returns 1 << (8 * `n_bytes`) as u128, where `n_bytes` must be < BYTES_IN_U128.
 //
 // Panics if `n_bytes >= BYTES_IN_U128`.
-fn one_shift_left_bytes_u128(n_bytes: u8) -> u128 {
+fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
     // TODO(yuval): change to match once it's supported for integers.
     if n_bytes == 0 {
         0x1_u128

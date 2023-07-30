@@ -9,9 +9,9 @@ use bytes_31::{
 };
 use zeroable::NonZeroIntoImpl;
 
-const BYTES_IN_U128: u8 = 16;
+const BYTES_IN_U128: usize = 16;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
-const BYTES_IN_BYTES31_MINUS_ONE: u8 = consteval_int!(31 - 1);
+const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 const POW_2_8: felt252 = 256;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
@@ -26,7 +26,7 @@ struct ByteArray {
     // The first byte is the most significant byte among the `pending_word_len` bytes in the word.
     pending_word: felt252,
     // Should be in range [0, 30].
-    pending_word_len: u8,
+    pending_word_len: usize,
 }
 
 impl ByteArrayDefault of Default<ByteArray> {
@@ -46,7 +46,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     // 2. len <= BYTES_IN_BYTES31.
     // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
     // private function. We could add masking/assertions but it would be more expensive.
-    fn append_word(ref self: ByteArray, word: felt252, len: u8) {
+    fn append_word(ref self: ByteArray, word: felt252, len: usize) {
         if len == 0 {
             return;
         }
@@ -188,7 +188,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     // `word` is of type felt252 but actually represents a bytes31.
     // It is represented as a felt252 to improve performance of building the byte array.
     #[inline]
-    fn append_word_fits_into_pending(ref self: ByteArray, word: felt252, len: u8) {
+    fn append_word_fits_into_pending(ref self: ByteArray, word: felt252, len: usize) {
         if self.pending_word_len == 0 {
             // len < BYTES_IN_BYTES31
             self.pending_word = word;
@@ -208,7 +208,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     // Note: this function doesn't update the new pending length of self. It's the caller's
     // responsibility.
     #[inline]
-    fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: u8) {
+    fn append_split_index_lt_16(ref self: ByteArray, word: felt252, split_index: usize) {
         let u256{low, high } = word.into();
 
         let (low_quotient, low_remainder) = u128_safe_divmod(
@@ -242,7 +242,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     // Note: this function doesn't update the new pending length of self. It's the caller's
     // responsibility.
     #[inline]
-    fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: u8) {
+    fn append_split_index_gt_16(ref self: ByteArray, word: felt252, split_index: usize) {
         let u256{low, high } = word.into();
 
         let (high_quotient, high_remainder) = u128_safe_divmod(
