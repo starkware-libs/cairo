@@ -1,11 +1,10 @@
 use std::vec;
 
 use cairo_lang_defs::db::get_all_path_leafs;
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
@@ -205,12 +204,10 @@ pub fn handle_contract_by_storage(
         code: Some(PluginGeneratedFile {
             name: "contract".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
-                StarkNetContractAuxData {
-                    patches: builder.patches,
-                    contracts: vec![module_name_ast.text(db)],
-                },
-            )),
+            patches: builder.patches,
+            aux_data: Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
+                contracts: vec![module_name_ast.text(db)],
+            })),
         }),
         diagnostics,
         remove_original_item: true,

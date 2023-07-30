@@ -13,18 +13,14 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
+use crate::patcher::Patches;
 use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
 #[salsa::query_group(DefsDatabase)]
 pub trait DefsGroup:
-    FilesGroup
-    + SyntaxGroup
-    + Upcast<dyn SyntaxGroup>
-    + ParserGroup
-    + Upcast<dyn FilesGroup>
-    + HasMacroPlugins
+    FilesGroup + SyntaxGroup + Upcast<dyn SyntaxGroup> + ParserGroup + Upcast<dyn FilesGroup>
 {
     #[salsa::interned]
     fn intern_constant(&self, id: ConstantLongId) -> ConstantId;
@@ -64,6 +60,11 @@ pub trait DefsGroup:
     fn intern_generic_param(&self, id: GenericParamLongId) -> GenericParamId;
     #[salsa::interned]
     fn intern_local_var(&self, id: LocalVarLongId) -> LocalVarId;
+
+    // Plugins.
+    // ========
+    #[salsa::input]
+    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -161,10 +162,6 @@ pub trait DefsGroup:
     ) -> Maybe<Arc<Vec<(ModuleFileId, PluginDiagnostic)>>>;
 }
 
-pub trait HasMacroPlugins {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
-}
-
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
     Ok(match module_id {
         ModuleId::CrateRoot(crate_id) => {
@@ -252,9 +249,10 @@ fn file_modules(db: &dyn DefsGroup, file_id: FileId) -> Maybe<Arc<Vec<ModuleId>>
 /// Information about the generation of a virtual file.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GeneratedFileInfo {
-    pub aux_data: DynGeneratedFileAuxData,
+    pub aux_data: Option<DynGeneratedFileAuxData>,
     /// The module and file index from which the current file was generated.
     pub origin: ModuleFileId,
+    pub patches: Arc<Patches>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -358,6 +356,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
+                        patches: Arc::new(generated.patches),
                     }));
                     module_queue
                         .push_back((new_file, db.file_module_syntax(new_file)?.items(syntax_db)));

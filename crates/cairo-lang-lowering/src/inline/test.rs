@@ -24,7 +24,6 @@ fn test_function_inlining(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
-
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),

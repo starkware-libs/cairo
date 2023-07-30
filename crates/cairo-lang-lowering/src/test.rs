@@ -66,7 +66,6 @@ fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
-
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),
@@ -175,7 +174,6 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 #[test]
 fn test_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
-
     let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
         .with_auto_generation_note(db, "withdraw_gas")
