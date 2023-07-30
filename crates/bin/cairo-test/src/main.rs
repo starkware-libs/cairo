@@ -30,7 +30,7 @@ struct Args {
     #[arg(long, default_value_t = false)]
     starknet: bool,
      /// Path to export tests results as JSON
-    #[arg(long, default_value_t = String::default())]
+    #[arg(short, long, default_value_t = String::default())]
     export: String,
 }
 
