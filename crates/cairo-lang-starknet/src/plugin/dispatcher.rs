@@ -1,8 +1,5 @@
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_semantic::plugin::DynPluginAuxData;
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
+use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::ast::{self, MaybeTraitBody, OptionReturnTypeClause};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -10,7 +7,6 @@ use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::aux_data::StarkNetABIAuxData;
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::is_ref_param;
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR};
@@ -279,9 +275,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: dispatcher_trait_name.into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetABIAuxData {
-                patches: builder.patches,
-            })),
+            patches: builder.patches,
+            aux_data: vec![],
         }),
         diagnostics,
         remove_original_item: false,

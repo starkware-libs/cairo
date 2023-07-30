@@ -10,7 +10,6 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
@@ -145,17 +144,18 @@ impl AbiBuilder {
             let generate_info =
                 db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
             let Some(generate_info) = generate_info else { continue };
-            let Some(mapper) = generate_info.aux_data.0.as_any().downcast_ref::<DynPluginAuxData>()
-            else {
-                continue;
-            };
-            let Some(aux_data) = mapper.0.as_any().downcast_ref::<StarkNetEventAuxData>() else {
-                continue;
-            };
-            let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
-            let event_type =
-                extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
-            builder.event_derive_data.insert(event_type, aux_data.event_data.clone());
+            for aux_data in &generate_info.aux_data {
+                let Some(StarkNetEventAuxData { event_data }) = aux_data.0.as_any().downcast_ref()
+                else {
+                    continue;
+                };
+                let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
+                let event_type = extract_matches!(
+                    concrete_trait_id.generic_args(db)[0],
+                    GenericArgumentId::Type
+                );
+                builder.event_derive_data.insert(event_type, event_data.clone());
+            }
         }
 
         // Add external functions, constructor and L1 handlers to ABI.

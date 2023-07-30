@@ -1,10 +1,6 @@
 use std::iter::zip;
-use std::sync::Arc;
 
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::ast::{
     Expr, GenericArg, ImplItem, ItemImpl, OptionWrappedGenericParamList,
@@ -27,15 +23,6 @@ impl MacroPlugin for GenerateTraitPlugin {
         }
     }
 }
-impl AsDynMacroPlugin for GenerateTraitPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for GenerateTraitPlugin {}
 
 fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginResult {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
@@ -164,10 +151,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         code: Some(PluginGeneratedFile {
             name: "generate_trait".into(),
             content: formatdoc! {"
-            {trait_attrs}trait {trait_identifier}{impl_generic_params} {{
-            {signatures}}}
-        "},
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+                {trait_attrs}trait {trait_identifier}{impl_generic_params} {{
+                {signatures}}}
+            "},
+            patches: Default::default(),
+            aux_data: vec![],
         }),
         diagnostics,
         remove_original_item: false,
