@@ -15,13 +15,13 @@ impl TupleSize0Serde of Serde<()> {
     }
 }
 
-impl TupleSize1Serde<E0, impl E0Serde: Serde<E0>> of Serde<(E0, )> {
-    fn serialize(self: @(E0, ), ref output: Array<felt252>) {
-        let (e0, ) = self;
+impl TupleSize1Serde<E0, impl E0Serde: Serde<E0>> of Serde<(E0,)> {
+    fn serialize(self: @(E0,), ref output: Array<felt252>) {
+        let (e0,) = self;
         e0.serialize(ref output)
     }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, )> {
-        Option::Some((E0Serde::deserialize(ref serialized)?, ))
+    fn deserialize(ref serialized: Span<felt252>) -> Option<(E0,)> {
+        Option::Some((E0Serde::deserialize(ref serialized)?,))
     }
 }
 

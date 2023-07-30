@@ -541,8 +541,8 @@ pub enum BreakLinePointsPositions {
     Leading(BreakLinePointProperties),
     Trailing(BreakLinePointProperties),
     Both { leading: BreakLinePointProperties, trailing: BreakLinePointProperties },
+    List { properties: BreakLinePointProperties, breaking_frequency: usize },
     None,
-    // TODO(Gil): Add a list breaking variant.
 }
 
 impl BreakLinePointsPositions {
@@ -554,7 +554,9 @@ impl BreakLinePointsPositions {
     }
     pub fn leading(&self) -> Option<BreakLinePointProperties> {
         match self {
-            Self::Leading(properties) | Self::Both { leading: properties, .. } => Some(properties.clone()),
+            Self::Leading(properties) | Self::Both { leading: properties, .. } => {
+                Some(properties.clone())
+            }
             _ => None,
         }
     }
@@ -584,6 +586,11 @@ pub trait SyntaxNodeFormat {
     /// Returns the break point properties before and after a specific node if a break point should
     /// exist, otherwise returns None.
     fn get_wrapping_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> BreakLinePointsPositions;
+    /// Returns the breaking position between the children of a syntax node.
+    fn get_internal_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
     ) -> BreakLinePointsPositions;
@@ -645,8 +652,9 @@ impl<'a> FormatterImpl<'a> {
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
-
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
+        let internal_break_line_points_positions =
+            syntax_node.get_internal_break_line_point_properties(self.db);
         let mut children: Vec<SyntaxNode> = syntax_node.children(self.db).collect();
         let n_children = children.len();
         if self.config.sort_module_level_items {
@@ -657,7 +665,13 @@ impl<'a> FormatterImpl<'a> {
                 continue;
             }
             self.format_node(child, no_space_after && i == n_children - 1);
-
+            if let BreakLinePointsPositions::List { properties, breaking_frequency } =
+                &internal_break_line_points_positions
+            {
+                if i % breaking_frequency == breaking_frequency - 1 && i < n_children - 1 {
+                    self.append_break_line_point(Some(properties.clone()));
+                }
+            }
             self.empty_lines_allowance = allowed_empty_between;
         }
     }

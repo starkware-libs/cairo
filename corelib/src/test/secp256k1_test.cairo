@@ -76,7 +76,7 @@ fn test_verify_eth_signature() {
 }
 
 #[test]
-#[should_panic(expected: ('Invalid signature', ))]
+#[should_panic(expected: ('Invalid signature',))]
 #[available_gas(100000000)]
 fn test_verify_eth_signature_wrong_eth_address() {
     let y_parity = true;
@@ -89,7 +89,7 @@ fn test_verify_eth_signature_wrong_eth_address() {
 }
 
 #[test]
-#[should_panic(expected: ('Signature out of range', ))]
+#[should_panic(expected: ('Signature out of range',))]
 #[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_r() {
     let y_parity = true;
@@ -102,7 +102,7 @@ fn test_verify_eth_signature_overflowing_signature_r() {
 }
 
 #[test]
-#[should_panic(expected: ('Signature out of range', ))]
+#[should_panic(expected: ('Signature out of range',))]
 #[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_s() {
     let y_parity = true;
