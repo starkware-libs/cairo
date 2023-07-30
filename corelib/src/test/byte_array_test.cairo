@@ -22,7 +22,7 @@ fn test_append_byte() {
 }
 
 #[test]
-#[available_gas(1000000)]
+#[available_gas(10000000)]
 fn test_append_word() {
     let mut ba = Default::default();
 
@@ -254,6 +254,44 @@ fn test_len() {
 
     ba.append(@test_byte_array_30());
     assert(ba.len() == 63, 'wrong ByteArray len');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_at_empty() {
+    let ba: ByteArray = Default::default();
+
+    assert(ba.at(0) == Option::None, 'index 0 is not out of bounds');
+    assert(ba.at(1) == Option::None, 'index 1 is not out of bounds');
+    assert(ba.at(30) == Option::None, 'index 30 is not out of bounds');
+    assert(ba.at(31) == Option::None, 'index 31 is not out of bounds');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_at() {
+    let mut ba = test_byte_array_31();
+    ba.append(@test_byte_array_31());
+    ba.append(@test_byte_array_17());
+
+    assert(ba.at(0) == Option::Some(0x01), 'wrong byte at index 0');
+    assert(ba.at(1) == Option::Some(0x02), 'wrong byte at index 1');
+    assert(ba.at(2) == Option::Some(0x03), 'wrong byte at index 2');
+    assert(ba.at(14) == Option::Some(0x0f), 'wrong byte at index 14');
+    assert(ba.at(15) == Option::Some(0x10), 'wrong byte at index 15');
+    assert(ba.at(16) == Option::Some(0x11), 'wrong byte at index 16');
+    assert(ba.at(17) == Option::Some(0x12), 'wrong byte at index 17');
+    assert(ba.at(29) == Option::Some(0x1e), 'wrong byte at index 29');
+    assert(ba.at(30) == Option::Some(0x1f), 'wrong byte at index 30');
+    assert(ba.at(31) == Option::Some(0x01), 'wrong byte at index 31');
+    assert(ba.at(32) == Option::Some(0x02), 'wrong byte at index 32');
+    assert(ba.at(61) == Option::Some(0x1f), 'wrong byte at index 61');
+    assert(ba.at(62) == Option::Some(0x01), 'wrong byte at index 62');
+    assert(ba.at(63) == Option::Some(0x02), 'wrong byte at index 63');
+    assert(ba.at(76) == Option::Some(0x0f), 'wrong byte at index 76');
+    assert(ba.at(77) == Option::Some(0x10), 'wrong byte at index 77');
+    assert(ba.at(78) == Option::Some(0x11), 'wrong byte at index 78');
+    assert(ba.at(79) == Option::None, 'index 79 is not out of bounds');
 }
 
 // ========= Test helper functions =========
