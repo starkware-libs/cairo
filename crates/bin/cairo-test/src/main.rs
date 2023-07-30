@@ -29,6 +29,9 @@ struct Args {
     /// Should we add the starknet plugin to run the tests.
     #[arg(long, default_value_t = false)]
     starknet: bool,
+     /// Path to export tests results as JSON
+    #[arg(long, default_value_t = String::default())]
+    export: String,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -43,6 +46,7 @@ fn main() -> anyhow::Result<()> {
         args.include_ignored,
         args.ignored,
         args.starknet,
+        &args.export,
     )?;
     runner.run()?;
 

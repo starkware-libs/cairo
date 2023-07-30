@@ -1008,6 +1008,8 @@ dependencies = [
  "num-traits 0.2.15",
  "rayon",
  "salsa",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 

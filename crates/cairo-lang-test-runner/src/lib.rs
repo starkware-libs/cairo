@@ -35,6 +35,8 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::Serialize;
+use serde_json;
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -49,6 +51,7 @@ pub struct TestRunner {
     pub include_ignored: bool,
     pub ignored: bool,
     pub starknet: bool,
+    pub export: String,
 }
 
 impl TestRunner {
@@ -61,12 +64,14 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
+    /// * `export` - The path to export tests results as JSON
     pub fn new(
         path: &Path,
         filter: &str,
         include_ignored: bool,
         ignored: bool,
         starknet: bool,
+        export: &str,
     ) -> Result<Self> {
         let db = &mut {
             let mut b = RootDatabase::builder();
@@ -94,6 +99,7 @@ impl TestRunner {
             include_ignored,
             ignored,
             starknet,
+            export: export.into(),
         })
     }
 
@@ -170,21 +176,30 @@ impl TestRunner {
           .collect_vec();
         let filtered_out = total_tests_count - named_tests.len();
         let contracts_info = get_contracts_info(db, self.main_crate_ids.clone(), &replacer)?;
-        let TestsSummary { passed, failed, ignored, failed_run_results } =
+        //let TestsSummary { passed, failed, ignored, failed_run_results } =
+        let tests_summary =
             run_tests(named_tests, sierra_program, function_set_costs, contracts_info)?;
-        if failed.is_empty() {
+
+        if !self.export.is_empty() {
+            let serialized = serde_json::to_string_pretty(&tests_summary.export).unwrap();
+            std::fs::write(self.export.as_str(), &serialized)
+                .expect(format!("Unable to write {}", &self.export).as_str());
+        }
+        if tests_summary.failed.is_empty() {
             println!(
                 "test result: {}. {} passed; {} failed; {} ignored; {filtered_out} filtered out;",
                 "ok".bright_green(),
-                passed.len(),
-                failed.len(),
-                ignored.len()
+                tests_summary.passed.len(),
+                tests_summary.failed.len(),
+                tests_summary.ignored.len()
             );
             Ok(None)
         } else {
             println!("failures:");
-            for (failure, run_result) in failed.iter().zip_eq(failed_run_results) {
-                print!("   {failure} - ");
+            for (failure, run_result) in
+                tests_summary.failed.iter().zip_eq(tests_summary.failed_run_results)
+            {
+                print!("   {} - ", failure);
                 match run_result {
                     RunResultValue::Success(_) => {
                         println!("expected panic but finished successfully.");
@@ -205,9 +220,9 @@ impl TestRunner {
             bail!(
                 "test result: {}. {} passed; {} failed; {} ignored",
                 "FAILED".bright_red(),
-                passed.len(),
-                failed.len(),
-                ignored.len()
+                tests_summary.passed.len(),
+                tests_summary.failed.len(),
+                tests_summary.ignored.len()
             );
         }
     }
@@ -220,11 +235,25 @@ enum TestStatus {
 }
 
 /// The result of a ran test.
+
 struct TestResult {
     /// The status of the run.
     status: TestStatus,
     /// The gas usage of the run if relevant.
     gas_usage: Option<i64>,
+}
+
+#[derive(Serialize)]
+struct TestResultExport {
+    /// The test name
+    name: String,
+    /// The status of the run.
+    status: String,
+    /// The gas usage of the run if relevant.
+    gas_usage: Option<i64>,
+    /// The error messages if status is 'Failed'
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    error_messages: Vec<String>,
 }
 
 /// Summary data of the ran tests.
@@ -233,6 +262,7 @@ pub struct TestsSummary {
     failed: Vec<String>,
     ignored: Vec<String>,
     failed_run_results: Vec<RunResultValue>,
+    export: Vec<TestResultExport>,
 }
 
 /// Runs the tests and process the results for a summary.
@@ -254,6 +284,7 @@ pub fn run_tests(
         failed: vec![],
         ignored: vec![],
         failed_run_results: vec![],
+        export: vec![],
     }));
     named_tests
         .into_par_iter()
@@ -312,12 +343,41 @@ pub fn run_tests(
                     return;
                 }
             };
-            let summary = wrapped_summary.as_mut().unwrap();
+            let summary: &mut TestsSummary = wrapped_summary.as_mut().unwrap();
             let (res_type, status_str, gas_usage) = match status {
                 Some(TestResult { status: TestStatus::Success, gas_usage }) => {
+                    summary.export.push(TestResultExport {
+                        name: name.clone(),
+                        status: "Success".to_string(),
+                        gas_usage,
+                        error_messages: vec![],
+                    });
                     (&mut summary.passed, "ok".bright_green(), gas_usage)
                 }
                 Some(TestResult { status: TestStatus::Fail(run_result), gas_usage }) => {
+                    let error_messages = match run_result.clone() {
+                        RunResultValue::Success(_) => {
+                            vec!["expected panic but finished successfully.".to_string()]
+                        }
+                        RunResultValue::Panic(values) => {
+                            let mut messages = Vec::<String>::new();
+                            for value in &values {
+                                match as_cairo_short_string(value) {
+                                    Some(as_string) => {
+                                        messages.push(as_string);
+                                    }
+                                    None => {}
+                                }
+                            }
+                            messages
+                        }
+                    };
+                    summary.export.push(TestResultExport {
+                        name: name.clone(),
+                        status: "Fail".to_string(),
+                        gas_usage,
+                        error_messages,
+                    });
                     summary.failed_run_results.push(run_result);
                     (&mut summary.failed, "fail".bright_red(), gas_usage)
                 }
