@@ -3,9 +3,10 @@ use bytes_31::{U128IntoBytes31, U8IntoBytes31};
 use array::{ArrayTrait, SpanTrait};
 use option::OptionTrait;
 use clone::Clone;
-use integer::u128_safe_divmod;
+use integer::{u128_safe_divmod, U32TryIntoNonZero};
 use bytes_31::{
-    BYTES_IN_BYTES31, one_shift_left_bytes_felt252, one_shift_left_bytes_u128, POW_2_128
+    BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
+    POW_2_128
 };
 use zeroable::NonZeroIntoImpl;
 
@@ -184,6 +185,33 @@ impl ByteArrayImpl of ByteArrayTrait {
         self.data.len() * BYTES_IN_BYTES31.into() + (*self.pending_word_len).into()
     }
 
+    // Returns the byte at the given index, or None if the index is out of bounds.
+    fn at(self: @ByteArray, index: usize) -> Option<u8> {
+        let (word_index, index_in_word) = DivRem::div_rem(
+            index, BYTES_IN_BYTES31.try_into().unwrap()
+        );
+
+        let data_len = self.data.len();
+        if word_index == data_len {
+            // Index is in pending word.
+            if index_in_word >= *self.pending_word_len {
+                return Option::None;
+            }
+            // index_in_word is from MSB, we need index from LSB.
+            let index_from_lsb = *self.pending_word_len - 1 - index_in_word;
+            let pending_bytes31: bytes31 = (*self.pending_word).try_into().unwrap();
+            return Option::Some(pending_bytes31.at(index_from_lsb));
+        }
+
+        if word_index > data_len {
+            return Option::None;
+        }
+
+        // index_in_word is from MSB, we need index from LSB.
+        let index_from_lsb = BYTES_IN_BYTES31 - 1 - index_in_word;
+        Option::Some(self.data.at(word_index).at(index_from_lsb))
+    }
+
     // === Helpers ===
 
     // Appends a single word of `len` bytes to the end of the ByteArray, assuming there
@@ -275,3 +303,8 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
+impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
+    fn index(self: @ByteArray, index: usize) -> u8 {
+        self.at(index).expect('Index out of bounds')
+    }
+}

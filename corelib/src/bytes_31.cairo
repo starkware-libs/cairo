@@ -5,6 +5,7 @@ use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
 const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;
 const POW_2_128: felt252 = 0x100000000000000000000000000000000;
+const POW_2_8: u128 = 0x100;
 
 #[derive(Copy, Drop)]
 extern type bytes31;
@@ -13,9 +14,37 @@ extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
 extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 
+#[generate_trait]
+impl Bytes31Impl of Bytes31Trait {
+    // Gets the byte at the given index (LSB's index is 0), assuming that
+    // `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
+    fn at(self: @bytes31, index: usize) -> u8 {
+        let u256{low, high } = (*self).into();
+        let res_u128 = if index < BYTES_IN_U128 {
+            (low / one_shift_left_bytes_u128(index)) % POW_2_8
+        } else {
+            (high / one_shift_left_bytes_u128(index - BYTES_IN_U128)) % POW_2_8
+        };
+        res_u128.try_into().unwrap()
+    }
+}
+
+impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
+    fn index(self: @bytes31, index: usize) -> u8 {
+        self.at(index)
+    }
+}
+
 impl Bytes31IntoFelt252 of Into<bytes31, felt252> {
     fn into(self: bytes31) -> felt252 {
         bytes31_to_felt252(self)
+    }
+}
+
+impl Bytes31IntoU256 of Into<bytes31, u256> {
+    fn into(self: bytes31) -> u256 {
+        let as_felt: felt252 = self.into();
+        as_felt.into()
     }
 }
 
