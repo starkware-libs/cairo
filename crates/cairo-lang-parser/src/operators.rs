@@ -6,7 +6,7 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         | SyntaxKind::TerminalNot
         | SyntaxKind::TerminalBitNot
         | SyntaxKind::TerminalMul => Some(2),
-        SyntaxKind::TerminalMinus => Some(3),
+        SyntaxKind::TerminalMinus => Some(6),
         _ => None,
     }
 }
@@ -16,11 +16,11 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalQuestionMark
         // [] Operator.
         | SyntaxKind::TerminalLBrack => Some(1),
-        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(2),
-        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(3),
-        SyntaxKind::TerminalAnd => Some(4),
-        SyntaxKind::TerminalXor => Some(5),
-        SyntaxKind::TerminalOr => Some(6),
+        SyntaxKind::TerminalAnd => Some(2),
+        SyntaxKind::TerminalXor => Some(3),
+        SyntaxKind::TerminalOr => Some(4),
+        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(5),
+        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(6),
         SyntaxKind::TerminalEqEq
         | SyntaxKind::TerminalNeq
         | SyntaxKind::TerminalLT
