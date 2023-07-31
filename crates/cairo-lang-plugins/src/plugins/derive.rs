@@ -1,3 +1,4 @@
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
@@ -8,10 +9,8 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use indent::indent_by;
-use indoc::formatdoc;
-use itertools::{chain, Itertools};
-use smol_str::SmolStr;
+use indoc::indoc;
+use itertools::chain;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -51,8 +50,8 @@ impl MacroPlugin for DerivePlugin {
 
 /// Information on struct members or enum variants.
 struct MemberInfo {
-    name: SmolStr,
-    _ty: String,
+    name: RewriteNode,
+    _ty: RewriteNode,
     _attributes: AttributeList,
 }
 
@@ -66,11 +65,11 @@ enum TypeVariantInfo {
 /// Information on generic params.
 struct GenericParamsInfo {
     /// All the generic params name, at the original order.
-    ordered: Vec<SmolStr>,
+    ordered: Vec<RewriteNode>,
     /// The generic params name that are types.
-    type_generics: Vec<SmolStr>,
+    type_generics: Vec<RewriteNode>,
     /// The generic params name that are not types.
-    other_generics: Vec<String>,
+    other_generics: Vec<RewriteNode>,
 }
 impl GenericParamsInfo {
     /// Extracts the information on generic params.
@@ -85,17 +84,17 @@ impl GenericParamsInfo {
                 .into_iter()
                 .map(|param| match param {
                     ast::GenericParam::Type(t) => {
-                        let name = t.name(db).text(db);
-                        type_generics.push(name.clone());
-                        ordered.push(name);
+                        let rewrite = RewriteNode::new_trimmed(t.name(db).as_syntax_node());
+                        ordered.push(rewrite.clone());
+                        type_generics.push(rewrite);
                     }
                     ast::GenericParam::Impl(i) => {
-                        other_generics.push(i.as_syntax_node().get_text_without_trivia(db));
-                        ordered.push(i.name(db).text(db));
+                        ordered.push(RewriteNode::new_trimmed(i.name(db).as_syntax_node()));
+                        other_generics.push(RewriteNode::new_trimmed(i.as_syntax_node()));
                     }
                     ast::GenericParam::Const(c) => {
-                        other_generics.push(c.as_syntax_node().get_text_without_trivia(db));
-                        ordered.push(c.name(db).text(db));
+                        ordered.push(RewriteNode::new_trimmed(c.name(db).as_syntax_node()));
+                        other_generics.push(RewriteNode::new_trimmed(c.as_syntax_node()));
                     }
                 })
                 .collect(),
@@ -104,40 +103,42 @@ impl GenericParamsInfo {
         Self { ordered, type_generics, other_generics }
     }
 
-    /// Formats the generic params for the type.
+    /// Returns a node for generics and their traits.
     /// `additional_demands` formats the generic type params as additional trait bounds.
-    fn format_generics_with_trait(
+    fn generics_with_trait_part(
         &self,
-        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
-    ) -> String {
-        if self.ordered.is_empty() {
-            "".to_string()
-        } else {
-            format!(
-                "<{}>",
-                chain!(
-                    self.type_generics.iter().map(|s| s.to_string()),
-                    self.other_generics.iter().cloned(),
-                    self.type_generics.iter().flat_map(additional_demands)
-                )
-                .join(", ")
-            )
-        }
+        additional_demands: impl Fn(&RewriteNode) -> Vec<RewriteNode>,
+    ) -> RewriteNode {
+        self.generics_helper(chain!(
+            self.type_generics.iter().cloned(),
+            self.other_generics.iter().cloned(),
+            self.type_generics.iter().flat_map(|t| additional_demands(t)),
+        ))
     }
 
-    /// Formats the generic params for the type.
-    fn format_generics(&self) -> String {
-        if self.ordered.is_empty() {
-            "".to_string()
-        } else {
-            format!("<{}>", self.ordered.iter().join(", "))
+    /// Returns a node for the generics of a type.
+    fn generics_part(&self) -> RewriteNode {
+        self.generics_helper(self.ordered.iter().cloned())
+    }
+
+    fn generics_helper(&self, mut iter: impl Iterator<Item = RewriteNode>) -> RewriteNode {
+        let Some(first) = iter.next() else {
+            return RewriteNode::new_modified(vec![]);
+        };
+        let mut children = vec!["<".into()];
+        children.push(first);
+        for node in iter {
+            children.push(", ".into());
+            children.push(node);
         }
+        children.push(">".into());
+        RewriteNode::new_modified(children)
     }
 }
 
 /// Information for the type being derived.
 struct DeriveInfo {
-    name: SmolStr,
+    name: RewriteNode,
     attributes: AttributeList,
     generics: GenericParamsInfo,
     specific_info: TypeVariantInfo,
@@ -152,29 +153,57 @@ impl DeriveInfo {
         specific_info: TypeVariantInfo,
     ) -> Self {
         Self {
-            name: ident.text(db),
+            name: RewriteNode::new_trimmed(ident.as_syntax_node()),
             attributes,
             generics: GenericParamsInfo::new(db, generic_args),
             specific_info,
         }
     }
 
-    /// Formats the header of the impl.
-    fn format_impl_header(&self, derived_trait: &str, dependent_traits: &[&str]) -> String {
-        format!(
-            "impl {name}{derived_trait}{generics_impl} of {derived_trait}::<{full_typename}>",
-            name = self.name,
-            generics_impl = self.generics.format_generics_with_trait(|t| dependent_traits
-                .iter()
-                .map(|d| format!("impl {t}{d}: {d}<{t}>"))
-                .collect()),
-            full_typename = self.full_typename(),
+    fn add_impl_header(
+        &self,
+        builder: &mut PatchBuilder,
+        derived_trait: &str,
+        dependent_traits: &[&str],
+    ) {
+        builder.add_modified(self.impl_header(derived_trait, dependent_traits))
+    }
+
+    /// Returns a node for the impl header.
+    fn impl_header(&self, derived_trait: &str, dependent_traits: &[&str]) -> RewriteNode {
+        RewriteNode::interpolate_patched(
+            "impl $name$$derived_trait$$generics_with_trait$ of $derived_trait$<$full_typename$>",
+            [
+                ("name".into(), self.name.clone()),
+                ("derived_trait".into(), RewriteNode::from(derived_trait)),
+                ("full_typename".into(), self.full_typename()),
+                ("generics".into(), RewriteNode::from(derived_trait)),
+                (
+                    "generics_with_trait".into(),
+                    self.generics.generics_with_trait_part(|t| {
+                        dependent_traits
+                            .iter()
+                            .map(|d| {
+                                RewriteNode::interpolate_patched(
+                                    "impl $t$$d$: $d$<$t$>",
+                                    [("t".into(), t.clone()), ("d".into(), (*d).into())].into(),
+                                )
+                            })
+                            .collect()
+                    }),
+                ),
+            ]
+            .into(),
         )
     }
 
+    fn full_typename(&self) -> RewriteNode {
+        RewriteNode::new_modified(vec![self.name.clone(), self.generics.generics_part()])
+    }
+
     /// Formats the full typename of the type, including generic args.
-    fn full_typename(&self) -> String {
-        format!("{name}{generics}", name = self.name, generics = self.generics.format_generics())
+    fn add_full_typename(&self, builder: &mut PatchBuilder) {
+        builder.add_modified(self.full_typename());
     }
 }
 
@@ -184,8 +213,8 @@ fn extract_members(db: &dyn SyntaxGroup, members: MemberList) -> Vec<MemberInfo>
         .elements(db)
         .into_iter()
         .map(|member| MemberInfo {
-            name: member.name(db).text(db),
-            _ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
+            name: RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+            _ty: RewriteNode::new_trimmed(member.type_clause(db).ty(db).as_syntax_node()),
             _attributes: member.attributes(db),
         })
         .collect()
@@ -197,11 +226,11 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
         .elements(db)
         .into_iter()
         .map(|variant| MemberInfo {
-            name: variant.name(db).text(db),
+            name: RewriteNode::new_trimmed(variant.name(db).as_syntax_node()),
             _ty: match variant.type_clause(db) {
-                ast::OptionTypeClause::Empty(_) => "()".to_string(),
+                ast::OptionTypeClause::Empty(_) => RewriteNode::Text("()".to_string()),
                 ast::OptionTypeClause::TypeClause(t) => {
-                    t.ty(db).as_syntax_node().get_text_without_trivia(db)
+                    RewriteNode::new_trimmed(t.ty(db).as_syntax_node())
                 }
             },
             _attributes: variant.attributes(db),
@@ -212,7 +241,8 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> PluginResult {
     let mut diagnostics = vec![];
-    let mut impls = vec![];
+    let mut builder = PatchBuilder::new(db);
+
     for attr in info.attributes.query_attr(db, "derive") {
         let attr = attr.structurize(db);
 
@@ -246,21 +276,21 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
 
             let derived = segment.ident(db).text(db);
             match derived.as_str() {
-                "Copy" | "Drop" => impls.push(get_empty_impl(&derived, &info)),
+                "Copy" | "Drop" => add_empty_impl(&mut builder, &info, &derived),
                 "Clone" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_clone_impl(&info))
+                    add_clone_impl(&mut builder, &info)
                 }
                 "Destruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_destruct_impl(&info))
+                    add_destruct_impl(&mut builder, &info)
                 }
                 "PanicDestruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_panic_destruct_impl(&info))
+                    add_panic_destruct_impl(&mut builder, &info)
                 }
                 "PartialEq" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_partial_eq_impl(&info))
+                    add_partial_eq_impl(&mut builder, &info)
                 }
                 "Serde" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_serde_impl(&info))
+                    add_serde_impl(&mut builder, &info)
                 }
                 "Clone" | "Destruct" | "PartialEq" | "Serde" => {
                     diagnostics.push(PluginDiagnostic {
@@ -276,13 +306,13 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
         }
     }
     PluginResult {
-        code: if impls.is_empty() {
+        code: if builder.code.is_empty() {
             None
         } else {
             Some(PluginGeneratedFile {
                 name: "impls".into(),
-                content: impls.join(""),
-                patches: Default::default(),
+                content: builder.code,
+                patches: builder.patches,
                 aux_data: vec![],
             })
         },
@@ -291,230 +321,273 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
     }
 }
 
-fn get_clone_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-            {header} {{
-                fn clone(self: @{full_typename}) -> {full_typename} {{
-                    {body}
-                }}
-            }}
-        ",
-        header = info.format_impl_header("Clone", &["Clone", "Destruct"]),
-        body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    match self {{
-                        {}
-                    }}",
-                    variants.iter().map(|variant|
-                        format!(
-                            "{name}::{variant}(x) => {name}::{variant}(Clone::clone(x)),",
-                            variant=variant.name,
-                        )).join("\n    ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                formatdoc! {"
-                    {name} {{
-                        {}
-                    }}",
-                    indent_by(4, members.iter().map(|member| {
-                        format!(
-                            "{member}: Clone::clone(self.{member}),",
-                            member=member.name,
-                        )
-                    }).join("\n"))
+fn add_clone_impl(builder: &mut PatchBuilder, info: &DeriveInfo) {
+    let impl_header = info.impl_header("Clone", &["Clone", "Destruct"]);
+    builder.add_modified(RewriteNode::interpolate_patched(
+        indoc! {"
+            $impl_header$ {
+                fn clone(self: @$full_typename$) -> $full_typename$ {
+                    $body$
                 }
             }
-            TypeVariantInfo::Extern => unreachable!(),
-        })
-    }
+        "},
+        [
+            ("impl_header".into(), impl_header),
+            ("full_typename".into(), info.full_typename()),
+            (
+                "body".into(),
+                match &info.specific_info {
+                    TypeVariantInfo::Enum(variants) => {
+                        let mut children = vec!["match self {\n".into()];
+                        for variant in variants {
+                            children.push(RewriteNode::interpolate_patched(
+                                "            $name$::$variant_name$(x) => \
+                                 $name$::$variant_name$(Clone::clone(x)),\n",
+                                [
+                                    ("name".into(), info.name.clone()),
+                                    ("variant_name".into(), variant.name.clone()),
+                                ]
+                                .into(),
+                            ));
+                        }
+                        children.push("        }".into());
+                        RewriteNode::new_modified(children)
+                    }
+                    TypeVariantInfo::Struct(members) => {
+                        let mut children = vec![info.name.clone(), " {\n".into()];
+                        for member in members {
+                            children.push(RewriteNode::interpolate_patched(
+                                "            $member_name$: Clone::clone(self.$member_name$),\n",
+                                [("member_name".into(), member.name.clone())].into(),
+                            ));
+                        }
+                        children.push("        }".into());
+                        RewriteNode::new_modified(children)
+                    }
+                    TypeVariantInfo::Extern => unreachable!(),
+                },
+            ),
+        ]
+        .into(),
+    ))
 }
 
-fn get_destruct_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn destruct(self: {full_typename}) nopanic {{
-            {body}
-        }}
-    }}
-",
-    header = info.format_impl_header("Destruct", &["Destruct"]),
-    body = indent_by(8, match &info.specific_info {
+fn add_destruct_impl(builder: &mut PatchBuilder, info: &DeriveInfo) {
+    let impl_header = info.impl_header("Destruct", &["Destruct"]);
+    builder.add_modified(RewriteNode::interpolate_patched(
+        indoc! {"
+            $impl_header$ {
+                fn destruct(self: $full_typename$) nopanic {
+            $body$
+                }
+            }
+        "},
+        [
+            ("impl_header".into(), impl_header),
+            ("full_typename".into(), info.full_typename()),
+            ("body".into(), match &info.specific_info {
+                TypeVariantInfo::Enum(variants) => {
+                    let mut children = vec!["        match self {\n".into()];
+                    for variant in variants {
+                        children.push(RewriteNode::interpolate_patched(
+                            "            $name$::$variant_name$(x) => traits::Destruct::destruct(x),\n",
+                            [
+                                ("name".into(), info.name.clone()),
+                                ("variant_name".into(), variant.name.clone()),
+                            ]
+                            .into(),
+                        ));
+                    }
+                    children.push("        }".into());
+                    RewriteNode::new_modified(children)
+                }
+                TypeVariantInfo::Struct(members) => {
+                    let mut children = vec![];
+                    for member in members {
+                        children.push(RewriteNode::interpolate_patched(
+                            "        traits::Destruct::destruct(self.$member_name$);\n",
+                            [("member_name".into(), member.name.clone())].into(),
+                        ));
+                    }
+                    RewriteNode::new_modified(children)
+                }
+                TypeVariantInfo::Extern => unreachable!(),
+            })
+        ].into()
+    ));
+}
+
+fn add_panic_destruct_impl(builder: &mut PatchBuilder, info: &DeriveInfo) {
+    info.add_impl_header(builder, "PanicDestruct", &["PanicDestruct"]);
+    builder.add_str(" {\n");
+    builder.add_str("    fn panic_destruct(self: @");
+    info.add_full_typename(builder);
+    builder.add_str(", ref panic: Panic) nopanic {\n");
+    match &info.specific_info {
         TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                match self {{
-                    {}
-                }}",
-                variants.iter().map(|variant| {
-                format!(
-                    "{name}::{variant}(x) => traits::Destruct::destruct(x),",
-                    variant=variant.name,
-                )
-            }).join("\n    ")}
+            builder.add_str("        match self {\n");
+            for variant in variants {
+                builder.add_str("            ");
+                builder.add_modified(info.name.clone());
+                builder.add_str("::");
+                builder.add_modified(variant.name.clone());
+                builder.add_str("(x) => ");
+                builder.add_str("traits::PanicDestruct::panic_destruct(x, ref panic),\n");
+            }
+            builder.add_str("        }\n");
         }
         TypeVariantInfo::Struct(members) => {
-            members.iter().map(|member| {
-                    format!(
-                        "traits::Destruct::destruct(self.{member});",
-                        member=member.name,
-                    )
-                }).join("\n")
+            for member in members {
+                builder.add_str("        traits::PanicDestruct::panic_destruct(self.");
+                builder.add_modified(member.name.clone());
+                builder.add_str(", ref panic);\n");
+            }
         }
         TypeVariantInfo::Extern => unreachable!(),
-    })
     }
+    builder.add_str("    }\n");
+    builder.add_str("}\n");
 }
 
-fn get_panic_destruct_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn panic_destruct(self: {full_typename}, ref panic: Panic) nopanic {{
-            {body}
-        }}
-    }}
-",
-    header = info.format_impl_header("PanicDestruct", &["PanicDestruct"]),
-    body = indent_by(8, match &info.specific_info {
+fn add_partial_eq_impl(builder: &mut PatchBuilder, info: &DeriveInfo) {
+    info.add_impl_header(builder, "PartialEq", &["PartialEq"]);
+    builder.add_str(" {\n");
+    builder.add_str("    fn eq(lhs: @");
+    info.add_full_typename(builder);
+    builder.add_str(", rhs: @");
+    info.add_full_typename(builder);
+    builder.add_str(") -> bool {\n");
+    match &info.specific_info {
         TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                        match self {{
-                            {}
-                        }}", variants.iter().map(|variant| {
-                format!(
-                    "{name}::{variant}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),",
-                    variant=variant.name,
-                )
-            }).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            members.iter().map(|member| {
-                    format!(
-                        "traits::PanicDestruct::panic_destruct(self.{member}, ref panic);",
-                        member=member.name,
-                    )
-                }).join("\n")
-        }
-        TypeVariantInfo::Extern => unreachable!(),
-    })
-    }
-}
-
-fn get_partial_eq_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
-            {body}
-        }}
-        #[inline(always)]
-        fn ne(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
-            !(lhs == rhs)
-        }}
-    }}
-",
-    header = info.format_impl_header("PartialEq", &["PartialEq"]),
-    body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                        match lhs {{
-                            {}
-                        }}",
-                variants.iter().map(|lhs_variant| {
-                    indent_by(4, formatdoc! {"
-                        {name}::{lhs_variant}(x) => match rhs {{
-                            {}
-                        }},",
-                        variants.iter().map(|rhs_variant|{
-                            if lhs_variant.name == rhs_variant.name {
-                                format!("{name}::{}(y) => x == y,", rhs_variant.name)
-                            } else {
-                                format!("{name}::{}(y) => false,", rhs_variant.name)
-                            }
-                        }).join("\n    "),
-                    lhs_variant=lhs_variant.name,
-                    })
-                }).join("\n    ")}
+            builder.add_str("        match lhs {\n");
+            for lhs_variant in variants {
+                builder.add_str("            ");
+                builder.add_modified(info.name.clone());
+                builder.add_str("::");
+                builder.add_modified(lhs_variant.name.clone());
+                builder.add_str("(x) => match rhs {\n");
+                for rhs_variant in variants {
+                    builder.add_str("                ");
+                    builder.add_modified(info.name.clone());
+                    builder.add_str("::");
+                    builder.add_modified(rhs_variant.name.clone());
+                    builder.add_str("(y) => ");
+                    if lhs_variant.name == rhs_variant.name {
+                        builder.add_str("x == y,\n");
+                    } else {
+                        builder.add_str("false,\n");
+                    }
+                }
+                builder.add_str("            },\n");
+            }
+            builder.add_str("        }\n");
         }
         TypeVariantInfo::Struct(members) => {
             if members.is_empty() {
-                "true".to_string()
+                builder.add_str("        true\n");
             } else {
-                members.iter().map(|member|format!("lhs.{member} == rhs.{member}", member=member.name)).join(" && ")
+                builder.add_str("        lhs.");
+                builder.add_modified(members[0].name.clone());
+                builder.add_str(" == rhs.");
+                builder.add_modified(members[0].name.clone());
+                for member in members.iter().skip(1) {
+                    builder.add_str(" && lhs.");
+                    builder.add_modified(member.name.clone());
+                    builder.add_str(" == rhs.");
+                    builder.add_modified(member.name.clone());
+                }
+                builder.add_str("\n");
+            }
+            builder.add_str("        }\n");
+        }
+        TypeVariantInfo::Extern => unreachable!(),
+    }
+    builder.add_str("    }\n");
+    builder.add_str("    #[inline(always)]\n");
+    builder.add_str("    fn ne(lhs: @");
+    info.add_full_typename(builder);
+    builder.add_str(", rhs: @");
+    info.add_full_typename(builder);
+    builder.add_str(") -> bool {\n");
+    builder.add_str("        !(lhs == rhs)\n");
+    builder.add_str("    }\n");
+    builder.add_str("}\n");
+}
+
+fn add_serde_impl(builder: &mut PatchBuilder, info: &DeriveInfo) {
+    info.add_impl_header(builder, "Serde", &["Serde", "Destruct"]);
+    builder.add_str(" {\n");
+    builder.add_str("    fn serialize(self: @");
+    info.add_full_typename(builder);
+    builder.add_str(", ref output: array::Array<felt252>) {\n");
+    match &info.specific_info {
+        TypeVariantInfo::Enum(variants) => {
+            builder.add_str("        match self {\n");
+            for (i, variant) in variants.iter().enumerate() {
+                builder.add_str("            ");
+                builder.add_modified(info.name.clone());
+                builder.add_str("::");
+                builder.add_modified(variant.name.clone());
+                builder.add_modified(RewriteNode::Text(format!(
+                    "(x) => {{ serde::Serde::serialize(@{i}, ref output); \
+                     serde::Serde::serialize(x, ref output); }},\n"
+                )));
+            }
+            builder.add_str("        }\n");
+        }
+        TypeVariantInfo::Struct(members) => {
+            for member in members {
+                builder.add_str("        serde::Serde::serialize(self.");
+                builder.add_modified(member.name.clone());
+                builder.add_str(", ref output);\n");
             }
         }
         TypeVariantInfo::Extern => unreachable!(),
-    })
     }
-}
-
-fn get_serde_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-            {header} {{
-                fn serialize(self: @{full_typename}, ref output: array::Array<felt252>) {{
-                    {serialize_body}
-                }}
-                fn deserialize(ref serialized: array::Span<felt252>) -> Option<{full_typename}> {{
-                    {deserialize_body}
-                }}
-            }}
-        ",
-        header = info.format_impl_header("Serde", &["Serde", "Destruct"]),
-        serialize_body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    match self {{
-                        {}
-                    }}",
-                    variants.iter().enumerate().map(|(idx, variant)| {
-                    format!(
-                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
-                        serde::Serde::serialize(x, ref output); }},",
-                        variant=variant.name,
-                    )
-                }).join("\n    ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                members.iter().map(|member| format!("serde::Serde::serialize(self.{member}, ref output)", member=member.name)).join(";\n")
-            }
-            TypeVariantInfo::Extern => unreachable!(),
-        }),
-        deserialize_body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-                    Option::Some(
-                        {}
-                        else {{ return Option::None; }}
-                    )",
-                    variants.iter().enumerate().map(|(idx, variant)| {
-                        format!(
-                            "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
-                            variant=variant.name,
-                        )
-                }).join("\n    else ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                formatdoc! {"
-                    Option::Some({name} {{
-                        {}
-                    }})",
-                    members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,", member=member.name)).join("\n    "),
+    builder.add_str("    }\n");
+    builder.add_str("    fn deserialize(ref serialized: array::Span<felt252>) -> Option<");
+    info.add_full_typename(builder);
+    builder.add_str("> {\n");
+    match &info.specific_info {
+        TypeVariantInfo::Enum(variants) => {
+            builder.add_str(
+                "        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;\n",
+            );
+            builder.add_str("        Option::Some(\n");
+            for (i, variant) in variants.iter().enumerate() {
+                if i == 0 {
+                    builder.add_str("            ");
+                } else {
+                    builder.add_str("            else ");
                 }
+                builder.add_str(format!("if idx == {i} {{ ").as_str());
+                builder.add_modified(info.name.clone());
+                builder.add_str("::");
+                builder.add_modified(variant.name.clone());
+                builder.add_str("(serde::Serde::deserialize(ref serialized)?) }\n");
             }
-            TypeVariantInfo::Extern => unreachable!(),
-        })
+            builder.add_str("            else { return Option::None; }\n");
+            builder.add_str("        )\n");
+            builder.add_str("    }\n");
+        }
+        TypeVariantInfo::Struct(members) => {
+            builder.add_str("        Option::Some(");
+            builder.add_modified(info.name.clone());
+            builder.add_str(" {\n");
+            for member in members {
+                builder.add_str("            ");
+                builder.add_modified(member.name.clone());
+                builder.add_str(": serde::Serde::deserialize(ref serialized)?,\n");
+            }
+            builder.add_str("        })\n");
+        }
+        TypeVariantInfo::Extern => unreachable!(),
     }
+    builder.add_str("    }\n");
+    builder.add_str("}\n");
 }
 
-fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
-    format!("{};\n", info.format_impl_header(derived_trait, &[derived_trait]))
+fn add_empty_impl(builder: &mut PatchBuilder, info: &DeriveInfo, derived_trait: &str) {
+    info.add_impl_header(builder, derived_trait, &[derived_trait]);
+    builder.add_str(":\n");
 }

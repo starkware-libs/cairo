@@ -174,6 +174,11 @@ impl From<SyntaxNode> for RewriteNode {
         RewriteNode::Copied(node)
     }
 }
+impl From<&str> for RewriteNode {
+    fn from(text: &str) -> Self {
+        RewriteNode::Text(text.to_string())
+    }
+}
 
 /// A modified rewrite node.
 #[derive(Clone, Debug, PartialEq, Eq)]

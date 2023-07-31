@@ -206,12 +206,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>:
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>:
 
 
 event_impl:
@@ -233,3 +233,897 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl boolCopy of Copy<bool>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl boolCopy of Copy<bool>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:28
+impl boolDrop of Drop<bool>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:28
+impl boolDrop of Drop<bool>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:34
+impl felt252Copy of Copy<felt252>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:34
+impl felt252Copy of Copy<felt252>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:34
+impl felt252Drop of Drop<felt252>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:34
+impl felt252Drop of Drop<felt252>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:53
+impl BoxCopy<T, impl TCopy: Copy<T>> of Copy<Box<T>>:
+                                                    ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:53
+impl BoxCopy<T, impl TCopy: Copy<T>> of Copy<Box<T>>:
+                                                    ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:53
+impl BoxDrop<T, impl TDrop: Drop<T>> of Drop<Box<T>>:
+                                                    ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:53
+impl BoxDrop<T, impl TDrop: Drop<T>> of Drop<Box<T>>:
+                                                    ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:63
+impl NullableCopy<T, impl TCopy: Copy<T>> of Copy<Nullable<T>>:
+                                                              ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:63
+impl NullableCopy<T, impl TCopy: Copy<T>> of Copy<Nullable<T>>:
+                                                              ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:63
+impl NullableDrop<T, impl TDrop: Drop<T>> of Drop<Nullable<T>>:
+                                                              ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:63
+impl NullableDrop<T, impl TDrop: Drop<T>> of Drop<Nullable<T>>:
+                                                              ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:57
+impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>:
+                                                        ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:57
+impl ArrayDrop<T, impl TDrop: Drop<T>> of Drop<Array<T>>:
+                                                        ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:86
+impl ResultCopy<T, E, impl TCopy: Copy<T>, impl ECopy: Copy<E>> of Copy<Result<T, E>>:
+                                                                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:86
+impl ResultCopy<T, E, impl TCopy: Copy<T>, impl ECopy: Copy<E>> of Copy<Result<T, E>>:
+                                                                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:86
+impl ResultDrop<T, E, impl TDrop: Drop<T>, impl EDrop: Drop<E>> of Drop<Result<T, E>>:
+                                                                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:86
+impl ResultDrop<T, E, impl TDrop: Drop<T>, impl EDrop: Drop<E>> of Drop<Result<T, E>>:
+                                                                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:19:1
+}
+^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:59
+impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>:
+                                                          ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:59
+impl OptionCopy<T, impl TCopy: Copy<T>> of Copy<Option<T>>:
+                                                          ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:59
+impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>:
+                                                          ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:59
+impl OptionDrop<T, impl TDrop: Drop<T>> of Drop<Option<T>>:
+                                                          ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:19:1
+}
+^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:34
+impl EcPointCopy of Copy<EcPoint>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:34
+impl EcPointCopy of Copy<EcPoint>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:34
+impl EcPointDrop of Drop<EcPoint>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:34
+impl EcPointDrop of Drop<EcPoint>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:34
+impl EcStateDrop of Drop<EcState>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:34
+impl EcStateDrop of Drop<EcState>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl u128Copy of Copy<u128>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl u128Copy of Copy<u128>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:28
+impl u128Drop of Drop<u128>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:28
+impl u128Drop of Drop<u128>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:24
+impl u8Copy of Copy<u8>:
+                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:24
+impl u8Copy of Copy<u8>:
+                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:24
+impl u8Drop of Drop<u8>:
+                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:24
+impl u8Drop of Drop<u8>:
+                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl u16Copy of Copy<u16>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl u16Copy of Copy<u16>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl u16Drop of Drop<u16>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl u16Drop of Drop<u16>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl u32Copy of Copy<u32>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl u32Copy of Copy<u32>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl u32Drop of Drop<u32>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl u32Drop of Drop<u32>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl u64Copy of Copy<u64>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl u64Copy of Copy<u64>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl u64Drop of Drop<u64>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl u64Drop of Drop<u64>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl u256Copy of Copy<u256>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl u256Copy of Copy<u256>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:28
+impl u256Drop of Drop<u256>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:28
+impl u256Drop of Drop<u256>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:12:1
+}
+^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl u512Copy of Copy<u512>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl u512Copy of Copy<u512>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:28
+impl u512Drop of Drop<u512>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:28
+impl u512Drop of Drop<u512>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:12:1
+}
+^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:24
+impl i8Copy of Copy<i8>:
+                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:24
+impl i8Copy of Copy<i8>:
+                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:24
+impl i8Drop of Drop<i8>:
+                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:24
+impl i8Drop of Drop<i8>:
+                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl i16Copy of Copy<i16>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl i16Copy of Copy<i16>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl i16Drop of Drop<i16>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl i16Drop of Drop<i16>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl i32Copy of Copy<i32>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl i32Copy of Copy<i32>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl i32Drop of Drop<i32>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl i32Drop of Drop<i32>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:26
+impl i64Copy of Copy<i64>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:26
+impl i64Copy of Copy<i64>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:26
+impl i64Drop of Drop<i64>:
+                         ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:26
+impl i64Drop of Drop<i64>:
+                         ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl i128Copy of Copy<i128>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl i128Copy of Copy<i128>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:28
+impl i128Drop of Drop<i128>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:28
+impl i128Drop of Drop<i128>:
+                           ^
+
+error: The name `ne` is defined multiple times.
+ --> impls:9:8
+    fn ne(lhs: @u512, rhs: @u512) -> bool {
+       ^^
+
+error: Not all trait items are implemented. Missing: 'ne'.
+ --> impls:3:6
+impl u256PartialEq of PartialEq<u256> {
+     ^***********^
+
+error: Not all trait items are implemented. Missing: 'ne'.
+ --> impls:3:6
+impl u512PartialEq of PartialEq<u512> {
+     ^***********^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:44
+impl BuiltinCostsCopy of Copy<BuiltinCosts>:
+                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:44
+impl BuiltinCostsCopy of Copy<BuiltinCosts>:
+                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:44
+impl BuiltinCostsDrop of Drop<BuiltinCosts>:
+                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:44
+impl BuiltinCostsDrop of Drop<BuiltinCosts>:
+                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:60
+impl PoseidonBuiltinStateCopy of Copy<PoseidonBuiltinState>:
+                                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:60
+impl PoseidonBuiltinStateCopy of Copy<PoseidonBuiltinState>:
+                                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:60
+impl PoseidonBuiltinStateDrop of Drop<PoseidonBuiltinState>:
+                                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:60
+impl PoseidonBuiltinStateDrop of Drop<PoseidonBuiltinState>:
+                                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:48
+impl StorageAddressCopy of Copy<StorageAddress>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:48
+impl StorageAddressCopy of Copy<StorageAddress>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:48
+impl StorageAddressDrop of Drop<StorageAddress>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:48
+impl StorageAddressDrop of Drop<StorageAddress>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:56
+impl StorageBaseAddressCopy of Copy<StorageBaseAddress>:
+                                                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:56
+impl StorageBaseAddressCopy of Copy<StorageBaseAddress>:
+                                                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:56
+impl StorageBaseAddressDrop of Drop<StorageBaseAddress>:
+                                                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:56
+impl StorageBaseAddressDrop of Drop<StorageBaseAddress>:
+                                                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:38
+impl SignatureCopy of Copy<Signature>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:38
+impl SignatureCopy of Copy<Signature>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:38
+impl SignatureDrop of Drop<Signature>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:38
+impl SignatureDrop of Drop<Signature>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:12:1
+}
+^
+
+error: Not all trait items are implemented. Missing: 'ne'.
+ --> impls:3:6
+impl SignaturePartialEq of PartialEq<Signature> {
+     ^****************^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:48
+impl Secp256k1PointCopy of Copy<Secp256k1Point>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:48
+impl Secp256k1PointCopy of Copy<Secp256k1Point>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:48
+impl Secp256k1PointDrop of Drop<Secp256k1Point>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:48
+impl Secp256k1PointDrop of Drop<Secp256k1Point>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:48
+impl Secp256r1PointCopy of Copy<Secp256r1Point>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:48
+impl Secp256r1PointCopy of Copy<Secp256r1Point>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:48
+impl Secp256r1PointDrop of Drop<Secp256r1Point>:
+                                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:48
+impl Secp256r1PointDrop of Drop<Secp256r1Point>:
+                                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:50
+impl ContractAddressCopy of Copy<ContractAddress>:
+                                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:50
+impl ContractAddressCopy of Copy<ContractAddress>:
+                                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:50
+impl ContractAddressDrop of Drop<ContractAddress>:
+                                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:50
+impl ContractAddressDrop of Drop<ContractAddress>:
+                                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:40
+impl EthAddressCopy of Copy<EthAddress>:
+                                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:40
+impl EthAddressCopy of Copy<EthAddress>:
+                                       ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:40
+impl EthAddressDrop of Drop<EthAddress>:
+                                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:40
+impl EthAddressDrop of Drop<EthAddress>:
+                                       ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:12:1
+}
+^
+
+error: Not all trait items are implemented. Missing: 'ne'.
+ --> impls:3:6
+impl EthAddressPartialEq of PartialEq<EthAddress> {
+     ^*****************^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:38
+impl ClassHashCopy of Copy<ClassHash>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:38
+impl ClassHashCopy of Copy<ClassHash>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:38
+impl ClassHashDrop of Drop<ClassHash>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:38
+impl ClassHashDrop of Drop<ClassHash>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:46
+impl ExecutionInfoCopy of Copy<ExecutionInfo>:
+                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:46
+impl ExecutionInfoCopy of Copy<ExecutionInfo>:
+                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:46
+impl ExecutionInfoDrop of Drop<ExecutionInfo>:
+                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:46
+impl ExecutionInfoDrop of Drop<ExecutionInfo>:
+                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:38
+impl BlockInfoCopy of Copy<BlockInfo>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:38
+impl BlockInfoCopy of Copy<BlockInfo>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:38
+impl BlockInfoDrop of Drop<BlockInfo>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:38
+impl BlockInfoDrop of Drop<BlockInfo>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:32
+impl TxInfoCopy of Copy<TxInfo>:
+                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:32
+impl TxInfoCopy of Copy<TxInfo>:
+                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:32
+impl TxInfoDrop of Drop<TxInfo>:
+                               ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:32
+impl TxInfoDrop of Drop<TxInfo>:
+                               ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:28
+impl CallDrop of Drop<Call>:
+                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:28
+impl CallDrop of Drop<Call>:
+                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:70
+impl AccountContractDispatcherCopy of Copy<AccountContractDispatcher>:
+                                                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:70
+impl AccountContractDispatcherCopy of Copy<AccountContractDispatcher>:
+                                                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:70
+impl AccountContractDispatcherDrop of Drop<AccountContractDispatcher>:
+                                                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:70
+impl AccountContractDispatcherDrop of Drop<AccountContractDispatcher>:
+                                                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:84
+impl AccountContractLibraryDispatcherCopy of Copy<AccountContractLibraryDispatcher>:
+                                                                                   ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:84
+impl AccountContractLibraryDispatcherCopy of Copy<AccountContractLibraryDispatcher>:
+                                                                                   ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:84
+impl AccountContractLibraryDispatcherDrop of Drop<AccountContractLibraryDispatcher>:
+                                                                                   ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:84
+impl AccountContractLibraryDispatcherDrop of Drop<AccountContractLibraryDispatcher>:
+                                                                                   ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:92
+impl AccountContractSafeLibraryDispatcherCopy of Copy<AccountContractSafeLibraryDispatcher>:
+                                                                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:92
+impl AccountContractSafeLibraryDispatcherCopy of Copy<AccountContractSafeLibraryDispatcher>:
+                                                                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:92
+impl AccountContractSafeLibraryDispatcherDrop of Drop<AccountContractSafeLibraryDispatcher>:
+                                                                                           ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:92
+impl AccountContractSafeLibraryDispatcherDrop of Drop<AccountContractSafeLibraryDispatcher>:
+                                                                                           ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:78
+impl AccountContractSafeDispatcherCopy of Copy<AccountContractSafeDispatcher>:
+                                                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:78
+impl AccountContractSafeDispatcherCopy of Copy<AccountContractSafeDispatcher>:
+                                                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:78
+impl AccountContractSafeDispatcherDrop of Drop<AccountContractSafeDispatcher>:
+                                                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:78
+impl AccountContractSafeDispatcherDrop of Drop<AccountContractSafeDispatcher>:
+                                                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:61
+impl NonZeroCopy<T, impl TCopy: Copy<T>> of Copy<NonZero<T>>:
+                                                            ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:61
+impl NonZeroCopy<T, impl TCopy: Copy<T>> of Copy<NonZero<T>>:
+                                                            ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:61
+impl NonZeroDrop<T, impl TDrop: Drop<T>> of Drop<NonZero<T>>:
+                                                            ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:61
+impl NonZeroDrop<T, impl TDrop: Drop<T>> of Drop<NonZero<T>>:
+                                                            ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:34
+impl bytes31Copy of Copy<bytes31>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:34
+impl bytes31Copy of Copy<bytes31>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:34
+impl bytes31Drop of Drop<bytes31>:
+                                 ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:34
+impl bytes31Drop of Drop<bytes31>:
+                                 ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:38
+impl ByteArrayDrop of Drop<ByteArray>:
+                                     ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:38
+impl ByteArrayDrop of Drop<ByteArray>:
+                                     ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:46
+impl ContractStateDrop of Drop<ContractState>:
+                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:46
+impl ContractStateDrop of Drop<ContractState>:
+                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:30
+impl EventDrop of Drop<Event>:
+                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:30
+impl EventDrop of Drop<Event>:
+                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:1:46
+impl ContractStateCopy of Copy<ContractState>:
+                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:1:46
+impl ContractStateCopy of Copy<ContractState>:
+                                             ^
+
+error: Missing token TerminalSemicolon.
+ --> impls:2:46
+impl ContractStateDrop of Drop<ContractState>:
+                                             ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> impls:2:46
+impl ContractStateDrop of Drop<ContractState>:
+                                             ^
