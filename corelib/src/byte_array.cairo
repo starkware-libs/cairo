@@ -16,7 +16,7 @@ const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 const POW_2_8: felt252 = 256;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-#[derive(Drop, Clone)]
+#[derive(Drop, Clone, PartialEq)]
 struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
