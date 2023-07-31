@@ -6,7 +6,7 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         | SyntaxKind::TerminalNot
         | SyntaxKind::TerminalBitNot
         | SyntaxKind::TerminalMul => Some(2),
-        SyntaxKind::TerminalMinus => Some(4),
+        SyntaxKind::TerminalMinus => Some(3),
         _ => None,
     }
 }
@@ -16,26 +16,25 @@ pub fn get_post_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalQuestionMark
         // [] Operator.
         | SyntaxKind::TerminalLBrack => Some(1),
-        SyntaxKind::TerminalAt | SyntaxKind::TerminalNot => Some(2),
-        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(3),
-        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(4),
-        SyntaxKind::TerminalAnd => Some(5),
-        SyntaxKind::TerminalXor => Some(6),
-        SyntaxKind::TerminalOr => Some(7),
+        SyntaxKind::TerminalMul | SyntaxKind::TerminalDiv | SyntaxKind::TerminalMod => Some(2),
+        SyntaxKind::TerminalPlus | SyntaxKind::TerminalMinus => Some(3),
+        SyntaxKind::TerminalAnd => Some(4),
+        SyntaxKind::TerminalXor => Some(5),
+        SyntaxKind::TerminalOr => Some(6),
         SyntaxKind::TerminalEqEq
         | SyntaxKind::TerminalNeq
         | SyntaxKind::TerminalLT
         | SyntaxKind::TerminalGT
         | SyntaxKind::TerminalLE
-        | SyntaxKind::TerminalGE => Some(8),
-        SyntaxKind::TerminalAndAnd => Some(9),
-        SyntaxKind::TerminalOrOr => Some(10),
+        | SyntaxKind::TerminalGE => Some(7),
+        SyntaxKind::TerminalAndAnd => Some(8),
+        SyntaxKind::TerminalOrOr => Some(9),
         SyntaxKind::TerminalEq
         | SyntaxKind::TerminalPlusEq
         | SyntaxKind::TerminalMinusEq
         | SyntaxKind::TerminalMulEq
         | SyntaxKind::TerminalDivEq
-        | SyntaxKind::TerminalModEq => Some(11),
+        | SyntaxKind::TerminalModEq => Some(10),
         _ => None,
     }
 }
