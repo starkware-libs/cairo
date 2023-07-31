@@ -1,16 +1,14 @@
-use std::sync::RwLock;
-
 use cairo_lang_filesystem::db::{FilesDatabase, FilesGroup};
 use cairo_lang_utils::Upcast;
 
 use super::db::{HasGreenInterner, SyntaxDatabase};
-use super::green::GreenInterner;
+use super::green::SyntaxInterner;
 
 #[salsa::database(SyntaxDatabase, FilesDatabase)]
 #[derive(Default)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
-    green_interner: RwLock<GreenInterner>,
+    green_interner: SyntaxInterner,
 }
 impl salsa::Database for DatabaseForTesting {}
 impl Upcast<dyn FilesGroup> for DatabaseForTesting {
@@ -19,7 +17,7 @@ impl Upcast<dyn FilesGroup> for DatabaseForTesting {
     }
 }
 impl HasGreenInterner for DatabaseForTesting {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }

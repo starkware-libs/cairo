@@ -630,7 +630,7 @@ impl<'a> FormatterImpl<'a> {
     /// Appends a formatted string, representing the syntax_node, to the result.
     /// Should be called with a root syntax node to format a file.
     pub fn format_node(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
-        if syntax_node.text(self.db).is_some() {
+        if syntax_node.token_text(self.db).is_some() {
             panic!("Token reached before terminal.");
         }
         let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
@@ -699,7 +699,7 @@ impl<'a> FormatterImpl<'a> {
                         self.line_state.line_buffer.push_space();
                     }
                     self.line_state.line_buffer.push_comment(
-                        &trivium.as_syntax_node().text(self.db).unwrap(),
+                        trivium.as_syntax_node().token_text(self.db).unwrap(),
                         !is_leading,
                     );
                     self.is_current_line_whitespaces = false;
@@ -733,7 +733,7 @@ impl<'a> FormatterImpl<'a> {
     /// Assumes the given SyntaxNode is a token.
     fn format_token(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-        let text = syntax_node.text(self.db).unwrap();
+        let text = syntax_node.token_text(self.db).unwrap();
         if !syntax_node.force_no_space_before(self.db) && !self.line_state.force_no_space_after {
             self.line_state.line_buffer.push_space();
         }
@@ -744,7 +744,7 @@ impl<'a> FormatterImpl<'a> {
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
         self.append_break_line_point(node_break_points.leading());
-        self.line_state.line_buffer.push_str(&text);
+        self.line_state.line_buffer.push_str(text);
         self.append_break_line_point(node_break_points.trailing());
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {

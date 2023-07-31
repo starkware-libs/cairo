@@ -45,11 +45,16 @@ struct SyntaxNodeInner {
 }
 impl SyntaxNode {
     pub fn new_root(db: &dyn SyntaxGroup, file_id: FileId, green: GreenId) -> Self {
+        let mut buffer = Vec::new();
         let inner = SyntaxNodeInner {
             green,
             offset: TextOffset::default(),
             parent: None,
-            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::Root(file_id, green)),
+            stable_ptr: db.intern_stable_ptr(SyntaxStablePtr::new_root(
+                &mut buffer,
+                file_id,
+                green,
+            )),
         };
         Self(Arc::new(inner))
     }
@@ -61,7 +66,7 @@ impl SyntaxNode {
         self.green_node(db).width()
     }
     pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
-        self.green_node(db).kind
+        self.green_node(db).kind()
     }
     pub fn span(&self, db: &dyn SyntaxGroup) -> TextSpan {
         let start = self.offset();
@@ -69,13 +74,10 @@ impl SyntaxNode {
         TextSpan { start, end }
     }
     /// Returns the text of the token if this node is a token.
-    pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        match self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
-            green::GreenNodeDetails::Node { .. } => None,
-        }
+    pub fn token_text(&self, db: &dyn SyntaxGroup) -> Option<&'static str> {
+        self.green_node(db).token_text()
     }
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode {
+    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode<'static> {
         db.lookup_intern_green(self.0.green)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
@@ -97,7 +99,7 @@ impl SyntaxNode {
     /// returns None.
     pub fn get_terminal_token(&self, db: &dyn SyntaxGroup) -> Option<SyntaxNode> {
         let green_node = self.green_node(db);
-        if !green_node.kind.is_terminal() {
+        if !green_node.kind().is_terminal() {
             return None;
         }
         // At this point we know we should have a second child which is the token.
@@ -107,39 +109,33 @@ impl SyntaxNode {
 
     pub fn span_start_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.offset();
-                }
-                let children = &mut self.children(db);
-                if let Some(child) = children.find(|child| child.width(db) != TextWidth::default())
-                {
-                    child.span_start_without_trivia(db)
-                } else {
-                    self.offset()
-                }
-            }
-            green::GreenNodeDetails::Token(_) => self.offset(),
+        if let Some(token_node) = self.get_terminal_token(db) {
+            return token_node.offset();
+        }
+        if green_node.kind().is_token() {
+            return self.offset();
+        }
+        let children = &mut self.children(db);
+        if let Some(child) = children.find(|child| child.width(db) != TextWidth::default()) {
+            child.span_start_without_trivia(db)
+        } else {
+            self.offset()
         }
     }
     pub fn span_end_without_trivia(&self, db: &dyn SyntaxGroup) -> TextOffset {
         let green_node = self.green_node(db);
-        match green_node.details {
-            green::GreenNodeDetails::Node { .. } => {
-                if let Some(token_node) = self.get_terminal_token(db) {
-                    return token_node.span(db).end;
-                }
-                let children = &mut self.children(db);
-                if let Some(child) =
-                    children.filter(|child| child.width(db) != TextWidth::default()).last()
-                {
-                    child.span_end_without_trivia(db)
-                } else {
-                    self.span(db).end
-                }
-            }
-            green::GreenNodeDetails::Token(_) => self.span(db).end,
+        if let Some(token_node) = self.get_terminal_token(db) {
+            return token_node.span(db).end;
+        }
+        if green_node.kind().is_token() {
+            return self.span(db).end;
+        }
+        let children = &mut self.children(db);
+        if let Some(child) = children.filter(|child| child.width(db) != TextWidth::default()).last()
+        {
+            child.span_end_without_trivia(db)
+        } else {
+            self.span(db).end
         }
     }
 
@@ -223,7 +219,7 @@ pub trait TypedSyntaxNode {
 }
 
 pub trait Token: TypedSyntaxNode {
-    fn new_green(db: &dyn SyntaxGroup, text: SmolStr) -> Self::Green;
+    fn new_green(db: &dyn SyntaxGroup, text: &str) -> Self::Green;
     fn text(&self, db: &dyn SyntaxGroup) -> SmolStr;
 }
 
@@ -249,14 +245,12 @@ pub struct NodeTextFormatter<'a> {
 }
 impl<'a> Display for NodeTextFormatter<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let node = self.node.green_node(self.db);
-        match node.details {
-            green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
-            green::GreenNodeDetails::Node { .. } => {
-                for child in self.node.children(self.db) {
-                    write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
-                }
-            }
+        if let Some(text) = self.node.token_text(self.db) {
+            write!(f, "{}", text)?;
+            return Ok(());
+        }
+        for child in self.node.children(self.db) {
+            write!(f, "{}", NodeTextFormatter { node: &child, db: self.db })?;
         }
         Ok(())
     }

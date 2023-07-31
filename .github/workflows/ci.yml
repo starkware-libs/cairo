@@ -105,7 +105,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: "Download and run cargo-udeps"
         run: |
-          wget -O - -c https://github.com/est31/cargo-udeps/releases/download/v0.1.35/cargo-udeps-v0.1.35-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+          wget -O - -c https://github.com/est31/cargo-udeps/releases/download/v0.1.41/cargo-udeps-v0.1.41-x86_64-unknown-linux-gnu.tar.gz | tar -xz
           cargo-udeps-*/cargo-udeps udeps
         env:
           RUSTUP_TOOLCHAIN: nightly-2023-07-05

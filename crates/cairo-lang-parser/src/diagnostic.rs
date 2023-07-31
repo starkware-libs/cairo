@@ -3,7 +3,6 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_filesystem::span::TextSpan;
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use smol_str::SmolStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ParserDiagnostic {
@@ -14,13 +13,13 @@ pub struct ParserDiagnostic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ParserDiagnosticKind {
     // TODO(spapini): Add tokens from the recovery set to the message.
-    SkippedElement { element_name: SmolStr },
+    SkippedElement { element_name: String },
     MissingToken(SyntaxKind),
     MissingExpression,
     MissingPathSegment,
     MissingTypeClause,
     MissingTypeExpression,
-    ReservedIdentifier { identifier: SmolStr },
+    ReservedIdentifier { identifier: String },
     UnderscoreNotAllowedAsIdentifier,
     MissingLiteralSuffix,
     InvalidNumericLiteralValue,

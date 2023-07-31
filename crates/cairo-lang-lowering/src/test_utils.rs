@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::plugin::MacroPlugin;
@@ -10,7 +10,7 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::green::GreenInterner;
+use cairo_lang_syntax::node::green::SyntaxInterner;
 use cairo_lang_utils::Upcast;
 
 use crate::db::{LoweringDatabase, LoweringGroup};
@@ -25,7 +25,7 @@ use crate::db::{LoweringDatabase, LoweringGroup};
 )]
 pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
-    green_interner: RwLock<GreenInterner>,
+    green_interner: SyntaxInterner,
 }
 impl salsa::Database for LoweringDatabaseForTesting {}
 impl Default for LoweringDatabaseForTesting {
@@ -54,7 +54,7 @@ impl Upcast<dyn SyntaxGroup> for LoweringDatabaseForTesting {
     }
 }
 impl HasGreenInterner for LoweringDatabaseForTesting {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }

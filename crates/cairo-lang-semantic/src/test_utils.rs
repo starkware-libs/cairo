@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
@@ -11,7 +11,7 @@ use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::green::GreenInterner;
+use cairo_lang_syntax::node::green::SyntaxInterner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 
@@ -22,7 +22,7 @@ use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 #[salsa::database(SemanticDatabase, DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
-    green_interner: RwLock<GreenInterner>,
+    green_interner: SyntaxInterner,
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
 impl Default for SemanticDatabaseForTesting {
@@ -51,7 +51,7 @@ impl Upcast<dyn SyntaxGroup> for SemanticDatabaseForTesting {
     }
 }
 impl HasGreenInterner for SemanticDatabaseForTesting {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }

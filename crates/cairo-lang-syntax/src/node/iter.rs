@@ -1,7 +1,6 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::vec;
 
 use cairo_lang_filesystem::span::TextOffset;
 
@@ -15,7 +14,7 @@ use crate::node::{SyntaxNode, SyntaxNodeInner};
 pub struct SyntaxNodeChildIterator<'db> {
     db: &'db dyn SyntaxGroup,
     node: SyntaxNode,
-    green_iterator: vec::IntoIter<GreenId>,
+    green_iterator: std::iter::Copied<std::slice::Iter<'static, GreenId>>,
     /// The current offset in the source file of the start of the child.
     offset: TextOffset,
     /// Mapping from (kind, key_fields) to the number of times this indexing pair has been seen.
@@ -51,7 +50,7 @@ impl<'db> SyntaxNodeChildIterator<'db> {
         SyntaxNodeChildIterator {
             db,
             node: node.clone(),
-            green_iterator: node.green_node(db).children().into_iter(),
+            green_iterator: node.green_node(db).children().iter().copied(),
             offset: node.offset(),
             key_map: HashMap::new(),
         }
@@ -63,7 +62,7 @@ impl<'db> SyntaxNodeChildIterator<'db> {
     ) -> Option<<SyntaxNodeChildIterator<'db> as Iterator>::Item> {
         let green = self.db.lookup_intern_green(green_id);
         let width = green.width();
-        let kind = green.kind;
+        let kind = green.kind();
         let key_fields: Vec<GreenId> = get_key_fields(kind, green.children());
         let index = match self.key_map.entry((kind, key_fields.clone())) {
             Entry::Occupied(mut entry) => entry.insert(entry.get() + 1),
@@ -72,12 +71,14 @@ impl<'db> SyntaxNodeChildIterator<'db> {
                 0
             }
         };
-        let stable_ptr = self.db.intern_stable_ptr(SyntaxStablePtr::Child {
-            parent: self.node.0.stable_ptr,
+        let mut buffer = Vec::new();
+        let stable_ptr = self.db.intern_stable_ptr(SyntaxStablePtr::new_child(
+            &mut buffer,
+            self.node.0.stable_ptr,
             kind,
-            key_fields,
-            index,
-        });
+            index as u16,
+            &key_fields[..],
+        ));
         // Create the SyntaxNode view for the child.
         let res = SyntaxNode(Arc::new(SyntaxNodeInner {
             green: green_id,

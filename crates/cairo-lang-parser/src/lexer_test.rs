@@ -361,7 +361,7 @@ fn test_cases() {
                 text: "let".into(),
                 kind: SyntaxKind::TerminalLet,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
             },
             LexerTerminal {
                 text: "x".into(),
@@ -373,7 +373,7 @@ fn test_cases() {
                 text: ":".into(),
                 kind: SyntaxKind::TerminalColon,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
             },
             LexerTerminal {
                 text: "&".into(),
@@ -385,19 +385,19 @@ fn test_cases() {
                 text: "T".into(),
                 kind: SyntaxKind::TerminalIdentifier,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
             },
             LexerTerminal {
                 text: "=".into(),
                 kind: SyntaxKind::TerminalEq,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
             },
             LexerTerminal {
                 text: "`".into(),
                 kind: SyntaxKind::TerminalBadCharacters,
                 leading_trivia: vec![],
-                trailing_trivia: vec![TokenWhitespace::new_green(db, " ".into()).into()]
+                trailing_trivia: vec![TokenWhitespace::new_green(db, " ").into()]
             },
             LexerTerminal {
                 text: "6".into(),
@@ -410,8 +410,8 @@ fn test_cases() {
                 kind: SyntaxKind::TerminalSemicolon,
                 leading_trivia: vec![],
                 trailing_trivia: vec![
-                    TokenWhitespace::new_green(db, " ".into()).into(),
-                    TokenSingleLineComment::new_green(db, "//  5+ 3;".into()).into()
+                    TokenWhitespace::new_green(db, " ").into(),
+                    TokenSingleLineComment::new_green(db, "//  5+ 3;").into()
                 ]
             },
             LexerTerminal {

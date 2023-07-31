@@ -12,7 +12,6 @@ use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::{extract_matches, try_extract_matches};
 use syntax::node::db::SyntaxGroup;
-use syntax::node::stable_ptr::SyntaxStablePtr;
 
 use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
@@ -259,14 +258,8 @@ fn generic_param_generic_params_list(
     let generic_param_long_id = db.lookup_intern_generic_param(generic_param_id);
 
     // Traverse up the tree to the generic params list ptr.
-    let SyntaxStablePtr::Child { parent, .. } =
-        db.lookup_intern_stable_ptr(generic_param_long_id.1.0)
-    else {
-        panic!()
-    };
-    let SyntaxStablePtr::Child { parent, .. } = db.lookup_intern_stable_ptr(parent) else {
-        panic!()
-    };
+    let parent = db.lookup_intern_stable_ptr(generic_param_long_id.1.0).parent().unwrap();
+    let parent = db.lookup_intern_stable_ptr(parent).parent().unwrap();
 
     let generic_param_list = ast::OptionWrappedGenericParamListPtr(parent).lookup(db.upcast());
     Ok(generic_param_list)

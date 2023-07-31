@@ -1035,6 +1035,7 @@ name = "cairo-lang-utils"
 version = "2.1.0-rc0"
 dependencies = [
  "env_logger",
+ "fxhash",
  "indexmap 2.0.0",
  "itertools 0.11.0",
  "log",

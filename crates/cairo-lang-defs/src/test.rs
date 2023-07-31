@@ -1,5 +1,5 @@
 use std::fmt::Write as _;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cairo_lang_debug::debug::DebugWithDb;
 use cairo_lang_filesystem::db::{
@@ -8,7 +8,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::{ParserDatabase, ParserGroup};
 use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::green::GreenInterner;
+use cairo_lang_syntax::node::green::SyntaxInterner;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
@@ -28,7 +28,7 @@ use crate::plugin::{
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
 pub struct DatabaseForTesting {
     storage: salsa::Storage<DatabaseForTesting>,
-    green_interner: RwLock<GreenInterner>,
+    green_interner: SyntaxInterner,
     plugins: Vec<Arc<dyn MacroPlugin>>,
 }
 impl salsa::Database for DatabaseForTesting {}
@@ -68,7 +68,7 @@ impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
     }
 }
 impl HasGreenInterner for DatabaseForTesting {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }
