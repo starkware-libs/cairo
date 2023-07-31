@@ -169,7 +169,7 @@ impl EcPointAddEq of AddEq<EcPoint> {
 impl EcPointSub of Sub<EcPoint> {
     /// Computes the difference between two points on the curve.
     fn sub(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
-        match rhs.try_into() {
+        match EcPointTryIntoNonZero::try_into(rhs) {
             Option::Some(_) => {},
             Option::None => {
                 // lhs - 0 = lhs.
