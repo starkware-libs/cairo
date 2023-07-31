@@ -205,3 +205,38 @@ impl ArrayTCloneImpl<T, impl TClone: Clone<T>, impl TDrop: Drop<T>> of Clone<Arr
         response
     }
 }
+
+// TODO(yg): add tests.
+impl ArrayPartialEq<T, impl PartialEqImpl: PartialEq<T>> of PartialEq<Array<T>> {
+    fn eq(lhs: @Array<T>, rhs: @Array<T>) -> bool {
+        if lhs.len() != rhs.len() {
+            return false;
+        }
+        let mut lhs_span = lhs.span();
+        let mut rhs_span = rhs.span();
+        loop {
+            let lhs_v = lhs_span.pop_front();
+            let rhs_v = rhs_span.pop_front();
+            match lhs_v {
+                Option::Some(lhs_v) => {
+                    match rhs_v {
+                        Option::Some(rhs_v) => {
+                            if lhs_v != rhs_v {
+                                break false;
+                            }
+                        },
+                        Option::None => {
+                            break false;
+                        },
+                    };
+                },
+                Option::None => {
+                    break rhs_v.is_none();
+                },
+            };
+        }
+    }
+    fn ne(lhs: @Array<T>, rhs: @Array<T>) -> bool {
+        !(lhs == rhs)
+    }
+}
