@@ -27,7 +27,8 @@ pub fn print_partial_tree(
     print_trivia: bool,
 ) -> String {
     let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds, print_trivia);
-    printer.print_tree("root", syntax_root, "", true, false);
+    let under_top_level = printer.top_level_kind.is_none();
+    printer.print_tree("root", syntax_root, "", true, under_top_level);
     printer.result
 }
 
@@ -68,7 +69,11 @@ impl<'a> Printer<'a> {
             spec: get_spec(),
             print_colors: false,
             print_trivia,
-            top_level_kind: Some(top_level_kind.to_string()),
+            top_level_kind: if top_level_kind.trim().is_empty() {
+                None
+            } else {
+                Some(top_level_kind.to_string())
+            },
             ignored_kinds: ignored_kinds.into_iter().map(|x| x.to_string()).collect(),
             result: String::new(),
         }
