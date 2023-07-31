@@ -313,7 +313,7 @@ mod __constructor {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -372,7 +372,7 @@ impl EventBestEventEverIntoEvent of Into<BestEventEver, Event> {
 
 impls:
 
-impl AwesomeEventDrop of Drop::<AwesomeEvent>;
+impl AwesomeEventDrop of Drop<AwesomeEvent>;
 
 
 event_impl:
@@ -399,7 +399,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
 
 impls:
 
-impl BestEventEverDrop of Drop::<BestEventEver>;
+impl BestEventEverDrop of Drop<BestEventEver>;
 
 
 event_impl:
@@ -418,6 +418,6 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 //! > expected_diagnostics

@@ -156,12 +156,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:

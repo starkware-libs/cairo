@@ -143,12 +143,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -306,12 +306,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -447,12 +447,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -491,8 +491,8 @@ error: Plugin diagnostic: Identifier not found.
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
  --> impls:1:1
-impl ContractStateDrop of Drop::<ContractState>;
-^**********************************************^
+impl ContractStateDrop of Drop<ContractState>;
+^********************************************^
 
 //! > ==========================================================================
 
@@ -675,12 +675,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -841,12 +841,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -997,12 +997,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -1158,12 +1158,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -1342,12 +1342,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -1561,12 +1561,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -1759,12 +1759,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -1978,12 +1978,12 @@ mod __constructor {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -2215,12 +2215,12 @@ trait BTrait {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -2481,12 +2481,12 @@ trait ATrait {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -2638,7 +2638,7 @@ mod __constructor {
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
@@ -2663,7 +2663,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
@@ -2789,7 +2789,7 @@ mod __constructor {
 
 impls:
 
-impl MyEventDrop of Drop::<MyEvent>;
+impl MyEventDrop of Drop<MyEvent>;
 
 
 event_impl:
@@ -2814,12 +2814,12 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:

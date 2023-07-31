@@ -197,9 +197,9 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
 impls:
 
-impl IContractDispatcherCopy of Copy::<IContractDispatcher>;
-impl IContractDispatcherDrop of Drop::<IContractDispatcher>;
-impl IContractDispatcherSerde of Serde::<IContractDispatcher> {
+impl IContractDispatcherCopy of Copy<IContractDispatcher>;
+impl IContractDispatcherDrop of Drop<IContractDispatcher>;
+impl IContractDispatcherSerde of Serde<IContractDispatcher> {
     fn serialize(self: @IContractDispatcher, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.contract_address, ref output)
     }
@@ -247,9 +247,9 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
 
 impls:
 
-impl IContractLibraryDispatcherCopy of Copy::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherDrop of Drop::<IContractLibraryDispatcher>;
-impl IContractLibraryDispatcherSerde of Serde::<IContractLibraryDispatcher> {
+impl IContractLibraryDispatcherCopy of Copy<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherDrop of Drop<IContractLibraryDispatcher>;
+impl IContractLibraryDispatcherSerde of Serde<IContractLibraryDispatcher> {
     fn serialize(self: @IContractLibraryDispatcher, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.class_hash, ref output)
     }
@@ -297,9 +297,9 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
 
 impls:
 
-impl IContractSafeLibraryDispatcherCopy of Copy::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherDrop of Drop::<IContractSafeLibraryDispatcher>;
-impl IContractSafeLibraryDispatcherSerde of Serde::<IContractSafeLibraryDispatcher> {
+impl IContractSafeLibraryDispatcherCopy of Copy<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherDrop of Drop<IContractSafeLibraryDispatcher>;
+impl IContractSafeLibraryDispatcherSerde of Serde<IContractSafeLibraryDispatcher> {
     fn serialize(self: @IContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.class_hash, ref output)
     }
@@ -347,9 +347,9 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
 
 impls:
 
-impl IContractSafeDispatcherCopy of Copy::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherDrop of Drop::<IContractSafeDispatcher>;
-impl IContractSafeDispatcherSerde of Serde::<IContractSafeDispatcher> {
+impl IContractSafeDispatcherCopy of Copy<IContractSafeDispatcher>;
+impl IContractSafeDispatcherDrop of Drop<IContractSafeDispatcher>;
+impl IContractSafeDispatcherSerde of Serde<IContractSafeDispatcher> {
     fn serialize(self: @IContractSafeDispatcher, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.contract_address, ref output)
     }

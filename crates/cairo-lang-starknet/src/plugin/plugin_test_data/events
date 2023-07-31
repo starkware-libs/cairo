@@ -45,7 +45,7 @@ enum MyEventEnum {
 
 impls:
 
-impl APartialEq of PartialEq::<A> {
+impl APartialEq of PartialEq<A> {
     fn eq(lhs: @A, rhs: @A) -> bool {
         lhs.x == rhs.x && lhs.data == rhs.data
     }
@@ -54,8 +54,8 @@ impl APartialEq of PartialEq::<A> {
         !(lhs == rhs)
     }
 }
-impl ADrop of Drop::<A>;
-impl ASerde of Serde::<A> {
+impl ADrop of Drop<A>;
+impl ASerde of Serde<A> {
     fn serialize(self: @A, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.x, ref output);
         serde::Serde::serialize(self.data, ref output)
@@ -93,7 +93,7 @@ impl AIsEvent of starknet::Event<A> {
 
 impls:
 
-impl BPartialEq of PartialEq::<B> {
+impl BPartialEq of PartialEq<B> {
     fn eq(lhs: @B, rhs: @B) -> bool {
         lhs.x == rhs.x
     }
@@ -102,8 +102,8 @@ impl BPartialEq of PartialEq::<B> {
         !(lhs == rhs)
     }
 }
-impl BDrop of Drop::<B>;
-impl BSerde of Serde::<B> {
+impl BDrop of Drop<B>;
+impl BSerde of Serde<B> {
     fn serialize(self: @B, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.x, ref output)
     }
@@ -135,7 +135,7 @@ impl BIsEvent of starknet::Event<B> {
 
 impls:
 
-impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
+impl MyEventEnumPartialEq of PartialEq<MyEventEnum> {
     fn eq(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
         match lhs {
             MyEventEnum::A(x) => match rhs {
@@ -153,7 +153,7 @@ impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
         !(lhs == rhs)
     }
 }
-impl MyEventEnumDrop of Drop::<MyEventEnum>;
+impl MyEventEnumDrop of Drop<MyEventEnum>;
 
 
 event_impl:

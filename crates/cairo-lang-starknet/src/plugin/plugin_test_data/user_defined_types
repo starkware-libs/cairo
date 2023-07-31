@@ -235,8 +235,8 @@ mod __constructor {
 
 impls:
 
-impl WrappedFelt252Drop of Drop::<WrappedFelt252>;
-impl WrappedFelt252Serde of Serde::<WrappedFelt252> {
+impl WrappedFelt252Drop of Drop<WrappedFelt252>;
+impl WrappedFelt252Serde of Serde<WrappedFelt252> {
     fn serialize(self: @WrappedFelt252, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.value, ref output)
     }
@@ -284,12 +284,12 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
 
 impls:
 
-impl ContractStateDrop of Drop::<ContractState>;
+impl ContractStateDrop of Drop<ContractState>;
 
 
 impls:
 
-impl EventDrop of Drop::<Event>;
+impl EventDrop of Drop<Event>;
 
 
 event_impl:
