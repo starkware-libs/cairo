@@ -355,7 +355,7 @@ fn test_index_view() {
 
 // Test panic with [] in case of out-of-bounds
 #[test]
-#[should_panic(expected: ('Index out of bounds',))]
+#[should_panic(expected: ('Index out of bounds', ))]
 #[available_gas(100000000)]
 fn test_index_view_out_of_bounds() {
     let mut ba = test_byte_array_31();
@@ -363,6 +363,34 @@ fn test_index_view_out_of_bounds() {
     ba.append(@test_byte_array_17());
 
     let x = ba[79];
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_equality() {
+    assert(@"a" == @"a", 'Same strings are not equal');
+    assert(@"a" != @"b", 'Different strings are equal');
+
+    let mut ba1 = test_byte_array_2();
+    ba1.append(@test_byte_array_31());
+    let ba2 = test_byte_array_33();
+    let ba3 = test_byte_array_32();
+    let mut ba4 = test_byte_array_32();
+    ba4.append(@test_byte_array_1());
+
+    assert(@ba1 == @ba1, 'Same ByteArrays are not equal');
+    assert(@ba2 == @ba2, 'Same ByteArrays are not equal');
+    assert(@ba3 == @ba3, 'Same ByteArrays are not equal');
+    assert(@ba4 == @ba4, 'Same ByteArrays are not equal');
+
+    // Different data
+    assert(@ba1 != @ba2, 'Different ByteArrays are equal');
+
+    // Different pending word length
+    assert(@ba2 != @ba3, 'Different ByteArrays are equal');
+
+    // Different pending word
+    assert(@ba2 != @ba4, 'Different ByteArrays are equal');
 }
 
 // ========= Test helper functions =========

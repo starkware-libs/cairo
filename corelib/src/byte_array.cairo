@@ -321,3 +321,22 @@ impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
         self.at(index).expect('Index out of bounds')
     }
 }
+
+impl ByteArrayPartialEq of PartialEq<ByteArray> {
+    fn eq(lhs: @ByteArray, rhs: @ByteArray) -> bool {
+        if lhs.data != rhs.data {
+            return false;
+        }
+        if lhs.pending_word_len != rhs.pending_word_len {
+            return false;
+        }
+        if lhs.pending_word != rhs.pending_word {
+            return false;
+        }
+
+        true
+    }
+    fn ne(lhs: @ByteArray, rhs: @ByteArray) -> bool {
+        !(lhs == rhs)
+    }
+}
