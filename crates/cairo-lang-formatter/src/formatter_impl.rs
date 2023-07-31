@@ -537,9 +537,37 @@ impl PendingLineState {
 }
 
 /// Represents the break line points before and after a syntax node.
-pub struct WrappingBreakLinePoints {
-    pub leading: Option<BreakLinePointProperties>,
-    pub trailing: Option<BreakLinePointProperties>,
+pub enum BreakLinePointsPositions {
+    Leading(BreakLinePointProperties),
+    Trailing(BreakLinePointProperties),
+    Both { leading: BreakLinePointProperties, trailing: BreakLinePointProperties },
+    None,
+    // TODO(Gil): Add a list breaking variant.
+}
+
+impl BreakLinePointsPositions {
+    pub fn new_symmetric(break_line_point_properties: BreakLinePointProperties) -> Self {
+        Self::Both {
+            leading: break_line_point_properties.clone(),
+            trailing: break_line_point_properties,
+        }
+    }
+    pub fn leading(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Leading(properties) | Self::Both { leading: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
+    pub fn trailing(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Trailing(properties) | Self::Both { trailing: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
 }
 
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
@@ -560,7 +588,7 @@ pub trait SyntaxNodeFormat {
     fn get_wrapping_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
-    ) -> WrappingBreakLinePoints;
+    ) -> BreakLinePointsPositions;
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
@@ -602,7 +630,7 @@ impl<'a> FormatterImpl<'a> {
         }
         let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         if let Some(precedence) = protected_zone_precedence {
             self.line_state.line_buffer.open_sub_builder(precedence);
         }
@@ -614,7 +642,7 @@ impl<'a> FormatterImpl<'a> {
         if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
@@ -703,9 +731,9 @@ impl<'a> FormatterImpl<'a> {
             self.is_current_line_whitespaces = false;
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         self.line_state.line_buffer.push_str(&text);
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
