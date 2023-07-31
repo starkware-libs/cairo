@@ -107,6 +107,12 @@ trait TryInto<T, S> {
     fn try_into(self: T) -> Option<S>;
 }
 
+impl TTryIntoT<T> of TryInto<T, T> {
+    fn try_into(self: T) -> Option<T> {
+        Option::Some(self)
+    }
+}
+
 trait Neg<T> {
     fn neg(a: T) -> T;
 }
