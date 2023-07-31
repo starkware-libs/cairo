@@ -415,56 +415,6 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     ))
                 }
-                SyntaxKind::TerminalComma
-                    if matches!(
-                        parent_kind(db, self),
-                        Some(SyntaxKind::ImplicitsList)
-                            | Some(SyntaxKind::ParamList)
-                            | Some(SyntaxKind::PatternStructParamList)
-                            | Some(SyntaxKind::PatternList)
-                            | Some(SyntaxKind::StructArgList)
-                            | Some(SyntaxKind::ArgList)
-                            | Some(SyntaxKind::ExprList)
-                            | Some(SyntaxKind::GenericArgList)
-                            | Some(SyntaxKind::GenericParamList)
-                    ) =>
-                {
-                    BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
-                        5,
-                        BreakLinePointIndentation::NotIndented,
-                        true,
-                        true,
-                    ))
-                }
-                SyntaxKind::TerminalComma
-                    if matches!(
-                        parent_kind(db, self),
-                        Some(
-                            SyntaxKind::MemberList
-                                | SyntaxKind::VariantList
-                                | SyntaxKind::MatchArms
-                        )
-                    ) =>
-                {
-                    BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
-                        6,
-                        BreakLinePointIndentation::NotIndented,
-                        false,
-                        true,
-                    ))
-                }
-                SyntaxKind::TerminalComma
-                    if matches!(parent_kind(db, self), Some(SyntaxKind::UsePathList)) =>
-                {
-                    let mut trailing = BreakLinePointProperties::new(
-                        6,
-                        BreakLinePointIndentation::NotIndented,
-                        true,
-                        true,
-                    );
-                    trailing.set_single_breakpoint();
-                    BreakLinePointsPositions::Trailing(trailing)
-                }
                 SyntaxKind::TerminalPlus => {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
@@ -565,6 +515,52 @@ impl SyntaxNodeFormat for SyntaxNode {
                 }
                 _ => BreakLinePointsPositions::None,
             },
+        }
+    }
+    fn get_internal_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> BreakLinePointsPositions {
+        match self.kind(db) {
+            SyntaxKind::ImplicitsList
+            | SyntaxKind::ParamList
+            | SyntaxKind::PatternList
+            | SyntaxKind::PatternStructParamList
+            | SyntaxKind::StructArgList
+            | SyntaxKind::ArgList
+            | SyntaxKind::ExprList
+            | SyntaxKind::GenericArgList
+            | SyntaxKind::GenericParamList => BreakLinePointsPositions::List {
+                properties: BreakLinePointProperties::new(
+                    5,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                ),
+                breaking_frequency: 2,
+            },
+            SyntaxKind::MatchArms | SyntaxKind::MemberList | SyntaxKind::VariantList => {
+                BreakLinePointsPositions::List {
+                    properties: BreakLinePointProperties::new(
+                        6,
+                        BreakLinePointIndentation::NotIndented,
+                        false,
+                        true,
+                    ),
+                    breaking_frequency: 2,
+                }
+            }
+            SyntaxKind::UsePathList => {
+                let mut properties = BreakLinePointProperties::new(
+                    6,
+                    BreakLinePointIndentation::NotIndented,
+                    true,
+                    true,
+                );
+                properties.set_single_breakpoint();
+                BreakLinePointsPositions::List { properties, breaking_frequency: 2 }
+            }
+            _ => BreakLinePointsPositions::None,
         }
     }
 

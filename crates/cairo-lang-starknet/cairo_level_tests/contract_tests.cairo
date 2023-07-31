@@ -53,7 +53,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_value(self: @ContractState, ) -> felt252 {
+    fn get_value(self: @ContractState,) -> felt252 {
         self.value.read()
     }
 
@@ -329,7 +329,7 @@ struct A {
 
 #[derive(starknet::Event, PartialEq, Drop, Clone, Serde)]
 struct B {
-    x: felt252, 
+    x: felt252,
 }
 
 #[derive(starknet::Event, PartialEq, Drop, Clone)]

@@ -166,7 +166,7 @@ trait Felt252DictValue<T> {
 // Tuple Copy impls.
 impl TupleSize0Copy of Copy<()>;
 
-impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0, )>;
+impl TupleSize1Copy<E0, impl E0Copy: Copy<E0>> of Copy<(E0,)>;
 
 impl TupleSize2Copy<E0, E1, impl E0Copy: Copy<E0>, impl E1Copy: Copy<E1>> of Copy<(E0, E1)>;
 
@@ -188,7 +188,7 @@ impl TupleSize4Copy<
 // Tuple Drop impls.
 impl TupleSize0Drop of Drop<()>;
 
-impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0, )>;
+impl TupleSize1Drop<E0, impl E0Drop: Drop<E0>> of Drop<(E0,)>;
 
 impl TupleSize2Drop<E0, E1, impl E0Drop: Drop<E0>, impl E1Drop: Drop<E1>> of Drop<(E0, E1)>;
 
@@ -219,15 +219,15 @@ impl TupleSize0PartialEq of PartialEq<()> {
     }
 }
 
-impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0, )> {
+impl TupleSize1PartialEq<E0, impl E0PartialEq: PartialEq<E0>> of PartialEq<(E0,)> {
     #[inline(always)]
-    fn eq(lhs: @(E0, ), rhs: @(E0, )) -> bool {
-        let (lhs, ) = lhs;
-        let (rhs, ) = rhs;
+    fn eq(lhs: @(E0,), rhs: @(E0,)) -> bool {
+        let (lhs,) = lhs;
+        let (rhs,) = rhs;
         lhs == rhs
     }
     #[inline(always)]
-    fn ne(lhs: @(E0, ), rhs: @(E0, )) -> bool {
+    fn ne(lhs: @(E0,), rhs: @(E0,)) -> bool {
         !(rhs == lhs)
     }
 }
@@ -296,9 +296,9 @@ impl TupleSize0Default of Default<()> {
     }
 }
 
-impl TupleSize1Default<E0, impl E0Default: Default<E0>> of Default<(E0, )> {
-    fn default() -> (E0, ) {
-        (E0Default::default(), )
+impl TupleSize1Default<E0, impl E0Default: Default<E0>> of Default<(E0,)> {
+    fn default() -> (E0,) {
+        (E0Default::default(),)
     }
 }
 

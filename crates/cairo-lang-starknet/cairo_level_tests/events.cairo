@@ -21,12 +21,12 @@ mod contract_with_event {
     use starknet::info::get_contract_address;
     #[storage]
     struct Storage {
-        value: u128, 
+        value: u128,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct IncrementalEvent {
-        value: u128, 
+        value: u128,
     }
 
     #[derive(Copy, Drop, PartialEq, starknet::Event)]

@@ -447,27 +447,27 @@ impl TupleSize0Store of Store<()> {
     }
 }
 
-impl TupleSize1Store<E0, impl E0Store: Store<E0>, impl E0Drop: Drop<E0>> of Store<(E0, )> {
+impl TupleSize1Store<E0, impl E0Store: Store<E0>, impl E0Drop: Drop<E0>> of Store<(E0,)> {
     #[inline(always)]
-    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, )> {
-        Result::Ok((E0Store::read(address_domain, base)?, ))
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0,)> {
+        Result::Ok((E0Store::read(address_domain, base)?,))
     }
     #[inline(always)]
-    fn write(address_domain: u32, base: StorageBaseAddress, value: (E0, )) -> SyscallResult<()> {
-        let (e0, ) = value;
+    fn write(address_domain: u32, base: StorageBaseAddress, value: (E0,)) -> SyscallResult<()> {
+        let (e0,) = value;
         E0Store::write(address_domain, base, e0)
     }
     #[inline(always)]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
-    ) -> SyscallResult<(E0, )> {
-        Result::Ok((E0Store::read_at_offset(address_domain, base, offset)?, ))
+    ) -> SyscallResult<(E0,)> {
+        Result::Ok((E0Store::read_at_offset(address_domain, base, offset)?,))
     }
     #[inline(always)]
     fn write_at_offset(
-        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0, )
+        address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0,)
     ) -> SyscallResult<()> {
-        let (e0, ) = value;
+        let (e0,) = value;
         E0Store::write_at_offset(address_domain, base, offset, e0)
     }
     #[inline(always)]
@@ -651,7 +651,7 @@ impl TupleSize4Store<
 
 
 impl ResultStore<
-    T, E, impl TStore: Store<T>, impl EStore: Store<E>, impl TDrop: Drop<T>, impl EDrop: Drop<E>, 
+    T, E, impl TStore: Store<T>, impl EStore: Store<E>, impl TDrop: Drop<T>, impl EDrop: Drop<E>,
 > of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
@@ -723,7 +723,7 @@ impl ResultStore<
     }
 }
 
-impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>, > of Store<Option<T>> {
+impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option<T>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
