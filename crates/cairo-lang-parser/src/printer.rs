@@ -286,5 +286,13 @@ impl<'a> Printer<'a> {
 
 // TODO(yuval): autogenerate.
 fn is_missing_kind(kind: SyntaxKind) -> bool {
-    matches!(kind, SyntaxKind::ExprMissing | SyntaxKind::StatementMissing)
+    matches!(
+        kind,
+        SyntaxKind::ExprMissing
+            | SyntaxKind::WrappedExprListMissing
+            | SyntaxKind::StatementMissing
+            | SyntaxKind::ItemMissing
+            | SyntaxKind::TraitItemMissing
+            | SyntaxKind::ImplItemMissing
+    )
 }
