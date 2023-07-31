@@ -23,7 +23,7 @@ fn test_ast() {
 
     assert_eq!(
         root.descendants(db)
-            .map(|node| (node.kind(db), node.text(db), node.offset(), node.width(db)))
+            .map(|node| (node.kind(db), node.token_text(db), node.offset(), node.width(db)))
             .collect::<Vec<_>>(),
         vec![
             (
@@ -58,7 +58,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenIdentifier,
-                Some("foo".into()),
+                Some("foo"),
                 TextOffset::default().add_width(TextWidth::new_for_testing(0)),
                 TextWidth::new_for_testing(3)
             ),
@@ -70,7 +70,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(" "),
                 TextOffset::default().add_width(TextWidth::new_for_testing(3)),
                 TextWidth::new_for_testing(1)
             ),
@@ -88,7 +88,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenPlus,
-                Some("+".into()),
+                Some("+"),
                 TextOffset::default().add_width(TextWidth::new_for_testing(4)),
                 TextWidth::new_for_testing(1)
             ),
@@ -100,7 +100,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenWhitespace,
-                Some(" ".into()),
+                Some(" "),
                 TextOffset::default().add_width(TextWidth::new_for_testing(5)),
                 TextWidth::new_for_testing(1)
             ),
@@ -130,7 +130,7 @@ fn test_ast() {
             ),
             (
                 SyntaxKind::TokenNumber,
-                Some("5".into()),
+                Some("5"),
                 TextOffset::default().add_width(TextWidth::new_for_testing(6)),
                 TextWidth::new_for_testing(1)
             ),
@@ -159,26 +159,26 @@ fn test_stable_ptr() {
 fn setup(db: &DatabaseForTesting) -> SyntaxNode {
     // TODO: Use a builder for easier construction of token.
     // Construct green nodes.
-    let token_foo = TokenIdentifier::new_green(db, "foo".into());
-    let token_whitespace1 = TokenWhitespace::new_green(db, " ".into());
-    let token_plus = TokenPlus::new_green(db, "+".into());
-    let token_whitespace2 = TokenWhitespace::new_green(db, " ".into());
-    let token5 = TokenNumber::new_green(db, "5".into());
+    let token_foo = TokenIdentifier::new_green(db, "foo");
+    let token_whitespace1 = TokenWhitespace::new_green(db, " ");
+    let token_plus = TokenPlus::new_green(db, "+");
+    let token_whitespace2 = TokenWhitespace::new_green(db, " ");
+    let token5 = TokenNumber::new_green(db, "5");
     assert_eq!(token_whitespace1, token_whitespace2);
-    let no_trivia = Trivia::new_green(db, vec![]);
+    let no_trivia = Trivia::new_green(db, &[]);
     let triviums = vec![token_whitespace1, token_whitespace2];
     assert_eq!(triviums[0], triviums[1]);
     let terminal_foo = TerminalIdentifier::new_green(
         db,
         no_trivia,
         token_foo,
-        Trivia::new_green(db, vec![triviums[0].into()]),
+        Trivia::new_green(db, &[triviums[0].into()]),
     );
     let terminal_plus = TerminalPlus::new_green(
         db,
         no_trivia,
         token_plus,
-        Trivia::new_green(db, vec![triviums[1].into()]),
+        Trivia::new_green(db, &[triviums[1].into()]),
     );
     let terminal5 = TerminalNumber::new_green(db, no_trivia, token5, no_trivia);
     let number5 =
@@ -187,7 +187,7 @@ fn setup(db: &DatabaseForTesting) -> SyntaxNode {
         db,
         ExprPath::new_green(
             db,
-            vec![PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
+            &[PathSegmentGreen::from(PathSegmentSimple::new_green(db, terminal_foo)).into()],
         )
         .into(),
         terminal_plus.into(),

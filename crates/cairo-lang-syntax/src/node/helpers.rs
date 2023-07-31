@@ -4,13 +4,12 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem,
-    TraitItemFunction, TraitItemFunctionPtr, Variant,
+    ItemUse, Member, Modifier, TerminalIdentifierGreen, TraitItem, TraitItemFunction,
+    TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
 use crate::node::ast::{Attribute, AttributeList};
-use crate::node::green::GreenNodeDetails;
 
 #[cfg(test)]
 #[path = "helpers_test.rs"]
@@ -27,10 +26,7 @@ impl ast::UsePathLeafPtr {
 impl GetIdentifier for ast::UsePathLeafPtr {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
         let alias_clause_green = self.alias_clause_green(db).0;
-        let children = match db.lookup_intern_green(alias_clause_green).details {
-            GreenNodeDetails::Node { children, width: _ } => children,
-            _ => panic!("Unexpected token"),
-        };
+        let children = db.lookup_intern_green(alias_clause_green).children();
         if !children.is_empty() {
             return ast::TerminalIdentifierGreen(children[ast::AliasClause::INDEX_ALIAS])
                 .identifier(db);
@@ -42,10 +38,7 @@ impl GetIdentifier for ast::UsePathLeafPtr {
 impl GetIdentifier for ast::PathSegmentGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let children = match db.lookup_intern_green(self.0).details {
-            GreenNodeDetails::Node { children, width: _ } => children,
-            _ => panic!("Unexpected token"),
-        };
+        let children = db.lookup_intern_green(self.0).children();
         let identifier = ast::TerminalIdentifierGreen(children[0]);
         identifier.identifier(db)
     }
@@ -53,10 +46,7 @@ impl GetIdentifier for ast::PathSegmentGreen {
 impl GetIdentifier for ast::ExprPathGreen {
     /// Retrieves the text of the last identifier in the path.
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        let children = match db.lookup_intern_green(self.0).details {
-            GreenNodeDetails::Node { children, width: _ } => children,
-            _ => panic!("Unexpected token"),
-        };
+        let children = db.lookup_intern_green(self.0).children();
         assert_eq!(children.len() & 1, 1, "Expected an odd number of elements in the path.");
         let segment_green = ast::PathSegmentGreen(*children.last().unwrap());
         segment_green.identifier(db)
@@ -64,12 +54,7 @@ impl GetIdentifier for ast::ExprPathGreen {
 }
 impl GetIdentifier for ast::TerminalIdentifierGreen {
     fn identifier(&self, db: &dyn SyntaxGroup) -> SmolStr {
-        match db.lookup_intern_green(self.0).details {
-            GreenNodeDetails::Token(_) => "Unexpected token".into(),
-            GreenNodeDetails::Node { children, width: _ } => {
-                TokenIdentifierGreen(children[1]).text(db)
-            }
-        }
+        self.0.children(db)[1].token_text(db).expect("Expected a token.").into()
     }
 }
 impl GetIdentifier for ast::ExprPath {

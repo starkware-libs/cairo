@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
@@ -18,7 +18,7 @@ use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use cairo_lang_semantic::plugin::SemanticPlugin;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::green::GreenInterner;
+use cairo_lang_syntax::node::green::SyntaxInterner;
 use cairo_lang_utils::Upcast;
 
 use crate::project::update_crate_roots_from_project_config;
@@ -34,7 +34,7 @@ use crate::project::update_crate_roots_from_project_config;
 )]
 pub struct RootDatabase {
     storage: salsa::Storage<RootDatabase>,
-    green_interner: Arc<RwLock<GreenInterner>>,
+    green_interner: Arc<SyntaxInterner>,
 }
 impl salsa::Database for RootDatabase {}
 impl salsa::ParallelDatabase for RootDatabase {
@@ -165,7 +165,7 @@ impl Upcast<dyn SyntaxGroup> for RootDatabase {
     }
 }
 impl HasGreenInterner for RootDatabase {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }

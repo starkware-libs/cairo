@@ -1,4 +1,3 @@
-use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::SyntaxNode;
@@ -6,7 +5,6 @@ use cairo_lang_syntax_codegen::cairo_spec::get_spec;
 use cairo_lang_syntax_codegen::spec::{Member, Node, NodeKind};
 use colored::{ColoredString, Colorize};
 use itertools::zip_eq;
-use smol_str::SmolStr;
 
 pub fn print_tree(
     db: &dyn SyntaxGroup,
@@ -91,29 +89,26 @@ impl<'a> Printer<'a> {
     ) {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
-        match green_node.details {
-            syntax::node::green::GreenNodeDetails::Token(text) => {
-                if under_top_level {
-                    self.print_token_node(
-                        field_description,
-                        indent,
-                        extra_head_indent,
-                        text,
-                        green_node.kind,
-                    )
-                }
-            }
-            syntax::node::green::GreenNodeDetails::Node { .. } => {
-                self.print_internal_node(
+        if let Some(text) = green_node.token_text() {
+            if under_top_level {
+                self.print_token_node(
                     field_description,
                     indent,
                     extra_head_indent,
-                    is_last,
-                    syntax_node,
-                    green_node.kind,
-                    under_top_level,
-                );
+                    text,
+                    green_node.kind(),
+                )
             }
+        } else {
+            self.print_internal_node(
+                field_description,
+                indent,
+                extra_head_indent,
+                is_last,
+                syntax_node,
+                green_node.kind(),
+                under_top_level,
+            );
         }
     }
 
@@ -122,7 +117,7 @@ impl<'a> Printer<'a> {
         field_description: &str,
         indent: &str,
         extra_head_indent: &str,
-        text: SmolStr,
+        text: &str,
         kind: SyntaxKind,
     ) {
         let text = if kind == SyntaxKind::TokenMissing {
@@ -132,7 +127,7 @@ impl<'a> Printer<'a> {
                 SyntaxKind::TokenWhitespace
                 | SyntaxKind::TokenNewline
                 | SyntaxKind::TokenEndOfFile => ".".to_string(),
-                _ => format!(": '{}'", self.green(self.bold(text.as_str().into()))),
+                _ => format!(": '{}'", self.green(self.bold(text.into()))),
             };
             format!("{} (kind: {:?}){token_text}", self.blue(field_description.into()), kind)
         };

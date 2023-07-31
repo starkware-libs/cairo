@@ -72,8 +72,8 @@ struct ConfigMacroHelper {
 impl ConfigMacroHelper {
     /// Traverse the syntax tree, accumulates the code without the dropped parts.
     fn traverse(&mut self, db: &dyn SyntaxGroup, syntax_node: SyntaxNode) {
-        if let Some(text) = syntax_node.text(db) {
-            self.result_code.push_str(&text);
+        if let Some(text) = syntax_node.token_text(db) {
+            self.result_code.push_str(text);
         }
         match syntax_node.kind(db) {
             SyntaxKind::ItemList => {

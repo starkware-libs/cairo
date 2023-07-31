@@ -1,158 +1,171 @@
 use cairo_lang_filesystem::span::TextWidth;
-use fxhash::FxHashMap;
-use itertools::chain;
-use smol_str::SmolStr;
+use cairo_lang_utils::interner::{InternedElement, PtrIndex, UnsizedInterner};
 
 use super::db::SyntaxGroup;
 use super::kind::SyntaxKind;
+use super::stable_ptr::{SyntaxStablePtr, SyntaxStablePtrHeader, SyntaxStablePtrId};
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum GreenNodeDetails {
-    Token(SmolStr),
-    Node { children: Vec<GreenId>, width: TextWidth },
-}
 /// Green node. Underlying untyped representation of the syntax tree.
-#[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenNode {
-    pub kind: SyntaxKind,
-    pub details: GreenNodeDetails,
-}
-impl GreenNode {
-    pub fn width(&self) -> TextWidth {
-        match &self.details {
-            GreenNodeDetails::Token(text) => TextWidth::from_str(text),
-            GreenNodeDetails::Node { width, .. } => *width,
+#[derive(Debug, Hash, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct GreenNodeHeader([u8]);
+#[allow(clippy::uninit_vec)]
+impl GreenNodeHeader {
+    pub fn new_token<'a>(
+        buffer: &'a mut Vec<u8>,
+        kind: SyntaxKind,
+        text: &str,
+    ) -> &'a GreenNodeHeader {
+        debug_assert!(kind.is_token(), "kind {:?} is not a token", kind);
+        let width = TextWidth::from_str(text).0;
+        let kind = kind as u16;
+        let total_size = 4 + 2 + text.len();
+        buffer.reserve(total_size);
+        unsafe {
+            buffer.set_len(total_size);
+            std::ptr::copy_nonoverlapping(&width as *const _ as *const u8, buffer.as_mut_ptr(), 4);
+            std::ptr::copy_nonoverlapping(
+                &kind as *const _ as *const u8,
+                buffer.as_mut_ptr().add(4),
+                2,
+            );
+            std::ptr::copy_nonoverlapping(text.as_ptr(), buffer.as_mut_ptr().add(6), text.len());
+            std::mem::transmute(&buffer[..total_size])
         }
     }
-    pub fn children(self) -> Vec<GreenId> {
-        match self.details {
-            GreenNodeDetails::Token(_text) => Vec::new(),
-            GreenNodeDetails::Node { children, .. } => children,
+    pub fn new_inner<'a>(
+        buffer: &'a mut Vec<u8>,
+        kind: SyntaxKind,
+        width: TextWidth,
+        children: &[GreenId],
+    ) -> &'a GreenNodeHeader {
+        debug_assert!(!kind.is_token(), "kind {:?} is a token", kind);
+        let width = width.0;
+        let kind = kind as u16;
+        let total_size = 4 + 4 + std::mem::size_of_val(children);
+        buffer.reserve(total_size);
+        unsafe {
+            buffer.set_len(total_size);
+            std::ptr::copy_nonoverlapping(&width as *const _ as *const u8, buffer.as_mut_ptr(), 4);
+            std::ptr::copy_nonoverlapping(
+                &kind as *const _ as *const u8,
+                buffer.as_mut_ptr().add(4),
+                2,
+            );
+            std::ptr::copy_nonoverlapping(
+                children.as_ptr() as *const u8,
+                buffer.as_mut_ptr().add(8),
+                std::mem::size_of_val(children),
+            );
+            std::mem::transmute(&buffer[..total_size])
         }
+    }
+    pub fn kind(&self) -> SyntaxKind {
+        unsafe { std::mem::transmute(self.0.as_ptr().add(4).cast::<u16>().read()) }
+    }
+    pub fn width(&self) -> TextWidth {
+        unsafe { std::mem::transmute(self.0.as_ptr().cast::<u32>().read()) }
+    }
+    pub fn children(&self) -> &[GreenId] {
+        if self.kind().is_token() {
+            &[]
+        } else {
+            let children: &[GreenId] = unsafe {
+                let children_bytes = self.0.get_unchecked(8..);
+                core::slice::from_raw_parts(
+                    children_bytes.as_ptr().cast::<GreenId>(),
+                    children_bytes.len() / std::mem::size_of::<GreenId>(),
+                )
+            };
+            children
+        }
+    }
+    pub fn token_text(&self) -> Option<&str> {
+        if self.kind().is_token() {
+            let text: &str = unsafe { std::str::from_utf8_unchecked(self.0.get_unchecked(6..)) };
+            Some(text)
+        } else {
+            None
+        }
+    }
+}
+impl InternedElement for GreenNodeHeader {
+    fn from_u8s(buf: &[u8]) -> &Self {
+        unsafe { std::mem::transmute(buf) }
+    }
+}
+pub struct GreenNode<'a>(pub &'a GreenNodeHeader);
+impl<'a> GreenNode<'a> {
+    pub fn new_token(buffer: &'a mut Vec<u8>, kind: SyntaxKind, text: &'a str) -> Self {
+        Self(GreenNodeHeader::new_token(buffer, kind, text))
+    }
+    pub fn new_inner(
+        buffer: &'a mut Vec<u8>,
+        kind: SyntaxKind,
+        width: TextWidth,
+        children: &[GreenId],
+    ) -> Self {
+        Self(GreenNodeHeader::new_inner(buffer, kind, width, children))
+    }
+    pub fn kind(&self) -> SyntaxKind {
+        self.0.kind()
+    }
+    pub fn width(&self) -> TextWidth {
+        self.0.width()
+    }
+    pub fn children(&self) -> &'a [GreenId] {
+        self.0.children()
+    }
+    pub fn token_text(&self) -> Option<&'a str> {
+        self.0.token_text()
     }
 }
 
 const INITIAL_CAPACITY: usize = 65536;
-pub struct StringInterner {
-    mapping: FxHashMap<&'static str, u32>,
-    ptrs: Vec<&'static str>,
-    buf: String,
-    bufs: Vec<String>,
+
+pub struct SyntaxInterner {
+    green_interner: UnsizedInterner<GreenNodeHeader>,
+    stable_interner: UnsizedInterner<SyntaxStablePtrHeader>,
 }
-impl StringInterner {
+impl SyntaxInterner {
     pub fn new() -> Self {
         Self {
-            mapping: FxHashMap::default(),
-            ptrs: Vec::with_capacity(INITIAL_CAPACITY),
-            buf: String::with_capacity(INITIAL_CAPACITY),
-            bufs: Vec::new(),
+            green_interner: UnsizedInterner::new(INITIAL_CAPACITY),
+            stable_interner: UnsizedInterner::new(INITIAL_CAPACITY),
         }
     }
-    pub fn intern(&mut self, text: &str) -> u32 {
-        if let Some(ptr) = self.mapping.get(text) {
-            return *ptr;
-        }
-        let current_capacity = self.buf.capacity();
-        if self.buf.len() + text.len() > current_capacity {
-            let capacity = (std::cmp::max(current_capacity, text.len()) + 1).next_power_of_two();
-            let new_buf = String::with_capacity(capacity);
-            self.bufs.push(std::mem::replace(&mut self.buf, new_buf));
-        };
-        let start = self.buf.len();
-        self.buf.push_str(text);
-        let ptr = unsafe { &*(&self.buf[start..] as *const str) };
-        let id = self.ptrs.len() as u32;
-        self.mapping.insert(ptr, id);
-        self.ptrs.push(ptr);
-        id
+    pub fn intern_green(&self, node: &GreenNode<'_>) -> GreenId {
+        GreenId(self.green_interner.intern(node.0))
     }
-
-    pub fn lookup(&self, ptr: u32) -> &'static str {
-        self.ptrs[ptr as usize]
+    pub fn lookup_green(&self, id: GreenId) -> GreenNode<'static> {
+        GreenNode(self.green_interner.lookup(id.0))
+    }
+    pub fn intern_stable(&self, ptr: &SyntaxStablePtr<'_>) -> SyntaxStablePtrId {
+        SyntaxStablePtrId(self.stable_interner.intern(ptr.0))
+    }
+    pub fn lookup_stable(&self, id: SyntaxStablePtrId) -> SyntaxStablePtr<'static> {
+        SyntaxStablePtr(self.stable_interner.lookup(id.0))
     }
 }
-impl Default for StringInterner {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-pub struct GreenInterner {
-    string_interner: StringInterner,
-    mapping: FxHashMap<&'static [u32], u32>,
-    ptrs: Vec<&'static [u32]>,
-    buf: Vec<u32>,
-    bufs: Vec<Vec<u32>>,
-}
-impl GreenInterner {
-    pub fn new() -> Self {
-        Self {
-            string_interner: StringInterner::new(),
-            mapping: FxHashMap::default(),
-            ptrs: Vec::with_capacity(INITIAL_CAPACITY),
-            buf: Vec::with_capacity(INITIAL_CAPACITY),
-            bufs: Vec::new(),
-        }
-    }
-    pub fn intern(&mut self, node: &GreenNode) -> GreenId {
-        let vec = match &node.details {
-            GreenNodeDetails::Token(s) => vec![node.kind as u32, self.string_interner.intern(s)],
-            GreenNodeDetails::Node { children, width } => chain!(
-                [node.kind as u32 + (1 << 31), width.0, children.len() as u32,],
-                children.iter().map(|&id| id.0),
-            )
-            .collect(),
-        };
-        if let Some(ptr) = self.mapping.get(&vec[..]) {
-            return GreenId(*ptr);
-        }
-        let current_capacity = self.buf.capacity();
-        if self.buf.len() + vec.len() > current_capacity {
-            let capacity = (std::cmp::max(current_capacity, vec.len()) + 1).next_power_of_two();
-            let new_buf = Vec::with_capacity(capacity);
-            self.bufs.push(std::mem::replace(&mut self.buf, new_buf));
-        };
-        let start = self.buf.len();
-        self.buf.extend_from_slice(&vec);
-        let ptr = unsafe { &*(&self.buf[start..] as *const [u32]) };
-        let id = self.ptrs.len() as u32;
-        self.mapping.insert(ptr, id);
-        self.ptrs.push(ptr);
-        GreenId(id)
-    }
-
-    pub fn lookup(&self, ptr: GreenId) -> GreenNode {
-        let res = self.ptrs[ptr.0 as usize];
-        if res[0] & (1 << 31) == 0 {
-            return GreenNode {
-                kind: unsafe { std::mem::transmute(res[0] as u16) },
-                details: GreenNodeDetails::Token(self.string_interner.lookup(res[1]).into()),
-            };
-        }
-        let width = TextWidth(res[1]);
-        let children_len = res[2] as usize;
-        let children = res[3..].iter().take(children_len).copied().map(GreenId);
-        let children = children.collect();
-        GreenNode {
-            kind: unsafe { std::mem::transmute((res[0] & !(1 << 31)) as u16) },
-            details: GreenNodeDetails::Node { children, width },
-        }
-    }
-}
-impl Default for GreenInterner {
+impl Default for SyntaxInterner {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
-pub struct GreenId(u32);
+pub struct GreenId(PtrIndex);
 impl GreenId {
-    /// Returns the width of the node of this green id.
+    pub fn kind(&self, db: &dyn SyntaxGroup) -> SyntaxKind {
+        db.lookup_intern_green(*self).kind()
+    }
     pub fn width(&self, db: &dyn SyntaxGroup) -> TextWidth {
-        match db.lookup_intern_green(*self).details {
-            super::green::GreenNodeDetails::Token(text) => TextWidth::from_str(&text),
-            super::green::GreenNodeDetails::Node { width, .. } => width,
-        }
+        db.lookup_intern_green(*self).width()
+    }
+    pub fn children(&self, db: &dyn SyntaxGroup) -> &'static [GreenId] {
+        db.lookup_intern_green(*self).children()
+    }
+    pub fn token_text(&self, db: &dyn SyntaxGroup) -> Option<&'static str> {
+        db.lookup_intern_green(*self).token_text()
     }
 }

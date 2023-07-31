@@ -10,7 +10,6 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::Token;
-use smol_str::SmolStr;
 
 pub struct Lexer<'a> {
     db: &'a dyn SyntaxGroup,
@@ -93,19 +92,19 @@ impl<'a> Lexer<'a> {
     /// Assumes the next character is one of [' ', '\r', '\t'].
     fn match_trivium_whitespace(&mut self) -> TriviumGreen {
         self.take_while(|s| matches!(s, ' ' | '\r' | '\t'));
-        TokenWhitespace::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenWhitespace::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next character '/n'.
     fn match_trivium_newline(&mut self) -> TriviumGreen {
         self.take();
-        TokenNewline::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenNewline::new_green(self.db, self.consume_span()).into()
     }
 
     /// Assumes the next 2 characters are "//".
     fn match_trivium_single_line_comment(&mut self) -> TriviumGreen {
         self.take_while(|c| c != '\n');
-        TokenSingleLineComment::new_green(self.db, SmolStr::from(self.consume_span())).into()
+        TokenSingleLineComment::new_green(self.db, self.consume_span()).into()
     }
 
     /// Token matchers.
@@ -278,7 +277,7 @@ impl<'a> Lexer<'a> {
             TokenKind::EndOfFile
         };
 
-        let text = SmolStr::from(self.consume_span());
+        let text = self.consume_span().to_string();
         let trailing_trivia = self.match_trivia(false);
         let terminal_kind = token_kind_to_terminal_syntax_kind(kind);
 
@@ -290,7 +289,7 @@ impl<'a> Lexer<'a> {
 /// Output terminal emitted by the lexer.
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LexerTerminal {
-    pub text: SmolStr,
+    pub text: String,
     /// The kind of the inner token of this terminal.
     pub kind: SyntaxKind,
     pub leading_trivia: Vec<TriviumGreen>,

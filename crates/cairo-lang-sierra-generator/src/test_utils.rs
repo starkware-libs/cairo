@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::ModuleId;
@@ -15,7 +15,7 @@ use cairo_lang_semantic::test_utils::setup_test_crate;
 use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{HasGreenInterner, SyntaxDatabase, SyntaxGroup};
-use cairo_lang_syntax::node::green::GreenInterner;
+use cairo_lang_syntax::node::green::SyntaxInterner;
 use cairo_lang_utils::{Upcast, UpcastMut};
 use salsa::{InternId, InternKey};
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -36,7 +36,7 @@ use crate::utils::{jump_statement, return_statement, simple_statement};
 )]
 pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
-    green_interner: RwLock<GreenInterner>,
+    green_interner: SyntaxInterner,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
 impl Default for SierraGenDatabaseForTesting {
@@ -70,7 +70,7 @@ impl Upcast<dyn SyntaxGroup> for SierraGenDatabaseForTesting {
     }
 }
 impl HasGreenInterner for SierraGenDatabaseForTesting {
-    fn get_interner(&self) -> &RwLock<GreenInterner> {
+    fn get_interner(&self) -> &SyntaxInterner {
         &self.green_interner
     }
 }
