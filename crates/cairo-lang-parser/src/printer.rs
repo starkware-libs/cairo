@@ -27,7 +27,8 @@ pub fn print_partial_tree(
     print_trivia: bool,
 ) -> String {
     let mut printer = Printer::new_partial(db, top_level_kind, ignored_kinds, print_trivia);
-    printer.print_tree("root", syntax_root, "", true, false);
+    let under_top_level = printer.top_level_kind.is_none();
+    printer.print_tree("root", syntax_root, "", true, under_top_level);
     printer.result
 }
 
@@ -37,6 +38,7 @@ struct Printer<'a> {
     print_colors: bool,
     print_trivia: bool,
     /// The highest SyntaxKind that is interesting. All other kinds, if not under it, are ignored.
+    /// If None, the whole tree is printed.
     top_level_kind: Option<String>,
     /// Syntax kinds to ignore when printing. In this context, "ignore" means printing the nodes
     /// themselves, but not their children.
@@ -68,7 +70,11 @@ impl<'a> Printer<'a> {
             spec: get_spec(),
             print_colors: false,
             print_trivia,
-            top_level_kind: Some(top_level_kind.to_string()),
+            top_level_kind: if top_level_kind.trim().is_empty() {
+                None
+            } else {
+                Some(top_level_kind.to_string())
+            },
             ignored_kinds: ignored_kinds.into_iter().map(|x| x.to_string()).collect(),
             result: String::new(),
         }

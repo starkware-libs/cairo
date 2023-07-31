@@ -263,7 +263,7 @@ pub fn fix_parser_tests() {
 /// Inputs:
 /// - cairo_code
 /// - top_level_kind - the highest SyntaxKind that is interesting. All other kinds, if not under it,
-///   are ignored.
+///   are ignored. If empty, the whole tree is printed.
 /// - ignored_kinds: Syntax kinds to ignore when printing. In this context, "ignore" means printing
 ///   the nodes themselves, but not their children.
 /// Outputs:
