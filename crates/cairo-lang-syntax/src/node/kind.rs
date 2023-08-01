@@ -3,8 +3,6 @@ use core::fmt;
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SyntaxKind {
     Trivia,
-    LiteralNumber,
-    OptionTerminalMinusEmpty,
     ExprList,
     Arg,
     ArgClauseNamed,
@@ -122,8 +120,8 @@ pub enum SyntaxKind {
     GenericParamImpl,
     TokenIdentifier,
     TerminalIdentifier,
-    TokenNumber,
-    TerminalNumber,
+    TokenLiteralNumber,
+    TerminalLiteralNumber,
     TokenShortString,
     TerminalShortString,
     TokenAs,
@@ -278,7 +276,7 @@ impl SyntaxKind {
         matches!(
             *self,
             SyntaxKind::TokenIdentifier
-                | SyntaxKind::TokenNumber
+                | SyntaxKind::TokenLiteralNumber
                 | SyntaxKind::TokenShortString
                 | SyntaxKind::TokenAs
                 | SyntaxKind::TokenConst
@@ -361,7 +359,7 @@ impl SyntaxKind {
         matches!(
             *self,
             SyntaxKind::TerminalIdentifier
-                | SyntaxKind::TerminalNumber
+                | SyntaxKind::TerminalLiteralNumber
                 | SyntaxKind::TerminalShortString
                 | SyntaxKind::TerminalAs
                 | SyntaxKind::TerminalConst

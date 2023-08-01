@@ -614,13 +614,32 @@ pub fn get_const_libfunc_name_by_type(db: &dyn SemanticGroup, ty: TypeId) -> Str
     }
 }
 
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub enum LiteralError {
+    InvalidType(TypeId),
+    OutOfRange(TypeId),
+}
+impl LiteralError {
+    pub fn format(&self, db: &dyn SemanticGroup) -> String {
+        match self {
+            Self::OutOfRange(ty) => format!(
+                "The value does not fit within the range of type {}.",
+                ty.format(db.upcast())
+            ),
+            Self::InvalidType(ty) => {
+                format!("A literal of type {} cannot be created.", ty.format(db.upcast()))
+            }
+        }
+    }
+}
+
 /// Validates that a given type is valid for a literal and that the value fits the range of the
 /// specific type.
 pub fn validate_literal(
     db: &dyn SemanticGroup,
     ty: TypeId,
     value: BigInt,
-) -> Result<(), SemanticDiagnosticKind> {
+) -> Result<(), LiteralError> {
     let is_out_of_range = if ty == core_felt252_ty(db) {
         value.abs()
             > BigInt::from_str_radix(
@@ -651,7 +670,7 @@ pub fn validate_literal(
     } else if ty == get_core_ty_by_name(db, "i128".into(), vec![]) {
         value.to_i128().is_none()
     } else {
-        return Err(SemanticDiagnosticKind::NoLiteralFunctionFound);
+        return Err(LiteralError::InvalidType(ty));
     };
-    if is_out_of_range { Err(SemanticDiagnosticKind::LiteralOutOfRange { ty }) } else { Ok(()) }
+    if is_out_of_range { Err(LiteralError::OutOfRange(ty)) } else { Ok(()) }
 }

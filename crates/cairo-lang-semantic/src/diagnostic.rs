@@ -16,6 +16,7 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use itertools::Itertools;
 use smol_str::SmolStr;
 
+use crate::corelib::LiteralError;
 use crate::db::SemanticGroup;
 use crate::expr::inference::InferenceError;
 use crate::items::imp::UninferredImpl;
@@ -111,14 +112,9 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
             SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
+            SemanticDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
             SemanticDiagnosticKind::LogicalOperatorsNotSupported => {
                 "Logical operators are not supported yet.".into()
-            }
-            SemanticDiagnosticKind::NoLiteralFunctionFound => {
-                "A literal with this type cannot be created.".into()
-            }
-            SemanticDiagnosticKind::LiteralOutOfRange { ty } => {
-                format!("The value does not fit within the range of type {}.", ty.format(db))
             }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
@@ -646,10 +642,7 @@ pub enum SemanticDiagnosticKind {
     UnknownType,
     UnknownStruct,
     UnknownEnum,
-    NoLiteralFunctionFound,
-    LiteralOutOfRange {
-        ty: semantic::TypeId,
-    },
+    LiteralError(LiteralError),
     NotAVariant,
     NotAStruct,
     NotAType,
