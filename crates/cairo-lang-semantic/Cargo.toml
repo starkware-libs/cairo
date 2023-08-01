@@ -10,6 +10,7 @@ description = "Cairo semantic model."
 testing = []
 
 [dependencies]
+cairo-felt.workspace = true
 cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.1.0-rc0" }
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.1.0-rc0" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.1.0-rc0" }
@@ -24,6 +25,7 @@ log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 salsa.workspace = true
+sha3.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]

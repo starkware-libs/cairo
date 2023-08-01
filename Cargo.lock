@@ -757,6 +757,7 @@ name = "cairo-lang-semantic"
 version = "2.1.0-rc0"
 dependencies = [
  "assert_matches",
+ "cairo-felt",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
@@ -776,6 +777,7 @@ dependencies = [
  "num-traits 0.2.15",
  "pretty_assertions",
  "salsa",
+ "sha3",
  "smol_str",
  "test-case",
  "test-log",
