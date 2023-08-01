@@ -133,7 +133,7 @@ fn some_func()
 
 //! > ==========================================================================
 
-//! > Test recursive consteval_int! 
+//! > Test recursive consteval_int!
 
 //! > test_runner_name
 test_expand_plugin
@@ -250,3 +250,63 @@ fn foo() {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test selector! macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let s = selector!('bar');
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let s = 0x35cd288e3694b535549c3af56ad805c149f92961bf84a1c647f7d86fc2431b4;
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test incorrect use of selector! macro
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+fn foo() {
+    let a = selector!(20);
+
+    let b = selector!('foo', 'bar');
+
+    let c = selector!['foo'];
+}
+
+//! > generated_cairo_code
+fn foo() {
+    let a = selector!(20);
+
+    let b = selector!('foo', 'bar');
+
+    let c = selector!['foo'];
+}
+
+//! > expected_diagnostics
+error: selector macro argument must be a short string
+ --> dummy_file.cairo:2:23
+    let a = selector!(20);
+                      ^^
+
+error: selector macro must have a single argument
+ --> dummy_file.cairo:4:23
+    let b = selector!('foo', 'bar');
+                      ^**********^
+
+error: Macro selector does not support this bracket type
+ --> dummy_file.cairo:6:13
+    let c = selector!['foo'];
+            ^**************^
