@@ -23,7 +23,7 @@ use cairo_lang_utils::bigint::BigUintAsHex;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use num_bigint::{BigInt, BigUint, ToBigInt};
-use num_traits::ToPrimitive;
+use num_traits::{Signed, ToPrimitive};
 use once_cell::sync::Lazy;
 use smol_str::SmolStr;
 use thiserror::Error;
@@ -570,13 +570,66 @@ enum_serde! {
     }
 }
 
-enum_serde! {
-    GenericArg {
-        UserType(UserTypeId) = 0,
-        Type(ConcreteTypeId) = 1,
-        Value(BigInt) = 2,
-        UserFunc(FunctionId) = 3,
-        Libfunc(ConcreteLibfuncId) = 4,
+/// Custom serialization for `GenericArg` to support negatives in `GenericArg::Value`.
+impl Felt252Serde for GenericArg {
+    fn serialize(&self, output: &mut Vec<BigUintAsHex>) -> Result<(), Felt252SerdeError> {
+        match self {
+            GenericArg::UserType(id) => {
+                0usize.serialize(output)?;
+                id.serialize(output)
+            }
+            GenericArg::Type(id) => {
+                1usize.serialize(output)?;
+                id.serialize(output)
+            }
+            GenericArg::Value(value) if !value.is_negative() => {
+                2usize.serialize(output)?;
+                value.serialize(output)
+            }
+            GenericArg::UserFunc(id) => {
+                3usize.serialize(output)?;
+                id.serialize(output)
+            }
+            GenericArg::Libfunc(id) => {
+                4usize.serialize(output)?;
+                id.serialize(output)
+            }
+            GenericArg::Value(value) => {
+                5usize.serialize(output)?;
+                (-value).serialize(output)
+            }
+        }
+    }
+
+    fn deserialize(input: &[BigUintAsHex]) -> Result<(Self, &[BigUintAsHex]), Felt252SerdeError> {
+        let (idx, input) = usize::deserialize(input)?;
+        Ok(match idx {
+            0 => {
+                let (id, input) = UserTypeId::deserialize(input)?;
+                (Self::UserType(id), input)
+            }
+            1 => {
+                let (id, input) = ConcreteTypeId::deserialize(input)?;
+                (Self::Type(id), input)
+            }
+            2 => {
+                let (value, input) = BigInt::deserialize(input)?;
+                (Self::Value(value), input)
+            }
+            3 => {
+                let (id, input) = FunctionId::deserialize(input)?;
+                (Self::UserFunc(id), input)
+            }
+            4 => {
+                let (id, input) = ConcreteLibfuncId::deserialize(input)?;
+                (Self::Libfunc(id), input)
+            }
+            5 => {
+                let (value, input) = BigInt::deserialize(input)?;
+                (Self::Value(-value), input)
+            }
+            _ => return Err(Felt252SerdeError::InvalidInputForDeserialization),
+        })
     }
 }
 

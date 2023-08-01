@@ -18,7 +18,7 @@ mod test_contract {
     }
 
     fn internal_func() -> felt252 {
-        1
+        -1
     }
 
     #[external(v0)]
