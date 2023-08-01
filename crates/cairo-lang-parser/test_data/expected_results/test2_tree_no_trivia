@@ -36,13 +36,11 @@
     │   │       │   │   ├── type_clause (kind: OptionTypeClauseEmpty) []
     │   │       │   │   ├── eq (kind: TokenEq): '='
     │   │       │   │   ├── rhs (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: LiteralNumber)
-    │   │       │   │   │   │   ├── sign (kind: TokenMinus): '-'
-    │   │       │   │   │   │   └── number (kind: TokenNumber): '5'
+    │   │       │   │   │   ├── lhs (kind: ExprUnary)
+    │   │       │   │   │   │   ├── op (kind: TokenMinus): '-'
+    │   │       │   │   │   │   └── expr (kind: TokenLiteralNumber): '5'
     │   │       │   │   │   ├── op (kind: TokenPlus): '+'
-    │   │       │   │   │   └── rhs (kind: LiteralNumber)
-    │   │       │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │       └── number (kind: TokenNumber): '3'
+    │   │       │   │   │   └── rhs (kind: TokenLiteralNumber): '3'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #1 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
@@ -61,18 +59,12 @@
     │   │       │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'x'
     │   │       │   │   │   │   ├── op (kind: TokenMul): '*'
-    │   │       │   │   │   │   └── rhs (kind: LiteralNumber)
-    │   │       │   │   │   │       ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │   │       └── number (kind: TokenNumber): '2'
+    │   │       │   │   │   │   └── rhs (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   ├── op (kind: TokenPlus): '+'
     │   │       │   │   │   └── rhs (kind: ExprBinary)
-    │   │       │   │   │       ├── lhs (kind: LiteralNumber)
-    │   │       │   │   │       │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │       │   └── number (kind: TokenNumber): '3'
+    │   │       │   │   │       ├── lhs (kind: TokenLiteralNumber): '3'
     │   │       │   │   │       ├── op (kind: TokenMul): '*'
-    │   │       │   │   │       └── rhs (kind: LiteralNumber)
-    │   │       │   │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │           └── number (kind: TokenNumber): '5'
+    │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
     │   │       │   │   ├── let_kw (kind: TokenLet): 'let'
@@ -102,9 +94,7 @@
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #4 (kind: StatementExpr)
     │   │       │   │   ├── expr (kind: ExprBinary)
-    │   │       │   │   │   ├── lhs (kind: LiteralNumber)
-    │   │       │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │   │   └── number (kind: TokenNumber): '5'
+    │   │       │   │   │   ├── lhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   │   ├── op (kind: TokenPlus): '+'
     │   │       │   │   │   └── rhs (kind: ExprStructCtorCall)
     │   │       │   │   │       ├── path (kind: ExprPath)
@@ -117,9 +107,7 @@
     │   │       │   │   │           │   │   ├── identifier (kind: TokenIdentifier): 'a'
     │   │       │   │   │           │   │   └── arg_expr (kind: StructArgExpr)
     │   │       │   │   │           │   │       ├── colon (kind: TokenColon): ':'
-    │   │       │   │   │           │   │       └── expr (kind: LiteralNumber)
-    │   │       │   │   │           │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │           │   │           └── number (kind: TokenNumber): '5'
+    │   │       │   │   │           │   │       └── expr (kind: TokenLiteralNumber): '5'
     │   │       │   │   │           │   ├── separator #0 (kind: TokenComma): ','
     │   │       │   │   │           │   └── item #1 (kind: StructArgSingle)
     │   │       │   │   │           │       ├── identifier (kind: TokenIdentifier): 'b'
@@ -151,9 +139,7 @@
     │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'df'
     │   │       │   │   │       ├── op (kind: TokenEqEq): '=='
-    │   │       │   │   │       └── rhs (kind: LiteralNumber)
-    │   │       │   │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │   │   │           └── number (kind: TokenNumber): '6'
+    │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '6'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #6 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
@@ -294,16 +280,12 @@
     │           │   │       │       │               │   ├── item #0 (kind: Arg)
     │           │   │       │       │               │   │   ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │           │   │       │       │               │   │       └── value (kind: LiteralNumber)
-    │           │   │       │       │               │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │           │   │       │       │               │   │           └── number (kind: TokenNumber): '1'
+    │           │   │       │       │               │   │       └── value (kind: TokenLiteralNumber): '1'
     │           │   │       │       │               │   ├── separator #0 (kind: TokenComma): ','
     │           │   │       │       │               │   └── item #1 (kind: Arg)
     │           │   │       │       │               │       ├── modifiers (kind: ModifierList) []
     │           │   │       │       │               │       └── arg_clause (kind: ArgClauseUnnamed)
-    │           │   │       │       │               │           └── value (kind: LiteralNumber)
-    │           │   │       │       │               │               ├── sign (kind: OptionTerminalMinusEmpty) []
-    │           │   │       │       │               │               └── number (kind: TokenNumber): '3'
+    │           │   │       │       │               │           └── value (kind: TokenLiteralNumber): '3'
     │           │   │       │       │               └── rparen (kind: TokenRParen): ')'
     │           │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │           │   │       └── rbrace (kind: TokenRBrace): '}'

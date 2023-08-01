@@ -1128,8 +1128,8 @@ fn test_i8_operators() {
     assert_eq(@0x7f_felt252.try_into().unwrap(), @0x7f_i8, '0x7f is not i8');
     let v: Option<i8> = 0x80_felt252.try_into();
     assert(v.is_none(), '0x80 is i8');
-    assert_eq(@-0x80_felt252.try_into().unwrap(), @-0x80_i8, '-0x80 is not i8');
-    let v: Option<i8> = -0x81_felt252.try_into();
+    assert_eq(@(-0x80_felt252).try_into().unwrap(), @-0x80_i8, '-0x80 is not i8');
+    let v: Option<i8> = (-0x81_felt252).try_into();
     assert(v.is_none(), '-0x81 is i8');
     assert_eq(@(1_i8 + 3_i8), @4_i8, '1 + 3 == 4');
     assert_eq(@(3_i8 + 6_i8), @9_i8, '3 + 6 == 9');
@@ -1231,8 +1231,8 @@ fn test_i16_operators() {
     assert_eq(@0x7fff_felt252.try_into().unwrap(), @0x7fff_i16, '0x7fff is not i16');
     let v: Option<i16> = 0x8000_felt252.try_into();
     assert(v.is_none(), '0x8000 is i16');
-    assert_eq(@-0x8000_felt252.try_into().unwrap(), @-0x8000_i16, '-0x8000 is not i16');
-    let v: Option<i16> = -0x8001_felt252.try_into();
+    assert_eq(@(-0x8000_felt252).try_into().unwrap(), @-0x8000_i16, '-0x8000 is not i16');
+    let v: Option<i16> = (-0x8001_felt252).try_into();
     assert(v.is_none(), '-0x8001 is i16');
     assert_eq(@(1_i16 + 3_i16), @4_i16, '1 + 3 == 4');
     assert_eq(@(3_i16 + 6_i16), @9_i16, '3 + 6 == 9');
@@ -1334,8 +1334,8 @@ fn test_i32_operators() {
     assert_eq(@0x7fffffff_felt252.try_into().unwrap(), @0x7fffffff_i32, '0x7fffffff is not i32');
     let v: Option<i32> = 0x80000000_felt252.try_into();
     assert(v.is_none(), '0x80000000 is i32');
-    assert_eq(@-0x80000000_felt252.try_into().unwrap(), @-0x80000000_i32, '-0x8000 is not i32');
-    let v: Option<i32> = -0x80000001_felt252.try_into();
+    assert_eq(@(-0x80000000_felt252).try_into().unwrap(), @-0x80000000_i32, '-0x8000 is not i32');
+    let v: Option<i32> = (-0x80000001_felt252).try_into();
     assert(v.is_none(), '-0x80000001 is i32');
     assert_eq(@(1_i32 + 3_i32), @4_i32, '1 + 3 == 4');
     assert_eq(@(3_i32 + 6_i32), @9_i32, '3 + 6 == 9');
@@ -1442,7 +1442,7 @@ fn test_i64_operators() {
     let v: Option<i64> = 0x8000000000000000_felt252.try_into();
     assert(v.is_none(), '0x8000000000000000 is i64');
     assert_eq(
-        @-0x8000000000000000_felt252.try_into().unwrap(),
+        @(-0x8000000000000000_felt252).try_into().unwrap(),
         @-0x8000000000000000_i64,
         '-0x8000000000000000 is not i64'
     );
@@ -1553,7 +1553,7 @@ fn test_i128_operators() {
     let v: Option<i128> = 0x80000000000000000000000000000000_felt252.try_into();
     assert(v.is_none(), '0x80..0 is i128');
     assert_eq(
-        @-0x80000000000000000000000000000000_felt252.try_into().unwrap(),
+        @(-0x80000000000000000000000000000000_felt252).try_into().unwrap(),
         @-0x80000000000000000000000000000000_i128,
         '-0x80..0 is not i128'
     );

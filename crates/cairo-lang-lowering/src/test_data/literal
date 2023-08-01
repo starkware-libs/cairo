@@ -1,0 +1,63 @@
+//! > Literal value out of range.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+    let a = 256_u8;
+    let a = 65536_u16;
+    let a = 4294967296_u32;
+    let b = 18446744073709551616_u64;
+    let c = 340282366920938463463374607431768211456_u128;
+    let d = 0x800000000000011000000000000000000000000000000000000000000000001;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:2:13
+    let a = 256_u8;
+            ^****^
+
+//! > lowering_flat
+Parameters:
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Literal short string out of range.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo() {
+    let a = 'aa'_u8;
+    let a = 'aba'_u16;
+    let b = 'abcda'_u32;
+    let b = 'abcdabcda'_u64;
+    let c = 'abcdabcdabcdabcda'_u128;
+    let d = 'abcdabcdabcdabcdabcdabcdabcdabcd';
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > lowering_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:2:13
+    let a = 'aa'_u8;
+            ^*****^
+
+//! > lowering_flat
+Parameters:
+
+//! > semantic_diagnostics
