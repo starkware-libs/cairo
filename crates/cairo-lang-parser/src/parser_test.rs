@@ -309,7 +309,7 @@ cairo_lang_test_utils::test_file_test!(
     diagnostic,
     "src/parser_test_data",
     {
-        exprs: "exprs",
+        expr_diagnostics: "expr_diagnostics",
         enum_diagnostics: "enum_diagnostics",
         fn_: "fn",
         if_: "if",
@@ -332,6 +332,7 @@ cairo_lang_test_utils::test_file_test!(
     {
         constant: "constant",
         enum_: "enum",
+        expr: "expr",
         loop_: "loop",
         item_free_function: "item_free_function",
         function_signature: "function_signature",
