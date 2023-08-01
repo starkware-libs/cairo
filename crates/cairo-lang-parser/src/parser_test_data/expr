@@ -18,13 +18,11 @@ StatementExpr
 //! > expected_tree
 └── Top level kind: StatementExpr
     ├── expr (kind: ExprBinary)
-    │   ├── lhs (kind: LiteralNumber)
-    │   │   ├── sign (kind: TokenMinus): '-'
-    │   │   └── number (kind: TokenNumber): '3'
+    │   ├── lhs (kind: ExprUnary)
+    │   │   ├── op (kind: TokenMinus): '-'
+    │   │   └── expr (kind: TokenLiteralNumber): '3'
     │   ├── op (kind: TokenMul): '*'
-    │   └── rhs (kind: LiteralNumber)
-    │       ├── sign (kind: OptionTerminalMinusEmpty) []
-    │       └── number (kind: TokenNumber): '5'
+    │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
 
 //! > ==========================================================================
@@ -48,14 +46,12 @@ StatementExpr
 
 //! > expected_tree
 └── Top level kind: StatementExpr
-    ├── expr (kind: ExprUnary)
-    │   ├── op (kind: TokenMinus): '-'
-    │   └── expr (kind: ExprBinary)
-    │       ├── lhs (kind: ExprPath)
-    │       │   └── item #0 (kind: PathSegmentSimple)
-    │       │       └── ident (kind: TokenIdentifier): 'a'
-    │       ├── op (kind: TokenMul): '*'
-    │       └── rhs (kind: LiteralNumber)
-    │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │           └── number (kind: TokenNumber): '5'
+    ├── expr (kind: ExprBinary)
+    │   ├── lhs (kind: ExprUnary)
+    │   │   ├── op (kind: TokenMinus): '-'
+    │   │   └── expr (kind: ExprPath)
+    │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │           └── ident (kind: TokenIdentifier): 'a'
+    │   ├── op (kind: TokenMul): '*'
+    │   └── rhs (kind: TokenLiteralNumber): '5'
     └── semicolon (kind: OptionTerminalSemicolonEmpty) []
