@@ -91,10 +91,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 true
             }
             SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
-                matches!(
-                    grandparent_kind(db, self),
-                    Some(SyntaxKind::ExprUnary | SyntaxKind::LiteralNumber)
-                )
+                matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
             }
             SyntaxKind::TokenLT
                 if matches!(
@@ -424,10 +421,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     ))
                 }
                 SyntaxKind::TerminalMinus
-                    if !matches!(
-                        parent_kind(db, self),
-                        Some(SyntaxKind::ExprUnary | SyntaxKind::LiteralNumber)
-                    ) =>
+                    if parent_kind(db, self) != Some(SyntaxKind::ExprUnary) =>
                 {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,

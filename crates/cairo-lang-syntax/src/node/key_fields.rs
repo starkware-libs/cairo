@@ -7,12 +7,6 @@ use super::kind::SyntaxKind;
 pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> {
     match kind {
         SyntaxKind::Trivia => vec![],
-        SyntaxKind::LiteralNumber => {
-            vec![]
-        }
-        SyntaxKind::OptionTerminalMinusEmpty => {
-            vec![]
-        }
         SyntaxKind::ExprList => vec![],
         SyntaxKind::Arg => {
             vec![]
@@ -322,8 +316,8 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalIdentifier => {
             vec![]
         }
-        SyntaxKind::TokenNumber => vec![],
-        SyntaxKind::TerminalNumber => {
+        SyntaxKind::TokenLiteralNumber => vec![],
+        SyntaxKind::TerminalLiteralNumber => {
             vec![]
         }
         SyntaxKind::TokenShortString => vec![],

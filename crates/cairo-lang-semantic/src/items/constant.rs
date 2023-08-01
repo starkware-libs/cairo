@@ -73,8 +73,11 @@ pub fn priv_constant_semantic_data(
 
     // Check that the expression is a literal.
     if let Expr::Literal(value) = &value.expr {
-        if let Err(kind) = validate_literal(db, const_type, value.value.clone()) {
-            ctx.diagnostics.report(&const_ast.value(syntax_db), kind);
+        if let Err(err) = validate_literal(db, const_type, value.value.clone()) {
+            ctx.diagnostics.report(
+                &const_ast.value(syntax_db),
+                crate::diagnostic::SemanticDiagnosticKind::LiteralError(err),
+            );
         }
     } else {
         ctx.diagnostics.report(
