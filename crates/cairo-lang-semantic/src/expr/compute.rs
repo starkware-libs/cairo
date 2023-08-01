@@ -38,7 +38,7 @@ use super::pattern::{
 use crate::corelib::{
     core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
     never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
-    unwrap_error_propagation_type, validate_literal,
+    unwrap_error_propagation_type,
 };
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
@@ -689,19 +689,9 @@ pub fn compute_root_expr(
 fn infer_all(ctx: &mut ComputationContext<'_>) -> Maybe<()> {
     for (_id, expr) in ctx.exprs.iter_mut() {
         *expr = ctx.resolver.inference().rewrite(expr.clone()).no_err();
-        if let Expr::Literal(expr) = expr {
-            validate_literal(ctx.db, expr.ty, expr.value.clone())
-                .map_err(|err| ctx.diagnostics.report_by_ptr(expr.stable_ptr.untyped(), err))
-                .ok();
-        }
     }
     for (_id, pattern) in ctx.patterns.iter_mut() {
         *pattern = ctx.resolver.inference().rewrite(pattern.clone()).no_err();
-        if let Pattern::Literal(pattern) = pattern {
-            validate_literal(ctx.db, pattern.literal.ty, pattern.literal.value.clone())
-                .map_err(|err| ctx.diagnostics.report_by_ptr(pattern.stable_ptr.untyped(), err))
-                .ok();
-        }
     }
     for (_id, stmt) in ctx.statements.iter_mut() {
         *stmt = ctx.resolver.inference().rewrite(stmt.clone()).no_err();
@@ -1474,7 +1464,7 @@ fn get_tail_expression(
 /// Creates the semantic model of a literal expression from its AST.
 fn literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
-    literal_syntax: &ast::LiteralNumber,
+    literal_syntax: &ast::TerminalLiteralNumber,
 ) -> Maybe<ExprLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();

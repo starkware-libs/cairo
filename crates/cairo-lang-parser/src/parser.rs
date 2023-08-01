@@ -827,7 +827,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Returns a GreenId of a node with ExprPath, ExprFunctionCall, ExprStructCtorCall,
-    /// ExprParenthesized, ExprTuple, LiteralNumber or ExprUnary kind, or None if such an expression
+    /// ExprParenthesized, ExprTuple or ExprUnary kind, or None if such an expression
     /// can't be parsed.
     ///
     /// `lbrace_allowed` - See [LbraceAllowed].
@@ -835,18 +835,7 @@ impl<'a> Parser<'a> {
         let Some(precedence) = get_unary_operator_precedence(self.peek().kind) else {
             return self.try_parse_atom(lbrace_allowed);
         };
-        let op = if self.peek().kind == SyntaxKind::TerminalMinus {
-            let minus = self.take::<TerminalMinus>();
-            if self.peek().kind == SyntaxKind::TerminalNumber {
-                return Some(
-                    LiteralNumber::new_green(self.db, minus.into(), self.take::<TerminalNumber>())
-                        .into(),
-                );
-            }
-            minus.into()
-        } else {
-            self.expect_unary_operator()
-        };
+        let op = self.expect_unary_operator();
         let expr = self.parse_expr_limited(precedence, lbrace_allowed);
         Some(ExprUnary::new_green(self.db, op, expr).into())
     }
@@ -888,14 +877,7 @@ impl<'a> Parser<'a> {
             }
             SyntaxKind::TerminalFalse => Some(self.take::<TerminalFalse>().into()),
             SyntaxKind::TerminalTrue => Some(self.take::<TerminalTrue>().into()),
-            SyntaxKind::TerminalNumber => Some(
-                LiteralNumber::new_green(
-                    self.db,
-                    OptionTerminalMinusEmpty::new_green(self.db).into(),
-                    self.take::<TerminalNumber>(),
-                )
-                .into(),
-            ),
+            SyntaxKind::TerminalLiteralNumber => Some(self.take::<TerminalLiteralNumber>().into()),
             SyntaxKind::TerminalShortString => Some(self.take::<TerminalShortString>().into()),
             SyntaxKind::TerminalLParen => {
                 // Note that LBrace is allowed inside parenthesis, even if `lbrace_allowed` is
@@ -1374,12 +1356,7 @@ impl<'a> Parser<'a> {
 
         // TODO(yuval): Support "Or" patterns.
         Some(match self.peek().kind {
-            SyntaxKind::TerminalNumber => LiteralNumber::new_green(
-                self.db,
-                OptionTerminalMinusEmpty::new_green(self.db).into(),
-                self.take::<TerminalNumber>(),
-            )
-            .into(),
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
             SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
             SyntaxKind::TerminalUnderscore => self.take::<TerminalUnderscore>().into(),
             SyntaxKind::TerminalIdentifier => {
@@ -1842,18 +1819,12 @@ impl<'a> Parser<'a> {
         }
 
         let expr = match self.peek().kind {
-            SyntaxKind::TerminalNumber => LiteralNumber::new_green(
-                self.db,
-                OptionTerminalMinusEmpty::new_green(self.db).into(),
-                self.take::<TerminalNumber>(),
-            )
-            .into(),
-            SyntaxKind::TerminalMinus => LiteralNumber::new_green(
-                self.db,
-                self.take::<TerminalMinus>().into(),
-                self.take::<TerminalNumber>(),
-            )
-            .into(),
+            SyntaxKind::TerminalLiteralNumber => self.take::<TerminalLiteralNumber>().into(),
+            SyntaxKind::TerminalMinus => {
+                let minus = self.take::<TerminalMinus>().into();
+                let literal = self.parse_token::<TerminalLiteralNumber>().into();
+                ExprUnary::new_green(self.db, minus, literal).into()
+            }
             SyntaxKind::TerminalShortString => self.take::<TerminalShortString>().into(),
             SyntaxKind::TerminalLBrace => self.parse_block().into(),
             _ => self.try_parse_type_expr()?,

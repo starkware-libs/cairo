@@ -6,6 +6,7 @@ use cairo_lang_diagnostics::{
 use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::inference::InferenceError;
+use cairo_lang_semantic::TypeId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 
 use crate::Location;
@@ -45,7 +46,7 @@ pub struct LoweringDiagnostic {
 impl DiagnosticEntry for LoweringDiagnostic {
     type DbType = dyn SemanticGroup;
 
-    fn format(&self, _db: &Self::DbType) -> String {
+    fn format(&self, db: &Self::DbType) -> String {
         match &self.kind {
             LoweringDiagnosticKind::Unreachable { .. } => "Unreachable code".into(),
             LoweringDiagnosticKind::NonZeroValueInMatch => {
@@ -86,6 +87,10 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "
                 .into()
             }
+            LoweringDiagnosticKind::LiteralOutOfRange { ty } => format!("The value does not fit within the range of type {}.", ty.format(db.upcast())),
+            LoweringDiagnosticKind::NoLiteralFunctionFound => {
+                "A literal with this type cannot be created.".into()
+            }
         }
     }
 
@@ -125,4 +130,6 @@ pub enum LoweringDiagnosticKind {
     UnsupportedMatchArmOutOfOrder,
     CannotInlineFunctionThatMightCallItself,
     MemberPathLoop,
+    LiteralOutOfRange { ty: TypeId },
+    NoLiteralFunctionFound,
 }
