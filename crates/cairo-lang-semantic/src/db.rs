@@ -151,6 +151,10 @@ pub trait SemanticGroup:
     #[salsa::invoke(items::module::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
 
+    /// Finds all the trait ids usable in the module.
+    #[salsa::invoke(items::module::module_usable_trait_ids)]
+    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TraitId>>>;
+
     // Struct.
     // =======
     /// Private query to compute data about a struct declaration.
@@ -980,14 +984,14 @@ pub trait SemanticGroup:
         &self,
         module_id: ModuleId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Vec<TraitFunctionId>;
+    ) -> Arc<Vec<TraitFunctionId>>;
     /// Returns all methods in a crate that match the given type filter.
     #[salsa::invoke(lsp_helpers::methods_in_crate)]
     fn methods_in_crate(
         &self,
         crate_id: CrateId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Vec<TraitFunctionId>;
+    ) -> Arc<Vec<TraitFunctionId>>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
@@ -1018,7 +1022,7 @@ fn module_semantic_diagnostics(
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
+    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
         diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(plugin_diag.stable_ptr),
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -1166,7 +1170,7 @@ fn file_semantic_diagnostics(
     file_id: FileId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for module_id in db.file_modules(file_id)? {
+    for module_id in db.file_modules(file_id)?.iter().copied() {
         if let Ok(module_diagnostics) = db.module_semantic_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }

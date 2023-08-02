@@ -289,7 +289,7 @@ fn module_has_trait(
     if db.module_traits_ids(module_id).ok()?.contains(&trait_id) {
         return Some(true);
     }
-    for use_id in db.module_uses_ids(module_id).ok()? {
+    for use_id in db.module_uses_ids(module_id).ok()?.iter().copied() {
         if db.use_resolved_item(use_id) == Ok(ResolvedGenericItem::Trait(trait_id)) {
             return Some(true);
         }
@@ -314,7 +314,7 @@ fn find_methods_for_type(
     // TODO(spapini): Look only in current crate dependencies.
     for crate_id in db.crates() {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
-        for trait_function in methods {
+        for trait_function in methods.iter().copied() {
             let clone_data = &mut resolver.inference().clone_data();
             let mut inference = clone_data.inference(db);
             let lookup_context = resolver.impl_lookup_context();

@@ -182,7 +182,9 @@ impl Backend {
                 let mut files_set: OrderedHashSet<_> = state.open_files.iter().copied().collect();
                 for crate_id in db.crates() {
                     for module_id in db.crate_modules(crate_id).iter() {
-                        for file_id in db.module_files(*module_id).unwrap_or_default() {
+                        for file_id in
+                            db.module_files(*module_id).unwrap_or_default().iter().copied()
+                        {
                             files_set.insert(file_id);
                         }
                     }
@@ -1153,8 +1155,7 @@ fn find_node_module(
     main_file: FileId,
     mut node: SyntaxNode,
 ) -> Option<ModuleId> {
-    let modules: Vec<_> = db.file_modules(main_file).into_iter().flatten().collect();
-    let mut module = *modules.first()?;
+    let mut module = db.file_modules(main_file).unwrap_or_default().iter().copied().next()?;
     let syntax_db = db.upcast();
 
     let mut inner_module_names = vec![];
