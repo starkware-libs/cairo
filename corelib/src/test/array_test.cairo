@@ -77,3 +77,30 @@ fn test_slice_out_of_bound_1() {
 fn test_slice_out_of_bound_2() {
     array![10, 11, 12].span().slice(0, 4);
 }
+
+#[test]
+#[available_gas(10000000)]
+fn test_equality() {
+    let arr1 = array![];
+    let arr2 = array![10, 11, 12];
+    let arr3 = array![10, 11, 13];
+    let arr4 = array![10, 11];
+    let arr5 = array![10, 11, 12, 13];
+
+    assert(arr1 == arr1, 'arr1 != arr1');
+    assert(arr2 == arr2, 'arr2 != arr2');
+    assert(arr3 == arr3, 'arr3 != arr3');
+    assert(arr4 == arr4, 'arr4 != arr4');
+    assert(arr5 == arr5, 'arr5 != arr5');
+
+    assert(arr1 != arr2, 'arr1 == arr2');
+    assert(arr1 != arr3, 'arr1 == arr3');
+    assert(arr1 != arr4, 'arr1 == arr4');
+    assert(arr1 != arr5, 'arr1 == arr5');
+    assert(arr2 != arr3, 'arr2 == arr3');
+    assert(arr2 != arr4, 'arr2 == arr4');
+    assert(arr2 != arr5, 'arr2 == arr5');
+    assert(arr3 != arr4, 'arr3 == arr4');
+    assert(arr3 != arr5, 'arr3 == arr5');
+    assert(arr4 != arr5, 'arr4 == arr5');
+}
