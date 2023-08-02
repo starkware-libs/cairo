@@ -37,12 +37,13 @@ impl TestFileRunner for ExpandContractTestRunner {
             self.db
                 .module_submodules_ids(test_module.module_id)
                 .unwrap_or_default()
-                .into_iter()
+                .iter()
+                .copied()
                 .map(ModuleId::Submodule),
         );
         let mut files = vec![];
         for module_id in module_ids {
-            for file in self.db.module_files(module_id).unwrap_or_default() {
+            for file in self.db.module_files(module_id).unwrap_or_default().iter().copied() {
                 if files.contains(&file) {
                     continue;
                 }
