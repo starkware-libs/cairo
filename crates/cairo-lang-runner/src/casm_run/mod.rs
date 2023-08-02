@@ -130,9 +130,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, VecDeque<Log>>,
-    /// A mapping from contract address to messages sent to L1.
-    l2_to_l1_messages: HashMap<Felt252, VecDeque<L2ToL1Message>>,
+    logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -142,6 +140,15 @@ impl StarknetState {
         self.next_id += Felt252::from(1);
         self.next_id.clone()
     }
+}
+
+/// Object storing logs for a contract.
+#[derive(Clone, Default)]
+struct ContractLogs {
+    /// Events.
+    events: VecDeque<Log>,
+    /// Messages sent to L1.
+    l2_to_l1_messages: VecDeque<L2ToL1Message>,
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -840,7 +847,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
+        self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -853,7 +860,7 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.l2_to_l1_messages.entry(contract).or_default().push_back((to_address, payload));
+        self.starknet_state.logs.entry(contract).or_default().l2_to_l1_messages.push_back((to_address, payload));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -1120,7 +1127,9 @@ impl<'a> CairoHintProcessor<'a> {
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
-                    contract_logs.and_then(|contract_logs| contract_logs.pop_front())
+                    contract_logs.and_then(
+                        |contract_logs| contract_logs.events.pop_front()
+                    )
                 {
                     res_segment.write(keys.len())?;
                     res_segment.write_data(keys.iter())?;
@@ -1129,11 +1138,10 @@ impl<'a> CairoHintProcessor<'a> {
                 }
             }
             "pop_l2_to_l1_message" => {
-                let contract_l2_to_l1_messages =
-                    self.starknet_state.l2_to_l1_messages.get_mut(&as_single_input(inputs)?);
+                let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((to_address, payload)) =
-                    contract_l2_to_l1_messages.and_then(
-                        |contract_l2_to_l1_messages| contract_l2_to_l1_messages.pop_front()
+                    contract_logs.and_then(
+                        |contract_logs| contract_logs.l2_to_l1_messages.pop_front()
                     )
                 {
                     res_segment.write(to_address)?;
