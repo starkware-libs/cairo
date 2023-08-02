@@ -1,5 +1,5 @@
 use traits::{ Into, TryInto, PartialEq };
-use array::{ ArrayTrait, SpanTrait };
+use array::{ ArrayTrait, SpanTrait, SpanPartialEq };
 use result::ResultTrait;
 use option::OptionTrait;
 use starknet::{ testing, SyscallResultTrait };
@@ -13,9 +13,7 @@ use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 #[starknet::contract]
 mod contract_with_messages_sent_to_l1 {
     use traits::Into;
-
-    // locals
-    use super::U128PayloadTrait;
+    use array::ArrayTrait;
 
     #[storage]
     struct Storage {
@@ -33,8 +31,31 @@ mod contract_with_messages_sent_to_l1 {
         fn send_message_to_l1(ref self: ContractState) {
             let value_ = self.value.read();
 
-            starknet::send_message_to_l1_syscall(to_address: value_.into(), payload: value_.payload());
+            starknet::send_message_to_l1_syscall(
+                to_address: value_.into(),
+                payload: self._generate_payload(n: value_).span()
+            );
             self.value.write(value_ + 1);
+        }
+    }
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        // generate_payload(n) -> [0, 1, 2, ..., n]
+        fn _generate_payload(self: @ContractState, n: u128) -> Array<felt252> {
+            let mut payload = array![];
+
+            let mut i: u128 = 0;
+            loop {
+                if (i > n) {
+                    break;
+                }
+
+                payload.append(i.into());
+                i += 1;
+            };
+
+            payload
         }
     }
 }
@@ -103,64 +124,4 @@ fn test_pop_l2_to_l1_message() {
     assert_eq(@payload.len(), @1, 'unexpected payload size');
     assert_eq(@to_address, @1234, 'unexpected to_address');
     assert_eq(payload.at(0), @2345, 'unexpected payload');
-}
-
-//
-// Helpers
-//
-
-impl SpanPartialEq<T, impl TPartialEq: PartialEq<T>, impl TCopy: Copy<T>, impl TDrop: Drop<T>> of PartialEq<Span<T>> {
-    fn eq(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-        if ((*lhs).len() != (*rhs).len()) {
-            // diff len
-
-            false
-        } else {
-            // same len, we compare array content
-
-            let mut eq = true;
-            let mut i: usize = 0;
-            let len = (*lhs).len();
-
-            loop {
-                if (i >= len) {
-                    break;
-                } else if (*(*lhs).at(i) != *(*rhs).at(i)) {
-                    eq = false;
-                    break;
-                }
-
-                i += 1;
-            };
-
-            eq
-        }
-    }
-
-    fn ne(lhs: @Span<T>, rhs: @Span<T>) -> bool {
-        !(*lhs == *rhs)
-    }
-}
-
-trait U128PayloadTrait {
-    fn payload(self: @u128) -> Span<felt252>;
-}
-
-impl U128PayloadImpl of U128PayloadTrait {
-    // n.payload() -> [0, 1, 2, ..., n]
-    fn payload(self: @u128) -> Span<felt252> {
-        let mut payload = array![];
-
-        let mut i: u128 = 0;
-        loop {
-            if (i > *self) {
-                break;
-            }
-
-            payload.append(i.into());
-            i += 1;
-        };
-
-        payload.span()
-    }
 }
