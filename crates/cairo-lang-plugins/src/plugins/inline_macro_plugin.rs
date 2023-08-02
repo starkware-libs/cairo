@@ -109,12 +109,6 @@ impl InlineMacroExpanderData {
             {
                 macro_plugin.append_macro_code(self, db, &macro_arguments);
             }
-        } else {
-            self.result_code.push_str(&inline_macro.as_syntax_node().get_text(db));
-            self.diagnostics.push(PluginDiagnostic {
-                stable_ptr: inline_macro.stable_ptr().untyped(),
-                message: format!("Unknown inline macro: {}", macro_name),
-            });
         }
     }
 
