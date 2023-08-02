@@ -168,3 +168,27 @@ fn test_split_bytes31() {
     assert(left == 0x112233445566778899aabbccddeeff00112233, 'bad split (19, 19) left');
     assert(right == 0, 'bad split (19, 19) right');
 }
+
+#[test]
+fn test_equality() {
+    let b1 = bytes31_const::<0x01>();
+    let b2 = bytes31_const::<0x0102>();
+    let b3 = bytes31_const::<0x0201>();
+    assert(b1 == b1, 'b1 != b1');
+    assert(b2 == b2, 'b2 != b2');
+    assert(b3 == b3, 'b3 != b3');
+    assert(b1 != b2, 'b1 == b2');
+    assert(b1 != b3, 'b1 == b3');
+    assert(b2 != b3, 'b2 == b3');
+
+    let b4 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f>();
+    let b5 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1e>();
+    let b6 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e>();
+
+    assert(b4 == b4, 'b4 != b4');
+    assert(b5 == b5, 'b5 != b5');
+    assert(b6 == b6, 'b6 != b6');
+    assert(b4 != b5, 'b4 == b5');
+    assert(b4 != b6, 'b4 == b6');
+    assert(b5 != b6, 'b5 == b6');
+}
