@@ -86,9 +86,34 @@ fn secp256_ec_negate_scalar<
 }
 
 
-/// Verifies a Secp256 ECDSA signature.
+/// Checks a Secp256 ECDSA signature.
 /// Also verifies that r and s components of the signature are in the range (0, N),
 /// where N is the size of the curve.
+/// Returns a Result with an error string if the signature is invalid.
+fn is_eth_signature_valid<
+    Secp256Point,
+    impl Secp256PointDrop: Drop<Secp256Point>,
+    impl Secp256Impl: Secp256Trait<Secp256Point>,
+    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+>(
+    msg_hash: u256, signature: Signature, eth_address: EthAddress
+) -> Result<(), felt252> {
+    if !is_signature_entry_valid::<Secp256Point>(signature.r) {
+        return Result::Err('Signature out of range');
+    }
+    if !is_signature_entry_valid::<Secp256Point>(signature.s) {
+        return Result::Err('Signature out of range');
+    }
+
+    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
+    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
+    if eth_address != calculated_eth_address {
+        return Result::Err('Invalid signature');
+    }
+    Result::Ok(())
+}
+
+/// Asserts that a Secp256 ECDSA signature is valid.
 fn verify_eth_signature<
     Secp256Point,
     impl Secp256PointDrop: Drop<Secp256Point>,
@@ -97,12 +122,10 @@ fn verify_eth_signature<
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) {
-    assert(is_signature_entry_valid::<Secp256Point>(signature.r), 'Signature out of range');
-    assert(is_signature_entry_valid::<Secp256Point>(signature.s), 'Signature out of range');
-
-    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
-    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
-    assert(eth_address == calculated_eth_address, 'Invalid signature');
+    match is_eth_signature_valid::<Secp256Point>(:msg_hash, :signature, :eth_address) {
+        Result::Ok(()) => {},
+        Result::Err(err) => panic_with_felt252(err),
+    }
 }
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
