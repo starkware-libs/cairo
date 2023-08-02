@@ -15,6 +15,9 @@ mod contract_with_messages_sent_to_l1 {
     use traits::Into;
     use array::ArrayTrait;
 
+    // locals
+    use super::generate_payload;
+
     #[storage]
     struct Storage {
         value: u128,
@@ -33,31 +36,29 @@ mod contract_with_messages_sent_to_l1 {
 
             starknet::send_message_to_l1_syscall(
                 to_address: value_.into(),
-                payload: self._generate_payload(n: value_).span()
+                payload: generate_payload(n: value_).span()
             );
             self.value.write(value_ + 1);
         }
     }
+}
 
-    #[generate_trait]
-    impl InternalImpl of InternalTrait {
-        // generate_payload(n) -> [0, 1, 2, ..., n]
-        fn _generate_payload(self: @ContractState, n: u128) -> Array<felt252> {
-            let mut payload = array![];
 
-            let mut i: u128 = 0;
-            loop {
-                if (i > n) {
-                    break;
-                }
+// generate_payload(n) -> [0, 1, 2, ..., n]
+fn generate_payload(n: u128) -> Array<felt252> {
+    let mut payload = array![];
 
-                payload.append(i.into());
-                i += 1;
-            };
-
-            payload
+    let mut i: u128 = 0;
+    loop {
+        if (i > n) {
+            break;
         }
-    }
+
+        payload.append(i.into());
+        i += 1;
+    };
+
+    payload
 }
 
 //
