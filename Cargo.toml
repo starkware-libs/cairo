@@ -80,7 +80,7 @@ keccak = "0.1.3"
 lalrpop-util = { version = "0.20.0", features = ["lexer"] }
 log = "0.4"
 lsp = { version = "0.94", package = "lsp-types" }
-num-bigint = "0.4"
+num-bigint = { version = "0.4", features = ["serde"] }
 num-integer = "0.1"
 num-traits = "0.2"
 once_cell = "1.17.1"
