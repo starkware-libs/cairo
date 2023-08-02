@@ -1,7 +1,7 @@
 use traits::{ Into, TryInto, PartialEq };
 use array::{ ArrayTrait, SpanTrait, SpanPartialEq };
-use result::ResultTrait;
 use option::OptionTrait;
+use result::ResultTrait;
 use starknet::{ testing, SyscallResultTrait };
 use starknet::syscalls::{ deploy_syscall, get_block_hash_syscall };
 use starknet::class_hash::Felt252TryIntoClassHash;
