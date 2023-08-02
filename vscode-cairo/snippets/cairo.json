@@ -26,7 +26,7 @@
   },
   "Creates an empty array variable": {
     "prefix": "array",
-    "body": ["let mut ${1:arr} = array![]"],
+    "body": ["let mut ${1:arr} = array![$2];"],
     "description": "Creates an empty array variable"
   },
   "Creates an empty array": {
