@@ -37,7 +37,7 @@ impl TupleStructureStorePacking of starknet::StorePacking<TupleStructure, (felt2
     }
     fn unpack(value: (felt252, felt252)) -> TupleStructure {
         let (v1, v2) = value;
-        TupleStructure { v1: v1.into(), v2: v2.into(),  }
+        TupleStructure { v1: v1.into(), v2: v2.into(), }
     }
 }
 
@@ -74,7 +74,7 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        data: AbcEtc, 
+        data: AbcEtc,
     }
 
     #[external(v0)]
@@ -103,8 +103,8 @@ fn write_read_struct() {
         i: storage_address_try_from_felt252(123_felt252).unwrap(),
         j: true,
         k: 123_felt252.try_into().unwrap(),
-        abc: Abc { a: 1_u8, b: 2_u16, c: 3_u32,  },
-        ts: TupleStructure { v1: 1_u256, v2: 2_u256,  },
+        abc: Abc { a: 1_u8, b: 2_u16, c: 3_u32, },
+        ts: TupleStructure { v1: 1_u256, v2: 2_u256, },
         efg1: Efg::E(()),
         efg2: Efg::G(123_u256)
     };

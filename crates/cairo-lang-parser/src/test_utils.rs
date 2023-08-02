@@ -2,7 +2,7 @@ use std::fs;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{FileId, FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
@@ -33,5 +33,6 @@ pub fn create_virtual_file(
         parent: None,
         name: file_name.into(),
         content: Arc::new(content.into()),
+        kind: FileKind::Module,
     }))
 }

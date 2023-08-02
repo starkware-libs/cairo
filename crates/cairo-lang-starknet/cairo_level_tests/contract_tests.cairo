@@ -53,7 +53,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_value(self: @ContractState, ) -> felt252 {
+    fn get_value(self: @ContractState,) -> felt252 {
         self.value.read()
     }
 

@@ -44,6 +44,7 @@ pub enum SyntaxKind {
     ArgListBraced,
     ExprListBracketed,
     ExprListBraced,
+    WrappedExprListMissing,
     PatternIdentifier,
     PatternStruct,
     PatternStructParamList,

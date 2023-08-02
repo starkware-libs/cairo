@@ -43,8 +43,9 @@ pub fn priv_inline_data(
     function_id: FunctionWithBodyId,
 ) -> Maybe<Arc<PrivInlineData>> {
     let semantic_function_id = function_id.base_semantic_function(db);
-    let mut diagnostics =
-        LoweringDiagnostics::new(semantic_function_id.module_file_id(db.upcast()));
+    let mut diagnostics = LoweringDiagnostics::new(
+        semantic_function_id.module_file_id(db.upcast()).file_id(db.upcast())?,
+    );
     let config = db.function_declaration_inline_config(semantic_function_id)?;
 
     let info = match config {

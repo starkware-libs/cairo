@@ -93,11 +93,14 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         let Err(destruct_err) = var.destruct_impl.clone() else {
             return;
         };
-        if matches!(panic_state, PanicState::EndsWithPanic) {
-            let Err(_panic_destruct_err) = var.panic_destruct_impl.clone() else {
+        let panic_destruct_err = if matches!(panic_state, PanicState::EndsWithPanic) {
+            let Err(panic_destruct_err) = var.panic_destruct_impl.clone() else {
                 return;
             };
-        }
+            Some(panic_destruct_err)
+        } else {
+            None
+        };
 
         let mut location = var.location.get(self.db);
         if let Some(drop_position) = opt_drop_position {
@@ -107,7 +110,11 @@ impl<'a> DemandReporter<VariableId, PanicState> for BorrowChecker<'a> {
         self.success = Err(self.diagnostics.report_by_location(
             location
                 .with_note(DiagnosticNote::text_only(drop_err.format(semantic_db)))
-                .with_note(DiagnosticNote::text_only(destruct_err.format(semantic_db))),
+                .with_note(DiagnosticNote::text_only(destruct_err.format(semantic_db)))
+                .maybe_with_note(
+                    panic_destruct_err
+                        .map(|err| DiagnosticNote::text_only(err.format(semantic_db))),
+                ),
             VariableNotDropped { drop_err, destruct_err },
         ));
     }
@@ -240,7 +247,7 @@ pub fn borrow_check(
     module_file_id: ModuleFileId,
     lowered: &mut FlatLowered,
 ) {
-    let mut diagnostics = LoweringDiagnostics::new(module_file_id);
+    let mut diagnostics = LoweringDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
     diagnostics.diagnostics.extend(std::mem::take(&mut lowered.diagnostics));
 
     if lowered.blocks.has_root().is_ok() {

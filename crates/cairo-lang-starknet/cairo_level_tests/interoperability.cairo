@@ -19,7 +19,7 @@ mod contract_a {
     use starknet::info::get_contract_address;
     #[storage]
     struct Storage {
-        value: u128, 
+        value: u128,
     }
 
     #[constructor]
@@ -80,7 +80,7 @@ fn test_flow() {
 
 #[test]
 #[available_gas(890000)]
-#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED', ))]
+#[should_panic(expected: ('Out of gas', 'ENTRYPOINT_FAILED',))]
 fn test_flow_out_of_gas() {
     // Set up.
     let (address0, _) = deploy_syscall(
@@ -116,7 +116,7 @@ fn test_class_hash_not_found() {
 
 #[test]
 #[available_gas(30000000)]
-#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED', ))]
+#[should_panic(expected: ('CONTRACT_NOT_DEPLOYED',))]
 fn test_contract_not_deployed() {
     let mut contract = IContractDispatcher { contract_address: 5.try_into().unwrap() };
     contract.foo(10);
@@ -173,7 +173,7 @@ fn test_non_empty_calldata_unexistent_constructor() {
 
 #[test]
 #[available_gas(30000000)]
-#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED', ))]
+#[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED',))]
 fn test_entrypoint_failed() {
     let (address0, _) = deploy_syscall(
         contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(), 0, array![].span(), false
@@ -185,7 +185,7 @@ fn test_entrypoint_failed() {
 
 #[test]
 #[available_gas(30000000)]
-#[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED', ))]
+#[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED',))]
 fn test_get_block_hash() {
     get_block_hash_syscall(0).unwrap_syscall();
 }

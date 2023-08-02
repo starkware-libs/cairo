@@ -296,6 +296,7 @@ note: the variable needs to be dropped due to the potential panic here:
    ^***^
 note: Trait has no implementation in context: core::traits::Drop::<test::A>
 note: Trait has no implementation in context: core::traits::Destruct::<test::A>
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::A>
 
 //! > lowering
 Parameters: v0: test::A
@@ -402,11 +403,11 @@ use array::ArrayTrait;
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> inline_macros:10:9
+ --> lib.cairo:7:9
   panic(arr);
         ^*^
 note: variable was previously used here:
-  --> inline_macros:8:3
+  --> lib.cairo:5:3
   b.append('bla');
   ^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
@@ -720,6 +721,7 @@ note: the variable needs to be dropped due to the potential panic here:
   ^******^
 note: Trait has no implementation in context: core::traits::Drop::<test::NonCopy>
 note: Trait has no implementation in context: core::traits::Destruct::<test::NonCopy>
+note: Trait has no implementation in context: core::traits::PanicDestruct::<test::NonCopy>
 
 //! > lowering
 Parameters: v0: test::MyStruct

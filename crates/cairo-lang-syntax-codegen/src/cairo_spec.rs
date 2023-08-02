@@ -223,10 +223,12 @@ pub fn get_spec() -> Vec<Node> {
         .node("rbrace", "TerminalRBrace")
     )
     .add_enum(EnumBuilder::new("WrappedExprList")
+        .missing("Missing")
         .node_with_explicit_kind("BracketedExprList", "ExprListBracketed")
         .node_with_explicit_kind("ParenthesizedExprList", "ExprListParenthesized")
         .node_with_explicit_kind("BracedExprList", "ExprListBraced")
     )
+    .add_struct(StructBuilder::new("WrappedExprListMissing"))
     // ---Patterns ---
     // TODO(spapini): Support "Or" patterns (e.g. 1 | 2).
     // TODO(spapini): Support tuple patterns (e.g. (x, _)).

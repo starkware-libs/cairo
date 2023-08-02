@@ -1,8 +1,60 @@
 use option::OptionTrait;
 use traits::{Into, TryInto};
-use bytes_31::{split_bytes31, U128IntoBytes31, U8IntoBytes31};
+use bytes_31::{Bytes31Trait, split_bytes31, U128IntoBytes31, U8IntoBytes31};
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
+
+#[test]
+fn test_at() {
+    let b1 = bytes31_const::<0x01>();
+    assert(b1.at(0) == 0x01, 'wrong byte at index 0');
+
+    let b17 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f1011>();
+    assert(b17.at(0) == 0x11, 'wrong byte at index 0');
+    assert(b17.at(1) == 0x10, 'wrong byte at index 1');
+    assert(b17.at(2) == 0x0f, 'wrong byte at index 2');
+    assert(b17.at(14) == 0x03, 'wrong byte at index 14');
+    assert(b17.at(15) == 0x02, 'wrong byte at index 15');
+    assert(b17.at(16) == 0x01, 'wrong byte at index 16');
+
+    let b31 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f>();
+    assert(b31.at(0) == 0x1f, 'wrong byte at index 0');
+    assert(b31.at(1) == 0x1e, 'wrong byte at index 1');
+    assert(b31.at(2) == 0x1d, 'wrong byte at index 2');
+    assert(b31.at(14) == 0x11, 'wrong byte at index 14');
+    assert(b31.at(15) == 0x10, 'wrong byte at index 15');
+    assert(b31.at(16) == 0x0f, 'wrong byte at index 16');
+    assert(b31.at(17) == 0x0e, 'wrong byte at index 17');
+    assert(b31.at(29) == 0x02, 'wrong byte at index 29');
+    assert(b31.at(30) == 0x01, 'wrong byte at index 30');
+}
+
+// Same as the previous test, but with [] instead of .at()
+#[test]
+fn test_index_view() {
+    let b1 = bytes31_const::<0x01>();
+    assert(b1[0] == 0x01, 'wrong byte at index 0');
+
+    let b17 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f1011>();
+    assert(b17[0] == 0x11, 'wrong byte at index 0');
+    assert(b17[1] == 0x10, 'wrong byte at index 1');
+    assert(b17[2] == 0x0f, 'wrong byte at index 2');
+    assert(b17[14] == 0x03, 'wrong byte at index 14');
+    assert(b17[15] == 0x02, 'wrong byte at index 15');
+    assert(b17[16] == 0x01, 'wrong byte at index 16');
+
+    let b31 = bytes31_const::<0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f>();
+    assert(b31[0] == 0x1f, 'wrong byte at index 0');
+    assert(b31[1] == 0x1e, 'wrong byte at index 1');
+    assert(b31[2] == 0x1d, 'wrong byte at index 2');
+    assert(b31[14] == 0x11, 'wrong byte at index 14');
+    assert(b31[15] == 0x10, 'wrong byte at index 15');
+    assert(b31[16] == 0x0f, 'wrong byte at index 16');
+    assert(b31[17] == 0x0e, 'wrong byte at index 17');
+    assert(b31[29] == 0x02, 'wrong byte at index 29');
+    assert(b31[30] == 0x01, 'wrong byte at index 30');
+}
+
 
 #[test]
 fn test_bytes31_to_from_felt252() {

@@ -119,7 +119,7 @@ pub fn colon_colon_completions(
     };
     let mut resolver = Resolver::with_data(db, resolver_data);
 
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).ok()?);
     let item = resolver
         .resolve_concrete_path(&mut diagnostics, segments, NotFoundItemType::Identifier)
         .ok()?;
@@ -209,9 +209,7 @@ pub fn dot_completions(
     let offset = if let Some(ModuleId::Submodule(submodule_id)) =
         find_node_module(db, file_id, expr.as_syntax_node())
     {
-        let syntax = db.file_syntax(file_id).unwrap();
-        let module_def_ast =
-            ast::ItemModule::from_ptr(syntax_db, &syntax, submodule_id.stable_ptr(db.upcast()));
+        let module_def_ast = submodule_id.stable_ptr(db.upcast()).lookup(syntax_db);
         let body = extract_matches!(module_def_ast.body(syntax_db), ast::MaybeModuleBody::Some);
         body.items(syntax_db).as_syntax_node().span_start_without_trivia(syntax_db)
     } else {

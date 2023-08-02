@@ -741,7 +741,7 @@
     │   │   │           │               └── ident (kind: TokenIdentifier): 'T'
     │   │   │           └── rangle (kind: TokenGT): '>'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #11 (kind: ItemMissing) []
+    │   └── child #11: Missing []
     └── eof (kind: TokenEndOfFile).
 --------------------
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.

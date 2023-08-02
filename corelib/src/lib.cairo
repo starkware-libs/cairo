@@ -26,39 +26,39 @@ impl BoolSerde of Serde<bool> {
     }
 }
 
-extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_and_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitAnd of BitAnd<bool> {
     #[inline(always)]
     fn bitand(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_and_impl(lhs, rhs);
+        let (r,) = bool_and_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_or_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitOr of BitOr<bool> {
     #[inline(always)]
     fn bitor(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_or_impl(lhs, rhs);
+        let (r,) = bool_or_impl(lhs, rhs);
         r
     }
 }
 
-extern fn bool_not_impl(a: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_not_impl(a: bool) -> (bool,) implicits() nopanic;
 #[inline(always)]
 impl BoolNot of Not<bool> {
     #[inline(always)]
     fn not(a: bool) -> bool implicits() nopanic {
-        let (r, ) = bool_not_impl(a);
+        let (r,) = bool_not_impl(a);
         r
     }
 }
 
-extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool, ) implicits() nopanic;
+extern fn bool_xor_impl(lhs: bool, rhs: bool) -> (bool,) implicits() nopanic;
 impl BoolBitXor of BitXor<bool> {
     #[inline(always)]
     fn bitxor(lhs: bool, rhs: bool) -> bool {
-        let (r, ) = bool_xor_impl(lhs, rhs);
+        let (r,) = bool_xor_impl(lhs, rhs);
         r
     }
 }
@@ -295,9 +295,12 @@ mod serde;
 
 // Hash functions.
 mod hash;
-use hash::{pedersen, Pedersen};
 
 mod keccak;
+
+// Pedersen
+mod pedersen;
+use pedersen::Pedersen;
 
 // Poseidon
 mod poseidon;
@@ -319,7 +322,14 @@ use zeroable::{Zeroable, NonZero};
 
 // bytes31.
 mod bytes_31;
-use bytes_31::{bytes31, bytes31_const, Bytes31IntoFelt252, Felt252TryIntoBytes31};
+use bytes_31::{
+    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
+    Felt252TryIntoBytes31
+};
+
+// BytesArray.
+mod byte_array;
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 
 #[cfg(test)]
 mod test;

@@ -4,8 +4,10 @@ use std::fmt;
 use cairo_lang_filesystem::span::TextWidth;
 use cairo_lang_syntax as syntax;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use itertools::Itertools;
+use smol_str::SmolStr;
+use syntax::node::ast::MaybeModuleBody;
 use syntax::node::kind::SyntaxKind;
 
 use crate::FormatterConfig;
@@ -535,9 +537,37 @@ impl PendingLineState {
 }
 
 /// Represents the break line points before and after a syntax node.
-pub struct WrappingBreakLinePoints {
-    pub leading: Option<BreakLinePointProperties>,
-    pub trailing: Option<BreakLinePointProperties>,
+pub enum BreakLinePointsPositions {
+    Leading(BreakLinePointProperties),
+    Trailing(BreakLinePointProperties),
+    Both { leading: BreakLinePointProperties, trailing: BreakLinePointProperties },
+    List { properties: BreakLinePointProperties, breaking_frequency: usize },
+    None,
+}
+
+impl BreakLinePointsPositions {
+    pub fn new_symmetric(break_line_point_properties: BreakLinePointProperties) -> Self {
+        Self::Both {
+            leading: break_line_point_properties.clone(),
+            trailing: break_line_point_properties,
+        }
+    }
+    pub fn leading(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Leading(properties) | Self::Both { leading: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
+    pub fn trailing(&self) -> Option<BreakLinePointProperties> {
+        match self {
+            Self::Trailing(properties) | Self::Both { trailing: properties, .. } => {
+                Some(properties.clone())
+            }
+            _ => None,
+        }
+    }
 }
 
 // TODO(spapini): Introduce the correct types here, to reflect the "applicable" nodes types.
@@ -558,7 +588,12 @@ pub trait SyntaxNodeFormat {
     fn get_wrapping_break_line_point_properties(
         &self,
         db: &dyn SyntaxGroup,
-    ) -> WrappingBreakLinePoints;
+    ) -> BreakLinePointsPositions;
+    /// Returns the breaking position between the children of a syntax node.
+    fn get_internal_break_line_point_properties(
+        &self,
+        db: &dyn SyntaxGroup,
+    ) -> BreakLinePointsPositions;
     /// If self is a protected zone, returns its precedence (highest precedence == lowest number).
     /// Otherwise, returns None.
     fn get_protected_zone_precedence(&self, db: &dyn SyntaxGroup) -> Option<usize>;
@@ -600,7 +635,7 @@ impl<'a> FormatterImpl<'a> {
         }
         let protected_zone_precedence = syntax_node.get_protected_zone_precedence(self.db);
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         if let Some(precedence) = protected_zone_precedence {
             self.line_state.line_buffer.open_sub_builder(precedence);
         }
@@ -612,21 +647,31 @@ impl<'a> FormatterImpl<'a> {
         if protected_zone_precedence.is_some() {
             self.line_state.line_buffer.close_sub_builder();
         }
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     /// Formats an internal node and appends the formatted string to the result.
     fn format_internal(&mut self, syntax_node: &SyntaxNode, no_space_after: bool) {
         let allowed_empty_between = syntax_node.allowed_empty_between(self.db);
-
         let no_space_after = no_space_after || syntax_node.force_no_space_after(self.db);
-        let children = syntax_node.children(self.db);
+        let internal_break_line_points_positions =
+            syntax_node.get_internal_break_line_point_properties(self.db);
+        let mut children: Vec<SyntaxNode> = syntax_node.children(self.db).collect();
         let n_children = children.len();
-        for (i, child) in children.enumerate() {
+        if self.config.sort_module_level_items {
+            children.sort_by_key(|c| MovableNode::new(self.db, c));
+        }
+        for (i, child) in children.iter().enumerate() {
             if child.width(self.db) == TextWidth::default() {
                 continue;
             }
-            self.format_node(&child, no_space_after && i == n_children - 1);
-
+            self.format_node(child, no_space_after && i == n_children - 1);
+            if let BreakLinePointsPositions::List { properties, breaking_frequency } =
+                &internal_break_line_points_positions
+            {
+                if i % breaking_frequency == breaking_frequency - 1 && i < n_children - 1 {
+                    self.append_break_line_point(Some(properties.clone()));
+                }
+            }
             self.empty_lines_allowance = allowed_empty_between;
         }
     }
@@ -698,14 +743,58 @@ impl<'a> FormatterImpl<'a> {
             self.is_current_line_whitespaces = false;
         }
         let node_break_points = syntax_node.get_wrapping_break_line_point_properties(self.db);
-        self.append_break_line_point(node_break_points.leading);
+        self.append_break_line_point(node_break_points.leading());
         self.line_state.line_buffer.push_str(&text);
-        self.append_break_line_point(node_break_points.trailing);
+        self.append_break_line_point(node_break_points.trailing());
     }
     fn append_break_line_point(&mut self, properties: Option<BreakLinePointProperties>) {
         if let Some(properties) = properties {
             self.line_state.line_buffer.push_break_line_point(properties);
             self.line_state.force_no_space_after = true;
         }
+    }
+}
+
+/// Represents a sortable SyntaxNode.
+#[derive(PartialEq, Eq)]
+enum MovableNode {
+    ItemModule(SmolStr),
+    ItemUse(SmolStr),
+    Immovable,
+}
+impl MovableNode {
+    fn new(db: &dyn SyntaxGroup, node: &SyntaxNode) -> Self {
+        match node.kind(db) {
+            SyntaxKind::ItemModule => {
+                let item = ast::ItemModule::from_syntax_node(db, node.clone());
+                if matches!(item.body(db), MaybeModuleBody::None(_)) {
+                    Self::ItemModule(item.name(db).text(db))
+                } else {
+                    Self::Immovable
+                }
+            }
+            SyntaxKind::ItemUse => Self::ItemUse(node.clone().get_text_without_trivia(db).into()),
+            _ => Self::Immovable,
+        }
+    }
+}
+impl PartialOrd for MovableNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match (self, other) {
+            (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
+            (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
+            | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
+            (_, MovableNode::Immovable) | (MovableNode::ItemModule(_), MovableNode::ItemUse(_)) => {
+                Ordering::Less
+            }
+            (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
+                Ordering::Greater
+            }
+        })
+    }
+}
+impl Ord for MovableNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
     }
 }

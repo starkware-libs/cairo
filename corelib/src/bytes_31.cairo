@@ -2,9 +2,10 @@ use traits::{Into, TryInto};
 use option::OptionTrait;
 use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
 
-const BYTES_IN_BYTES31: u8 = 31;
-const BYTES_IN_U128: u8 = 16;
+const BYTES_IN_BYTES31: usize = 31;
+const BYTES_IN_U128: usize = 16;
 const POW_2_128: felt252 = 0x100000000000000000000000000000000;
+const POW_2_8: u128 = 0x100;
 
 #[derive(Copy, Drop)]
 extern type bytes31;
@@ -13,9 +14,37 @@ extern fn bytes31_const<const value: felt252>() -> bytes31 nopanic;
 extern fn bytes31_try_from_felt252(value: felt252) -> Option<bytes31> implicits(RangeCheck) nopanic;
 extern fn bytes31_to_felt252(value: bytes31) -> felt252 nopanic;
 
+#[generate_trait]
+impl Bytes31Impl of Bytes31Trait {
+    // Gets the byte at the given index (LSB's index is 0), assuming that
+    // `index < BYTES_IN_BYTES31`. If the assumption is not met, the behavior is undefined.
+    fn at(self: @bytes31, index: usize) -> u8 {
+        let u256{low, high } = (*self).into();
+        let res_u128 = if index < BYTES_IN_U128 {
+            (low / one_shift_left_bytes_u128(index)) % POW_2_8
+        } else {
+            (high / one_shift_left_bytes_u128(index - BYTES_IN_U128)) % POW_2_8
+        };
+        res_u128.try_into().unwrap()
+    }
+}
+
+impl Bytes31IndexView of IndexView<bytes31, usize, u8> {
+    fn index(self: @bytes31, index: usize) -> u8 {
+        self.at(index)
+    }
+}
+
 impl Bytes31IntoFelt252 of Into<bytes31, felt252> {
     fn into(self: bytes31) -> felt252 {
         bytes31_to_felt252(self)
+    }
+}
+
+impl Bytes31IntoU256 of Into<bytes31, u256> {
+    fn into(self: bytes31) -> u256 {
+        let as_felt: felt252 = self.into();
+        as_felt.into()
     }
 }
 
@@ -57,7 +86,7 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
     }
 }
 
-// Splits a bytes31 into two bytes31s at the given index.
+// Splits a bytes31 into two bytes31s at the given index (LSB's index is 0).
 // The bytes31s are represented using felt252s to improve performance.
 // Note: this function assumes that:
 // 1. `word` is validly convertible to a bytes31 which has no more than `len` bytes of data.
@@ -65,7 +94,7 @@ impl U128IntoBytes31 of Into<u128, bytes31> {
 // 3. len <= BYTES_IN_BYTES31.
 // If these assumptions are not met, it can corrupt the ByteArray. Thus, this should be a
 // private function. We could add masking/assertions but it would be more expansive.
-fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
+fn split_bytes31(word: felt252, len: usize, index: usize) -> (felt252, felt252) {
     if index == 0 {
         return (0, word);
     }
@@ -73,7 +102,7 @@ fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
         return (word, 0);
     }
 
-    let u256{low, high }: u256 = word.into();
+    let u256{low, high } = word.into();
 
     if index == BYTES_IN_U128 {
         return (low.into(), high.into());
@@ -91,7 +120,7 @@ fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
         let (low_quotient, low_remainder) = u128_safe_divmod(
             low, one_shift_left_bytes_u128(index).try_into().unwrap()
         );
-        let right = high.into() * one_shift_left_bytes_felt252(BYTES_IN_U128 - index)
+        let right = high.into() * one_shift_left_bytes_u128(BYTES_IN_U128 - index).into()
             + low_quotient.into();
         return (low_remainder.into(), right);
     }
@@ -110,7 +139,7 @@ fn split_bytes31(word: felt252, len: u8, index: u8) -> (felt252, felt252) {
 // Note: if `n_bytes >= BYTES_IN_BYTES31`, the behavior is undefined. If one wants to assert that in
 // the callsite, it's sufficient to assert that `n_bytes != BYTES_IN_BYTES31` because if
 // `n_bytes > 31` then `n_bytes - 16 > 15` and `one_shift_left_bytes_u128` would panic.
-fn one_shift_left_bytes_felt252(n_bytes: u8) -> felt252 {
+fn one_shift_left_bytes_felt252(n_bytes: usize) -> felt252 {
     if n_bytes < BYTES_IN_U128 {
         one_shift_left_bytes_u128(n_bytes).into()
     } else {
@@ -121,7 +150,7 @@ fn one_shift_left_bytes_felt252(n_bytes: u8) -> felt252 {
 // Returns 1 << (8 * `n_bytes`) as u128, where `n_bytes` must be < BYTES_IN_U128.
 //
 // Panics if `n_bytes >= BYTES_IN_U128`.
-fn one_shift_left_bytes_u128(n_bytes: u8) -> u128 {
+fn one_shift_left_bytes_u128(n_bytes: usize) -> u128 {
     // TODO(yuval): change to match once it's supported for integers.
     if n_bytes == 0 {
         0x1_u128

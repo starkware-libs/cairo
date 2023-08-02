@@ -3,13 +3,14 @@ use std::fmt::Display;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
-    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, ModuleFileId, StructId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    EnumId, FunctionTitleId, ImplDefId, ImplFunctionId, StructId, TopLevelLanguageElementId,
+    TraitFunctionId, TraitId,
 };
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_diagnostics::{
     DiagnosticAdded, DiagnosticEntry, DiagnosticLocation, Diagnostics, DiagnosticsBuilder,
 };
+use cairo_lang_filesystem::ids::FileId;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use itertools::Itertools;
@@ -28,11 +29,11 @@ mod test;
 
 pub struct SemanticDiagnostics {
     pub diagnostics: DiagnosticsBuilder<SemanticDiagnostic>,
-    pub module_file_id: ModuleFileId,
+    pub file_id: FileId,
 }
 impl SemanticDiagnostics {
-    pub fn new(module_file_id: ModuleFileId) -> Self {
-        Self { module_file_id, diagnostics: DiagnosticsBuilder::default() }
+    pub fn new(file_id: FileId) -> Self {
+        Self { file_id, diagnostics: DiagnosticsBuilder::default() }
     }
     pub fn build(self) -> Diagnostics<SemanticDiagnostic> {
         self.diagnostics.build()
@@ -43,8 +44,7 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics
-            .add(SemanticDiagnostic::new(StableLocation::from_ast(self.module_file_id, node), kind))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::from_ast(node), kind))
     }
     /// Report a diagnostic in the location after the given node (with width 0).
     pub fn report_after<TNode: TypedSyntaxNode>(
@@ -52,20 +52,14 @@ impl SemanticDiagnostics {
         node: &TNode,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new_after(
-            StableLocation::from_ast(self.module_file_id, node),
-            kind,
-        ))
+        self.diagnostics.add(SemanticDiagnostic::new_after(StableLocation::from_ast(node), kind))
     }
     pub fn report_by_ptr(
         &mut self,
         stable_ptr: SyntaxStablePtrId,
         kind: SemanticDiagnosticKind,
     ) -> DiagnosticAdded {
-        self.diagnostics.add(SemanticDiagnostic::new(
-            StableLocation::new(self.module_file_id, stable_ptr),
-            kind,
-        ))
+        self.diagnostics.add(SemanticDiagnostic::new(StableLocation::new(stable_ptr), kind))
     }
 }
 
@@ -504,7 +498,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::PluginDiagnostic(diagnostic) => {
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, original_diag: _ } => {
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
                 // TODO(spapini): Support nested diagnostics.
                 format!("Plugin diagnostic: {}", diagnostic.message)
             }
@@ -603,6 +597,12 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedImplicitPrecedenceArguments => {
                 "Unsupported `implicit_precedence` arguments.".into()
             }
+            SemanticDiagnosticKind::InlineMacroNotFound { macro_name } => {
+                format!("Inline macro `{}` not found.", macro_name)
+            }
+            SemanticDiagnosticKind::InlineMacroFailed { macro_name } => {
+                format!("Inline macro `{}` failed.", macro_name)
+            }
         }
     }
 
@@ -612,8 +612,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
             location = location.after();
         }
         match &self.kind {
-            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, .. } => {
-                DiagnosticLocation { span: diagnostic.span, ..location }
+            SemanticDiagnosticKind::WrappedPluginDiagnostic { diagnostic, file_id, .. } => {
+                DiagnosticLocation { span: diagnostic.span, file_id: *file_id }
             }
             _ => location,
         }
@@ -850,6 +850,7 @@ pub enum SemanticDiagnosticKind {
     PanicableExternFunction,
     PluginDiagnostic(PluginDiagnostic),
     WrappedPluginDiagnostic {
+        file_id: FileId,
         diagnostic: PluginMappedDiagnostic,
         original_diag: Box<SemanticDiagnostic>,
     },
@@ -887,6 +888,12 @@ pub enum SemanticDiagnosticKind {
     ImplicitPrecedenceAttrForExternFunctionNotAllowed,
     RedundantImplicitPrecedenceAttribute,
     UnsupportedImplicitPrecedenceArguments,
+    InlineMacroNotFound {
+        macro_name: SmolStr,
+    },
+    InlineMacroFailed {
+        macro_name: SmolStr,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

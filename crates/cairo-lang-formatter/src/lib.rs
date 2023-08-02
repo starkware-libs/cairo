@@ -8,7 +8,7 @@ pub mod node_properties;
 use std::sync::Arc;
 
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_filesystem::ids::{FileLongId, VirtualFile};
+use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -48,6 +48,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
         parent: None,
         name: "string_to_format".into(),
         content: Arc::new(content.clone()),
+        kind: FileKind::Module,
     }));
     let mut diagnostics = DiagnosticsBuilder::new();
     let syntax_root =
@@ -59,6 +60,7 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
+    sort_module_level_items: bool,
 }
 
 // Config params
@@ -67,12 +69,12 @@ const TAB_SIZE: usize = 4;
 const MAX_LINE_LENGTH: usize = 100;
 
 impl FormatterConfig {
-    pub fn new(tab_size: usize, max_line_length: usize) -> Self {
-        Self { tab_size, max_line_length }
+    pub fn new(tab_size: usize, max_line_length: usize, sort_module_level_items: bool) -> Self {
+        Self { tab_size, max_line_length, sort_module_level_items }
     }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
-        Self::new(TAB_SIZE, MAX_LINE_LENGTH)
+        Self::new(TAB_SIZE, MAX_LINE_LENGTH, false)
     }
 }

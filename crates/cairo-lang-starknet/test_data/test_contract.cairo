@@ -57,7 +57,7 @@ mod test_contract {
 
         /// An external method that requires the `segment_arena` builtin.
         #[external]
-        fn segment_arena_builtin(ref self: ContractState, ) {
+        fn segment_arena_builtin(ref self: ContractState,) {
             let x = felt252_dict_new::<felt252>();
             x.squash();
         }

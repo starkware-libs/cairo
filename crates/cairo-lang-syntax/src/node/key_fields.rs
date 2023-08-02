@@ -120,6 +120,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ExprListBraced => {
             vec![]
         }
+        SyntaxKind::WrappedExprListMissing => {
+            vec![]
+        }
         SyntaxKind::PatternIdentifier => {
             vec![/* name */ children[1]]
         }
