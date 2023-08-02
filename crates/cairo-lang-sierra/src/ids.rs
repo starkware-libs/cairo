@@ -2,13 +2,14 @@ use derivative::Derivative;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use salsa;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use smol_str::SmolStr;
 
 macro_rules! define_generic_identity {
     ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive(Clone, Debug, Eq, Hash, PartialEq)]
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
         pub struct $type_name(pub SmolStr);
         impl $type_name {
             pub const fn new_inline(name: &'static str) -> Self {
@@ -44,7 +45,7 @@ define_generic_identity!("The identity of a generic type.", GenericTypeId);
 macro_rules! define_identity {
     ($doc:literal, $type_name:ident) => {
         #[doc=$doc]
-        #[derive(Clone, Debug, Derivative)]
+        #[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
         #[derivative(Eq, Hash, PartialEq)]
         pub struct $type_name {
             pub id: u64,
@@ -105,7 +106,7 @@ define_identity!("The identity of a variable.", VarId);
 define_identity!("The identity of a concrete type.", ConcreteTypeId);
 
 /// The identity of a user type.
-#[derive(Clone, Debug, Derivative)]
+#[derive(Clone, Debug, Derivative, Serialize, Deserialize)]
 #[derivative(Eq, Hash, PartialEq)]
 pub struct UserTypeId {
     pub id: BigUint,

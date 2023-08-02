@@ -1,4 +1,5 @@
 use num_bigint::BigInt;
+use serde::{Deserialize, Serialize};
 
 use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
@@ -6,7 +7,7 @@ use crate::ids::{
 };
 
 /// A full Sierra program.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Program {
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
@@ -24,7 +25,7 @@ impl Program {
 }
 
 /// Declaration of a concrete type.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct TypeDeclaration {
     /// The id of the declared concrete type.
     pub id: ConcreteTypeId,
@@ -33,7 +34,7 @@ pub struct TypeDeclaration {
 }
 
 /// Declaration of a concrete type info.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct DeclaredTypeInfo {
     /// Can the type be stored by any of the store commands.
     pub storable: bool,
@@ -46,7 +47,7 @@ pub struct DeclaredTypeInfo {
 }
 
 /// A concrete type (the generic parent type and the generic arguments).
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConcreteTypeLongId {
     /// The id of the used generic type.
     pub generic_id: GenericTypeId,
@@ -55,7 +56,7 @@ pub struct ConcreteTypeLongId {
 }
 
 /// Declaration of a concrete library function.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct LibfuncDeclaration {
     /// The id of the declared concrete libfunc.
     pub id: ConcreteLibfuncId,
@@ -63,7 +64,7 @@ pub struct LibfuncDeclaration {
 }
 
 /// A concrete library function (the generic parent function and the generic arguments).
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConcreteLibfuncLongId {
     /// The id of the used generic libfunc.
     pub generic_id: GenericLibfuncId,
@@ -72,7 +73,7 @@ pub struct ConcreteLibfuncLongId {
 }
 
 /// Represents the signature of a function.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct FunctionSignature {
     /// The types of the parameters of the function.
     pub param_types: Vec<ConcreteTypeId>,
@@ -81,7 +82,7 @@ pub struct FunctionSignature {
 }
 
 /// Represents a function (its name, signature and entry point).
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct GenFunction<StatementId> {
     /// The name of the function.
     pub id: FunctionId,
@@ -113,14 +114,14 @@ impl<StatementId> GenFunction<StatementId> {
 }
 
 /// Descriptor of a variable.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Param {
     pub id: VarId,
     pub ty: ConcreteTypeId,
 }
 
 /// Represents the index of a Sierra statement in the Program::statements vector.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub struct StatementIdx(pub usize);
 impl StatementIdx {
     pub fn next(&self, target: &BranchTarget) -> StatementIdx {
@@ -132,7 +133,7 @@ impl StatementIdx {
 }
 
 /// Possible arguments for generic type.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum GenericArg {
     UserType(UserTypeId),
     Type(ConcreteTypeId),
@@ -142,7 +143,7 @@ pub enum GenericArg {
 }
 
 /// A possible statement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum GenStatement<StatementId> {
     Invocation(GenInvocation<StatementId>),
     Return(Vec<VarId>),
@@ -168,7 +169,7 @@ impl<StatementId> GenStatement<StatementId> {
 }
 
 /// An invocation statement.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct GenInvocation<StatementId> {
     /// The called libfunc.
     pub libfunc_id: ConcreteLibfuncId,
@@ -180,7 +181,7 @@ pub struct GenInvocation<StatementId> {
 }
 
 /// Describes the flow of a chosen libfunc's branch.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct GenBranchInfo<StatementId> {
     /// The target the branch continues the run through.
     pub target: GenBranchTarget<StatementId>,
@@ -188,7 +189,7 @@ pub struct GenBranchInfo<StatementId> {
     pub results: Vec<VarId>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub enum GenBranchTarget<StatementId> {
     /// Continues a run to the next statement.
     Fallthrough,
