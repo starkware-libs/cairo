@@ -11,40 +11,32 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop)]
+    #[derive(Drop, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
-    use array::ArrayTrait;
-    use array::SpanTrait;
 
-    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
-            output.append(*self.value);
-        }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
-            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
-        }
+    #[derive(Drop, Serde, starknet::Store)]
+    enum SimpleEnum {
+        A: u8,
+        B: u16,
     }
-    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
-            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::Store::read(address_domain, base)?
-            })
-        }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::Store::write(address_domain, base, value.value)
-        }
-        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
-        }
-        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
-        }
-        fn size() -> u8 {
-            1_u8
-        }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum EnumWithDefault {
+        A: u8,
+        #[default]
+        B: u16,
+        C: u32,
+    }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum BadEnumWithDefault {
+        A: u8,
+        #[default]
+        B: u16,
+        #[default]
+        C: u32,
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
@@ -64,40 +56,32 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop)]
+    #[derive(Drop, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
-    use array::ArrayTrait;
-    use array::SpanTrait;
 
-    impl WrappedFelt252Serde of serde::Serde::<WrappedFelt252> {
-        fn serialize(self: @WrappedFelt252, ref output: Array::<felt252>) {
-            output.append(*self.value);
-        }
-        fn deserialize(ref serialized: Span::<felt252>) -> Option::<WrappedFelt252> {
-            Option::<WrappedFelt252>::Some(WrappedFelt252 { value: *serialized.pop_front()? })
-        }
+    #[derive(Drop, Serde, starknet::Store)]
+    enum SimpleEnum {
+        A: u8,
+        B: u16,
     }
-    impl WrappedFelt252Store of starknet::Store::<WrappedFelt252> {
-        fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult::<WrappedFelt252> {
-            starknet::SyscallResult::<WrappedFelt252>::Ok(WrappedFelt252 {
-                value: starknet::Store::read(address_domain, base)?
-            })
-        }
-        #[inline(always)]
-        fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult::<()> {
-            starknet::Store::write(address_domain, base, value.value)
-        }
-        fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
-            WrappedFelt252Store::read_at_offset(address_domain, base, offset)
-        }
-        fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
-            WrappedFelt252Store::write_at_offset(address_domain, base, offset, value)
-        }
-        fn size() -> u8 {
-            1_u8
-        }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum EnumWithDefault {
+        A: u8,
+        #[default]
+        B: u16,
+        C: u32,
+    }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    enum BadEnumWithDefault {
+        A: u8,
+        #[default]
+        B: u16,
+        #[default]
+        C: u32,
     }
     impl WrappedFelt252LegacyHash of hash::LegacyHash::<WrappedFelt252> {
         #[inline(always)]
@@ -113,7 +97,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1243623198958948520580646756853141118759553057893182087136995209187446689212;
+const TEST_CLASS_HASH: felt252 = 868179374812959866992943743346160690500232668884563118364274065120131556484;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -152,10 +136,9 @@ use starknet::event::EventEmitter;
     use var::InternalContractStateTrait as varContractStateTrait;
     mod var {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -200,10 +183,9 @@ use starknet::event::EventEmitter;
     use mapping::InternalContractStateTrait as mappingContractStateTrait;
     mod mapping {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -257,10 +239,9 @@ trait __abi<ContractState> {
 
 mod __external {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -273,10 +254,9 @@ mod __external {
 
 mod __l1_handler {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -289,10 +269,9 @@ mod __l1_handler {
 
 mod __constructor {
         use super::WrappedFelt252;
-        use super::ArrayTrait;
-        use super::SpanTrait;
-        use super::WrappedFelt252Serde;
-        use super::WrappedFelt252Store;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
         use super::WrappedFelt252LegacyHash;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -307,6 +286,291 @@ mod __constructor {
 impls:
 
 impl WrappedFelt252Drop<> of Drop::<WrappedFelt252<>>;
+impl WrappedFelt252Serde<> of serde::Serde::<WrappedFelt252<>> {
+    fn serialize(self: @WrappedFelt252<>, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.value, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<WrappedFelt252<>> {
+        Option::Some(WrappedFelt252 {
+            value: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
+        let value = starknet::Store::<felt252>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            WrappedFelt252 {
+                value,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write(address_domain, base, value.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<WrappedFelt252> {
+        let value = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            WrappedFelt252 {
+                value,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: WrappedFelt252) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.value)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<felt252>::size()
+    }
+}
+
+impls:
+
+impl SimpleEnumDrop of Drop::<SimpleEnum>;
+impl SimpleEnumSerde of serde::Serde::<SimpleEnum> {
+    fn serialize(self: @SimpleEnum, ref output: array::Array<felt252>) {
+        match self {
+            SimpleEnum::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            SimpleEnum::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+        }
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<SimpleEnum> {
+        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+        Option::Some(
+            if idx == 0 { SimpleEnum::A(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { SimpleEnum::B(serde::Serde::deserialize(ref serialized)?) }
+            else { return Option::None; }
+        )
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::A(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::B(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+        }
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
+        match value {
+            SimpleEnum::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            SimpleEnum::B(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<SimpleEnum> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::A(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::B(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: SimpleEnum) -> starknet::SyscallResult<()> {
+        match value {
+            SimpleEnum::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            SimpleEnum::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size())
+    }
+}
+
+impls:
+
+impl EnumWithDefaultDrop of Drop::<EnumWithDefault>;
+impl EnumWithDefaultSerde of serde::Serde::<EnumWithDefault> {
+    fn serialize(self: @EnumWithDefault, ref output: array::Array<felt252>) {
+        match self {
+            EnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+            EnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+        }
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<EnumWithDefault> {
+        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+        Option::Some(
+            if idx == 0 { EnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { EnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { EnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
+            else { return Option::None; }
+        )
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::A(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 0 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::B(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::C(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+        }
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+        match value {
+            EnumWithDefault::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            EnumWithDefault::B(x) => {
+                starknet::Store::write(address_domain, base, 0)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            EnumWithDefault::C(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EnumWithDefault> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::A(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 0 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::B(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::C(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+        match value {
+            EnumWithDefault::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            EnumWithDefault::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 0)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            EnumWithDefault::C(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + cmp::max(starknet::Store::<u32>::size(), cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size()))
+    }
+}
+
+impls:
+
+impl BadEnumWithDefaultDrop of Drop::<BadEnumWithDefault>;
+impl BadEnumWithDefaultSerde of serde::Serde::<BadEnumWithDefault> {
+    fn serialize(self: @BadEnumWithDefault, ref output: array::Array<felt252>) {
+        match self {
+            BadEnumWithDefault::A(x) => { serde::Serde::serialize(@0, ref output); serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::B(x) => { serde::Serde::serialize(@1, ref output); serde::Serde::serialize(x, ref output); },
+            BadEnumWithDefault::C(x) => { serde::Serde::serialize(@2, ref output); serde::Serde::serialize(x, ref output); },
+        }
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<BadEnumWithDefault> {
+        let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
+        Option::Some(
+            if idx == 0 { BadEnumWithDefault::A(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 1 { BadEnumWithDefault::B(serde::Serde::deserialize(ref serialized)?) }
+            else if idx == 2 { BadEnumWithDefault::C(serde::Serde::deserialize(ref serialized)?) }
+            else { return Option::None; }
+        )
+    }
+}
 
 
 impls:
@@ -337,4 +601,204 @@ impl EventIsEvent of starknet::Event<Event> {
     }
 }
 
+
+
+inline_macros:
+
+impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::A(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::B(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Unknown enum indicator:');
+            array::ArrayTrait::append(ref __array_builder_macro_result__, idx);
+            __array_builder_macro_result__
+        })
+        }
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: SimpleEnum) -> starknet::SyscallResult<()> {
+        match value {
+            SimpleEnum::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            SimpleEnum::B(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<SimpleEnum> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::A(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                SimpleEnum::B(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Unknown enum indicator:');
+            array::ArrayTrait::append(ref __array_builder_macro_result__, idx);
+            __array_builder_macro_result__
+        })
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: SimpleEnum) -> starknet::SyscallResult<()> {
+        match value {
+            SimpleEnum::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            SimpleEnum::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size())
+    }
+}
+
+inline_macros:
+
+impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
+        let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::A(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 0 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::B(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::C(
+                    starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Unknown enum indicator:');
+            array::ArrayTrait::append(ref __array_builder_macro_result__, idx);
+            __array_builder_macro_result__
+        })
+        }
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+        match value {
+            EnumWithDefault::A(x) => {
+                starknet::Store::write(address_domain, base, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            EnumWithDefault::B(x) => {
+                starknet::Store::write(address_domain, base, 0)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            },
+            EnumWithDefault::C(x) => {
+                starknet::Store::write(address_domain, base, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<EnumWithDefault> {
+        let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        if idx == 1 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::A(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 0 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::B(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else if idx == 2 {
+            starknet::SyscallResult::Ok(
+                EnumWithDefault::C(
+                    starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                )
+            )
+        }
+        else {
+            starknet::SyscallResult::Err({
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+            array::ArrayTrait::append(ref __array_builder_macro_result__, 'Unknown enum indicator:');
+            array::ArrayTrait::append(ref __array_builder_macro_result__, idx);
+            __array_builder_macro_result__
+        })
+        }
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: EnumWithDefault) -> starknet::SyscallResult<()> {
+        match value {
+            EnumWithDefault::A(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 1)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            EnumWithDefault::B(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 0)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            },
+            EnumWithDefault::C(x) => {
+                starknet::Store::write_at_offset(address_domain, base, offset, 2)?;
+                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+            }
+        };
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        1_u8 + cmp::max(starknet::Store::<u32>::size(), cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size()))
+    }
+}
+
 //! > expected_diagnostics
+error: Plugin diagnostic: Multiple variants annotated with `#[default]`
+ --> lib.cairo:32:9
+        #[default]
+        ^********^
