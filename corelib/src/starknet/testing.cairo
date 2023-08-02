@@ -1,4 +1,4 @@
-use starknet::{ ContractAddress, EthAddress };
+use starknet::ContractAddress;
 use array::ArrayTrait;
 use array::SpanTrait;
 use traits::Into;
