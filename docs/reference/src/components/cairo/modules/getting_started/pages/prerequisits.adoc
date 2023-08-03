@@ -9,15 +9,15 @@
 rustup override set stable && rustup update
 ```
 
-Ensure Rust was installed correctly by running the following from the root project directory:
-```bash
-cargo test
-```
-
 Clone the Cairo repo:
 
 ```sh
 git clone https://github.com/starkware-libs/cairo
+```
+
+Ensure Rust was installed correctly by running the following from the root project directory:
+```bash
+cd cairo && cargo test
 ```
 
 ## Development environment setup
