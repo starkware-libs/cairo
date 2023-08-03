@@ -7,7 +7,6 @@ use starknet::syscalls::{ deploy_syscall, get_block_hash_syscall };
 use starknet::class_hash::Felt252TryIntoClassHash;
 use test::test_utils::{ assert_eq, assert_ne };
 
-// locals
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
 #[starknet::contract]
@@ -15,7 +14,6 @@ mod contract_with_messages_sent_to_l1 {
     use traits::Into;
     use array::ArrayTrait;
 
-    // locals
     use super::generate_payload;
 
     #[storage]
@@ -44,7 +42,7 @@ mod contract_with_messages_sent_to_l1 {
 }
 
 
-// generate_payload(n) -> [0, 1, 2, ..., n]
+// Generates the array [0, 1, 2, ..., n]
 fn generate_payload(n: u128) -> Array<felt252> {
     let mut payload = array![];
 
@@ -61,10 +59,6 @@ fn generate_payload(n: u128) -> Array<felt252> {
     payload
 }
 
-//
-// Tests
-//
-
 #[test]
 #[available_gas(30000000)]
 fn test_l2_to_l1_messages() {
@@ -75,15 +69,15 @@ fn test_l2_to_l1_messages() {
 
     testing::set_contract_address(contract_address);
 
-    // send messages
+    // Send messages.
     contract.send_message_to_l1();
     contract.send_message_to_l1();
     contract.send_message_to_l1();
 
-    // assert other addresses did not sent messages
+    // Assert other addresses did not sent messages.
     assert(testing::pop_l2_to_l1_message(other_contract_address).is_none(), 'no messages');
 
-    // pop messages
+    // Pop messages.
     assert_eq(
         @testing::pop_l2_to_l1_message(contract_address).unwrap(),
         @(0, array![0].span()),
@@ -100,7 +94,7 @@ fn test_l2_to_l1_messages() {
         'message == (2, [0, 1, 2])'
     );
 
-    // assert all messages have been popped
+    // Assert all messages have been popped.
     assert(testing::pop_l2_to_l1_message(contract_address).is_none(), 'no more messages');
 }
 
