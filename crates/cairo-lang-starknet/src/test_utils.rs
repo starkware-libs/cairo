@@ -1,10 +1,10 @@
-use std::ops::DerefMut;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_compiler::project::setup_project;
 use cairo_lang_compiler::CompilerConfig;
+use cairo_lang_filesystem::db::FilesGroup;
+use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_test_utils::test_lock;
 use once_cell::sync::Lazy;
 
@@ -21,7 +21,7 @@ pub fn get_example_file_path(file_name: &str) -> PathBuf {
 
 /// Salsa database configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
-static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
@@ -34,12 +34,19 @@ static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
 /// Returns the compiled test contract, with replaced ids.
 pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
     let path = get_example_file_path(example_file_name);
-    let mut locked_db = test_lock(&SHARED_DB);
+    let locked_db = test_lock(&SHARED_DB);
     // Setting up the contract path.
     let db = locked_db.snapshot();
-    let main_crate_ids =
-        setup_project(locked_db.deref_mut(), Path::new(&path)).expect("failed to setup project");
     drop(locked_db);
+    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(&path)));
+    let crate_id = db.intern_crate(CrateLongId::Virtual {
+        name: "test".into(),
+        root: Directory::Virtual {
+            files: [("lib.cairo".into(), file_id)].into(),
+            dirs: Default::default(),
+        },
+    });
+    let main_crate_ids = vec![crate_id];
     compile_contract_in_prepared_db(
         &db,
         None,

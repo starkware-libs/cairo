@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
 
     let main_crate_ids = setup_project(db, Path::new(&args.path))?;
 
-    if DiagnosticsReporter::stderr().check(db) {
+    if DiagnosticsReporter::stderr().check(db, &[]) {
         anyhow::bail!("failed to compile: {}", args.path.display());
     }
 

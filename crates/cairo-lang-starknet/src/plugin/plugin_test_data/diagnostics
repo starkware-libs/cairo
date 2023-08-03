@@ -19,7 +19,7 @@ error: Plugin diagnostic: Contracts without body are not supported.
 #[starknet::contract]
 ^*******************^
 
-error: Module file not found. Expected path: src/test_contract.cairo
+error: Module file not found. Expected path: test_contract.cairo
  --> lib.cairo:1:1
 #[starknet::contract]
 ^*******************^

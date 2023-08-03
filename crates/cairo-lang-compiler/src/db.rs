@@ -41,7 +41,7 @@ impl salsa::ParallelDatabase for RootDatabase {
     fn snapshot(&self) -> salsa::Snapshot<RootDatabase> {
         salsa::Snapshot::new(RootDatabase {
             storage: self.storage.snapshot(),
-            green_interner: Default::default(),
+            green_interner: self.green_interner.clone(),
         })
     }
 }

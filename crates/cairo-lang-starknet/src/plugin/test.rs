@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::get_diagnostics_as_string;
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
@@ -9,33 +6,20 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use crate::plugin::StarkNetPlugin;
+use crate::test_utils::SHARED_DB;
 
-struct ExpandContractTestRunner {
-    db: RootDatabase,
-}
-
-impl Default for ExpandContractTestRunner {
-    fn default() -> Self {
-        Self {
-            db: RootDatabase::builder()
-                .detect_corelib()
-                .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
-                .build()
-                .unwrap(),
-        }
-    }
-}
+#[derive(Default)]
+struct ExpandContractTestRunner {}
 
 impl TestFileRunner for ExpandContractTestRunner {
     fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+        let db = SHARED_DB.lock().unwrap().snapshot();
         let (test_module, _semantic_diagnostics) =
-            setup_test_module(&mut self.db, inputs["cairo_code"].as_str()).split();
+            setup_test_module(&db, inputs["cairo_code"].as_str()).split();
 
         let mut module_ids = vec![test_module.module_id];
         module_ids.extend(
-            self.db
-                .module_submodules_ids(test_module.module_id)
+            db.module_submodules_ids(test_module.module_id)
                 .unwrap_or_default()
                 .iter()
                 .copied()
@@ -43,7 +27,7 @@ impl TestFileRunner for ExpandContractTestRunner {
         );
         let mut files = vec![];
         for module_id in module_ids {
-            for file in self.db.module_files(module_id).unwrap_or_default().iter().copied() {
+            for file in db.module_files(module_id).unwrap_or_default().iter().copied() {
                 if files.contains(&file) {
                     continue;
                 }
@@ -53,13 +37,16 @@ impl TestFileRunner for ExpandContractTestRunner {
         let mut file_contents = vec![];
 
         for file in files {
-            file_contents.push(format!("{}:", file.file_name(&self.db)));
-            file_contents.push(self.db.file_content(file).unwrap().as_ref().clone());
+            file_contents.push(format!("{}:", file.file_name(&db)));
+            file_contents.push(db.file_content(file).unwrap().as_ref().clone());
         }
 
         OrderedHashMap::from([
             ("generated_cairo_code".into(), file_contents.join("\n\n")),
-            ("expected_diagnostics".into(), get_diagnostics_as_string(&mut self.db)),
+            (
+                "expected_diagnostics".into(),
+                get_diagnostics_as_string(&db, &[test_module.crate_id]),
+            ),
         ])
     }
 }
