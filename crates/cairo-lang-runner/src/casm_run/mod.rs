@@ -639,7 +639,7 @@ impl<'a> CairoHintProcessor<'a> {
                 self.send_message_to_l1(
                     gas_counter,
                     system_buffer.next_felt252()?.into_owned(),
-                    system_buffer.next_arr()?
+                    system_buffer.next_arr()?,
                 )
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
@@ -860,7 +860,12 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().l2_to_l1_messages.push_back((to_address, payload));
+        self.starknet_state
+            .logs
+            .entry(contract)
+            .or_default()
+            .l2_to_l1_messages
+            .push_back((to_address, payload));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -1127,9 +1132,7 @@ impl<'a> CairoHintProcessor<'a> {
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
-                    contract_logs.and_then(
-                        |contract_logs| contract_logs.events.pop_front()
-                    )
+                    contract_logs.and_then(|contract_logs| contract_logs.events.pop_front())
                 {
                     res_segment.write(keys.len())?;
                     res_segment.write_data(keys.iter())?;
@@ -1139,10 +1142,8 @@ impl<'a> CairoHintProcessor<'a> {
             }
             "pop_l2_to_l1_message" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
-                if let Some((to_address, payload)) =
-                    contract_logs.and_then(
-                        |contract_logs| contract_logs.l2_to_l1_messages.pop_front()
-                    )
+                if let Some((to_address, payload)) = contract_logs
+                    .and_then(|contract_logs| contract_logs.l2_to_l1_messages.pop_front())
                 {
                     res_segment.write(to_address)?;
                     res_segment.write(payload.len())?;
