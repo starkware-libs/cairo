@@ -46,7 +46,7 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
 }
 
 pub fn core_crate(db: &dyn SemanticGroup) -> CrateId {
-    db.intern_crate(CrateLongId("core".into()))
+    db.intern_crate(CrateLongId::Real("core".into()))
 }
 
 pub fn core_felt252_ty(db: &dyn SemanticGroup) -> TypeId {
