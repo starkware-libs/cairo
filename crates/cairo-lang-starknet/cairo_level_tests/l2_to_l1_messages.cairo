@@ -1,11 +1,11 @@
-use traits::{ Into, TryInto, PartialEq };
-use array::{ ArrayTrait, SpanTrait, SpanPartialEq };
+use traits::{Into, TryInto, PartialEq};
+use array::{ArrayTrait, SpanTrait, SpanPartialEq};
 use option::OptionTrait;
 use result::ResultTrait;
-use starknet::{ testing, SyscallResultTrait };
-use starknet::syscalls::{ deploy_syscall, get_block_hash_syscall };
+use starknet::{testing, SyscallResultTrait};
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::class_hash::Felt252TryIntoClassHash;
-use test::test_utils::{ assert_eq, assert_ne };
+use test::test_utils::{assert_eq, assert_ne};
 
 use contract_with_messages_sent_to_l1::IContractWithMessagesSentToL1;
 
@@ -33,8 +33,7 @@ mod contract_with_messages_sent_to_l1 {
             let value_ = self.value.read();
 
             starknet::send_message_to_l1_syscall(
-                to_address: value_.into(),
-                payload: generate_payload(n: value_).span()
+                to_address: value_.into(), payload: generate_payload(n: value_).span()
             );
             self.value.write(value_ + 1);
         }
