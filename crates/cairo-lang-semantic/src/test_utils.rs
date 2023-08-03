@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
@@ -16,6 +16,7 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
+use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::items::functions::GenericFunctionId;
@@ -26,14 +27,30 @@ pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
-impl Default for SemanticDatabaseForTesting {
-    fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+impl salsa::ParallelDatabase for SemanticDatabaseForTesting {
+    fn snapshot(&self) -> salsa::Snapshot<SemanticDatabaseForTesting> {
+        salsa::Snapshot::new(SemanticDatabaseForTesting { storage: self.storage.snapshot() })
+    }
+}
+impl SemanticDatabaseForTesting {
+    pub fn new_empty() -> Self {
+        let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(vec![]);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
+    }
+    /// Snapshots the db for read only.
+    pub fn snapshot(&self) -> SemanticDatabaseForTesting {
+        SemanticDatabaseForTesting { storage: self.storage.snapshot() }
+    }
+}
+pub static SHARED_DB: Lazy<Mutex<SemanticDatabaseForTesting>> =
+    Lazy::new(|| Mutex::new(SemanticDatabaseForTesting::new_empty()));
+impl Default for SemanticDatabaseForTesting {
+    fn default() -> Self {
+        SHARED_DB.lock().unwrap().snapshot()
     }
 }
 impl AsFilesGroupMut for SemanticDatabaseForTesting {
