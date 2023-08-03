@@ -195,12 +195,12 @@ fn foo() {}
 foo
 
 //! > module_code
-struct Linear {}
+struct NonCopy {}
 
 struct A {}
 enum B {}
-struct C { x: felt252, y: Linear }
-enum D { X: felt252, Y: Linear }
+struct C { x: felt252, y: NonCopy }
+enum D { X: felt252, Y: NonCopy }
 extern type E;
 
 impl ACopy of Copy::<A>;
@@ -215,39 +215,39 @@ impl ECopy of Copy::<E>;
 impl EDrop of Drop::<E>;
 impl TCopy of Copy::<()>;
 impl TDrop of Drop::<()>;
-impl T2Copy of Copy::<(felt252, Linear)>;
-impl T2Drop of Drop::<(felt252, Linear)>;
+impl T2Copy of Copy::<(felt252, NonCopy)>;
+impl T2Drop of Drop::<(felt252, NonCopy)>;
 
 //! > expected_diagnostics
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:13:1
 impl CCopy of Copy::<C>;
 ^**********************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:14:1
 impl CDrop of Drop::<C>;
 ^**********************^
 
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:15:1
 impl DCopy of Copy::<D>;
 ^**********************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:16:1
 impl DDrop of Drop::<D>;
 ^**********************^
 
-error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<core::felt252>.
+error: Invalid copy trait implementation, Trait has no implementation in context: core::traits::Copy::<test::NonCopy>.
  --> lib.cairo:21:1
-impl T2Copy of Copy::<(felt252, Linear)>;
-^***************************************^
+impl T2Copy of Copy::<(felt252, NonCopy)>;
+^****************************************^
 
-error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<core::felt252>.
+error: Invalid drop trait implementation, Trait has no implementation in context: core::traits::Drop::<test::NonCopy>.
  --> lib.cairo:22:1
-impl T2Drop of Drop::<(felt252, Linear)>;
-^***************************************^
+impl T2Drop of Drop::<(felt252, NonCopy)>;
+^****************************************^
 
 //! > ==========================================================================
 

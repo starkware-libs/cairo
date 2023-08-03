@@ -452,7 +452,6 @@ fn foo() {
 foo
 
 //! > module_code
-impl Felt252Drop of Drop::<felt252>;
 struct A<T> { }
 trait MyTrait<T> {
    fn foo<impl TDrop: Drop::<T>>(self:A<T>);
@@ -482,7 +481,6 @@ fn foo() {
 foo
 
 //! > module_code
-impl Felt252Copy of Copy::<felt252>;
 
 //! > expected_diagnostics
 
@@ -502,7 +500,6 @@ fn foo() {
 foo
 
 //! > module_code
-impl Felt252Copy of Copy::<felt252>;
 fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
    clone_loop::<T>(x)
 }

@@ -83,10 +83,10 @@ error: 'super' cannot be used for the crate's root module.
   super::foo();
   ^***^
 
-error: Invalid path.
- --> lib.cairo:14:9
+error: Identifier not found.
+ --> lib.cairo:14:3
   test::super::foo();
-        ^***^
+  ^**^
 
 //! > ==========================================================================
 

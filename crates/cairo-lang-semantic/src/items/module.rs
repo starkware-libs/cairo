@@ -108,10 +108,24 @@ pub fn module_usable_trait_ids(
 ) -> Maybe<Arc<OrderedHashSet<TraitId>>> {
     let mut module_traits =
         OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
+    // Add traits from impls in the module.
+    for imp in db.module_impls_ids(module_id)?.iter().copied() {
+        let trait_id = db.impl_def_trait(imp)?;
+        module_traits.insert(trait_id);
+    }
+    // Add traits from uses in the module.
     for use_id in db.module_uses_ids(module_id)?.iter().copied() {
-        if let Ok(ResolvedGenericItem::Trait(trait_id)) = db.use_resolved_item(use_id) {
-            module_traits.insert(trait_id);
-        }
+        match db.use_resolved_item(use_id)? {
+            // use of a trait.
+            ResolvedGenericItem::Trait(trait_id) => {
+                module_traits.insert(trait_id);
+            }
+            // use of an impl from which we get the trait.
+            ResolvedGenericItem::Impl(impl_def_id) => {
+                module_traits.insert(db.impl_def_trait(impl_def_id)?);
+            }
+            _ => {}
+        };
     }
     Ok(module_traits.into())
 }
