@@ -28,5 +28,9 @@ pub fn detect_corelib() -> Option<PathBuf> {
         try_path!(&dir, 3);
     }
 
+    if let Ok(dir) = std::env::current_dir() {
+        try_path!(&dir, 0);
+    }
+
     None
 }

@@ -4,3 +4,5 @@
 .spr.yml
 node_modules
 .DS_Store
+perf.data*
+flamegraph.svg

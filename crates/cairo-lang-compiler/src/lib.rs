@@ -88,8 +88,8 @@ pub fn compile(
 /// # Arguments
 /// * `db` - Preloaded compilation database.
 /// * `main_crate_ids` - [`CrateId`]s to compile. Do not include dependencies here, only pass
-///   top-level crates in order to eliminate unused code. Use `db.intern_crate(CrateLongId(name))`
-///   in order to obtain [`CrateId`] from its name.
+///   top-level crates in order to eliminate unused code. Use
+///   `db.intern_crate(CrateLongId::Real(name))` in order to obtain [`CrateId`] from its name.
 /// * `compiler_config` - The compiler configuration.
 /// # Returns
 /// * `Ok(SierraProgram)` - The compiled program.

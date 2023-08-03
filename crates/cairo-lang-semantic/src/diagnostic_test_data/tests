@@ -69,6 +69,11 @@ fn foo() {
 //! > function_body
 
 //! > expected_diagnostics
+error: Function not found.
+ --> lib.cairo:7:9
+  test::foo();
+        ^*^
+
 error: Identifier not found.
  --> lib.cairo:8:3
   bad_module::foo();
