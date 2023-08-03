@@ -36,9 +36,10 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
     let path = get_example_file_path(example_file_name);
     let mut locked_db = test_lock(&SHARED_DB);
     // Setting up the contract path.
+    let db = locked_db.snapshot();
     let main_crate_ids =
         setup_project(locked_db.deref_mut(), Path::new(&path)).expect("failed to setup project");
-    let db = locked_db.snapshot();
+    drop(locked_db);
     compile_contract_in_prepared_db(
         &db,
         None,
