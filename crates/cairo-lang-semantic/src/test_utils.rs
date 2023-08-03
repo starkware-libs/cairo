@@ -12,6 +12,7 @@ use cairo_lang_filesystem::ids::{
     CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
 };
 use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
@@ -35,7 +36,7 @@ impl SemanticDatabaseForTesting {
     pub fn new_empty() -> Self {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_macro_plugins(vec![]);
+        res.set_macro_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
