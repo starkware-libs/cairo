@@ -5,7 +5,6 @@ use option::OptionTrait;
 use traits::{TryInto, Into};
 use zeroable::Zeroable;
 use clone::Clone;
-use starknet::Event;
 use starknet::class_hash::Felt252TryIntoClassHash;
 use starknet::StorageAddress;
 use test::test_utils::{assert_eq, assert_ne};
@@ -340,7 +339,7 @@ enum MyEventEnum {
 
 fn event_serde_tester<
     T,
-    impl TEvent: Event<T>,
+    impl TEvent: starknet::Event<T>,
     impl TClone: Clone<T>,
     impl TPartialEq: PartialEq<T>,
     impl TDrop: Drop<T>
@@ -353,7 +352,7 @@ fn event_serde_tester<
     event.append_keys_and_data(ref keys, ref data);
     let mut keys = keys.span();
     let mut data = data.span();
-    let mut event = Event::deserialize(ref keys, ref data).unwrap();
+    let mut event = starknet::Event::deserialize(ref keys, ref data).unwrap();
     assert_eq(@event, @original_event, 'Event deserialization failed');
 }
 

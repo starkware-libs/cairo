@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, LocalVarLongId, MemberId, TraitFunctionId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -18,6 +19,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionHelper};
@@ -1561,11 +1563,12 @@ fn dot_expr(
 }
 
 /// Finds all the trait ids usable in the current context.
-fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Vec<TraitId>> {
-    let mut module_traits = ctx.db.module_traits_ids(ctx.resolver.module_file_id.0)?;
+fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<OrderedHashSet<TraitId>> {
+    let mut module_traits =
+        OrderedHashSet::from_iter(ctx.db.module_traits_ids(ctx.resolver.module_file_id.0)?);
     for use_id in ctx.db.module_uses_ids(ctx.resolver.module_file_id.0)? {
         if let Ok(ResolvedGenericItem::Trait(trait_id)) = ctx.db.use_resolved_item(use_id) {
-            module_traits.push(trait_id);
+            module_traits.insert(trait_id);
         }
     }
     Ok(module_traits)
@@ -1591,10 +1594,19 @@ fn method_call_expr(
     let generic_args_syntax = segment.generic_args(syntax_db);
     // Save some work.
     ctx.resolver.inference().solve().ok();
-    let candidate_traits = all_module_trait_ids(ctx)?;
+    let mut candidate_traits = all_module_trait_ids(ctx)?;
+
+    // Add traits from generic args in the context.
+    for generic_param in ctx.resolver.data.generic_params.values() {
+        if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
+            let trait_id = ctx.db.generic_impl_param_trait(*generic_param)?;
+            candidate_traits.insert(trait_id);
+        }
+    }
+
     let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
         ctx,
-        candidate_traits,
+        Vec::from_iter(candidate_traits),
         func_name,
         lexpr,
         path.stable_ptr().untyped(),
