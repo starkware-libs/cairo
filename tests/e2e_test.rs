@@ -93,11 +93,10 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 struct SmallE2ETestRunner;
 impl TestFileRunner for SmallE2ETestRunner {
     fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-        let mut locked_db = test_lock(&SHARED_DB);
+        let locked_db = test_lock(&SHARED_DB);
         // Parse code and create semantic model.
-        let test_module =
-            setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
         let db = locked_db.snapshot();
+        let test_module = setup_test_module(&db, inputs["cairo"].as_str()).unwrap();
         DiagnosticsReporter::stderr().ensure(&db).unwrap();
 
         // Compile to Sierra.
@@ -118,6 +117,7 @@ impl TestFileRunner for SmallE2ETestRunner {
         let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
             .unwrap()
             .to_string();
+        drop(locked_db);
 
         OrderedHashMap::from([
             ("casm".into(), casm),

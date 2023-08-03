@@ -244,7 +244,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedConcreteItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+                            db.intern_crate(CrateLongId::Real(identifier.text(syntax_db))),
                         )),
                     )
                 }
@@ -359,7 +359,7 @@ impl<'db> Resolver<'db> {
                         db,
                         segments.next().unwrap(),
                         ResolvedGenericItem::Module(ModuleId::CrateRoot(
-                            db.intern_crate(CrateLongId(identifier.text(syntax_db))),
+                            db.intern_crate(CrateLongId::Real(identifier.text(syntax_db))),
                         )),
                     )
                 }
@@ -662,7 +662,7 @@ impl<'db> Resolver<'db> {
 
         // If the first segment is a name of a crate, use the crate's root module as the base
         // module.
-        let crate_id = self.db.intern_crate(CrateLongId(ident));
+        let crate_id = self.db.intern_crate(CrateLongId::Real(ident));
         // TODO(spapini): Use a better interface to check if the crate exists (not using `dir`).
         if self.db.crate_root_dir(crate_id).is_some() {
             return None;

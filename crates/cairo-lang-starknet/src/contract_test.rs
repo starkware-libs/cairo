@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use cairo_lang_compiler::db::RootDatabase;
-use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::{get_crate_semantic_diagnostics, setup_test_crate};
 use indoc::indoc;
 use itertools::Itertools;
@@ -40,7 +39,7 @@ fn test_contract_resolving() {
         "},
     );
 
-    let contracts = find_contracts(db, &db.crates());
+    let contracts = find_contracts(db, &[crate_id]);
     assert_eq!(contracts.len(), 1);
 
     assert_eq!(
