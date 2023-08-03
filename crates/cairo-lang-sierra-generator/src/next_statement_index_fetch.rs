@@ -22,7 +22,7 @@ impl NextStatementIndexFetch {
                 }
                 Statement::Label(label) => {
                     if label_to_statement.insert(label.id, index).is_some() {
-                        panic!("Label {} was already declared.", label.id);
+                        panic!("Label was already declared.");
                     }
                     if include_label_indices {
                         index += 1;

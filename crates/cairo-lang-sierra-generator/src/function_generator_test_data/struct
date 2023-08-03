@@ -22,7 +22,7 @@ use box::BoxTrait;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 unbox<core::integer::u256>([0]) -> ([1])
 struct_deconstruct<core::integer::u256>([1]) -> ([2], [3])
 drop<u128>([2]) -> ()

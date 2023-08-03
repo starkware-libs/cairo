@@ -56,7 +56,7 @@ test_expr_diagnostics
 {
   foo();
   core::felt252_add(1,1);
-  test::foo();
+  submod::foo();
   bad_module::foo();
   super::foo();
   test::super::foo();
@@ -65,22 +65,26 @@ test_expr_diagnostics
 //! > module_code
 fn foo() {
 }
+mod submod {
+  fn foo() {
+  }
+}
 
 //! > function_body
 
 //! > expected_diagnostics
 error: Identifier not found.
- --> lib.cairo:8:3
+ --> lib.cairo:12:3
   bad_module::foo();
   ^********^
 
 error: 'super' cannot be used for the crate's root module.
- --> lib.cairo:9:3
+ --> lib.cairo:13:3
   super::foo();
   ^***^
 
 error: Invalid path.
- --> lib.cairo:10:9
+ --> lib.cairo:14:9
   test::super::foo();
         ^***^
 

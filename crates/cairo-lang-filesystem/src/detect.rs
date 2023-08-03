@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+#[allow(clippy::reversed_empty_ranges)]
 pub fn detect_corelib() -> Option<PathBuf> {
     macro_rules! try_path {
         ($base:expr, $up:expr) => {{
@@ -26,6 +27,10 @@ pub fn detect_corelib() -> Option<PathBuf> {
     if let Ok(dir) = std::env::current_exe() {
         try_path!(&dir, 2);
         try_path!(&dir, 3);
+    }
+
+    if let Ok(dir) = std::env::current_dir() {
+        try_path!(&dir, 0);
     }
 
     None

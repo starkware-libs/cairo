@@ -36,7 +36,7 @@ cairo_lang_test_utils::test_file_test!(
 );
 
 fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
+    let db = &mut SierraGenDatabaseForTesting::new_empty();
 
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
@@ -85,7 +85,7 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
 
     let statements = generate_block_code(&mut expr_generator_context, BlockId::root()).unwrap();
     for statement in &statements {
-        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string());
+        expected_sierra_code.push_str(&replace_sierra_ids(db, statement).to_string(db));
         expected_sierra_code.push('\n');
     }
 

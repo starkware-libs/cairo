@@ -24,7 +24,7 @@ fn bar(x: felt252, y: felt252, z: felt252) -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 disable_ap_tracking() -> ()
 drop<felt252>([1]) -> ()
 felt252_const<5>() -> ([2])
