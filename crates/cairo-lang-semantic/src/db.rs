@@ -900,6 +900,7 @@ pub trait SemanticGroup:
         generic_param: GenericParamId,
     ) -> Maybe<Arc<ResolverData>>;
     /// Returns the trait a generic param impl should implement.
+    /// Panics if the generic param is not a generic impl param.
     #[salsa::invoke(items::generics::generic_impl_param_trait)]
     fn generic_impl_param_trait(&self, generic_param_id: GenericParamId) -> Maybe<TraitId>;
 

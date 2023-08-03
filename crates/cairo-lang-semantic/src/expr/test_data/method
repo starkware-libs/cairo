@@ -98,3 +98,33 @@ error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic param
  --> lib.cairo:34:7
     x.is_bla();
       ^****^
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from the generic arguments.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<T, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: T) {}
+    }
+}
+
+//! > expected_diagnostics

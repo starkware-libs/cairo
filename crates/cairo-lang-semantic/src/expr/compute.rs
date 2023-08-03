@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
+    FunctionTitleId, FunctionWithBodyId, GenericKind, LocalVarLongId, MemberId, TraitFunctionId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -1589,10 +1590,19 @@ fn method_call_expr(
     // Save some work.
     ctx.resolver.inference().solve().ok();
 
-    let candidate_traits = traits_in_context(ctx)?;
+    let mut candidate_traits = traits_in_context(ctx)?;
+
+    // Add traits from impl generic args in the context.
+    for generic_param in ctx.resolver.data.generic_params.values() {
+        if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
+            let trait_id = ctx.db.generic_impl_param_trait(*generic_param)?;
+            candidate_traits.insert(trait_id);
+        }
+    }
+
     let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
         ctx,
-        &Vec::from_iter(candidate_traits)[..],
+        Vec::from_iter(candidate_traits).as_slice(),
         func_name,
         lexpr,
         path.stable_ptr().untyped(),
