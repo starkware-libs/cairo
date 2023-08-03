@@ -225,7 +225,7 @@ fn test_add_store_statements(
         local_variables,
     )
     .iter()
-    .map(|statement| replace_sierra_ids(db, statement).to_string())
+    .map(|statement| replace_sierra_ids(db, statement).to_string(db))
     .collect()
 }
 
@@ -239,7 +239,7 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["2", "4"], &["5"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
         dummy_return_statement(&[]),
     ];
@@ -255,7 +255,7 @@ fn store_temp_simple() {
             "store_temp<felt252>(4) -> (4)",
             "felt252_add(2, 4) -> (5)",
             "nope() -> ()",
-            "label0:",
+            "label_test::test::0:",
             "store_temp<felt252>(5) -> (5)",
             "felt252_add(5, 5) -> (6)",
             "return()",
@@ -269,7 +269,7 @@ fn store_temp_for_branch_command() {
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_branch(&db, "branch_with_param", &["2"], 0),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_return_statement(&[]),
     ];
 
@@ -278,8 +278,8 @@ fn store_temp_for_branch_command() {
         vec![
             "felt252_add(0, 1) -> (2)",
             "store_temp<felt252>(2) -> (2)",
-            "branch_with_param(2) { label0() fallthrough() }",
-            "label0:",
+            "branch_with_param(2) { label_test::test::0() fallthrough() }",
+            "label_test::test::0:",
             "return()",
         ]
     );
@@ -303,11 +303,11 @@ fn store_local_simple() {
         dummy_simple_statement(&db, "store_temp<felt252>", &["9"], &["9"]),
         // Don't store as local due to a simple jump.
         dummy_jump_statement(&db, 0),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_simple_statement(&db, "nope", &[], &[]),
         // Case IV: tempvar copied into local before branches.
         dummy_simple_branch(&db, "branch", &[], 1),
-        dummy_label(1),
+        dummy_label(&db, 1),
         dummy_return_statement(&[]),
     ];
 
@@ -335,12 +335,12 @@ fn store_local_simple() {
             "store_local<felt252>(107, 7) -> (7)",
             "revoke_ap() -> ()",
             "store_temp<felt252>(9) -> (9)",
-            "jump() { label0() }",
-            "label0:",
+            "jump() { label_test::test::0() }",
+            "label_test::test::0:",
             "nope() -> ()",
             "store_local<felt252>(109, 9) -> (9)",
-            "branch() { label1() fallthrough() }",
-            "label1:",
+            "branch() { label_test::test::1() fallthrough() }",
+            "label_test::test::1:",
             "return()",
         ],
     );
@@ -408,10 +408,10 @@ fn store_local_result_of_if() {
         dummy_simple_statement(&db, "store_temp<felt252>", &["100"], &["100"]),
         dummy_jump_statement(&db, 1),
         // Else part.
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_push_values(&db, &[("0", "100")]),
         // Post-if.
-        dummy_label(1),
+        dummy_label(&db, 1),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "revoke_ap", &[], &[]),
         dummy_return_statement(&[]),
@@ -424,12 +424,12 @@ fn store_local_result_of_if() {
             OrderedHashMap::from_iter(vec![("100".into(), "200".into()),])
         ),
         vec![
-            "branch() { label0() fallthrough() }",
+            "branch() { label_test::test::0() fallthrough() }",
             "store_temp<felt252>(100) -> (100)",
-            "jump() { label1() }",
-            "label0:",
+            "jump() { label_test::test::1() }",
+            "label_test::test::0:",
             "store_temp<felt252>(0) -> (100)",
-            "label1:",
+            "label_test::test::1:",
             "nope() -> ()",
             "store_local<felt252>(200, 100) -> (100)",
             "revoke_ap() -> ()",
@@ -618,9 +618,9 @@ fn push_values_after_branch_merge() {
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_push_values(&db, &[("0", "100"), ("1", "101"), ("2", "102")]),
         dummy_jump_statement(&db, 1),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_push_values(&db, &[("1", "101"), ("2", "102")]),
-        dummy_label(1),
+        dummy_label(&db, 1),
         dummy_push_values(&db, &[("101", "201"), ("102", "202"), ("3", "203")]),
         dummy_return_statement(&["0"]),
     ];
@@ -628,17 +628,17 @@ fn push_values_after_branch_merge() {
     assert_eq!(
         test_add_store_statements(&db, statements, LocalVariables::default()),
         vec![
-            "branch() { label0() fallthrough() }",
+            "branch() { label_test::test::0() fallthrough() }",
             // Push [0], [1] and [2].
             "store_temp<felt252>(0) -> (100)",
             "store_temp<felt252>(1) -> (101)",
             "store_temp<felt252>(2) -> (102)",
-            "jump() { label1() }",
-            "label0:",
+            "jump() { label_test::test::1() }",
+            "label_test::test::0:",
             // Push [1] and [2].
             "store_temp<felt252>(1) -> (101)",
             "store_temp<felt252>(2) -> (102)",
-            "label1:",
+            "label_test::test::1:",
             // Here the two branches merge and the merged stack is [1], [2].
             // Reuse [101] and [102]. Push [3].
             "rename<felt252>(101) -> (201)",
@@ -659,7 +659,7 @@ fn push_values_early_return() {
         dummy_simple_branch(&db, "branch", &[], 0),
         dummy_push_values(&db, &[("101", "201"), ("2", "202"), ("3", "203")]),
         dummy_return_statement(&["0"]),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_push_values(&db, &[("101", "201"), ("2", "202")]),
         dummy_return_statement(&["0"]),
     ];
@@ -670,7 +670,7 @@ fn push_values_early_return() {
             // Push [0] and [1].
             "store_temp<felt252>(0) -> (100)",
             "store_temp<felt252>(1) -> (101)",
-            "branch() { label0() fallthrough() }",
+            "branch() { label_test::test::0() fallthrough() }",
             // Reuse [101]. Push [2] and [3].
             "rename<felt252>(101) -> (201)",
             "store_temp<felt252>(2) -> (202)",
@@ -678,7 +678,7 @@ fn push_values_early_return() {
             "return(0)",
             // This is not a merge of branches because of the "return" statement.
             // The stack contains [0] and [1].
-            "label0:",
+            "label_test::test::0:",
             // Reuse [101]. Push [2].
             "rename<felt252>(101) -> (201)",
             "store_temp<felt252>(2) -> (202)",
@@ -735,7 +735,7 @@ fn consecutive_const_additions_with_branch() {
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
         dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
         dummy_simple_branch(&db, "branch", &[], 0),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_push_values(&db, &[("4", "5")]),
         dummy_return_statement(&["5"]),
     ];
@@ -749,8 +749,8 @@ fn consecutive_const_additions_with_branch() {
             // There is no need to add a store_temp() instruction between two `felt252_add3()`.
             "felt252_add3(3) -> (4)",
             "store_temp<felt252>(4) -> (4)",
-            "branch() { label0() fallthrough() }",
-            "label0:",
+            "branch() { label_test::test::0() fallthrough() }",
+            "label_test::test::0:",
             // Return.
             "rename<felt252>(4) -> (5)",
             "return(5)",
@@ -767,7 +767,7 @@ fn consecutive_appends_with_branch() {
         dummy_simple_statement(&db, "array_append", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "array_append", &["4", "5"], &["6"]),
         dummy_simple_branch(&db, "branch", &[], 0),
-        dummy_label(0),
+        dummy_label(&db, 0),
         dummy_push_values(&db, &[("6", "7")]),
         dummy_return_statement(&["7"]),
     ];
@@ -779,8 +779,8 @@ fn consecutive_appends_with_branch() {
             "array_append(2, 3) -> (4)",
             "array_append(4, 5) -> (6)",
             "store_temp<Array<felt252>>(6) -> (6)",
-            "branch() { label0() fallthrough() }",
-            "label0:",
+            "branch() { label_test::test::0() fallthrough() }",
+            "label_test::test::0:",
             // Return.
             "rename<felt252>(6) -> (7)",
             "return(7)",

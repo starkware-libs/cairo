@@ -128,8 +128,8 @@ pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
     db: &mut T,
     content: &str,
 ) -> ModuleId {
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let directory = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let directory = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(directory));
     let file = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
     db.as_files_group_mut().override_file_content(file, Some(Arc::new(content.to_string())));
@@ -173,8 +173,8 @@ fn test_submodules() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -260,8 +260,8 @@ fn test_plugin() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -284,8 +284,8 @@ fn test_plugin_remove_original() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
 
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -353,8 +353,8 @@ impl MacroPlugin for FooToBarPlugin {
 fn test_foo_to_bar() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -379,8 +379,8 @@ fn test_foo_to_bar() {
 fn test_first_plugin_removes() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -403,8 +403,8 @@ fn test_first_plugin_removes() {
 fn test_first_plugin_generates() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.
@@ -427,8 +427,8 @@ fn test_first_plugin_generates() {
 fn test_plugin_chain() {
     let mut db_val = DatabaseForTesting::default();
     let db = &mut db_val;
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let root = Directory("src".into());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
     db.set_crate_root(crate_id, Some(root));
 
     // Main module file.

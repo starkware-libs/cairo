@@ -1,28 +1,22 @@
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use pretty_assertions::assert_eq;
-use salsa::{InternId, InternKey};
 use test_log::test;
 
 use super::resolve_labels;
 use crate::pre_sierra;
 use crate::resolve_labels::LabelReplacer;
+use crate::test_utils::{label_id_from_usize, SierraGenDatabaseForTesting};
 use crate::utils::{jump_statement, simple_statement};
-
-fn label(id: usize) -> pre_sierra::Statement {
-    pre_sierra::Statement::Label(pre_sierra::Label {
-        id: pre_sierra::LabelId::from_intern_id(InternId::from(id)),
-    })
-}
-
-fn jump(id: usize) -> pre_sierra::Statement {
-    jump_statement(
-        ConcreteLibfuncId::from_string("jump"),
-        pre_sierra::LabelId::from_intern_id(InternId::from(id)),
-    )
-}
 
 #[test]
 fn test_resolve_labels() {
+    let db_val = SierraGenDatabaseForTesting::default();
+    let db = &db_val;
+    let label =
+        |id| pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) });
+    let jump =
+        |id| jump_statement(ConcreteLibfuncId::from_string("jump"), label_id_from_usize(db, id));
+
     let statements: Vec<pre_sierra::Statement> = vec![
         label(7),
         label(5),

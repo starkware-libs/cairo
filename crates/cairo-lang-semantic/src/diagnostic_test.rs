@@ -40,8 +40,8 @@ cairo_lang_test_utils::test_file_test!(
 
 #[test]
 fn test_missing_module_file() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let crate_id = setup_test_crate(
         db,
         "
@@ -56,7 +56,7 @@ fn test_missing_module_file() {
     assert_eq!(
         db.module_semantic_diagnostics(ModuleId::Submodule(submodule_id)).unwrap().format(db),
         indoc! {"
-            error: Module file not found. Expected path: src/a/abc.cairo
+            error: Module file not found. Expected path: abc.cairo
              --> lib.cairo:3:9
                     mod abc;
                     ^******^
@@ -171,7 +171,7 @@ impl PluginAuxData for PatchMapper {
 
 #[test]
 fn test_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
     db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
     let crate_id = setup_test_crate(
@@ -206,8 +206,8 @@ fn test_inline_module_diagnostics() {
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let crate_id = setup_test_crate(
         db,
         indoc! {"

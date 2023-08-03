@@ -1,3 +1,4 @@
+use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_sierra as sierra;
 use cairo_lang_sierra::ids::ConcreteTypeId;
@@ -17,9 +18,22 @@ pub struct LabelLongId {
 }
 define_short_id!(LabelId, LabelLongId, SierraGenGroup, lookup_intern_label_id);
 
-impl std::fmt::Display for LabelId {
+pub struct LabelIdWithDb<'db> {
+    db: &'db dyn SierraGenGroup,
+    label_id: LabelId,
+}
+impl<'db> std::fmt::Display for LabelIdWithDb<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "label{}", self.0)
+        let LabelLongId { parent, id } = self.db.lookup_intern_label_id(self.label_id);
+        let parent = parent.function_id(self.db.upcast()).unwrap();
+        let dbg = format!("{:?}", parent.debug(self.db));
+        write!(f, "label_{}::{}", dbg, id)
+    }
+}
+
+impl LabelId {
+    pub fn with_db<'db>(&self, db: &'db dyn SierraGenGroup) -> LabelIdWithDb<'db> {
+        LabelIdWithDb { db, label_id: *self }
     }
 }
 
@@ -52,11 +66,25 @@ pub enum Statement {
     /// If a prefix of the values is already on the stack, they will not be re-pushed.
     PushValues(Vec<PushValue>),
 }
-impl std::fmt::Display for Statement {
+impl Statement {
+    pub fn to_string(&self, db: &dyn SierraGenGroup) -> String {
+        StatementWithDb { db, statement: self.clone() }.to_string()
+    }
+}
+
+struct StatementWithDb<'db> {
+    db: &'db dyn SierraGenGroup,
+    statement: Statement,
+}
+impl<'db> std::fmt::Display for StatementWithDb<'db> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Statement::Sierra(value) => write!(f, "{value}"),
-            Statement::Label(Label { id }) => write!(f, "{id}:"),
+        match &self.statement {
+            Statement::Sierra(value) => {
+                write!(f, "{}", value.clone().map(|label_id| label_id.with_db(self.db)))
+            }
+            Statement::Label(Label { id }) => {
+                write!(f, "{}:", id.with_db(self.db))
+            }
             Statement::PushValues(values) => {
                 write!(f, "PushValues(")?;
                 write_comma_separated(
