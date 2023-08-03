@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 
@@ -11,7 +12,18 @@ pub const CAIRO_FILE_EXTENSION: &str = "cairo";
 
 /// A crate is a standalone file tree representing a single compilation unit.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct CrateLongId(pub SmolStr);
+pub enum CrateLongId {
+    Real(SmolStr),
+    Virtual { name: SmolStr, root: Directory },
+}
+impl CrateLongId {
+    pub fn name(&self) -> SmolStr {
+        match self {
+            CrateLongId::Real(name) => name.clone(),
+            CrateLongId::Virtual { name, .. } => name.clone(),
+        }
+    }
+}
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
 
 /// A trait for getting the internal salsa::InternId of a short id object.
@@ -78,18 +90,27 @@ impl FileId {
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct Directory(pub PathBuf);
+pub enum Directory {
+    Real(PathBuf),
+    Virtual { files: BTreeMap<SmolStr, FileId>, dirs: BTreeMap<SmolStr, Box<Directory>> },
+}
 
 impl Directory {
     /// Returns a file inside this directory. The file and directory don't necessarily exist on
     /// the file system. These are ids/paths to them.
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
-        FileId::new(db, self.0.join(name.to_string()))
+        match self {
+            Directory::Real(path) => FileId::new(db, path.join(name.to_string())),
+            Directory::Virtual { files, dirs: _ } => files[&name],
+        }
     }
 
     /// Returns a sub directory inside this directory. These directories don't necessarily exist on
     /// the file system. These are ids/paths to them.
     pub fn subdir(&self, name: SmolStr) -> Directory {
-        Directory(self.0.join(name.to_string()))
+        match self {
+            Directory::Real(path) => Directory::Real(path.join(name.to_string())),
+            Directory::Virtual { files: _, dirs } => dirs[&name].as_ref().clone(),
+        }
     }
 }

@@ -70,8 +70,8 @@ pub fn init_files_group(db: &mut (dyn FilesGroup + 'static)) {
 }
 
 pub fn init_dev_corelib(db: &mut (dyn FilesGroup + 'static), path: PathBuf) {
-    let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
-    let core_root_dir = Directory(path);
+    let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
+    let core_root_dir = Directory::Real(path);
     db.set_crate_root(core_crate, Some(core_root_dir));
 }
 
@@ -127,7 +127,10 @@ fn crates(db: &dyn FilesGroup) -> Vec<CrateId> {
     db.crate_roots().keys().copied().collect()
 }
 fn crate_root_dir(db: &dyn FilesGroup, crt: CrateId) -> Option<Directory> {
-    db.crate_roots().get(&crt).cloned()
+    match db.lookup_intern_crate(crt) {
+        CrateLongId::Real(_) => db.crate_roots().get(&crt).cloned(),
+        CrateLongId::Virtual { name: _, root } => Some(root),
+    }
 }
 
 fn priv_raw_file_content(db: &dyn FilesGroup, file: FileId) -> Option<Arc<String>> {
