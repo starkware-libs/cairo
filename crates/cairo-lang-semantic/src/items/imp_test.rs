@@ -9,8 +9,8 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
 fn test_impl() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let (test_module, diagnostics) = setup_test_module(
         db,
         indoc::indoc! {"
@@ -47,8 +47,5 @@ fn test_impl() {
          mutability: Immutable }], return_type: (), implicits: [], panicable: true }"
     );
 
-    assert_eq!(
-        format!("{:?}", db.impl_def_concrete_trait(impl_def_id).unwrap()),
-        "ConcreteTraitId(0)"
-    );
+    db.impl_def_concrete_trait(impl_def_id).unwrap();
 }

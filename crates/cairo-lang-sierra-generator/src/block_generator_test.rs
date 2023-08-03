@@ -36,7 +36,7 @@ cairo_lang_test_utils::test_file_test!(
 );
 
 fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
+    let db = &mut SierraGenDatabaseForTesting::new_empty();
 
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.

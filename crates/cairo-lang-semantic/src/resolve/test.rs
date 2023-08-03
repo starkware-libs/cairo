@@ -16,8 +16,8 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
 fn test_resolve_path() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"
@@ -56,7 +56,7 @@ fn set_file_content(db: &mut SemanticDatabaseForTesting, path: &str, content: &s
 
 #[test]
 fn test_resolve_path_super() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
 
     let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
@@ -106,8 +106,8 @@ fn test_resolve_path_super() {
 
 #[test]
 fn test_resolve_path_trait_impl() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let test_module = setup_test_module(
         db,
         indoc! {"

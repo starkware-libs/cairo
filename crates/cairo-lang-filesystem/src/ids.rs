@@ -101,7 +101,10 @@ impl Directory {
     pub fn file(&self, db: &dyn FilesGroup, name: SmolStr) -> FileId {
         match self {
             Directory::Real(path) => FileId::new(db, path.join(name.to_string())),
-            Directory::Virtual { files, dirs: _ } => files[&name],
+            Directory::Virtual { files, dirs: _ } => files
+                .get(&name)
+                .copied()
+                .unwrap_or_else(|| FileId::new(db, PathBuf::from(name.as_str()))),
         }
     }
 
@@ -110,7 +113,13 @@ impl Directory {
     pub fn subdir(&self, name: SmolStr) -> Directory {
         match self {
             Directory::Real(path) => Directory::Real(path.join(name.to_string())),
-            Directory::Virtual { files: _, dirs } => dirs[&name].as_ref().clone(),
+            Directory::Virtual { files: _, dirs } => {
+                if let Some(dir) = dirs.get(&name) {
+                    dir.as_ref().clone()
+                } else {
+                    Directory::Virtual { files: BTreeMap::new(), dirs: BTreeMap::new() }
+                }
+            }
         }
     }
 }

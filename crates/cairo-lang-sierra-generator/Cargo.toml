@@ -26,11 +26,14 @@ id-arena.workspace = true
 indexmap.workspace = true
 itertools.workspace = true
 num-bigint.workspace = true
+once_cell.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-cairo-lang-semantic = { path = "../cairo-lang-semantic", features = ["testing"] }
+cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
+    "testing",
+] }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
 env_logger.workspace = true
 indoc.workspace = true

@@ -1,10 +1,11 @@
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::FileLongId;
+use cairo_lang_filesystem::ids::{CrateId, FileLongId};
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_semantic::db::SemanticGroup;
+use itertools::chain;
 use thiserror::Error;
 
 use crate::db::RootDatabase;
@@ -82,9 +83,10 @@ impl<'a> DiagnosticsReporter<'a> {
 
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `true` if diagnostics were found.
-    pub fn check(&mut self, db: &RootDatabase) -> bool {
+    pub fn check(&mut self, db: &RootDatabase, extra_crate_ids: &[CrateId]) -> bool {
         let mut found_diagnostics = false;
-        for crate_id in db.crates() {
+        let crates = db.crates().clone();
+        for crate_id in chain!(crates.iter(), extra_crate_ids.iter()).copied() {
             let Ok(module_file) = db.module_main_file(ModuleId::CrateRoot(crate_id)) else {
                 found_diagnostics = true;
                 self.callback.on_diagnostic("Failed to get main module file".to_string());
@@ -131,7 +133,7 @@ impl<'a> DiagnosticsReporter<'a> {
     /// Checks if there are diagnostics and reports them to the provided callback as strings.
     /// Returns `Err` if diagnostics were found.
     pub fn ensure(&mut self, db: &RootDatabase) -> Result<(), DiagnosticsError> {
-        if self.check(db) { Err(DiagnosticsError) } else { Ok(()) }
+        if self.check(db, &[]) { Err(DiagnosticsError) } else { Ok(()) }
     }
 }
 
@@ -144,8 +146,8 @@ impl Default for DiagnosticsReporter<'static> {
 /// Returns a string with all the diagnostics in the db.
 ///
 /// This is a shortcut for `DiagnosticsReporter::write_to_string(&mut string).check(db)`.
-pub fn get_diagnostics_as_string(db: &mut RootDatabase) -> String {
+pub fn get_diagnostics_as_string(db: &RootDatabase, extra_crate_ids: &[CrateId]) -> String {
     let mut diagnostics = String::default();
-    DiagnosticsReporter::write_to_string(&mut diagnostics).check(db);
+    DiagnosticsReporter::write_to_string(&mut diagnostics).check(db, extra_crate_ids);
     diagnostics
 }
