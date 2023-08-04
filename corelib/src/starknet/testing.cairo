@@ -81,3 +81,6 @@ fn pop_log<T, impl TEvent: starknet::Event<T>>(address: ContractAddress) -> Opti
     let (mut keys, mut data) = pop_log_raw(address)?;
     starknet::Event::deserialize(ref keys, ref data)
 }
+
+// Allows to get available gas. If you have a zero value use also 'gas::withdraw_gas().unwrap();'
+extern fn get_available_gas() -> u128 implicits(GasBuiltin) nopanic;

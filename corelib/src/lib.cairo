@@ -333,6 +333,3 @@ use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 
 #[cfg(test)]
 mod test;
-
-// Module for testing only.
-mod testing;

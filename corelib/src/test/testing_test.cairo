@@ -20,11 +20,11 @@ fn test_assert_true() {
 
 #[test]
 fn test_get_available_gas_no_gas_supply() {
-    assert_eq(@testing::get_available_gas(), @0, 'expected no_gas_supply')
+    assert_eq(@starknet::testing::get_available_gas(), @0, 'expected no_gas_supply')
 }
 
 #[test]
 #[available_gas(10000)]
 fn test_get_available_gas_with_gas_supply() {
-    assert_gt(testing::get_available_gas(), 5000, 'high amount of gas used')
+    assert_gt(starknet::testing::get_available_gas(), 5000, 'high amount of gas used')
 }
