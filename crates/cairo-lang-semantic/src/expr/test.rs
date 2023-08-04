@@ -97,11 +97,36 @@ fn test_expr_assignment() {
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
 
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "Assignment(ExprAssignment { ref_arg: LocalVarId(test::a), rhs: \
-         FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
-         [Value(Var(LocalVarId(test::a))), Value(Literal(ExprLiteral { value: 3, ty: \
-         core::felt252 }))], ty: core::felt252 }), ty: () })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            Assignment(
+                ExprAssignment {
+                    ref_arg: LocalVarId(test::a),
+                    rhs: FunctionCall(
+                        ExprFunctionCall {
+                            function: core::Felt252Mul::mul,
+                            args: [
+                                Value(
+                                    Var(
+                                        LocalVarId(test::a),
+                                    ),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            ty: core::felt252,
+                        },
+                    ),
+                    ty: (),
+                },
+            )"
+        }
     );
 }
 
@@ -116,16 +141,89 @@ fn test_expr_operator() {
     // TODO(spapini): Make transparent DebugWithDb attribute, to have better outputs.
     // TODO(spapini): Have better whitespaces here somehow.
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "FunctionCall(ExprFunctionCall { function: core::BoolNot::not, args: \
-         [Value(FunctionCall(ExprFunctionCall { function: core::Felt252PartialEq::eq, args: \
-         [Value(Snapshot(ExprSnapshot { inner: FunctionCall(ExprFunctionCall { function: \
-         core::Felt252Add::add, args: [Value(Literal(ExprLiteral { value: -5, ty: core::felt252 \
-         })), Value(FunctionCall(ExprFunctionCall { function: core::Felt252Mul::mul, args: \
-         [Value(Literal(ExprLiteral { value: 9, ty: core::felt252 })), Value(Literal(ExprLiteral \
-         { value: 3, ty: core::felt252 }))], ty: core::felt252 }))], ty: core::felt252 }), ty: \
-         @core::felt252 })), Value(Snapshot(ExprSnapshot { inner: Literal(ExprLiteral { value: 0, \
-         ty: core::felt252 }), ty: @core::felt252 }))], ty: core::bool }))], ty: core::bool })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            FunctionCall(
+                ExprFunctionCall {
+                    function: core::BoolNot::not,
+                    args: [
+                        Value(
+                            FunctionCall(
+                                ExprFunctionCall {
+                                    function: core::Felt252PartialEq::eq,
+                                    args: [
+                                        Value(
+                                            Snapshot(
+                                                ExprSnapshot {
+                                                    inner: FunctionCall(
+                                                        ExprFunctionCall {
+                                                            function: core::Felt252Add::add,
+                                                            args: [
+                                                                Value(
+                                                                    Literal(
+                                                                        ExprLiteral {
+                                                                            value: -5,
+                                                                            ty: core::felt252,
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                                Value(
+                                                                    FunctionCall(
+                                                                        ExprFunctionCall {
+                                                                            function: core::Felt252Mul::mul,
+                                                                            args: [
+                                                                                Value(
+                                                                                    Literal(
+                                                                                        ExprLiteral {
+                                                                                            value: 9,
+                                                                                            ty: core::felt252,
+                                                                                        },
+                                                                                    ),
+                                                                                ),
+                                                                                Value(
+                                                                                    Literal(
+                                                                                        ExprLiteral {
+                                                                                            value: 3,
+                                                                                            ty: core::felt252,
+                                                                                        },
+                                                                                    ),
+                                                                                ),
+                                                                            ],
+                                                                            ty: core::felt252,
+                                                                        },
+                                                                    ),
+                                                                ),
+                                                            ],
+                                                            ty: core::felt252,
+                                                        },
+                                                    ),
+                                                    ty: @core::felt252,
+                                                },
+                                            ),
+                                        ),
+                                        Value(
+                                            Snapshot(
+                                                ExprSnapshot {
+                                                    inner: Literal(
+                                                        ExprLiteral {
+                                                            value: 0,
+                                                            ty: core::felt252,
+                                                        },
+                                                    ),
+                                                    ty: @core::felt252,
+                                                },
+                                            ),
+                                        ),
+                                    ],
+                                    ty: core::bool,
+                                },
+                            ),
+                        ),
+                    ],
+                    ty: core::bool,
+                },
+            )"
+        }
     );
 }
 
@@ -167,7 +265,7 @@ fn test_member_access() {
         .iter()
         .map(|stmt_id| {
             format!(
-                "{:?}",
+                "{:#?}",
                 db.expr_semantic(
                     foo_id,
                     extract_matches!(
@@ -183,16 +281,61 @@ fn test_member_access() {
     assert_eq!(
         exprs,
         vec![
-            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
-             test::A, member: MemberId(test::a), ty: (core::felt252,) })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
-             test::A, member: MemberId(test::b), ty: core::felt252 })",
-            "MemberAccess(ExprMemberAccess { expr: Var(ParamId(test::a)), concrete_struct_id: \
-             test::A, member: MemberId(test::c), ty: test::B })",
-            "MemberAccess(ExprMemberAccess { expr: MemberAccess(ExprMemberAccess { expr: \
-             Var(ParamId(test::a)), concrete_struct_id: test::A, member: MemberId(test::c), ty: \
-             test::B }), concrete_struct_id: test::B, member: MemberId(test::a), ty: \
-             core::felt252 })",
+            indoc! {"
+                MemberAccess(
+                    ExprMemberAccess {
+                        expr: Var(
+                            ParamId(test::a),
+                        ),
+                        concrete_struct_id: test::A,
+                        member: MemberId(test::a),
+                        ty: (core::felt252,),
+                    },
+                )"
+            },
+            indoc! {"
+                MemberAccess(
+                    ExprMemberAccess {
+                        expr: Var(
+                            ParamId(test::a),
+                        ),
+                        concrete_struct_id: test::A,
+                        member: MemberId(test::b),
+                        ty: core::felt252,
+                    },
+                )"
+            },
+            indoc! {"
+                MemberAccess(
+                    ExprMemberAccess {
+                        expr: Var(
+                            ParamId(test::a),
+                        ),
+                        concrete_struct_id: test::A,
+                        member: MemberId(test::c),
+                        ty: test::B,
+                    },
+                )"
+            },
+            indoc! {"
+                MemberAccess(
+                    ExprMemberAccess {
+                        expr: MemberAccess(
+                            ExprMemberAccess {
+                                expr: Var(
+                                    ParamId(test::a),
+                                ),
+                                concrete_struct_id: test::A,
+                                member: MemberId(test::c),
+                                ty: test::B,
+                            },
+                        ),
+                        concrete_struct_id: test::B,
+                        member: MemberId(test::a),
+                        ty: core::felt252,
+                    },
+                )"
+            },
         ]
     );
 }
@@ -274,9 +417,15 @@ fn test_tuple_type() {
     assert_eq!(signature.params.len(), 1);
     let param = &signature.params[0];
     assert_eq!(
-        format!("{:?}", param.debug(db)),
-        "Parameter { id: ParamId(test::a), name: \"a\", ty: (core::felt252, (), \
-         (core::felt252,)), mutability: Mutable }"
+        format!("{:#?}", param.debug(db)),
+        indoc! {r#"
+            Parameter {
+                id: ParamId(test::a),
+                name: "a",
+                ty: (core::felt252, (), (core::felt252,)),
+                mutability: Mutable,
+            }"#
+        }
     );
 }
 
@@ -329,10 +478,40 @@ fn test_let_statement() {
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
 
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "Block(ExprBlock { statements: [Let(StatementLet { pattern: Variable(a), expr: \
-         Literal(ExprLiteral { value: 3, ty: core::felt252 }) }), Let(StatementLet { pattern: \
-         Variable(b), expr: Var(LocalVarId(test::a)) })], tail: None, ty: () })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            Block(
+                ExprBlock {
+                    statements: [
+                        Let(
+                            StatementLet {
+                                pattern: Variable(
+                                    a,
+                                ),
+                                expr: Literal(
+                                    ExprLiteral {
+                                        value: 3,
+                                        ty: core::felt252,
+                                    },
+                                ),
+                            },
+                        ),
+                        Let(
+                            StatementLet {
+                                pattern: Variable(
+                                    b,
+                                ),
+                                expr: Var(
+                                    LocalVarId(test::a),
+                                ),
+                            },
+                        ),
+                    ],
+                    tail: None,
+                    ty: (),
+                },
+            )"
+        }
     );
 }
 
@@ -417,12 +596,48 @@ fn test_expr_match() {
     let expr = db.expr_semantic(test_function.function_id, tail.unwrap());
     let expr_formatter = ExprFormatter { db, function_id: test_function.function_id };
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "Match(ExprMatch { matched_expr: Var(ParamId(test::a)), arms: [MatchArm { pattern: \
-         Literal(PatternLiteral { literal: ExprLiteral { value: 0, ty: core::felt252 } }), \
-         expression: Literal(ExprLiteral { value: 0, ty: core::felt252 }) }, MatchArm { pattern: \
-         Otherwise(PatternOtherwise { ty: core::felt252 }), expression: Literal(ExprLiteral { \
-         value: 1, ty: core::felt252 }) }], ty: core::felt252 })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            Match(
+                ExprMatch {
+                    matched_expr: Var(
+                        ParamId(test::a),
+                    ),
+                    arms: [
+                        MatchArm {
+                            pattern: Literal(
+                                PatternLiteral {
+                                    literal: ExprLiteral {
+                                        value: 0,
+                                        ty: core::felt252,
+                                    },
+                                },
+                            ),
+                            expression: Literal(
+                                ExprLiteral {
+                                    value: 0,
+                                    ty: core::felt252,
+                                },
+                            ),
+                        },
+                        MatchArm {
+                            pattern: Otherwise(
+                                PatternOtherwise {
+                                    ty: core::felt252,
+                                },
+                            ),
+                            expression: Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::felt252,
+                                },
+                            ),
+                        },
+                    ],
+                    ty: core::felt252,
+                },
+            )"
+        }
     );
 }
 
@@ -617,10 +832,32 @@ fn test_expr_struct_ctor() {
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "StructCtor(ExprStructCtor { concrete_struct_id: test::A, members: [(MemberId(test::a), \
-         Literal(ExprLiteral { value: 1, ty: core::felt252 })), (MemberId(test::b), \
-         Var(LocalVarId(test::b)))], ty: test::A })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            StructCtor(
+                ExprStructCtor {
+                    concrete_struct_id: test::A,
+                    members: [
+                        (
+                            MemberId(test::a),
+                            Literal(
+                                ExprLiteral {
+                                    value: 1,
+                                    ty: core::felt252,
+                                },
+                            ),
+                        ),
+                        (
+                            MemberId(test::b),
+                            Var(
+                                LocalVarId(test::b),
+                            ),
+                        ),
+                    ],
+                    ty: test::A,
+                },
+            )"
+        }
     );
 }
 
@@ -632,13 +869,59 @@ fn test_expr_tuple() {
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
     assert_eq!(
-        format!("{:?}", expr.debug(&expr_formatter)),
-        "Tuple(ExprTuple { items: [FunctionCall(ExprFunctionCall { function: \
-         core::Felt252Add::add, args: [Value(Literal(ExprLiteral { value: 1, ty: core::felt252 \
-         })), Value(Literal(ExprLiteral { value: 2, ty: core::felt252 }))], ty: core::felt252 }), \
-         Tuple(ExprTuple { items: [Literal(ExprLiteral { value: 2, ty: core::felt252 }), \
-         Literal(ExprLiteral { value: 3, ty: core::felt252 })], ty: (core::felt252, \
-         core::felt252) })], ty: (core::felt252, (core::felt252, core::felt252)) })"
+        format!("{:#?}", expr.debug(&expr_formatter)),
+        indoc! {"
+            Tuple(
+                ExprTuple {
+                    items: [
+                        FunctionCall(
+                            ExprFunctionCall {
+                                function: core::Felt252Add::add,
+                                args: [
+                                    Value(
+                                        Literal(
+                                            ExprLiteral {
+                                                value: 1,
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                    ),
+                                    Value(
+                                        Literal(
+                                            ExprLiteral {
+                                                value: 2,
+                                                ty: core::felt252,
+                                            },
+                                        ),
+                                    ),
+                                ],
+                                ty: core::felt252,
+                            },
+                        ),
+                        Tuple(
+                            ExprTuple {
+                                items: [
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 2,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: core::felt252,
+                                        },
+                                    ),
+                                ],
+                                ty: (core::felt252, core::felt252),
+                            },
+                        ),
+                    ],
+                    ty: (core::felt252, (core::felt252, core::felt252)),
+                },
+            )"
+        }
     );
 }
 
