@@ -1,5 +1,4 @@
 use starknet::get_tx_info;
-use box::BoxTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 fn foo(v: felt252) {

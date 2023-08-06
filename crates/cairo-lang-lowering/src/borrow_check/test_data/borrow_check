@@ -159,7 +159,7 @@ fn foo(ref x: ADrop, y: ADrop) {
 }
 
 fn bar(){
-  let mut data = Default::default();
+  let mut data = array![];
   data.append(1);
   panic(data);
 }
@@ -175,8 +175,6 @@ impl ADropDrop of Drop::<ADrop>;
 
 extern fn use_a_copy(x: ACopy) nopanic;
 extern fn use_a_drop(x: ADrop) nopanic;
-
-use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
@@ -208,8 +206,6 @@ fn foo(ref self: Query::<felt252>, value: felt252) {
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 struct Query<T> {
   data: Array::<T>,
 }
@@ -245,9 +241,6 @@ fn foo() {
 foo
 
 //! > module_code
-// Core library imports.
-use array::ArrayTrait;
-use traits::Into;
 
 //! > semantic_diagnostics
 
@@ -397,17 +390,16 @@ fn foo() {
 foo
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:7:9
+ --> lib.cairo:6:9
   panic(arr);
         ^*^
 note: variable was previously used here:
-  --> lib.cairo:5:3
+  --> lib.cairo:4:3
   b.append('bla');
   ^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
@@ -559,8 +551,6 @@ fn foo(ref s1: MyStruct, ref s2: MyStruct) {
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 extern fn invalidate(a: Array<felt252>) nopanic;
 
 #[derive(Drop)]
@@ -573,21 +563,21 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:10:30
+ --> lib.cairo:8:30
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
                              ^^
 note: variable was previously used here:
-  --> lib.cairo:12:16
+  --> lib.cairo:10:16
     invalidate(s2.a);
                ^**^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>
 
 error: Variable was previously moved.
- --> lib.cairo:10:12
+ --> lib.cairo:8:12
 fn foo(ref s1: MyStruct, ref s2: MyStruct) {
            ^^
 note: variable was previously used here:
-  --> lib.cairo:11:16
+  --> lib.cairo:9:16
     invalidate(s1.a);
                ^**^
 note: Trait has no implementation in context: core::traits::Copy::<core::array::Array::<core::felt252>>

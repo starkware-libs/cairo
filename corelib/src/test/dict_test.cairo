@@ -1,7 +1,4 @@
-use box::BoxTrait;
-use dict::{Felt252DictTrait, Felt252DictEntryTrait};
-use nullable::NullableTrait;
-use traits::Index;
+use dict::Felt252DictEntryTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 #[test]
@@ -17,7 +14,7 @@ fn test_dict_squash_empty() {
 
 #[test]
 fn test_dict_default_val() {
-    let mut dict = Default::default();
+    let mut dict: Felt252Dict = Default::default();
     let default_val = dict.get(0);
     assert_eq(@default_val, @0, 'default_val == 0');
 }

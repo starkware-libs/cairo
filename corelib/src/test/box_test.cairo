@@ -1,4 +1,3 @@
-use box::BoxTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 #[test]

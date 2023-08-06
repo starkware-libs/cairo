@@ -15,8 +15,6 @@ fn foo(ref arr: Array<felt252>) {
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()

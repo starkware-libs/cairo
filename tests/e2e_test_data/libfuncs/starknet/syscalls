@@ -604,7 +604,6 @@ test::foo@0([0]: GasBuiltin, [1]: System, [2]: ClassHash, [3]: felt252, [4]: cor
 SmallE2ETestRunner
 
 //! > cairo
-use array::ArrayTrait;
 fn foo(input: Array::<u64>) -> starknet::SyscallResult<u256> {
     starknet::syscalls::keccak_syscall(input.span())
 }

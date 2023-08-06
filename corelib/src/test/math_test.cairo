@@ -1,6 +1,3 @@
-use traits::TryInto;
-use option::OptionTrait;
-
 #[test]
 #[available_gas(10000000)]
 fn test_egcd() {

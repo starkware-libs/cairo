@@ -14,18 +14,6 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait OptionTrait<T>{
-    fn is_some(self: Option::<T>) -> bool;
-}
-impl OptionTraitImpl<T> of OptionTrait::<T> {
-    fn is_some(self: Option::<T>) -> bool {
-        match self {
-            Option::Some(_) => true,
-            Option::None => false,
-        }
-    }
-}
-
 trait AnotherTrait{
     fn is_some(self: felt252) -> bool;
 }
@@ -48,7 +36,7 @@ test_function_diagnostics
 fn foo() -> Option::<felt252> {
     let x = Option::None(());
     x.is_foo();
-    x.is_some();
+    x.is_bla();
     let y = Option::Some(true);
     y.is_bar();
     y.SomeOtherPrefix::is_bar();
@@ -59,12 +47,12 @@ fn foo() -> Option::<felt252> {
 foo
 
 //! > module_code
-trait OptionTrait<T>{
-    fn is_some(self: Option::<T>) -> bool;
+trait MyTrait<T>{
+    fn is_bla(self: Option::<T>) -> bool;
     fn is_bar(self: Option::<T>) -> bool;
 }
-impl OptionTraitImpl<T> of OptionTrait::<T> {
-    fn is_some(self: Option::<T>) -> bool {
+impl MyTraitImpl<T> of MyTrait::<T> {
+    fn is_bla(self: Option<T>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None => false,
@@ -72,8 +60,8 @@ impl OptionTraitImpl<T> of OptionTrait::<T> {
     }
     fn is_bar(self: Option::<T>) -> bool { true }
 }
-impl AnotherOptionTraitImpl<T> of OptionTrait::<felt252> {
-    fn is_some(self: Option::<felt252>) -> bool {
+impl AnotherMyTraitImpl<T> of MyTrait::<felt252> {
+    fn is_bla(self: Option::<felt252>) -> bool {
         match self {
             Option::Some(_) => true,
             Option::None => false,
@@ -96,7 +84,7 @@ error: Method `is_foo` not found on type "core::option::Option::<?0>". Did you i
     x.is_foo();
       ^****^
 
-error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: OptionTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
+error: Ambiguous method call. More than one applicable trait function with a suitable self type was found: MyTrait::is_bar and AnotherTrait::is_bar. Consider adding type annotations or explicitly refer to the impl function.
  --> lib.cairo:36:7
     y.is_bar();
       ^****^
@@ -106,7 +94,7 @@ error: Invalid member expression.
     y.SomeOtherPrefix::is_bar();
       ^***********************^
 
-error: Candidate impl test::AnotherOptionTraitImpl::<?0> has an unused generic parameter.
+error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic parameter.
  --> lib.cairo:34:7
-    x.is_some();
-      ^*****^
+    x.is_bla();
+      ^****^

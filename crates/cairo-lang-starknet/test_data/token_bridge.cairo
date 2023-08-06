@@ -1,7 +1,4 @@
 use starknet::ContractAddress;
-use serde::Serde;
-use traits::Into;
-use zeroable::Zeroable;
 
 #[starknet::interface]
 trait IMintableToken<T> {
@@ -11,20 +8,12 @@ trait IMintableToken<T> {
 
 #[starknet::contract]
 mod token_bridge {
-    use array::ArrayTrait;
-    use integer::{Felt252IntoU256, U128IntoFelt252};
-    use option::OptionTrait;
-    use serde::Serde;
-    use starknet::contract_address::ContractAddressZeroable;
     use starknet::{
-        ContractAddress, get_caller_address, EthAddress, EthAddressIntoFelt252, EthAddressSerde,
-        EthAddressZeroable, syscalls::send_message_to_l1_syscall
+        ContractAddress, get_caller_address, EthAddress, syscalls::send_message_to_l1_syscall
     };
     use super::{
         IMintableTokenDispatcher, IMintableTokenLibraryDispatcher, IMintableTokenDispatcherTrait
     };
-    use traits::Into;
-    use zeroable::Zeroable;
 
     const WITHDRAW_MESSAGE: felt252 = 0;
     const CONTRACT_IDENTITY: felt252 = 'STARKGATE';

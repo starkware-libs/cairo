@@ -1,9 +1,5 @@
 use core::debug::PrintTrait;
-use core::result::ResultTrait;
-use core::traits::TryInto;
-use array::ArrayTrait;
 use starknet::syscalls::{deploy_syscall, replace_class_syscall};
-use option::OptionTrait;
 use test::test_utils::assert_eq;
 use starknet::class_hash::ClassHash;
 
@@ -14,9 +10,6 @@ trait IWithReplace<TContractState> {
 
 #[starknet::contract]
 mod contract_a {
-    use core::traits::TryInto;
-    use option::OptionTrait;
-    use core::result::ResultTrait;
     use starknet::class_hash::ClassHash;
 
     #[storage]

@@ -1,5 +1,3 @@
-use box::BoxTrait;
-
 struct Node {
     value: felt252,
     left: Option<Box<Node>>,

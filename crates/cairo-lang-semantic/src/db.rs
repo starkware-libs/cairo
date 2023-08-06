@@ -15,6 +15,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast::{self, TraitItemFunction};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 use smol_str::SmolStr;
 
@@ -152,7 +153,7 @@ pub trait SemanticGroup:
 
     /// Finds all the trait ids usable in the module.
     #[salsa::invoke(items::module::module_usable_trait_ids)]
-    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TraitId>>>;
+    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<OrderedHashSet<TraitId>>>;
 
     // Struct.
     // =======

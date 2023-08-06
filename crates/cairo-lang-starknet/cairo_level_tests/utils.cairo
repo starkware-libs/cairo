@@ -1,7 +1,3 @@
-use array::ArrayTrait;
-use serde::Serde;
-use option::OptionTrait;
-
 fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>>(
     value: T
 ) -> Span<felt252> {

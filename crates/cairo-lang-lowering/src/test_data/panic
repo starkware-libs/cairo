@@ -6,7 +6,7 @@ test_function_lowering
 //! > function
 fn foo(ref x: felt252, a: bool) -> felt252 {
   x = 7;
-  let mut data = Default::default();
+  let mut data = array![];
   data.append(1);
   let y = panic(data);
   5
@@ -16,7 +16,6 @@ fn foo(ref x: felt252, a: bool) -> felt252 {
 foo
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
@@ -26,14 +25,14 @@ use array::ArrayTrait;
 Parameters: v0: core::felt252, v1: core::bool
 blk0 (root):
 Statements:
-  (v12: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
+  (v9: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
   (v4: core::felt252) <- 1u
-  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v12, v4)
+  (v10: core::array::Array::<core::felt252>) <- core::array::array_append::<core::felt252>(v9, v4)
   (v7: core::panics::Panic) <- struct_construct()
   (v8: (core::panics::Panic, core::array::Array::<core::felt252>)) <- struct_construct(v7, v10)
-  (v13: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
+  (v12: core::panics::PanicResult::<(core::felt252, core::felt252)>) <- PanicResult::Err(v8)
 End:
-  Return(v13)
+  Return(v12)
 
 //! > ==========================================================================
 
@@ -52,10 +51,8 @@ fn foo(ref x: felt252, ref a: bool) -> felt252 {
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 fn bar(ref a: bool) -> felt252 {
-  let mut data = Default::default();
+  let mut data = array![];
   data.append(1);
   let y = panic(data);
   5

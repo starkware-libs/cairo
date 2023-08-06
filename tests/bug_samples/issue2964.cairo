@@ -1,7 +1,3 @@
-use serde::Serde;
-use clone::Clone;
-use array::ArrayTrait;
-use option::OptionTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 #[derive(Copy, Drop, Serde, PartialEq)]

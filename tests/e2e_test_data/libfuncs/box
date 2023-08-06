@@ -4,8 +4,6 @@
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: felt252) -> Box::<felt252> {
     BoxTrait::new(x)
 }
@@ -44,8 +42,6 @@ test::foo@0([0]: felt252) -> (Box<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<felt252>) -> felt252 {
     x.unbox()
 }
@@ -78,8 +74,6 @@ test::foo@0([0]: Box<felt252>) -> (felt252);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: u256) -> Box::<u256> {
     BoxTrait::new(x)
 }
@@ -120,8 +114,6 @@ test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<u256>) -> u256 {
     x.unbox()
 }
@@ -156,8 +148,6 @@ test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo() -> Box::<()> {
     BoxTrait::new(())
 }
@@ -194,8 +184,6 @@ test::foo@0() -> (Box<Unit>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 fn foo(x: Box::<()>) -> () {
     x.unbox()
 }
@@ -227,8 +215,6 @@ test::foo@0([0]: Box<Unit>) -> (Unit);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 struct Empty {}
 fn foo() -> Box::<Empty> {
     BoxTrait::new(Empty{})
@@ -266,8 +252,6 @@ test::foo@0() -> (Box<test::Empty>);
 SmallE2ETestRunner
 
 //! > cairo
-use box::BoxTrait;
-
 struct Empty {}
 fn foo(x: Box::<Empty>) -> Empty {
     x.unbox()

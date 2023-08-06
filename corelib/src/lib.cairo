@@ -5,7 +5,8 @@ use traits::{
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
 use serde::Serde;
-use array::SpanTrait;
+
+type usize = u32;
 
 #[derive(Copy, Drop)]
 enum bool {
@@ -215,15 +216,14 @@ use box::{Box, BoxTrait};
 
 // Nullable
 mod nullable;
-use nullable::{Nullable, match_nullable, null, nullable_from_box};
+use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
 
-// Arrays.
+// Array.
 mod array;
 use array::{Array, ArrayTrait};
-type usize = u32;
 
 // Span.
-use array::Span;
+use array::{Span, SpanTrait};
 
 
 // Dictionary.
@@ -234,11 +234,11 @@ use dict::{
 
 // Result.
 mod result;
-use result::Result;
+use result::{Result, ResultTrait};
 
 // Option.
 mod option;
-use option::Option;
+use option::{Option, OptionTrait};
 
 // Clone.
 mod clone;
