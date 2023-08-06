@@ -112,22 +112,25 @@ where
 
 impl Encode for BigIntAsHex {
     fn size_hint(&self) -> usize {
-        // sign, len, data.
-        1 + 8 + self.value.to_bytes_be().1.len()
+        // sign + len packed in the same byte, it allows numbers of byte size up to 63 (2**504),
+        // data.
+        let bits = self.value.bits() as usize;
+        core::mem::size_of::<u8>() + bits / 8 + if bits % 8 != 0 { 1 } else { 0 }
     }
+
+    /// /!\ Warning this function panics if the number encoded is too big (>= 2**504)
     fn encode_to<T: parity_scale_codec::Output + ?Sized>(&self, dest: &mut T) {
-        let (sign, data) = self.value.to_bytes_be();
-        match sign {
-            num_bigint::Sign::Minus => 0u8.encode_to(dest),
-            num_bigint::Sign::NoSign => 1u8.encode_to(dest),
-            num_bigint::Sign::Plus => 2u8.encode_to(dest),
-        };
-        // TODO(yair): better way to encode vec?
-        let len = data.len() as u64;
-        len.encode_to(dest);
-        for b in data.as_slice() {
-            b.encode_to(dest);
-        }
+        let (sign, data) = self.value.to_bytes_le();
+        assert!(data.len() <= 63, "Can't encode numbers longer than 63 bytes");
+        // Pack sign + number byte size.
+        ((match sign {
+            num_bigint::Sign::Minus => 0u8,
+            num_bigint::Sign::NoSign => 1u8,
+            num_bigint::Sign::Plus => 2u8,
+        } << 6)
+            + data.len() as u8)
+            .encode_to(dest);
+        dest.write(&data);
     }
 }
 
@@ -135,8 +138,8 @@ impl Decode for BigIntAsHex {
     fn decode<I: parity_scale_codec::Input>(
         input: &mut I,
     ) -> Result<Self, parity_scale_codec::Error> {
-        let discriminant = input.read_byte()?;
-        let sign = match discriminant {
+        let sign_and_len = input.read_byte()?;
+        let sign = match sign_and_len >> 6 {
             0u8 => num_bigint::Sign::Minus,
             1u8 => num_bigint::Sign::NoSign,
             2u8 => num_bigint::Sign::Plus,
@@ -144,12 +147,9 @@ impl Decode for BigIntAsHex {
                 return Err(parity_scale_codec::Error::from("Bad sign encoding."));
             }
         };
-        // TODO(yair): better way to decode vec?
-        let data_len = u64::decode(input)?;
-        let mut bytes: Vec<u8> = Vec::with_capacity(data_len as usize);
-        for _ in 0..data_len {
-            bytes.push(input.read_byte()?);
-        }
-        Ok(Self { value: BigInt::from_bytes_be(sign, bytes.as_slice()) })
+        let len = sign_and_len & 0b00111111;
+        let mut buffer = vec![0; len as usize];
+        input.read(&mut buffer)?;
+        Ok(Self { value: BigInt::from_bytes_le(sign, buffer.as_slice()) })
     }
 }
