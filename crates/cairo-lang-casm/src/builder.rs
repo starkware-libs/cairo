@@ -603,6 +603,7 @@ impl CasmBuilder {
     /// Returns an instruction wrapping the instruction body.
     /// If `inc_ap_supported` may add an `ap++` to the instruction.
     fn get_instruction(&mut self, body: InstructionBody, inc_ap_supported: bool) -> Instruction {
+        assert!(self.reachable, "Cannot add instructions at unreachable code.");
         let inc_ap =
             inc_ap_supported && self.main_state.allocated as usize > self.main_state.ap_change;
         if inc_ap {

@@ -42,7 +42,7 @@ fn foo(v: felt252) -> Option<i64> {
 
 //! > casm
 %{ memory[ap + 0] = (memory[fp + -3] + 9223372036854775808) % PRIME < 18446744073709551616 %}
-jmp rel 20 if [ap + 0] != 0, ap++;
+jmp rel 18 if [ap + 0] != 0, ap++;
 [fp + -3] = [ap + 0] + 9223372036854775808, ap++;
 %{
 (value, scalar) = (memory[ap + -1], 10633823966279327296825105735305134080)
@@ -58,9 +58,8 @@ memory[ap + 1] = y
 [ap + -1] = [[fp + -4] + 1], ap++;
 [ap + -5] = [[fp + -4] + 2];
 [ap + -5] = [ap + -1] + 340282366920938463463374607431768211455;
-jmp rel 21 if [ap + -1] != 0;
+jmp rel 19 if [ap + -1] != 0;
 [fp + -1] = [fp + -1] + 1;
-jmp rel 17;
 [ap + 0] = [fp + -3] + 9223372036854775808, ap++;
 [ap + -1] = [[fp + -4] + 0];
 [ap + 0] = [fp + -3] + 340282366920938463454151235394913435648, ap++;
@@ -76,7 +75,7 @@ jmp rel 8;
 ret;
 
 //! > function_costs
-test::foo: OrderedHashMap({Const: 1710})
+test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
 type RangeCheck = RangeCheck;

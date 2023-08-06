@@ -49,7 +49,6 @@ pub fn build_sint_from_felt252(
         &auxiliary_vars,
     );
     casm_build_extend! {casm_builder,
-        jump Done;
     IsInRange:
         tempvar rc_val = canonical_value;
         assert rc_val = *(range_check++);
