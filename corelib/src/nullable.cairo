@@ -16,6 +16,7 @@ extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic
 
 trait NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T;
+    fn new(value: T) -> Nullable<T>;
 }
 
 impl NullableImpl<T> of NullableTrait<T> {
@@ -24,6 +25,10 @@ impl NullableImpl<T> of NullableTrait<T> {
             FromNullableResult::Null => panic_with_felt252('Attempted to deref null value'),
             FromNullableResult::NotNull(value) => value.unbox(),
         }
+    }
+    fn new(value: T) -> Nullable<T> {
+        let nullable = nullable_from_box(BoxTrait::new(value));
+        nullable
     }
 }
 
