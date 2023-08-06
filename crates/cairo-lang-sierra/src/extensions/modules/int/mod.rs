@@ -4,6 +4,7 @@ use num_bigint::BigInt;
 
 use super::felt252::Felt252Type;
 use super::try_from_felt252::{TryFromFelt252, TryFromFelt252Libfunc};
+use super::utils::reinterpret_cast_signature;
 use crate::extensions::lib_func::{
     BranchSignature, DeferredOutputKind, LibfuncSignature, OutputVarInfo, ParamSignature,
     SierraApChange, SignatureSpecializationContext, SpecializationContext,
@@ -169,18 +170,9 @@ impl<TIntTraits: IntTraits> NoGenericArgsGenericLibfunc for IntToFelt252Libfunc<
         &self,
         context: &dyn SignatureSpecializationContext,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        Ok(LibfuncSignature::new_non_branch_ex(
-            vec![ParamSignature {
-                ty: context.get_concrete_type(TIntTraits::GENERIC_TYPE_ID, &[])?,
-                allow_deferred: true,
-                allow_add_const: true,
-                allow_const: true,
-            }],
-            vec![OutputVarInfo {
-                ty: context.get_concrete_type(Felt252Type::id(), &[])?,
-                ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
-            }],
-            SierraApChange::Known { new_vars_only: true },
+        Ok(reinterpret_cast_signature(
+            context.get_concrete_type(TIntTraits::GENERIC_TYPE_ID, &[])?,
+            context.get_concrete_type(Felt252Type::id(), &[])?
         ))
     }
 }

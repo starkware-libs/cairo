@@ -22,7 +22,6 @@ pub fn build_sint_from_felt252(
     max_value: i128,
 ) -> Result<CompiledInvocation, InvocationError> {
     let [range_check, value] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(2) range_check;
@@ -55,14 +54,16 @@ pub fn build_sint_from_felt252(
         assert rc_val = *(range_check++);
     }
     // For i128, the previous range check already made sure the value is in range.
-    if min_value != i128::MIN || max_value != i128::MAX {
+    if !(min_value == i128::MIN && max_value == i128::MAX) {
         casm_build_extend! {casm_builder,
             // value + 2**128 - max_value - 1 < 2**128 ==> value <= max_value
-            const fixer_limit = (BigInt::from(u128::MAX) - max_value) as BigInt;
+            const fixer_limit = BigInt::from(u128::MAX) - BigInt::from(max_value);
             tempvar rc_val = value + fixer_limit;
             assert rc_val = *(range_check++);
         };
     }
+
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
@@ -95,6 +96,7 @@ pub fn build_sint_overflowing_operation(
         BranchInfo { target: BranchTarget::Statement(overflow_handle_statement_id), results: _ },
     ] = builder.invocation.branches.as_slice()
     else {
+        // TODO(orizi): this should be an error instead of panic.
         panic!("malformed invocation");
     };
     let mut casm_builder = CasmBuilder::default();
@@ -117,44 +119,45 @@ pub fn build_sint_overflowing_operation(
     }
     casm_build_extend! {casm_builder,
         const positive_range_fixer = -BigInt::from(min_value);
-        const range_size = (BigInt::from(max_value) - BigInt::from(min_value) + 1) as BigInt;
+        const range_size = BigInt::from(max_value) - BigInt::from(min_value) + BigInt::from(1);
+        // Shift the valid range to [0, range_size).
         let canonical_value = value + positive_range_fixer;
         tempvar is_in_range;
         hint TestLessThan {lhs: canonical_value, rhs: range_size} into {dst: is_in_range};
         jump IsInRange if is_in_range != 0;
-        tempvar is_overflow;
-        // Bound for Addition or subtraction of any 2 numbers in [i128::MIN, i128::MAX].
+        tempvar is_above;
+        // Bound for addition or subtraction of any 2 numbers in [i128::MIN, i128::MAX].
         // max(2 * i128::MAX, i128::MAX - i128::MIN) + 1
         // ==> max(2*(2**127 - 1), 2**127 - 1 -(-2**127)) + 1 ==> 2**128
-        const overflow_bound = (BigInt::from(u128::MAX) + 1) as BigInt;
-        hint TestLessThan {lhs: value, rhs: overflow_bound} into {dst: is_overflow};
-        jump IsOverflow if is_overflow != 0;
-        // Underflow case.
+        const above_bound = BigInt::from(u128::MAX) + BigInt::from(1);
+        hint TestLessThan {lhs: value, rhs: above_bound} into {dst: is_above};
+        jump IsAbove if is_above != 0;
+        // Below range case.
         // We need to assert that the value is smaller than the lower limit:
         // value + 2**128 - min_value < 2**128 ==> value < min_value
         const min_value_fixer =
-            (BigInt::from(u128::MAX) + 1 - BigInt::from(min_value)) as BigInt;
+            BigInt::from(u128::MAX) + BigInt::from(1) - BigInt::from(min_value);
         tempvar rc_val = value + min_value_fixer;
         assert rc_val = *(range_check++);
-        let fixed_underflow = value + range_size;
-        jump Underflow;
-    IsOverflow:
+        let fixed_below = value + range_size;
+        jump Below;
+    IsAbove:
         // We need to assert that the value is larger than the upper limit:
         // value - (max_value + 1) >= 0 ==> value > max_value
-        const max_value_plus_one = (BigInt::from(max_value) + 1) as BigInt;
+        const max_value_plus_one = BigInt::from(max_value) + BigInt::from(1);
         tempvar rc_val = value - max_value_plus_one;
         assert rc_val = *(range_check++);
-        let fixed_overflow = value - range_size;
-        jump Overflow;
+        let fixed_above = value - range_size;
+        jump Above;
     IsInRange:
         tempvar rc_val = canonical_value;
         assert rc_val = *(range_check++);
     }
     // For i128, the previous range check already made sure the value is in range.
-    if min_value != i128::MIN || max_value != i128::MAX {
+    if !(min_value == i128::MIN && max_value == i128::MAX) {
         casm_build_extend! {casm_builder,
             // value + 2**128 - max_value - 1 < 2**128 ==> value <= max_value
-            const fixer_limit = (BigInt::from(u128::MAX) - max_value) as BigInt;
+            const fixer_limit = BigInt::from(u128::MAX) - BigInt::from(max_value);
             tempvar rc_val = value + fixer_limit;
             assert rc_val = *(range_check++);
         };
@@ -164,11 +167,11 @@ pub fn build_sint_overflowing_operation(
         [
             ("Fallthrough", &[&[range_check], &[value]], None),
             (
-                "Underflow",
-                &[&[range_check], &[fixed_underflow]],
+                "Below",
+                &[&[range_check], &[fixed_below]],
                 Some(*underflow_handle_statement_id),
             ),
-            ("Overflow", &[&[range_check], &[fixed_overflow]], Some(*overflow_handle_statement_id)),
+            ("Above", &[&[range_check], &[fixed_above]], Some(*overflow_handle_statement_id)),
         ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),

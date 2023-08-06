@@ -264,15 +264,15 @@ pub fn get_pointer_after_program_code(offset: i32) -> (InstructionsWithRelocatio
     )
 }
 
-/// builds a libfunc that tries to convert a felt252 to type with values in the range[0,
-/// 2**`num_bits`).
+/// Builds a libfunc that tries to convert a felt252 to type with values in the range
+/// `[0, 2**num_bits)`.
+/// Assumption: num_bits > 128.
 pub fn build_unsigned_try_from_felt252(
     builder: CompiledInvocationBuilder<'_>,
     num_bits: usize,
 ) -> Result<CompiledInvocation, InvocationError> {
-    let addr_bound: BigInt = BigInt::from(1) << num_bits;
+    let val_bound: BigInt = BigInt::from(1) << num_bits;
     let [range_check, value] = builder.try_get_single_cells()?;
-    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     let mut casm_builder = CasmBuilder::default();
     add_input_variables! {casm_builder,
         buffer(2) range_check;
@@ -280,25 +280,27 @@ pub fn build_unsigned_try_from_felt252(
     };
     let auxiliary_vars: [_; 4] = std::array::from_fn(|_| casm_builder.alloc_var(false));
     casm_build_extend! {casm_builder,
-        const limit = addr_bound.clone();
+        const limit = val_bound.clone();
         let orig_range_check = range_check;
-        tempvar is_valid_address;
-        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_address};
-        jump IsValidAddress if is_valid_address != 0;
+        tempvar is_valid_value;
+        hint TestLessThan {lhs: value, rhs: limit} into {dst: is_valid_value};
+        jump IsValidValue if is_valid_value != 0;
         tempvar shifted_value = value - limit;
     }
     validate_under_limit::<1>(
         &mut casm_builder,
-        &(Felt252::prime().to_bigint().unwrap() - addr_bound.clone()),
+        &(Felt252::prime().to_bigint().unwrap() - val_bound.clone()),
         shifted_value,
         range_check,
         &auxiliary_vars,
     );
     casm_build_extend! {casm_builder,
         jump Failure;
-        IsValidAddress:
+        IsValidValue:
     };
-    validate_under_limit::<1>(&mut casm_builder, &addr_bound, value, range_check, &auxiliary_vars);
+    validate_under_limit::<1>(&mut casm_builder, &val_bound, value, range_check, &auxiliary_vars);
+
+    let failure_handle_statement_id = get_non_fallthrough_statement_id(&builder);
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [
