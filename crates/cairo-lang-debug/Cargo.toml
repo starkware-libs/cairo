@@ -7,7 +7,7 @@ license-file.workspace = true
 description = "Debug utilities for query objects."
 
 [dependencies]
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0-rc4" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0" }
 
 [dev-dependencies]
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros"}
