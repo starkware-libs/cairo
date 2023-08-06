@@ -5,6 +5,7 @@ use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 
+use crate::corelib::validate_literal;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
@@ -67,12 +68,16 @@ pub fn priv_constant_semantic_data(
     }
 
     // Check that the expression is a literal.
-    if !matches!(value.expr, Expr::Literal(_)) {
+    if let Expr::Literal(value) = &value.expr {
+        if let Err(kind) = validate_literal(db, const_type, value.value.clone()) {
+            ctx.diagnostics.report(&const_ast.value(syntax_db), kind);
+        }
+    } else {
         ctx.diagnostics.report(
             &const_ast.value(syntax_db),
             crate::diagnostic::SemanticDiagnosticKind::OnlyLiteralConstants,
         );
-    };
+    }
 
     let constant = Constant { value: value.expr };
 

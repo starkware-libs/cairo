@@ -99,7 +99,34 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
+error: A literal with this type cannot be created.
+ --> lib.cairo:1:27
+const DEFAULT_VAR: bool = 1;
+                          ^
+
 error: Mismatched types. The type core::bool cannot be created from a numeric literal.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^
+
+//! > ==========================================================================
+
+//! > Const of out of range value.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const DEFAULT_VAR: u8 = 256;
+
+//! > expected_diagnostics
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:1:25
+const DEFAULT_VAR: u8 = 256;
+                        ^*^
