@@ -15,8 +15,6 @@ fn foo(ref arr: Array<felt252>) {
 }
 
 //! > module_code
-use array::ArrayTrait;
-
 #[inline(never)]
 fn immovable<T>(t: T) -> T { t }
 

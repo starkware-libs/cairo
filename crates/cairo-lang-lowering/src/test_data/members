@@ -64,8 +64,6 @@ fn foo(ref my_struct: MyStruct) {
 foo
 
 //! > module_code
-use array::ArrayTrait;
-
 #[derive(Drop)]
 struct MyStruct {
     value: felt252,

@@ -13,7 +13,6 @@ fn foo(a: Box::<u256>) -> u128 {
 foo
 
 //! > module_code
-use box::BoxTrait;
 
 //! > semantic_diagnostics
 

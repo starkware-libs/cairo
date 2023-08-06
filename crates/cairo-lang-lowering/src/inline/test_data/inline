@@ -409,7 +409,7 @@ test_function_inlining
 
 //! > function
 fn foo() {
-  let mut arr = Default::default();
+  let mut arr = array![];
   arr.append(5)
 }
 
@@ -417,7 +417,6 @@ fn foo() {
 foo
 
 //! > module_code
-use array::ArrayTrait;
 
 //! > semantic_diagnostics
 
@@ -425,7 +424,7 @@ use array::ArrayTrait;
 Parameters:
 blk0 (root):
 Statements:
-  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  (v0: core::array::Array::<core::felt252>) <- core::array::ArrayImpl::<core::felt252>::new()
   (v1: core::felt252) <- 5u
   (v3: core::array::Array::<core::felt252>, v2: ()) <- core::array::ArrayImpl::<core::felt252>::append(v0, v1)
 End:
@@ -446,8 +445,9 @@ End:
 
 blk2:
 Statements:
+  (v4: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
 End:
-  Goto(blk6, {})
+  Goto(blk1, {v4 -> v0})
 
 blk3:
 Statements:
@@ -460,17 +460,6 @@ Statements:
   (v6: ()) <- struct_construct()
 End:
   Goto(blk3, {v5 -> v3, v6 -> v2})
-
-blk5:
-Statements:
-End:
-  Goto(blk1, {v4 -> v0})
-
-blk6:
-Statements:
-  (v7: core::array::Array::<core::felt252>) <- core::array::array_new::<core::felt252>()
-End:
-  Goto(blk5, {v7 -> v4})
 
 //! > lowering_diagnostics
 

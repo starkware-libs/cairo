@@ -1,10 +1,5 @@
-use core::traits::Into;
-use core::result::ResultTrait;
 use test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
-use array::ArrayTrait;
-use traits::TryInto;
-use option::OptionTrait;
 use starknet::SyscallResultTrait;
 use starknet::class_hash::Felt252TryIntoClassHash;
 
@@ -137,7 +132,7 @@ mod contract_failed_constructor {
 #[available_gas(30000000)]
 fn test_failed_constructor() {
     // Set up.
-    let mut calldata = Default::default();
+    let mut calldata = array![];
     calldata.append(100);
     let mut err = deploy_syscall(
         contract_failed_constructor::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false

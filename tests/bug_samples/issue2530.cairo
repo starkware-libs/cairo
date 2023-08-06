@@ -1,5 +1,3 @@
-use array::ArrayTrait;
-
 #[derive(Drop)]
 struct MyStruct {
     value: felt252,

@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use ast::PathSegment;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, TraitFunctionId, TraitId,
+    FunctionTitleId, FunctionWithBodyId, LocalVarLongId, MemberId, ModuleId, TraitFunctionId,
+    TraitId,
 };
 use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
@@ -18,6 +19,7 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use cairo_lang_utils::{extract_matches, try_extract_matches, OptionHelper};
@@ -36,8 +38,8 @@ use super::pattern::{
     PatternVariable,
 };
 use crate::corelib::{
-    core_binary_operator, core_bool_ty, core_unary_operator, false_literal_expr, get_core_trait,
-    never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
+    core_binary_operator, core_bool_ty, core_module, core_unary_operator, false_literal_expr,
+    get_core_trait, never_ty, true_literal_expr, try_get_core_ty_by_name, unit_expr, unit_ty,
     unwrap_error_propagation_type, validate_literal,
 };
 use crate::db::SemanticGroup;
@@ -1560,15 +1562,26 @@ fn dot_expr(
     }
 }
 
-/// Finds all the trait ids usable in the current context.
-fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Vec<TraitId>> {
-    let mut module_traits = ctx.db.module_traits_ids(ctx.resolver.module_file_id.0)?;
-    for use_id in ctx.db.module_uses_ids(ctx.resolver.module_file_id.0)? {
+/// Finds all the trait ids usable in the given module.
+fn all_module_trait_ids(
+    ctx: &mut ComputationContext<'_>,
+    module: ModuleId,
+) -> Maybe<OrderedHashSet<TraitId>> {
+    let mut module_traits = OrderedHashSet::from_iter(ctx.db.module_traits_ids(module)?);
+    for use_id in ctx.db.module_uses_ids(module)? {
         if let Ok(ResolvedGenericItem::Trait(trait_id)) = ctx.db.use_resolved_item(use_id) {
-            module_traits.push(trait_id);
+            module_traits.insert(trait_id);
         }
     }
     Ok(module_traits)
+}
+
+/// Finds all the trait ids usable in the current context.
+fn traits_in_context(ctx: &mut ComputationContext<'_>) -> Maybe<OrderedHashSet<TraitId>> {
+    let mut traits = all_module_trait_ids(ctx, ctx.resolver.module_file_id.0)?;
+    let core_traits = all_module_trait_ids(ctx, core_module(ctx.db))?;
+    traits.extend(core_traits);
+    Ok(traits)
 }
 
 /// Computes the semantic model of a method call expression (e.g. "expr.method(..)").
@@ -1591,10 +1604,11 @@ fn method_call_expr(
     let generic_args_syntax = segment.generic_args(syntax_db);
     // Save some work.
     ctx.resolver.inference().solve().ok();
-    let candidate_traits = all_module_trait_ids(ctx)?;
+
+    let candidate_traits = traits_in_context(ctx)?;
     let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
         ctx,
-        candidate_traits,
+        Vec::from_iter(candidate_traits),
         func_name,
         lexpr,
         path.stable_ptr().untyped(),

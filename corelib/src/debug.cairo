@@ -12,7 +12,7 @@ use option::Option;
 //
 // get_caller_address().print();
 //
-// let mut arr = Default::default();
+// let mut arr = array![];
 // arr.append('1234567890123456789012345678901');
 // arr.append('Sca');
 // arr.append('SomeVeryLongMessage');

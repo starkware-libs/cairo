@@ -1,10 +1,3 @@
-use array::ArrayTrait;
-use array::SpanTrait;
-use box::BoxTrait;
-use option::OptionTrait;
-use traits::{TryInto, Into};
-use zeroable::Zeroable;
-use clone::Clone;
 use starknet::Event;
 use starknet::class_hash::Felt252TryIntoClassHash;
 use starknet::StorageAddress;

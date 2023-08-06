@@ -1,5 +1,3 @@
-use option::OptionTrait;
-
 // Calculates H(...H(H(0, 1), ..., n))...) where H is the Pedersen hash function.
 fn hash_chain(n: felt252) -> felt252 {
     if n == 0 {

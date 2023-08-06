@@ -231,9 +231,6 @@ fn foo(data: Array::<felt252>) -> Array::<felt252> {
 }
 
 //! > module_code
-use array::ArrayTrait;
-use option::OptionTrait;
-
 #[inline(always)]
 fn bar(data: Array::<felt252>) -> Array::<felt252> {
     gas::withdraw_gas().expect('Out of gas');

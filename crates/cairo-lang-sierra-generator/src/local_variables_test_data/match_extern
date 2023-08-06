@@ -30,7 +30,6 @@ fn foo(x: felt252) -> felt252 {
 //! > module_code
 use zeroable::IsZeroResult;
 use zeroable::NonZeroIntoImpl;
-use traits::Into;
 // Revokes ap since this function is recursive.
 fn revoke_ap() -> felt252 {
     revoke_ap()

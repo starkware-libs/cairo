@@ -1,6 +1,3 @@
-use core::option::OptionTrait;
-use core::traits::{Into, TryInto};
-use array::{ArrayTrait, SpanTrait};
 use starknet::{
     ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
     storage_address_to_felt252, storage_address_try_from_felt252
@@ -8,7 +5,6 @@ use starknet::{
 use starknet::eth_address::Felt252TryIntoEthAddress;
 use super::utils::{serialized_element, single_deserialize};
 use integer::BoundedInt;
-use zeroable::Zeroable;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {

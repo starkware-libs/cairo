@@ -114,7 +114,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -124,7 +123,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -134,7 +132,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -262,7 +259,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -272,7 +268,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -282,7 +277,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -418,7 +412,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -428,7 +421,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -438,7 +430,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -592,7 +583,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -656,7 +646,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -666,7 +655,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -794,7 +782,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -822,7 +809,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -832,7 +818,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -951,7 +936,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -978,7 +962,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -988,7 +971,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1111,7 +1093,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -1139,7 +1120,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1149,7 +1129,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1198,7 +1177,7 @@ note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
- --> contract:62:32
+ --> contract:61:32
                 serde::Serde::<T>::deserialize(ref data)
                                ^
 
@@ -1289,7 +1268,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -1323,7 +1301,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1333,7 +1310,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1472,7 +1448,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -1542,7 +1517,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1552,7 +1526,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1728,7 +1701,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1739,7 +1711,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1750,7 +1721,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1899,7 +1869,6 @@ use starknet::event::EventEmitter;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
@@ -1949,7 +1918,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1959,7 +1927,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -1969,7 +1936,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2170,7 +2136,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2182,7 +2147,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2194,7 +2158,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2394,7 +2357,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -2450,7 +2412,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2461,7 +2422,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2607,7 +2567,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2618,7 +2577,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2629,7 +2587,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2758,7 +2715,6 @@ mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2769,7 +2725,6 @@ mod __l1_handler {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     
@@ -2780,7 +2735,6 @@ mod __constructor {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
         use option::OptionTraitImpl;
 
     

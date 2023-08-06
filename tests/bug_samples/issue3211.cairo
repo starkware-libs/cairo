@@ -1,7 +1,5 @@
 use core::integer::u128;
 use core::integer::Felt252TryIntoU128;
-use traits::{Into, TryInto};
-use option::OptionTrait;
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
     #[inline(always)]

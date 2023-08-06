@@ -340,7 +340,6 @@ fn foo() -> felt252 {
 foo
 
 //! > module_code
-use option::OptionTrait;
 extern fn get_option() -> Option<felt252> nopanic;
 
 //! > semantic_diagnostics
@@ -583,7 +582,6 @@ fn foo() {
 foo
 
 //! > module_code
-use option::OptionTrait;
 
 //! > semantic_diagnostics
 

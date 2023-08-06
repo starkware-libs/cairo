@@ -1,5 +1,3 @@
-use core::array::ArrayTrait;
-
 #[available_gas(2000000)]
 #[test]
 fn main() {

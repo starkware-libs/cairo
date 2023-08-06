@@ -215,7 +215,6 @@ pub fn handle_contract_by_storage(
         ("ClassHashSerde", "starknet::class_hash::ClassHashSerde"),
         ("ContractAddressSerde", "starknet::contract_address::ContractAddressSerde"),
         ("StorageAddressSerde", "starknet::storage_access::StorageAddressSerde"),
-        ("OptionTrait", "option::OptionTrait"),
         ("OptionTraitImpl", "option::OptionTraitImpl"),
     ]
     .into_iter()

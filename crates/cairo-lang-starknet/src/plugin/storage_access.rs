@@ -221,7 +221,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 let idx = starknet::Store::<felt252>::read(address_domain, base)?;
                 {match_idx}
                 else {{
-                    let mut message = Default::default();
+                    let mut message = array![];
                     message.append('Incorrect index:');
                     message.append(idx);
                     starknet::SyscallResult::Err(message)
@@ -240,7 +240,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
          offset)?;
                 {match_idx_at_offset}
                 else {{
-                    let mut message = Default::default();
+                    let mut message = array![];
                     message.append('Incorrect index:');
                     message.append(idx);
                     starknet::SyscallResult::Err(message)

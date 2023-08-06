@@ -18,9 +18,6 @@ fn serialize_array_felt_helper(ref serialized: Array<felt252>, mut input: Array<
 serialize_array_felt_helper
 
 //! > module_code
-use array::ArrayTrait;
-use option::OptionTrait;
-use serde::Serde;
 
 //! > semantic_diagnostics
 

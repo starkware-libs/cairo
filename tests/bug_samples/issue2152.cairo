@@ -1,6 +1,4 @@
-use array::ArrayTrait;
 use integer::u256_from_felt252;
-use option::OptionTrait;
 
 #[test]
 #[available_gas(100000)]

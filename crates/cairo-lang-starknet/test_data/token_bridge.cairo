@@ -1,7 +1,4 @@
 use starknet::ContractAddress;
-use serde::Serde;
-use traits::Into;
-use zeroable::Zeroable;
 
 #[starknet::interface]
 trait IMintableToken<T> {

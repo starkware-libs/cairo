@@ -1,4 +1,3 @@
-use option::OptionTrait;
 use test::test_utils::{assert_eq, assert_ne};
 
 fn foo() -> usize {
