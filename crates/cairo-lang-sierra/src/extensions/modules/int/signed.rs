@@ -101,6 +101,7 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
                 ty_param,
             ],
             branch_signatures: vec![
+                // In range.
                 BranchSignature {
                     vars: vec![
                         rc_output_info.clone(),
@@ -108,10 +109,12 @@ impl<TSintTraits: SintTraits> GenericLibfunc for SintOperationLibfunc<TSintTrait
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Below range.
                 BranchSignature {
                     vars: vec![rc_output_info.clone(), wrapping_result_info.clone()],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Above range.
                 BranchSignature {
                     vars: vec![rc_output_info, wrapping_result_info],
                     ap_change: SierraApChange::Known { new_vars_only: false },
@@ -163,6 +166,7 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
                 signed_ty_param,
             ],
             branch_signatures: vec![
+                // Positive.
                 BranchSignature {
                     vars: vec![
                         rc_output_info.clone(),
@@ -173,6 +177,7 @@ impl<TSintTraits: SintTraits> NoGenericArgsGenericLibfunc for SintDiffLibfunc<TS
                     ],
                     ap_change: SierraApChange::Known { new_vars_only: false },
                 },
+                // Negative.
                 BranchSignature {
                     vars: vec![
                         rc_output_info,
