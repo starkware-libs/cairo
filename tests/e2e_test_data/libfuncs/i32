@@ -440,3 +440,100 @@ rename<i32>([3]) -> ([5]);
 return([5]);
 
 test::foo@0([0]: i32) -> (i32);
+
+//! > ==========================================================================
+
+//! > i32_diff libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i32, b: i32) -> Result<u32, u32> {
+    integer::i32_diff(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 1] + [fp + -3], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 4294967296 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 12;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4] + 4294967296, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 880})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i32 = i32;
+type u32 = u32;
+type core::result::Result::<core::integer::u32, core::integer::u32> = Enum<ut@core::result::Result::<core::integer::u32, core::integer::u32>, u32, u32>;
+
+libfunc i32_diff = i32_diff;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0> = enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::result::Result::<core::integer::u32, core::integer::u32>> = store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1> = enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::result::Result::<core::integer::u32, core::integer::u32>> = rename<core::result::Result::<core::integer::u32, core::integer::u32>>;
+
+i32_diff([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([7]) -> ([9]);
+jump() { 10() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u32, core::integer::u32>, 1>([6]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u32, core::integer::u32>>([10]) -> ([9]);
+rename<RangeCheck>([8]) -> ([11]);
+rename<core::result::Result::<core::integer::u32, core::integer::u32>>([9]) -> ([12]);
+return([11], [12]);
+
+test::foo@0([0]: RangeCheck, [1]: i32, [2]: i32) -> (RangeCheck, core::result::Result::<core::integer::u32, core::integer::u32>);
+
+//! > ==========================================================================
+
+//! > i32_wide_mul libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i32, b: i32) -> i64 {
+    integer::i32_wide_mul(a, b)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i32 = i32;
+type i64 = i64;
+
+libfunc i32_wide_mul = i32_wide_mul;
+libfunc store_temp<i64> = store_temp<i64>;
+
+i32_wide_mul([0], [1]) -> ([2]);
+store_temp<i64>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: i32, [1]: i32) -> (i64);
