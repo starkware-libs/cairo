@@ -146,6 +146,7 @@ fn block_body_implicits(
             stmt.outputs.splice(0..0, implicit_output_vars);
         }
     }
+<<<<<<< HEAD
     for i in remove.into_iter().rev() {
         ctx.lowered.blocks[block_id].statements.remove(i);
     }
@@ -158,13 +159,107 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
     while let Some(block_id) = blocks_to_visit.pop() {
         if !ctx.visited.insert(block_id) {
             continue;
+||||||| 94c613b9d
+    // End.
+    let mut blocks_to_visit = vec![];
+    match &mut ctx.lowered.blocks[block_id].end {
+        FlatBlockEnd::Return(rets) => {
+            rets.splice(0..0, implicits.iter().cloned());
         }
+        FlatBlockEnd::Panic(_) => {
+            unreachable!("Panics should have been stripped in a previous phase.")
+        }
+        FlatBlockEnd::Goto(block_id, remapping) => {
+            let target_implicits = ctx
+                .implicit_vars_for_block
+                .entry(*block_id)
+                .or_insert_with(|| alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location))
+                .clone();
+            let old_remapping = std::mem::take(&mut remapping.remapping);
+            remapping.remapping = chain!(
+                zip_eq(target_implicits.into_iter().map(|var_usage| var_usage.var_id), implicits),
+                old_remapping
+            )
+            .collect();
+            blocks_to_visit.push(*block_id);
+=======
+    Ok(implicits)
+}
+
+/// Finds the implicits for a function's blocks starting from the root.
+fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId) -> Maybe<()> {
+    let mut blocks_to_visit = vec![root_block_id];
+    while let Some(block_id) = blocks_to_visit.pop() {
+        if !ctx.visited.insert(block_id) {
+            continue;
+>>>>>>> origin/dev-v2.1.0
+        }
+<<<<<<< HEAD
         let implicits = block_body_implicits(ctx, block_id)?;
         // End.
         match &mut ctx.lowered.blocks[block_id].end {
             FlatBlockEnd::Return(rets) => {
                 rets.splice(0..0, implicits.iter().cloned());
             }
+            FlatBlockEnd::Panic(_) => {
+                unreachable!("Panics should have been stripped in a previous phase.")
+||||||| 94c613b9d
+        FlatBlockEnd::Match { info } => match info {
+            MatchInfo::Enum(stmt) => {
+                for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
+                    assert!(
+                        ctx.implicit_vars_for_block.insert(*block_id, implicits.clone()).is_none(),
+                        "Multiple jumps to arm blocks are not allowed."
+                    );
+                    blocks_to_visit.push(*block_id);
+                }
+=======
+        let implicits = block_body_implicits(ctx, block_id)?;
+        // End.
+        match &mut ctx.lowered.blocks[block_id].end {
+            FlatBlockEnd::Return(rets) => {
+                rets.splice(0..0, implicits.iter().cloned());
+>>>>>>> origin/dev-v2.1.0
+            }
+<<<<<<< HEAD
+            FlatBlockEnd::Goto(block_id, remapping) => {
+                let target_implicits = ctx
+                    .implicit_vars_for_block
+                    .entry(*block_id)
+                    .or_insert_with(|| {
+                        alloc_implicits(ctx.variables, &ctx.implicits_tys, ctx.location)
+                    })
+                    .clone();
+                let old_remapping = std::mem::take(&mut remapping.remapping);
+                remapping.remapping = chain!(
+                    zip_eq(
+                        target_implicits.into_iter().map(|var_usage| var_usage.var_id),
+                        implicits
+                    ),
+                    old_remapping
+                )
+                .collect();
+                blocks_to_visit.push(*block_id);
+            }
+            FlatBlockEnd::Match { info } => {
+                blocks_to_visit.extend(info.arms().iter().rev().map(|a| a.block_id));
+                match info {
+                    MatchInfo::Enum(stmt) => {
+                        for MatchArm { variant_id: _, block_id, var_ids: _ } in &stmt.arms {
+                            assert!(
+                                ctx.implicit_vars_for_block
+                                    .insert(*block_id, implicits.clone())
+                                    .is_none(),
+                                "Multiple jumps to arm blocks are not allowed."
+                            );
+                        }
+                    }
+                    MatchInfo::Extern(stmt) => {
+                        let callee_implicits = ctx.db.function_implicits(stmt.function)?;
+||||||| 94c613b9d
+            MatchInfo::Extern(stmt) => {
+                let callee_implicits = ctx.db.function_implicits(stmt.function)?;
+=======
             FlatBlockEnd::Panic(_) => {
                 unreachable!("Panics should have been stripped in a previous phase.")
             }
@@ -202,6 +297,7 @@ fn lower_function_blocks_implicits(ctx: &mut Context<'_>, root_block_id: BlockId
                     }
                     MatchInfo::Extern(stmt) => {
                         let callee_implicits = ctx.db.function_implicits(stmt.function)?;
+>>>>>>> origin/dev-v2.1.0
 
                         let indices =
                             callee_implicits.iter().map(|ty| ctx.implicit_index[ty]).collect_vec();
