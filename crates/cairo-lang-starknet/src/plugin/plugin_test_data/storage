@@ -526,10 +526,6 @@ use starknet::event::EventEmitter;
     }
 
 
-trait __abi<ContractState> {
-    
-}
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;

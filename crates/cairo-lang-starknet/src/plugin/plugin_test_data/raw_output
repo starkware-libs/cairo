@@ -87,14 +87,6 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
-    #[external]
-        fn test_raw_output(ref self: ContractState) -> Span::<felt252>;
-        #[external]
-        fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  >;
-        
-}
-
 mod __external {
         use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
