@@ -1511,7 +1511,7 @@
       ],
       [
         64,
-        "function_call<user@test::counter_contract::counter::InternalContractStateImpl::read>"
+        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>"
       ],
       [
         65,
@@ -1623,7 +1623,7 @@
       ],
       [
         92,
-        "function_call<user@test::counter_contract::counter::InternalContractStateImpl::write>"
+        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>"
       ],
       [
         93,
@@ -1679,7 +1679,7 @@
       ],
       [
         106,
-        "function_call<user@test::counter_contract::other_contract::InternalContractStateImpl::read>"
+        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
       ],
       [
         107,
@@ -1755,7 +1755,7 @@
       ],
       [
         125,
-        "function_call<user@test::counter_contract::other_contract::InternalContractStateImpl::write>"
+        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
       ],
       [
         126,
@@ -2349,7 +2349,7 @@
       ],
       [
         11,
-        "test::counter_contract::counter::InternalContractStateImpl::read"
+        "test::counter_contract::counter::InternalContractMemberStateImpl::read"
       ],
       [
         12,
@@ -2365,7 +2365,7 @@
       ],
       [
         15,
-        "test::counter_contract::counter::InternalContractStateImpl::write"
+        "test::counter_contract::counter::InternalContractMemberStateImpl::write"
       ],
       [
         16,
@@ -2373,7 +2373,7 @@
       ],
       [
         17,
-        "test::counter_contract::other_contract::InternalContractStateImpl::read"
+        "test::counter_contract::other_contract::InternalContractMemberStateImpl::read"
       ],
       [
         18,
@@ -2393,7 +2393,7 @@
       ],
       [
         22,
-        "test::counter_contract::other_contract::InternalContractStateImpl::write"
+        "test::counter_contract::other_contract::InternalContractMemberStateImpl::write"
       ],
       [
         23,

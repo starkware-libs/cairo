@@ -22,7 +22,7 @@ use dispatcher::handle_trait;
 use events::derive_event_needed;
 use storage_access::derive_storage_access_needed;
 
-use self::contract::{handle_contract_by_storage, handle_module};
+use self::contract::{handle_module, handle_module_by_storage};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -40,7 +40,7 @@ impl MacroPlugin for StarkNetPlugin {
                 storage_access::handle_struct(db, struct_ast)
             }
             ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
-                handle_contract_by_storage(db, struct_ast).unwrap_or_default()
+                handle_module_by_storage(db, struct_ast).unwrap_or_default()
             }
             ast::Item::Enum(enum_ast) if derive_storage_access_needed(&enum_ast, db) => {
                 storage_access::handle_enum(db, enum_ast)

@@ -48,9 +48,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -79,7 +79,6 @@ use starknet::event::EventEmitter;
             )
         }
     }
-
 
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -111,22 +110,17 @@ fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<fe
 }
 
 
+    mod __external {
+        use super::__wrapper_test_raw_output as test_raw_output;
+        use super::__wrapper_test_raw_output_with_spaces as test_raw_output_with_spaces;
+    }
 
-mod __external {
-    use super::__wrapper_test_raw_output as test_raw_output;
-    use super::__wrapper_test_raw_output_with_spaces as test_raw_output_with_spaces;
-}
+    mod __l1_handler {
+    }
 
-mod __l1_handler {
-}
+    mod __constructor {
+    }
 
-mod __constructor {
-}
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
