@@ -76,6 +76,8 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",
+        no_body: "no_body",
+        external_event: "external_event",
     },
     ExpandContractTestRunner
 );
