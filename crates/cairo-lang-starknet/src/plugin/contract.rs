@@ -16,9 +16,10 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, EVENT_ATTR,
-    EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
-    L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, CONTRACT_ATTR,
+    DEPRECATED_CONTRACT_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
+    L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
+    STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
@@ -446,9 +447,11 @@ fn handle_entry_point(
     if entry_point_kind == EntryPointKind::Constructor {
         {
             let name_node = item_function.declaration(db).name(db);
-            if name_node.text(db) != "constructor" {
+            if name_node.text(db) != CONSTRUCTOR_NAME {
                 diagnostics.push(PluginDiagnostic {
-                    message: "The constructor function must be called `constructor`.".to_string(),
+                    message: format!(
+                        "The constructor function must be called `{CONSTRUCTOR_NAME}`."
+                    ),
                     stable_ptr: name_node.stable_ptr().untyped(),
                 })
             }
