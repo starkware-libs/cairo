@@ -186,10 +186,6 @@ use starknet::event::EventEmitter;
     }
 
 
-trait __abi<ContractState> {
-    
-}
-
 mod __external {
         use super::HashStateExTrait;
         use super::WrappedFelt252;

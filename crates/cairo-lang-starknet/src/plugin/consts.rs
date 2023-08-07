@@ -1,4 +1,3 @@
-pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";

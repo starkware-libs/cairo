@@ -39,15 +39,6 @@ impl EntryPointKind {
             None
         }
     }
-
-    /// Returns the relevant attribute of the entry point kind.
-    pub fn get_attr(&self) -> &str {
-        match self {
-            EntryPointKind::External => EXTERNAL_ATTR,
-            EntryPointKind::Constructor => CONSTRUCTOR_ATTR,
-            EntryPointKind::L1Handler => L1_HANDLER_ATTR,
-        }
-    }
 }
 
 /// Generates Cairo code for an entry point wrapper.

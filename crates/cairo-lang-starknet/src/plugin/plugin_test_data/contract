@@ -142,23 +142,6 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
-    #[external]
-        fn get_something(self: @ContractState, ref arg: felt252, num: felt252) -> felt252;
-        #[external]
-        fn set_something(ref self: ContractState, ref arg: felt252, num: felt252);
-        #[l1_handler]
-        fn l1_handler_func(ref self: ContractState, from_address: felt252, arg: felt252, num: felt252);
-        #[external]
-        fn test_serde(
-        ref self: ContractState,
-        contract_address: ContractAddress,
-        class_hash: ClassHash,
-        storage_address: StorageAddress,
-    );
-        
-}
-
 mod __external {
         use super::ClassHash;
         use super::ContractAddress;

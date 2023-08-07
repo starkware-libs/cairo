@@ -89,20 +89,6 @@ use starknet::event::EventEmitter;
 
 
 
-trait __abi<ContractState> {
-    #[l1_handler]
-        fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252);
-        #[l1_handler]
-        fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252);
-        #[l1_handler]
-        fn l1_handler_no_params(ref self: ContractState);
-        #[l1_handler]
-        fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252);
-        #[l1_handler]
-        fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128);
-        
-}
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;

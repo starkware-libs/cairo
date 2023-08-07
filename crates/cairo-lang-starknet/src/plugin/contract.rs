@@ -15,9 +15,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
-    EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
-    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, EVENT_ATTR,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
@@ -89,7 +89,6 @@ struct ContractGenerationData {
     generated_external_functions: Vec<RewriteNode>,
     generated_constructor_functions: Vec<RewriteNode>,
     generated_l1_handler_functions: Vec<RewriteNode>,
-    abi_functions: Vec<RewriteNode>,
 }
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -329,10 +328,6 @@ pub fn handle_contract_by_storage(
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $storage_code$
 
-            trait {ABI_TRAIT}<ContractState> {{
-                $abi_functions$
-            }}
-
             mod {EXTERNAL_MODULE} {{$extra_uses$
 
                 $generated_external_functions$
@@ -357,7 +352,6 @@ pub fn handle_contract_by_storage(
             ),
             ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
             ("storage_code".to_string(), storage_code),
-            ("abi_functions".to_string(), RewriteNode::new_modified(data.abi_functions)),
             ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),
@@ -418,8 +412,6 @@ fn handle_entry_point(
     diagnostics: &mut Vec<PluginDiagnostic>,
     data: &mut ContractGenerationData,
 ) {
-    let attr = entry_point_kind.get_attr();
-
     if entry_point_kind == EntryPointKind::Constructor {
         {
             let name_node = item_function.declaration(db).name(db);
@@ -458,11 +450,6 @@ fn handle_entry_point(
                 .set_str("".to_string());
         }
     }
-    data.abi_functions.push(RewriteNode::new_modified(vec![
-        RewriteNode::Text(format!("#[{attr}]\n        ")),
-        declaration_node,
-        RewriteNode::Text(";\n        ".to_string()),
-    ]));
 
     match generate_entry_point_wrapper(db, item_function, function_name) {
         Ok(generated_function) => {
