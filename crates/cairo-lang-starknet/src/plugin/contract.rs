@@ -130,19 +130,6 @@ pub fn handle_contract_by_storage(
         maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
-    // Add required fixed uses.
-    for (use_item, path) in [
-        ("ClassHashSerde", "starknet::class_hash::ClassHashSerde"),
-        ("ContractAddressSerde", "starknet::contract_address::ContractAddressSerde"),
-        ("StorageAddressSerde", "starknet::storage_access::StorageAddressSerde"),
-        ("OptionTrait", "option::OptionTrait"),
-        ("OptionTraitImpl", "option::OptionTraitImpl"),
-    ]
-    .into_iter()
-    {
-        extra_uses.entry(use_item.into()).or_insert_with(|| path.to_string());
-    }
-
     let extra_uses_node = RewriteNode::new_modified(
         extra_uses
             .values()
