@@ -237,7 +237,6 @@ use starknet::event::EventEmitter;
         }
     }
 
-
 mod __external {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
@@ -285,6 +284,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:

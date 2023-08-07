@@ -188,7 +188,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::Event;
         use starknet::class_hash::ClassHashSerde;
@@ -221,6 +220,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:

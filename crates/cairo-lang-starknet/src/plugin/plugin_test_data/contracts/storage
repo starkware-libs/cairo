@@ -525,7 +525,6 @@ use starknet::event::EventEmitter;
         }
     }
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -555,6 +554,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:

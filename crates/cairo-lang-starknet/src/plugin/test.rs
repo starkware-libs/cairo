@@ -11,6 +11,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::plugin::StarkNetPlugin;
 
+/// A test runner for expanding contracts and components.
 struct ExpandContractTestRunner {
     db: RootDatabase,
 }
@@ -65,7 +66,7 @@ impl TestFileRunner for ExpandContractTestRunner {
 
 cairo_lang_test_utils::test_file_test_with_runner!(
     expand_contract,
-    "src/plugin/plugin_test_data",
+    "src/plugin/plugin_test_data/contracts",
     {
         diagnostics: "diagnostics",
         contract: "contract",

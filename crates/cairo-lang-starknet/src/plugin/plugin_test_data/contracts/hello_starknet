@@ -1,26 +1,24 @@
-//! > Test expansion of a simple starknet contract.
+//! > Test expansion of the hello_starknet contract.
 
 //! > test_runner_name
 ExpandContractTestRunner
 
 //! > cairo_code
 #[starknet::contract]
-mod test_contract {
-    use array::ArrayTrait;
-
+mod hello_starknet {
     #[storage]
-    struct Storage {}
+    struct Storage { balance: felt252, }
 
+    // Increases the balance by the given amount.
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
-        Default::<Array<felt252>>::default().span()
+    fn increase_balance(ref self: ContractState, amount: felt252) {
+        self.balance.write(self.balance.read() + amount);
     }
 
+    // Returns the current balance.
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
-        Default::<Array<felt252>>::default().span()
+    fn get_balance(self: @ContractState) -> felt252 {
+        self.balance.read()
     }
 }
 
@@ -28,22 +26,20 @@ mod test_contract {
 lib.cairo:
 
 #[starknet::contract]
-mod test_contract {
-    use array::ArrayTrait;
-
+mod hello_starknet {
     #[storage]
-    struct Storage {}
+    struct Storage { balance: felt252, }
 
+    // Increases the balance by the given amount.
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output(ref self: ContractState) -> Span::<felt252> {
-        Default::<Array<felt252>>::default().span()
+    fn increase_balance(ref self: ContractState, amount: felt252) {
+        self.balance.write(self.balance.read() + amount);
     }
 
+    // Returns the current balance.
     #[external(v0)]
-    #[raw_output]
-    fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  > {
-        Default::<Array<felt252>>::default().span()
+    fn get_balance(self: @ContractState) -> felt252 {
+        self.balance.read()
     }
 }
 
@@ -53,14 +49,16 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 876434993571142883350487723206857627809544242047179747265251009258990971924;
+const TEST_CLASS_HASH: felt252 = 1102354323051365330526116728762987089260624826846154342310342950171552219682;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
+        balance: balance::ContractState,
     }
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
+            balance: balance::ContractState{},
         }
     }
     #[cfg(test)]
@@ -85,10 +83,50 @@ use starknet::event::EventEmitter;
         }
     }
 
+    use balance::InternalContractStateTrait as balanceContractStateTrait;
+    mod balance {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+        use super;
 
+        #[derive(Copy, Drop)]
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
+        }
+
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            }
+            fn read(self: @ContractState) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: ContractState, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
+        }
+    }
 
 mod __external {
-        use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -96,18 +134,25 @@ mod __external {
         use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
             
+            let __arg_amount =
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
-            super::test_raw_output(ref contract_state, )
+            super::increase_balance(ref contract_state, __arg_amount);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
         }
         #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
             gas::withdraw_gas().expect('Out of gas');
@@ -115,13 +160,18 @@ mod __external {
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
             gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
-            super::test_raw_output_with_spaces(ref contract_state, )
+            
+            let res = super::get_balance(@contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            serde::Serde::<felt252>::serialize(@res, ref arr);
+            array::ArrayTrait::span(@arr)
         }
         
 }
 
 mod __l1_handler {
-        use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -132,7 +182,6 @@ mod __l1_handler {
 }
 
 mod __constructor {
-        use super::ArrayTrait;
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
         use starknet::storage_access::StorageAddressSerde;
@@ -141,6 +190,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:

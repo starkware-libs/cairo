@@ -98,7 +98,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -128,6 +127,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -237,7 +237,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -282,6 +281,7 @@ mod __constructor {
         }
         
 }
+
 
 
 impls:
@@ -386,7 +386,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -416,6 +415,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -547,7 +547,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -631,6 +630,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -740,7 +740,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -788,6 +787,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -888,7 +888,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -935,6 +934,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -1039,7 +1039,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1089,6 +1088,7 @@ mod __constructor {
 }
 
 
+
 impls:
 
 impl ContractStateDrop of Drop::<ContractState>;
@@ -1131,7 +1131,7 @@ note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
- --> contract:53:32
+ --> contract:52:32
                 serde::Serde::<T>::deserialize(ref data)
                                ^
 
@@ -1208,7 +1208,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1262,6 +1261,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -1376,7 +1376,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1466,6 +1465,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -1614,7 +1614,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::my_felt252_array_type;
         use starknet::class_hash::ClassHashSerde;
@@ -1647,6 +1646,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -1829,7 +1829,6 @@ use starknet::event::EventEmitter;
         }
     }
 
-
 mod __external {
         use starknet::class_hash::ClassHashSerde;
         use starknet::contract_address::ContractAddressSerde;
@@ -1859,6 +1858,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -2041,7 +2041,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::AImpl;
         use super::BImpl;
@@ -2077,6 +2076,7 @@ mod __constructor {
 
     
 }
+
 
 
 generate_trait:
@@ -2253,7 +2253,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::AImpl;
         use starknet::class_hash::ClassHashSerde;
@@ -2331,6 +2330,7 @@ mod __constructor {
 
     
 }
+
 
 
 generate_trait:
@@ -2459,7 +2459,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::Event;
         use starknet::class_hash::ClassHashSerde;
@@ -2492,6 +2491,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -2603,7 +2603,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 mod __external {
         use super::MyEvent;
         use starknet::class_hash::ClassHashSerde;
@@ -2636,6 +2635,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
