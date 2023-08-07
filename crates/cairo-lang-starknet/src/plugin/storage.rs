@@ -6,6 +6,7 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
+use super::contract::StarknetModuleKind;
 use crate::contract::starknet_keccak;
 
 /// Generate getters and setters for the variables in the storage struct.
@@ -14,26 +15,41 @@ pub fn handle_storage_struct(
     struct_ast: ast::ItemStruct,
     extra_uses_node: &RewriteNode,
     has_event: bool,
+    starknet_module_kind: StarknetModuleKind,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
     let mut members_init_code = Vec::new();
     let mut vars_code = Vec::new();
     let mut diagnostics = vec![];
 
+    let state_struct_name = format!("{}State", starknet_module_kind.to_str_capital());
+    let member_state_name = format!("{}MemberState", starknet_module_kind.to_str_capital());
+    let (generic_arg_str, full_generic_arg_str) =
+        if starknet_module_kind == StarknetModuleKind::Component {
+            ("<TCS>", "::<TCS>")
+        } else {
+            ("", "")
+        };
+    let full_state_struct_name = format!("{state_struct_name}{generic_arg_str}");
+
     for member in struct_ast.members(db).elements(db) {
         let name_node = member.name(db).as_syntax_node();
         let name = member.name(db).text(db);
         members_code.push(RewriteNode::interpolate_patched(
-            "
-        $name$: $name$::ContractMemberState,",
+            &format!(
+                "
+        $name$: $name$::{member_state_name},"
+            ),
             UnorderedHashMap::from([(
                 "name".to_string(),
                 RewriteNode::new_trimmed(name_node.clone()),
             )]),
         ));
         members_init_code.push(RewriteNode::interpolate_patched(
-            "
-            $name$: $name$::ContractMemberState{},",
+            &format!(
+                "
+            $name$: $name$::{member_state_name}{{}},"
+            ),
             UnorderedHashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node))]),
         ));
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
@@ -41,7 +57,7 @@ pub fn handle_storage_struct(
         match try_extract_mapping_types(db, &type_ast) {
             Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
                 vars_code.push(RewriteNode::interpolate_patched(
-                    handle_legacy_mapping_storage_var(&address).as_str(),
+                    handle_legacy_mapping_storage_var(&address, &member_state_name).as_str(),
                     [
                         (
                             "storage_var_name".to_string(),
@@ -68,7 +84,7 @@ pub fn handle_storage_struct(
             }
             None => {
                 vars_code.push(RewriteNode::interpolate_patched(
-                    handle_simple_storage_var(&address).as_str(),
+                    handle_simple_storage_var(&address, &member_state_name).as_str(),
                     [
                         (
                             "storage_var_name".to_string(),
@@ -85,31 +101,38 @@ pub fn handle_storage_struct(
             }
         }
     }
+
+    let unsafe_new_function_name =
+        format!("unsafe_new_{}_state{generic_arg_str}", starknet_module_kind.to_str_lower());
+    let for_testing_function_name =
+        format!("{}_state_for_testing{generic_arg_str}", starknet_module_kind.to_str_lower());
     let empty_event_code =
         if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
     let storage_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
             use starknet::event::EventEmitter;
-            #[derive(Drop)]
-                struct ContractState {{$members_code$
+                struct {full_state_struct_name} {{$members_code$
                 }}
+                impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
+             {{}}
                 #[inline(always)]
-                fn unsafe_new_contract_state() -> ContractState {{
-                    ContractState {{$member_init_code$
+                fn {unsafe_new_function_name}() -> {full_state_struct_name} {{
+                    {state_struct_name}{full_generic_arg_str} {{$member_init_code$
                     }}
                 }}
                 #[cfg(test)]
                 #[inline(always)]
-                fn contract_state_for_testing() -> ContractState {{
-                    unsafe_new_contract_state()
+                fn {for_testing_function_name}() -> {full_state_struct_name} {{
+                    {unsafe_new_function_name}()
                 }}
 
 
                 $empty_event_code$
-                impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {{
-                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, \
-             event: S) {{
+                impl {state_struct_name}EventEmitter{generic_arg_str} of \
+             EventEmitter<{full_state_struct_name}, Event> {{
+                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: \
+             {full_state_struct_name}, event: S) {{
                         let event: Event = traits::Into::into(event);
                         let mut keys = Default::<array::Array>::default();
                         let mut data = Default::<array::Array>::default();
@@ -171,24 +194,25 @@ fn try_extract_mapping_types(
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_simple_storage_var(address: &str) -> String {
+fn handle_simple_storage_var(address: &str, member_state_name: &str) -> String {
     format!(
         "
-    use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
+    use $storage_var_name$::Internal{member_state_name}Trait as \
+         $storage_var_name${member_state_name}Trait;
     mod $storage_var_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct ContractMemberState {{}}
-        trait InternalContractStateTrait {{
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> $type_name$;
-            fn write(ref self: ContractMemberState, value: $type_name$);
+        struct {member_state_name} {{}}
+        trait Internal{member_state_name}Trait {{
+            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
+            fn read(self: @{member_state_name}) -> $type_name$;
+            fn write(ref self: {member_state_name}, value: $type_name$);
         }}
 
-        impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {{
+        impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
+            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress {{
                 starknet::storage_base_address_const::<{address}>()
             }}
-            fn read(self: @ContractMemberState) -> $type_name$ {{
+            fn read(self: @{member_state_name}) -> $type_name$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
@@ -198,7 +222,7 @@ fn handle_simple_storage_var(address: &str) -> String {
                     )
                 )
             }}
-            fn write(ref self: ContractMemberState, value: $type_name$) {{
+            fn write(ref self: {member_state_name}, value: $type_name$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
@@ -215,27 +239,28 @@ fn handle_simple_storage_var(address: &str) -> String {
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_legacy_mapping_storage_var(address: &str) -> String {
+fn handle_legacy_mapping_storage_var(address: &str, member_state_name: &str) -> String {
     format!(
         "
-    use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
+    use $storage_var_name$::Internal{member_state_name}Trait as \
+         $storage_var_name${member_state_name}Trait;
     mod $storage_var_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
-        struct ContractMemberState {{}}
-        trait InternalContractStateTrait {{
-            fn address(self: @ContractMemberState, key: $key_type$) -> \
+        struct {member_state_name} {{}}
+        trait Internal{member_state_name}Trait {{
+            fn address(self: @{member_state_name}, key: $key_type$) -> \
          starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState, key: $key_type$) -> $value_type$;
-            fn write(ref self: ContractMemberState, key: $key_type$, value: $value_type$);
+            fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
+            fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$);
         }}
 
-        impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractMemberState, key: $key_type$) -> \
+        impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
+            fn address(self: @{member_state_name}, key: $key_type$) -> \
          starknet::StorageBaseAddress {{
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
-            fn read(self: @ContractMemberState, key: $key_type$) -> $value_type$ {{
+            fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
@@ -245,7 +270,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
                     )
                 )
             }}
-            fn write(ref self: ContractMemberState, key: $key_type$, value: $value_type$) {{
+            fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(

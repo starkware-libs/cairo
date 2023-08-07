@@ -49,6 +49,10 @@ impl RewriteNode {
         Self::Modified(ModifiedNode { children: Some(children) })
     }
 
+    pub fn empty() -> Self {
+        Self::Text("".to_string())
+    }
+
     /// Creates a rewrite node from an AST object.
     pub fn from_ast<T: TypedSyntaxNode>(node: &T) -> Self {
         RewriteNode::Copied(node.as_syntax_node())

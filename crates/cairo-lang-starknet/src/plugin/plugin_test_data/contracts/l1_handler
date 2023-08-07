@@ -54,9 +54,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2af729534074cc956b32098b82809d28afc7fff3533b10e7cbbb22514afa6f;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -85,7 +85,6 @@ use starknet::event::EventEmitter;
             )
         }
     }
-
 
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -199,25 +198,20 @@ fn __wrapper_l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Spa
 }
 
 
+    mod __external {
+    }
 
-mod __external {
-}
+    mod __l1_handler {
+        use super::__wrapper_good_l1_handler as good_l1_handler;
+        use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
+        use super::__wrapper_l1_handler_no_params as l1_handler_no_params;
+        use super::__wrapper_l1_handler_wrong_first_param_name as l1_handler_wrong_first_param_name;
+        use super::__wrapper_l1_handler_wrong_first_param_type as l1_handler_wrong_first_param_type;
+    }
 
-mod __l1_handler {
-    use super::__wrapper_good_l1_handler as good_l1_handler;
-    use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
-    use super::__wrapper_l1_handler_no_params as l1_handler_no_params;
-    use super::__wrapper_l1_handler_wrong_first_param_name as l1_handler_wrong_first_param_name;
-    use super::__wrapper_l1_handler_wrong_first_param_type as l1_handler_wrong_first_param_type;
-}
+    mod __constructor {
+    }
 
-mod __constructor {
-}
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

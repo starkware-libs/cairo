@@ -69,3 +69,14 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     },
     ExpandContractTestRunner
 );
+
+cairo_lang_test_utils::test_file_test_with_runner!(
+    expand_component,
+    "src/plugin/plugin_test_data/components",
+    {
+        component: "component",
+        no_body: "no_body",
+        no_storage: "no_storage",
+    },
+    ExpandContractTestRunner
+);
