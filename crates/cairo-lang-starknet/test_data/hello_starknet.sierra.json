@@ -734,7 +734,7 @@
       ],
       [
         68,
-        "function_call<user@test::hello_starknet::balance::InternalContractStateImpl::read>"
+        "function_call<user@test::hello_starknet::balance::InternalContractMemberStateImpl::read>"
       ],
       [
         69,
@@ -742,7 +742,7 @@
       ],
       [
         70,
-        "function_call<user@test::hello_starknet::balance::InternalContractStateImpl::write>"
+        "function_call<user@test::hello_starknet::balance::InternalContractMemberStateImpl::write>"
       ],
       [
         71,
@@ -928,11 +928,11 @@
       ],
       [
         6,
-        "test::hello_starknet::balance::InternalContractStateImpl::read"
+        "test::hello_starknet::balance::InternalContractMemberStateImpl::read"
       ],
       [
         7,
-        "test::hello_starknet::balance::InternalContractStateImpl::write"
+        "test::hello_starknet::balance::InternalContractMemberStateImpl::write"
       ],
       [
         8,

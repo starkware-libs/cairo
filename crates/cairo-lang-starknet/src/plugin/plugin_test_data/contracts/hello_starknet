@@ -48,10 +48,10 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
         balance: balance::ContractMemberState,
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -82,17 +82,17 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use balance::InternalContractStateTrait as balanceContractStateTrait;
+    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
     mod balance {
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractStateTrait {
+        trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
         }
 
-        impl InternalContractStateImpl of InternalContractStateTrait {
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
@@ -120,8 +120,7 @@ use starknet::event::EventEmitter;
         }
     }
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -162,20 +161,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

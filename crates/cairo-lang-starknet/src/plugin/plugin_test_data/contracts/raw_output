@@ -52,9 +52,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1f00b6cb035975e1b10429734c1cb82a267b66465d300afaec2af06e3e1ac14;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -85,8 +85,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::ArrayTrait;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -114,22 +113,18 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::ArrayTrait;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::ArrayTrait;
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

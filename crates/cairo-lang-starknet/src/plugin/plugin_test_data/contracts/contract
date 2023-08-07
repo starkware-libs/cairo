@@ -108,9 +108,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -140,8 +140,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -233,7 +232,7 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -273,7 +272,7 @@ mod __l1_handler {
         
 }
 
-mod __constructor {
+    mod __constructor {
         use super::ClassHash;
         use super::ContractAddress;
         use super::StorageAddress;
@@ -283,6 +282,7 @@ mod __constructor {
 
     
 }
+
 
 
 impls:
@@ -389,9 +389,5 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
         Option::Some(BestEventEver {})
     }
 }
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 //! > expected_diagnostics

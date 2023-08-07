@@ -64,9 +64,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -97,26 +97,21 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
-
-    
-}
-
-mod __l1_handler {
+    mod __external {
 
     
 }
 
-mod __constructor {
+    mod __l1_handler {
 
     
 }
 
+    mod __constructor {
 
-impls:
+    
+}
 
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -187,9 +182,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -220,18 +215,17 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
-
-    
-}
-
-mod __l1_handler {
+    mod __external {
 
     
 }
 
-mod __constructor {
+    mod __l1_handler {
+
+    
+}
+
+    mod __constructor {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -251,10 +245,6 @@ mod __constructor {
         
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -318,10 +308,10 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff1ecaecfe92dce54d9d;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
         mapping: mapping::ContractMemberState,
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -353,26 +343,21 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
-
-    
-}
-
-mod __l1_handler {
+    mod __external {
 
     
 }
 
-mod __constructor {
+    mod __l1_handler {
 
     
 }
 
+    mod __constructor {
 
-impls:
+    
+}
 
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -409,15 +394,15 @@ error: Plugin diagnostic: Identifier not found.
         mapping: Map::<felt252, felt252>,
         ^*****^
 
+error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
+ --> contract:7:5
+    impl ContractStateDrop of Drop<ContractState> {}
+    ^**********************************************^
+
 error: Plugin diagnostic: Identifier not found.
  --> lib.cairo:5:9
         mapping: Map::<felt252, felt252>,
         ^*****^
-
-error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
- --> impls:1:1
-impl ContractStateDrop of Drop::<ContractState>;
-^**********************************************^
 
 //! > ==========================================================================
 
@@ -465,9 +450,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -498,8 +483,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -561,20 +545,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -645,9 +625,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x124995404f8319289ef288de547438677d2604e15a5315c83676af341b004e8;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -678,8 +658,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -703,20 +682,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -778,9 +753,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -811,8 +786,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -834,20 +808,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -913,9 +883,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -946,8 +916,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -971,20 +940,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1024,7 +989,7 @@ note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
- --> contract:47:32
+ --> contract:46:32
                 serde::Serde::<T>::deserialize(ref data),
                                ^
 
@@ -1067,9 +1032,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -1100,8 +1065,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1132,20 +1096,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1221,9 +1181,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -1254,8 +1214,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1320,20 +1279,16 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
 
     
 }
 
-mod __constructor {
+    mod __constructor {
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1443,9 +1398,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4837185259a4d5d8351;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -1476,29 +1431,24 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::my_felt252_array_type;
 
     
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::my_felt252_array_type;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::my_felt252_array_type;
 
     
 }
 
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1598,10 +1548,10 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343fe167b82768570a896;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
         same_name: same_name::ContractMemberState,
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -1632,17 +1582,17 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use same_name::InternalContractStateTrait as same_nameContractStateTrait;
+    use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
     mod same_name {
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractStateTrait {
+        trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
             fn read(self: @ContractMemberState) -> felt252;
             fn write(ref self: ContractMemberState, value: felt252);
         }
 
-        impl InternalContractStateImpl of InternalContractStateTrait {
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
             }
@@ -1670,26 +1620,21 @@ use starknet::event::EventEmitter;
         }
     }
 
-
-mod __external {
-
-    
-}
-
-mod __l1_handler {
+    mod __external {
 
     
 }
 
-mod __constructor {
+    mod __l1_handler {
 
     
 }
 
+    mod __constructor {
 
-impls:
+    
+}
 
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -1833,9 +1778,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18ccab86db3595169e73c;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -1866,27 +1811,27 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::AImpl;
         use super::BImpl;
 
     
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::AImpl;
         use super::BImpl;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::AImpl;
         use super::BImpl;
 
     
 }
+
 
 
 generate_trait:
@@ -1899,11 +1844,6 @@ generate_trait:
 
 trait BTrait {
 }
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -2029,9 +1969,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -2062,8 +2002,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::AImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -2114,17 +2053,18 @@ mod __external {
         
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::AImpl;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::AImpl;
 
     
 }
+
 
 
 generate_trait:
@@ -2136,11 +2076,6 @@ trait ATrait {
 
     fn foo_constructor(ref self: ContractState);
 }
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:
@@ -2167,17 +2102,17 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The 'external' attribute is not allowed inside a contract external impl.
+error: Plugin diagnostic: The 'external' attribute is not allowed inside an external impl.
  --> lib.cairo:10:9
         #[external(v0)]
         ^*************^
 
-error: Plugin diagnostic: The 'l1_handler' attribute is not allowed inside a contract external impl.
+error: Plugin diagnostic: The 'l1_handler' attribute is not allowed inside an external impl.
  --> lib.cairo:12:9
         #[l1_handler]
         ^***********^
 
-error: Plugin diagnostic: The 'constructor' attribute is not allowed inside a contract external impl.
+error: Plugin diagnostic: The 'constructor' attribute is not allowed inside an external impl.
  --> lib.cairo:14:9
         #[constructor]
         ^************^
@@ -2220,9 +2155,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71dafd3abf300622647b;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -2252,24 +2187,24 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::Event;
 
     
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::Event;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::Event;
 
     
 }
+
 
 
 impls:
@@ -2294,12 +2229,6 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
@@ -2347,9 +2276,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b081753f226075310e440696;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -2380,24 +2309,24 @@ use starknet::event::EventEmitter;
     }
 
 
-
-mod __external {
+    mod __external {
         use super::MyEvent;
 
     
 }
 
-mod __l1_handler {
+    mod __l1_handler {
         use super::MyEvent;
 
     
 }
 
-mod __constructor {
+    mod __constructor {
         use super::MyEvent;
 
     
 }
+
 
 
 impls:
@@ -2423,11 +2352,6 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
     }
 }
 
-
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 
 impls:

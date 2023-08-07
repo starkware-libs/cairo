@@ -1,0 +1,228 @@
+//! > Test expansion of a basic component.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::component]
+mod component {
+    #[storage]
+    struct Storage {
+        data: u32,
+        map: LegacyMap<u32, u32>
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Log: Log,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Log {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod component {
+    #[storage]
+    struct Storage {
+        data: u32,
+        map: LegacyMap<u32, u32>
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Log: Log,
+    }
+    #[derive(Drop, starknet::Event)]
+    struct Log {}
+}
+
+component:
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x2dcc4e3cad2fa458124644e8b04f628293a61e466cc3833f5da4759b0443b3e;
+use starknet::event::EventEmitter;
+    struct ComponentState<TCS> {
+        data: data::ComponentMemberState,
+        map: map::ComponentMemberState,
+    }
+    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
+        ComponentState::<TCS> {
+            data: data::ComponentMemberState{},
+            map: map::ComponentMemberState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
+        unsafe_new_component_state<TCS>()
+    }
+
+
+    
+    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    mod data {
+        use super::Event;
+        use super::Log;
+        #[derive(Copy, Drop)]
+        struct ComponentMemberState {}
+        trait InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ComponentMemberState) -> u32;
+            fn write(ref self: ComponentMemberState, value: u32);
+        }
+
+        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
+            }
+            fn read(self: @ComponentMemberState) -> u32 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ComponentMemberState, value: u32) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+    use map::InternalComponentMemberStateTrait as mapComponentMemberStateTrait;
+    mod map {
+        use super::Event;
+        use super::Log;
+        #[derive(Copy, Drop)]
+        struct ComponentMemberState {}
+        trait InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress;
+            fn read(self: @ComponentMemberState, key: u32) -> u32;
+            fn write(ref self: ComponentMemberState, key: u32, value: u32);
+        }
+
+        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
+            }
+            fn read(self: @ComponentMemberState, key: u32) -> u32 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
+            }
+            fn write(ref self: ComponentMemberState, key: u32, value: u32) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::Log(val) => {
+                array::ArrayTrait::append(ref keys, 0x100572688f36e5f96cee69badc6dcd8712fa19d323be018601b92e967c60678);
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+            if selector == 0x100572688f36e5f96cee69badc6dcd8712fa19d323be018601b92e967c60678 {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Log(val));
+            }
+        Option::None
+    }
+}
+impl EventLogIntoEvent of Into<Log, Event> {
+    fn into(self: Log) -> Event {
+        Event::Log(self)
+    }
+}
+
+
+
+impls:
+
+impl LogDrop of Drop::<Log>;
+
+
+event_impl:
+
+impl LogIsEvent of starknet::Event<Log> {
+    fn append_keys_and_data(
+        self: @Log, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Log> {
+        Option::Some(Log {})
+    }
+}
+
+//! > expected_diagnostics
