@@ -1,0 +1,2698 @@
+//! > Test diagnostics from invalid contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract;
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract;
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contracts without body are not supported.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+error: Module file not found. Expected path: src/test_contract.cairo
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+//! > ==========================================================================
+
+//! > Test first param must be self.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo() {}
+
+    #[external(v0)]
+    fn bar(_n: u32) {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    fn foo() {}
+
+    #[external(v0)]
+    fn bar(_n: u32) {}
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 45160169293473719406744259310761826795062156439927954035200894390197437803;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+ --> lib.cairo:7:11
+    fn foo() {}
+          ^^
+
+error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+ --> lib.cairo:10:12
+    fn bar(_n: u32) {}
+           ^*****^
+
+//! > ==========================================================================
+
+//! > Test invalid constractor name.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[constructor]
+    fn invalid_constructor_name(ref self: ContractState) {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[constructor]
+    fn invalid_constructor_name(ref self: ContractState) {}
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 105724854851525732656747189112424955784130579533864065238578929011236086858;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::invalid_constructor_name(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The constructor function must be called `constructor`.
+ --> lib.cairo:7:8
+    fn invalid_constructor_name(ref self: ContractState) {}
+       ^**********************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics non legacy storage variable.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+        mapping: Map::<felt252, felt252>,
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+        mapping: Map::<felt252, felt252>,
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 585714219604284949312488231214316555669580783328194809075076667937711803805;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+        mapping: mapping::ContractState,
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            mapping: mapping::ContractState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Non `LegacyMap` mapping is not yet supported.
+ --> lib.cairo:5:18
+        mapping: Map::<felt252, felt252>,
+                 ^*********************^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:5:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:5:9
+        mapping: Map::<felt252, felt252>,
+        ^*****^
+
+error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
+ --> impls:1:1
+impl ContractStateDrop of Drop::<ContractState>;
+^**********************************************^
+
+//! > ==========================================================================
+
+//! > Test non-v0 external function.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external(v1)]
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo_v0(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+    #[external(v1)]
+    fn foo_v1(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 393806972942277607821072105318331163597970668207822274409669945054460847164;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v0(ref contract_state, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo_v1(ref contract_state, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:8:5
+    #[external]
+    ^*********^
+
+error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:11:5
+    #[external(v1)]
+    ^*************^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable parameter in entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 516977575265217330182845769154459023540283221406901776467308604288970786024;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test diagnostics of non-serializable return type in entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 489215812708762262321593369929310129684834641386672889484400421559941333500;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            
+            let res = super::foo(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:6:59
+    fn foo(ref self: ContractState) -> (felt252, felt252) {
+                                                          ^
+
+//! > ==========================================================================
+
+//! > Test diagnostics of generic entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo<T>(ref self: ContractState, x: T) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo<T>(ref self: ContractState, x: T) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1265092799867197978363841180035964557093255172609887126562878375001682451963;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<T>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::foo(ref contract_state, __arg_x);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract entry points cannot have generic arguments
+ --> lib.cairo:6:11
+    fn foo<T>(ref self: ContractState, x: T) {
+          ^*^
+
+error: Variable not dropped.
+ --> lib.cairo:6:40
+    fn foo<T>(ref self: ContractState, x: T) {
+                                       ^
+note: Trait has no implementation in context: core::traits::Drop::<T>
+note: Trait has no implementation in context: core::traits::Destruct::<T>
+
+error: Type not found.
+ --> contract:52:32
+                serde::Serde::<T>::deserialize(ref data)
+                               ^
+
+error: Plugin diagnostic: Type annotations needed. Failed to infer ?8
+ --> lib.cairo:6:8
+    fn foo<T>(ref self: ContractState, x: T) {
+       ^*^
+
+//! > ==========================================================================
+
+//! > Test multiple diagnostics from entry point.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1496063534612202122784781543886673498221182393177447897962767144086700522025;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_x =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+
+            let __arg_y =
+                serde::Serde::<(felt252, felt252)>::deserialize(ref data)
+                    .expect('Failed to deserialize param #2');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            
+            let res = super::foo(ref contract_state, __arg_x, __arg_y);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            serde::Serde::<(felt252, felt252)>::serialize(@res, ref arr);
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found: "()".
+ --> lib.cairo:6:105
+    fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252) {
+                                                                                                        ^
+
+//! > ==========================================================================
+
+//! > Test account contract_entry point on a non-account contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn __validate__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __validate_declare__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __validate_deploy__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __execute__(ref self: ContractState) {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+    #[external(v0)]
+    fn __validate__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __validate_declare__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __validate_deploy__(ref self: ContractState) {}
+    #[external(v0)]
+    fn __execute__(ref self: ContractState) {}
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1161951693435338292010126047291936292193455496737609784468650217503643411416;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn __validate__(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate__(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn __validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_declare__(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn __validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__validate_deploy__(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn __execute__(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::__execute__(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test raw_outputs diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    #[raw_output]
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+
+    #[external(v0)]
+    #[raw_output]
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+
+    #[external(v0)]
+    #[raw_output]
+    fn bar2(ref self: ContractState, a: felt252) {}
+
+    // Should generate diagnostic as path resolving is not supported.
+    #[external(v0)]
+    #[raw_output]
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+         array::array_new()
+    }
+
+    // Should generate diagnostic as alias resolving is not supported.
+    type my_felt252_array_type = Array::<felt252>;
+    #[external(v0)]
+    #[raw_output]
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
+        array::array_new()
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[external(v0)]
+    #[raw_output]
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+
+    #[external(v0)]
+    #[raw_output]
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+
+    #[external(v0)]
+    #[raw_output]
+    fn bar2(ref self: ContractState, a: felt252) {}
+
+    // Should generate diagnostic as path resolving is not supported.
+    #[external(v0)]
+    #[raw_output]
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+         array::array_new()
+    }
+
+    // Should generate diagnostic as alias resolving is not supported.
+    type my_felt252_array_type = Array::<felt252>;
+    #[external(v0)]
+    #[raw_output]
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
+        array::array_new()
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1546445079340859639365845092387677843502325126655810594464828949621108474705;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::my_felt252_array_type;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:8:37
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                    ^*^
+
+error: Plugin diagnostic: `raw_output` functions cannot have `ref` parameters.
+ --> lib.cairo:8:53
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                                    ^*^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:8:69
+    fn foo(ref self: ContractState, ref a: felt252, ref b: felt252) {}
+                                                                    ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:12:53
+    fn bar1(ref self: ContractState, a: felt252) -> felt252 { 0 }
+                                                    ^*****^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:16:50
+    fn bar2(ref self: ContractState, a: felt252) {}
+                                                 ^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:21:53
+    fn bar3(ref self: ContractState, a: felt252) -> core::Array::<felt252> {
+                                                    ^********************^
+
+error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
+ --> lib.cairo:29:53
+    fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type {
+                                                    ^*******************^
+
+//! > ==========================================================================
+
+//! > Test reusage of storage var name diagnostics.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+        same_name: felt252,
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+        same_name: felt252,
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1105606754110051083728243557082802883446336715205195351698561354337476454550;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+        same_name: same_name::ContractState,
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            same_name: same_name::ContractState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+    use same_name::InternalContractStateTrait as same_nameContractStateTrait;
+    mod same_name {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+        use super;
+
+        #[derive(Copy, Drop)]
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
+        }
+
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x26673b81123c540a9238f376b833c3914834c3c0cdf4e609f834963616d3ef9>()
+            }
+            fn read(self: @ContractState) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: ContractState, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
+        }
+    }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The name `same_name` is defined multiple times.
+ --> lib.cairo:5:9
+        same_name: felt252,
+        ^*******^
+
+//! > ==========================================================================
+
+//! > Contract with no storage.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contracts must define a 'Storage' struct.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+//! > ==========================================================================
+
+//! > Not annotated storage struct.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    struct Storage {
+        same_name: felt252,
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    struct Storage {
+        same_name: felt252,
+    }
+    fn same_name() -> felt252 {
+        1
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+//! > ==========================================================================
+
+//! > Non v0 impls.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+    #[external(v0)]
+    #[generate_trait]
+    impl AImpl of ATrait {}
+
+    #[external(v1)]
+    #[generate_trait]
+    impl BImpl of BTrait {}
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+    #[external(v0)]
+    #[generate_trait]
+    impl AImpl of ATrait {}
+
+    #[external(v1)]
+    #[generate_trait]
+    impl BImpl of BTrait {}
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1738931947817543127574982731191165532662415247853947540214483435696729745212;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use super::AImpl;
+        use super::BImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::AImpl;
+        use super::BImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::AImpl;
+        use super::BImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+generate_trait:
+
+trait ATrait {
+}
+
+
+generate_trait:
+
+trait BTrait {
+}
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Only #[external(v0)] is supported.
+ --> lib.cairo:10:5
+    #[external(v1)]
+    ^*************^
+
+//! > ==========================================================================
+
+//! > old contract attribute.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[contract]
+mod test_contract {
+
+}
+
+#[abi]
+trait ContractAbi {
+
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[contract]
+mod test_contract {
+
+}
+
+#[abi]
+trait ContractAbi {
+
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
+error: Plugin diagnostic: The 'abi' attribute was deprecated, please use `starknet::interface` instead.
+ --> lib.cairo:6:1
+#[abi]
+^****^
+
+//! > ==========================================================================
+
+//! > Attributes in external impl.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[generate_trait]
+    #[external(v0)]
+    impl AImpl of ATrait {
+        #[external(v0)]
+        fn foo_external(ref self: ContractState) {}
+        #[l1_handler]
+        fn foo_l1_handler(ref self: ContractState) {}
+        #[constructor]
+        fn foo_constructor(ref self: ContractState) {}
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[generate_trait]
+    #[external(v0)]
+    impl AImpl of ATrait {
+        #[external(v0)]
+        fn foo_external(ref self: ContractState) {}
+        #[l1_handler]
+        fn foo_l1_handler(ref self: ContractState) {}
+        #[constructor]
+        fn foo_constructor(ref self: ContractState) {}
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 659208935625225645673012054755134575540283560013107281636737814367393316164;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_external(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_l1_handler(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::AImpl::foo_constructor(ref contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::AImpl;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+generate_trait:
+
+trait ATrait {
+    fn foo_external(ref self: ContractState);
+
+    fn foo_l1_handler(ref self: ContractState);
+
+    fn foo_constructor(ref self: ContractState);
+}
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The 'external' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:10:9
+        #[external(v0)]
+        ^*************^
+
+error: Plugin diagnostic: The 'l1_handler' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:12:9
+        #[l1_handler]
+        ^***********^
+
+error: Plugin diagnostic: The 'constructor' attribute is not allowed inside a contract external impl.
+ --> lib.cairo:14:9
+        #[constructor]
+        ^************^
+
+//! > ==========================================================================
+
+//! > "Event" enum without #[event].
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 191867647445899813732255736453831540083131731341500404649215625255809344635;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::Event;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract type that is named `Event` must be marked with #[event].
+ --> lib.cairo:8:10
+    enum Event {
+         ^***^
+
+//! > ==========================================================================
+
+//! > #[event] enum that isn't named "Event".
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum MyEvent {
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum MyEvent {
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1310046472266970990678663450742219093213412730506752722328026548424285619862;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+
+mod __external {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __l1_handler {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use super::MyEvent;
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl MyEventDrop of Drop::<MyEvent>;
+
+
+event_impl:
+
+impl MyEventIsEvent of starknet::Event<MyEvent> {
+    fn append_keys_and_data(
+        self: @MyEvent, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<MyEvent> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contract type that is marked with #[event] must be named `Event`.
+ --> lib.cairo:9:10
+    enum MyEvent {
+         ^*****^

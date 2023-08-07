@@ -1,0 +1,211 @@
+//! > Test expansion of a simple starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+struct A {
+    x: felt252,
+    #[key]
+    data: usize,
+}
+
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+struct B {
+    x: felt252,
+}
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum MyEventEnum {
+    A: A,
+    B: B,
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+struct A {
+    x: felt252,
+    #[key]
+    data: usize,
+}
+
+#[derive(starknet::Event, PartialEq, Drop, Serde)]
+struct B {
+    x: felt252,
+}
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum MyEventEnum {
+    A: A,
+    B: B,
+}
+
+impls:
+
+impl APartialEq of PartialEq::<A> {
+    fn eq(lhs: @A, rhs: @A) -> bool {
+        lhs.x == rhs.x && lhs.data == rhs.data
+    }
+    #[inline(always)]
+    fn ne(lhs: @A, rhs: @A) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl ADrop of Drop::<A>;
+impl ASerde of Serde::<A> {
+    fn serialize(self: @A, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.x, ref output);
+        serde::Serde::serialize(self.data, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<A> {
+        Option::Some(A {
+            x: serde::Serde::deserialize(ref serialized)?,
+            data: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+event_impl:
+
+impl AIsEvent of starknet::Event<A> {
+    fn append_keys_and_data(
+        self: @A, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.x, ref data);
+                serde::Serde::serialize(self.data, ref keys);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<A> {
+                let x = serde::Serde::deserialize(
+                    ref data
+                )?;
+                let data = serde::Serde::deserialize(
+                    ref keys
+                )?;
+        Option::Some(A {x, data, })
+    }
+}
+
+impls:
+
+impl BPartialEq of PartialEq::<B> {
+    fn eq(lhs: @B, rhs: @B) -> bool {
+        lhs.x == rhs.x
+    }
+    #[inline(always)]
+    fn ne(lhs: @B, rhs: @B) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl BDrop of Drop::<B>;
+impl BSerde of Serde::<B> {
+    fn serialize(self: @B, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.x, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<B> {
+        Option::Some(B {
+            x: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+event_impl:
+
+impl BIsEvent of starknet::Event<B> {
+    fn append_keys_and_data(
+        self: @B, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.x, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<B> {
+                let x = serde::Serde::deserialize(
+                    ref data
+                )?;
+        Option::Some(B {x, })
+    }
+}
+
+impls:
+
+impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
+    fn eq(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
+        match lhs {
+            MyEventEnum::A(x) => match rhs {
+                MyEventEnum::A(y) => x == y,
+                MyEventEnum::B(y) => false,
+            },
+            MyEventEnum::B(x) => match rhs {
+                MyEventEnum::A(y) => false,
+                MyEventEnum::B(y) => x == y,
+            },
+        }
+    }
+    #[inline(always)]
+    fn ne(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl MyEventEnumDrop of Drop::<MyEventEnum>;
+
+
+event_impl:
+
+impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
+    fn append_keys_and_data(
+        self: @MyEventEnum, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            MyEventEnum::A(val) => {
+                array::ArrayTrait::append(ref keys, 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760);
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            MyEventEnum::B(val) => {
+                array::ArrayTrait::append(ref keys, 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111);
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<MyEventEnum> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+            if selector == 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760 {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(MyEventEnum::A(val));
+            }
+            if selector == 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111 {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(MyEventEnum::B(val));
+            }
+        Option::None
+    }
+}
+impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {
+    fn into(self: A) -> MyEventEnum {
+        MyEventEnum::A(self)
+    }
+}
+impl MyEventEnumBIntoEvent of Into<B, MyEventEnum> {
+    fn into(self: B) -> MyEventEnum {
+        MyEventEnum::B(self)
+    }
+}
+
+//! > expected_diagnostics

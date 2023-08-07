@@ -1,0 +1,224 @@
+//! > Test expansion of the hello_starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::contract]
+mod hello_starknet {
+    #[storage]
+    struct Storage { balance: felt252, }
+
+    // Increases the balance by the given amount.
+    #[external(v0)]
+    fn increase_balance(ref self: ContractState, amount: felt252) {
+        self.balance.write(self.balance.read() + amount);
+    }
+
+    // Returns the current balance.
+    #[external(v0)]
+    fn get_balance(self: @ContractState) -> felt252 {
+        self.balance.read()
+    }
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod hello_starknet {
+    #[storage]
+    struct Storage { balance: felt252, }
+
+    // Increases the balance by the given amount.
+    #[external(v0)]
+    fn increase_balance(ref self: ContractState, amount: felt252) {
+        self.balance.write(self.balance.read() + amount);
+    }
+
+    // Returns the current balance.
+    #[external(v0)]
+    fn get_balance(self: @ContractState) -> felt252 {
+        self.balance.read()
+    }
+}
+
+contract:
+
+use starknet::SyscallResultTrait;
+use starknet::SyscallResultTraitImpl;
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 1102354323051365330526116728762987089260624826846154342310342950171552219682;
+use starknet::event::EventEmitter;
+#[derive(Drop)]
+    struct ContractState {
+        balance: balance::ContractState,
+    }
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            balance: balance::ContractState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys),
+                array::ArrayTrait::span(@data),
+            ).unwrap_syscall()
+        }
+    }
+
+    use balance::InternalContractStateTrait as balanceContractStateTrait;
+    mod balance {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+        use starknet::SyscallResultTrait;
+        use starknet::SyscallResultTraitImpl;
+        use super;
+
+        #[derive(Copy, Drop)]
+        struct ContractState {}
+        trait InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractState) -> felt252;
+            fn write(ref self: ContractState, value: felt252);
+        }
+
+        impl InternalContractStateImpl of InternalContractStateTrait {
+            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            }
+            fn read(self: @ContractState) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::read(
+                    address_domain,
+                    self.address(),
+                ).unwrap_syscall()
+            }
+            fn write(ref self: ContractState, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::Store::<felt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
+                ).unwrap_syscall()
+            }
+        }
+    }
+
+mod __external {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            let __arg_amount =
+                serde::Serde::<felt252>::deserialize(ref data)
+                    .expect('Failed to deserialize param #1');
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            super::increase_balance(ref contract_state, __arg_amount);
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            array::ArrayTrait::span(@arr)
+        }
+        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+            internal::require_implicit::<System>();
+            internal::revoke_ap_tracking();
+            gas::withdraw_gas().expect('Out of gas');
+            
+            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            let mut contract_state = super::unsafe_new_contract_state();
+            
+            let res = super::get_balance(@contract_state, );
+            let mut arr = array::array_new();
+            // References.
+            // Result.
+            serde::Serde::<felt252>::serialize(@res, ref arr);
+            array::ArrayTrait::span(@arr)
+        }
+        
+}
+
+mod __l1_handler {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+mod __constructor {
+        use starknet::class_hash::ClassHashSerde;
+        use starknet::contract_address::ContractAddressSerde;
+        use starknet::storage_access::StorageAddressSerde;
+        use option::OptionTrait;
+        use option::OptionTraitImpl;
+
+    
+}
+
+
+
+impls:
+
+impl ContractStateDrop of Drop::<ContractState>;
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
