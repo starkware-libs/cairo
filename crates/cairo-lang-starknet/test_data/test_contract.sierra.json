@@ -1472,7 +1472,7 @@
       ],
       [
         91,
-        "function_call<user@test::test_contract::my_storage_var::InternalContractStateImpl::read>"
+        "function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::read>"
       ],
       [
         92,
@@ -1496,7 +1496,7 @@
       ],
       [
         97,
-        "function_call<user@test::test_contract::my_storage_var::InternalContractStateImpl::write>"
+        "function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write>"
       ],
       [
         98,
@@ -2030,11 +2030,11 @@
       ],
       [
         20,
-        "test::test_contract::my_storage_var::InternalContractStateImpl::read"
+        "test::test_contract::my_storage_var::InternalContractMemberStateImpl::read"
       ],
       [
         21,
-        "test::test_contract::my_storage_var::InternalContractStateImpl::write"
+        "test::test_contract::my_storage_var::InternalContractMemberStateImpl::write"
       ],
       [
         22,

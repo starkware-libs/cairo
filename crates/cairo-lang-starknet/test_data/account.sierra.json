@@ -2183,7 +2183,7 @@
       ],
       [
         104,
-        "function_call<user@test::account::public_key::InternalContractStateImpl::read>"
+        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::read>"
       ],
       [
         105,
@@ -2427,7 +2427,7 @@
       ],
       [
         165,
-        "function_call<user@test::account::public_key::InternalContractStateImpl::write>"
+        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::write>"
       ],
       [
         166,
@@ -3149,7 +3149,7 @@
       ],
       [
         14,
-        "test::account::public_key::InternalContractStateImpl::read"
+        "test::account::public_key::InternalContractMemberStateImpl::read"
       ],
       [
         15,
@@ -3181,7 +3181,7 @@
       ],
       [
         22,
-        "test::account::public_key::InternalContractStateImpl::write"
+        "test::account::public_key::InternalContractMemberStateImpl::write"
       ],
       [
         23,
