@@ -90,8 +90,6 @@ struct ContractGenerationData {
     generated_constructor_functions: Vec<RewriteNode>,
     generated_l1_handler_functions: Vec<RewriteNode>,
     abi_functions: Vec<RewriteNode>,
-    event_functions: Vec<RewriteNode>,
-    abi_events: Vec<RewriteNode>,
 }
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -331,11 +329,8 @@ pub fn handle_contract_by_storage(
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $storage_code$
 
-            $event_functions$
-
             trait {ABI_TRAIT}<ContractState> {{
                 $abi_functions$
-                $abi_events$
             }}
 
             mod {EXTERNAL_MODULE} {{$extra_uses$
@@ -362,9 +357,7 @@ pub fn handle_contract_by_storage(
             ),
             ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
             ("storage_code".to_string(), storage_code),
-            ("event_functions".to_string(), RewriteNode::new_modified(data.event_functions)),
             ("abi_functions".to_string(), RewriteNode::new_modified(data.abi_functions)),
-            ("abi_events".to_string(), RewriteNode::new_modified(data.abi_events)),
             ("extra_uses".to_string(), extra_uses_node),
             (
                 "generated_external_functions".to_string(),

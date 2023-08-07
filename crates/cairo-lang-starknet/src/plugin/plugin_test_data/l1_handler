@@ -89,8 +89,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[l1_handler]
         fn good_l1_handler(ref self: ContractState, from_address: felt252, arg: felt252);
@@ -103,7 +101,6 @@ trait __abi<ContractState> {
         #[l1_handler]
         fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128);
         
-    
 }
 
 mod __external {

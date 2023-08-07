@@ -99,15 +99,12 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo();
         #[external]
         fn bar(_n: u32);
         
-    
 }
 
 mod __external {
@@ -249,13 +246,10 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[constructor]
         fn invalid_constructor_name(ref self: ContractState);
         
-    
 }
 
 mod __external {
@@ -407,10 +401,7 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 
@@ -575,8 +566,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo_v0(ref self: ContractState, x: (felt252, felt252));
@@ -585,7 +574,6 @@ trait __abi<ContractState> {
         #[external]
         fn foo_v1(ref self: ContractState, x: (felt252, felt252));
         
-    
 }
 
 mod __external {
@@ -781,13 +769,10 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, x: (felt252, felt252));
         
-    
 }
 
 mod __external {
@@ -938,13 +923,10 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState) -> (felt252, felt252);
         
-    
 }
 
 mod __external {
@@ -1098,13 +1080,10 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo<T>(ref self: ContractState, x: T);
         
-    
 }
 
 mod __external {
@@ -1198,7 +1177,7 @@ note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
- --> contract:62:32
+ --> contract:59:32
                 serde::Serde::<T>::deserialize(ref data)
                                ^
 
@@ -1276,13 +1255,10 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, x: (felt252, felt252), y: (felt252, felt252)) -> (felt252, felt252);
         
-    
 }
 
 mod __external {
@@ -1453,8 +1429,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn __validate__(ref self: ContractState);
@@ -1465,7 +1439,6 @@ trait __abi<ContractState> {
         #[external]
         fn __execute__(ref self: ContractState);
         
-    
 }
 
 mod __external {
@@ -1706,8 +1679,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo(ref self: ContractState, ref a: felt252, ref b: felt252);
@@ -1720,7 +1691,6 @@ trait __abi<ContractState> {
         #[external]
         fn bar4(ref self: ContractState, a: felt252) -> my_felt252_array_type;
         
-    
 }
 
 mod __external {
@@ -1938,10 +1908,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 
@@ -2157,10 +2124,7 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 
@@ -2376,8 +2340,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn foo_external(ref self: ContractState);
@@ -2386,7 +2348,6 @@ trait __abi<ContractState> {
         #[external]
         fn foo_constructor(ref self: ContractState);
         
-    
 }
 
 mod __external {
@@ -2595,10 +2556,7 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 
@@ -2746,10 +2704,7 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 

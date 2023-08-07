@@ -127,15 +127,12 @@ use starknet::event::EventEmitter;
     }
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn increase_balance(ref self: ContractState, amount: felt252);
         #[external]
         fn get_balance(self: @ContractState) -> felt252;
         
-    
 }
 
 mod __external {
