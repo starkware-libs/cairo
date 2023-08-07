@@ -27,8 +27,7 @@ impl NullableImpl<T> of NullableTrait<T> {
         }
     }
     fn new(value: T) -> Nullable<T> {
-        let nullable = nullable_from_box(BoxTrait::new(value));
-        nullable
+        nullable_from_box(BoxTrait::new(value))
     }
 }
 
