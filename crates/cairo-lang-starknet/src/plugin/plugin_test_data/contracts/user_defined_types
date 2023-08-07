@@ -147,11 +147,6 @@ use starknet::event::EventEmitter;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -195,11 +190,6 @@ use starknet::event::EventEmitter;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -245,11 +235,6 @@ mod __external {
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
@@ -261,11 +246,6 @@ mod __l1_handler {
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
@@ -277,11 +257,6 @@ mod __constructor {
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
