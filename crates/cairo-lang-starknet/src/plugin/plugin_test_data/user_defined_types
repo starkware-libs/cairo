@@ -186,10 +186,7 @@ use starknet::event::EventEmitter;
     }
 
 
-
-
 trait __abi<ContractState> {
-    
     
 }
 

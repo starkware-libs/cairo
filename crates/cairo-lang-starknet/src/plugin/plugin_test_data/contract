@@ -142,8 +142,6 @@ use starknet::event::EventEmitter;
 
 
 
-
-
 trait __abi<ContractState> {
     #[external]
         fn get_something(self: @ContractState, ref arg: felt252, num: felt252) -> felt252;
@@ -159,7 +157,6 @@ trait __abi<ContractState> {
         storage_address: StorageAddress,
     );
         
-    
 }
 
 mod __external {
