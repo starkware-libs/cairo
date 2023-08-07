@@ -149,27 +149,20 @@ mod __external {
         use super::Event;
         use super::AwesomeEvent;
         use super::BestEventEver;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn get_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             
             let res = super::get_something(@contract_state, ref __arg_arg, __arg_num);
@@ -184,17 +177,15 @@ mod __external {
         fn set_something(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let mut __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::set_something(ref contract_state, ref __arg_arg, __arg_num);
             let mut arr = array::array_new();
@@ -207,21 +198,18 @@ mod __external {
         fn test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_contract_address =
-                serde::Serde::<ContractAddress>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<ContractAddress>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_class_hash =
-                serde::Serde::<ClassHash>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<ClassHash>::deserialize(ref data), 'Failed to deserialize param #2');
 
             let __arg_storage_address =
-                serde::Serde::<StorageAddress>::deserialize(ref data)
-                    .expect('Failed to deserialize param #3');
+                option::OptionTraitImpl::expect(serde::Serde::<StorageAddress>::deserialize(ref data), 'Failed to deserialize param #3');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::test_serde(ref contract_state, __arg_contract_address, __arg_class_hash, __arg_storage_address);
             let mut arr = array::array_new();
@@ -239,31 +227,23 @@ mod __l1_handler {
         use super::Event;
         use super::AwesomeEvent;
         use super::BestEventEver;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_from_address =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #2');
 
             let __arg_num =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #3');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #3');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_func(ref contract_state, __arg_from_address, __arg_arg, __arg_num);
             let mut arr = array::array_new();
@@ -281,11 +261,6 @@ mod __constructor {
         use super::Event;
         use super::AwesomeEvent;
         use super::BestEventEver;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }

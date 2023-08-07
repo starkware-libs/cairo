@@ -90,37 +90,25 @@ use starknet::event::EventEmitter;
 
 
 mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_from_address =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
             let mut arr = array::array_new();
@@ -132,17 +120,15 @@ mod __l1_handler {
         fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg__from_address =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
 
             let __arg_arg =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #2');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #2');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
             let mut arr = array::array_new();
@@ -154,10 +140,10 @@ mod __l1_handler {
         fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_no_params(ref contract_state, );
             let mut arr = array::array_new();
@@ -169,13 +155,12 @@ mod __l1_handler {
         fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_abc =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
             let mut arr = array::array_new();
@@ -187,13 +172,12 @@ mod __l1_handler {
         fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_from_address =
-                serde::Serde::<u128>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<u128>::deserialize(ref data), 'Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
             let mut arr = array::array_new();
@@ -205,11 +189,6 @@ mod __l1_handler {
 }
 
 mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }

@@ -85,11 +85,6 @@ use starknet::event::EventEmitter;
 
     use balance::InternalContractStateTrait as balanceContractStateTrait;
     mod balance {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -128,23 +123,17 @@ use starknet::event::EventEmitter;
 
 
 mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             let __arg_amount =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+                option::OptionTraitImpl::expect(serde::Serde::<felt252>::deserialize(ref data), 'Failed to deserialize param #1');
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::increase_balance(ref contract_state, __arg_amount);
             let mut arr = array::array_new();
@@ -156,10 +145,10 @@ mod __external {
         fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             
             let res = super::get_balance(@contract_state, );
@@ -173,21 +162,11 @@ mod __external {
 }
 
 mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }

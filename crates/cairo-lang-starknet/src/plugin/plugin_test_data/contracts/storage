@@ -103,11 +103,6 @@ use starknet::event::EventEmitter;
 
     use var_felt252::InternalContractStateTrait as var_felt252ContractStateTrait;
     mod var_felt252 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -145,11 +140,6 @@ use starknet::event::EventEmitter;
     }
     use var_u8::InternalContractStateTrait as var_u8ContractStateTrait;
     mod var_u8 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -187,11 +177,6 @@ use starknet::event::EventEmitter;
     }
     use var_u16::InternalContractStateTrait as var_u16ContractStateTrait;
     mod var_u16 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -229,11 +214,6 @@ use starknet::event::EventEmitter;
     }
     use var_u32::InternalContractStateTrait as var_u32ContractStateTrait;
     mod var_u32 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -271,11 +251,6 @@ use starknet::event::EventEmitter;
     }
     use var_u64::InternalContractStateTrait as var_u64ContractStateTrait;
     mod var_u64 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -313,11 +288,6 @@ use starknet::event::EventEmitter;
     }
     use var_u128::InternalContractStateTrait as var_u128ContractStateTrait;
     mod var_u128 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -355,11 +325,6 @@ use starknet::event::EventEmitter;
     }
     use var_bool::InternalContractStateTrait as var_boolContractStateTrait;
     mod var_bool {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -397,11 +362,6 @@ use starknet::event::EventEmitter;
     }
     use felt252_to_u128::InternalContractStateTrait as felt252_to_u128ContractStateTrait;
     mod felt252_to_u128 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -440,11 +400,6 @@ use starknet::event::EventEmitter;
     }
     use u128_to_bool::InternalContractStateTrait as u128_to_boolContractStateTrait;
     mod u128_to_bool {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -483,11 +438,6 @@ use starknet::event::EventEmitter;
     }
     use bool_to_felt252::InternalContractStateTrait as bool_to_felt252ContractStateTrait;
     mod bool_to_felt252 {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
         use starknet::SyscallResultTrait;
         use starknet::SyscallResultTraitImpl;
         use super;
@@ -527,31 +477,16 @@ use starknet::event::EventEmitter;
 
 
 mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
