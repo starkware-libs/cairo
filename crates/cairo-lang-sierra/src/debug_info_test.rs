@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use indoc::indoc;
 
 use super::DebugInfo;
+use crate::program::VersionedProgram;
 use crate::ProgramParser;
 
 #[test]
@@ -19,6 +20,8 @@ fn test_extract_names() {
                     Func1@1(a: u128, gb: GasBuiltin) -> (GasBuiltin);
                     Func2@6() -> ();
                 "})
+                .unwrap()
+                .into_v1()
                 .unwrap(),
         ),
         DebugInfo {
@@ -56,6 +59,8 @@ fn test_populate_names() {
         Func1@1(a: [0], gb: [1]) -> ([1]);
         Func2@6() -> ();
     "})
+        .unwrap()
+        .into_v1()
         .unwrap();
     DebugInfo {
         type_names: HashMap::from([
@@ -72,7 +77,7 @@ fn test_populate_names() {
     .populate(&mut program);
 
     assert_eq!(
-        program.to_string(),
+        VersionedProgram::from(program).to_string(),
         indoc! {"
             type u128 = u128;
             type GasBuiltin = GasBuiltin;

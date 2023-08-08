@@ -21,6 +21,8 @@ fn test_felt252_serde(example_file_name: &str) {
             &read_to_string(get_example_file_path(format!("{example_file_name}.sierra").as_str()))
                 .unwrap(),
         )
+        .unwrap()
+        .into_v1()
         .unwrap();
     let replacer = CanonicalReplacer::from_program(&sierra);
     let sierra = replacer.apply(&sierra);
