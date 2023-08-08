@@ -45,9 +45,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 394012874717152213897607285090648546398436591943588733136617370902578160851;
 use starknet::event::EventEmitter;
@@ -94,19 +91,17 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
     use var_felt252::InternalContractStateTrait as var_felt252ContractStateTrait;
     mod var_felt252 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -122,28 +117,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_u8::InternalContractStateTrait as var_u8ContractStateTrait;
     mod var_u8 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -159,28 +154,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> u8 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u8>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u8>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: u8) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u8>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u8>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_u16::InternalContractStateTrait as var_u16ContractStateTrait;
     mod var_u16 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -196,28 +191,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> u16 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u16>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u16>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: u16) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u16>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u16>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_u32::InternalContractStateTrait as var_u32ContractStateTrait;
     mod var_u32 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -233,28 +228,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> u32 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u32>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: u32) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u32>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u32>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_u64::InternalContractStateTrait as var_u64ContractStateTrait;
     mod var_u64 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -270,28 +265,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> u64 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u64>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u64>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: u64) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u64>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u64>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_u128::InternalContractStateTrait as var_u128ContractStateTrait;
     mod var_u128 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -307,28 +302,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u128>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u128>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use var_bool::InternalContractStateTrait as var_boolContractStateTrait;
     mod var_bool {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -344,28 +339,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> bool {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<bool>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<bool>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: bool) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<bool>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<bool>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
     use felt252_to_u128::InternalContractStateTrait as felt252_to_u128ContractStateTrait;
     mod felt252_to_u128 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -382,28 +377,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState, key: felt252) -> u128 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u128>::read(
-                    address_domain,
-                    self.address(key),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
             }
             fn write(ref self: ContractState, key: felt252, value: u128) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<u128>::write(
-                    address_domain,
-                    self.address(key),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
             }
         }
     }
     use u128_to_bool::InternalContractStateTrait as u128_to_boolContractStateTrait;
     mod u128_to_bool {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -420,28 +415,28 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState, key: u128) -> bool {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<bool>::read(
-                    address_domain,
-                    self.address(key),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<bool>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
             }
             fn write(ref self: ContractState, key: u128, value: bool) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<bool>::write(
-                    address_domain,
-                    self.address(key),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<bool>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
             }
         }
     }
     use bool_to_felt252::InternalContractStateTrait as bool_to_felt252ContractStateTrait;
     mod bool_to_felt252 {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -458,19 +453,23 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState, key: bool) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::read(
-                    address_domain,
-                    self.address(key),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
             }
             fn write(ref self: ContractState, key: bool, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::write(
-                    address_domain,
-                    self.address(key),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
             }
         }
     }

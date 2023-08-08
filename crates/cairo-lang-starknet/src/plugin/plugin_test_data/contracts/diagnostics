@@ -61,9 +61,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 45160169293473719406744259310761826795062156439927954035200894390197437803;
 use starknet::event::EventEmitter;
@@ -90,10 +87,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -185,9 +184,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 105724854851525732656747189112424955784130579533864065238578929011236086858;
 use starknet::event::EventEmitter;
@@ -214,10 +210,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -317,9 +315,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 585714219604284949312488231214316555669580783328194809075076667937711803805;
 use starknet::event::EventEmitter;
@@ -348,10 +343,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -465,9 +462,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 393806972942277607821072105318331163597970668207822274409669945054460847164;
 use starknet::event::EventEmitter;
@@ -494,10 +488,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -646,9 +642,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 516977575265217330182845769154459023540283221406901776467308604288970786024;
 use starknet::event::EventEmitter;
@@ -675,10 +668,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -780,9 +775,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 489215812708762262321593369929310129684834641386672889484400421559941333500;
 use starknet::event::EventEmitter;
@@ -809,10 +801,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -916,9 +910,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1265092799867197978363841180035964557093255172609887126562878375001682451963;
 use starknet::event::EventEmitter;
@@ -945,10 +936,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -1031,7 +1024,7 @@ note: Trait has no implementation in context: core::traits::Drop::<T>
 note: Trait has no implementation in context: core::traits::Destruct::<T>
 
 error: Type not found.
- --> contract:48:32
+ --> contract:47:32
                 serde::Serde::<T>::deserialize(ref data),
                                ^
 
@@ -1071,9 +1064,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1496063534612202122784781543886673498221182393177447897962767144086700522025;
 use starknet::event::EventEmitter;
@@ -1100,10 +1090,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -1226,9 +1218,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1161951693435338292010126047291936292193455496737609784468650217503643411416;
 use starknet::event::EventEmitter;
@@ -1255,10 +1244,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -1449,9 +1440,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1546445079340859639365845092387677843502325126655810594464828949621108474705;
 use starknet::event::EventEmitter;
@@ -1478,10 +1466,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -1605,9 +1595,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1105606754110051083728243557082802883446336715205195351698561354337476454550;
 use starknet::event::EventEmitter;
@@ -1636,19 +1623,17 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
     use same_name::InternalContractStateTrait as same_nameContractStateTrait;
     mod same_name {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -1664,19 +1649,23 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
@@ -1841,9 +1830,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1738931947817543127574982731191165532662415247853947540214483435696729745212;
 use starknet::event::EventEmitter;
@@ -1870,10 +1856,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -2038,9 +2026,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 659208935625225645673012054755134575540283560013107281636737814367393316164;
 use starknet::event::EventEmitter;
@@ -2067,10 +2052,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -2230,9 +2217,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 191867647445899813732255736453831540083131731341500404649215625255809344635;
 use starknet::event::EventEmitter;
@@ -2258,10 +2242,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
@@ -2358,9 +2344,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1310046472266970990678663450742219093213412730506752722328026548424285619862;
 use starknet::event::EventEmitter;
@@ -2387,10 +2370,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 

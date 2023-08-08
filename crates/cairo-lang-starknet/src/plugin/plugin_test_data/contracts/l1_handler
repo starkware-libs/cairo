@@ -51,9 +51,6 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 75913422193598734687236969958070324999070170986463056419297228471797480047;
 use starknet::event::EventEmitter;
@@ -80,10 +77,12 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
