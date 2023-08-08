@@ -1,18 +1,22 @@
-use std::sync::Arc;
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory};
+use cairo_lang_filesystem::ids::{
+    CrateId, CrateLongId, Directory, FileKind, FileLongId, VirtualFile,
+};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
+use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
 use crate::items::functions::GenericFunctionId;
@@ -23,14 +27,30 @@ pub struct SemanticDatabaseForTesting {
     storage: salsa::Storage<SemanticDatabaseForTesting>,
 }
 impl salsa::Database for SemanticDatabaseForTesting {}
-impl Default for SemanticDatabaseForTesting {
-    fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+impl salsa::ParallelDatabase for SemanticDatabaseForTesting {
+    fn snapshot(&self) -> salsa::Snapshot<SemanticDatabaseForTesting> {
+        salsa::Snapshot::new(SemanticDatabaseForTesting { storage: self.storage.snapshot() })
+    }
+}
+impl SemanticDatabaseForTesting {
+    pub fn new_empty() -> Self {
+        let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(vec![]);
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
+    }
+    /// Snapshots the db for read only.
+    pub fn snapshot(&self) -> SemanticDatabaseForTesting {
+        SemanticDatabaseForTesting { storage: self.storage.snapshot() }
+    }
+}
+pub static SHARED_DB: Lazy<Mutex<SemanticDatabaseForTesting>> =
+    Lazy::new(|| Mutex::new(SemanticDatabaseForTesting::new_empty()));
+impl Default for SemanticDatabaseForTesting {
+    fn default() -> Self {
+        SHARED_DB.lock().unwrap().snapshot()
     }
 }
 impl AsFilesGroupMut for SemanticDatabaseForTesting {
@@ -93,18 +113,26 @@ pub struct TestModule {
 }
 
 /// Sets up a crate with given content, and returns its crate id.
-pub fn setup_test_crate(db: &mut (dyn SemanticGroup + 'static), content: &str) -> CrateId {
-    let crate_id = db.intern_crate(CrateLongId("test".into()));
-    let directory = Directory("src".into());
-    db.set_crate_root(crate_id, Some(directory));
-    let file_id = db.module_main_file(ModuleId::CrateRoot(crate_id)).unwrap();
-    db.as_files_group_mut().override_file_content(file_id, Some(Arc::new(content.to_string())));
-    crate_id
+pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
+    let file_id = db.intern_file(FileLongId::Virtual(VirtualFile {
+        parent: None,
+        name: "lib.cairo".into(),
+        content: Arc::new(content.into()),
+        kind: FileKind::Module,
+    }));
+
+    db.intern_crate(CrateLongId::Virtual {
+        name: "test".into(),
+        root: Directory::Virtual {
+            files: BTreeMap::from([("lib.cairo".into(), file_id)]),
+            dirs: Default::default(),
+        },
+    })
 }
 
 /// Sets up a module with given content, and returns its module id.
 pub fn setup_test_module(
-    db: &mut (dyn SemanticGroup + 'static),
+    db: &(dyn SemanticGroup + 'static),
     content: &str,
 ) -> WithStringDiagnostics<TestModule> {
     let crate_id = setup_test_crate(db, content);
@@ -133,7 +161,7 @@ pub struct TestFunction {
 /// function_name - name of the function.
 /// module_code - extra setup code in the module context.
 pub fn setup_test_function(
-    db: &mut (dyn SemanticGroup + 'static),
+    db: &(dyn SemanticGroup + 'static),
     function_code: &str,
     function_name: &str,
     module_code: &str,
@@ -180,7 +208,7 @@ pub struct TestExpr {
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_expr(
-    db: &mut (dyn SemanticGroup + 'static),
+    db: &(dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -220,7 +248,7 @@ pub fn setup_test_expr(
 /// module_code - extra setup code in the module context.
 /// function_body - extra setup code in the function context.
 pub fn setup_test_block(
-    db: &mut (dyn SemanticGroup + 'static),
+    db: &(dyn SemanticGroup + 'static),
     expr_code: &str,
     module_code: &str,
     function_body: &str,
@@ -231,7 +259,7 @@ pub fn setup_test_block(
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SemanticDatabaseForTesting::default();
+    let db = &SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
@@ -247,7 +275,7 @@ pub fn test_expr_diagnostics(
 pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let db = &mut SemanticDatabaseForTesting::default();
+    let db = &SemanticDatabaseForTesting::default();
     OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_function(

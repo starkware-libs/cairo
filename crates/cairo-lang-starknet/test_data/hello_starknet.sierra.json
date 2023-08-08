@@ -34,18 +34,18 @@
     "0xa",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x390d672b6ef7fab63615b63b7b11a75e5990713c9ddf68193ca9b10945e38ac",
-    "0x2578e47cd71d87b33ad91e134e4e415edd84a92da79ae22f04fefe2af44e7e1",
+    "0x3ff33acf77611eda2fc86ccefb1cd1d9255bef93dda0a914688ee3d4fdb5d14",
+    "0xa223ab09f3257f0ba4c277c0a5bfa418d7ac684ee7c2b679bf8951526b1490",
     "0xf",
     "0x10",
-    "0x10f0a6fc0de86b4d1a026feeb2748bbff826fc0ca66eee62d311e6c5f147001",
+    "0x228240b0da8f83495f174e0d69017fde2233a1e1935f4d4658dd35eef33edd2",
     "0x11",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x13",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x15",
-    "0xe62f25996808c24adc45bae715a43bae20055af68a813f4a403f0fcf8526b3",
+    "0x1f58e9bb93fffc906b56a766fb0d92988400e1820f63e16decbf560de74a3d5",
     "0x17",
     "0x53746f726167654261736541646472657373",
     "0x53746f7261676541646472657373",
@@ -396,19 +396,19 @@
       ],
       [
         15,
-        "hello_starknet::hello_starknet::hello_starknet::balance::ContractState"
+        "test::hello_starknet::balance::ContractState"
       ],
       [
         16,
-        "hello_starknet::hello_starknet::hello_starknet::ContractState"
+        "test::hello_starknet::ContractState"
       ],
       [
         17,
-        "Tuple<hello_starknet::hello_starknet::hello_starknet::ContractState, Unit>"
+        "Tuple<test::hello_starknet::ContractState, Unit>"
       ],
       [
         18,
-        "core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::ContractState, ())>"
+        "core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>"
       ],
       [
         19,
@@ -428,11 +428,11 @@
       ],
       [
         23,
-        "Tuple<hello_starknet::hello_starknet::hello_starknet::balance::ContractState, Unit>"
+        "Tuple<test::hello_starknet::balance::ContractState, Unit>"
       ],
       [
         24,
-        "core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::balance::ContractState, ())>"
+        "core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>"
       ],
       [
         25,
@@ -578,27 +578,27 @@
       ],
       [
         29,
-        "struct_construct<hello_starknet::hello_starknet::hello_starknet::balance::ContractState>"
+        "struct_construct<test::hello_starknet::balance::ContractState>"
       ],
       [
         30,
-        "struct_construct<hello_starknet::hello_starknet::hello_starknet::ContractState>"
+        "struct_construct<test::hello_starknet::ContractState>"
       ],
       [
         31,
-        "store_temp<hello_starknet::hello_starknet::hello_starknet::ContractState>"
+        "store_temp<test::hello_starknet::ContractState>"
       ],
       [
         32,
-        "function_call<user@hello_starknet::hello_starknet::hello_starknet::increase_balance>"
+        "function_call<user@test::hello_starknet::increase_balance>"
       ],
       [
         33,
-        "enum_match<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>>"
       ],
       [
         34,
-        "drop<Tuple<hello_starknet::hello_starknet::hello_starknet::ContractState, Unit>>"
+        "drop<Tuple<test::hello_starknet::ContractState, Unit>>"
       ],
       [
         35,
@@ -638,15 +638,15 @@
       ],
       [
         44,
-        "snapshot_take<hello_starknet::hello_starknet::hello_starknet::ContractState>"
+        "snapshot_take<test::hello_starknet::ContractState>"
       ],
       [
         45,
-        "drop<hello_starknet::hello_starknet::hello_starknet::ContractState>"
+        "drop<test::hello_starknet::ContractState>"
       ],
       [
         46,
-        "function_call<user@hello_starknet::hello_starknet::hello_starknet::get_balance>"
+        "function_call<user@test::hello_starknet::get_balance>"
       ],
       [
         47,
@@ -722,19 +722,19 @@
       ],
       [
         65,
-        "struct_deconstruct<hello_starknet::hello_starknet::hello_starknet::ContractState>"
+        "struct_deconstruct<test::hello_starknet::ContractState>"
       ],
       [
         66,
-        "snapshot_take<hello_starknet::hello_starknet::hello_starknet::balance::ContractState>"
+        "snapshot_take<test::hello_starknet::balance::ContractState>"
       ],
       [
         67,
-        "store_temp<hello_starknet::hello_starknet::hello_starknet::balance::ContractState>"
+        "store_temp<test::hello_starknet::balance::ContractState>"
       ],
       [
         68,
-        "function_call<user@hello_starknet::hello_starknet::hello_starknet::balance::InternalContractStateImpl::read>"
+        "function_call<user@test::hello_starknet::balance::InternalContractStateImpl::read>"
       ],
       [
         69,
@@ -742,35 +742,35 @@
       ],
       [
         70,
-        "function_call<user@hello_starknet::hello_starknet::hello_starknet::balance::InternalContractStateImpl::write>"
+        "function_call<user@test::hello_starknet::balance::InternalContractStateImpl::write>"
       ],
       [
         71,
-        "enum_match<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::balance::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>>"
       ],
       [
         72,
-        "struct_deconstruct<Tuple<hello_starknet::hello_starknet::hello_starknet::balance::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::hello_starknet::balance::ContractState, Unit>>"
       ],
       [
         73,
-        "struct_construct<Tuple<hello_starknet::hello_starknet::hello_starknet::ContractState, Unit>>"
+        "struct_construct<Tuple<test::hello_starknet::ContractState, Unit>>"
       ],
       [
         74,
-        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>, 0>"
       ],
       [
         75,
-        "store_temp<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>>"
       ],
       [
         76,
-        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>, 1>"
       ],
       [
         77,
-        "drop<hello_starknet::hello_starknet::hello_starknet::balance::ContractState>"
+        "drop<test::hello_starknet::balance::ContractState>"
       ],
       [
         78,
@@ -862,19 +862,19 @@
       ],
       [
         100,
-        "struct_construct<Tuple<hello_starknet::hello_starknet::hello_starknet::balance::ContractState, Unit>>"
+        "struct_construct<Tuple<test::hello_starknet::balance::ContractState, Unit>>"
       ],
       [
         101,
-        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::balance::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>, 0>"
       ],
       [
         102,
-        "store_temp<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::balance::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>>"
       ],
       [
         103,
-        "enum_init<core::panics::PanicResult::<(hello_starknet::hello_starknet::hello_starknet::balance::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>, 1>"
       ],
       [
         104,
@@ -904,11 +904,11 @@
     "user_func_names": [
       [
         0,
-        "hello_starknet::hello_starknet::hello_starknet::__external::increase_balance"
+        "test::hello_starknet::__external::increase_balance"
       ],
       [
         1,
-        "hello_starknet::hello_starknet::hello_starknet::__external::get_balance"
+        "test::hello_starknet::__external::get_balance"
       ],
       [
         2,
@@ -916,11 +916,11 @@
       ],
       [
         3,
-        "hello_starknet::hello_starknet::hello_starknet::increase_balance"
+        "test::hello_starknet::increase_balance"
       ],
       [
         4,
-        "hello_starknet::hello_starknet::hello_starknet::get_balance"
+        "test::hello_starknet::get_balance"
       ],
       [
         5,
@@ -928,11 +928,11 @@
       ],
       [
         6,
-        "hello_starknet::hello_starknet::hello_starknet::balance::InternalContractStateImpl::read"
+        "test::hello_starknet::balance::InternalContractStateImpl::read"
       ],
       [
         7,
-        "hello_starknet::hello_starknet::hello_starknet::balance::InternalContractStateImpl::write"
+        "test::hello_starknet::balance::InternalContractStateImpl::write"
       ],
       [
         8,
@@ -985,7 +985,7 @@
     },
     {
       "type": "event",
-      "name": "hello_starknet::hello_starknet::hello_starknet::Event",
+      "name": "test::hello_starknet::Event",
       "kind": "enum",
       "variants": []
     }

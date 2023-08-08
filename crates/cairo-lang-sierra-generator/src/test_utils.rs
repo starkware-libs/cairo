@@ -1,12 +1,14 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::db::{
-    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
+    init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
+use cairo_lang_filesystem::flag::Flag;
+use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
@@ -16,11 +18,13 @@ use cairo_lang_sierra::ids::{ConcreteLibfuncId, GenericLibfuncId};
 use cairo_lang_sierra::program;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::{Upcast, UpcastMut};
-use salsa::{InternId, InternKey};
+use defs::ids::FreeFunctionId;
+use lowering::ids::ConcreteFunctionWithBodyLongId;
+use once_cell::sync::Lazy;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
-use crate::pre_sierra;
+use crate::pre_sierra::{self, LabelLongId};
 use crate::replace_ids::replace_sierra_ids_in_program;
 use crate::utils::{jump_statement, return_statement, simple_statement};
 
@@ -37,14 +41,40 @@ pub struct SierraGenDatabaseForTesting {
     storage: salsa::Storage<SierraGenDatabaseForTesting>,
 }
 impl salsa::Database for SierraGenDatabaseForTesting {}
-impl Default for SierraGenDatabaseForTesting {
-    fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
+impl salsa::ParallelDatabase for SierraGenDatabaseForTesting {
+    fn snapshot(&self) -> salsa::Snapshot<SierraGenDatabaseForTesting> {
+        salsa::Snapshot::new(SierraGenDatabaseForTesting { storage: self.storage.snapshot() })
+    }
+}
+pub static SHARED_DB: Lazy<Mutex<SierraGenDatabaseForTesting>> =
+    Lazy::new(|| Mutex::new(SierraGenDatabaseForTesting::new_empty()));
+pub static SHARED_DB_WITHOUT_AD_WITHDRAW_GAS: Lazy<Mutex<SierraGenDatabaseForTesting>> =
+    Lazy::new(|| {
+        let mut db = SierraGenDatabaseForTesting::new_empty();
+        let add_withdraw_gas_flag_id = FlagId::new(db.upcast_mut(), "add_withdraw_gas");
+        db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
+        Mutex::new(db)
+    });
+impl SierraGenDatabaseForTesting {
+    pub fn new_empty() -> Self {
+        let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         res.set_semantic_plugins(get_default_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
+    }
+    pub fn without_add_withdraw_gas() -> Self {
+        SHARED_DB_WITHOUT_AD_WITHDRAW_GAS.lock().unwrap().snapshot()
+    }
+    /// Snapshots the db for read only.
+    pub fn snapshot(&self) -> SierraGenDatabaseForTesting {
+        SierraGenDatabaseForTesting { storage: self.storage.snapshot() }
+    }
+}
+impl Default for SierraGenDatabaseForTesting {
+    fn default() -> Self {
+        SHARED_DB.lock().unwrap().snapshot()
     }
 }
 impl AsFilesGroupMut for SierraGenDatabaseForTesting {
@@ -100,8 +130,8 @@ pub fn checked_compile_to_sierra(content: &str) -> cairo_lang_sierra::program::P
 pub fn setup_db_and_get_crate_id(
     content: &str,
 ) -> (SierraGenDatabaseForTesting, cairo_lang_filesystem::ids::CrateId) {
-    let mut db_val = SierraGenDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SierraGenDatabaseForTesting::default();
+    let db = &db_val;
     let crate_id = setup_test_crate(db, content);
     let module_id = ModuleId::CrateRoot(crate_id);
     db.module_semantic_diagnostics(module_id)
@@ -111,6 +141,12 @@ pub fn setup_db_and_get_crate_id(
         .unwrap()
         .expect_with_db(db, "Unexpected lowering diagnostics.");
     (db_val, crate_id)
+}
+
+pub fn get_dummy_function(db: &dyn SierraGenGroup) -> FreeFunctionId {
+    let crate_id = setup_test_crate(db.upcast(), "fn test(){}");
+    let module_id = ModuleId::CrateRoot(crate_id);
+    db.module_free_functions_ids(module_id).unwrap()[0]
 }
 
 /// Generates a dummy statement with the given name, inputs and outputs.
@@ -152,7 +188,7 @@ pub fn dummy_simple_branch(
         args: as_var_id_vec(args),
         branches: vec![
             program::GenBranchInfo {
-                target: program::GenBranchTarget::Statement(label_id_from_usize(target)),
+                target: program::GenBranchTarget::Statement(label_id_from_usize(db, target)),
                 results: vec![],
             },
             program::GenBranchInfo {
@@ -169,18 +205,30 @@ pub fn dummy_return_statement(args: &[&str]) -> pre_sierra::Statement {
 }
 
 /// Generates a dummy label.
-pub fn dummy_label(id: usize) -> pre_sierra::Statement {
-    pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(id) })
+pub fn dummy_label(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
+    pre_sierra::Statement::Label(pre_sierra::Label { id: label_id_from_usize(db, id) })
 }
 
 /// Generates a dummy jump to label statement.
 pub fn dummy_jump_statement(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::Statement {
-    jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(id))
+    jump_statement(dummy_concrete_lib_func_id(db, "jump"), label_id_from_usize(db, id))
 }
 
 /// Returns the [pre_sierra::LabelId] for the given `id`.
-pub fn label_id_from_usize(id: usize) -> pre_sierra::LabelId {
-    pre_sierra::LabelId::from_intern_id(InternId::from(id))
+pub fn label_id_from_usize(db: &dyn SierraGenGroup, id: usize) -> pre_sierra::LabelId {
+    let free_function_id = get_dummy_function(db);
+    let semantic_function = db.intern_concrete_function_with_body(
+        semantic::items::functions::ConcreteFunctionWithBody {
+            generic_function: semantic::items::functions::GenericFunctionWithBodyId::Free(
+                free_function_id,
+            ),
+            generic_args: vec![],
+        },
+    );
+    let parent = db.intern_lowering_concrete_function_with_body(
+        ConcreteFunctionWithBodyLongId::Semantic(semantic_function),
+    );
+    db.intern_label_id(LabelLongId { parent, id })
 }
 
 /// Generates a dummy [PushValues](pre_sierra::Statement::PushValues) statement.

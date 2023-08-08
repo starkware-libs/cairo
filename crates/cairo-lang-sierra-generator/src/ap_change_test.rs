@@ -16,7 +16,7 @@ cairo_lang_test_utils::test_file_test!(
 );
 
 fn contains_cycles_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-    let db = &mut SierraGenDatabaseForTesting::default();
+    let db = &SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
 

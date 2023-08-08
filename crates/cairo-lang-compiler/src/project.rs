@@ -41,13 +41,13 @@ pub fn setup_single_file_project(
         let canonical = path.canonicalize().map_err(|_| bad_path_err())?;
         let file_dir = canonical.parent().ok_or_else(bad_path_err)?;
         let crate_name = file_dir.to_str().ok_or_else(bad_path_err)?;
-        let crate_id = db.intern_crate(CrateLongId(crate_name.into()));
-        db.set_crate_root(crate_id, Some(Directory(file_dir.to_path_buf())));
+        let crate_id = db.intern_crate(CrateLongId::Real(crate_name.into()));
+        db.set_crate_root(crate_id, Some(Directory::Real(file_dir.to_path_buf())));
         Ok(crate_id)
     } else {
         // If file_stem is not lib, create a fake lib file.
-        let crate_id = db.intern_crate(CrateLongId(file_stem.into()));
-        db.set_crate_root(crate_id, Some(Directory(path.parent().unwrap().to_path_buf())));
+        let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
+        db.set_crate_root(crate_id, Some(Directory::Real(path.parent().unwrap().to_path_buf())));
 
         let module_id = ModuleId::CrateRoot(crate_id);
         let file_id = db.module_main_file(module_id).unwrap();
@@ -60,12 +60,12 @@ pub fn setup_single_file_project(
 /// Updates the crate roots from a ProjectConfig object.
 pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
     for (crate_name, directory_path) in config.content.crate_roots {
-        let crate_id = db.intern_crate(CrateLongId(crate_name));
+        let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
         let mut path = PathBuf::from(&directory_path);
         if path.is_relative() {
             path = PathBuf::from(&config.base_path).join(path);
         }
-        let root = Directory(path);
+        let root = Directory::Real(path);
         db.set_crate_root(crate_id, Some(root));
     }
 }
@@ -115,6 +115,6 @@ pub fn get_main_crate_ids_from_project(
         .content
         .crate_roots
         .keys()
-        .map(|crate_id| db.intern_crate(CrateLongId(crate_id.clone())))
+        .map(|crate_id| db.intern_crate(CrateLongId::Real(crate_id.clone())))
         .collect()
 }

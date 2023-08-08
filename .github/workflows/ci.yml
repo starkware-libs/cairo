@@ -13,34 +13,34 @@ jobs:
     strategy:
       matrix:
         cmd:
-          - nextest run -p cairo-lang-casm
-          - nextest run -p cairo-lang-compiler
-          - nextest run -p cairo-lang-debug
-          - nextest run -p cairo-lang-defs
-          - nextest run -p cairo-lang-diagnostics
-          - nextest run -p cairo-lang-eq-solver
-          - nextest run -p cairo-lang-filesystem
-          - nextest run -p cairo-lang-formatter
-          - nextest run -p cairo-lang-language-server
-          - nextest run -p cairo-lang-lowering
-          - nextest run -p cairo-lang-parser
-          - nextest run -p cairo-lang-plugins
-          - nextest run -p cairo-lang-proc-macros
-          - nextest run -p cairo-lang-project
-          - nextest run -p cairo-lang-runner
-          - nextest run -p cairo-lang-semantic
-          - nextest run -p cairo-lang-sierra
-          - nextest run -p cairo-lang-sierra-ap-change
-          - nextest run -p cairo-lang-sierra-gas
-          - nextest run -p cairo-lang-sierra-generator
-          - nextest run -p cairo-lang-sierra-to-casm
-          - nextest run -p cairo-lang-sierra-type-size
+          - test -p cairo-lang-casm
+          - test -p cairo-lang-compiler
+          - test -p cairo-lang-debug
+          - test -p cairo-lang-defs
+          - test -p cairo-lang-diagnostics
+          - test -p cairo-lang-eq-solver
+          - test -p cairo-lang-filesystem
+          - test -p cairo-lang-formatter
+          - test -p cairo-lang-language-server
+          - test -p cairo-lang-lowering
+          - test -p cairo-lang-parser
+          - test -p cairo-lang-plugins
+          - test -p cairo-lang-proc-macros
+          - test -p cairo-lang-project
+          - test -p cairo-lang-runner
+          - test -p cairo-lang-semantic
+          - test -p cairo-lang-sierra
+          - test -p cairo-lang-sierra-ap-change
+          - test -p cairo-lang-sierra-gas
+          - test -p cairo-lang-sierra-generator
+          - test -p cairo-lang-sierra-to-casm
+          - test -p cairo-lang-sierra-type-size
           - test -p cairo-lang-starknet
-          - nextest run -p cairo-lang-syntax
-          - nextest run -p cairo-lang-syntax-codegen
-          - nextest run -p cairo-lang-test-runner
-          - nextest run -p cairo-lang-test-utils
-          - nextest run -p cairo-lang-utils
+          - test -p cairo-lang-syntax
+          - test -p cairo-lang-syntax-codegen
+          - test -p cairo-lang-test-runner
+          - test -p cairo-lang-test-utils
+          - test -p cairo-lang-utils
           - test -p tests
     steps:
       - uses: actions/checkout@v3

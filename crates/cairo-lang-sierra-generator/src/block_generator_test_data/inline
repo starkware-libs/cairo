@@ -81,27 +81,27 @@ End:
 felt252_const<2>() -> ([0])
 dup<felt252>([1]) -> ([1], [3])
 felt252_sub([3], [0]) -> ([2])
-felt252_is_zero([2]) { fallthrough() label0([4]) }
+felt252_is_zero([2]) { fallthrough() label_test::foo::0([4]) }
 branch_align() -> ()
-felt252_is_zero([1]) { fallthrough() label2([5]) }
+felt252_is_zero([1]) { fallthrough() label_test::foo::2([5]) }
 branch_align() -> ()
 felt252_const<1>() -> ([6])
 PushValues([6]: felt252) -> ([7])
-jump() { label4() }
-label2:
+jump() { label_test::foo::4() }
+label_test::foo::2:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
 felt252_const<0>() -> ([8])
 PushValues([8]: felt252) -> ([7])
-label4:
+label_test::foo::4:
 PushValues([7]: felt252) -> ([9])
-jump() { label5() }
-label3:
-label0:
+jump() { label_test::foo::5() }
+label_test::foo::3:
+label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
 PushValues([1]: felt252) -> ([9])
-label5:
+label_test::foo::5:
 PushValues([9]: felt252) -> ([10])
 return([10])
-label1:
+label_test::foo::1:

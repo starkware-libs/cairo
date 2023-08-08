@@ -32,7 +32,7 @@
     "0x8",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x84737894901c89dc14402492642de6b0e3584e45733ce5824fcdc7fa9397bb",
+    "0x51e6d8a297262fcd146d0859913944d5868c6025cf0e433d482f9473e6fd39",
     "0x27",
     "0x7265766f6b655f61705f747261636b696e67",
     "0x77697468647261775f676173",
@@ -199,7 +199,7 @@
       ],
       [
         13,
-        "minimal_contract::minimal_contract::minimal_contract::ContractState"
+        "test::minimal_contract::ContractState"
       ],
       [
         14,
@@ -309,19 +309,19 @@
       ],
       [
         25,
-        "struct_construct<minimal_contract::minimal_contract::minimal_contract::ContractState>"
+        "struct_construct<test::minimal_contract::ContractState>"
       ],
       [
         26,
-        "store_temp<minimal_contract::minimal_contract::minimal_contract::ContractState>"
+        "store_temp<test::minimal_contract::ContractState>"
       ],
       [
         27,
-        "function_call<user@minimal_contract::minimal_contract::minimal_contract::empty>"
+        "function_call<user@test::minimal_contract::empty>"
       ],
       [
         28,
-        "drop<minimal_contract::minimal_contract::minimal_contract::ContractState>"
+        "drop<test::minimal_contract::ContractState>"
       ],
       [
         29,
@@ -367,11 +367,11 @@
     "user_func_names": [
       [
         0,
-        "minimal_contract::minimal_contract::minimal_contract::__external::empty"
+        "test::minimal_contract::__external::empty"
       ],
       [
         1,
-        "minimal_contract::minimal_contract::minimal_contract::empty"
+        "test::minimal_contract::empty"
       ]
     ]
   },
@@ -396,7 +396,7 @@
     },
     {
       "type": "event",
-      "name": "minimal_contract::minimal_contract::minimal_contract::Event",
+      "name": "test::minimal_contract::Event",
       "kind": "enum",
       "variants": []
     }

@@ -32,7 +32,7 @@ pub fn generic_completions(
 
     // Crates.
     completions.extend(db.crate_roots().keys().map(|crate_id| CompletionItem {
-        label: db.lookup_intern_crate(*crate_id).0.into(),
+        label: db.lookup_intern_crate(*crate_id).name().into(),
         kind: Some(CompletionItemKind::MODULE),
         ..CompletionItem::default()
     }));

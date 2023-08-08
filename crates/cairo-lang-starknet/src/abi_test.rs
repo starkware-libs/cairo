@@ -13,9 +13,9 @@ use crate::plugin::StarkNetPlugin;
 
 #[test]
 fn test_abi() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let db_val = SemanticDatabaseForTesting::default();
     let module_id = setup_test_module(
-        &mut db_val,
+        &db_val,
         indoc! {"
             struct MyStruct<T> {
               a: T,

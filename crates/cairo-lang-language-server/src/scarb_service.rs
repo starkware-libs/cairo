@@ -80,8 +80,8 @@ impl ScarbService {
             .flat_map(|unit| unit.components)
             .filter(|component| component.source_root().exists())
             .map(|component| {
-                let crate_id = CrateLongId(component.name.as_str().into());
-                let directory = Directory(component.source_root().into());
+                let crate_id = CrateLongId::Real(component.name.as_str().into());
+                let directory = Directory::Real(component.source_root().into());
                 (crate_id, directory)
             })
             .collect();
