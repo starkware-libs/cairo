@@ -25,7 +25,7 @@ pub fn handle_storage_struct(
         let name = member.name(db).text(db);
         members_code.push(RewriteNode::interpolate_patched(
             "
-        $name$: $name$::ContractState,",
+        $name$: $name$::ContractMemberState,",
             UnorderedHashMap::from([(
                 "name".to_string(),
                 RewriteNode::new_trimmed(name_node.clone()),
@@ -33,7 +33,7 @@ pub fn handle_storage_struct(
         ));
         members_init_code.push(RewriteNode::interpolate_patched(
             "
-            $name$: $name$::ContractState{},",
+            $name$: $name$::ContractMemberState{},",
             UnorderedHashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node))]),
         ));
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
@@ -179,18 +179,18 @@ fn handle_simple_storage_var(address: &str) -> String {
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {{}}
+        struct ContractMemberState {{}}
         trait InternalContractStateTrait {{
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState) -> $type_name$;
-            fn write(ref self: ContractState, value: $type_name$);
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> $type_name$;
+            fn write(ref self: ContractMemberState, value: $type_name$);
         }}
 
         impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress {{
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {{
                 starknet::storage_base_address_const::<{address}>()
             }}
-            fn read(self: @ContractState) -> $type_name$ {{
+            fn read(self: @ContractMemberState) -> $type_name$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<$type_name$>::read(
@@ -198,7 +198,7 @@ fn handle_simple_storage_var(address: &str) -> String {
                     self.address(),
                 ).unwrap_syscall()
             }}
-            fn write(ref self: ContractState, value: $type_name$) {{
+            fn write(ref self: ContractMemberState, value: $type_name$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<$type_name$>::write(
@@ -223,19 +223,21 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {{}}
+        struct ContractMemberState {{}}
         trait InternalContractStateTrait {{
-            fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState, key: $key_type$) -> $value_type$;
-            fn write(ref self: ContractState, key: $key_type$, value: $value_type$);
+            fn address(self: @ContractMemberState, key: $key_type$) -> \
+         starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState, key: $key_type$) -> $value_type$;
+            fn write(ref self: ContractMemberState, key: $key_type$, value: $value_type$);
         }}
 
         impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress {{
+            fn address(self: @ContractMemberState, key: $key_type$) -> \
+         starknet::StorageBaseAddress {{
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
-            fn read(self: @ContractState, key: $key_type$) -> $value_type$ {{
+            fn read(self: @ContractMemberState, key: $key_type$) -> $value_type$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<$value_type$>::read(
@@ -243,7 +245,7 @@ fn handle_legacy_mapping_storage_var(address: &str) -> String {
                     self.address(key),
                 ).unwrap_syscall()
             }}
-            fn write(ref self: ContractState, key: $key_type$, value: $value_type$) {{
+            fn write(ref self: ContractMemberState, key: $key_type$, value: $value_type$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<$value_type$>::write(

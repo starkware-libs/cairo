@@ -32,12 +32,12 @@
     "0x8",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x24d5a290e912e6f80761ecd9fe5cffae73fd390e7a17556876424a5aa669c12",
-    "0x8989498b1301e77837e896626cc9c42b670984ae316ea5a024b179d9ad6acf",
-    "0x259034af3d8b444ffc147c4326c534f4b5ec3a989a85b3fec5b67718f03dc34",
-    "0x33ab65a16885c25831de4d85e24a926ef310da2cfeb92c449a09d9e99e39499",
-    "0x234c188a86f1d9d5355522917fae57c1c5196d1134206cbf093e00385ed97bb",
-    "0x13a247d5aad38cff897685e27cb15fbf4210b925d36edf6ab287da1b345ccdc",
+    "0x315fa84fcae42b7a1565325bdc1cad7e05bc2b95cc4c1c75e2608f64fd4a9f",
+    "0x2e9be8b85dd9f74a51ba2846cdca785de71ab4d4cd159c3378d304874bfc15f",
+    "0x8e4feda4edc22a27aa76ccceffec4b0b397649eb731686cd02ceef69df4faf",
+    "0x1580fe4becf12549f2c94606040b570019d5fac6edd6c46384a26187e579eb3",
+    "0x2aba34c2476ae4723414e984e80f2447b0232b23745df8db4bced7f2e2ecd67",
+    "0x3b8c563de27f69312e9ac95b042d51b6cb1e9532b7ab94e096d675002a25e8f",
     "0x1a3cbf244cecc2c2b8282f076f96f193870517ca45d17f7182b701ed0f2a0ec",
     "0xd",
     "0xe",
@@ -74,17 +74,17 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x2a",
-    "0x2e01edad45094d8ce8ae17a7199e0d28db4f97137c41ef44a13f0608f7f71a0",
+    "0x4d822e934a32deb3c818d96b548542330579eb57efbd3d8d8b98d790176632",
     "0x2c",
-    "0x1e9a4bc30ab911e509662eb041a811c3d6762b9e5c77a9b8d498198a05c8055",
+    "0x274ff13c9af3378d0935aa02ebe9005249deb621c1bc58e7b70e49ad04819ec",
     "0x2e",
-    "0x977e29db7e3aaa778ee1abc7a29796f5a6336fbddc5009773e36f9e24999e1",
+    "0x27e590a7e6294259069fba86364b1d65f00d23a00710b3f0713d6532418c1",
     "0x30",
     "0x4e6f6e5a65726f",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
-    "0x2e40c93d51ffb220cbce0b1326a6a41ca7aead5edf67c2c4ce828dc37413325",
+    "0x32ffada273a88cba912e1cef6757a24ce2741b3f147c08cac4b089ffef9d01b",
     "0x34",
-    "0x22756d60b29905c01a5e1c48e75a6d2665eb6b2f0ba10aaa40fd0479c95a2c",
+    "0x1e65b0e6b2d817f74d8529d2e435b161f1cd3ca35c6ff0fb07bc842394e21cf",
     "0x36",
     "0x1f0bcbe4b6c646ff0248574048fd1dec913b5234cd80da58f029357be35f0c3",
     "0x3144c175dc8851842fd80cc598e0e04a13f867c189438483f78ab66ee9a958c",
@@ -116,7 +116,7 @@
     "0x4a",
     "0x38f4af6e44b2e0a6ad228a4874672855e693db590abc7105a5a9819dbbf5ba6",
     "0x4b",
-    "0x3b9a78e7d4aa4a4ea6eb0303cbc569d7f6f8c6b798b8815b5f4005f98b6679a",
+    "0x3e83b0d9bd62ad87f63b66fd1b3d3018fd55fc83f019efa3e6cea320a49bec3",
     "0x4d",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
@@ -2425,27 +2425,27 @@
       ],
       [
         13,
-        "test::erc_20::name::ContractState"
+        "test::erc_20::name::ContractMemberState"
       ],
       [
         14,
-        "test::erc_20::symbol::ContractState"
+        "test::erc_20::symbol::ContractMemberState"
       ],
       [
         15,
-        "test::erc_20::decimals::ContractState"
+        "test::erc_20::decimals::ContractMemberState"
       ],
       [
         16,
-        "test::erc_20::total_supply::ContractState"
+        "test::erc_20::total_supply::ContractMemberState"
       ],
       [
         17,
-        "test::erc_20::balances::ContractState"
+        "test::erc_20::balances::ContractMemberState"
       ],
       [
         18,
-        "test::erc_20::allowances::ContractState"
+        "test::erc_20::allowances::ContractMemberState"
       ],
       [
         19,
@@ -2549,27 +2549,27 @@
       ],
       [
         44,
-        "Tuple<test::erc_20::name::ContractState, Unit>"
+        "Tuple<test::erc_20::name::ContractMemberState, Unit>"
       ],
       [
         45,
-        "core::panics::PanicResult::<(test::erc_20::name::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>"
       ],
       [
         46,
-        "Tuple<test::erc_20::symbol::ContractState, Unit>"
+        "Tuple<test::erc_20::symbol::ContractMemberState, Unit>"
       ],
       [
         47,
-        "core::panics::PanicResult::<(test::erc_20::symbol::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>"
       ],
       [
         48,
-        "Tuple<test::erc_20::decimals::ContractState, Unit>"
+        "Tuple<test::erc_20::decimals::ContractMemberState, Unit>"
       ],
       [
         49,
-        "core::panics::PanicResult::<(test::erc_20::decimals::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>"
       ],
       [
         50,
@@ -2581,19 +2581,19 @@
       ],
       [
         52,
-        "Tuple<test::erc_20::total_supply::ContractState, Unit>"
+        "Tuple<test::erc_20::total_supply::ContractMemberState, Unit>"
       ],
       [
         53,
-        "core::panics::PanicResult::<(test::erc_20::total_supply::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>"
       ],
       [
         54,
-        "Tuple<test::erc_20::balances::ContractState, Unit>"
+        "Tuple<test::erc_20::balances::ContractMemberState, Unit>"
       ],
       [
         55,
-        "core::panics::PanicResult::<(test::erc_20::balances::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>"
       ],
       [
         56,
@@ -2681,11 +2681,11 @@
       ],
       [
         77,
-        "Tuple<test::erc_20::allowances::ContractState, Unit>"
+        "Tuple<test::erc_20::allowances::ContractMemberState, Unit>"
       ],
       [
         78,
-        "core::panics::PanicResult::<(test::erc_20::allowances::ContractState, ())>"
+        "core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>"
       ],
       [
         79,
@@ -2831,27 +2831,27 @@
       ],
       [
         25,
-        "struct_construct<test::erc_20::name::ContractState>"
+        "struct_construct<test::erc_20::name::ContractMemberState>"
       ],
       [
         26,
-        "struct_construct<test::erc_20::symbol::ContractState>"
+        "struct_construct<test::erc_20::symbol::ContractMemberState>"
       ],
       [
         27,
-        "struct_construct<test::erc_20::decimals::ContractState>"
+        "struct_construct<test::erc_20::decimals::ContractMemberState>"
       ],
       [
         28,
-        "struct_construct<test::erc_20::total_supply::ContractState>"
+        "struct_construct<test::erc_20::total_supply::ContractMemberState>"
       ],
       [
         29,
-        "struct_construct<test::erc_20::balances::ContractState>"
+        "struct_construct<test::erc_20::balances::ContractMemberState>"
       ],
       [
         30,
-        "struct_construct<test::erc_20::allowances::ContractState>"
+        "struct_construct<test::erc_20::allowances::ContractMemberState>"
       ],
       [
         31,
@@ -3103,27 +3103,27 @@
       ],
       [
         93,
-        "drop<test::erc_20::symbol::ContractState>"
+        "drop<test::erc_20::symbol::ContractMemberState>"
       ],
       [
         94,
-        "drop<test::erc_20::decimals::ContractState>"
+        "drop<test::erc_20::decimals::ContractMemberState>"
       ],
       [
         95,
-        "drop<test::erc_20::total_supply::ContractState>"
+        "drop<test::erc_20::total_supply::ContractMemberState>"
       ],
       [
         96,
-        "drop<test::erc_20::balances::ContractState>"
+        "drop<test::erc_20::balances::ContractMemberState>"
       ],
       [
         97,
-        "drop<test::erc_20::allowances::ContractState>"
+        "drop<test::erc_20::allowances::ContractMemberState>"
       ],
       [
         98,
-        "store_temp<test::erc_20::name::ContractState>"
+        "store_temp<test::erc_20::name::ContractMemberState>"
       ],
       [
         99,
@@ -3159,11 +3159,11 @@
       ],
       [
         107,
-        "drop<test::erc_20::name::ContractState>"
+        "drop<test::erc_20::name::ContractMemberState>"
       ],
       [
         108,
-        "store_temp<test::erc_20::symbol::ContractState>"
+        "store_temp<test::erc_20::symbol::ContractMemberState>"
       ],
       [
         109,
@@ -3171,7 +3171,7 @@
       ],
       [
         110,
-        "store_temp<test::erc_20::decimals::ContractState>"
+        "store_temp<test::erc_20::decimals::ContractMemberState>"
       ],
       [
         111,
@@ -3203,7 +3203,7 @@
       ],
       [
         118,
-        "store_temp<test::erc_20::total_supply::ContractState>"
+        "store_temp<test::erc_20::total_supply::ContractMemberState>"
       ],
       [
         119,
@@ -3271,7 +3271,7 @@
       ],
       [
         135,
-        "store_temp<test::erc_20::balances::ContractState>"
+        "store_temp<test::erc_20::balances::ContractMemberState>"
       ],
       [
         136,
@@ -3283,7 +3283,7 @@
       ],
       [
         138,
-        "store_temp<test::erc_20::allowances::ContractState>"
+        "store_temp<test::erc_20::allowances::ContractMemberState>"
       ],
       [
         139,
@@ -3367,7 +3367,7 @@
       ],
       [
         159,
-        "snapshot_take<test::erc_20::allowances::ContractState>"
+        "snapshot_take<test::erc_20::allowances::ContractMemberState>"
       ],
       [
         160,
@@ -3443,7 +3443,7 @@
       ],
       [
         178,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::name::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>>"
       ],
       [
         179,
@@ -3451,7 +3451,7 @@
       ],
       [
         180,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::symbol::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>>"
       ],
       [
         181,
@@ -3459,7 +3459,7 @@
       ],
       [
         182,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::decimals::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>>"
       ],
       [
         183,
@@ -3475,15 +3475,15 @@
       ],
       [
         186,
-        "struct_deconstruct<Tuple<test::erc_20::name::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::name::ContractMemberState, Unit>>"
       ],
       [
         187,
-        "struct_deconstruct<Tuple<test::erc_20::symbol::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::symbol::ContractMemberState, Unit>>"
       ],
       [
         188,
-        "struct_deconstruct<Tuple<test::erc_20::decimals::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::decimals::ContractMemberState, Unit>>"
       ],
       [
         189,
@@ -3523,7 +3523,7 @@
       ],
       [
         198,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::total_supply::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>>"
       ],
       [
         199,
@@ -3531,7 +3531,7 @@
       ],
       [
         200,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>"
       ],
       [
         201,
@@ -3539,11 +3539,11 @@
       ],
       [
         202,
-        "struct_deconstruct<Tuple<test::erc_20::total_supply::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::total_supply::ContractMemberState, Unit>>"
       ],
       [
         203,
-        "struct_deconstruct<Tuple<test::erc_20::balances::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::balances::ContractMemberState, Unit>>"
       ],
       [
         204,
@@ -3563,15 +3563,15 @@
       ],
       [
         208,
-        "drop<Tuple<test::erc_20::total_supply::ContractState, Unit>>"
+        "drop<Tuple<test::erc_20::total_supply::ContractMemberState, Unit>>"
       ],
       [
         209,
-        "drop<Tuple<test::erc_20::symbol::ContractState, Unit>>"
+        "drop<Tuple<test::erc_20::symbol::ContractMemberState, Unit>>"
       ],
       [
         210,
-        "drop<Tuple<test::erc_20::name::ContractState, Unit>>"
+        "drop<Tuple<test::erc_20::name::ContractMemberState, Unit>>"
       ],
       [
         211,
@@ -3751,7 +3751,7 @@
       ],
       [
         255,
-        "snapshot_take<test::erc_20::balances::ContractState>"
+        "snapshot_take<test::erc_20::balances::ContractMemberState>"
       ],
       [
         256,
@@ -3783,11 +3783,11 @@
       ],
       [
         263,
-        "enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>>"
       ],
       [
         264,
-        "struct_deconstruct<Tuple<test::erc_20::allowances::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::erc_20::allowances::ContractMemberState, Unit>>"
       ],
       [
         265,
@@ -3831,7 +3831,7 @@
       ],
       [
         275,
-        "snapshot_take<test::erc_20::name::ContractState>"
+        "snapshot_take<test::erc_20::name::ContractMemberState>"
       ],
       [
         276,
@@ -3867,59 +3867,59 @@
       ],
       [
         284,
-        "struct_construct<Tuple<test::erc_20::name::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::name::ContractMemberState, Unit>>"
       ],
       [
         285,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::name::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>, 0>"
       ],
       [
         286,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::name::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>>"
       ],
       [
         287,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::name::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>, 1>"
       ],
       [
         288,
-        "snapshot_take<test::erc_20::symbol::ContractState>"
+        "snapshot_take<test::erc_20::symbol::ContractMemberState>"
       ],
       [
         289,
-        "struct_construct<Tuple<test::erc_20::symbol::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::symbol::ContractMemberState, Unit>>"
       ],
       [
         290,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::symbol::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>, 0>"
       ],
       [
         291,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::symbol::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>>"
       ],
       [
         292,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::symbol::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>, 1>"
       ],
       [
         293,
-        "snapshot_take<test::erc_20::decimals::ContractState>"
+        "snapshot_take<test::erc_20::decimals::ContractMemberState>"
       ],
       [
         294,
-        "struct_construct<Tuple<test::erc_20::decimals::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::decimals::ContractMemberState, Unit>>"
       ],
       [
         295,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::decimals::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>, 0>"
       ],
       [
         296,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::decimals::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>>"
       ],
       [
         297,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::decimals::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>, 1>"
       ],
       [
         298,
@@ -3927,39 +3927,39 @@
       ],
       [
         299,
-        "snapshot_take<test::erc_20::total_supply::ContractState>"
+        "snapshot_take<test::erc_20::total_supply::ContractMemberState>"
       ],
       [
         300,
-        "struct_construct<Tuple<test::erc_20::total_supply::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::total_supply::ContractMemberState, Unit>>"
       ],
       [
         301,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::total_supply::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>, 0>"
       ],
       [
         302,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::total_supply::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>>"
       ],
       [
         303,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::total_supply::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>, 1>"
       ],
       [
         304,
-        "struct_construct<Tuple<test::erc_20::balances::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::balances::ContractMemberState, Unit>>"
       ],
       [
         305,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::balances::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>, 0>"
       ],
       [
         306,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::balances::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>"
       ],
       [
         307,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::balances::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>, 1>"
       ],
       [
         308,
@@ -4167,19 +4167,19 @@
       ],
       [
         359,
-        "struct_construct<Tuple<test::erc_20::allowances::ContractState, Unit>>"
+        "struct_construct<Tuple<test::erc_20::allowances::ContractMemberState, Unit>>"
       ],
       [
         360,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::allowances::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>, 0>"
       ],
       [
         361,
-        "store_temp<core::panics::PanicResult::<(test::erc_20::allowances::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>>"
       ],
       [
         362,
-        "enum_init<core::panics::PanicResult::<(test::erc_20::allowances::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>, 1>"
       ],
       [
         363,

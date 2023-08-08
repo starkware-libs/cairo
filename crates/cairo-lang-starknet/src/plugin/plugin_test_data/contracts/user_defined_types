@@ -107,14 +107,14 @@ const TEST_CLASS_HASH: felt252 = 78466995233030447509889909725395494592551972460
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
-        var: var::ContractState,
-        mapping: mapping::ContractState,
+        var: var::ContractMemberState,
+        mapping: mapping::ContractMemberState,
     }
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var: var::ContractState{},
-            mapping: mapping::ContractState{},
+            var: var::ContractMemberState{},
+            mapping: mapping::ContractMemberState{},
         }
     }
     #[cfg(test)]
@@ -152,18 +152,18 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
+        struct ContractMemberState {}
         trait InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState) -> WrappedFelt252;
-            fn write(ref self: ContractState, value: WrappedFelt252);
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> WrappedFelt252;
+            fn write(ref self: ContractMemberState, value: WrappedFelt252);
         }
 
         impl InternalContractStateImpl of InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
             }
-            fn read(self: @ContractState) -> WrappedFelt252 {
+            fn read(self: @ContractMemberState) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<WrappedFelt252>::read(
@@ -171,7 +171,7 @@ use starknet::event::EventEmitter;
                     self.address(),
                 ).unwrap_syscall()
             }
-            fn write(ref self: ContractState, value: WrappedFelt252) {
+            fn write(ref self: ContractMemberState, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<WrappedFelt252>::write(
@@ -195,19 +195,19 @@ use starknet::event::EventEmitter;
         use super;
 
         #[derive(Copy, Drop)]
-        struct ContractState {}
+        struct ContractMemberState {}
         trait InternalContractStateTrait {
-            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252;
-            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252);
+            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252;
+            fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252);
         }
 
         impl InternalContractStateImpl of InternalContractStateTrait {
-            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
+            fn address(self: @ContractMemberState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
             }
-            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252 {
+            fn read(self: @ContractMemberState, key: WrappedFelt252) -> WrappedFelt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<WrappedFelt252>::read(
@@ -215,7 +215,7 @@ use starknet::event::EventEmitter;
                     self.address(key),
                 ).unwrap_syscall()
             }
-            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252) {
+            fn write(ref self: ContractMemberState, key: WrappedFelt252, value: WrappedFelt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::Store::<WrappedFelt252>::write(
