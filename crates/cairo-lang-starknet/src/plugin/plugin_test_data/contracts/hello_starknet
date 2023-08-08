@@ -121,55 +121,57 @@ use starknet::event::EventEmitter;
     }
 
 
-mod __external {
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_amount = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    increase_balance(ref contract_state, __arg_amount);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
 
-    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            let __arg_amount = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #1'
-            );
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::increase_balance(ref contract_state, __arg_amount);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            
-            let res = super::get_balance(@contract_state, );
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            serde::Serde::<felt252>::serialize(@res, ref arr);
-            array::ArrayTrait::span(@arr)
-        }
-        
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = get_balance(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<felt252>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external {
+    use super::__wrapper_increase_balance;
+    use super::__wrapper_get_balance;
 }
 
 mod __l1_handler {
-
-    
 }
 
 mod __constructor {
-
-    
 }
 
 

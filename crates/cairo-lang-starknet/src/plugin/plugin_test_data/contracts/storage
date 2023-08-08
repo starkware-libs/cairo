@@ -475,19 +475,15 @@ use starknet::event::EventEmitter;
     }
 
 
-mod __external {
 
-    
+
+mod __external {
 }
 
 mod __l1_handler {
-
-    
 }
 
 mod __constructor {
-
-    
 }
 
 

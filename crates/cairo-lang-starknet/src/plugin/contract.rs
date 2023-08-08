@@ -18,7 +18,7 @@ use super::consts::{
     CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, CONTRACT_ATTR,
     DEPRECATED_CONTRACT_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
     L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
-    STORAGE_STRUCT_NAME,
+    STORAGE_STRUCT_NAME, WRAPPER_PREFIX,
 };
 use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
@@ -87,9 +87,10 @@ pub fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> Plugi
 /// Accumulated data for contract generation.
 #[derive(Default)]
 struct ContractGenerationData {
-    generated_external_functions: Vec<RewriteNode>,
-    generated_constructor_functions: Vec<RewriteNode>,
-    generated_l1_handler_functions: Vec<RewriteNode>,
+    generated_functions: Vec<RewriteNode>,
+    external_functions: Vec<RewriteNode>,
+    constructor_functions: Vec<RewriteNode>,
+    l1_handler_functions: Vec<RewriteNode>,
 }
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -162,37 +163,33 @@ pub fn handle_contract_by_storage(
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $contract_state_code$
 
-            mod {EXTERNAL_MODULE} {{$extra_uses$
+            $generated_functions$
 
-                $generated_external_functions$
+            mod {EXTERNAL_MODULE} {{$external_functions$
             }}
 
-            mod {L1_HANDLER_MODULE} {{$extra_uses$
-
-                $generated_l1_handler_functions$
+            mod {L1_HANDLER_MODULE} {{$l1_handler_functions$
             }}
 
-            mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-
-                $generated_constructor_functions$
+            mod {CONSTRUCTOR_MODULE} {{$constructor_functions$
             }}
         "
         )
         .as_str(),
         [
             ("contract_state_code".to_string(), contract_state_code),
-            ("extra_uses".to_string(), extra_uses_node),
             (
-                "generated_external_functions".to_string(),
-                RewriteNode::new_modified(data.generated_external_functions),
+                "generated_functions".to_string(),
+                RewriteNode::new_modified(data.generated_functions),
+            ),
+            ("external_functions".to_string(), RewriteNode::new_modified(data.external_functions)),
+            (
+                "l1_handler_functions".to_string(),
+                RewriteNode::new_modified(data.l1_handler_functions),
             ),
             (
-                "generated_l1_handler_functions".to_string(),
-                RewriteNode::new_modified(data.generated_l1_handler_functions),
-            ),
-            (
-                "generated_constructor_functions".to_string(),
-                RewriteNode::new_modified(data.generated_constructor_functions),
+                "constructor_functions".to_string(),
+                RewriteNode::new_modified(data.constructor_functions),
             ),
         ]
         .into(),
@@ -423,23 +420,17 @@ fn forbid_attribute_in_external_impl(
 fn handle_entry_point(
     entry_point_kind: EntryPointKind,
     item_function: &ast::FunctionWithBody,
-    function_name: RewriteNode,
+    wrapped_function_path: RewriteNode,
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     data: &mut ContractGenerationData,
 ) {
-    if entry_point_kind == EntryPointKind::Constructor {
-        {
-            let name_node = item_function.declaration(db).name(db);
-            if name_node.text(db) != CONSTRUCTOR_NAME {
-                diagnostics.push(PluginDiagnostic {
-                    message: format!(
-                        "The constructor function must be called `{CONSTRUCTOR_NAME}`."
-                    ),
-                    stable_ptr: name_node.stable_ptr().untyped(),
-                })
-            }
-        };
+    let name_node = item_function.declaration(db).name(db);
+    if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
+        diagnostics.push(PluginDiagnostic {
+            message: format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
+            stable_ptr: name_node.stable_ptr().untyped(),
+        });
     }
 
     let declaration = item_function.declaration(db);
@@ -469,18 +460,31 @@ fn handle_entry_point(
         }
     }
 
-    match generate_entry_point_wrapper(db, item_function, function_name) {
+    let wrapper_function_name = RewriteNode::interpolate_patched(
+        format!("{WRAPPER_PREFIX}$function_name$").as_str(),
+        [("function_name".into(), RewriteNode::new_trimmed(name_node.as_syntax_node()))].into(),
+    );
+    match generate_entry_point_wrapper(
+        db,
+        item_function,
+        wrapped_function_path,
+        wrapper_function_name.clone(),
+    ) {
         Ok(generated_function) => {
+            data.generated_functions.push(generated_function);
+            data.generated_functions.push(RewriteNode::Text("\n".to_string()));
             let generated = match entry_point_kind {
-                EntryPointKind::Constructor => &mut data.generated_constructor_functions,
+                EntryPointKind::Constructor => &mut data.constructor_functions,
                 EntryPointKind::L1Handler => {
                     validate_l1_handler_first_parameter(db, &params, diagnostics);
-                    &mut data.generated_l1_handler_functions
+                    &mut data.l1_handler_functions
                 }
-                EntryPointKind::External => &mut data.generated_external_functions,
+                EntryPointKind::External => &mut data.external_functions,
             };
-            generated.push(generated_function);
-            generated.push(RewriteNode::Text("\n        ".to_string()));
+            generated.push(RewriteNode::interpolate_patched(
+                "\n    use super::$wrapper_function_name$;",
+                [("wrapper_function_name".into(), wrapper_function_name)].into(),
+            ));
         }
         Err(entry_point_diagnostics) => {
             diagnostics.extend(entry_point_diagnostics);
