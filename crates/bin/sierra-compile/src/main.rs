@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let sierra_code = fs::read_to_string(args.file).with_context(|| "Could not read file!")?;
-    let Ok(program) = ProgramParser::new().parse(&sierra_code) else {
+    let Ok(program) = ProgramParser::new().parse(&sierra_code).unwrap().into_v1() else {
         anyhow::bail!(indoc! {"
             Failed to parse sierra program.
             Note: StarkNet contracts should be compiled with `starknet-sierra-compile`."

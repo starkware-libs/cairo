@@ -7,12 +7,12 @@ use num_bigint::BigInt;
 
 grammar;
 
-pub Program: Program = {
+pub Program: VersionedProgram = {
     <type_declarations:TypeDeclaration*>
     <libfunc_declarations:LibfuncDeclaration*>
     <statements:Statement*>
     <funcs:Function*>
-    => Program{type_declarations, libfunc_declarations, statements, funcs},
+    => Program{type_declarations, libfunc_declarations, statements, funcs}.into(),
 }
 
 TypeDeclaration: TypeDeclaration = {

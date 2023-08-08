@@ -1,6 +1,6 @@
 //! Cairo compiler.
 //!
-//! This crate is responsible for compiling a Cairo project into a Sierra program.
+//! This crate is responsible for compiling a Cairo project into a Sierra VersionedProgram.
 //! It is the main entry point for the compiler.
 use std::path::Path;
 use std::sync::Arc;
@@ -8,7 +8,7 @@ use std::sync::Arc;
 use ::cairo_lang_diagnostics::ToOption;
 use anyhow::{Context, Result};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_sierra::program::Program;
+use cairo_lang_sierra::program::VersionedProgram;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 
@@ -43,7 +43,7 @@ impl Default for CompilerConfig<'static> {
     }
 }
 
-pub type SierraProgram = Arc<Program>;
+pub type SierraProgram = Arc<VersionedProgram>;
 
 /// Compiles a Cairo project at the given path.
 /// The project must be a valid Cairo project:
@@ -110,5 +110,7 @@ pub fn compile_prepared_db(
         sierra_program = Arc::new(replace_sierra_ids_in_program(db, &sierra_program));
     }
 
-    Ok(sierra_program)
+    let versioned_program = Arc::into_inner(sierra_program).unwrap().into();
+
+    Ok(Arc::new(versioned_program))
 }

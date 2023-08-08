@@ -102,7 +102,7 @@ fn generate(
     costs: HashMap<ConcreteLibfuncId, Vec<CostExpr>>,
 ) -> Result<Vec<CostExpr>, CostError> {
     Ok(generate_equations(
-        &cairo_lang_sierra::ProgramParser::new().parse(code).unwrap(),
+        &cairo_lang_sierra::ProgramParser::new().parse(code).unwrap().into_v1().unwrap(),
         |_, _idx, libfunc_id| {
             costs
                 .get(libfunc_id)
@@ -130,7 +130,7 @@ fn test_reverse_topological_ordering() {
     foo_c@4() -> ();
     foo_d@6() -> ();
 "};
-    let program = cairo_lang_sierra::ProgramParser::new().parse(code).unwrap();
+    let program = cairo_lang_sierra::ProgramParser::new().parse(code).unwrap().into_v1().unwrap();
     let ordering: Vec<usize> =
         get_reverse_topological_ordering(&program).unwrap().into_iter().map(|x| x.0).collect();
     assert_eq!(ordering, vec![4, 2, 6, 0]);
