@@ -137,6 +137,24 @@ impl StarknetState {
         self.next_id += Felt252::from(1);
         self.next_id.clone()
     }
+
+    /// Replaces the addresses in the context.
+    pub fn open_caller_context(&mut self, new_contract_address: Felt252) -> (Felt252, Felt252) {
+        let old_contract_address =
+            std::mem::replace(&mut self.exec_info.contract_address, new_contract_address.clone());
+        let old_caller_address =
+            std::mem::replace(&mut self.exec_info.caller_address, old_contract_address.clone());
+        (old_contract_address, old_caller_address)
+    }
+
+    /// Restores the addresses in the context.
+    pub fn close_caller_context(
+        &mut self,
+        (old_contract_address, old_caller_address): (Felt252, Felt252),
+    ) {
+        self.exec_info.contract_address = old_contract_address;
+        self.exec_info.caller_address = old_caller_address;
+    }
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -861,17 +879,10 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            // Replace the contract address in the context.
-            let old_contract_address = std::mem::replace(
-                &mut self.starknet_state.exec_info.contract_address,
-                deployed_contract_address.clone(),
-            );
-
-            // Run the constructor.
+            let old_addrs =
+                self.starknet_state.open_caller_context(deployed_contract_address.clone());
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
-
-            // Restore the contract address in the context.
-            self.starknet_state.exec_info.contract_address = old_contract_address;
+            self.starknet_state.close_caller_context(old_addrs);
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
@@ -923,21 +934,9 @@ impl<'a> CairoHintProcessor<'a> {
             fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
         };
 
-        // Replace the contract address in the context.
-        let old_contract_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.contract_address,
-            contract_address.clone(),
-        );
-        let old_caller_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.caller_address,
-            old_contract_address.clone(),
-        );
-
+        let old_addrs = self.starknet_state.open_caller_context(contract_address.clone());
         let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
-
-        // Restore the contract address in the context.
-        self.starknet_state.exec_info.caller_address = old_caller_address;
-        self.starknet_state.exec_info.contract_address = old_contract_address;
+        self.starknet_state.close_caller_context(old_addrs);
 
         match res {
             Ok((res_data_start, res_data_end)) => {
