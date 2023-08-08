@@ -387,7 +387,7 @@ use crate::test_utils::{build_metadata, read_sierra_example_file, strip_comments
         "merge unit param")]
 
 fn sierra_to_casm(sierra_code: &str, check_gas_usage: bool, expected_casm: &str) {
-    let program = ProgramParser::new().parse(sierra_code).unwrap();
+    let program = ProgramParser::new().parse(sierra_code).unwrap().try_into().unwrap();
     pretty_assertions::assert_eq!(
         compile(&program, &build_metadata(&program, check_gas_usage), check_gas_usage)
             .expect("Compilation failed.")
@@ -796,7 +796,7 @@ of the libfunc or return statement.";
             "}, "Error from program registry: Function parameter type must be storable";
             "Function that uses unstorable types")]
 fn compiler_errors(sierra_code: &str, expected_result: &str) {
-    let program = ProgramParser::new().parse(sierra_code).unwrap();
+    let program = ProgramParser::new().parse(sierra_code).unwrap().try_into().unwrap();
     pretty_assertions::assert_eq!(
         compile(&program, &build_metadata(&program, false), false)
             .expect_err("Compilation is expected to fail.")

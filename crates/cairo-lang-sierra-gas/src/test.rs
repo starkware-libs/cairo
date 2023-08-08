@@ -20,7 +20,11 @@ fn get_example_program(name: &str) -> Program {
     // Pop the "/sierra_gas" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
     path.extend(["cairo-lang-sierra", "examples", &format!("{name}.sierra")].into_iter());
-    cairo_lang_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
+    cairo_lang_sierra::ProgramParser::new()
+        .parse(&fs::read_to_string(path).unwrap())
+        .unwrap()
+        .try_into()
+        .unwrap()
 }
 
 fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {

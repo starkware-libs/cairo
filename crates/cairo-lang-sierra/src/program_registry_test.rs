@@ -21,6 +21,8 @@ fn basic_insertion() {
                     Func2@6() -> ();
                 "})
                 .unwrap()
+                .try_into()
+                .unwrap()
         )
         .map(|_| ()),
         Ok(())
@@ -36,6 +38,8 @@ fn function_id_double_declaration() {
                     used_id@1(a: int, gb: GasBuiltin) -> (GasBuiltin);
                     used_id@6() -> ();
                 "})
+                .unwrap()
+                .try_into()
                 .unwrap()
         )
         .map(|_| ()),
@@ -53,6 +57,8 @@ fn type_id_double_declaration() {
                     type used_id = GasBuiltin;
                     "})
                 .unwrap()
+                .try_into()
+                .unwrap()
         )
         .map(|_| ()),
         Err(Box::new(ProgramRegistryError::TypeConcreteIdAlreadyExists("used_id".into())))
@@ -69,6 +75,8 @@ fn concrete_type_double_declaration() {
                     type int1 = u128;
                     type int2 = u128;
                 "})
+                .unwrap()
+                .try_into()
                 .unwrap()
         )
         .map(|_| ()),
@@ -91,6 +99,8 @@ fn libfunc_id_double_declaration() {
                     libfunc used_id = rename<u128>;
                     libfunc used_id = rename<GasBuiltin>;
                 "})
+                .unwrap()
+                .try_into()
                 .unwrap()
         )
         .map(|_| ()),

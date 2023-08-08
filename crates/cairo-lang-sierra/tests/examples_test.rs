@@ -15,7 +15,11 @@ use test_case::test_case;
 fn get_example_program(name: &str) -> Program {
     let path: PathBuf =
         [env!("CARGO_MANIFEST_DIR"), "examples", &format!("{name}.sierra")].into_iter().collect();
-    cairo_lang_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
+    cairo_lang_sierra::ProgramParser::new()
+        .parse(&fs::read_to_string(path).unwrap())
+        .unwrap()
+        .try_into()
+        .unwrap()
 }
 
 #[test_case("fib_jumps")]

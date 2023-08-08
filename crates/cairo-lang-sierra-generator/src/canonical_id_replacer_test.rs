@@ -38,6 +38,8 @@ fn test_replacer() {
             box_and_back@26([1]: felt252) -> (felt252);
             box_and_back_wrapper@31([1]: felt252) -> (felt252);
         "})
+        .unwrap()
+        .try_into()
         .unwrap();
 
     let expected_output = ProgramParser::new()
@@ -71,6 +73,8 @@ fn test_replacer() {
             [2]@26([1]: [0]) -> ([0]);
             [3]@31([1]: [0]) -> ([0]);
         "})
+        .unwrap()
+        .try_into()
         .unwrap();
 
     let replacer = CanonicalReplacer::from_program(&input);
