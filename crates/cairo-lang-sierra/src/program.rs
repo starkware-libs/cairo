@@ -5,10 +5,15 @@ use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
+use crate::lang_version_id::LangVersionId;
 
 /// A full Sierra program.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Program {
+    /// Version of the Sierra Program.
+    ///
+    /// This struct will not deserialize if version does not match.
+    pub version: LangVersionId,
     /// Declarations for all the used types.
     pub type_declarations: Vec<TypeDeclaration>,
     /// Declarations for all the used library functions.

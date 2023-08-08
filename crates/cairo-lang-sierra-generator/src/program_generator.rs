@@ -160,6 +160,7 @@ pub fn get_sierra_program_for_functions(
     let resolved_statements = resolve_labels(statements, &label_replacer);
 
     Ok(Arc::new(program::Program {
+        version: Default::default(),
         type_declarations,
         libfunc_declarations,
         statements: resolved_statements,

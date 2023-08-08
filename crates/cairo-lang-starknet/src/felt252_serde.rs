@@ -411,7 +411,16 @@ impl Felt252Serde for Program {
             funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
             input = next;
         }
-        Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
+        Ok((
+            Self {
+                version: Default::default(),
+                type_declarations,
+                libfunc_declarations,
+                statements,
+                funcs,
+            },
+            input,
+        ))
     }
 }
 
