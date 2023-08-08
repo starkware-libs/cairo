@@ -109,7 +109,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1010490069093431966487018155674502699168459723066331577845463233808659387585;
+const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {

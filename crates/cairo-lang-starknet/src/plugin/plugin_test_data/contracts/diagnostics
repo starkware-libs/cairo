@@ -65,7 +65,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 45160169293473719406744259310761826795062156439927954035200894390197437803;
+const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -189,7 +189,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 105724854851525732656747189112424955784130579533864065238578929011236086858;
+const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -321,7 +321,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 585714219604284949312488231214316555669580783328194809075076667937711803805;
+const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff1ecaecfe92dce54d9d;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -469,7 +469,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 393806972942277607821072105318331163597970668207822274409669945054460847164;
+const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -650,7 +650,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 516977575265217330182845769154459023540283221406901776467308604288970786024;
+const TEST_CLASS_HASH: felt252 = 0x124995404f8319289ef288de547438677d2604e15a5315c83676af341b004e8;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -784,7 +784,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 489215812708762262321593369929310129684834641386672889484400421559941333500;
+const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -920,7 +920,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1265092799867197978363841180035964557093255172609887126562878375001682451963;
+const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1075,7 +1075,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1496063534612202122784781543886673498221182393177447897962767144086700522025;
+const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1230,7 +1230,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1161951693435338292010126047291936292193455496737609784468650217503643411416;
+const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1453,7 +1453,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1546445079340859639365845092387677843502325126655810594464828949621108474705;
+const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4837185259a4d5d8351;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1609,7 +1609,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1105606754110051083728243557082802883446336715205195351698561354337476454550;
+const TEST_CLASS_HASH: felt252 = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343fe167b82768570a896;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -1845,7 +1845,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1738931947817543127574982731191165532662415247853947540214483435696729745212;
+const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18ccab86db3595169e73c;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2042,7 +2042,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 659208935625225645673012054755134575540283560013107281636737814367393316164;
+const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2234,7 +2234,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 191867647445899813732255736453831540083131731341500404649215625255809344635;
+const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71dafd3abf300622647b;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -2362,7 +2362,7 @@ use starknet::SyscallResultTrait;
 use starknet::SyscallResultTraitImpl;
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1310046472266970990678663450742219093213412730506752722328026548424285619862;
+const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b081753f226075310e440696;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
