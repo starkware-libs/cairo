@@ -150,8 +150,11 @@ pub fn handle_contract_by_storage(
     );
 
     let module_name_ast = module_ast.name(db);
-    let test_class_hash = starknet_keccak(
-        module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+    let test_class_hash = format!(
+        "0x{:x}",
+        starknet_keccak(
+            module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+        )
     );
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(

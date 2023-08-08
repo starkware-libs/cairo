@@ -46,7 +46,7 @@ mod test_contract {
 contract:
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 394012874717152213897607285090648546398436591943588733136617370902578160851;
+const TEST_CLASS_HASH: felt252 = 0xdf00ddc8940a9ebc2f8665e989d2652203dabc0967e7b9cbce7d6a201564d3;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
