@@ -1,4 +1,4 @@
-use anyhow::Context;
+use anyhow::{bail, Context};
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
     FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId,
@@ -7,7 +7,10 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::ids::{ConcreteFunctionWithBodyId, FunctionWithBodyLongId};
 use cairo_lang_semantic::db::SemanticGroup;
+use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::items::us::SemanticUseEx;
 use cairo_lang_semantic::plugin::DynPluginAuxData;
+use cairo_lang_semantic::resolve::ResolvedGenericItem;
 use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
@@ -19,6 +22,7 @@ use sha3::{Digest, Keccak256};
 
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::consts::WRAPPER_PREFIX;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -105,18 +109,36 @@ pub fn get_module_functions(
     module_name: &str,
 ) -> anyhow::Result<Vec<FreeFunctionId>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    match db
+    let module_id = match db
         .module_item_by_name(generated_module_id, module_name.into())
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
-        Some(ModuleItemId::Submodule(external_module_id)) => Ok((*db
-            .module_free_functions_ids(ModuleId::Submodule(external_module_id))
-            .to_option()
-            .with_context(|| "Failed to get external module functions.")?)
-        .clone()),
+        Some(ModuleItemId::Submodule(external_module_id)) => {
+            ModuleId::Submodule(external_module_id)
+        }
         _ => anyhow::bail!("Failed to get the external module."),
+    };
+    let mut functions = vec![];
+    for use_id in db
+        .module_uses_ids(module_id)
+        .to_option()
+        .with_context(|| "Failed to get external module functions.")?
+        .iter()
+    {
+        let ResolvedGenericItem::GenericFunction(function) = db
+            .use_resolved_item(*use_id)
+            .to_option()
+            .with_context(|| "Failed to fetch used function.")?
+        else {
+            bail!("Fetched item not a function.")
+        };
+        match function {
+            GenericFunctionId::Free(function) => functions.push(function),
+            _ => bail!("Expected a free function."),
+        }
     }
+    Ok(functions)
 }
 
 /// Returns the generated contract module.
@@ -215,7 +237,10 @@ pub fn get_selector_and_sierra_function<T: SierraIdReplacer>(
         FunctionWithBodyLongId::Semantic
     )
     .expect("Entrypoint cannot be a generated function.");
-    let selector =
-        Felt252::try_from(starknet_keccak(semantic.name(db.upcast()).as_bytes())).unwrap();
+    let name = semantic.name(db.upcast());
+    let used_name = name
+        .strip_prefix(WRAPPER_PREFIX)
+        .unwrap_or_else(|| panic!("Wrapper with unexpected prefix: `{name}`."));
+    let selector = Felt252::try_from(starknet_keccak(used_name.as_bytes())).unwrap();
     (selector, sierra_id)
 }

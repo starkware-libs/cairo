@@ -32,8 +32,8 @@
     "0x8",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x254ce8c995cd7b04a22486fc6edb4e69761777836421bc1daa97c82e3f9f90d",
-    "0xa60b7be793032e44299848ab90b6140009d3ae32c3d9d1e630ab46b191eb10",
+    "0x3a2440b9db287cb1310549d962bb9126239020af65f43b99ef431f9a5a6f36a",
+    "0x319cc273699cc631b546c84e3912f5faad1ba0eaa322f8294391e6853f80b91",
     "0x2a2bc90f879f74024a98dc39591093f2c6656f38121b3ea36aac62bb7c818f8",
     "0xd",
     "0xe",
@@ -52,7 +52,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x19",
-    "0x2f1b6c9c7f63e6b0719cea94653b1346ff0394cbbaa092884429a394feb68ab",
+    "0x3a59fecd81014e40a74c80403d6765c103b552f2c4c3360e3499e7896326a06",
     "0x1b",
     "0x1a7af3a0b367ac11af2e7bc39793ff9efddaab92f3b20eb0bce9cddcd4e3111",
     "0x1ef3e1182164a62fea0a1b0875f3797302278efdbe1c1df56f0d7d78f0e26f1",
@@ -65,7 +65,7 @@
     "0x22",
     "0xd1c5fc0255aaf04e6472cb278cf46cf09f8a38b1616f87a5dc2885e50e66fd",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x30b16190317837cfb1a0a2259525a87b112765eee2a0e6b6e662201d0475c9c",
+    "0x9ba8e8d6404be2dcf08602ab63278057f91459b2f64ad01856810cf0333103",
     "0x26",
     "0x53746f726167654261736541646472657373",
     "0x2cf4ead4392e987c9b56754a10f0a8e0f13776791e096fa6503893f05582c51",
@@ -1069,11 +1069,11 @@
       ],
       [
         13,
-        "test::counter_contract::counter::ContractState"
+        "test::counter_contract::ContractStateMembercounter"
       ],
       [
         14,
-        "test::counter_contract::other_contract::ContractState"
+        "test::counter_contract::ContractStateMemberother_contract"
       ],
       [
         15,
@@ -1125,11 +1125,11 @@
       ],
       [
         27,
-        "Tuple<test::counter_contract::counter::ContractState, Unit>"
+        "Tuple<test::counter_contract::ContractStateMembercounter, Unit>"
       ],
       [
         28,
-        "core::panics::PanicResult::<(test::counter_contract::counter::ContractState, ())>"
+        "core::panics::PanicResult::<(test::counter_contract::ContractStateMembercounter, ())>"
       ],
       [
         29,
@@ -1169,11 +1169,11 @@
       ],
       [
         38,
-        "Tuple<test::counter_contract::other_contract::ContractState, Unit>"
+        "Tuple<test::counter_contract::ContractStateMemberother_contract, Unit>"
       ],
       [
         39,
-        "core::panics::PanicResult::<(test::counter_contract::other_contract::ContractState, ())>"
+        "core::panics::PanicResult::<(test::counter_contract::ContractStateMemberother_contract, ())>"
       ],
       [
         40,
@@ -1355,11 +1355,11 @@
       ],
       [
         25,
-        "struct_construct<test::counter_contract::counter::ContractState>"
+        "struct_construct<test::counter_contract::ContractStateMembercounter>"
       ],
       [
         26,
-        "struct_construct<test::counter_contract::other_contract::ContractState>"
+        "struct_construct<test::counter_contract::ContractStateMemberother_contract>"
       ],
       [
         27,
@@ -1503,15 +1503,15 @@
       ],
       [
         62,
-        "drop<test::counter_contract::other_contract::ContractState>"
+        "drop<test::counter_contract::ContractStateMemberother_contract>"
       ],
       [
         63,
-        "store_temp<test::counter_contract::counter::ContractState>"
+        "store_temp<test::counter_contract::ContractStateMembercounter>"
       ],
       [
         64,
-        "function_call<user@test::counter_contract::counter::InternalContractStateImpl::read>"
+        "function_call<user@test::counter_contract::__InternalContractStateMembercounterImpl::read>"
       ],
       [
         65,
@@ -1611,7 +1611,7 @@
       ],
       [
         89,
-        "snapshot_take<test::counter_contract::counter::ContractState>"
+        "snapshot_take<test::counter_contract::ContractStateMembercounter>"
       ],
       [
         90,
@@ -1623,15 +1623,15 @@
       ],
       [
         92,
-        "function_call<user@test::counter_contract::counter::InternalContractStateImpl::write>"
+        "function_call<user@test::counter_contract::__InternalContractStateMembercounterImpl::write>"
       ],
       [
         93,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::counter_contract::ContractStateMembercounter, ())>>"
       ],
       [
         94,
-        "struct_deconstruct<Tuple<test::counter_contract::counter::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::counter_contract::ContractStateMembercounter, Unit>>"
       ],
       [
         95,
@@ -1667,19 +1667,19 @@
       ],
       [
         103,
-        "drop<test::counter_contract::counter::ContractState>"
+        "drop<test::counter_contract::ContractStateMembercounter>"
       ],
       [
         104,
-        "snapshot_take<test::counter_contract::other_contract::ContractState>"
+        "snapshot_take<test::counter_contract::ContractStateMemberother_contract>"
       ],
       [
         105,
-        "store_temp<test::counter_contract::other_contract::ContractState>"
+        "store_temp<test::counter_contract::ContractStateMemberother_contract>"
       ],
       [
         106,
-        "function_call<user@test::counter_contract::other_contract::InternalContractStateImpl::read>"
+        "function_call<user@test::counter_contract::__InternalContractStateMemberother_contractImpl::read>"
       ],
       [
         107,
@@ -1755,19 +1755,19 @@
       ],
       [
         125,
-        "function_call<user@test::counter_contract::other_contract::InternalContractStateImpl::write>"
+        "function_call<user@test::counter_contract::__InternalContractStateMemberother_contractImpl::write>"
       ],
       [
         126,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::counter_contract::ContractStateMemberother_contract, ())>>"
       ],
       [
         127,
-        "struct_deconstruct<Tuple<test::counter_contract::other_contract::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::counter_contract::ContractStateMemberother_contract, Unit>>"
       ],
       [
         128,
-        "drop<Tuple<test::counter_contract::counter::ContractState, Unit>>"
+        "drop<Tuple<test::counter_contract::ContractStateMembercounter, Unit>>"
       ],
       [
         129,
@@ -1879,19 +1879,19 @@
       ],
       [
         156,
-        "struct_construct<Tuple<test::counter_contract::counter::ContractState, Unit>>"
+        "struct_construct<Tuple<test::counter_contract::ContractStateMembercounter, Unit>>"
       ],
       [
         157,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractStateMembercounter, ())>, 0>"
       ],
       [
         158,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::counter::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::counter_contract::ContractStateMembercounter, ())>>"
       ],
       [
         159,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractStateMembercounter, ())>, 1>"
       ],
       [
         160,
@@ -2055,19 +2055,19 @@
       ],
       [
         200,
-        "struct_construct<Tuple<test::counter_contract::other_contract::ContractState, Unit>>"
+        "struct_construct<Tuple<test::counter_contract::ContractStateMemberother_contract, Unit>>"
       ],
       [
         201,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractStateMemberother_contract, ())>, 0>"
       ],
       [
         202,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::counter_contract::ContractStateMemberother_contract, ())>>"
       ],
       [
         203,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractStateMemberother_contract, ())>, 1>"
       ],
       [
         204,
@@ -2305,19 +2305,19 @@
     "user_func_names": [
       [
         0,
-        "test::counter_contract::__external::get_counter"
+        "test::counter_contract::__wrapper_get_counter"
       ],
       [
         1,
-        "test::counter_contract::__external::increase_counter"
+        "test::counter_contract::__wrapper_increase_counter"
       ],
       [
         2,
-        "test::counter_contract::__external::decrease_counter"
+        "test::counter_contract::__wrapper_decrease_counter"
       ],
       [
         3,
-        "test::counter_contract::__constructor::constructor"
+        "test::counter_contract::__wrapper_constructor"
       ],
       [
         4,
@@ -2349,7 +2349,7 @@
       ],
       [
         11,
-        "test::counter_contract::counter::InternalContractStateImpl::read"
+        "test::counter_contract::__InternalContractStateMembercounterImpl::read"
       ],
       [
         12,
@@ -2365,7 +2365,7 @@
       ],
       [
         15,
-        "test::counter_contract::counter::InternalContractStateImpl::write"
+        "test::counter_contract::__InternalContractStateMembercounterImpl::write"
       ],
       [
         16,
@@ -2373,7 +2373,7 @@
       ],
       [
         17,
-        "test::counter_contract::other_contract::InternalContractStateImpl::read"
+        "test::counter_contract::__InternalContractStateMemberother_contractImpl::read"
       ],
       [
         18,
@@ -2393,7 +2393,7 @@
       ],
       [
         22,
-        "test::counter_contract::other_contract::InternalContractStateImpl::write"
+        "test::counter_contract::__InternalContractStateMemberother_contractImpl::write"
       ],
       [
         23,

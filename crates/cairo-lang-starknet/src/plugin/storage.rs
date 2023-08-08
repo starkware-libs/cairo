@@ -12,7 +12,6 @@ use crate::contract::starknet_keccak;
 pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
-    extra_uses_node: &RewriteNode,
     has_event: bool,
 ) -> (RewriteNode, Vec<PluginDiagnostic>) {
     let mut members_code = Vec::new();
@@ -25,7 +24,7 @@ pub fn handle_storage_struct(
         let name = member.name(db).text(db);
         members_code.push(RewriteNode::interpolate_patched(
             "
-        $name$: $name$::ContractState,",
+        $name$: ContractStateMember$name$,",
             UnorderedHashMap::from([(
                 "name".to_string(),
                 RewriteNode::new_trimmed(name_node.clone()),
@@ -33,7 +32,7 @@ pub fn handle_storage_struct(
         ));
         members_init_code.push(RewriteNode::interpolate_patched(
             "
-            $name$: $name$::ContractState{},",
+            $name$: ContractStateMember$name${},",
             UnorderedHashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node))]),
         ));
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
@@ -47,7 +46,6 @@ pub fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
-                        ("extra_uses".to_string(), extra_uses_node.clone()),
                         (
                             "key_type".to_string(),
                             RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
@@ -74,7 +72,6 @@ pub fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
-                        ("extra_uses".to_string(), extra_uses_node.clone()),
                         (
                             "type_name".to_string(),
                             RewriteNode::new_trimmed(type_ast.as_syntax_node()),
@@ -174,41 +171,39 @@ fn try_extract_mapping_types(
 fn handle_simple_storage_var(address: &str) -> String {
     format!(
         "
-    use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
-    mod $storage_var_name$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        struct ContractState {{}}
-        trait InternalContractStateTrait {{
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState) -> $type_name$;
-            fn write(ref self: ContractState, value: $type_name$);
-        }}
+    #[derive(Copy, Drop)]
+    struct ContractStateMember$storage_var_name$ {{}}
+    trait __InternalContractStateMember$storage_var_name$Trait {{
+        fn address(self: @ContractStateMember$storage_var_name$) -> starknet::StorageBaseAddress;
+        fn read(self: @ContractStateMember$storage_var_name$) -> $type_name$;
+        fn write(ref self: ContractStateMember$storage_var_name$, value: $type_name$);
+    }}
 
-        impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress {{
-                starknet::storage_base_address_const::<{address}>()
-            }}
-            fn read(self: @ContractState) -> $type_name$ {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::read(
-                        address_domain,
-                        self.address(),
-                    )
+    impl __InternalContractStateMember$storage_var_name$Impl of
+         __InternalContractStateMember$storage_var_name$Trait {{
+        fn address(self: @ContractStateMember$storage_var_name$) -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_const::<{address}>()
+        }}
+        fn read(self: @ContractStateMember$storage_var_name$) -> $type_name$ {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<$type_name$>::read(
+                    address_domain,
+                    self.address(),
                 )
-            }}
-            fn write(ref self: ContractState, value: $type_name$) {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
+            )
+        }}
+        fn write(ref self: ContractStateMember$storage_var_name$, value: $type_name$) {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<$type_name$>::write(
+                    address_domain,
+                    self.address(),
+                    value,
                 )
-            }}
+            )
         }}
     }}"
     )
@@ -218,42 +213,46 @@ fn handle_simple_storage_var(address: &str) -> String {
 fn handle_legacy_mapping_storage_var(address: &str) -> String {
     format!(
         "
-    use $storage_var_name$::InternalContractStateTrait as $storage_var_name$ContractStateTrait;
-    mod $storage_var_name$ {{$extra_uses$
-        #[derive(Copy, Drop)]
-        struct ContractState {{}}
-        trait InternalContractStateTrait {{
-            fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState, key: $key_type$) -> $value_type$;
-            fn write(ref self: ContractState, key: $key_type$, value: $value_type$);
+    #[derive(Copy, Drop)]
+    struct ContractStateMember$storage_var_name$ {{}}
+    trait __InternalContractStateMember$storage_var_name$Trait {{
+        fn address(
+            self: @ContractStateMember$storage_var_name$, key: $key_type$
+        ) -> starknet::StorageBaseAddress;
+        fn read(self: @ContractStateMember$storage_var_name$, key: $key_type$) -> $value_type$;
+        fn write(
+            ref self: ContractStateMember$storage_var_name$, key: $key_type$, value: $value_type$);
+    }}
+    impl __InternalContractStateMember$storage_var_name$Impl of
+         __InternalContractStateMember$storage_var_name$Trait {{
+        fn address(
+            self: @ContractStateMember$storage_var_name$, key: $key_type$
+        ) -> starknet::StorageBaseAddress {{
+            starknet::storage_base_address_from_felt252(
+                hash::LegacyHash::<$key_type$>::hash({address}, key))
         }}
-
-        impl InternalContractStateImpl of InternalContractStateTrait {{
-            fn address(self: @ContractState, key: $key_type$) -> starknet::StorageBaseAddress {{
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<$key_type$>::hash({address}, key))
-            }}
-            fn read(self: @ContractState, key: $key_type$) -> $value_type$ {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$value_type$>::read(
-                        address_domain,
-                        self.address(key),
-                    )
+        fn read(self: @ContractStateMember$storage_var_name$, key: $key_type$) -> $value_type$ {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<$value_type$>::read(
+                    address_domain,
+                    self.address(key),
                 )
-            }}
-            fn write(ref self: ContractState, key: $key_type$, value: $value_type$) {{
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$value_type$>::write(
-                        address_domain,
-                        self.address(key),
-                        value,
-                    )
+            )
+        }}
+        fn write(
+            ref self: ContractStateMember$storage_var_name$, key: $key_type$, value: $value_type$
+        ) {{
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<$value_type$>::write(
+                    address_domain,
+                    self.address(key),
+                    value,
                 )
-            }}
+            )
         }}
     }}"
     )

@@ -104,14 +104,14 @@ const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
-        var: var::ContractState,
-        mapping: mapping::ContractState,
+        var: ContractStateMembervar,
+        mapping: ContractStateMembermapping,
     }
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var: var::ContractState{},
-            mapping: mapping::ContractState{},
+            var: ContractStateMembervar{},
+            mapping: ContractStateMembermapping{},
         }
     }
     #[cfg(test)]
@@ -138,126 +138,94 @@ use starknet::event::EventEmitter;
         }
     }
 
-    use var::InternalContractStateTrait as varContractStateTrait;
-    mod var {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-        #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState) -> WrappedFelt252;
-            fn write(ref self: ContractState, value: WrappedFelt252);
-        }
+    #[derive(Copy, Drop)]
+    struct ContractStateMembervar {}
+    trait __InternalContractStateMembervarTrait {
+        fn address(self: @ContractStateMembervar) -> starknet::StorageBaseAddress;
+        fn read(self: @ContractStateMembervar) -> WrappedFelt252;
+        fn write(ref self: ContractStateMembervar, value: WrappedFelt252);
+    }
 
-        impl InternalContractStateImpl of InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
-            }
-            fn read(self: @ContractState) -> WrappedFelt252 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::read(
-                        address_domain,
-                        self.address(),
-                    )
+    impl __InternalContractStateMembervarImpl of
+         __InternalContractStateMembervarTrait {
+        fn address(self: @ContractStateMembervar) -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
+        }
+        fn read(self: @ContractStateMembervar) -> WrappedFelt252 {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<WrappedFelt252>::read(
+                    address_domain,
+                    self.address(),
                 )
-            }
-            fn write(ref self: ContractState, value: WrappedFelt252) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
+            )
+        }
+        fn write(ref self: ContractStateMembervar, value: WrappedFelt252) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<WrappedFelt252>::write(
+                    address_domain,
+                    self.address(),
+                    value,
                 )
-            }
+            )
         }
     }
-    use mapping::InternalContractStateTrait as mappingContractStateTrait;
-    mod mapping {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-        #[derive(Copy, Drop)]
-        struct ContractState {}
-        trait InternalContractStateTrait {
-            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252;
-            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252);
+    #[derive(Copy, Drop)]
+    struct ContractStateMembermapping {}
+    trait __InternalContractStateMembermappingTrait {
+        fn address(
+            self: @ContractStateMembermapping, key: WrappedFelt252
+        ) -> starknet::StorageBaseAddress;
+        fn read(self: @ContractStateMembermapping, key: WrappedFelt252) -> WrappedFelt252;
+        fn write(
+            ref self: ContractStateMembermapping, key: WrappedFelt252, value: WrappedFelt252);
+    }
+    impl __InternalContractStateMembermappingImpl of
+         __InternalContractStateMembermappingTrait {
+        fn address(
+            self: @ContractStateMembermapping, key: WrappedFelt252
+        ) -> starknet::StorageBaseAddress {
+            starknet::storage_base_address_from_felt252(
+                hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
         }
-
-        impl InternalContractStateImpl of InternalContractStateTrait {
-            fn address(self: @ContractState, key: WrappedFelt252) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_from_felt252(
-                    hash::LegacyHash::<WrappedFelt252>::hash(0x3043534c8400cf510f61f13082bd823461a59a867690d0148bae4bfcbdb1a4, key))
-            }
-            fn read(self: @ContractState, key: WrappedFelt252) -> WrappedFelt252 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::read(
-                        address_domain,
-                        self.address(key),
-                    )
+        fn read(self: @ContractStateMembermapping, key: WrappedFelt252) -> WrappedFelt252 {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<WrappedFelt252>::read(
+                    address_domain,
+                    self.address(key),
                 )
-            }
-            fn write(ref self: ContractState, key: WrappedFelt252, value: WrappedFelt252) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<WrappedFelt252>::write(
-                        address_domain,
-                        self.address(key),
-                        value,
-                    )
+            )
+        }
+        fn write(
+            ref self: ContractStateMembermapping, key: WrappedFelt252, value: WrappedFelt252
+        ) {
+            // Only address_domain 0 is currently supported.
+            let address_domain = 0_u32;
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::Store::<WrappedFelt252>::write(
+                    address_domain,
+                    self.address(key),
+                    value,
                 )
-            }
+            )
         }
     }
+
+
 
 
 mod __external {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-
-    
 }
 
 mod __l1_handler {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-
-    
 }
 
 mod __constructor {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-
-    
 }
 
 
@@ -578,6 +546,19 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+
+
+impls:
+
+impl ContractStateMembervarCopy of Copy::<ContractStateMembervar>;
+impl ContractStateMembervarDrop of Drop::<ContractStateMembervar>;
+
+
+impls:
+
+impl ContractStateMembermappingCopy of Copy::<ContractStateMembermapping>;
+impl ContractStateMembermappingDrop of Drop::<ContractStateMembermapping>;
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`

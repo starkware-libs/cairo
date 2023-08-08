@@ -36,9 +36,9 @@
     "0x24d668d7ede46c87d2cddfbcf73195c96f0ca8075ae10c8a468054b80120d78",
     "0xe",
     "0xd",
-    "0x14c946db26d17e0a5e47929cf79589343eac83e4f42fd59b5a68d0d16b19756",
-    "0x1ff2aefa7478bc5f68ac076fbc34ba991d6281fb6d351d5338cdf14caec904f",
-    "0x284e956a4290edb71bd6ad8d16a83f9e647c103f07443726149878d5b38edce",
+    "0x15ccbceec3f627d1542b7a3c2fc519efb917d60bc7a4625e981f99dedb3e3e9",
+    "0x28d8cc107dd854c32ed9f6139a9b7a9ec539d92b2d6cb6c018158b3b61800df",
+    "0xc46ef871c746b35b4197367645af28dc45c2a301560328bb66e2b7ece5d54a",
     "0x2e5662a69f154da2d2a0febbfb85a2af12ec91a1cdb77dd2b8d649befea729f",
     "0x10",
     "0x11",
@@ -61,10 +61,10 @@
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x1f",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
-    "0x2d0a5755d1fccbdf667839f517ea8e0835d833fc998017985d8dd9058cd7bb9",
+    "0x118d92023ec840e4b176e8d8f0f06e1af562393c5e6d70859253af344e7ebbd",
     "0x22",
     "0x114a8f96e6697265bf3ce48ba5bbe3adebdd73ce511f8a05167250ff3913c2",
-    "0x1c946f72045c481453e4c2f9e8e0229d33c8c43e0f05e700099dafa33a8d1db",
+    "0x1f9f565b76372da647b5a3c22e225fd6374f72cbdc2e4adaae8fd60194b1920",
     "0x25",
     "0x2b0bebbcc7e173d41ed8f24317daab4e2f494ab320d454da6ee529663b8cf8c",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
@@ -81,7 +81,7 @@
     "0x27",
     "0x2c",
     "0x2f",
-    "0x35d8e9aaa63ef2de4c4b33d16a901be0c9e87757bc86830e6eaf617bdca93a7",
+    "0x3f17dd2c7d71bd5eba7e8455e9a01fc2065ee145fd161ed6be50ea406f4b64d",
     "0x31",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -1709,15 +1709,15 @@
       ],
       [
         16,
-        "test::token_bridge::governor::ContractState"
+        "test::token_bridge::ContractStateMembergovernor"
       ],
       [
         17,
-        "test::token_bridge::l1_bridge::ContractState"
+        "test::token_bridge::ContractStateMemberl1_bridge"
       ],
       [
         18,
-        "test::token_bridge::l2_token::ContractState"
+        "test::token_bridge::ContractStateMemberl2_token"
       ],
       [
         19,
@@ -1781,11 +1781,11 @@
       ],
       [
         34,
-        "Tuple<test::token_bridge::l1_bridge::ContractState, Unit>"
+        "Tuple<test::token_bridge::ContractStateMemberl1_bridge, Unit>"
       ],
       [
         35,
-        "core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractState, ())>"
+        "core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl1_bridge, ())>"
       ],
       [
         36,
@@ -1793,11 +1793,11 @@
       ],
       [
         37,
-        "Tuple<test::token_bridge::l2_token::ContractState, Unit>"
+        "Tuple<test::token_bridge::ContractStateMemberl2_token, Unit>"
       ],
       [
         38,
-        "core::panics::PanicResult::<(test::token_bridge::l2_token::ContractState, ())>"
+        "core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl2_token, ())>"
       ],
       [
         39,
@@ -1841,11 +1841,11 @@
       ],
       [
         49,
-        "Tuple<test::token_bridge::governor::ContractState, Unit>"
+        "Tuple<test::token_bridge::ContractStateMembergovernor, Unit>"
       ],
       [
         50,
-        "core::panics::PanicResult::<(test::token_bridge::governor::ContractState, ())>"
+        "core::panics::PanicResult::<(test::token_bridge::ContractStateMembergovernor, ())>"
       ],
       [
         51,
@@ -2095,15 +2095,15 @@
       ],
       [
         43,
-        "struct_construct<test::token_bridge::governor::ContractState>"
+        "struct_construct<test::token_bridge::ContractStateMembergovernor>"
       ],
       [
         44,
-        "struct_construct<test::token_bridge::l1_bridge::ContractState>"
+        "struct_construct<test::token_bridge::ContractStateMemberl1_bridge>"
       ],
       [
         45,
-        "struct_construct<test::token_bridge::l2_token::ContractState>"
+        "struct_construct<test::token_bridge::ContractStateMemberl2_token>"
       ],
       [
         46,
@@ -2235,15 +2235,15 @@
       ],
       [
         78,
-        "snapshot_take<test::token_bridge::governor::ContractState>"
+        "snapshot_take<test::token_bridge::ContractStateMembergovernor>"
       ],
       [
         79,
-        "store_temp<test::token_bridge::governor::ContractState>"
+        "store_temp<test::token_bridge::ContractStateMembergovernor>"
       ],
       [
         80,
-        "function_call<user@test::token_bridge::governor::InternalContractStateImpl::read>"
+        "function_call<user@test::token_bridge::__InternalContractStateMembergovernorImpl::read>"
       ],
       [
         81,
@@ -2271,15 +2271,15 @@
       ],
       [
         87,
-        "snapshot_take<test::token_bridge::l1_bridge::ContractState>"
+        "snapshot_take<test::token_bridge::ContractStateMemberl1_bridge>"
       ],
       [
         88,
-        "store_temp<test::token_bridge::l1_bridge::ContractState>"
+        "store_temp<test::token_bridge::ContractStateMemberl1_bridge>"
       ],
       [
         89,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractStateImpl::read>"
+        "function_call<user@test::token_bridge::__InternalContractStateMemberl1_bridgeImpl::read>"
       ],
       [
         90,
@@ -2331,15 +2331,15 @@
       ],
       [
         102,
-        "drop<test::token_bridge::governor::ContractState>"
+        "drop<test::token_bridge::ContractStateMembergovernor>"
       ],
       [
         103,
-        "drop<test::token_bridge::l2_token::ContractState>"
+        "drop<test::token_bridge::ContractStateMemberl2_token>"
       ],
       [
         104,
-        "drop<test::token_bridge::l1_bridge::ContractState>"
+        "drop<test::token_bridge::ContractStateMemberl1_bridge>"
       ],
       [
         105,
@@ -2359,15 +2359,15 @@
       ],
       [
         109,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractStateImpl::write>"
+        "function_call<user@test::token_bridge::__InternalContractStateMemberl1_bridgeImpl::write>"
       ],
       [
         110,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl1_bridge, ())>>"
       ],
       [
         111,
-        "struct_deconstruct<Tuple<test::token_bridge::l1_bridge::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::token_bridge::ContractStateMemberl1_bridge, Unit>>"
       ],
       [
         112,
@@ -2427,15 +2427,15 @@
       ],
       [
         126,
-        "snapshot_take<test::token_bridge::l2_token::ContractState>"
+        "snapshot_take<test::token_bridge::ContractStateMemberl2_token>"
       ],
       [
         127,
-        "store_temp<test::token_bridge::l2_token::ContractState>"
+        "store_temp<test::token_bridge::ContractStateMemberl2_token>"
       ],
       [
         128,
-        "function_call<user@test::token_bridge::l2_token::InternalContractStateImpl::read>"
+        "function_call<user@test::token_bridge::__InternalContractStateMemberl2_tokenImpl::read>"
       ],
       [
         129,
@@ -2447,15 +2447,15 @@
       ],
       [
         131,
-        "function_call<user@test::token_bridge::l2_token::InternalContractStateImpl::write>"
+        "function_call<user@test::token_bridge::__InternalContractStateMemberl2_tokenImpl::write>"
       ],
       [
         132,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl2_token, ())>>"
       ],
       [
         133,
-        "struct_deconstruct<Tuple<test::token_bridge::l2_token::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::token_bridge::ContractStateMemberl2_token, Unit>>"
       ],
       [
         134,
@@ -2643,15 +2643,15 @@
       ],
       [
         180,
-        "function_call<user@test::token_bridge::governor::InternalContractStateImpl::write>"
+        "function_call<user@test::token_bridge::__InternalContractStateMembergovernorImpl::write>"
       ],
       [
         181,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::governor::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::token_bridge::ContractStateMembergovernor, ())>>"
       ],
       [
         182,
-        "struct_deconstruct<Tuple<test::token_bridge::governor::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::token_bridge::ContractStateMembergovernor, Unit>>"
       ],
       [
         183,
@@ -2843,19 +2843,19 @@
       ],
       [
         230,
-        "struct_construct<Tuple<test::token_bridge::l1_bridge::ContractState, Unit>>"
+        "struct_construct<Tuple<test::token_bridge::ContractStateMemberl1_bridge, Unit>>"
       ],
       [
         231,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl1_bridge, ())>, 0>"
       ],
       [
         232,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl1_bridge, ())>>"
       ],
       [
         233,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl1_bridge, ())>, 1>"
       ],
       [
         234,
@@ -2883,19 +2883,19 @@
       ],
       [
         240,
-        "struct_construct<Tuple<test::token_bridge::l2_token::ContractState, Unit>>"
+        "struct_construct<Tuple<test::token_bridge::ContractStateMemberl2_token, Unit>>"
       ],
       [
         241,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl2_token, ())>, 0>"
       ],
       [
         242,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl2_token, ())>>"
       ],
       [
         243,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMemberl2_token, ())>, 1>"
       ],
       [
         244,
@@ -3007,19 +3007,19 @@
       ],
       [
         271,
-        "struct_construct<Tuple<test::token_bridge::governor::ContractState, Unit>>"
+        "struct_construct<Tuple<test::token_bridge::ContractStateMembergovernor, Unit>>"
       ],
       [
         272,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::governor::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMembergovernor, ())>, 0>"
       ],
       [
         273,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::governor::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::token_bridge::ContractStateMembergovernor, ())>>"
       ],
       [
         274,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::governor::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractStateMembergovernor, ())>, 1>"
       ],
       [
         275,
@@ -3245,31 +3245,31 @@
     "user_func_names": [
       [
         0,
-        "test::token_bridge::__external::get_version"
+        "test::token_bridge::__wrapper_get_version"
       ],
       [
         1,
-        "test::token_bridge::__external::get_identity"
+        "test::token_bridge::__wrapper_get_identity"
       ],
       [
         2,
-        "test::token_bridge::__external::set_l1_bridge"
+        "test::token_bridge::__wrapper_set_l1_bridge"
       ],
       [
         3,
-        "test::token_bridge::__external::set_l2_token"
+        "test::token_bridge::__wrapper_set_l2_token"
       ],
       [
         4,
-        "test::token_bridge::__external::initiate_withdraw"
+        "test::token_bridge::__wrapper_initiate_withdraw"
       ],
       [
         5,
-        "test::token_bridge::__l1_handler::handle_deposit"
+        "test::token_bridge::__wrapper_handle_deposit"
       ],
       [
         6,
-        "test::token_bridge::__constructor::constructor"
+        "test::token_bridge::__wrapper_constructor"
       ],
       [
         7,
@@ -3321,11 +3321,11 @@
       ],
       [
         19,
-        "test::token_bridge::governor::InternalContractStateImpl::read"
+        "test::token_bridge::__InternalContractStateMembergovernorImpl::read"
       ],
       [
         20,
-        "test::token_bridge::l1_bridge::InternalContractStateImpl::read"
+        "test::token_bridge::__InternalContractStateMemberl1_bridgeImpl::read"
       ],
       [
         21,
@@ -3333,7 +3333,7 @@
       ],
       [
         22,
-        "test::token_bridge::l1_bridge::InternalContractStateImpl::write"
+        "test::token_bridge::__InternalContractStateMemberl1_bridgeImpl::write"
       ],
       [
         23,
@@ -3341,11 +3341,11 @@
       ],
       [
         24,
-        "test::token_bridge::l2_token::InternalContractStateImpl::read"
+        "test::token_bridge::__InternalContractStateMemberl2_tokenImpl::read"
       ],
       [
         25,
-        "test::token_bridge::l2_token::InternalContractStateImpl::write"
+        "test::token_bridge::__InternalContractStateMemberl2_tokenImpl::write"
       ],
       [
         26,
@@ -3381,7 +3381,7 @@
       ],
       [
         34,
-        "test::token_bridge::governor::InternalContractStateImpl::write"
+        "test::token_bridge::__InternalContractStateMembergovernorImpl::write"
       ],
       [
         35,

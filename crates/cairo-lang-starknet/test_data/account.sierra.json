@@ -35,7 +35,7 @@
     "0x45634f70",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0xf78b35e51543454ecd775d96ca1304d2babac2af146f84439b67d9965e1",
+    "0xd5122890e6d77711498abc71ec570ce84fad8eacbd08e3d81545b57f218eab",
     "0x17b20b8515bacb33cc4e5d817848d0e4a2d53b8a3902a30014b0931aa9871d2",
     "0x10",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
@@ -82,7 +82,7 @@
     "0x32",
     "0x28f8d296e28032baef1f420f78ea9d933102ba47a50b1c5f80fc8a3a1041da",
     "0x20",
-    "0x2d39a338ab20bb569d18acea1c6c64af2d7380ef19ca79ce0f8a8b17efe8d3b",
+    "0x3d40e562f69a47e5c5a6e495e1733306facb62d8f3996bdb823cb86ce703406",
     "0x35",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -1485,7 +1485,7 @@
       ],
       [
         16,
-        "test::account::public_key::ContractState"
+        "test::account::ContractStateMemberpublic_key"
       ],
       [
         17,
@@ -1633,11 +1633,11 @@
       ],
       [
         53,
-        "Tuple<test::account::public_key::ContractState, Unit>"
+        "Tuple<test::account::ContractStateMemberpublic_key, Unit>"
       ],
       [
         54,
-        "core::panics::PanicResult::<(test::account::public_key::ContractState, ())>"
+        "core::panics::PanicResult::<(test::account::ContractStateMemberpublic_key, ())>"
       ],
       [
         55,
@@ -1887,7 +1887,7 @@
       ],
       [
         30,
-        "struct_construct<test::account::public_key::ContractState>"
+        "struct_construct<test::account::ContractStateMemberpublic_key>"
       ],
       [
         31,
@@ -2179,11 +2179,11 @@
       ],
       [
         103,
-        "store_temp<test::account::public_key::ContractState>"
+        "store_temp<test::account::ContractStateMemberpublic_key>"
       ],
       [
         104,
-        "function_call<user@test::account::public_key::InternalContractStateImpl::read>"
+        "function_call<user@test::account::__InternalContractStateMemberpublic_keyImpl::read>"
       ],
       [
         105,
@@ -2427,15 +2427,15 @@
       ],
       [
         165,
-        "function_call<user@test::account::public_key::InternalContractStateImpl::write>"
+        "function_call<user@test::account::__InternalContractStateMemberpublic_keyImpl::write>"
       ],
       [
         166,
-        "enum_match<core::panics::PanicResult::<(test::account::public_key::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::account::ContractStateMemberpublic_key, ())>>"
       ],
       [
         167,
-        "struct_deconstruct<Tuple<test::account::public_key::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::account::ContractStateMemberpublic_key, Unit>>"
       ],
       [
         168,
@@ -2495,7 +2495,7 @@
       ],
       [
         182,
-        "drop<test::account::public_key::ContractState>"
+        "drop<test::account::ContractStateMemberpublic_key>"
       ],
       [
         183,
@@ -2803,7 +2803,7 @@
       ],
       [
         259,
-        "snapshot_take<test::account::public_key::ContractState>"
+        "snapshot_take<test::account::ContractStateMemberpublic_key>"
       ],
       [
         260,
@@ -2839,19 +2839,19 @@
       ],
       [
         268,
-        "struct_construct<Tuple<test::account::public_key::ContractState, Unit>>"
+        "struct_construct<Tuple<test::account::ContractStateMemberpublic_key, Unit>>"
       ],
       [
         269,
-        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractStateMemberpublic_key, ())>, 0>"
       ],
       [
         270,
-        "store_temp<core::panics::PanicResult::<(test::account::public_key::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::account::ContractStateMemberpublic_key, ())>>"
       ],
       [
         271,
-        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractStateMemberpublic_key, ())>, 1>"
       ],
       [
         272,
@@ -3093,23 +3093,23 @@
     "user_func_names": [
       [
         0,
-        "test::account::__external::__validate_deploy__"
+        "test::account::__wrapper___validate_deploy__"
       ],
       [
         1,
-        "test::account::__external::__validate_declare__"
+        "test::account::__wrapper___validate_declare__"
       ],
       [
         2,
-        "test::account::__external::__validate__"
+        "test::account::__wrapper___validate__"
       ],
       [
         3,
-        "test::account::__external::__execute__"
+        "test::account::__wrapper___execute__"
       ],
       [
         4,
-        "test::account::__constructor::constructor"
+        "test::account::__wrapper_constructor"
       ],
       [
         5,
@@ -3149,7 +3149,7 @@
       ],
       [
         14,
-        "test::account::public_key::InternalContractStateImpl::read"
+        "test::account::__InternalContractStateMemberpublic_keyImpl::read"
       ],
       [
         15,
@@ -3181,7 +3181,7 @@
       ],
       [
         22,
-        "test::account::public_key::InternalContractStateImpl::write"
+        "test::account::__InternalContractStateMemberpublic_keyImpl::write"
       ],
       [
         23,
