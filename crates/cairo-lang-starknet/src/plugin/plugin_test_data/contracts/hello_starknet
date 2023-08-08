@@ -45,9 +45,6 @@ mod hello_starknet {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 1102354323051365330526116728762987089260624826846154342310342950171552219682;
 use starknet::event::EventEmitter;
@@ -76,19 +73,17 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
     use balance::InternalContractStateTrait as balanceContractStateTrait;
     mod balance {
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
         struct ContractState {}
         trait InternalContractStateTrait {
@@ -104,19 +99,23 @@ use starknet::event::EventEmitter;
             fn read(self: @ContractState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
             fn write(ref self: ContractState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }

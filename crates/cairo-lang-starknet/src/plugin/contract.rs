@@ -156,9 +156,6 @@ pub fn handle_contract_by_storage(
     let generated_contract_mod = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            use starknet::SyscallResultTrait;
-            use starknet::SyscallResultTraitImpl;
-
             #[cfg(test)]
             const TEST_CLASS_HASH: felt252 = {test_class_hash};
             $contract_state_code$
