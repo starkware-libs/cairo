@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use indoc::indoc;
 
 use super::DebugInfo;
+use crate::program::VersionedProgram;
 use crate::ProgramParser;
 
 #[test]

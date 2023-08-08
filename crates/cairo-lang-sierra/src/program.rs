@@ -1,3 +1,6 @@
+use std::fmt;
+
+use anyhow::Result;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +12,37 @@ use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
 };
+
+/// Version-tagged representation of Sierra program.
+///
+/// Always prefer using this struct in APIs instead of inner ones.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum VersionedProgram {
+    V1(Program),
+}
+
+impl From<Program> for VersionedProgram {
+    fn from(value: Program) -> Self {
+        VersionedProgram::V1(value)
+    }
+}
+
+impl VersionedProgram {
+    pub fn into_v1(self) -> Result<Program> {
+        match self {
+            VersionedProgram::V1(program) => Ok(program),
+        }
+    }
+}
+
+impl fmt::Display for VersionedProgram {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            VersionedProgram::V1(program) => write!(f, "{program}")?,
+        }
+        Ok(())
+    }
+}
 
 /// A full Sierra program.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
