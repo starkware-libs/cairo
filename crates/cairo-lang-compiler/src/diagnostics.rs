@@ -102,7 +102,7 @@ impl<'a> DiagnosticsReporter<'a> {
             }
 
             for module_id in &*db.crate_modules(crate_id) {
-                for file_id in db.module_files(*module_id).unwrap_or_default() {
+                for file_id in db.module_files(*module_id).unwrap_or_default().iter().copied() {
                     let diag = db.file_syntax_diagnostics(file_id);
                     if !diag.get_all().is_empty() {
                         found_diagnostics = true;

@@ -690,13 +690,13 @@ pub fn module_impl_ids_for_trait_filter(
     trait_filter: TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
     let mut uninferred_impls = Vec::new();
-    for impl_def_id in db.module_impls_ids(module_id)? {
+    for impl_def_id in db.module_impls_ids(module_id)?.iter().copied() {
         uninferred_impls.push(UninferredImpl::Def(impl_def_id));
     }
-    for impl_alias_id in db.module_impl_aliases_ids(module_id)? {
+    for impl_alias_id in db.module_impl_aliases_ids(module_id)?.iter().copied() {
         uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
     }
-    for use_id in db.module_uses_ids(module_id)? {
+    for use_id in db.module_uses_ids(module_id)?.iter().copied() {
         if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
             uninferred_impls.push(UninferredImpl::Def(impl_def_id));
         }
@@ -969,12 +969,12 @@ pub fn infer_impl_by_self(
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
     self_ty: TypeId,
-    candidate_traits: Vec<TraitId>,
+    candidate_traits: &[TraitId],
     function_name: SmolStr,
     stable_ptr: SyntaxStablePtrId,
 ) -> Maybe<Vec<TraitFunctionId>> {
     let mut candidates = Vec::new();
-    for trait_id in candidate_traits {
+    for trait_id in candidate_traits.iter().copied() {
         for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
             if name == function_name
                 && can_infer_impl_by_self(ctx, trait_function, self_ty, stable_ptr)

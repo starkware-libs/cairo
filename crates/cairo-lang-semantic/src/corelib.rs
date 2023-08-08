@@ -37,9 +37,9 @@ pub fn core_submodule(db: &dyn SemanticGroup, submodule_name: &str) -> ModuleId 
     let core_module = core_module(db);
     let submodules = db.module_submodules(core_module).unwrap();
     let syntax_db = db.upcast();
-    for (submodule_id, submodule) in submodules {
+    for (submodule_id, submodule) in submodules.iter() {
         if submodule.name(syntax_db).text(syntax_db) == submodule_name {
-            return ModuleId::Submodule(submodule_id);
+            return ModuleId::Submodule(*submodule_id);
         }
     }
     unreachable!("Requested core submodule not found");

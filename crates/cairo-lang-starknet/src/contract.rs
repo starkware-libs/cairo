@@ -110,10 +110,11 @@ pub fn get_module_functions(
         .to_option()
         .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
     {
-        Some(ModuleItemId::Submodule(external_module_id)) => Ok(db
+        Some(ModuleItemId::Submodule(external_module_id)) => Ok((*db
             .module_free_functions_ids(ModuleId::Submodule(external_module_id))
             .to_option()
-            .with_context(|| "Failed to get external module functions.")?),
+            .with_context(|| "Failed to get external module functions.")?)
+        .clone()),
         _ => anyhow::bail!("Failed to get the external module."),
     }
 }

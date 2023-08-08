@@ -209,10 +209,10 @@ pub fn get_sierra_program(
     let mut requested_function_ids = vec![];
     for crate_id in requested_crate_ids {
         for module_id in db.crate_modules(crate_id).iter() {
-            for (free_func_id, _) in db.module_free_functions(*module_id)? {
+            for (free_func_id, _) in db.module_free_functions(*module_id)?.iter() {
                 // TODO(spapini): Search Impl functions.
                 if let Some(function) =
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), free_func_id)
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), *free_func_id)
                 {
                     requested_function_ids.push(function)
                 }

@@ -513,7 +513,7 @@ fn file_lowering_diagnostics(
     file_id: FileId,
 ) -> Maybe<Diagnostics<LoweringDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for module_id in db.file_modules(file_id)? {
+    for module_id in db.file_modules(file_id)?.iter().copied() {
         if let Ok(module_diagnostics) = db.module_lowering_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }
