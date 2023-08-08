@@ -1,6 +1,7 @@
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
+pub const WRAPPER_PREFIX: &str = "__wrapper_";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_TYPE_NAME: &str = "Event";
 pub const CONTRACT_STATE_NAME: &str = "ContractState";

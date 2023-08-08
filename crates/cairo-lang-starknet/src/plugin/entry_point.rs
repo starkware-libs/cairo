@@ -6,6 +6,7 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
 use super::consts::{
@@ -45,7 +46,8 @@ impl EntryPointKind {
 pub fn generate_entry_point_wrapper(
     db: &dyn SyntaxGroup,
     function: &FunctionWithBody,
-    wrapped_function_name: RewriteNode,
+    wrapped_function_path: RewriteNode,
+    wrapper_function_name: RewriteNode,
 ) -> Result<RewriteNode, Vec<PluginDiagnostic>> {
     let declaration = function.declaration(db);
     let sig = declaration.signature(db);
@@ -86,12 +88,12 @@ pub fn generate_entry_point_wrapper(
         let ref_modifier = if is_ref { "ref " } else { "" };
         arg_names.push(format!("{ref_modifier}{arg_name}"));
         let mut_modifier = if is_ref { "mut " } else { "" };
-        let arg_definition = format!(
+        let arg_definition = formatdoc!(
             "
             let {mut_modifier}{arg_name} = option::OptionTraitImpl::expect(
-                serde::Serde::<{type_name}>::deserialize(ref data),
-                'Failed to deserialize param #{param_idx}'
-            );"
+                    serde::Serde::<{type_name}>::deserialize(ref data),
+                    'Failed to deserialize param #{param_idx}'
+                );"
         );
         arg_definitions.push(arg_definition);
 
@@ -102,12 +104,6 @@ pub fn generate_entry_point_wrapper(
         }
     }
     let arg_names_str = arg_names.join(", ");
-
-    let function_name = RewriteNode::new_trimmed(declaration.name(db).as_syntax_node());
-    let wrapped_name = RewriteNode::interpolate_patched(
-        "super::$wrapped_function_name$",
-        [("wrapped_function_name".to_string(), wrapped_function_name)].into(),
-    );
 
     let ret_ty = sig.ret_ty(db);
     let (let_res, append_res, return_ty_is_felt252_span, ret_type_ptr) = match &ret_ty {
@@ -120,8 +116,8 @@ pub fn generate_entry_point_wrapper(
             let return_ty_is_felt252_span = is_felt252_span(db, &ret_type_ast);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
-                "\n            let res = ",
-                format!("\n            serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
+                "let res = ",
+                format!("\n    serde::Serde::<{ret_type_name}>::serialize(@res, ref arr);"),
                 return_ty_is_felt252_span,
                 ret_type_ast.stable_ptr().untyped(),
             )
@@ -141,21 +137,21 @@ pub fn generate_entry_point_wrapper(
 
     let contract_state_arg = if is_snapshot { "@contract_state" } else { "ref contract_state" };
     let output_handling_string = if raw_output {
-        format!("$wrapped_name$({contract_state_arg}, {arg_names_str})")
+        format!("$wrapped_function_path$({contract_state_arg}, {arg_names_str})")
     } else {
-        format!(
-            "{let_res}$wrapped_name$({contract_state_arg}, {arg_names_str});
-            let mut arr = array::array_new();
-            // References.$ref_appends$
-            // Result.{append_res}
-            array::ArrayTrait::span(@arr)"
-        )
+        formatdoc! {"
+            {let_res}$wrapped_function_path$({contract_state_arg}, {arg_names_str});
+                let mut arr = array::array_new();
+                // References.$ref_appends$
+                // Result.{append_res}
+                array::ArrayTrait::span(@arr)"
+        }
     };
 
     let output_handling = RewriteNode::interpolate_patched(
         &output_handling_string,
         [
-            ("wrapped_name".to_string(), wrapped_name),
+            ("wrapped_function_path".to_string(), wrapped_function_path),
             ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
         ]
         .into(),
@@ -165,23 +161,26 @@ pub fn generate_entry_point_wrapper(
         IMPLICIT_PRECEDENCE.iter().join(", ")
     }));
 
-    let arg_definitions = RewriteNode::Text(arg_definitions.join("\n"));
+    let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
 
     Ok(RewriteNode::interpolate_patched(
-        "$implicit_precedence$
-        fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            $arg_definitions$
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of \
-         gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            $output_handling$
-        }",
+        indoc! {"
+            $implicit_precedence$
+            fn $wrapper_function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
+                internal::require_implicit::<System>();
+                internal::revoke_ap_tracking();
+                option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+                $arg_definitions$
+                assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+                option::OptionTraitImpl::expect(
+                    gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+                );
+                let mut contract_state = unsafe_new_contract_state();
+                $output_handling$
+            }
+        "},
         [
-            ("function_name".to_string(), function_name),
+            ("wrapper_function_name".to_string(), wrapper_function_name),
             ("output_handling".to_string(), output_handling),
             ("arg_definitions".to_string(), arg_definitions),
             ("implicit_precedence".to_string(), implicit_precedence),

@@ -3093,23 +3093,23 @@
     "user_func_names": [
       [
         0,
-        "test::account::__external::__validate_deploy__"
+        "test::account::__wrapper___validate_deploy__"
       ],
       [
         1,
-        "test::account::__external::__validate_declare__"
+        "test::account::__wrapper___validate_declare__"
       ],
       [
         2,
-        "test::account::__external::__validate__"
+        "test::account::__wrapper___validate__"
       ],
       [
         3,
-        "test::account::__external::__execute__"
+        "test::account::__wrapper___execute__"
       ],
       [
         4,
-        "test::account::__constructor::constructor"
+        "test::account::__wrapper_constructor"
       ],
       [
         5,

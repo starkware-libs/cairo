@@ -541,8 +541,8 @@ enum_init<core::panics::PanicResult::<((),)>, 1>([7]) -> ([8]);
 store_temp<core::panics::PanicResult::<((),)>>([8]) -> ([9]);
 return([9]);
 
-test::hello_starknet::__external::increase_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-test::hello_starknet::__external::get_balance@110([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::hello_starknet::__wrapper_increase_balance@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::hello_starknet::__wrapper_get_balance@110([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
 core::Felt252Serde::deserialize@206([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::felt252>);
 test::hello_starknet::increase_balance@235([0]: GasBuiltin, [1]: System, [2]: test::hello_starknet::ContractState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::hello_starknet::ContractState, ())>);
 test::hello_starknet::get_balance@276([0]: GasBuiltin, [1]: System, [2]: test::hello_starknet::ContractState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);

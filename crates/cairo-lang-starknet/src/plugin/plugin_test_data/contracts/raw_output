@@ -86,44 +86,45 @@ use starknet::event::EventEmitter;
 
 
 
-mod __external {
-        use super::ArrayTrait;
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    test_raw_output(ref contract_state, )
+}
 
-    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::test_raw_output(ref contract_state, )
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::test_raw_output_with_spaces(ref contract_state, )
-        }
-        
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    test_raw_output_with_spaces(ref contract_state, )
+}
+
+
+
+mod __external {
+    use super::__wrapper_test_raw_output as test_raw_output;
+    use super::__wrapper_test_raw_output_with_spaces as test_raw_output_with_spaces;
 }
 
 mod __l1_handler {
-        use super::ArrayTrait;
-
-    
 }
 
 mod __constructor {
-        use super::ArrayTrait;
-
-    
 }
 
 

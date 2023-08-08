@@ -7,7 +7,7 @@ use itertools::Itertools;
 use pretty_assertions::assert_eq;
 
 use crate::contract::{find_contracts, get_module_functions, starknet_keccak};
-use crate::plugin::consts::EXTERNAL_MODULE;
+use crate::plugin::consts::{EXTERNAL_MODULE, WRAPPER_PREFIX};
 use crate::plugin::StarkNetPlugin;
 
 #[test]
@@ -48,7 +48,7 @@ fn test_contract_resolving() {
             .into_iter()
             .map(|func_id| func_id.name(db))
             .collect_vec(),
-        vec!["ep1", "ep2"]
+        vec![format!("{WRAPPER_PREFIX}ep1"), format!("{WRAPPER_PREFIX}ep2")]
     );
 
     // Assert no semantic diagnostics

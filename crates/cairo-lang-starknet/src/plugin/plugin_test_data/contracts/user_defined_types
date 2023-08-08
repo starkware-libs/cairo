@@ -227,37 +227,15 @@ use starknet::event::EventEmitter;
     }
 
 
-mod __external {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
 
-    
+
+mod __external {
 }
 
 mod __l1_handler {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-
-    
 }
 
 mod __constructor {
-        use super::HashStateExTrait;
-        use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
-        use super::SimpleEnum;
-        use super::EnumWithDefault;
-        use super::BadEnumWithDefault;
-
-    
 }
 
 

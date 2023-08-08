@@ -88,120 +88,130 @@ use starknet::event::EventEmitter;
 
 
 
-mod __external {
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_from_address = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_arg = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg__from_address = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_arg = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
     
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    l1_handler_no_params(ref contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_abc = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_from_address = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external {
 }
 
 mod __l1_handler {
-
-    #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            let __arg_from_address = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #1'
-            );
-
-            let __arg_arg = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #2'
-            );
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::good_l1_handler(ref contract_state, __arg_from_address, __arg_arg);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            let __arg__from_address = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #1'
-            );
-
-            let __arg_arg = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #2'
-            );
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::good_l1_handler_ignored(ref contract_state, __arg__from_address, __arg_arg);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::l1_handler_no_params(ref contract_state, );
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            let __arg_abc = option::OptionTraitImpl::expect(
-                serde::Serde::<felt252>::deserialize(ref data),
-                'Failed to deserialize param #1'
-            );
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-        fn l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
-            internal::require_implicit::<System>();
-            internal::revoke_ap_tracking();
-            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-            
-            let __arg_from_address = option::OptionTraitImpl::expect(
-                serde::Serde::<u128>::deserialize(ref data),
-                'Failed to deserialize param #1'
-            );
-            assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
-            let mut contract_state = super::unsafe_new_contract_state();
-            super::l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
-            let mut arr = array::array_new();
-            // References.
-            // Result.
-            array::ArrayTrait::span(@arr)
-        }
-        
+    use super::__wrapper_good_l1_handler as good_l1_handler;
+    use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
+    use super::__wrapper_l1_handler_no_params as l1_handler_no_params;
+    use super::__wrapper_l1_handler_wrong_first_param_name as l1_handler_wrong_first_param_name;
+    use super::__wrapper_l1_handler_wrong_first_param_type as l1_handler_wrong_first_param_type;
 }
 
 mod __constructor {
-
-    
 }
 
 
