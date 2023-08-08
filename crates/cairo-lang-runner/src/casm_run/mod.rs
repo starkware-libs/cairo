@@ -117,6 +117,9 @@ macro_rules! insert_value_to_cellref {
 // Log type signature
 type Log = (Vec<Felt252>, Vec<Felt252>);
 
+// L2 to L1 message type signature
+type L2ToL1Message = (Felt252, Vec<Felt252>);
+
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
@@ -127,7 +130,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, VecDeque<Log>>,
+    logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -155,6 +158,15 @@ impl StarknetState {
         self.exec_info.contract_address = old_contract_address;
         self.exec_info.caller_address = old_caller_address;
     }
+}
+
+/// Object storing logs for a contract.
+#[derive(Clone, Default)]
+struct ContractLogs {
+    /// Events.
+    events: VecDeque<Log>,
+    /// Messages sent to L1.
+    l2_to_l1_messages: VecDeque<L2ToL1Message>,
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -642,10 +654,11 @@ impl<'a> CairoHintProcessor<'a> {
                 self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
             }),
             "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                let _to_address = system_buffer.next_felt252()?;
-                let _payload = system_buffer.next_arr()?;
-                deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-                Ok(SyscallResult::Success(vec![]))
+                self.send_message_to_l1(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_arr()?,
+                )
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
@@ -852,7 +865,25 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
+        self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
+        Ok(SyscallResult::Success(vec![]))
+    }
+
+    /// Executes the `send_message_to_l1_event_syscall` syscall.
+    fn send_message_to_l1(
+        &mut self,
+        gas_counter: &mut usize,
+        to_address: Felt252,
+        payload: Vec<Felt252>,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
+        let contract = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state
+            .logs
+            .entry(contract)
+            .or_default()
+            .l2_to_l1_messages
+            .push_back((to_address, payload));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -1100,12 +1131,22 @@ impl<'a> CairoHintProcessor<'a> {
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
-                    contract_logs.and_then(|contract_logs| contract_logs.pop_front())
+                    contract_logs.and_then(|contract_logs| contract_logs.events.pop_front())
                 {
                     res_segment.write(keys.len())?;
                     res_segment.write_data(keys.iter())?;
                     res_segment.write(data.len())?;
                     res_segment.write_data(data.iter())?;
+                }
+            }
+            "pop_l2_to_l1_message" => {
+                let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
+                if let Some((to_address, payload)) = contract_logs
+                    .and_then(|contract_logs| contract_logs.l2_to_l1_messages.pop_front())
+                {
+                    res_segment.write(to_address)?;
+                    res_segment.write(payload.len())?;
+                    res_segment.write_data(payload.iter())?;
                 }
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
