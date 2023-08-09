@@ -200,7 +200,7 @@ fn test_abi() {
 fn test_abi_failure() {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .build()
         .unwrap();
     let module_id = setup_test_module(

@@ -48,7 +48,7 @@ pub fn test_expand_plugin(
         let mut remove_original_item = false;
         let mut local_generated_items = Vec::<String>::new();
         for plugin in &plugins {
-            let result = plugin.clone().as_dyn_macro_plugin().generate_code(db, item.clone());
+            let result = plugin.generate_code(db, item.clone());
 
             diagnostic_items.extend(result.diagnostics.iter().map(|diag| {
                 let syntax_node = diag.stable_ptr.lookup(db);

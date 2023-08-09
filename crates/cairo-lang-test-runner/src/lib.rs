@@ -72,10 +72,10 @@ impl TestRunner {
             let mut b = RootDatabase::builder();
             b.detect_corelib();
             b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
-            b.with_semantic_plugin(Arc::new(TestPlugin::default()));
+            b.with_macro_plugin(Arc::new(TestPlugin::default()));
 
             if starknet {
-                b.with_semantic_plugin(Arc::new(StarkNetPlugin::default()));
+                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()));
             }
 
             b.build()?

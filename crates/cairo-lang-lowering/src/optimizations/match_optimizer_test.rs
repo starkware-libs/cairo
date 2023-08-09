@@ -27,7 +27,6 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
-
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),

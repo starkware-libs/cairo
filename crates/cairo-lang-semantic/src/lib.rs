@@ -11,7 +11,6 @@ pub mod items;
 pub mod literals;
 pub mod lookup_item;
 pub mod lsp_helpers;
-pub mod patcher;
 pub mod plugin;
 pub mod resolve;
 pub mod substitution;
