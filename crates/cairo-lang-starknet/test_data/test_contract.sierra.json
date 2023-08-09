@@ -34,7 +34,7 @@
     "0xa",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x112fac021461ecd37f6332ac9d92bffdb060bbe224b082b5fe8468d7b513b14",
+    "0x2d4388acc61f711f6a1b753b077cb73a8fc32032b1f612900ffbd0469cf2e87",
     "0x3d790d3b609a4468933c91e8c2c057c11b221de5d7f956661f5ff55e445c659",
     "0xf",
     "0x10",
@@ -61,7 +61,7 @@
     "0x1f",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x21",
-    "0x15f6d721f111ffbfb90801339b2ee31855ce08caa83ee9c2a077c59432979c1",
+    "0x8265750a62469b2c92a1c4591c2c55a82f0ad83b22fd517e38ce79bb31d87e",
     "0x23",
     "0x2d7b9ba5597ffc180f5bbd030da76b84ecf1e4f1311043a0a15295f29ccc1b0",
     "0x15ff625f5dacf0067f8b4a033a2a80dafd76835603be2febfab2e4a6c399de5",
@@ -954,7 +954,7 @@
       ],
       [
         15,
-        "test::test_contract::my_storage_var::ContractState"
+        "test::test_contract::my_storage_var::ContractMemberState"
       ],
       [
         16,
@@ -1034,11 +1034,11 @@
       ],
       [
         35,
-        "Tuple<test::test_contract::my_storage_var::ContractState, Unit>"
+        "Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>"
       ],
       [
         36,
-        "core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractState, ())>"
+        "core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>"
       ],
       [
         37,
@@ -1224,7 +1224,7 @@
       ],
       [
         29,
-        "struct_construct<test::test_contract::my_storage_var::ContractState>"
+        "struct_construct<test::test_contract::my_storage_var::ContractMemberState>"
       ],
       [
         30,
@@ -1464,11 +1464,11 @@
       ],
       [
         89,
-        "snapshot_take<test::test_contract::my_storage_var::ContractState>"
+        "snapshot_take<test::test_contract::my_storage_var::ContractMemberState>"
       ],
       [
         90,
-        "store_temp<test::test_contract::my_storage_var::ContractState>"
+        "store_temp<test::test_contract::my_storage_var::ContractMemberState>"
       ],
       [
         91,
@@ -1500,7 +1500,7 @@
       ],
       [
         98,
-        "enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>>"
       ],
       [
         99,
@@ -1508,7 +1508,7 @@
       ],
       [
         100,
-        "struct_deconstruct<Tuple<test::test_contract::my_storage_var::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>>"
       ],
       [
         101,
@@ -1528,7 +1528,7 @@
       ],
       [
         105,
-        "drop<test::test_contract::my_storage_var::ContractState>"
+        "drop<test::test_contract::my_storage_var::ContractMemberState>"
       ],
       [
         106,
@@ -1772,19 +1772,19 @@
       ],
       [
         166,
-        "struct_construct<Tuple<test::test_contract::my_storage_var::ContractState, Unit>>"
+        "struct_construct<Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>>"
       ],
       [
         167,
-        "enum_init<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>, 0>"
       ],
       [
         168,
-        "store_temp<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>>"
       ],
       [
         169,
-        "enum_init<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>, 1>"
       ],
       [
         170,

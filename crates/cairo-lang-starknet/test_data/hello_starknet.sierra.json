@@ -34,7 +34,7 @@
     "0xa",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x3ff33acf77611eda2fc86ccefb1cd1d9255bef93dda0a914688ee3d4fdb5d14",
+    "0x2997dfefbf11eb12bc7af40ff8a5d2874212ecabeba643b9f9007a9bb6b0dbc",
     "0xa223ab09f3257f0ba4c277c0a5bfa418d7ac684ee7c2b679bf8951526b1490",
     "0xf",
     "0x10",
@@ -45,7 +45,7 @@
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x15",
-    "0x1f58e9bb93fffc906b56a766fb0d92988400e1820f63e16decbf560de74a3d5",
+    "0x74a68d335ed59d3ba366ada47b8b311439b7cc5386f8371c7f2efdeea107d6",
     "0x17",
     "0x53746f726167654261736541646472657373",
     "0x53746f7261676541646472657373",
@@ -396,7 +396,7 @@
       ],
       [
         15,
-        "test::hello_starknet::balance::ContractState"
+        "test::hello_starknet::balance::ContractMemberState"
       ],
       [
         16,
@@ -428,11 +428,11 @@
       ],
       [
         23,
-        "Tuple<test::hello_starknet::balance::ContractState, Unit>"
+        "Tuple<test::hello_starknet::balance::ContractMemberState, Unit>"
       ],
       [
         24,
-        "core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>"
+        "core::panics::PanicResult::<(test::hello_starknet::balance::ContractMemberState, ())>"
       ],
       [
         25,
@@ -578,7 +578,7 @@
       ],
       [
         29,
-        "struct_construct<test::hello_starknet::balance::ContractState>"
+        "struct_construct<test::hello_starknet::balance::ContractMemberState>"
       ],
       [
         30,
@@ -726,11 +726,11 @@
       ],
       [
         66,
-        "snapshot_take<test::hello_starknet::balance::ContractState>"
+        "snapshot_take<test::hello_starknet::balance::ContractMemberState>"
       ],
       [
         67,
-        "store_temp<test::hello_starknet::balance::ContractState>"
+        "store_temp<test::hello_starknet::balance::ContractMemberState>"
       ],
       [
         68,
@@ -746,11 +746,11 @@
       ],
       [
         71,
-        "enum_match<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::hello_starknet::balance::ContractMemberState, ())>>"
       ],
       [
         72,
-        "struct_deconstruct<Tuple<test::hello_starknet::balance::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::hello_starknet::balance::ContractMemberState, Unit>>"
       ],
       [
         73,
@@ -770,7 +770,7 @@
       ],
       [
         77,
-        "drop<test::hello_starknet::balance::ContractState>"
+        "drop<test::hello_starknet::balance::ContractMemberState>"
       ],
       [
         78,
@@ -862,19 +862,19 @@
       ],
       [
         100,
-        "struct_construct<Tuple<test::hello_starknet::balance::ContractState, Unit>>"
+        "struct_construct<Tuple<test::hello_starknet::balance::ContractMemberState, Unit>>"
       ],
       [
         101,
-        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractMemberState, ())>, 0>"
       ],
       [
         102,
-        "store_temp<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::hello_starknet::balance::ContractMemberState, ())>>"
       ],
       [
         103,
-        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::hello_starknet::balance::ContractMemberState, ())>, 1>"
       ],
       [
         104,
