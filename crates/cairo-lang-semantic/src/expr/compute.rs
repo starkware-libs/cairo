@@ -47,7 +47,6 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{
     ElementKind, NotFoundItemType, SemanticDiagnostics, UnsupportedOutsideOfFunctionFeatureName,
 };
-use crate::inline_macros::get_inline_macro_plugin;
 use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
@@ -284,7 +283,7 @@ fn compute_expr_inline_macro_semantic(
     let syntax_db = ctx.db.upcast();
 
     let macro_name = syntax.path(syntax_db).as_syntax_node().get_text(syntax_db).trim().to_string();
-    let Some(macro_plugin) = get_inline_macro_plugin(&macro_name) else {
+    let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
         return Err(ctx
             .diagnostics
             .report(syntax, InlineMacroNotFound { macro_name: macro_name.into() }));

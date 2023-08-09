@@ -20,6 +20,7 @@ use cairo_lang_utils::{Upcast, UpcastMut};
 use defs::ids::FreeFunctionId;
 use lowering::ids::ConcreteFunctionWithBodyLongId;
 use once_cell::sync::Lazy;
+use semantic::inline_macros::get_default_inline_macro_plugins;
 use {cairo_lang_defs as defs, cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::db::{SierraGenDatabase, SierraGenGroup};
@@ -59,6 +60,7 @@ impl SierraGenDatabaseForTesting {
         let mut res = SierraGenDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         res.set_macro_plugins(get_default_plugins());
+        res.set_inline_macro_plugins(get_default_inline_macro_plugins().into());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
