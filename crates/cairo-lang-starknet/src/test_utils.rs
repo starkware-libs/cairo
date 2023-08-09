@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
+use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
@@ -47,6 +48,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
         },
     });
     let main_crate_ids = vec![crate_id];
+    let diagnostics_reporter = DiagnosticsReporter::default().with_extra_crates(&main_crate_ids);
     compile_contract_in_prepared_db(
         &db,
         None,
@@ -54,7 +56,7 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
         CompilerConfig {
             replace_ids: true,
             allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
-            ..CompilerConfig::default()
+            diagnostics_reporter,
         },
     )
     .expect("compile_path failed")
