@@ -27,6 +27,11 @@ impl CrateLongId {
     }
 }
 define_short_id!(CrateId, CrateLongId, FilesGroup, lookup_intern_crate);
+impl CrateId {
+    pub fn name(&self, db: &dyn FilesGroup) -> SmolStr {
+        db.lookup_intern_crate(*self).name()
+    }
+}
 
 /// A trait for getting the internal salsa::InternId of a short id object.
 /// This id is unstable across runs and should not be used to anything that is externally visible.
