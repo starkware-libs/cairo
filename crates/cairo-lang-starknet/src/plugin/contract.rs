@@ -1,23 +1,24 @@
 use std::vec;
 
 use cairo_lang_defs::db::get_all_path_leafs;
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{PatchBuilder, RewriteNode};
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    ABI_TRAIT, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR,
-    EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE, L1_HANDLER_ATTR,
-    L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, CONTRACT_ATTR,
+    DEPRECATED_CONTRACT_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
+    L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
+    STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
@@ -89,9 +90,6 @@ struct ContractGenerationData {
     generated_external_functions: Vec<RewriteNode>,
     generated_constructor_functions: Vec<RewriteNode>,
     generated_l1_handler_functions: Vec<RewriteNode>,
-    abi_functions: Vec<RewriteNode>,
-    event_functions: Vec<RewriteNode>,
-    abi_events: Vec<RewriteNode>,
 }
 
 /// If the module is annotated with CONTRACT_ATTR, generate the relevant contract logic.
@@ -109,118 +107,26 @@ pub fn handle_contract_by_storage(
         return None;
     }
 
-    let body = match module_ast.body(db) {
-        MaybeModuleBody::Some(body) => body,
-        MaybeModuleBody::None(empty_body) => {
-            return Some(PluginResult {
-                code: None,
-                diagnostics: vec![PluginDiagnostic {
-                    message: "Contracts without body are not supported.".to_string(),
-                    stable_ptr: empty_body.stable_ptr().untyped(),
-                }],
-                remove_original_item: false,
-            });
-        }
-    };
+    let body = extract_matches!(module_ast.body(db), MaybeModuleBody::Some);
     let mut diagnostics = vec![];
-    let mut kept_original_items = Vec::new();
 
-    // A mapping from a 'use' item to its path.
+    // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
+    // Whether an event exists in the given contract module. If it doesn't, we need to generate an
+    // empty one.
     let mut has_event = false;
     for item in body.items(db).elements(db) {
-        // Skipping elements that only generate other code, but their code itself is ignored.
+        // Skip elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
         {
             continue;
         }
 
-        let has_event_attr = item.has_attr(db, EVENT_ATTR);
-        let event_name_info = match &item {
-            ast::Item::Struct(strct) => Some((
-                strct.name(db).text(db) == EVENT_TYPE_NAME,
-                strct.name(db).stable_ptr().untyped(),
-            )),
-            ast::Item::Enum(enm) => Some((
-                enm.name(db).text(db) == EVENT_TYPE_NAME,
-                enm.name(db).stable_ptr().untyped(),
-            )),
-            _ => None,
-        };
-        if let Some((has_event_name, stable_ptr)) = event_name_info {
-            match (has_event_attr, has_event_name) {
-                (true, false) => {
-                    diagnostics.push(PluginDiagnostic {
-                        message: format!(
-                            "Contract type that is marked with #[{EVENT_ATTR}] must be named \
-                             `Event`."
-                        ),
-                        stable_ptr,
-                    });
-                }
-                (false, true) => {
-                    diagnostics.push(PluginDiagnostic {
-                        message: format!(
-                            "Contract type that is named `Event` must be marked with \
-                             #[{EVENT_ATTR}]."
-                        ),
-                        stable_ptr,
-                    });
-                    // The attribute is missing, but we still can't create an empty event.
-                    has_event = true;
-                }
-                (true, true) => {
-                    has_event = true;
-                }
-                (false, false) => {}
-            }
+        if is_starknet_event(db, &mut diagnostics, &item) {
+            has_event = true;
         }
 
-        kept_original_items.push(RewriteNode::Copied(item.as_syntax_node()));
-        if let Some(ident) = match item {
-            ast::Item::Constant(item) => Some(item.name(db)),
-            ast::Item::Module(item) => Some(item.name(db)),
-            ast::Item::Use(item) => {
-                let leaves = get_all_path_leafs(db, item.use_path(db));
-                for leaf in leaves {
-                    if leaf.stable_ptr().identifier(db) == EVENT_TYPE_NAME {
-                        has_event = true;
-                    }
-                    extra_uses
-                        .entry(leaf.stable_ptr().identifier(db))
-                        .or_insert_with_key(|ident| format!("super::{}", ident));
-                }
-                None
-            }
-            ast::Item::Impl(item) => Some(item.name(db)),
-            ast::Item::Struct(item) => Some(item.name(db)),
-            ast::Item::Enum(item) => Some(item.name(db)),
-            ast::Item::TypeAlias(item) => Some(item.name(db)),
-            // Externs, trait declarations and free functions are not directly required in generated
-            // inner modules.
-            ast::Item::ExternFunction(_)
-            | ast::Item::ExternType(_)
-            | ast::Item::Trait(_)
-            | ast::Item::FreeFunction(_)
-            | ast::Item::ImplAlias(_)
-            | ast::Item::Missing(_) => None,
-        } {
-            extra_uses
-                .entry(ident.text(db))
-                .or_insert_with_key(|ident| format!("super::{}", ident));
-        }
-    }
-
-    for (use_item, path) in [
-        ("ClassHashSerde", "starknet::class_hash::ClassHashSerde"),
-        ("ContractAddressSerde", "starknet::contract_address::ContractAddressSerde"),
-        ("StorageAddressSerde", "starknet::storage_access::StorageAddressSerde"),
-        ("OptionTrait", "option::OptionTrait"),
-        ("OptionTraitImpl", "option::OptionTraitImpl"),
-    ]
-    .into_iter()
-    {
-        extra_uses.entry(use_item.into()).or_insert_with(|| path.to_string());
+        maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
     let extra_uses_node = RewriteNode::new_modified(
@@ -232,15 +138,98 @@ pub fn handle_contract_by_storage(
 
     let mut data = ContractGenerationData::default();
 
-    let mut storage_code = RewriteNode::Text("".to_string());
+    // Generate the code for ContractState and the entry points.
+    let contract_state_code = generate_entry_points_and_contract_state(
+        db,
+        &mut diagnostics,
+        body,
+        &mut data,
+        &extra_uses_node,
+        has_event,
+    );
+
+    let module_name_ast = module_ast.name(db);
+    let test_class_hash = format!(
+        "0x{:x}",
+        starknet_keccak(
+            module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+        )
+    );
+    let generated_contract_mod = RewriteNode::interpolate_patched(
+        formatdoc!(
+            "
+            #[cfg(test)]
+            const TEST_CLASS_HASH: felt252 = {test_class_hash};
+            $contract_state_code$
+
+            mod {EXTERNAL_MODULE} {{$extra_uses$
+
+                $generated_external_functions$
+            }}
+
+            mod {L1_HANDLER_MODULE} {{$extra_uses$
+
+                $generated_l1_handler_functions$
+            }}
+
+            mod {CONSTRUCTOR_MODULE} {{$extra_uses$
+
+                $generated_constructor_functions$
+            }}
+        "
+        )
+        .as_str(),
+        [
+            ("contract_state_code".to_string(), contract_state_code),
+            ("extra_uses".to_string(), extra_uses_node),
+            (
+                "generated_external_functions".to_string(),
+                RewriteNode::new_modified(data.generated_external_functions),
+            ),
+            (
+                "generated_l1_handler_functions".to_string(),
+                RewriteNode::new_modified(data.generated_l1_handler_functions),
+            ),
+            (
+                "generated_constructor_functions".to_string(),
+                RewriteNode::new_modified(data.generated_constructor_functions),
+            ),
+        ]
+        .into(),
+    );
+
+    let mut builder = PatchBuilder::new(db);
+    builder.add_modified(generated_contract_mod);
+    Some(PluginResult {
+        code: Some(PluginGeneratedFile {
+            name: "contract".into(),
+            content: builder.code,
+            patches: builder.patches,
+            aux_data: Some(DynGeneratedFileAuxData::new(StarkNetContractAuxData {
+                contracts: vec![module_name_ast.text(db)],
+            })),
+        }),
+        diagnostics,
+        remove_original_item: true,
+    })
+}
+
+/// Generates the code for the entry points of the contract, and for the ContractState.
+fn generate_entry_points_and_contract_state(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    body: ast::ModuleBody,
+    data: &mut ContractGenerationData,
+    extra_uses_node: &RewriteNode,
+    has_event: bool,
+) -> RewriteNode {
+    let mut contract_state_code = RewriteNode::Text("".to_string());
     for item in body.items(db).elements(db) {
         match &item {
             ast::Item::FreeFunction(item_function) => {
-                let Some(entry_point_kind) = EntryPointKind::try_from_function_with_body(
-                    db,
-                    &mut diagnostics,
-                    item_function,
-                ) else {
+                let Some(entry_point_kind) =
+                    EntryPointKind::try_from_function_with_body(db, diagnostics, item_function)
+                else {
                     continue;
                 };
                 let function_name = RewriteNode::new_trimmed(
@@ -251,23 +240,23 @@ pub fn handle_contract_by_storage(
                     item_function,
                     function_name,
                     db,
-                    &mut diagnostics,
-                    &mut data,
+                    diagnostics,
+                    data,
                 );
             }
             ast::Item::Impl(item_impl) => {
-                let is_external = has_external_attribute(db, &mut diagnostics, &item);
-                if !(is_external || has_include_attribute(db, &mut diagnostics, &item)) {
+                let is_external = has_external_attribute(db, diagnostics, &item);
+                if !(is_external || has_include_attribute(db, diagnostics, &item)) {
                     continue;
                 }
-                let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
+                let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
                     continue;
                 };
                 let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
-                for item in body.items(db).elements(db) {
+                for item in impl_body.items(db).elements(db) {
                     if is_external {
                         for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
-                            forbid_attribute_in_external_impl(db, &mut diagnostics, &item, attr);
+                            forbid_attribute_in_external_impl(db, diagnostics, &item, attr);
                         }
                     }
 
@@ -300,104 +289,118 @@ pub fn handle_contract_by_storage(
                         &item_function,
                         function_name,
                         db,
-                        &mut diagnostics,
-                        &mut data,
+                        diagnostics,
+                        data,
                     );
                 }
             }
             ast::Item::Struct(item_struct)
                 if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
             {
-                let (storage_rewrite_node, storage_diagnostics) =
-                    handle_storage_struct(db, item_struct.clone(), &extra_uses_node, has_event);
-                storage_code = storage_rewrite_node;
+                let (contract_state_rewrite_node, storage_diagnostics) =
+                    handle_storage_struct(db, item_struct.clone(), extra_uses_node, has_event);
+                contract_state_code = contract_state_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
             }
             _ => {}
         }
     }
+    contract_state_code
+}
 
-    let module_name_ast = module_ast.name(db);
-    let test_class_hash = starknet_keccak(
-        module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
-    );
-    let generated_contract_mod = RewriteNode::interpolate_patched(
-        formatdoc!(
-            "
-            use starknet::SyscallResultTrait;
-            use starknet::SyscallResultTraitImpl;
+/// Adds extra uses, to be used in the generated submodules.
+fn maybe_add_extra_use(
+    db: &dyn SyntaxGroup,
+    item: ast::Item,
+    extra_uses: &mut OrderedHashMap<smol_str::SmolStr, String>,
+) {
+    if let Some(ident) = match item {
+        ast::Item::Use(item) => {
+            let leaves = get_all_path_leafs(db, item.use_path(db));
+            for leaf in leaves {
+                extra_uses
+                    .entry(leaf.stable_ptr().identifier(db))
+                    .or_insert_with_key(|ident| format!("super::{}", ident));
+            }
+            None
+        }
+        ast::Item::Constant(item) => Some(item.name(db)),
+        ast::Item::Module(item) => Some(item.name(db)),
+        ast::Item::Impl(item) => Some(item.name(db)),
+        ast::Item::Struct(item) => Some(item.name(db)),
+        ast::Item::Enum(item) => Some(item.name(db)),
+        ast::Item::TypeAlias(item) => Some(item.name(db)),
+        // These items are not directly required in generated inner modules.
+        ast::Item::ExternFunction(_)
+        | ast::Item::ExternType(_)
+        | ast::Item::Trait(_)
+        | ast::Item::FreeFunction(_)
+        | ast::Item::ImplAlias(_)
+        | ast::Item::Missing(_) => None,
+    } {
+        extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
+    }
+}
 
-            #[cfg(test)]
-            const TEST_CLASS_HASH: felt252 = {test_class_hash};
-            $storage_code$
+/// Checks whether the given item is an event, and if so - makes sure it's valid.
+fn is_starknet_event(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+) -> bool {
+    let (has_event_name, stable_ptr) = match item {
+        ast::Item::Struct(strct) => {
+            (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr().untyped())
+        }
+        ast::Item::Enum(enm) => {
+            (enm.name(db).text(db) == EVENT_TYPE_NAME, enm.name(db).stable_ptr().untyped())
+        }
+        ast::Item::Use(item) => {
+            for leaf in get_all_path_leafs(db, item.use_path(db)) {
+                let stable_ptr = &leaf.stable_ptr();
+                if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
+                    if !item.has_attr(db, EVENT_ATTR) {
+                        diagnostics.push(PluginDiagnostic {
+                            message: format!(
+                                "Contract type that is named `Event` must be marked with \
+                                 #[{EVENT_ATTR}]."
+                            ),
+                            stable_ptr: stable_ptr.untyped(),
+                        });
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        _ => return false,
+    };
+    let has_event_attr = item.has_attr(db, EVENT_ATTR);
 
-            $event_functions$
-
-            trait {ABI_TRAIT}<ContractState> {{
-                $abi_functions$
-                $abi_events$
-            }}
-
-            mod {EXTERNAL_MODULE} {{$extra_uses$
-
-                $generated_external_functions$
-            }}
-
-            mod {L1_HANDLER_MODULE} {{$extra_uses$
-
-                $generated_l1_handler_functions$
-            }}
-
-            mod {CONSTRUCTOR_MODULE} {{$extra_uses$
-
-                $generated_constructor_functions$
-            }}
-        "
-        )
-        .as_str(),
-        [
-            (
-                "contract_name".to_string(),
-                RewriteNode::new_trimmed(module_name_ast.as_syntax_node()),
-            ),
-            ("original_items".to_string(), RewriteNode::new_modified(kept_original_items)),
-            ("storage_code".to_string(), storage_code),
-            ("event_functions".to_string(), RewriteNode::new_modified(data.event_functions)),
-            ("abi_functions".to_string(), RewriteNode::new_modified(data.abi_functions)),
-            ("abi_events".to_string(), RewriteNode::new_modified(data.abi_events)),
-            ("extra_uses".to_string(), extra_uses_node),
-            (
-                "generated_external_functions".to_string(),
-                RewriteNode::new_modified(data.generated_external_functions),
-            ),
-            (
-                "generated_l1_handler_functions".to_string(),
-                RewriteNode::new_modified(data.generated_l1_handler_functions),
-            ),
-            (
-                "generated_constructor_functions".to_string(),
-                RewriteNode::new_modified(data.generated_constructor_functions),
-            ),
-        ]
-        .into(),
-    );
-
-    let mut builder = PatchBuilder::new(db);
-    builder.add_modified(generated_contract_mod);
-    Some(PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: "contract".into(),
-            content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
-                StarkNetContractAuxData {
-                    patches: builder.patches,
-                    contracts: vec![module_name_ast.text(db)],
-                },
-            )),
-        }),
-        diagnostics,
-        remove_original_item: true,
-    })
+    match (has_event_attr, has_event_name) {
+        (true, false) => {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "Contract type that is marked with #[{EVENT_ATTR}] must be named `Event`."
+                ),
+                stable_ptr,
+            });
+            false
+        }
+        (false, true) => {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "Contract type that is named `Event` must be marked with #[{EVENT_ATTR}]."
+                ),
+                stable_ptr,
+            });
+            // The attribute is missing, but this counts as a event - we can't create another
+            // (empty) event.
+            true
+        }
+        (true, true) => true,
+        (false, false) => false,
+    }
 }
 
 fn forbid_attribute_in_external_impl(
@@ -425,14 +428,14 @@ fn handle_entry_point(
     diagnostics: &mut Vec<PluginDiagnostic>,
     data: &mut ContractGenerationData,
 ) {
-    let attr = entry_point_kind.get_attr();
-
     if entry_point_kind == EntryPointKind::Constructor {
         {
             let name_node = item_function.declaration(db).name(db);
-            if name_node.text(db) != "constructor" {
+            if name_node.text(db) != CONSTRUCTOR_NAME {
                 diagnostics.push(PluginDiagnostic {
-                    message: "The constructor function must be called `constructor`.".to_string(),
+                    message: format!(
+                        "The constructor function must be called `{CONSTRUCTOR_NAME}`."
+                    ),
                     stable_ptr: name_node.stable_ptr().untyped(),
                 })
             }
@@ -465,11 +468,6 @@ fn handle_entry_point(
                 .set_str("".to_string());
         }
     }
-    data.abi_functions.push(RewriteNode::new_modified(vec![
-        RewriteNode::Text(format!("#[{attr}]\n        ")),
-        declaration_node,
-        RewriteNode::Text(";\n        ".to_string()),
-    ]));
 
     match generate_entry_point_wrapper(db, item_function, function_name) {
         Ok(generated_function) => {

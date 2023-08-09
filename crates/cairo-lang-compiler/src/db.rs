@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::plugin::MacroPlugin;
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
@@ -14,8 +14,7 @@ use cairo_lang_lowering::db::{LoweringDatabase, LoweringGroup};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
-use cairo_lang_semantic::plugin::SemanticPlugin;
+use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
@@ -41,10 +40,10 @@ impl salsa::ParallelDatabase for RootDatabase {
     }
 }
 impl RootDatabase {
-    fn new(plugins: Vec<Arc<dyn SemanticPlugin>>) -> Self {
+    fn new(plugins: Vec<Arc<dyn MacroPlugin>>) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
-        res.set_semantic_plugins(plugins);
+        res.set_macro_plugins(plugins);
         res
     }
 
@@ -70,7 +69,7 @@ impl Default for RootDatabase {
 
 #[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
-    plugins: Vec<Arc<dyn SemanticPlugin>>,
+    plugins: Vec<Arc<dyn MacroPlugin>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
@@ -86,7 +85,7 @@ impl RootDatabaseBuilder {
         }
     }
 
-    pub fn with_semantic_plugin(&mut self, plugin: Arc<dyn SemanticPlugin>) -> &mut Self {
+    pub fn with_macro_plugin(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
         self.plugins.push(plugin);
         self
     }
@@ -132,7 +131,7 @@ impl RootDatabaseBuilder {
             update_crate_roots_from_project_config(&mut db, *config.clone());
 
             if let Some(corelib) = config.corelib {
-                let core_crate = db.intern_crate(CrateLongId(CORELIB_CRATE_NAME.into()));
+                let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
                 db.set_crate_root(core_crate, Some(corelib));
             }
         }
@@ -169,10 +168,5 @@ impl Upcast<dyn SemanticGroup> for RootDatabase {
 impl Upcast<dyn LoweringGroup> for RootDatabase {
     fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
         self
-    }
-}
-impl HasMacroPlugins for RootDatabase {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.get_macro_plugins()
     }
 }

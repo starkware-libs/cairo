@@ -72,9 +72,9 @@ fn checked_compile_to_sierra(
             if module_id.full_path(&db) != format!("examples::{name}") {
                 continue;
             }
-            for (free_func_id, _) in db.module_free_functions(*module_id).unwrap() {
+            for (free_func_id, _) in db.module_free_functions(*module_id).unwrap().iter() {
                 if let Some(function) =
-                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), free_func_id)
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), *free_func_id)
                 {
                     requested_function_ids.push(function)
                 }

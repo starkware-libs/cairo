@@ -28,20 +28,20 @@ foo
 
 //! > sierra_code
 felt252_const<10>() -> ([0])
-felt252_is_zero([0]) { fallthrough() label0([1]) }
+felt252_is_zero([0]) { fallthrough() label_test::foo::0([1]) }
 branch_align() -> ()
 felt252_const<3>() -> ([2])
 PushValues([2]: felt252) -> ([3])
-jump() { label2() }
-label0:
+jump() { label_test::foo::2() }
+label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([1]) -> ()
 felt252_const<4>() -> ([4])
 PushValues([4]: felt252) -> ([3])
-label2:
+label_test::foo::2:
 PushValues([3]: felt252) -> ([5])
 return([5])
-label1:
+label_test::foo::1:
 
 //! > lowering_flat
 Parameters:
@@ -101,20 +101,20 @@ foo
 //! > sierra_code
 felt252_const<7>() -> ([0])
 dup<felt252>([0]) -> ([0], [1])
-felt252_is_zero([1]) { fallthrough() label0([2]) }
+felt252_is_zero([1]) { fallthrough() label_test::foo::0([2]) }
 branch_align() -> ()
 PushValues([0]: felt252) -> ([3])
-jump() { label2() }
-label0:
+jump() { label_test::foo::2() }
+label_test::foo::0:
 branch_align() -> ()
 drop<NonZero<felt252>>([2]) -> ()
 drop<felt252>([0]) -> ()
 felt252_const<7>() -> ([4])
 PushValues([4]: felt252) -> ([3])
-label2:
+label_test::foo::2:
 PushValues([3]: felt252) -> ([5])
 return([5])
-label1:
+label_test::foo::1:
 
 //! > lowering_flat
 Parameters:
@@ -170,20 +170,20 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label0([2]) }
+enum_match<core::option::Option::<@core::felt252>>([0]) { fallthrough([1]) label_test::foo::0([2]) }
 branch_align() -> ()
 rename<felt252>([1]) -> ([3])
 PushValues([3]: felt252) -> ([4])
-jump() { label2() }
-label0:
+jump() { label_test::foo::2() }
+label_test::foo::0:
 branch_align() -> ()
 drop<Unit>([2]) -> ()
 felt252_const<0>() -> ([5])
 PushValues([5]: felt252) -> ([4])
-label2:
+label_test::foo::2:
 PushValues([4]: felt252) -> ([6])
 return([6])
-label1:
+label_test::foo::1:
 
 //! > lowering_flat
 Parameters: v0: core::option::Option::<@core::felt252>

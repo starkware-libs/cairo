@@ -1,9 +1,4 @@
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     Attribute, AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -33,15 +28,6 @@ impl MacroPlugin for PanicablePlugin {
         generate_panicable_code(db, declaration, attributes)
     }
 }
-impl AsDynMacroPlugin for PanicablePlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for PanicablePlugin {}
 
 /// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.
 fn generate_panicable_code(
@@ -130,7 +116,8 @@ fn generate_panicable_code(
                     }}
                 "#
             ),
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+            patches: Default::default(),
+            aux_data: None,
         }),
         diagnostics: vec![],
         remove_original_item: false,

@@ -31,32 +31,32 @@ fn bar(a: felt252) -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 felt252_const<2>() -> ([1])
 dup<felt252>([0]) -> ([0], [3])
 felt252_sub([3], [1]) -> ([2])
 store_temp<felt252>([2]) -> ([2])
-felt252_is_zero([2]) { fallthrough() label1([4]) }
+felt252_is_zero([2]) { fallthrough() label_test::foo::1([4]) }
 branch_align() -> ()
-felt252_is_zero([0]) { fallthrough() label3([5]) }
+felt252_is_zero([0]) { fallthrough() label_test::foo::3([5]) }
 branch_align() -> ()
 felt252_const<1>() -> ([6])
 store_temp<felt252>([6]) -> ([7])
-jump() { label5() }
-label3:
+jump() { label_test::foo::5() }
+label_test::foo::3:
 branch_align() -> ()
 drop<NonZero<felt252>>([5]) -> ()
 felt252_const<0>() -> ([8])
 store_temp<felt252>([8]) -> ([7])
-label5:
+label_test::foo::5:
 rename<felt252>([7]) -> ([9])
-jump() { label6() }
-label4:
-label1:
+jump() { label_test::foo::6() }
+label_test::foo::4:
+label_test::foo::1:
 branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
 store_temp<felt252>([0]) -> ([9])
-label6:
+label_test::foo::6:
 rename<felt252>([9]) -> ([10])
 return([10])
-label2:
+label_test::foo::2:

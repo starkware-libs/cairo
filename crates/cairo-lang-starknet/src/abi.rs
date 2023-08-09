@@ -4,13 +4,12 @@ use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
     SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
+use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
     ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
@@ -145,17 +144,15 @@ impl AbiBuilder {
             let generate_info =
                 db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
             let Some(generate_info) = generate_info else { continue };
-            let Some(mapper) = generate_info.aux_data.0.as_any().downcast_ref::<DynPluginAuxData>()
+            let Some(aux_data) = &generate_info.aux_data else { continue };
+            let Some(StarkNetEventAuxData { event_data }) = aux_data.0.as_any().downcast_ref()
             else {
-                continue;
-            };
-            let Some(aux_data) = mapper.0.as_any().downcast_ref::<StarkNetEventAuxData>() else {
                 continue;
             };
             let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
             let event_type =
                 extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
-            builder.event_derive_data.insert(event_type, aux_data.event_data.clone());
+            builder.event_derive_data.insert(event_type, event_data.clone());
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
@@ -581,54 +578,57 @@ impl AbiBuilder {
         }
 
         match concrete {
-            ConcreteTypeId::Struct(id) => self.abi.items.push(Item::Struct(Struct {
-                name: concrete.format(db),
-                members: get_struct_members(db, id).map_err(|_| ABIError::UnexpectedType)?,
-            })),
-            ConcreteTypeId::Enum(id) => self.abi.items.push(Item::Enum(Enum {
-                name: concrete.format(db),
-                variants: get_enum_variants(db, id).map_err(|_| ABIError::UnexpectedType)?,
-            })),
+            ConcreteTypeId::Struct(id) => {
+                let members = self.add_and_get_struct_members(db, id)?;
+                self.abi.items.push(Item::Struct(Struct { name: concrete.format(db), members }))
+            }
+            ConcreteTypeId::Enum(id) => {
+                let variants = self.add_and_get_enum_variants(db, id)?;
+                self.abi.items.push(Item::Enum(Enum { name: concrete.format(db), variants }))
+            }
             ConcreteTypeId::Extern(_) => {}
         }
         Ok(())
+    }
+
+    /// Adds the types of struct members to the ABI, and returns them.
+    fn add_and_get_struct_members(
+        &mut self,
+        db: &dyn SemanticGroup,
+        id: cairo_lang_semantic::ConcreteStructId,
+    ) -> Result<Vec<StructMember>, ABIError> {
+        db.concrete_struct_members(id)?
+            .iter()
+            .map(|(name, member)| {
+                self.add_type(db, member.ty)?;
+                Ok(StructMember { name: name.to_string(), ty: member.ty.format(db) })
+            })
+            .collect()
+    }
+
+    /// Adds the types of struct variants to the ABI, and returns them.
+    fn add_and_get_enum_variants(
+        &mut self,
+        db: &dyn SemanticGroup,
+        id: cairo_lang_semantic::ConcreteEnumId,
+    ) -> Result<Vec<EnumVariant>, ABIError> {
+        let generic_id = id.enum_id(db);
+
+        db.enum_variants(generic_id)?
+            .iter()
+            .map(|(name, variant_id)| {
+                let variant =
+                    db.concrete_enum_variant(id, &db.variant_semantic(generic_id, *variant_id)?)?;
+                self.add_type(db, variant.ty)?;
+                Ok(EnumVariant { name: name.to_string(), ty: variant.ty.format(db) })
+            })
+            .collect::<Result<Vec<_>, ABIError>>()
     }
 }
 
 fn get_type_name(db: &dyn SemanticGroup, ty: TypeId) -> Option<SmolStr> {
     let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
     Some(concrete_ty.generic_type(db).name(db.upcast()))
-}
-
-fn get_struct_members(
-    db: &dyn SemanticGroup,
-    id: cairo_lang_semantic::ConcreteStructId,
-) -> Maybe<Vec<StructMember>> {
-    Ok(db
-        .concrete_struct_members(id)?
-        .iter()
-        .map(|(name, member)| StructMember { name: name.to_string(), ty: member.ty.format(db) })
-        .collect())
-}
-
-fn get_enum_variants(
-    db: &dyn SemanticGroup,
-    id: cairo_lang_semantic::ConcreteEnumId,
-) -> Maybe<Vec<EnumVariant>> {
-    let generic_id = id.enum_id(db);
-
-    db.enum_variants(generic_id)?
-        .iter()
-        .map(|(name, variant_id)| {
-            Ok(EnumVariant {
-                name: name.to_string(),
-                ty: db
-                    .concrete_enum_variant(id, &db.variant_semantic(generic_id, *variant_id)?)?
-                    .ty
-                    .format(db),
-            })
-        })
-        .collect::<Result<Vec<_>, DiagnosticAdded>>()
 }
 
 #[derive(Error, Debug)]

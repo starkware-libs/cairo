@@ -44,7 +44,7 @@ members = [
 ]
 
 [workspace.package]
-version = "2.1.0-rc0"
+version = "2.1.0"
 edition = "2021"
 repository = "https://github.com/starkware-libs/cairo/"
 license = "Apache-2.0"
@@ -92,7 +92,7 @@ quote = "1.0.21"
 rayon = "1.7.0"
 rstest = "0.18.1"
 salsa = "0.16.1"
-scarb-metadata = "1.4.2"
+scarb-metadata = "1"
 schemars = { version = "0.8.12", features = ["preserve_order"] }
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0"

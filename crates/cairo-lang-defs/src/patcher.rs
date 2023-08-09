@@ -1,9 +1,30 @@
-use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Patch {
+    pub span: TextSpan,
+    pub origin_span: TextSpan,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Patches {
+    pub patches: Vec<Patch>,
+}
+impl Patches {
+    pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
+        for Patch { span: patch_span, origin_span } in &self.patches {
+            if patch_span.contains(span) {
+                let start = origin_span.start.add_width(span.start - patch_span.start);
+                return Some(TextSpan { start, end: start.add_width(span.end - span.start) });
+            }
+        }
+        None
+    }
+}
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -183,28 +204,6 @@ pub struct ModifiedNode {
     /// Some(vec![]) - None can be (idempotently) modified, whereas modifying Some(vec![]) would
     /// panic.
     pub children: Option<Vec<RewriteNode>>,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct Patch {
-    span: TextSpan,
-    origin_span: TextSpan,
-}
-
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct Patches {
-    patches: Vec<Patch>,
-}
-impl Patches {
-    pub fn translate(&self, _db: &dyn DefsGroup, span: TextSpan) -> Option<TextSpan> {
-        for Patch { span: patch_span, origin_span } in &self.patches {
-            if patch_span.contains(span) {
-                let start = origin_span.start.add_width(span.start - patch_span.start);
-                return Some(TextSpan { start, end: start.add_width(span.end - span.start) });
-            }
-        }
-        None
-    }
 }
 
 pub struct PatchBuilder<'a> {

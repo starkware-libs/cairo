@@ -1,8 +1,7 @@
+use cairo_lang_defs::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_semantic::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
-use cairo_lang_semantic::plugin::DynPluginAuxData;
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -114,10 +113,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
-                patches: builder.patches,
-                event_data,
-            })),
+            patches: builder.patches,
+            aux_data: Some(DynGeneratedFileAuxData::new(StarkNetEventAuxData { event_data })),
         }),
         diagnostics,
         remove_original_item: false,
@@ -315,10 +312,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(StarkNetEventAuxData {
-                patches: builder.patches,
-                event_data,
-            })),
+            patches: builder.patches,
+            aux_data: Some(DynGeneratedFileAuxData::new(StarkNetEventAuxData { event_data })),
         }),
         diagnostics,
         remove_original_item: false,

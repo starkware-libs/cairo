@@ -25,6 +25,7 @@ fn all_list_includes_all_supported() {
         "set_nonce",
         "set_signature",
         "pop_log",
+        "pop_l2_to_l1_message",
         "get_available_gas",
     ];
     pretty_assertions::assert_eq!(

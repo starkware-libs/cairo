@@ -8,8 +8,7 @@ use cairo_lang_defs::ids::{
     LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
     VariantId,
 };
-use cairo_lang_defs::plugin::MacroPlugin;
-use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
+use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
 use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
 use cairo_lang_parser::db::ParserGroup;
@@ -28,7 +27,7 @@ use crate::items::generics::{GenericParam, GenericParamData, GenericParamsData};
 use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
-use crate::plugin::{DynPluginAuxData, SemanticPlugin};
+use crate::plugin::PluginMappedDiagnostic;
 use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
@@ -150,6 +149,10 @@ pub trait SemanticGroup:
     /// Returns the attributes of a module.
     #[salsa::invoke(items::module::module_attributes)]
     fn module_attributes(&self, module_id: ModuleId) -> Maybe<Vec<Attribute>>;
+
+    /// Finds all the trait ids usable in the module.
+    #[salsa::invoke(items::module::module_usable_trait_ids)]
+    fn module_usable_trait_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TraitId>>>;
 
     // Struct.
     // =======
@@ -967,11 +970,6 @@ pub trait SemanticGroup:
     #[salsa::invoke(corelib::core_felt252_ty)]
     fn core_felt252_ty(&self) -> semantic::TypeId;
 
-    // Plugins.
-    // ========
-    #[salsa::input]
-    fn semantic_plugins(&self) -> Vec<Arc<dyn SemanticPlugin>>;
-
     // Helpers for language server.
     // ============================
     /// Returns all methods in a module that match the given type filter.
@@ -980,14 +978,14 @@ pub trait SemanticGroup:
         &self,
         module_id: ModuleId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Vec<TraitFunctionId>;
+    ) -> Arc<Vec<TraitFunctionId>>;
     /// Returns all methods in a crate that match the given type filter.
     #[salsa::invoke(lsp_helpers::methods_in_crate)]
     fn methods_in_crate(
         &self,
         crate_id: CrateId,
         type_filter: lsp_helpers::TypeFilter,
-    ) -> Vec<TraitFunctionId>;
+    ) -> Arc<Vec<TraitFunctionId>>;
 }
 
 impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
@@ -996,29 +994,12 @@ impl<T: Upcast<dyn SemanticGroup + 'static>> Elongate for T {
     }
 }
 
-/// Initializes a database with DefsGroup.
-pub fn init_semantic_group(db: &mut (dyn SemanticGroup + 'static)) {
-    // Initialize inputs.
-    db.set_semantic_plugins(Vec::new());
-}
-
-pub trait SemanticGroupEx<'a>: Upcast<dyn SemanticGroup + 'a> {
-    fn get_macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.upcast()
-            .semantic_plugins()
-            .into_iter()
-            .map(|plugin| plugin.as_dyn_macro_plugin())
-            .collect()
-    }
-}
-impl<'a, T: Upcast<dyn SemanticGroup + 'a> + ?Sized> SemanticGroupEx<'a> for T {}
-
 fn module_semantic_diagnostics(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)? {
+    for (_module_file_id, plugin_diag) in db.module_plugin_diagnostics(module_id)?.iter().cloned() {
         diagnostics.add(SemanticDiagnostic::new(
             StableLocation::new(plugin_diag.stable_ptr),
             SemanticDiagnosticKind::PluginDiagnostic(plugin_diag),
@@ -1130,19 +1111,16 @@ fn map_diagnostics(
             continue;
         };
         if let Some(file_info) = &generated_file_info[file_index] {
-            let opt_diag = file_info
-                .aux_data
-                .0
-                .as_any()
-                .downcast_ref::<DynPluginAuxData>()
-                .and_then(|mapper| mapper.map_diag(db.upcast(), diag));
-            if let Some(plugin_diag) = opt_diag {
+            let opt_span = file_info
+                .patches
+                .translate(diag.stable_location.diagnostic_location(db.upcast()).span);
+            if let Some(span) = opt_span {
                 // We don't have a real location, so we give a dummy location in the correct file.
                 // SemanticDiagnostic struct knowns to give the proper span for
                 // WrappedPluginDiagnostic.
                 let stable_location = diag.stable_location;
                 let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
-                    diagnostic: plugin_diag,
+                    diagnostic: PluginMappedDiagnostic { span, message: diag.format(db) },
                     original_diag: Box::new(diag.clone()),
                     file_id: file_info.origin.file_id(db.upcast()).unwrap(),
                 };
@@ -1166,7 +1144,7 @@ fn file_semantic_diagnostics(
     file_id: FileId,
 ) -> Maybe<Diagnostics<SemanticDiagnostic>> {
     let mut diagnostics = DiagnosticsBuilder::default();
-    for module_id in db.file_modules(file_id)? {
+    for module_id in db.file_modules(file_id)?.iter().copied() {
         if let Ok(module_diagnostics) = db.module_semantic_diagnostics(module_id) {
             diagnostics.extend(module_diagnostics)
         }

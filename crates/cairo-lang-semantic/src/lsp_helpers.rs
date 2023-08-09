@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_defs::ids::{ModuleId, TraitFunctionId};
 use cairo_lang_filesystem::ids::CrateId;
 
@@ -18,9 +20,12 @@ pub fn methods_in_module(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
     type_filter: TypeFilter,
-) -> Vec<TraitFunctionId> {
+) -> Arc<Vec<TraitFunctionId>> {
     let mut result = Vec::new();
-    for trait_id in db.module_traits_ids(module_id).unwrap_or_default() {
+    let Ok(module_traits_ids) = db.module_traits_ids(module_id) else {
+        return result.into();
+    };
+    for trait_id in module_traits_ids.iter().copied() {
         for (_, trait_function) in db.trait_functions(trait_id).unwrap_or_default() {
             let Ok(signature) = db.trait_function_signature(trait_function) else {
                 continue;
@@ -42,7 +47,7 @@ pub fn methods_in_module(
             result.push(trait_function)
         }
     }
-    result
+    result.into()
 }
 
 /// Checks if a type head can fit for a method.
@@ -61,10 +66,10 @@ pub fn methods_in_crate(
     db: &dyn SemanticGroup,
     crate_id: CrateId,
     type_filter: TypeFilter,
-) -> Vec<TraitFunctionId> {
+) -> Arc<Vec<TraitFunctionId>> {
     let mut result = Vec::new();
     for module_id in db.crate_modules(crate_id).iter() {
-        result.extend(methods_in_module(db, *module_id, type_filter.clone()))
+        result.extend_from_slice(&db.methods_in_module(*module_id, type_filter.clone())[..])
     }
-    result
+    result.into()
 }

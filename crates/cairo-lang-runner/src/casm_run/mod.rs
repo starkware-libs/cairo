@@ -117,6 +117,9 @@ macro_rules! insert_value_to_cellref {
 // Log type signature
 type Log = (Vec<Felt252>, Vec<Felt252>);
 
+// L2 to L1 message type signature
+type L2ToL1Message = (Felt252, Vec<Felt252>);
+
 /// Execution scope for starknet related data.
 /// All values will be 0 and by default if not setup by the test.
 #[derive(Clone, Default)]
@@ -127,7 +130,7 @@ pub struct StarknetState {
     #[allow(dead_code)]
     deployed_contracts: HashMap<Felt252, Felt252>,
     /// A mapping from contract address to logs.
-    logs: HashMap<Felt252, VecDeque<Log>>,
+    logs: HashMap<Felt252, ContractLogs>,
     /// The simulated execution info.
     exec_info: ExecutionInfo,
     next_id: Felt252,
@@ -137,6 +140,33 @@ impl StarknetState {
         self.next_id += Felt252::from(1);
         self.next_id.clone()
     }
+
+    /// Replaces the addresses in the context.
+    pub fn open_caller_context(&mut self, new_contract_address: Felt252) -> (Felt252, Felt252) {
+        let old_contract_address =
+            std::mem::replace(&mut self.exec_info.contract_address, new_contract_address.clone());
+        let old_caller_address =
+            std::mem::replace(&mut self.exec_info.caller_address, old_contract_address.clone());
+        (old_contract_address, old_caller_address)
+    }
+
+    /// Restores the addresses in the context.
+    pub fn close_caller_context(
+        &mut self,
+        (old_contract_address, old_caller_address): (Felt252, Felt252),
+    ) {
+        self.exec_info.contract_address = old_contract_address;
+        self.exec_info.caller_address = old_caller_address;
+    }
+}
+
+/// Object storing logs for a contract.
+#[derive(Clone, Default)]
+struct ContractLogs {
+    /// Events.
+    events: VecDeque<Log>,
+    /// Messages sent to L1.
+    l2_to_l1_messages: VecDeque<L2ToL1Message>,
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -624,10 +654,11 @@ impl<'a> CairoHintProcessor<'a> {
                 self.emit_event(gas_counter, system_buffer.next_arr()?, system_buffer.next_arr()?)
             }),
             "SendMessageToL1" => execute_handle_helper(&mut |system_buffer, gas_counter| {
-                let _to_address = system_buffer.next_felt252()?;
-                let _payload = system_buffer.next_arr()?;
-                deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
-                Ok(SyscallResult::Success(vec![]))
+                self.send_message_to_l1(
+                    gas_counter,
+                    system_buffer.next_felt252()?.into_owned(),
+                    system_buffer.next_arr()?,
+                )
             }),
             "Keccak" => execute_handle_helper(&mut |system_buffer, gas_counter| {
                 keccak(gas_counter, system_buffer.next_arr()?)
@@ -834,7 +865,25 @@ impl<'a> CairoHintProcessor<'a> {
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, EMIT_EVENT);
         let contract = self.starknet_state.exec_info.contract_address.clone();
-        self.starknet_state.logs.entry(contract).or_default().push_back((keys, data));
+        self.starknet_state.logs.entry(contract).or_default().events.push_back((keys, data));
+        Ok(SyscallResult::Success(vec![]))
+    }
+
+    /// Executes the `send_message_to_l1_event_syscall` syscall.
+    fn send_message_to_l1(
+        &mut self,
+        gas_counter: &mut usize,
+        to_address: Felt252,
+        payload: Vec<Felt252>,
+    ) -> Result<SyscallResult, HintError> {
+        deduct_gas!(gas_counter, SEND_MESSAGE_TO_L1);
+        let contract = self.starknet_state.exec_info.contract_address.clone();
+        self.starknet_state
+            .logs
+            .entry(contract)
+            .or_default()
+            .l2_to_l1_messages
+            .push_back((to_address, payload));
         Ok(SyscallResult::Success(vec![]))
     }
 
@@ -861,17 +910,10 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-            // Replace the contract address in the context.
-            let old_contract_address = std::mem::replace(
-                &mut self.starknet_state.exec_info.contract_address,
-                deployed_contract_address.clone(),
-            );
-
-            // Run the constructor.
+            let old_addrs =
+                self.starknet_state.open_caller_context(deployed_contract_address.clone());
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
-
-            // Restore the contract address in the context.
-            self.starknet_state.exec_info.contract_address = old_contract_address;
+            self.starknet_state.close_caller_context(old_addrs);
             match res {
                 Ok(value) => value,
                 Err(mut revert_reason) => {
@@ -923,21 +965,9 @@ impl<'a> CairoHintProcessor<'a> {
             fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
         };
 
-        // Replace the contract address in the context.
-        let old_contract_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.contract_address,
-            contract_address.clone(),
-        );
-        let old_caller_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.caller_address,
-            old_contract_address.clone(),
-        );
-
+        let old_addrs = self.starknet_state.open_caller_context(contract_address.clone());
         let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
-
-        // Restore the contract address in the context.
-        self.starknet_state.exec_info.caller_address = old_caller_address;
-        self.starknet_state.exec_info.contract_address = old_contract_address;
+        self.starknet_state.close_caller_context(old_addrs);
 
         match res {
             Ok((res_data_start, res_data_end)) => {
@@ -1101,12 +1131,22 @@ impl<'a> CairoHintProcessor<'a> {
             "pop_log" => {
                 let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
                 if let Some((keys, data)) =
-                    contract_logs.and_then(|contract_logs| contract_logs.pop_front())
+                    contract_logs.and_then(|contract_logs| contract_logs.events.pop_front())
                 {
                     res_segment.write(keys.len())?;
                     res_segment.write_data(keys.iter())?;
                     res_segment.write(data.len())?;
                     res_segment.write_data(data.iter())?;
+                }
+            }
+            "pop_l2_to_l1_message" => {
+                let contract_logs = self.starknet_state.logs.get_mut(&as_single_input(inputs)?);
+                if let Some((to_address, payload)) = contract_logs
+                    .and_then(|contract_logs| contract_logs.l2_to_l1_messages.pop_front())
+                {
+                    res_segment.write(to_address)?;
+                    res_segment.write(payload.len())?;
+                    res_segment.write_data(payload.iter())?;
                 }
             }
             _ => Err(HintError::CustomHint(Box::from(format!(
@@ -1218,9 +1258,10 @@ fn secp256k1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256k1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)|
+        .map(
+            |(smaller, greater)|
             // Return the correct y coordinate based on the parity.
-            if smaller.0.is_odd() == y_parity { smaller } else { greater }
+            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
         )
         .map(|y| secp256k1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
@@ -1344,9 +1385,11 @@ fn secp256r1_get_point_from_x(
     }
     let x = x.into();
     let maybe_p = secp256r1::Affine::get_ys_from_x_unchecked(x)
-        .map(|(smaller, greater)|
+        .map(
+            |(smaller, greater)|
             // Return the correct y coordinate based on the parity.
-            if smaller.0.is_odd() == y_parity { smaller } else { greater })
+            if smaller.into_bigint().is_odd() == y_parity { smaller } else { greater },
+        )
         .map(|y| secp256r1::Affine::new_unchecked(x, y))
         .filter(|p| p.is_in_correct_subgroup_assuming_on_curve());
     let Some(p) = maybe_p else {

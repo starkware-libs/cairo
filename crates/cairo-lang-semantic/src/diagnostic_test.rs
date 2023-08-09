@@ -2,10 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, GeneratedFileAuxData, MacroPlugin, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_diagnostics::DiagnosticEntry;
+use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -14,16 +12,10 @@ use pretty_assertions::assert_eq;
 use test_log::test;
 
 use crate::db::SemanticGroup;
-use crate::patcher::{PatchBuilder, Patches, RewriteNode};
-use crate::plugin::{
-    AsDynGeneratedFileAuxData, AsDynMacroPlugin, DynPluginAuxData, PluginAuxData,
-    PluginMappedDiagnostic, SemanticPlugin,
-};
 use crate::test_utils::{
     get_crate_semantic_diagnostics, setup_test_crate, test_expr_diagnostics,
     SemanticDatabaseForTesting,
 };
-use crate::SemanticDiagnostic;
 
 cairo_lang_test_utils::test_file_test!(
     diagnostics,
@@ -40,8 +32,8 @@ cairo_lang_test_utils::test_file_test!(
 
 #[test]
 fn test_missing_module_file() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let crate_id = setup_test_crate(
         db,
         "
@@ -56,7 +48,7 @@ fn test_missing_module_file() {
     assert_eq!(
         db.module_semantic_diagnostics(ModuleId::Submodule(submodule_id)).unwrap().format(db),
         indoc! {"
-            error: Module file not found. Expected path: src/a/abc.cairo
+            error: Module file not found. Expected path: abc.cairo
              --> lib.cairo:3:9
                     mod abc;
                     ^******^
@@ -114,9 +106,8 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                     code: Some(PluginGeneratedFile {
                         name: "virt2".into(),
                         content: builder.code,
-                        aux_data: DynGeneratedFileAuxData::new(DynPluginAuxData::new(
-                            PatchMapper { patches: builder.patches },
-                        )),
+                        patches: builder.patches,
+                        aux_data: None,
                     }),
                     diagnostics: vec![],
                     remove_original_item: false,
@@ -126,54 +117,12 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
         }
     }
 }
-impl AsDynMacroPlugin for AddInlineModuleDummyPlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-impl SemanticPlugin for AddInlineModuleDummyPlugin {}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct PatchMapper {
-    patches: Patches,
-}
-impl GeneratedFileAuxData for PatchMapper {
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-    fn eq(&self, other: &dyn GeneratedFileAuxData) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() { self == other } else { false }
-    }
-}
-impl AsDynGeneratedFileAuxData for PatchMapper {
-    fn as_dyn_macro_token(&self) -> &(dyn GeneratedFileAuxData + 'static) {
-        self
-    }
-}
-impl PluginAuxData for PatchMapper {
-    fn map_diag(
-        &self,
-        db: &(dyn SemanticGroup + 'static),
-        diag: &dyn std::any::Any,
-    ) -> Option<PluginMappedDiagnostic> {
-        let Some(diag) = diag.downcast_ref::<SemanticDiagnostic>() else {
-            return None;
-        };
-        let span = self
-            .patches
-            .translate(db.upcast(), diag.stable_location.diagnostic_location(db.upcast()).span)?;
-        Some(PluginMappedDiagnostic { span, message: format!("Mapped error. {}", diag.format(db)) })
-    }
-}
 
 #[test]
 fn test_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let mut db_val = SemanticDatabaseForTesting::new_empty();
     let db = &mut db_val;
-    db.set_semantic_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
+    db.set_macro_plugins(vec![Arc::new(AddInlineModuleDummyPlugin)]);
     let crate_id = setup_test_crate(
         db,
         indoc! {"
@@ -195,7 +144,7 @@ fn test_inline_module_diagnostics() {
                     return 5_felt252;
                            ^*******^
 
-            error: Plugin diagnostic: Mapped error. Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
+            error: Plugin diagnostic: Unexpected return type. Expected: "test::a::inner_mod::NewType", found: "core::felt252".
              --> lib.cairo:4:16
                     return 5_felt252;
                            ^*******^
@@ -206,8 +155,8 @@ fn test_inline_module_diagnostics() {
 
 #[test]
 fn test_inline_inline_module_diagnostics() {
-    let mut db_val = SemanticDatabaseForTesting::default();
-    let db = &mut db_val;
+    let db_val = SemanticDatabaseForTesting::default();
+    let db = &db_val;
     let crate_id = setup_test_crate(
         db,
         indoc! {"

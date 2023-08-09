@@ -45,20 +45,17 @@ mod hello_starknet {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 1102354323051365330526116728762987089260624826846154342310342950171552219682;
+const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
-        balance: balance::ContractState,
+        balance: balance::ContractMemberState,
     }
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            balance: balance::ContractState{},
+            balance: balance::ContractMemberState{},
         }
     }
     #[cfg(test)]
@@ -76,86 +73,68 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
     use balance::InternalContractStateTrait as balanceContractStateTrait;
     mod balance {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
-        use starknet::SyscallResultTrait;
-        use starknet::SyscallResultTraitImpl;
-        use super;
-
         #[derive(Copy, Drop)]
-        struct ContractState {}
+        struct ContractMemberState {}
         trait InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractState) -> felt252;
-            fn write(ref self: ContractState, value: felt252);
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> felt252;
+            fn write(ref self: ContractMemberState, value: felt252);
         }
 
         impl InternalContractStateImpl of InternalContractStateTrait {
-            fn address(self: @ContractState) -> starknet::StorageBaseAddress {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
-            fn read(self: @ContractState) -> felt252 {
+            fn read(self: @ContractMemberState) -> felt252 {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::read(
-                    address_domain,
-                    self.address(),
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
             }
-            fn write(ref self: ContractState, value: felt252) {
+            fn write(ref self: ContractMemberState, value: felt252) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
-                starknet::Store::<felt252>::write(
-                    address_domain,
-                    self.address(),
-                    value,
-                ).unwrap_syscall()
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
             }
         }
     }
 
 
-
-
-trait __abi<ContractState> {
-    #[external]
-        fn increase_balance(ref self: ContractState, amount: felt252);
-        #[external]
-        fn get_balance(self: @ContractState) -> felt252;
-        
-    
-}
-
 mod __external {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
-            let __arg_amount =
-                serde::Serde::<felt252>::deserialize(ref data)
-                    .expect('Failed to deserialize param #1');
+            let __arg_amount = option::OptionTraitImpl::expect(
+                serde::Serde::<felt252>::deserialize(ref data),
+                'Failed to deserialize param #1'
+            );
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::increase_balance(ref contract_state, __arg_amount);
             let mut arr = array::array_new();
@@ -167,10 +146,10 @@ mod __external {
         fn get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             
             let res = super::get_balance(@contract_state, );
@@ -184,21 +163,11 @@ mod __external {
 }
 
 mod __l1_handler {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __constructor {
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }

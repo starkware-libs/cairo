@@ -3,8 +3,6 @@ use std::ops::Deref;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
-use cairo_lang_plugins::get_default_plugins;
-use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::chain;
@@ -68,7 +66,6 @@ fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
     let db = &mut LoweringDatabaseForTesting::default();
-    db.set_semantic_plugins(get_default_plugins());
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
         inputs["function"].as_str(),
@@ -103,11 +100,10 @@ fn test_function_lowering(
 fn test_function_lowering_phases(
     inputs: &OrderedHashMap<String, String>,
 ) -> OrderedHashMap<String, String> {
-    let mut db = LoweringDatabaseForTesting::default();
-    db.set_semantic_plugins(get_default_plugins());
+    let db = LoweringDatabaseForTesting::default();
 
     let (test_function, semantic_diagnostics) = setup_test_function(
-        &mut db,
+        &db,
         inputs["function"].as_str(),
         inputs["function_name"].as_str(),
         inputs["module_code"].as_str(),
@@ -178,7 +174,6 @@ fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {
 #[test]
 fn test_diagnostics() {
     let db = &mut LoweringDatabaseForTesting::default();
-    db.set_semantic_plugins(get_default_plugins());
     let test_expr = setup_test_expr(db, "a = a * 3", "", "let mut a = 5;").unwrap();
     let location = LocationId::from_stable_location(db, test_expr.function_id.stable_location(db))
         .with_auto_generation_note(db, "withdraw_gas")

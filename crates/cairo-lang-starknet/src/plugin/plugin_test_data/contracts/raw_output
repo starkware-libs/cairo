@@ -49,11 +49,8 @@ mod test_contract {
 
 contract:
 
-use starknet::SyscallResultTrait;
-use starknet::SyscallResultTraitImpl;
-
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 876434993571142883350487723206857627809544242047179747265251009258990971924;
+const TEST_CLASS_HASH: felt252 = 0x1f00b6cb035975e1b10429734c1cb82a267b66465d300afaec2af06e3e1ac14;
 use starknet::event::EventEmitter;
 #[derive(Drop)]
     struct ContractState {
@@ -78,42 +75,28 @@ use starknet::event::EventEmitter;
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
             starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::syscalls::emit_event_syscall(
-                array::ArrayTrait::span(@keys),
-                array::ArrayTrait::span(@data),
-            ).unwrap_syscall()
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
         }
     }
 
 
 
-
-
-trait __abi<ContractState> {
-    #[external]
-        fn test_raw_output(ref self: ContractState) -> Span::<felt252>;
-        #[external]
-        fn test_raw_output_with_spaces(ref self: ContractState) -> Span     ::   < felt252  >;
-        
-    
-}
-
 mod __external {
         use super::ArrayTrait;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
         fn test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::test_raw_output(ref contract_state, )
         }
@@ -121,10 +104,10 @@ mod __external {
         fn test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas');
             let mut contract_state = super::unsafe_new_contract_state();
             super::test_raw_output_with_spaces(ref contract_state, )
         }
@@ -133,22 +116,12 @@ mod __external {
 
 mod __l1_handler {
         use super::ArrayTrait;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }
 
 mod __constructor {
         use super::ArrayTrait;
-        use starknet::class_hash::ClassHashSerde;
-        use starknet::contract_address::ContractAddressSerde;
-        use starknet::storage_access::StorageAddressSerde;
-        use option::OptionTrait;
-        use option::OptionTraitImpl;
 
     
 }

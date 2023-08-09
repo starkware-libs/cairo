@@ -35,8 +35,8 @@
     "0x45634f70",
     "0x53797374656d",
     "0x4275696c74696e436f737473",
-    "0x58f830025e1f8c5b377f6998b478b0855747ff7f857f74194d0202330b33b4",
-    "0x37d60fa405db33a6a9f21d6b1c520b35b880477e803426e4b368b3a32d14f3f",
+    "0x2db784556f87e861d539d33c823cc21c4bbafa740aa585bc5f3db3cdefe3b2a",
+    "0x17b20b8515bacb33cc4e5d817848d0e4a2d53b8a3902a30014b0931aa9871d2",
     "0x10",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
     "0x12",
@@ -50,16 +50,16 @@
     "0xc1f0cb41289e2f6a79051e9af1ead07112b46ff17a492a90b3944dc53a51c8",
     "0x18",
     "0x11",
-    "0x15ee4a707227947f1e21d25510ef39a726a297ae94b403cb63b3ad30580b4c4",
+    "0x5615ac12848ccdd8ae68c85275e04ba7b8e6718d9fae1265a4271d4e2b3172",
     "0x1a",
     "0x556e696e697469616c697a6564",
     "0xe",
     "0x1d",
-    "0x2cb3bc13cd6eee97924227744ac7e890353d63259bb58f4ed3d903eb95cc05c",
+    "0x1be5977c32fc96e90c3ca14758a1399c8ee531d214b863eda1e0834ed69fbf4",
     "0x1e",
     "0x74584e9f10ffb1a40aa5a3582e203f6758defc4a497d1a2d5a89f274a320e9",
     "0x21",
-    "0x2c6b875d728c558607a1fab6dbdb37df216bf68fff8debc53cb5ba948c06405",
+    "0xf104fa09f5554cb2499eb013039e229e868834bcc42439af425f44b16e5cdf",
     "0x23",
     "0x426f78",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
@@ -82,7 +82,7 @@
     "0x32",
     "0x28f8d296e28032baef1f420f78ea9d933102ba47a50b1c5f80fc8a3a1041da",
     "0x20",
-    "0x29efada4d7e5d517e490a4202093801e54489b790082ebd465d0d5fc65a80a8",
+    "0x3c819625f4e9299c9644edae5d19d7898fb068eda859884b00eedb12b0ebb20",
     "0x35",
     "0x753634",
     "0x3808c701a5d13e100ab11b6c02f91f752ecae7e420d21b56c90ec0a475cc7e5",
@@ -1485,11 +1485,11 @@
       ],
       [
         16,
-        "account::account::account::public_key::ContractState"
+        "test::account::public_key::ContractMemberState"
       ],
       [
         17,
-        "account::account::account::ContractState"
+        "test::account::ContractState"
       ],
       [
         18,
@@ -1525,11 +1525,11 @@
       ],
       [
         26,
-        "Tuple<account::account::account::ContractState, felt252>"
+        "Tuple<test::account::ContractState, felt252>"
       ],
       [
         27,
-        "core::panics::PanicResult::<(account::account::account::ContractState, core::felt252)>"
+        "core::panics::PanicResult::<(test::account::ContractState, core::felt252)>"
       ],
       [
         28,
@@ -1541,11 +1541,11 @@
       ],
       [
         30,
-        "Tuple<account::account::account::ContractState, Array<core::array::Span::<core::felt252>>>"
+        "Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>"
       ],
       [
         31,
-        "core::panics::PanicResult::<(account::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>"
+        "core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>"
       ],
       [
         32,
@@ -1561,11 +1561,11 @@
       ],
       [
         35,
-        "Tuple<account::account::account::ContractState, Unit>"
+        "Tuple<test::account::ContractState, Unit>"
       ],
       [
         36,
-        "core::panics::PanicResult::<(account::account::account::ContractState, ())>"
+        "core::panics::PanicResult::<(test::account::ContractState, ())>"
       ],
       [
         37,
@@ -1633,11 +1633,11 @@
       ],
       [
         53,
-        "Tuple<account::account::account::public_key::ContractState, Unit>"
+        "Tuple<test::account::public_key::ContractMemberState, Unit>"
       ],
       [
         54,
-        "core::panics::PanicResult::<(account::account::account::public_key::ContractState, ())>"
+        "core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>"
       ],
       [
         55,
@@ -1887,27 +1887,27 @@
       ],
       [
         30,
-        "struct_construct<account::account::account::public_key::ContractState>"
+        "struct_construct<test::account::public_key::ContractMemberState>"
       ],
       [
         31,
-        "struct_construct<account::account::account::ContractState>"
+        "struct_construct<test::account::ContractState>"
       ],
       [
         32,
-        "snapshot_take<account::account::account::ContractState>"
+        "snapshot_take<test::account::ContractState>"
       ],
       [
         33,
-        "drop<account::account::account::ContractState>"
+        "drop<test::account::ContractState>"
       ],
       [
         34,
-        "store_temp<account::account::account::ContractState>"
+        "store_temp<test::account::ContractState>"
       ],
       [
         35,
-        "function_call<user@account::account::account::StorageImpl::validate_transaction>"
+        "function_call<user@test::account::StorageImpl::validate_transaction>"
       ],
       [
         36,
@@ -1999,15 +1999,15 @@
       ],
       [
         58,
-        "function_call<user@account::account::account::AccountContractImpl::__validate__>"
+        "function_call<user@test::account::AccountContractImpl::__validate__>"
       ],
       [
         59,
-        "enum_match<core::panics::PanicResult::<(account::account::account::ContractState, core::felt252)>>"
+        "enum_match<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>>"
       ],
       [
         60,
-        "struct_deconstruct<Tuple<account::account::account::ContractState, felt252>>"
+        "struct_deconstruct<Tuple<test::account::ContractState, felt252>>"
       ],
       [
         61,
@@ -2023,7 +2023,7 @@
       ],
       [
         64,
-        "function_call<user@account::account::account::AccountContractImpl::__execute__>"
+        "function_call<user@test::account::AccountContractImpl::__execute__>"
       ],
       [
         65,
@@ -2031,11 +2031,11 @@
       ],
       [
         66,
-        "enum_match<core::panics::PanicResult::<(account::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
+        "enum_match<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
       ],
       [
         67,
-        "struct_deconstruct<Tuple<account::account::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
+        "struct_deconstruct<Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
       ],
       [
         68,
@@ -2063,15 +2063,15 @@
       ],
       [
         74,
-        "function_call<user@account::account::account::constructor>"
+        "function_call<user@test::account::constructor>"
       ],
       [
         75,
-        "enum_match<core::panics::PanicResult::<(account::account::account::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::account::ContractState, ())>>"
       ],
       [
         76,
-        "drop<Tuple<account::account::account::ContractState, Unit>>"
+        "drop<Tuple<test::account::ContractState, Unit>>"
       ],
       [
         77,
@@ -2175,15 +2175,15 @@
       ],
       [
         102,
-        "struct_deconstruct<account::account::account::ContractState>"
+        "struct_deconstruct<test::account::ContractState>"
       ],
       [
         103,
-        "store_temp<account::account::account::public_key::ContractState>"
+        "store_temp<test::account::public_key::ContractMemberState>"
       ],
       [
         104,
-        "function_call<user@account::account::account::public_key::InternalContractStateImpl::read>"
+        "function_call<user@test::account::public_key::InternalContractStateImpl::read>"
       ],
       [
         105,
@@ -2275,19 +2275,19 @@
       ],
       [
         127,
-        "struct_construct<Tuple<account::account::account::ContractState, felt252>>"
+        "struct_construct<Tuple<test::account::ContractState, felt252>>"
       ],
       [
         128,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, core::felt252)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>, 0>"
       ],
       [
         129,
-        "store_temp<core::panics::PanicResult::<(account::account::account::ContractState, core::felt252)>>"
+        "store_temp<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>>"
       ],
       [
         130,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, core::felt252)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>, 1>"
       ],
       [
         131,
@@ -2347,11 +2347,11 @@
       ],
       [
         145,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 1>"
       ],
       [
         146,
-        "store_temp<core::panics::PanicResult::<(account::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
+        "store_temp<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
       ],
       [
         147,
@@ -2363,7 +2363,7 @@
       ],
       [
         149,
-        "function_call<user@account::account::account::AccountContractImpl::__execute__[expr33]>"
+        "function_call<user@test::account::AccountContractImpl::__execute__[expr33]>"
       ],
       [
         150,
@@ -2375,11 +2375,11 @@
       ],
       [
         152,
-        "struct_construct<Tuple<account::account::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
+        "struct_construct<Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
       ],
       [
         153,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 0>"
       ],
       [
         154,
@@ -2427,31 +2427,31 @@
       ],
       [
         165,
-        "function_call<user@account::account::account::public_key::InternalContractStateImpl::write>"
+        "function_call<user@test::account::public_key::InternalContractStateImpl::write>"
       ],
       [
         166,
-        "enum_match<core::panics::PanicResult::<(account::account::account::public_key::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>"
       ],
       [
         167,
-        "struct_deconstruct<Tuple<account::account::account::public_key::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<test::account::public_key::ContractMemberState, Unit>>"
       ],
       [
         168,
-        "struct_construct<Tuple<account::account::account::ContractState, Unit>>"
+        "struct_construct<Tuple<test::account::ContractState, Unit>>"
       ],
       [
         169,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, ())>, 0>"
       ],
       [
         170,
-        "store_temp<core::panics::PanicResult::<(account::account::account::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::account::ContractState, ())>>"
       ],
       [
         171,
-        "enum_init<core::panics::PanicResult::<(account::account::account::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::account::ContractState, ())>, 1>"
       ],
       [
         172,
@@ -2495,7 +2495,7 @@
       ],
       [
         182,
-        "drop<account::account::account::public_key::ContractState>"
+        "drop<test::account::public_key::ContractMemberState>"
       ],
       [
         183,
@@ -2803,7 +2803,7 @@
       ],
       [
         259,
-        "snapshot_take<account::account::account::public_key::ContractState>"
+        "snapshot_take<test::account::public_key::ContractMemberState>"
       ],
       [
         260,
@@ -2839,19 +2839,19 @@
       ],
       [
         268,
-        "struct_construct<Tuple<account::account::account::public_key::ContractState, Unit>>"
+        "struct_construct<Tuple<test::account::public_key::ContractMemberState, Unit>>"
       ],
       [
         269,
-        "enum_init<core::panics::PanicResult::<(account::account::account::public_key::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>, 0>"
       ],
       [
         270,
-        "store_temp<core::panics::PanicResult::<(account::account::account::public_key::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>"
       ],
       [
         271,
-        "enum_init<core::panics::PanicResult::<(account::account::account::public_key::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>, 1>"
       ],
       [
         272,
@@ -3093,23 +3093,23 @@
     "user_func_names": [
       [
         0,
-        "account::account::account::__external::__validate_deploy__"
+        "test::account::__external::__validate_deploy__"
       ],
       [
         1,
-        "account::account::account::__external::__validate_declare__"
+        "test::account::__external::__validate_declare__"
       ],
       [
         2,
-        "account::account::account::__external::__validate__"
+        "test::account::__external::__validate__"
       ],
       [
         3,
-        "account::account::account::__external::__execute__"
+        "test::account::__external::__execute__"
       ],
       [
         4,
-        "account::account::account::__constructor::constructor"
+        "test::account::__constructor::constructor"
       ],
       [
         5,
@@ -3117,7 +3117,7 @@
       ],
       [
         6,
-        "account::account::account::StorageImpl::validate_transaction"
+        "test::account::StorageImpl::validate_transaction"
       ],
       [
         7,
@@ -3129,11 +3129,11 @@
       ],
       [
         9,
-        "account::account::account::AccountContractImpl::__validate__"
+        "test::account::AccountContractImpl::__validate__"
       ],
       [
         10,
-        "account::account::account::AccountContractImpl::__execute__"
+        "test::account::AccountContractImpl::__execute__"
       ],
       [
         11,
@@ -3141,7 +3141,7 @@
       ],
       [
         12,
-        "account::account::account::constructor"
+        "test::account::constructor"
       ],
       [
         13,
@@ -3149,7 +3149,7 @@
       ],
       [
         14,
-        "account::account::account::public_key::InternalContractStateImpl::read"
+        "test::account::public_key::InternalContractStateImpl::read"
       ],
       [
         15,
@@ -3169,7 +3169,7 @@
       ],
       [
         19,
-        "account::account::account::AccountContractImpl::__execute__[expr33]"
+        "test::account::AccountContractImpl::__execute__[expr33]"
       ],
       [
         20,
@@ -3181,7 +3181,7 @@
       ],
       [
         22,
-        "account::account::account::public_key::InternalContractStateImpl::write"
+        "test::account::public_key::InternalContractStateImpl::write"
       ],
       [
         23,
@@ -3393,7 +3393,7 @@
     },
     {
       "type": "event",
-      "name": "account::account::account::Event",
+      "name": "test::account::Event",
       "kind": "enum",
       "variants": []
     }

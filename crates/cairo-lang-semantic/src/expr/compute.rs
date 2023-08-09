@@ -50,7 +50,6 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
-use crate::items::us::SemanticUseEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
@@ -1005,13 +1004,13 @@ fn compute_expr_indexed_semantic(
     let syntax_db = ctx.db.upcast();
     let expr = compute_expr_semantic(ctx, &syntax.expr(syntax_db));
     let index_expr = compute_expr_semantic(ctx, &syntax.index_expr(syntax_db));
-    let candidate_traits = vec!["Index", "IndexView"]
+    let candidate_traits: Vec<_> = ["Index", "IndexView"]
         .iter()
         .map(|trait_name| get_core_trait(ctx.db, (*trait_name).into()))
         .collect();
     let (function_id, fixed_expr, mutability) = compute_method_function_call_data(
         ctx,
-        candidate_traits,
+        &candidate_traits[..],
         "index".into(),
         expr,
         syntax.stable_ptr().untyped(),
@@ -1037,7 +1036,7 @@ fn compute_expr_indexed_semantic(
 #[allow(clippy::too_many_arguments)]
 fn compute_method_function_call_data(
     ctx: &mut ComputationContext<'_>,
-    candidate_traits: Vec<TraitId>,
+    candidate_traits: &[TraitId],
     func_name: SmolStr,
     self_expr: ExprAndId,
     method_syntax: SyntaxStablePtrId,
@@ -1561,14 +1560,8 @@ fn dot_expr(
 }
 
 /// Finds all the trait ids usable in the current context.
-fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Vec<TraitId>> {
-    let mut module_traits = ctx.db.module_traits_ids(ctx.resolver.module_file_id.0)?;
-    for use_id in ctx.db.module_uses_ids(ctx.resolver.module_file_id.0)? {
-        if let Ok(ResolvedGenericItem::Trait(trait_id)) = ctx.db.use_resolved_item(use_id) {
-            module_traits.push(trait_id);
-        }
-    }
-    Ok(module_traits)
+fn all_module_trait_ids(ctx: &mut ComputationContext<'_>) -> Maybe<Arc<Vec<TraitId>>> {
+    ctx.db.module_usable_trait_ids(ctx.resolver.module_file_id.0)
 }
 
 /// Computes the semantic model of a method call expression (e.g. "expr.method(..)").
@@ -1594,7 +1587,7 @@ fn method_call_expr(
     let candidate_traits = all_module_trait_ids(ctx)?;
     let (function_id, fixed_lexpr, mutability) = compute_method_function_call_data(
         ctx,
-        candidate_traits,
+        &candidate_traits[..],
         func_name,
         lexpr,
         path.stable_ptr().untyped(),

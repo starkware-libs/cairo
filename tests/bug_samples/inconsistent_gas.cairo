@@ -9,6 +9,7 @@ mod test_contract {
     use starknet::storage_access::storage_base_address_from_felt252;
     use starknet::storage_access::storage_address_from_base_and_offset;
     use starknet::ContractAddress;
+    use starknet::SyscallResultTrait;
 
     #[storage]
     struct Storage {

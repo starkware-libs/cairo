@@ -41,7 +41,7 @@ mod module_does_not_exist;
 //! > function_body
 
 //! > expected_diagnostics
-error: Module file not found. Expected path: src/module_does_not_exist.cairo
+error: Module file not found. Expected path: module_does_not_exist.cairo
  --> lib.cairo:1:1
 mod module_does_not_exist;
 ^************************^

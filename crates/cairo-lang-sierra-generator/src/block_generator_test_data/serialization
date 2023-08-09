@@ -29,19 +29,19 @@ use serde::Serde;
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-array_pop_front<felt252>([0]) { fallthrough([1], [2]) label0([3]) }
+array_pop_front<felt252>([0]) { fallthrough([1], [2]) label_test::serialize_array_felt_helper::0([3]) }
 branch_align() -> ()
 unbox<felt252>([2]) -> ([4])
 enum_init<core::option::Option::<core::felt252>, 0>([4]) -> ([5])
 PushValues([1]: Array<felt252>, [5]: core::option::Option::<core::felt252>) -> ([6], [7])
-jump() { label2() }
-label0:
+jump() { label_test::serialize_array_felt_helper::2() }
+label_test::serialize_array_felt_helper::0:
 branch_align() -> ()
 struct_construct<Unit>() -> ([8])
 enum_init<core::option::Option::<core::felt252>, 1>([8]) -> ([9])
 PushValues([3]: Array<felt252>, [9]: core::option::Option::<core::felt252>) -> ([6], [7])
-label2:
-enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label3([11]) }
+label_test::serialize_array_felt_helper::2:
+enum_match<core::option::Option::<core::felt252>>([7]) { fallthrough([10]) label_test::serialize_array_felt_helper::3([11]) }
 branch_align() -> ()
 snapshot_take<felt252>([10]) -> ([12], [13])
 drop<felt252>([12]) -> ()
@@ -52,18 +52,18 @@ PushValues([15]: Array<felt252>, [6]: Array<felt252>) -> ([21], [22])
 function_call<user@test::serialize_array_felt_helper>([21], [22]) -> ([19], [20])
 drop<Unit>([20]) -> ()
 PushValues([19]: Array<felt252>) -> ([23])
-jump() { label6() }
-label3:
+jump() { label_test::serialize_array_felt_helper::5() }
+label_test::serialize_array_felt_helper::3:
 branch_align() -> ()
 drop<Unit>([11]) -> ()
 drop<Array<felt252>>([6]) -> ()
 PushValues([14]: Array<felt252>) -> ([23])
-label6:
+label_test::serialize_array_felt_helper::5:
 struct_construct<Unit>() -> ([24])
 PushValues([23]: Array<felt252>, [24]: Unit) -> ([25], [26])
 return([25], [26])
-label4:
-label1:
+label_test::serialize_array_felt_helper::4:
+label_test::serialize_array_felt_helper::1:
 
 //! > lowering_flat
 Parameters: v0: core::array::Array::<core::felt252>, v1: core::array::Array::<core::felt252>

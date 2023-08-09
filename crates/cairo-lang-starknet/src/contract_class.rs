@@ -82,7 +82,7 @@ pub fn compile_path(
 ) -> Result<ContractClass> {
     let mut db = RootDatabase::builder()
         .detect_corelib()
-        .with_semantic_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
@@ -216,15 +216,18 @@ pub fn extract_semantic_entrypoints(
     contract: &ContractDeclaration,
 ) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
     let external: Vec<_> = get_module_functions(db.upcast(), contract, EXTERNAL_MODULE)?
-        .into_iter()
+        .iter()
+        .copied()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
         .collect();
     let l1_handler: Vec<_> = get_module_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
-        .into_iter()
+        .iter()
+        .copied()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
         .collect();
     let constructor: Vec<_> = get_module_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-        .into_iter()
+        .iter()
+        .copied()
         .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
         .collect();
     if constructor.len() > 1 {

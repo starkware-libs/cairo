@@ -1,5 +1,5 @@
+use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_semantic::patcher::RewriteNode;
 use cairo_lang_syntax::node::ast::{
     self, Attribute, FunctionWithBody, OptionArgListParenthesized, OptionReturnTypeClause,
 };
@@ -37,15 +37,6 @@ impl EntryPointKind {
             Some(EntryPointKind::L1Handler)
         } else {
             None
-        }
-    }
-
-    /// Returns the relevant attribute of the entry point kind.
-    pub fn get_attr(&self) -> &str {
-        match self {
-            EntryPointKind::External => EXTERNAL_ATTR,
-            EntryPointKind::Constructor => CONSTRUCTOR_ATTR,
-            EntryPointKind::L1Handler => L1_HANDLER_ATTR,
         }
     }
 }
@@ -97,9 +88,10 @@ pub fn generate_entry_point_wrapper(
         let mut_modifier = if is_ref { "mut " } else { "" };
         let arg_definition = format!(
             "
-            let {mut_modifier}{arg_name} =
-                serde::Serde::<{type_name}>::deserialize(ref data)
-                    .expect('Failed to deserialize param #{param_idx}');"
+            let {mut_modifier}{arg_name} = option::OptionTraitImpl::expect(
+                serde::Serde::<{type_name}>::deserialize(ref data),
+                'Failed to deserialize param #{param_idx}'
+            );"
         );
         arg_definitions.push(arg_definition);
 
@@ -180,10 +172,11 @@ pub fn generate_entry_point_wrapper(
         fn $function_name$(mut data: Span::<felt252>) -> Span::<felt252> {
             internal::require_implicit::<System>();
             internal::revoke_ap_tracking();
-            gas::withdraw_gas().expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
             $arg_definitions$
             assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-            gas::withdraw_gas_all(get_builtin_costs()).expect('Out of gas');
+            option::OptionTraitImpl::expect(gas::withdraw_gas_all(get_builtin_costs()), 'Out of \
+         gas');
             let mut contract_state = super::unsafe_new_contract_state();
             $output_handling$
         }",

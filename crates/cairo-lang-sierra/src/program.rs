@@ -147,6 +147,25 @@ pub enum GenStatement<StatementId> {
     Invocation(GenInvocation<StatementId>),
     Return(Vec<VarId>),
 }
+impl<StatementId> GenStatement<StatementId> {
+    pub fn map<T>(self, f: impl Fn(StatementId) -> T) -> GenStatement<T> {
+        match self {
+            GenStatement::Invocation(invocation) => GenStatement::Invocation(GenInvocation {
+                libfunc_id: invocation.libfunc_id,
+                args: invocation.args.clone(),
+                branches: invocation
+                    .branches
+                    .into_iter()
+                    .map(|branch| GenBranchInfo {
+                        target: branch.target.map(&f),
+                        results: branch.results.clone(),
+                    })
+                    .collect(),
+            }),
+            GenStatement::Return(results) => GenStatement::Return(results.clone()),
+        }
+    }
+}
 
 /// An invocation statement.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -175,6 +194,14 @@ pub enum GenBranchTarget<StatementId> {
     Fallthrough,
     /// Continues the run to provided statement.
     Statement(StatementId),
+}
+impl<StatementId> GenBranchTarget<StatementId> {
+    pub fn map<T>(self, f: impl Fn(StatementId) -> T) -> GenBranchTarget<T> {
+        match self {
+            GenBranchTarget::Fallthrough => GenBranchTarget::Fallthrough,
+            GenBranchTarget::Statement(id) => GenBranchTarget::Statement(f(id)),
+        }
+    }
 }
 
 pub type Function = GenFunction<StatementIdx>;

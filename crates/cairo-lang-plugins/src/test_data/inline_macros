@@ -174,10 +174,6 @@ fn foo() {
 }
 
 //! > expected_diagnostics
-error: Unknown inline macro: foo
- --> dummy_file.cairo:2:13
-    let x = foo!(0);
-            ^*****^
 
 //! > ==========================================================================
 

@@ -7,9 +7,9 @@ use crate::test_utils::{setup_test_module, SemanticDatabaseForTesting};
 
 #[test]
 fn test_resolve() {
-    let mut db_val = SemanticDatabaseForTesting::default();
+    let db_val = SemanticDatabaseForTesting::default();
     let (test_module, _diagnostics) = setup_test_module(
-        &mut db_val,
+        &db_val,
         indoc! {"
             fn foo() -> felt252 { 5 }
             extern fn felt252_add(a: felt252, b: felt252) -> felt252 nopanic;

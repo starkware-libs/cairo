@@ -305,6 +305,14 @@ fn test_pop_log_empty_logs() {
 }
 
 #[test]
+#[available_gas(300000)]
+#[should_panic]
+fn test_pop_l2_to_l1_message_empty_messages() {
+    let contract_address = starknet::contract_address_const::<0x1234>();
+    starknet::testing::pop_l2_to_l1_message(contract_address).unwrap();
+}
+
+#[test]
 #[should_panic]
 fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress {
     starknet::storage_address_try_from_felt252(-1).unwrap()

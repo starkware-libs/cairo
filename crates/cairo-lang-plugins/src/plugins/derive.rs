@@ -1,9 +1,4 @@
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{
-    DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult,
-};
-use cairo_lang_semantic::plugin::{AsDynMacroPlugin, SemanticPlugin, TrivialPluginAuxData};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -53,17 +48,6 @@ impl MacroPlugin for DerivePlugin {
         )
     }
 }
-
-impl AsDynMacroPlugin for DerivePlugin {
-    fn as_dyn_macro_plugin<'a>(self: Arc<Self>) -> Arc<dyn MacroPlugin + 'a>
-    where
-        Self: 'a,
-    {
-        self
-    }
-}
-
-impl SemanticPlugin for DerivePlugin {}
 
 /// Information on struct members or enum variants.
 struct MemberInfo {
@@ -298,7 +282,8 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             Some(PluginGeneratedFile {
                 name: "impls".into(),
                 content: impls.join(""),
-                aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+                patches: Default::default(),
+                aux_data: None,
             })
         },
         diagnostics,

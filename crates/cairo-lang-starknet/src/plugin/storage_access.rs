@@ -1,7 +1,4 @@
-use std::sync::Arc;
-
-use cairo_lang_defs::plugin::{DynGeneratedFileAuxData, PluginGeneratedFile, PluginResult};
-use cairo_lang_semantic::plugin::TrivialPluginAuxData;
+use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{
     AttributeArg, AttributeArgVariant, AttributeStructurize,
 };
@@ -147,7 +144,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+            patches: Default::default(),
+            aux_data: None,
         }),
         diagnostics,
         remove_original_item: false,
@@ -165,7 +163,24 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     let mut match_size = "".to_string();
 
+    let mut default_index = None;
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
+        let indicator = if variant.attributes(db).has_attr(db, "default") {
+            if default_index.is_some() {
+                return PluginResult {
+                    code: None,
+                    diagnostics: vec![PluginDiagnostic {
+                        stable_ptr: variant.stable_ptr().untyped(),
+                        message: "Multiple variants annotated with `#[default]`".to_string(),
+                    }],
+                    remove_original_item: false,
+                };
+            }
+            default_index = Some(i);
+            0
+        } else {
+            i + usize::from(default_index.is_none())
+        };
         let variant_name = variant.name(db).text(db);
         let variant_type = match variant.type_clause(db) {
             ast::OptionTypeClause::Empty(_) => "()".to_string(),
@@ -175,7 +190,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         };
 
         match_idx.push(formatdoc!(
-            "if idx == {i} {{
+            "if idx == {indicator} {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
                         starknet::Store::read_at_offset(address_domain, base, 1_u8)?
@@ -184,7 +199,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }}",
         ));
         match_idx_at_offset.push(formatdoc!(
-            "if idx == {i} {{
+            "if idx == {indicator} {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
                         starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
@@ -194,13 +209,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         ));
         match_value.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
-                starknet::Store::write(address_domain, base, {i})?;
+                starknet::Store::write(address_domain, base, {indicator})?;
                 starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
             }}"
         ));
         match_value_at_offset.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
-                starknet::Store::write_at_offset(address_domain, base, offset, {i})?;
+                starknet::Store::write_at_offset(address_domain, base, offset, {indicator})?;
                 starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }}"
         ));
@@ -221,10 +236,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 let idx = starknet::Store::<felt252>::read(address_domain, base)?;
                 {match_idx}
                 else {{
-                    let mut message = Default::default();
-                    message.append('Incorrect index:');
-                    message.append(idx);
-                    starknet::SyscallResult::Err(message)
+                    starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                 }}
             }}
             fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: {enum_name}) \
@@ -240,10 +252,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
          offset)?;
                 {match_idx_at_offset}
                 else {{
-                    let mut message = Default::default();
-                    message.append('Incorrect index:');
-                    message.append(idx);
-                    starknet::SyscallResult::Err(message)
+                    starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
                 }}
             }}
             #[inline(always)]
@@ -271,7 +280,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            aux_data: DynGeneratedFileAuxData(Arc::new(TrivialPluginAuxData {})),
+            patches: Default::default(),
+            aux_data: None,
         }),
         diagnostics,
         remove_original_item: false,

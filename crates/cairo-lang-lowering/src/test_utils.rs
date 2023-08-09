@@ -1,16 +1,16 @@
-use std::sync::Arc;
+use std::sync::Mutex;
 
-use cairo_lang_defs::db::{DefsDatabase, DefsGroup, HasMacroPlugins};
-use cairo_lang_defs::plugin::MacroPlugin;
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
-use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup, SemanticGroupEx};
+use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::Upcast;
+use once_cell::sync::Lazy;
 
 use crate::db::{LoweringDatabase, LoweringGroup};
 
@@ -26,14 +26,28 @@ pub struct LoweringDatabaseForTesting {
     storage: salsa::Storage<LoweringDatabaseForTesting>,
 }
 impl salsa::Database for LoweringDatabaseForTesting {}
+impl salsa::ParallelDatabase for LoweringDatabaseForTesting {
+    fn snapshot(&self) -> salsa::Snapshot<LoweringDatabaseForTesting> {
+        salsa::Snapshot::new(LoweringDatabaseForTesting { storage: self.storage.snapshot() })
+    }
+}
+impl LoweringDatabaseForTesting {
+    /// Snapshots the db for read only.
+    pub fn snapshot(&self) -> LoweringDatabaseForTesting {
+        LoweringDatabaseForTesting { storage: self.storage.snapshot() }
+    }
+}
+pub static SHARED_DB: Lazy<Mutex<LoweringDatabaseForTesting>> = Lazy::new(|| {
+    let mut res = LoweringDatabaseForTesting { storage: Default::default() };
+    init_files_group(&mut res);
+    res.set_macro_plugins(get_default_plugins());
+    let corelib_path = detect_corelib().expect("Corelib not found in default location.");
+    init_dev_corelib(&mut res, corelib_path);
+    Mutex::new(res)
+});
 impl Default for LoweringDatabaseForTesting {
     fn default() -> Self {
-        let mut res = Self { storage: Default::default() };
-        init_files_group(&mut res);
-        res.set_semantic_plugins(get_default_plugins());
-        let corelib_path = detect_corelib().expect("Corelib not found in default location.");
-        init_dev_corelib(&mut res, corelib_path);
-        res
+        SHARED_DB.lock().unwrap().snapshot()
     }
 }
 impl AsFilesGroupMut for LoweringDatabaseForTesting {
@@ -64,10 +78,5 @@ impl Upcast<dyn SemanticGroup> for LoweringDatabaseForTesting {
 impl Upcast<dyn LoweringGroup> for LoweringDatabaseForTesting {
     fn upcast(&self) -> &(dyn LoweringGroup + 'static) {
         self
-    }
-}
-impl HasMacroPlugins for LoweringDatabaseForTesting {
-    fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>> {
-        self.get_macro_plugins()
     }
 }

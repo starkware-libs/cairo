@@ -1,4 +1,3 @@
-pub const ABI_TRAIT: &str = "__abi";
 pub const EXTERNAL_MODULE: &str = "__external";
 pub const L1_HANDLER_MODULE: &str = "__l1_handler";
 pub const CONSTRUCTOR_MODULE: &str = "__constructor";
@@ -17,6 +16,7 @@ pub const EXTERNAL_ATTR: &str = "external";
 pub const INCLUDE_ATTR: &str = "include";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
+pub const CONSTRUCTOR_NAME: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";

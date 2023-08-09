@@ -1,12 +1,13 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
-use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
+use super::us::SemanticUseEx;
 use crate::corelib::core_module;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind;
@@ -96,4 +97,18 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
             module_ast.attributes(syntax_db).structurize(syntax_db)
         }
     })
+}
+
+/// Finds all the trait ids usable in the current context.
+pub fn module_usable_trait_ids(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<Vec<TraitId>>> {
+    let mut module_traits = (*db.module_traits_ids(module_id)?).clone();
+    for use_id in db.module_uses_ids(module_id)?.iter().copied() {
+        if let Ok(ResolvedGenericItem::Trait(trait_id)) = db.use_resolved_item(use_id) {
+            module_traits.push(trait_id);
+        }
+    }
+    Ok(module_traits.into())
 }

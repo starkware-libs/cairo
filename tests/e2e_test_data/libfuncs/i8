@@ -439,3 +439,100 @@ rename<i8>([3]) -> ([5]);
 return([5]);
 
 test::foo@0([0]: i8) -> (i8);
+
+//! > ==========================================================================
+
+//! > i8_diff libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i8, b: i8) -> Result<u8, u8> {
+    integer::i8_diff(a, b)
+}
+
+//! > casm
+[fp + -4] = [ap + 1] + [fp + -3], ap++;
+%{ memory[ap + -1] = memory[ap + 0] < 256 %}
+jmp rel 7 if [ap + -1] != 0, ap++;
+[ap + 0] = [ap + -1] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 12;
+[ap + -1] = [[fp + -5] + 0];
+ap += 1;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 0, ap++;
+[ap + 0] = [ap + -4], ap++;
+jmp rel 8;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = 1, ap++;
+[ap + 0] = [ap + -4] + 256, ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 880})
+
+//! > sierra_code
+type RangeCheck = RangeCheck;
+type i8 = i8;
+type u8 = u8;
+type core::result::Result::<core::integer::u8, core::integer::u8> = Enum<ut@core::result::Result::<core::integer::u8, core::integer::u8>, u8, u8>;
+
+libfunc i8_diff = i8_diff;
+libfunc branch_align = branch_align;
+libfunc enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 0> = enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 0>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<core::result::Result::<core::integer::u8, core::integer::u8>> = store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>;
+libfunc jump = jump;
+libfunc enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1> = enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1>;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<core::result::Result::<core::integer::u8, core::integer::u8>> = rename<core::result::Result::<core::integer::u8, core::integer::u8>>;
+
+i8_diff([0], [1], [2]) { fallthrough([3], [4]) 6([5], [6]) };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 0>([4]) -> ([7]);
+store_temp<RangeCheck>([3]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([7]) -> ([9]);
+jump() { 10() };
+branch_align() -> ();
+enum_init<core::result::Result::<core::integer::u8, core::integer::u8>, 1>([6]) -> ([10]);
+store_temp<RangeCheck>([5]) -> ([8]);
+store_temp<core::result::Result::<core::integer::u8, core::integer::u8>>([10]) -> ([9]);
+rename<RangeCheck>([8]) -> ([11]);
+rename<core::result::Result::<core::integer::u8, core::integer::u8>>([9]) -> ([12]);
+return([11], [12]);
+
+test::foo@0([0]: RangeCheck, [1]: i8, [2]: i8) -> (RangeCheck, core::result::Result::<core::integer::u8, core::integer::u8>);
+
+//! > ==========================================================================
+
+//! > i8_wide_mul libfunc
+
+//! > test_runner_name
+SmallE2ETestRunner
+
+//! > cairo
+fn foo(a: i8, b: i8) -> i16 {
+    integer::i8_wide_mul(a, b)
+}
+
+//! > casm
+[ap + 0] = [fp + -4] * [fp + -3], ap++;
+ret;
+
+//! > function_costs
+test::foo: OrderedHashMap({Const: 100})
+
+//! > sierra_code
+type i8 = i8;
+type i16 = i16;
+
+libfunc i8_wide_mul = i8_wide_mul;
+libfunc store_temp<i16> = store_temp<i16>;
+
+i8_wide_mul([0], [1]) -> ([2]);
+store_temp<i16>([2]) -> ([3]);
+return([3]);
+
+test::foo@0([0]: i8, [1]: i8) -> (i16);

@@ -23,7 +23,7 @@ fn bar(x: felt252) -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 alloc_local<felt252>() -> ([2])
 alloc_local<felt252>() -> ([4])
 alloc_local<felt252>() -> ([6])
@@ -83,32 +83,32 @@ fn revoke_ap() -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 alloc_local<felt252>() -> ([2])
 alloc_local<felt252>() -> ([4])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
 function_call<user@test::revoke_ap>() -> ([3])
 store_local<felt252>([4], [3]) -> ([3])
-enum_match<core::bool>([0]) { fallthrough([5]) label1([6]) }
+enum_match<core::bool>([0]) { fallthrough([5]) label_test::foo::1([6]) }
 branch_align() -> ()
 drop<Unit>([5]) -> ()
 function_call<user@test::revoke_ap>() -> ([7])
 rename<felt252>([7]) -> ([1])
-jump() { label3() }
-label1:
+jump() { label_test::foo::3() }
+label_test::foo::1:
 branch_align() -> ()
 drop<Unit>([6]) -> ()
 felt252_const<1>() -> ([8])
 store_temp<felt252>([8]) -> ([1])
-label3:
+label_test::foo::3:
 store_local<felt252>([2], [1]) -> ([1])
 function_call<user@test::revoke_ap>() -> ([9])
 drop<felt252>([9]) -> ()
 felt252_add([3], [1]) -> ([10])
 store_temp<felt252>([10]) -> ([11])
 return([11])
-label2:
+label_test::foo::2:
 
 //! > ==========================================================================
 
@@ -135,7 +135,7 @@ foo
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 alloc_local<felt252>() -> ([2])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
@@ -179,7 +179,7 @@ fn revoke_ap() -> felt252 {
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label0:
+label_test::foo::0:
 alloc_local<felt252>() -> ([1])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()
@@ -228,7 +228,7 @@ fn immovable<T>(t: T) -> T { t }
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label1:
+label_test::foo::0:
 disable_ap_tracking() -> ()
 struct_deconstruct<test::MyStruct>([0]) -> ([1], [2])
 store_temp<felt252>([2]) -> ([4])
@@ -286,7 +286,7 @@ fn immovable<T>(t: T) -> T { t }
 //! > sierra_gen_diagnostics
 
 //! > sierra_code
-label3:
+label_test::foo::0:
 alloc_local<test::MyStruct2>() -> ([1])
 finalize_locals() -> ()
 disable_ap_tracking() -> ()

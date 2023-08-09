@@ -266,7 +266,7 @@ pub enum ModuleId {
 impl ModuleId {
     pub fn full_path(&self, db: &dyn DefsGroup) -> String {
         match self {
-            ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).0.to_string(),
+            ModuleId::CrateRoot(id) => db.lookup_intern_crate(*id).name().into(),
             ModuleId::Submodule(id) => {
                 format!("{}::{}", id.parent_module(db).full_path(db), id.name(db))
             }

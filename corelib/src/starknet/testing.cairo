@@ -81,3 +81,15 @@ fn pop_log<T, impl TEvent: starknet::Event<T>>(address: ContractAddress) -> Opti
     let (mut keys, mut data) = pop_log_raw(address)?;
     starknet::Event::deserialize(ref keys, ref data)
 }
+
+// TODO(Ilya): Decide if we limit the type of `to_address`.
+// Pop the earliest unpopped l2 to l1 message for the contract.
+fn pop_l2_to_l1_message(address: ContractAddress) -> Option<(felt252, Span<felt252>)> {
+    let mut l2_to_l1_message = cheatcode::<'pop_l2_to_l1_message'>(array![address.into()].span());
+    Option::Some(
+        (
+            serde::Serde::deserialize(ref l2_to_l1_message)?,
+            serde::Serde::deserialize(ref l2_to_l1_message)?,
+        )
+    )
+}
