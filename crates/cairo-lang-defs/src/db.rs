@@ -14,7 +14,9 @@ use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
 use crate::patcher::Patches;
-use crate::plugin::{DynGeneratedFileAuxData, MacroPlugin, PluginDiagnostic};
+use crate::plugin::{
+    DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, PluginDiagnostic,
+};
 
 /// Salsa database interface.
 /// See [`super::ids`] for further details.
@@ -65,6 +67,8 @@ pub trait DefsGroup:
     // ========
     #[salsa::input]
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
+    #[salsa::input]
+    fn inline_macro_plugins(&self) -> Vec<Arc<dyn InlineMacroExprPlugin>>;
 
     // Module to syntax.
     /// Gets the main file of the module.

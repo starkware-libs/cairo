@@ -19,6 +19,7 @@ use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
 
 use crate::db::{SemanticDatabase, SemanticGroup};
+use crate::inline_macros::get_default_inline_macro_plugins;
 use crate::items::functions::GenericFunctionId;
 use crate::{semantic, ConcreteFunctionWithBodyId, SemanticDiagnostic};
 
@@ -37,6 +38,7 @@ impl SemanticDatabaseForTesting {
         let mut res = SemanticDatabaseForTesting { storage: Default::default() };
         init_files_group(&mut res);
         res.set_macro_plugins(get_default_plugins());
+        res.set_inline_macro_plugins(get_default_inline_macro_plugins());
         let corelib_path = detect_corelib().expect("Corelib not found in default location.");
         init_dev_corelib(&mut res, corelib_path);
         res
