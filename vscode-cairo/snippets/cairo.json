@@ -87,7 +87,7 @@
   },
   "Creates a view function": {
     "prefix": ["view", "fn"],
-    "body": ["#[external]", "fn $1(self: @ContractState, ) {", "\t$5", "}"],
+    "body": ["fn $1(self: @ContractState, ) {", "\t$5", "}"],
     "description": "Creates a view function"
   },
   "Match": {
