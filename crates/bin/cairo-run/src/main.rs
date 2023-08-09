@@ -65,7 +65,7 @@ fn main() -> anyhow::Result<()> {
             )
         })
     {
-        anyhow::bail!("Program requires gas counter, please provide `--available_gas` argument.");
+        anyhow::bail!("Program requires gas counter, please provide `--available-gas` argument.");
     }
 
     let contracts_info = get_contracts_info(db, main_crate_ids, &replacer)?;
