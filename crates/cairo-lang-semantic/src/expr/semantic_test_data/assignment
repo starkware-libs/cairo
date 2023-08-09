@@ -37,3 +37,5 @@ Assignment(
         ty: (),
     },
 )
+
+//! > semantic_diagnostics

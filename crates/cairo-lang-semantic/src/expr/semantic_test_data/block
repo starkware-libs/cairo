@@ -36,6 +36,8 @@ Block(
     },
 )
 
+//! > semantic_diagnostics
+
 //! > ==========================================================================
 
 //! > Test block with tail expr
@@ -82,3 +84,5 @@ Block(
         ty: core::felt252,
     },
 )
+
+//! > semantic_diagnostics

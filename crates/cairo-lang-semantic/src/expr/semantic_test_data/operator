@@ -89,3 +89,5 @@ FunctionCall(
         ty: core::bool,
     },
 )
+
+//! > semantic_diagnostics

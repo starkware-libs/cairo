@@ -23,7 +23,19 @@ extern fn array_slice<T>(
 ) -> Option<@Array<T>> implicits(RangeCheck) nopanic;
 extern fn array_len<T>(arr: @Array<T>) -> usize nopanic;
 
-#[generate_trait]
+trait ArrayTrait<T> {
+    #[inline(always)]
+    fn new() -> Array<T>;
+    fn append(ref self: Array<T>, value: T);
+    fn pop_front(ref self: Array<T>) -> Option<T> nopanic;
+    fn pop_front_consume(self: Array<T>) -> Option<(Array<T>, T)> nopanic;
+    fn get(self: @Array<T>, index: usize) -> Option<Box<@T>>;
+    fn at(self: @Array<T>, index: usize) -> @T;
+    fn len(self: @Array<T>) -> usize;
+    fn is_empty(self: @Array<T>) -> bool;
+    fn span(self: @Array<T>) -> Span<T>;
+}
+
 impl ArrayImpl<T> of ArrayTrait<T> {
     #[inline(always)]
     fn new() -> Array<T> {

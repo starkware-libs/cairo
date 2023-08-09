@@ -1,0 +1,345 @@
+//! > Test consteval_int! simple usage
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+consteval_int!(4 + 5)
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 9,
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test consteval_int! complex usage
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+consteval_int!(23 + 4 * 5 + (4 + 5) / 2)
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 47,
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test consteval_int! handle temporary overflow
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+consteval_int!(255 + 1 - 1)
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 255,
+        ty: core::felt252,
+    },
+)
+
+//! > semantic_diagnostics
+
+//! > ==========================================================================
+
+//! > Test array macro
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+array![1, 2, 3]
+
+//! > expected
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        __array_builder_macro_result__,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: ?0::new,
+                            args: [],
+                            ty: core::array::Array::<?0>,
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: ?1::append,
+                            args: [
+                                Reference(
+                                    LocalVarId(test::__array_builder_macro_result__),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 1,
+                                            ty: ?2,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            ty: (),
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: ?3::append,
+                            args: [
+                                Reference(
+                                    LocalVarId(test::__array_builder_macro_result__),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 2,
+                                            ty: ?4,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            ty: (),
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: ?5::append,
+                            args: [
+                                Reference(
+                                    LocalVarId(test::__array_builder_macro_result__),
+                                ),
+                                Value(
+                                    Literal(
+                                        ExprLiteral {
+                                            value: 3,
+                                            ty: ?6,
+                                        },
+                                    ),
+                                ),
+                            ],
+                            ty: (),
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Var(
+                LocalVarId(test::__array_builder_macro_result__),
+            ),
+        ),
+        ty: core::array::Array::<?0>,
+    },
+)
+
+//! > semantic_diagnostics
+error: Trait has no implementation in context: core::array::ArrayTrait::<core::felt252>
+ --> inline_macro.cairo:2:66
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+                                                                 ^*^
+
+//! > ==========================================================================
+
+//! > Test array macro empty
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+array![]
+
+//! > expected
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        __array_builder_macro_result__,
+                    ),
+                    expr: FunctionCall(
+                        ExprFunctionCall {
+                            function: ?0::new,
+                            args: [],
+                            ty: core::array::Array::<?0>,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Var(
+                LocalVarId(test::__array_builder_macro_result__),
+            ),
+        ),
+        ty: core::array::Array::<?0>,
+    },
+)
+
+//! > semantic_diagnostics
+error: Type annotations needed. Failed to infer ?0
+ --> inline_macro.cairo:2:54
+            let mut __array_builder_macro_result__ = ArrayTrait::new();
+                                                     ^********^
+
+//! > ==========================================================================
+
+//! > Test array macro with method call
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+use array::ArrayTrait;
+
+//! > expr_code
+array![10, 11, 12].span()
+
+//! > expected
+FunctionCall(
+    ExprFunctionCall {
+        function: ?7::span,
+        args: [
+            Value(
+                Snapshot(
+                    ExprSnapshot {
+                        inner: Block(
+                            ExprBlock {
+                                statements: [
+                                    Let(
+                                        StatementLet {
+                                            pattern: Variable(
+                                                __array_builder_macro_result__,
+                                            ),
+                                            expr: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: ?0::new,
+                                                    args: [],
+                                                    ty: core::array::Array::<?0>,
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                    Expr(
+                                        StatementExpr {
+                                            expr: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: ?1::append,
+                                                    args: [
+                                                        Reference(
+                                                            LocalVarId(test::__array_builder_macro_result__),
+                                                        ),
+                                                        Value(
+                                                            Literal(
+                                                                ExprLiteral {
+                                                                    value: 10,
+                                                                    ty: ?2,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    ty: (),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                    Expr(
+                                        StatementExpr {
+                                            expr: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: ?3::append,
+                                                    args: [
+                                                        Reference(
+                                                            LocalVarId(test::__array_builder_macro_result__),
+                                                        ),
+                                                        Value(
+                                                            Literal(
+                                                                ExprLiteral {
+                                                                    value: 11,
+                                                                    ty: ?4,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    ty: (),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                    Expr(
+                                        StatementExpr {
+                                            expr: FunctionCall(
+                                                ExprFunctionCall {
+                                                    function: ?5::append,
+                                                    args: [
+                                                        Reference(
+                                                            LocalVarId(test::__array_builder_macro_result__),
+                                                        ),
+                                                        Value(
+                                                            Literal(
+                                                                ExprLiteral {
+                                                                    value: 12,
+                                                                    ty: ?6,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ],
+                                                    ty: (),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ],
+                                tail: Some(
+                                    Var(
+                                        LocalVarId(test::__array_builder_macro_result__),
+                                    ),
+                                ),
+                                ty: core::array::Array::<?0>,
+                            },
+                        ),
+                        ty: @core::array::Array::<?0>,
+                    },
+                ),
+            ),
+        ],
+        ty: core::array::Span::<?6>,
+    },
+)
+
+//! > semantic_diagnostics
+error: Trait has no implementation in context: core::array::ArrayTrait::<core::felt252>
+ --> lib.cairo:3:20
+array![10, 11, 12].span()
+                   ^**^

@@ -101,6 +101,8 @@ Block(
     },
 )
 
+//! > semantic_diagnostics
+
 //! > ==========================================================================
 
 //! > Test strcut constructor
@@ -144,3 +146,5 @@ StructCtor(
         ty: test::A,
     },
 )
+
+//! > semantic_diagnostics
