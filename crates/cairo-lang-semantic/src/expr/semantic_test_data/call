@@ -17,3 +17,5 @@ FunctionCall(
         ty: (),
     },
 )
+
+//! > semantic_diagnostics
