@@ -1,0 +1,19 @@
+//! > Test call
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > module_code
+fn foo() {6;}
+
+//! > expr_code
+foo()
+
+//! > expected
+FunctionCall(
+    ExprFunctionCall {
+        function: test::foo,
+        args: [],
+        ty: (),
+    },
+)

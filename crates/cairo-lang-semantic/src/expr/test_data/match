@@ -85,3 +85,33 @@ error: Mismatched types. The type core::bool cannot be created from a numeric li
  --> lib.cairo:6:15
     match a + 1 {
               ^
+
+//! > ==========================================================================
+
+//! > Match incompatible arm types
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: felt252, b: bool) -> felt252 {
+    match a {
+        0 => 0_felt252,
+        _ => b,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+enum A {
+    a: (),
+    b: felt252,
+}
+
+//! > expected_diagnostics
+error: Match arms have incompatible types: "core::felt252" and "core::bool"
+ --> lib.cairo:8:14
+        _ => b,
+             ^

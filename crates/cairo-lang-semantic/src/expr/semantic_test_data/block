@@ -1,0 +1,84 @@
+//! > Test block
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+{6;8;}
+
+//! > expected
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 6,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 8,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test block with tail expr
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+{6;8;9}
+
+//! > expected
+Block(
+    ExprBlock {
+        statements: [
+            Expr(
+                StatementExpr {
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 6,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+            Expr(
+                StatementExpr {
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 8,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+        ],
+        tail: Some(
+            Literal(
+                ExprLiteral {
+                    value: 9,
+                    ty: core::felt252,
+                },
+            ),
+        ),
+        ty: core::felt252,
+    },
+)

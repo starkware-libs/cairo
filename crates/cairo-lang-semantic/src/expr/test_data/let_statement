@@ -113,3 +113,26 @@ error: Expected variable or constant, found function.
  --> lib.cairo:3:13
     let x = foo;
             ^*^
+
+//! > ==========================================================================
+
+//! > Type mismatch diagnostics
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   let a: () = 3_felt252;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "()", found: "core::felt252".
+ --> lib.cairo:2:16
+   let a: () = 3_felt252;
+               ^*******^

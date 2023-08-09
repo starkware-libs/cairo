@@ -1,0 +1,96 @@
+//! > Constructor
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: A) -> A {
+    A {
+        b: 1_felt252,
+        a: 2,
+        c: 7,
+        a: 3,
+        ..d,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: felt252,
+    b: ()
+}
+
+//! > expected_diagnostics
+error: Unexpected argument type. Expected: "()", found: "core::felt252".
+ --> lib.cairo:7:9
+        b: 1_felt252,
+        ^
+
+error: Unknown member.
+ --> lib.cairo:9:9
+        c: 7,
+        ^
+
+error: Member specified more than once.
+ --> lib.cairo:10:9
+        a: 3,
+        ^
+
+error: Unsupported feature.
+ --> lib.cairo:11:9
+        ..d,
+        ^*^
+
+//! > ==========================================================================
+
+//! > Blocks, `if`s, and `match`s, don't require semicolon, even not in tail expressions.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo(a: A){
+    a.f;
+    a.a::b;
+    a.4.4;
+    5_felt252.a;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct A {
+    a: (felt252,),
+    b: felt252,
+    c: felt252,
+}
+
+//! > expected_diagnostics
+error: Struct "test::A" has no member "f"
+ --> lib.cairo:7:7
+    a.f;
+      ^
+
+error: Invalid member expression.
+ --> lib.cairo:8:7
+    a.a::b;
+      ^**^
+
+error: Invalid member expression.
+ --> lib.cairo:9:7
+    a.4.4;
+      ^
+
+error: Invalid member expression.
+ --> lib.cairo:9:9
+    a.4.4;
+        ^
+
+error: Type "core::felt252" has no members.
+ --> lib.cairo:10:15
+    5_felt252.a;
+              ^

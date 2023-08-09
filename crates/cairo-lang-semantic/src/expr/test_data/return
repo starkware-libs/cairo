@@ -57,3 +57,24 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test type mismatch in return.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> felt252 {}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Unexpected return type. Expected: "core::felt252", found: "()".
+ --> lib.cairo:1:21
+fn foo() -> felt252 {}
+                    ^^

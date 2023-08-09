@@ -1,0 +1,267 @@
+//! > Test 7
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+7
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 7,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 0x123
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+0x123
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 291,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 12_felt252
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+12_felt252
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 12,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 16_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+16_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 16,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 0x16_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+0x16_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 22,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 'a'
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+'a'
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 97,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 'B'_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+'B'_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 66,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 'hello world'_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+'hello world'_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 126207244316550804821666916,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test '\''
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+'\''
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 39,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test '\x12\x34'_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+'\x12\x34'_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 4660,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 86_400_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+86_400_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 8_6_4_0_0_u128
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+8_6_4_0_0_u128
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::integer::u128,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 86_400
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+86_400
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 8_6_4_0_0
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+8_6_4_0_0
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 86400,
+        ty: core::felt252,
+    },
+)
+
+//! > ==========================================================================
+
+//! > Test 0x1_f32
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+0x1_f32
+
+//! > expected
+Literal(
+    ExprLiteral {
+        value: 7986,
+        ty: core::felt252,
+    },
+)

@@ -1,0 +1,43 @@
+//! > Test let
+
+//! > test_runner_name
+test_expr_semantics
+
+//! > expr_code
+{
+    let a: felt252 = 3;
+    let b = a;
+}
+
+//! > expected
+Block(
+    ExprBlock {
+        statements: [
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        a,
+                    ),
+                    expr: Literal(
+                        ExprLiteral {
+                            value: 3,
+                            ty: core::felt252,
+                        },
+                    ),
+                },
+            ),
+            Let(
+                StatementLet {
+                    pattern: Variable(
+                        b,
+                    ),
+                    expr: Var(
+                        LocalVarId(test::a),
+                    ),
+                },
+            ),
+        ],
+        tail: None,
+        ty: (),
+    },
+)
