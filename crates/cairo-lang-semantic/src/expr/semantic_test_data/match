@@ -52,3 +52,5 @@ Match(
         ty: core::felt252,
     },
 )
+
+//! > semantic_diagnostics
