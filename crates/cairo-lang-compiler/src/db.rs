@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Result};
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::plugin::MacroPlugin;
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, MacroPlugin};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
@@ -15,8 +15,10 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_project::ProjectConfig;
 use cairo_lang_semantic::db::{SemanticDatabase, SemanticGroup};
+use cairo_lang_semantic::inline_macros::get_default_inline_macro_plugins;
 use cairo_lang_sierra_generator::db::SierraGenDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
 use crate::project::update_crate_roots_from_project_config;
@@ -40,10 +42,14 @@ impl salsa::ParallelDatabase for RootDatabase {
     }
 }
 impl RootDatabase {
-    fn new(plugins: Vec<Arc<dyn MacroPlugin>>) -> Self {
+    fn new(
+        plugins: Vec<Arc<dyn MacroPlugin>>,
+        inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
+    ) -> Self {
         let mut res = Self { storage: Default::default() };
         init_files_group(&mut res);
         res.set_macro_plugins(plugins);
+        res.set_inline_macro_plugins(inline_macro_plugins.into());
         res
     }
 
@@ -70,6 +76,7 @@ impl Default for RootDatabase {
 #[derive(Clone, Debug)]
 pub struct RootDatabaseBuilder {
     plugins: Vec<Arc<dyn MacroPlugin>>,
+    inline_macro_plugins: OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>,
     detect_corelib: bool,
     project_config: Option<Box<ProjectConfig>>,
     cfg_set: Option<CfgSet>,
@@ -79,6 +86,7 @@ impl RootDatabaseBuilder {
     fn new() -> Self {
         Self {
             plugins: get_default_plugins(),
+            inline_macro_plugins: get_default_inline_macro_plugins(),
             detect_corelib: false,
             project_config: None,
             cfg_set: None,
@@ -87,6 +95,15 @@ impl RootDatabaseBuilder {
 
     pub fn with_macro_plugin(&mut self, plugin: Arc<dyn MacroPlugin>) -> &mut Self {
         self.plugins.push(plugin);
+        self
+    }
+
+    pub fn with_inline_macro_plugin(
+        &mut self,
+        name: String,
+        plugin: Arc<dyn InlineMacroExprPlugin>,
+    ) -> &mut Self {
+        self.inline_macro_plugins.insert(name, plugin);
         self
     }
 
@@ -115,7 +132,8 @@ impl RootDatabaseBuilder {
         //   Errors if something is not OK are very subtle, mostly this results in missing
         //   identifier diagnostics, or panics regarding lack of corelib items.
 
-        let mut db = RootDatabase::new(self.plugins.clone());
+        let mut db =
+            RootDatabase::new(self.plugins.clone(), self.inline_macro_plugins.clone().into());
 
         if let Some(cfg_set) = &self.cfg_set {
             db.use_cfg(cfg_set);
