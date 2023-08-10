@@ -7,8 +7,8 @@ use std::ops::{Deref, DerefMut};
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, GenericParamId,
-    ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, MemberId, ParamId,
-    StructId, TraitFunctionId, TraitId, VarId, VariantId,
+    ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, LocalVarId, LookupItemId, MemberId,
+    ParamId, StructId, TraitFunctionId, TraitId, VarId, VariantId,
 };
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -53,7 +53,23 @@ pub mod solver;
 /// yet and needs to be inferred.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct TypeVar {
+    pub inference_id: InferenceId,
     pub id: LocalTypeVarId,
+}
+
+/// An id for an inference context. Each inference variablwe is associated with an inference id.
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject)]
+#[debug_db(dyn SemanticGroup + 'static)]
+pub enum InferenceId {
+    LookupItemDeclaration(LookupItemId),
+    LookupItemGenerics(LookupItemId),
+    LookupItemDefinition(LookupItemId),
+    ImplDefTrait(ImplDefId),
+    GenericParam(GenericParamId),
+    GenericImplParamTrait(GenericParamId),
+    Canonical,
+    /// For resolving that will not be used anywhere in the semnatic model.
+    NoContext,
 }
 
 /// An impl variable, created when a generic type argument is not passed, and thus is not known
@@ -61,6 +77,7 @@ pub struct TypeVar {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplVar {
+    pub inference_id: InferenceId,
     #[dont_rewrite]
     pub id: LocalImplVarId,
     pub concrete_trait_id: ConcreteTraitId,
@@ -95,7 +112,7 @@ impl ImplVarId {
 }
 semantic_object_for_id!(ImplVarId, lookup_intern_impl_var, intern_impl_var, ImplVar);
 
-#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq, SemanticObject)]
 pub enum InferenceVar {
     Type(LocalTypeVarId),
     Impl(LocalImplVarId),
@@ -188,9 +205,10 @@ struct ImplVarData {
 }
 
 /// State of inference.
-#[derive(Clone, Debug, DebugWithDb, Default, PartialEq, Eq)]
+#[derive(Debug, DebugWithDb, PartialEq, Eq)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct InferenceData {
+    pub inference_id: InferenceId,
     /// Current inferred assignment for type variables.
     pub type_assignment: HashMap<LocalTypeVarId, TypeId>,
     /// Current inferred assignment for impl variables.
@@ -212,11 +230,56 @@ pub struct InferenceData {
     ambiguous: Vec<(LocalImplVarId, Ambiguity)>,
 }
 impl InferenceData {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(inference_id: InferenceId) -> Self {
+        Self {
+            inference_id,
+            type_assignment: HashMap::new(),
+            impl_assignment: HashMap::new(),
+            type_vars: Vec::new(),
+            impl_vars: Vec::new(),
+            stable_ptrs: HashMap::new(),
+            pending: VecDeque::new(),
+            refuted: Vec::new(),
+            solved: Vec::new(),
+            ambiguous: Vec::new(),
+        }
     }
     pub fn inference<'db, 'b: 'db>(&'db mut self, db: &'b dyn SemanticGroup) -> Inference<'db> {
         Inference { db, data: self }
+    }
+    pub fn clone_with_inference_id(
+        &self,
+        db: &dyn SemanticGroup,
+        inference_id: InferenceId,
+    ) -> InferenceData {
+        let mut inference_id_replacer =
+            InferenceIdReplacer::new(db, self.inference_id, inference_id);
+        Self {
+            inference_id,
+            type_assignment: inference_id_replacer.rewrite(self.type_assignment.clone()).no_err(),
+            impl_assignment: inference_id_replacer.rewrite(self.impl_assignment.clone()).no_err(),
+            type_vars: inference_id_replacer.rewrite(self.type_vars.clone()).no_err(),
+            impl_vars: inference_id_replacer.rewrite(self.impl_vars.clone()).no_err(),
+            stable_ptrs: self.stable_ptrs.clone(),
+            pending: inference_id_replacer.rewrite(self.pending.clone()).no_err(),
+            refuted: inference_id_replacer.rewrite(self.refuted.clone()).no_err(),
+            solved: inference_id_replacer.rewrite(self.solved.clone()).no_err(),
+            ambiguous: inference_id_replacer.rewrite(self.ambiguous.clone()).no_err(),
+        }
+    }
+    pub fn temporary_clone(&self) -> InferenceData {
+        Self {
+            inference_id: self.inference_id,
+            type_assignment: self.type_assignment.clone(),
+            impl_assignment: self.impl_assignment.clone(),
+            type_vars: self.type_vars.clone(),
+            impl_vars: self.impl_vars.clone(),
+            stable_ptrs: self.stable_ptrs.clone(),
+            pending: self.pending.clone(),
+            refuted: self.refuted.clone(),
+            solved: self.solved.clone(),
+            ambiguous: self.ambiguous.clone(),
+        }
     }
 }
 
@@ -247,15 +310,6 @@ impl<'db> std::fmt::Debug for Inference<'db> {
 }
 
 impl<'db> Inference<'db> {
-    /// Creates a new [Inference] instance with the given [InferenceData].
-    pub fn with_data(db: &'db dyn SemanticGroup, data: &'db mut InferenceData) -> Self {
-        Self { db, data }
-    }
-
-    pub fn clone_data(&self) -> InferenceData {
-        self.data.clone()
-    }
-
     /// Getter for an [ImplVar].
     fn impl_var(&self, var_id: LocalImplVarId) -> &ImplVar {
         &self.impl_vars[var_id.0]
@@ -279,7 +333,8 @@ impl<'db> Inference<'db> {
     /// Allocates a new [TypeVar] for an unknown type that needs to be inferred.
     /// Returns the variable id.
     pub fn new_type_var_raw(&mut self, stable_ptr: Option<SyntaxStablePtrId>) -> TypeVar {
-        let var = TypeVar { id: LocalTypeVarId(self.type_vars.len()) };
+        let var =
+            TypeVar { inference_id: self.inference_id, id: LocalTypeVarId(self.type_vars.len()) };
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Type(var.id), stable_ptr);
         }
@@ -316,7 +371,8 @@ impl<'db> Inference<'db> {
         if let Some(stable_ptr) = stable_ptr {
             self.stable_ptrs.insert(InferenceVar::Impl(id), stable_ptr);
         }
-        let var = ImplVar { id, concrete_trait_id, lookup_context };
+        let var =
+            ImplVar { inference_id: self.inference_id, id, concrete_trait_id, lookup_context };
         self.impl_vars.push(var);
         self.pending.push_back(id);
         id
@@ -341,7 +397,7 @@ impl<'db> Inference<'db> {
             };
 
             // Solution found. Assign it.
-            self.assign_impl(var, solution)?;
+            self.assign_local_impl(var, solution)?;
 
             // Something changed.
             self.solved.push(var);
@@ -439,9 +495,12 @@ impl<'db> Inference<'db> {
         None
     }
 
-    /// Assigns a value to an [ImplVar]. Return the assigned impl, or an error.
-    /// Assumes the variable is not already assigned.
-    fn assign_impl(&mut self, var: LocalImplVarId, impl_id: ImplId) -> InferenceResult<ImplId> {
+    /// Assigns a value to a local impl variable id. See assign_impl().
+    fn assign_local_impl(
+        &mut self,
+        var: LocalImplVarId,
+        impl_id: ImplId,
+    ) -> InferenceResult<ImplId> {
         self.conform_traits(
             self.impl_var(var).concrete_trait_id,
             impl_id.concrete_trait(self.db)?,
@@ -456,9 +515,27 @@ impl<'db> Inference<'db> {
         Ok(impl_id)
     }
 
+    /// Tries to assigns value to an [ImplVarId]. Return the assigned impl, or an error.
+    fn assign_impl(&mut self, var_id: ImplVarId, impl_id: ImplId) -> InferenceResult<ImplId> {
+        let var = var_id.get(self.db);
+        if var.inference_id != self.inference_id {
+            return Err(InferenceError::ImplKindMismatch {
+                impl0: ImplId::ImplVar(var_id),
+                impl1: impl_id,
+            });
+        }
+        self.assign_local_impl(var.id, impl_id)
+    }
+
     /// Assigns a value to a [TypeVar]. Return the assigned type, or an error.
     /// Assumes the variable is not already assigned.
     fn assign_ty(&mut self, var: TypeVar, ty: TypeId) -> InferenceResult<TypeId> {
+        if var.inference_id != self.inference_id {
+            return Err(InferenceError::TypeKindMismatch {
+                ty0: self.db.intern_type(TypeLongId::Var(var)),
+                ty1: ty,
+            });
+        }
         assert!(!self.type_assignment.contains_key(&var.id), "Cannot reassign variable.");
         let inference_var = InferenceVar::Type(var.id);
         if self.ty_contains_var(ty, inference_var)? {
@@ -517,7 +594,7 @@ impl<'db> Inference<'db> {
         };
 
         let (canonical_trait, canonicalizer) =
-            CanonicalTrait::canonicalize(self.db, concrete_trait_id);
+            CanonicalTrait::canonicalize(self.db, self.inference_id, concrete_trait_id);
         match self.db.canonic_trait_solutions(canonical_trait, lookup_context)? {
             SolutionSet::None => Ok(SolutionSet::None),
             SolutionSet::Unique(canonical_impl) => {
@@ -555,5 +632,33 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Inference<'a> {
             }
         }
         value.default_rewrite(self)
+    }
+}
+
+struct InferenceIdReplacer<'a> {
+    db: &'a dyn SemanticGroup,
+    from_inference_id: InferenceId,
+    to_inference_id: InferenceId,
+}
+impl<'a> InferenceIdReplacer<'a> {
+    fn new(
+        db: &'a dyn SemanticGroup,
+        from_inference_id: InferenceId,
+        to_inference_id: InferenceId,
+    ) -> Self {
+        Self { db, from_inference_id, to_inference_id }
+    }
+}
+impl<'a> HasDb<&'a dyn SemanticGroup> for InferenceIdReplacer<'a> {
+    fn get_db(&self) -> &'a dyn SemanticGroup {
+        self.db
+    }
+}
+add_basic_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude InferenceId);
+add_expr_rewrites!(<'a>, InferenceIdReplacer<'a>, NoError, @exclude);
+add_rewrite!(<'a>, InferenceIdReplacer<'a>, NoError, Ambiguity);
+impl<'a> SemanticRewriter<InferenceId, NoError> for InferenceIdReplacer<'a> {
+    fn rewrite(&mut self, value: InferenceId) -> Result<InferenceId, NoError> {
+        if value == self.from_inference_id { Ok(self.to_inference_id) } else { Ok(value) }
     }
 }

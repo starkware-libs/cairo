@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use cairo_lang_defs::ids::{
-    FreeFunctionId, FunctionTitleId, FunctionWithBodyId, LanguageElementId,
+    FreeFunctionId, FunctionTitleId, FunctionWithBodyId, LanguageElementId, LookupItemId,
+    ModuleItemId,
 };
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
@@ -17,6 +18,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::resolve::{Resolver, ResolverData};
@@ -86,7 +88,10 @@ pub fn free_function_generic_params_data(
     let declaration = function_syntax.declaration(syntax_db);
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
+        ModuleItemId::FreeFunction(free_function_id),
+    ));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -94,10 +99,10 @@ pub fn free_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -135,7 +140,13 @@ pub fn priv_free_function_declaration_data(
     // Generic params.
     let generic_params_data = db.free_function_generic_params_data(free_function_id)?;
     let generic_params = generic_params_data.generic_params;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::FreeFunction(free_function_id),
+    ));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let mut environment = Environment::default();
@@ -164,6 +175,7 @@ pub fn priv_free_function_declaration_data(
             .report(&mut diagnostics, stable_ptr.unwrap_or(declaration.stable_ptr().untyped()));
     }
     let signature = resolver.inference().rewrite(signature).no_err();
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     Ok(FunctionDeclarationData {
         diagnostics: diagnostics.build(),
@@ -214,10 +226,12 @@ pub fn priv_free_function_body_data(
     let declaration = db.priv_free_function_declaration_data(free_function_id)?;
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
-    for generic_param in declaration.generic_params {
-        resolver.add_generic_param(generic_param.id());
-    }
+    let parent_resolver_data = db.free_function_declaration_resolver_data(free_function_id)?;
+    let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+        ModuleItemId::FreeFunction(free_function_id),
+    ));
+    let resolver =
+        Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
 
     let environment = declaration.environment;
     // Compute body semantic expr.

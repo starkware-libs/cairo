@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ConstantId, LanguageElementId};
+use cairo_lang_defs::ids::{ConstantId, LanguageElementId, LookupItemId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -11,6 +11,7 @@ use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
+use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
@@ -51,7 +52,10 @@ pub fn priv_constant_semantic_data(
     let const_ast = module_constants.get(&const_id).to_maybe()?;
     let syntax_db = db.upcast();
 
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::Constant(const_id),
+    ));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
     let const_type = resolve_type(
         db,

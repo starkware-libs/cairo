@@ -3,6 +3,7 @@ use cairo_lang_defs::ids::{EnumId, ExternTypeId, GenericParamId, GenericTypeId, 
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_proc_macros::SemanticObject;
 use cairo_lang_syntax::node::ast;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::{define_short_id, try_extract_matches, OptionFrom};
 use itertools::Itertools;
 
@@ -13,10 +14,12 @@ use crate::corelib::{
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
-use crate::expr::inference::{InferenceResult, TypeVar};
-use crate::items::imp::{get_impl_at_context, ImplId, ImplLookupContext};
+use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::{InferenceData, InferenceId, InferenceResult, TypeVar};
+use crate::items::imp::{ImplId, ImplLookupContext};
 use crate::resolve::{ResolvedConcreteItem, Resolver};
-use crate::{semantic, semantic_object_for_id};
+use crate::substitution::SemanticRewriter;
+use crate::{semantic, semantic_object_for_id, ConcreteTraitId};
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, SemanticObject)]
 pub enum TypeLongId {
@@ -348,6 +351,22 @@ pub struct TypeInfo {
     pub duplicatable: InferenceResult<ImplId>,
     pub destruct_impl: InferenceResult<ImplId>,
     pub panic_destruct_impl: InferenceResult<ImplId>,
+}
+
+/// Checks if there is at least one impl that can be inferred for a specific concrete trait.
+pub fn get_impl_at_context(
+    db: &dyn SemanticGroup,
+    lookup_context: ImplLookupContext,
+    concrete_trait_id: ConcreteTraitId,
+    stable_ptr: Option<SyntaxStablePtrId>,
+) -> InferenceResult<ImplId> {
+    let mut inference_data = InferenceData::new(InferenceId::NoContext);
+    let mut inference = inference_data.inference(db);
+    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
+    if let Some((_, err)) = inference.finalize() {
+        return Err(err);
+    };
+    Ok(inference.rewrite(impl_id).no_err())
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.

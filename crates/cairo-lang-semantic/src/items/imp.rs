@@ -5,8 +5,8 @@ use std::vec;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
-    ImplFunctionId, ImplFunctionLongId, LanguageElementId, ModuleId, TopLevelLanguageElementId,
-    TraitFunctionId, TraitId,
+    ImplFunctionId, ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -43,7 +43,7 @@ use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::infers::InferenceEmbeddings;
 use crate::expr::inference::solver::SolutionSet;
-use crate::expr::inference::{ImplVarId, InferenceData, InferenceResult};
+use crate::expr::inference::{ImplVarId, InferenceId};
 use crate::items::function_with_body::get_implicit_precedence;
 use crate::items::functions::ImplicitPrecedence;
 use crate::items::us::SemanticUseEx;
@@ -200,8 +200,10 @@ pub fn impl_def_generic_params_data(
     let module_impls = db.module_impls(module_file_id.0)?;
     let syntax_db = db.upcast();
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Impl(impl_def_id)));
 
-    let mut resolver = Resolver::new(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -209,10 +211,10 @@ pub fn impl_def_generic_params_data(
         module_file_id,
         &impl_ast.generic_params(syntax_db),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, impl_ast.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -265,8 +267,9 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
     let module_impls = db.module_impls(module_file_id.0)?;
     let syntax_db = db.upcast();
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
-    let mut resolver = Resolver::new(db, module_file_id);
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
@@ -338,11 +341,17 @@ pub fn priv_impl_declaration_data_inner(
     let module_impls = db.module_impls(module_file_id.0)?;
     let syntax_db = db.upcast();
     let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::Impl(impl_def_id),
+    ));
 
     // Generic params.
     let generic_params_data = db.impl_def_generic_params_data(impl_def_id)?;
     let generic_params = generic_params_data.generic_params;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
     let trait_path_syntax = impl_ast.trait_path(syntax_db);
 
@@ -364,6 +373,7 @@ pub fn priv_impl_declaration_data_inner(
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_ast.stable_ptr().untyped()));
     }
     let concrete_trait = resolver.inference().rewrite(concrete_trait).no_err();
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let attributes = impl_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
@@ -889,7 +899,7 @@ pub fn can_infer_impl_by_self(
     self_ty: TypeId,
     stable_ptr: SyntaxStablePtrId,
 ) -> bool {
-    let mut temp_inference_data = ctx.resolver.inference().clone_data();
+    let mut temp_inference_data = ctx.resolver.inference().temporary_clone();
     let mut temp_inference = temp_inference_data.inference(ctx.db);
     let lookup_context = ctx.resolver.impl_lookup_context();
     let Some((concrete_trait_id, _)) = temp_inference.infer_concrete_trait_by_self(
@@ -986,22 +996,6 @@ pub fn filter_candidate_traits(
     Ok(candidates)
 }
 
-/// Checks if there is at least one impl that can be inferred for a specific concrete trait.
-pub fn get_impl_at_context(
-    db: &dyn SemanticGroup,
-    lookup_context: ImplLookupContext,
-    concrete_trait_id: ConcreteTraitId,
-    stable_ptr: Option<SyntaxStablePtrId>,
-) -> InferenceResult<ImplId> {
-    let mut inference_data = InferenceData::new();
-    let mut inference = inference_data.inference(db);
-    let impl_id = inference.new_impl_var(concrete_trait_id, stable_ptr, lookup_context)?;
-    if let Some((_, err)) = inference.finalize() {
-        return Err(err);
-    };
-    Ok(inference.rewrite(impl_id).no_err())
-}
-
 // === Impl Function Declaration ===
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
@@ -1054,11 +1048,11 @@ pub fn impl_function_generic_params_data(
     let function_syntax = &data.function_asts[impl_function_id];
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
-    let mut resolver = Resolver::new(db, module_file_id);
-    let impl_def_generic_params = db.impl_def_generic_params(impl_def_id)?;
-    for generic_param in impl_def_generic_params {
-        resolver.add_generic_param(generic_param.id());
-    }
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ImplFunction(impl_function_id));
+    let resolver_data = db.impl_def_resolver_data(impl_def_id)?;
+    let mut resolver =
+        Resolver::with_data(db, resolver_data.clone_with_inference_id(db, inference_id));
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -1066,10 +1060,10 @@ pub fn impl_function_generic_params_data(
         module_file_id,
         &declaration.generic_params(syntax_db),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, function_syntax.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -1153,11 +1147,15 @@ pub fn priv_impl_function_declaration_data(
     let syntax_db = db.upcast();
     let declaration = function_syntax.declaration(syntax_db);
 
-    let function_generic_params_data = db.impl_function_generic_params_data(impl_function_id)?;
-    let function_generic_params = function_generic_params_data.generic_params;
-    let mut resolver =
-        Resolver::with_data(db, (*function_generic_params_data.resolver_data).clone());
-    diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
+    let generic_params_data = db.impl_function_generic_params_data(impl_function_id)?;
+    let generic_params = generic_params_data.generic_params;
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ImplFunction(impl_function_id));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
+    diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
 
@@ -1178,18 +1176,14 @@ pub fn priv_impl_function_declaration_data(
         &signature_syntax,
         &signature,
         function_syntax,
-        &function_generic_params,
+        &generic_params,
     );
 
     let attributes = function_syntax.attributes(syntax_db).structurize(syntax_db);
 
     let inline_config = get_inline_config(db, &mut diagnostics, &attributes)?;
 
-    forbid_inline_always_with_impl_generic_param(
-        &mut diagnostics,
-        &function_generic_params,
-        &inline_config,
-    );
+    forbid_inline_always_with_impl_generic_param(&mut diagnostics, &generic_params, &inline_config);
 
     let (implicit_precedence, _) = get_implicit_precedence(db, &mut diagnostics, &attributes)?;
 
@@ -1199,13 +1193,14 @@ pub fn priv_impl_function_declaration_data(
             .report(&mut diagnostics, stable_ptr.unwrap_or(function_syntax.stable_ptr().untyped()));
     }
     let signature = resolver.inference().rewrite(signature).no_err();
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplFunctionDeclarationData {
         function_declaration_data: FunctionDeclarationData {
             diagnostics: diagnostics.build(),
             signature,
-            generic_params: function_generic_params,
+            generic_params,
             environment,
             attributes,
             resolver_data,
@@ -1406,11 +1401,11 @@ pub fn priv_impl_function_body_data(
     let function_syntax = &data.function_asts[impl_function_id];
     // Compute declaration semantic.
     let declaration = db.priv_impl_function_declaration_data(impl_function_id)?;
-    let parent_resolver_data = db.impl_def_resolver_data(impl_def_id)?;
-    let mut resolver = Resolver::with_data(db, (*parent_resolver_data).clone());
-    for generic_param in declaration.function_declaration_data.generic_params {
-        resolver.add_generic_param(generic_param.id());
-    }
+    let parent_resolver_data = declaration.function_declaration_data.resolver_data;
+    let inference_id =
+        InferenceId::LookupItemDefinition(LookupItemId::ImplFunction(impl_function_id));
+    let resolver =
+        Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment = declaration.function_declaration_data.environment;
 
     // Compute body semantic expr.

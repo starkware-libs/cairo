@@ -27,7 +27,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::infers::InferenceEmbeddings;
-use crate::expr::inference::{Inference, InferenceData};
+use crate::expr::inference::{Inference, InferenceData, InferenceId};
 use crate::items::enm::SemanticEnumEx;
 use crate::items::functions::{GenericFunctionId, ImplGenericFunctionId};
 use crate::items::imp::{ConcreteImplId, ConcreteImplLongId, ImplId, ImplLookupContext};
@@ -85,7 +85,7 @@ impl ResolvedItems {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, DebugWithDb)]
+#[derive(Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ResolverData {
     // Current module in which to resolve the path.
@@ -98,12 +98,24 @@ pub struct ResolverData {
     pub inference_data: InferenceData,
 }
 impl ResolverData {
-    pub fn new(module_file_id: ModuleFileId) -> Self {
+    pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
         Self {
             module_file_id,
             generic_params: Default::default(),
             resolved_items: Default::default(),
-            inference_data: Default::default(),
+            inference_data: InferenceData::new(inference_id),
+        }
+    }
+    pub fn clone_with_inference_id(
+        &self,
+        db: &dyn SemanticGroup,
+        inference_id: InferenceId,
+    ) -> Self {
+        Self {
+            module_file_id: self.module_file_id,
+            generic_params: self.generic_params.clone(),
+            resolved_items: self.resolved_items.clone(),
+            inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
         }
     }
 }
@@ -142,14 +154,18 @@ impl AsSegments for Vec<ast::PathSegment> {
 }
 
 impl<'db> Resolver<'db> {
-    pub fn new(db: &'db dyn SemanticGroup, module_file_id: ModuleFileId) -> Self {
+    pub fn new(
+        db: &'db dyn SemanticGroup,
+        module_file_id: ModuleFileId,
+        inference_id: InferenceId,
+    ) -> Self {
         Self {
             db,
             data: ResolverData {
                 module_file_id,
                 generic_params: Default::default(),
                 resolved_items: Default::default(),
-                inference_data: Default::default(),
+                inference_data: InferenceData::new(inference_id),
             },
         }
     }

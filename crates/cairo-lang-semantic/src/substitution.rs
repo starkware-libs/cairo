@@ -1,3 +1,4 @@
+use std::collections::{HashMap, VecDeque};
 use std::ops::Deref;
 
 use cairo_lang_defs::ids::{
@@ -10,7 +11,9 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{zip_eq, Itertools};
 
 use crate::db::SemanticGroup;
-use crate::expr::inference::{ImplVar, ImplVarId, TypeVar};
+use crate::expr::inference::{
+    ImplVar, ImplVarId, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId, TypeVar,
+};
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
     GenericFunctionWithBodyId, ImplGenericFunctionId, ImplGenericFunctionWithBodyId,
@@ -106,6 +109,18 @@ impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Vec<T>, E> for TR
         value.into_iter().map(|el| self.rewrite(el)).collect()
     }
 }
+impl<T, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<VecDeque<T>, E> for TRewriter {
+    fn rewrite(&mut self, value: VecDeque<T>) -> Result<VecDeque<T>, E> {
+        value.into_iter().map(|el| self.rewrite(el)).collect()
+    }
+}
+impl<K: Eq + std::hash::Hash, V, E, TRewriter: SemanticRewriter<K, E> + SemanticRewriter<V, E>>
+    SemanticRewriter<HashMap<K, V>, E> for TRewriter
+{
+    fn rewrite(&mut self, value: HashMap<K, V>) -> Result<HashMap<K, V>, E> {
+        value.into_iter().map(|(k, v)| Ok((self.rewrite(k)?, self.rewrite(v)?))).collect()
+    }
+}
 impl<T: Clone, E, TRewriter: SemanticRewriter<T, E>> SemanticRewriter<Box<T>, E> for TRewriter {
     fn rewrite(&mut self, value: Box<T>) -> Result<Box<T>, E> {
         Ok(Box::new(self.rewrite((*value).clone())?))
@@ -166,6 +181,7 @@ macro_rules! add_basic_rewrites {
             ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
+        $crate::prune_single!(__identitity_helper, InferenceId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, ParamId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, LiteralId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, FreeFunctionId, $($exclude)*);
@@ -184,6 +200,9 @@ macro_rules! add_basic_rewrites {
         $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
         $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, LocalImplVarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, LocalTypeVarId, $($exclude)*);
+        $crate::prune_single!(__identitity_helper, InferenceVar, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);

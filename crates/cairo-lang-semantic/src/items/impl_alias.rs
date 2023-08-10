@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ImplAliasId, LanguageElementId};
+use cairo_lang_defs::ids::{ImplAliasId, LanguageElementId, LookupItemId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -12,6 +12,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
@@ -50,7 +51,13 @@ pub fn priv_impl_alias_semantic_data(
     let syntax_db = db.upcast();
     let generic_params_data = db.impl_alias_generic_params_data(impl_alias_id)?;
     let generic_params = generic_params_data.generic_params.clone();
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::ImplAlias(impl_alias_id),
+    ));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let item = resolver.resolve_concrete_path(
@@ -69,6 +76,7 @@ pub fn priv_impl_alias_semantic_data(
             .report(&mut diagnostics, stable_ptr.unwrap_or(impl_alias_ast.stable_ptr().untyped()));
     }
     let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {
@@ -94,12 +102,15 @@ pub fn priv_impl_alias_semantic_data_cycle(
     let generic_params_data = db.impl_alias_generic_params_data(*impl_alias_id)?;
     let generic_params = generic_params_data.generic_params.clone();
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::ImplAlias(*impl_alias_id),
+    ));
 
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
         generic_params,
-        resolver_data: Arc::new(ResolverData::new(module_file_id)),
+        resolver_data: Arc::new(ResolverData::new(module_file_id, inference_id)),
     })
 }
 
@@ -137,7 +148,10 @@ pub fn impl_alias_generic_params_data(
     let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
     let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
     let syntax_db = db.upcast();
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id = InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(
+        ModuleItemId::ImplAlias(impl_alias_id),
+    ));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -145,10 +159,10 @@ pub fn impl_alias_generic_params_data(
         module_file_id,
         &impl_alias_ast.generic_params(syntax_db),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, impl_alias_ast.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
