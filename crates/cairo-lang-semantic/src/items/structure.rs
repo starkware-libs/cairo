@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, MemberId, MemberLongId, StructId};
+use cairo_lang_defs::ids::{
+    LanguageElementId, LookupItemId, MemberId, MemberLongId, ModuleItemId, StructId,
+};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -14,6 +16,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::{resolve_type, ConcreteStructId};
@@ -53,7 +56,13 @@ pub fn priv_struct_declaration_data(
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
     let generic_params = generic_params_data.generic_params;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+        ModuleItemId::Struct(struct_id),
+    ));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = struct_ast.attributes(syntax_db).structurize(syntax_db);
@@ -64,9 +73,6 @@ pub fn priv_struct_declaration_data(
             .report(&mut diagnostics, stable_ptr.unwrap_or(struct_ast.stable_ptr().untyped()));
     }
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
-    resolver.inference().finalize().map(|(_, inference_err)| {
-        inference_err.report(&mut diagnostics, struct_ast.stable_ptr().untyped())
-    });
     let resolver_data = Arc::new(resolver.data);
     Ok(StructDeclarationData {
         diagnostics: diagnostics.build(),
@@ -106,7 +112,9 @@ pub fn struct_generic_params_data(
     let module_structs = db.module_structs(module_file_id.0)?;
     let struct_ast = module_structs.get(&struct_id).to_maybe()?;
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Struct(struct_id)));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -114,10 +122,10 @@ pub fn struct_generic_params_data(
         module_file_id,
         &struct_ast.generic_params(db.upcast()),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, struct_ast.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -167,7 +175,13 @@ pub fn priv_struct_definition_data(
 
     // Generic params.
     let generic_params_data = db.struct_generic_params_data(struct_id)?;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id = InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(
+        ModuleItemId::Struct(struct_id),
+    ));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Members.

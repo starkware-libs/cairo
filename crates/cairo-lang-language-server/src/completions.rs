@@ -8,6 +8,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use cairo_lang_semantic::expr::inference::infers::InferenceEmbeddings;
 use cairo_lang_semantic::expr::inference::solver::SolutionSet;
+use cairo_lang_semantic::expr::inference::InferenceId;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::items::us::SemanticUseEx;
@@ -114,8 +115,10 @@ pub fn colon_colon_completions(
 ) -> Option<Vec<CompletionItem>> {
     // Get a resolver in the current context.
     let resolver_data = match lookup_items.into_iter().next() {
-        Some(item) => (*item.resolver_data(db).ok()?).clone(),
-        None => Resolver::new(db, module_file_id).data,
+        Some(item) => {
+            (*item.resolver_data(db).ok()?).clone_with_inference_id(db, InferenceId::NoContext)
+        }
+        None => Resolver::new(db, module_file_id, InferenceId::NoContext).data,
     };
     let mut resolver = Resolver::with_data(db, resolver_data);
 
@@ -190,7 +193,10 @@ pub fn dot_completions(
     let function_with_body = lookup_item_id.function_with_body()?;
     let module_id = function_with_body.module_file_id(db.upcast()).0;
     let resolver_data = lookup_item_id.resolver_data(db).ok()?;
-    let resolver = Resolver::with_data(db, resolver_data.as_ref().clone());
+    let resolver = Resolver::with_data(
+        db,
+        resolver_data.as_ref().clone_with_inference_id(db, InferenceId::NoContext),
+    );
 
     // Extract lhs node.
     let node = expr.lhs(syntax_db);
@@ -315,7 +321,8 @@ fn find_methods_for_type(
     for crate_id in db.crates() {
         let methods = db.methods_in_crate(crate_id, type_filter.clone());
         for trait_function in methods.iter().copied() {
-            let clone_data = &mut resolver.inference().clone_data();
+            let clone_data =
+                &mut resolver.inference().clone_with_inference_id(db, InferenceId::NoContext);
             let mut inference = clone_data.inference(db);
             let lookup_context = resolver.impl_lookup_context();
             // Check if trait function signature's first param can fit our expr type.

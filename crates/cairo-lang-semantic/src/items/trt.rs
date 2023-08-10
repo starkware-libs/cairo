@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
-    FunctionTitleId, LanguageElementId, TopLevelLanguageElementId, TraitFunctionId,
-    TraitFunctionLongId, TraitId,
+    FunctionTitleId, LanguageElementId, LookupItemId, ModuleItemId, TopLevelLanguageElementId,
+    TraitFunctionId, TraitFunctionLongId, TraitId,
 };
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
@@ -26,6 +26,7 @@ use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::compute::{compute_root_expr, ComputationContext, Environment};
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::{
@@ -197,7 +198,9 @@ pub fn trait_generic_params_data(
     let trait_ast = module_traits.get(&trait_id).to_maybe()?;
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -206,10 +209,10 @@ pub fn trait_generic_params_data(
         &trait_ast.generic_params(syntax_db),
     )?;
 
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, trait_ast.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { diagnostics: diagnostics.build(), generic_params, resolver_data })
 }
@@ -243,7 +246,12 @@ pub fn priv_trait_semantic_declaration_data(
     // Generic params.
     let generic_params_data = db.trait_generic_params_data(trait_id)?;
     let generic_params = generic_params_data.generic_params;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id =
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Trait(trait_id)));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     let attributes = trait_ast.attributes(syntax_db).structurize(syntax_db);
@@ -253,6 +261,7 @@ pub fn priv_trait_semantic_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(trait_ast.stable_ptr().untyped()));
     }
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(TraitDeclarationData {
@@ -412,7 +421,11 @@ pub fn trait_function_generic_params_data(
     let data = db.priv_trait_semantic_definition_data(trait_id)?;
     let function_syntax = &data.function_asts[trait_function_id];
     let declaration = function_syntax.declaration(syntax_db);
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::TraitFunction(trait_function_id));
+    let parent_resolver_data = db.trait_resolver_data(trait_id)?;
+    let mut resolver =
+        Resolver::with_data(db, parent_resolver_data.clone_with_inference_id(db, inference_id));
     let trait_generic_params = db.trait_generic_params(trait_id)?;
     for generic_param in trait_generic_params {
         resolver.add_generic_param(generic_param.id());
@@ -489,8 +502,12 @@ pub fn priv_trait_function_declaration_data(
     let declaration = function_syntax.declaration(syntax_db);
     let function_generic_params_data = db.trait_function_generic_params_data(trait_function_id)?;
     let function_generic_params = function_generic_params_data.generic_params;
-    let mut resolver =
-        Resolver::with_data(db, (*function_generic_params_data.resolver_data).clone());
+    let inference_id =
+        InferenceId::LookupItemDeclaration(LookupItemId::TraitFunction(trait_function_id));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*function_generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(function_generic_params_data.diagnostics);
 
     let signature_syntax = declaration.signature(syntax_db);
@@ -638,10 +655,10 @@ pub fn priv_trait_function_body_data(
     let trait_function_declaration_data =
         db.priv_trait_function_declaration_data(trait_function_id)?;
     let parent_resolver_data = db.trait_resolver_data(trait_id)?;
-    let mut resolver = Resolver::with_data(db, (*parent_resolver_data).clone());
-    for generic_param in trait_function_declaration_data.generic_params {
-        resolver.add_generic_param(generic_param.id());
-    }
+    let inference_id =
+        InferenceId::LookupItemDefinition(LookupItemId::TraitFunction(trait_function_id));
+    let resolver =
+        Resolver::with_data(db, (*parent_resolver_data).clone_with_inference_id(db, inference_id));
     let environment = trait_function_declaration_data.environment;
 
     // Compute body semantic expr.

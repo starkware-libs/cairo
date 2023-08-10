@@ -202,7 +202,7 @@ impl<'db> InferenceConform for Inference<'db> {
                 self.db.impl_concrete_trait(impl0)?,
             )?;
             let impl_id = self.rewrite(impl0).no_err();
-            return self.assign_impl(var.get(self.db).id, impl_id);
+            return self.assign_impl(var, impl_id);
         }
         match impl0 {
             ImplId::ImplVar(var) => {
@@ -211,7 +211,7 @@ impl<'db> InferenceConform for Inference<'db> {
                     self.db.impl_concrete_trait(impl1)?,
                 )?;
                 let impl_id = self.rewrite(impl1).no_err();
-                self.assign_impl(var.get(self.db).id, impl_id)
+                self.assign_impl(var, impl_id)
             }
             ImplId::Concrete(concrete0) => {
                 let ImplId::Concrete(concrete1) = impl1 else {

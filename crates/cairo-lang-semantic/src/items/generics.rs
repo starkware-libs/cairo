@@ -18,9 +18,12 @@ use super::imp::{ImplHead, ImplId};
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::{self, *};
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::literals::LiteralId;
 use crate::lookup_item::LookupItemEx;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
+use crate::substitution::SemanticRewriter;
 use crate::types::{resolve_type, TypeHead};
 use crate::{ConcreteTraitId, SemanticDiagnostic, TypeId};
 
@@ -191,7 +194,9 @@ pub fn generic_param_data(
     let allow_consts = matches!(generic_item_id, GenericItemId::ExternFunc(_));
     let lookup_item: LookupItemId = generic_item_id.into();
     let context_resolver_data = lookup_item.resolver_context(db)?;
-    let mut resolver = Resolver::with_data(db, (*context_resolver_data).clone());
+    let inference_id = InferenceId::GenericParam(generic_param_id);
+    let mut resolver =
+        Resolver::with_data(db, (*context_resolver_data).clone_with_inference_id(db, inference_id));
     let generic_params_syntax = extract_matches!(
         generic_param_generic_params_list(db, generic_param_id)?,
         ast::OptionWrappedGenericParamList::WrappedGenericParamList
@@ -228,6 +233,7 @@ pub fn generic_param_data(
             stable_ptr.unwrap_or(generic_param_syntax.stable_ptr().untyped()),
         );
     }
+    let param_semantic = resolver.inference().rewrite(param_semantic).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamData {
         generic_param: param_semantic,
@@ -298,7 +304,11 @@ pub fn generic_impl_param_trait(
     let trait_path_syntax = syntax.trait_path(syntax_db);
 
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
+    // TODO(spapini): We should not create a new resolver -  we are missing the other generic params
+    // in the context.
+    // Remove also GenericImplParamTrait.
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
 
     resolver
         .resolve_generic_path_with_args(

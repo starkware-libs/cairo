@@ -5,7 +5,10 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
-use super::{ImplVar, ImplVarId, Inference, InferenceVar, LocalImplVarId, LocalTypeVarId, TypeVar};
+use super::{
+    ImplVar, ImplVarId, Inference, InferenceId, InferenceVar, LocalImplVarId, LocalTypeVarId,
+    TypeVar,
+};
 use crate::db::SemanticGroup;
 use crate::items::functions::{
     ConcreteFunctionWithBody, ConcreteFunctionWithBodyId, GenericFunctionId,
@@ -31,9 +34,10 @@ impl CanonicalTrait {
     /// Canonicalizes a concrete trait that is part of an [Inference].
     pub fn canonicalize(
         db: &dyn SemanticGroup,
+        source_inference_id: InferenceId,
         trait_id: ConcreteTraitId,
     ) -> (Self, CanonicalMapping) {
-        let (t, mapping) = Canonicalizer::canonicalize(db, trait_id);
+        let (t, mapping) = Canonicalizer::canonicalize(db, source_inference_id, trait_id);
         (Self(t), mapping)
     }
     /// Embeds a canonical trait into an [Inference].
@@ -75,6 +79,8 @@ impl CanonicalMapping {
         let from_canonic = VarMapping {
             type_var_mapping: to_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             impl_var_mapping: to_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            source_inference_id: to_canonic.target_inference_id,
+            target_inference_id: to_canonic.source_inference_id,
         };
         Self { to_canonic, from_canonic }
     }
@@ -82,16 +88,38 @@ impl CanonicalMapping {
         let to_canonic = VarMapping {
             type_var_mapping: from_canonic.type_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
             impl_var_mapping: from_canonic.impl_var_mapping.iter().map(|(k, v)| (*v, *k)).collect(),
+            source_inference_id: from_canonic.target_inference_id,
+            target_inference_id: from_canonic.source_inference_id,
         };
         Self { to_canonic, from_canonic }
     }
 }
 
 // Mappings.
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct VarMapping {
     type_var_mapping: OrderedHashMap<LocalTypeVarId, LocalTypeVarId>,
     impl_var_mapping: OrderedHashMap<LocalImplVarId, LocalImplVarId>,
+    source_inference_id: InferenceId,
+    target_inference_id: InferenceId,
+}
+impl VarMapping {
+    fn new_to_canonic(source_inference_id: InferenceId) -> Self {
+        Self {
+            type_var_mapping: OrderedHashMap::default(),
+            impl_var_mapping: OrderedHashMap::default(),
+            source_inference_id,
+            target_inference_id: InferenceId::Canonical,
+        }
+    }
+    fn new_from_canonic(target_inference_id: InferenceId) -> Self {
+        Self {
+            type_var_mapping: OrderedHashMap::default(),
+            impl_var_mapping: OrderedHashMap::default(),
+            source_inference_id: InferenceId::Canonical,
+            target_inference_id,
+        }
+    }
 }
 
 /// A 'never' error.
@@ -116,11 +144,16 @@ struct Canonicalizer<'db> {
     to_canonic: VarMapping,
 }
 impl<'db> Canonicalizer<'db> {
-    fn canonicalize<T>(db: &'db dyn SemanticGroup, value: T) -> (T, CanonicalMapping)
+    fn canonicalize<T>(
+        db: &'db dyn SemanticGroup,
+        source_inference_id: InferenceId,
+        value: T,
+    ) -> (T, CanonicalMapping)
     where
         Self: SemanticRewriter<T, NoError>,
     {
-        let mut canonicalizer = Self { db, to_canonic: Default::default() };
+        let mut canonicalizer =
+            Self { db, to_canonic: VarMapping::new_to_canonic(source_inference_id) };
         let value = canonicalizer.rewrite(value).no_err();
         let mapping = CanonicalMapping::from_to_canonic(canonicalizer.to_canonic);
         (value, mapping)
@@ -137,9 +170,13 @@ impl<'a> SemanticRewriter<TypeLongId, NoError> for Canonicalizer<'a> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
+        if var.inference_id != self.to_canonic.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let next_id = LocalTypeVarId(self.to_canonic.type_var_mapping.len());
         Ok(TypeLongId::Var(TypeVar {
             id: *self.to_canonic.type_var_mapping.entry(var.id).or_insert(next_id),
+            inference_id: InferenceId::Canonical,
         }))
     }
 }
@@ -149,9 +186,13 @@ impl<'a> SemanticRewriter<ImplId, NoError> for Canonicalizer<'a> {
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.db);
+        if var.inference_id != self.to_canonic.source_inference_id {
+            return value.default_rewrite(self);
+        }
         let next_id = LocalImplVarId(self.to_canonic.impl_var_mapping.len());
         let var = ImplVar {
             id: *self.to_canonic.impl_var_mapping.entry(var.id).or_insert(next_id),
+            inference_id: InferenceId::Canonical,
             ..var
         };
         Ok(ImplId::ImplVar(var.intern(self.db)))
@@ -168,7 +209,8 @@ impl<'a, 'db> Embedder<'a, 'db> {
     where
         Self: SemanticRewriter<T, NoError>,
     {
-        let mut embedder = Self { inference, from_canonic: Default::default() };
+        let from_canonic = VarMapping::new_from_canonic(inference.inference_id);
+        let mut embedder = Self { inference, from_canonic };
         let value = embedder.rewrite(value).no_err();
         let mapping = CanonicalMapping::from_from_canonic(embedder.from_canonic);
         (value, mapping)
@@ -186,13 +228,15 @@ impl<'a, 'b> SemanticRewriter<TypeLongId, NoError> for Embedder<'a, 'b> {
         let TypeLongId::Var(var) = value else {
             return value.default_rewrite(self);
         };
-        Ok(TypeLongId::Var(TypeVar {
-            id: *self
-                .from_canonic
-                .type_var_mapping
-                .entry(var.id)
-                .or_insert_with(|| self.inference.new_type_var_raw(None).id),
-        }))
+        if var.inference_id != InferenceId::Canonical {
+            return value.default_rewrite(self);
+        }
+        let new_id = self
+            .from_canonic
+            .type_var_mapping
+            .entry(var.id)
+            .or_insert_with(|| self.inference.new_type_var_raw(None).id);
+        Ok(TypeLongId::Var(self.inference.type_vars[new_id.0]))
     }
 }
 impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
@@ -201,14 +245,14 @@ impl<'a, 'b> SemanticRewriter<ImplId, NoError> for Embedder<'a, 'b> {
             return value.default_rewrite(self);
         };
         let var = var_id.get(self.get_db());
+        if var.inference_id != InferenceId::Canonical {
+            return value.default_rewrite(self);
+        }
         let concrete_trait_id = self.rewrite(var.concrete_trait_id)?;
-        let var = ImplVar {
-            id: *self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
-                self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
-            }),
-            ..var
-        };
-        Ok(ImplId::ImplVar(var.intern(self.get_db())))
+        let new_id = self.from_canonic.impl_var_mapping.entry(var.id).or_insert_with(|| {
+            self.inference.new_impl_var_raw(var.lookup_context.clone(), concrete_trait_id, None)
+        });
+        Ok(ImplId::ImplVar(self.inference.impl_vars[new_id.0].intern(self.get_db())))
     }
 }
 
@@ -250,7 +294,7 @@ impl<'db> SemanticRewriter<TypeLongId, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Type(var.id)))?;
-        Ok(TypeLongId::Var(TypeVar { id }))
+        Ok(TypeLongId::Var(TypeVar { id, inference_id: self.mapping.target_inference_id }))
     }
 }
 impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
@@ -265,7 +309,7 @@ impl<'db> SemanticRewriter<ImplId, MapperError> for Mapper<'db> {
             .get(&var.id)
             .copied()
             .ok_or(MapperError(InferenceVar::Impl(var.id)))?;
-        let var = ImplVar { id, ..var };
+        let var = ImplVar { id, inference_id: self.mapping.target_inference_id, ..var };
         Ok(ImplId::ImplVar(var.intern(self.get_db())))
     }
 }
