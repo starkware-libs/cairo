@@ -904,11 +904,11 @@
     "user_func_names": [
       [
         0,
-        "test::hello_starknet::__external::increase_balance"
+        "test::hello_starknet::__wrapper_increase_balance"
       ],
       [
         1,
-        "test::hello_starknet::__external::get_balance"
+        "test::hello_starknet::__wrapper_get_balance"
       ],
       [
         2,

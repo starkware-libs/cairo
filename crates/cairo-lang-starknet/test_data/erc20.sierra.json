@@ -4337,51 +4337,51 @@
     "user_func_names": [
       [
         0,
-        "test::erc_20::__external::get_name"
+        "test::erc_20::__wrapper_get_name"
       ],
       [
         1,
-        "test::erc_20::__external::get_symbol"
+        "test::erc_20::__wrapper_get_symbol"
       ],
       [
         2,
-        "test::erc_20::__external::get_decimals"
+        "test::erc_20::__wrapper_get_decimals"
       ],
       [
         3,
-        "test::erc_20::__external::get_total_supply"
+        "test::erc_20::__wrapper_get_total_supply"
       ],
       [
         4,
-        "test::erc_20::__external::balance_of"
+        "test::erc_20::__wrapper_balance_of"
       ],
       [
         5,
-        "test::erc_20::__external::allowance"
+        "test::erc_20::__wrapper_allowance"
       ],
       [
         6,
-        "test::erc_20::__external::transfer"
+        "test::erc_20::__wrapper_transfer"
       ],
       [
         7,
-        "test::erc_20::__external::transfer_from"
+        "test::erc_20::__wrapper_transfer_from"
       ],
       [
         8,
-        "test::erc_20::__external::approve"
+        "test::erc_20::__wrapper_approve"
       ],
       [
         9,
-        "test::erc_20::__external::increase_allowance"
+        "test::erc_20::__wrapper_increase_allowance"
       ],
       [
         10,
-        "test::erc_20::__external::decrease_allowance"
+        "test::erc_20::__wrapper_decrease_allowance"
       ],
       [
         11,
-        "test::erc_20::__constructor::constructor"
+        "test::erc_20::__wrapper_constructor"
       ],
       [
         12,

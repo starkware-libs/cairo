@@ -188,22 +188,15 @@ use starknet::event::EventEmitter;
 
 
 
-mod __external {
-        use super::Event;
 
-    
+
+mod __external {
 }
 
 mod __l1_handler {
-        use super::Event;
-
-    
 }
 
 mod __constructor {
-        use super::Event;
-
-    
 }
 
 

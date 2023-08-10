@@ -1950,31 +1950,31 @@
     "user_func_names": [
       [
         0,
-        "test::test_contract::__external::test"
+        "test::test_contract::__wrapper_test"
       ],
       [
         1,
-        "test::test_contract::__external::another_function"
+        "test::test_contract::__wrapper_another_function"
       ],
       [
         2,
-        "test::test_contract::__external::call_foo"
+        "test::test_contract::__wrapper_call_foo"
       ],
       [
         3,
-        "test::test_contract::__external::libcall_foo"
+        "test::test_contract::__wrapper_libcall_foo"
       ],
       [
         4,
-        "test::test_contract::__external::segment_arena_builtin"
+        "test::test_contract::__wrapper_segment_arena_builtin"
       ],
       [
         5,
-        "test::test_contract::__l1_handler::l1_handle"
+        "test::test_contract::__wrapper_l1_handle"
       ],
       [
         6,
-        "test::test_contract::__constructor::constructor"
+        "test::test_contract::__wrapper_constructor"
       ],
       [
         7,

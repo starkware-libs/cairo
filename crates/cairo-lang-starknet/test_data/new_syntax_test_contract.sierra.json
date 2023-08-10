@@ -2305,19 +2305,19 @@
     "user_func_names": [
       [
         0,
-        "test::counter_contract::__external::get_counter"
+        "test::counter_contract::__wrapper_get_counter"
       ],
       [
         1,
-        "test::counter_contract::__external::increase_counter"
+        "test::counter_contract::__wrapper_increase_counter"
       ],
       [
         2,
-        "test::counter_contract::__external::decrease_counter"
+        "test::counter_contract::__wrapper_decrease_counter"
       ],
       [
         3,
-        "test::counter_contract::__constructor::constructor"
+        "test::counter_contract::__wrapper_constructor"
       ],
       [
         4,
