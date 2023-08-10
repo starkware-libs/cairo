@@ -9,6 +9,7 @@ use cairo_lang_defs::ids::{
 use cairo_lang_diagnostics::Maybe;
 
 use crate::db::SemanticGroup;
+use crate::expr::inference::InferenceId;
 use crate::resolve::ResolverData;
 
 pub trait HasResolverData {
@@ -50,7 +51,8 @@ impl LookupItemEx for LookupItemId {
             LookupItemId::ModuleItem(item) => {
                 // Top level does not have an outer context, create an empty resolver data.
                 let module_file_id = item.module_file_id(db.upcast());
-                let resolver_data = Arc::new(ResolverData::new(module_file_id));
+                let resolver_data =
+                    Arc::new(ResolverData::new(module_file_id, InferenceId::NoContext));
                 Ok(resolver_data)
             }
         }
@@ -95,7 +97,10 @@ impl HasResolverData for SubmoduleId {
     fn resolver_data(&self, _db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
         let module_id = ModuleId::Submodule(*self);
         let module_file_id = ModuleFileId(module_id, FileIndex(0));
-        Ok(Arc::new(ResolverData::new(module_file_id)))
+        let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+            ModuleItemId::Submodule(*self),
+        ));
+        Ok(Arc::new(ResolverData::new(module_file_id, inference_id)))
     }
 }
 impl HasResolverData for UseId {
@@ -115,7 +120,10 @@ impl HasResolverData for ImplDefId {
 }
 impl HasResolverData for ExternTypeId {
     fn resolver_data(&self, db: &dyn SemanticGroup) -> Maybe<Arc<ResolverData>> {
-        Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()))))
+        let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+            ModuleItemId::ExternType(*self),
+        ));
+        Ok(Arc::new(ResolverData::new(self.module_file_id(db.upcast()), inference_id)))
     }
 }
 impl HasResolverData for ExternFunctionId {

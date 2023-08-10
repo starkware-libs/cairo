@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{EnumId, LanguageElementId, VariantId, VariantLongId};
+use cairo_lang_defs::ids::{
+    EnumId, LanguageElementId, LookupItemId, ModuleItemId, VariantId, VariantLongId,
+};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::{DebugWithDb, SemanticObject};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
@@ -16,6 +18,7 @@ use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::SemanticDiagnostics;
 use crate::expr::inference::canonic::ResultNoErrEx;
+use crate::expr::inference::InferenceId;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::{GenericSubstitution, SemanticRewriter, SubstitutionRewriter};
 use crate::types::resolve_type;
@@ -51,7 +54,12 @@ pub fn priv_enum_declaration_data(
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id =
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
     let generic_params = generic_params_data.generic_params;
     let attributes = enum_ast.attributes(syntax_db).structurize(syntax_db);
@@ -61,6 +69,7 @@ pub fn priv_enum_declaration_data(
         inference_err
             .report(&mut diagnostics, stable_ptr.unwrap_or(enum_ast.stable_ptr().untyped()));
     }
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
     let resolver_data = Arc::new(resolver.data);
     Ok(EnumDeclarationData {
@@ -98,7 +107,9 @@ pub fn enum_generic_params_data(
     let enum_ast = module_enums.get(&enum_id).to_maybe()?;
 
     // Generic params.
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id =
+        InferenceId::LookupItemGenerics(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     let generic_params = semantic_generic_params(
         db,
         &mut diagnostics,
@@ -106,10 +117,10 @@ pub fn enum_generic_params_data(
         module_file_id,
         &enum_ast.generic_params(db.upcast()),
     )?;
-    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     resolver.inference().finalize().map(|(_, inference_err)| {
         inference_err.report(&mut diagnostics, enum_ast.stable_ptr().untyped())
     });
+    let generic_params = resolver.inference().rewrite(generic_params).no_err();
     let resolver_data = Arc::new(resolver.data);
     Ok(GenericParamsData { generic_params, diagnostics: diagnostics.build(), resolver_data })
 }
@@ -174,7 +185,12 @@ pub fn priv_enum_definition_data(
 
     // Generic params.
     let generic_params_data = db.enum_generic_params_data(enum_id)?;
-    let mut resolver = Resolver::with_data(db, (*generic_params_data.resolver_data).clone());
+    let inference_id =
+        InferenceId::LookupItemDefinition(LookupItemId::ModuleItem(ModuleItemId::Enum(enum_id)));
+    let mut resolver = Resolver::with_data(
+        db,
+        (*generic_params_data.resolver_data).clone_with_inference_id(db, inference_id),
+    );
     diagnostics.diagnostics.extend(generic_params_data.diagnostics);
 
     // Variants.

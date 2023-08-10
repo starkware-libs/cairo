@@ -583,3 +583,36 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > inference in impl generic params
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait BashStateTrait<S> {
+   fn update(self: S, value: felt252) -> S;
+   fn finalize(self: S) -> felt252;
+}
+trait Bash<T, S, impl X: BashStateTrait<S>> {
+   fn update_state(state: S, value: T) -> S;
+}
+trait BashStateExTrait<S, T> {
+   fn update_with(self: S, value: T) -> S;
+}
+impl BashStateEx<S, impl X0: BashStateTrait<S>, T, impl Y0: Bash<T, S, _>> of BashStateExTrait<S, T> {
+   fn update_with(self: S, value: T) -> S {
+       Bash::update_state(self, value)
+   }
+}
+
+//! > expected_diagnostics

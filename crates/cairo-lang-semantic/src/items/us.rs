@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{LanguageElementId, UseId};
+use cairo_lang_defs::ids::{LanguageElementId, LookupItemId, ModuleItemId, UseId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -11,6 +11,7 @@ use cairo_lang_utils::Upcast;
 use crate::db::SemanticGroup;
 use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use crate::expr::inference::InferenceId;
 use crate::resolve::{ResolvedGenericItem, Resolver, ResolverData};
 use crate::SemanticDiagnostic;
 
@@ -27,7 +28,9 @@ pub fn priv_use_semantic_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Us
     let module_file_id = use_id.module_file_id(db.upcast());
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     // TODO(spapini): Add generic args when they are supported on structs.
-    let mut resolver = Resolver::new(db, module_file_id);
+    let inference_id =
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(use_id)));
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
     // TODO(spapini): when code changes in a file, all the AST items change (as they contain a path
     // to the green root that changes. Once ASTs are rooted on items, use a selector that picks only
     // the item instead of all the module data.
@@ -106,10 +109,12 @@ pub fn priv_use_semantic_data_cycle(
             UseCycle
         },
     ));
+    let inference_id =
+        InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(ModuleItemId::Use(*use_id)));
     Ok(UseData {
         diagnostics: diagnostics.build(),
         resolved_item: err,
-        resolver_data: Arc::new(ResolverData::new(module_file_id)),
+        resolver_data: Arc::new(ResolverData::new(module_file_id, inference_id)),
     })
 }
 

@@ -5,7 +5,9 @@ use itertools::Itertools;
 
 use super::canonic::{CanonicalImpl, CanonicalMapping, CanonicalTrait, MapperError, ResultNoErrEx};
 use super::infers::InferenceEmbeddings;
-use super::{InferenceData, InferenceError, InferenceResult, InferenceVar, LocalImplVarId};
+use super::{
+    InferenceData, InferenceError, InferenceId, InferenceResult, InferenceVar, LocalImplVarId,
+};
 use crate::db::SemanticGroup;
 use crate::items::imp::{find_candidates_at_context, ImplId, ImplLookupContext, UninferredImpl};
 use crate::substitution::SemanticRewriter;
@@ -165,7 +167,7 @@ impl CandidateSolver {
         candidate: UninferredImpl,
         lookup_context: &ImplLookupContext,
     ) -> InferenceResult<CandidateSolver> {
-        let mut inference_data = InferenceData::new();
+        let mut inference_data = InferenceData::new(InferenceId::Canonical);
         let mut inference = inference_data.inference(db);
         let (concrete_trait_id, canonical_embedding) = canonical_trait.embed(&mut inference);
         // Add the defining module of the candidate to the lookup.
