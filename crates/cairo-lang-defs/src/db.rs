@@ -8,7 +8,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
@@ -342,6 +342,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
             for plugin in db.macro_plugins() {
                 let result = plugin.generate_code(db.upcast(), item_ast.clone());
                 for plugin_diag in result.diagnostics {
+                    println!("plugin diag: {:?}", plugin_diag);
                     plugin_diagnostics.push((module_file_id, plugin_diag));
                 }
                 if result.remove_original_item {
@@ -453,10 +454,17 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
+                ast::Item::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
+                    module_file_id,
+                    PluginDiagnostic {
+                        stable_ptr: inline_macro_ast.stable_ptr().untyped(),
+                        message: format!(
+                            "Unknown inline item macro: {}.",
+                            inline_macro_ast.name(db.upcast()).text(db.upcast())
+                        ),
+                    },
+                )),
                 ast::Item::Missing(_) => {}
-                ast::Item::InlineMacro(_) => {
-                    todo!("Not implemented yet.")
-                }
             }
         }
     }
