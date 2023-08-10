@@ -1,0 +1,138 @@
+//! > Test an ItemInlineMacro with parenthesis syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+inline_macro!(1,2,3);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ExprListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── expressions (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with brackets syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+inline_macro![1,2,3];
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ExprListBracketed)
+    │   ├── lbrack (kind: TokenLBrack): '['
+    │   ├── expressions (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   └── rbrack (kind: TokenRBrack): ']'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with braces syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+inline_macro!{1,2,3};
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList) []
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ExprListBraced)
+    │   ├── lbrace (kind: TokenLBrace): '{'
+    │   ├── expressions (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   └── rbrace (kind: TokenRBrace): '}'
+    └── semicolon (kind: TokenSemicolon): ';'
+
+//! > ==========================================================================
+
+//! > Test an ItemInlineMacro with attributes syntax tree
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+#[an_attr]
+inline_macro!(1,2,3);
+
+//! > top_level_kind
+ItemInlineMacro
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── Top level kind: ItemInlineMacro
+    ├── attributes (kind: AttributeList)
+    │   └── child #0 (kind: Attribute)
+    │       ├── hash (kind: TokenHash): '#'
+    │       ├── lbrack (kind: TokenLBrack): '['
+    │       ├── attr (kind: ExprPath)
+    │       │   └── item #0 (kind: PathSegmentSimple)
+    │       │       └── ident (kind: TokenIdentifier): 'an_attr'
+    │       ├── arguments (kind: OptionArgListParenthesizedEmpty) []
+    │       └── rbrack (kind: TokenRBrack): ']'
+    ├── name (kind: TokenIdentifier): 'inline_macro'
+    ├── bang (kind: TokenNot): '!'
+    ├── arguments (kind: ExprListParenthesized)
+    │   ├── lparen (kind: TokenLParen): '('
+    │   ├── expressions (kind: ExprList)
+    │   │   ├── item #0 (kind: TokenLiteralNumber): '1'
+    │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   ├── item #1 (kind: TokenLiteralNumber): '2'
+    │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   └── item #2 (kind: TokenLiteralNumber): '3'
+    │   └── rparen (kind: TokenRParen): ')'
+    └── semicolon (kind: TokenSemicolon): ';'

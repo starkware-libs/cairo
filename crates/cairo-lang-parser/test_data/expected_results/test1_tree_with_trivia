@@ -1938,7 +1938,61 @@
     │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       └── trailing_trivia (kind: Trivia)
     │   │           └── child #0 (kind: TokenNewline).
-    │   └── child #11: Missing []
+    │   ├── child #11 (kind: ItemInlineMacro)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── name (kind: TerminalIdentifier)
+    │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │   │   │   └── child #0 (kind: TokenNewline).
+    │   │   │   ├── token (kind: TokenIdentifier): 'inline_item_macro'
+    │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   ├── bang (kind: TerminalNot)
+    │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   ├── token (kind: TokenNot): '!'
+    │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   ├── arguments (kind: ExprListParenthesized)
+    │   │   │   ├── lparen (kind: TerminalLParen)
+    │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   ├── token (kind: TokenLParen): '('
+    │   │   │   │   └── trailing_trivia (kind: Trivia) []
+    │   │   │   ├── expressions (kind: ExprList)
+    │   │   │   │   ├── item #0 (kind: ExprPath)
+    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │       └── ident (kind: TerminalIdentifier)
+    │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │           ├── token (kind: TokenIdentifier): 'x'
+    │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │   │   │   ├── separator #0 (kind: TerminalComma)
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │   ├── token (kind: TokenComma): ','
+    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   ├── item #1 (kind: ExprPath)
+    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │       └── ident (kind: TerminalIdentifier)
+    │   │   │   │   │           ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │           ├── token (kind: TokenIdentifier): 'y'
+    │   │   │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │   │   │   ├── separator #1 (kind: TerminalComma)
+    │   │   │   │   │   ├── leading_trivia (kind: Trivia) []
+    │   │   │   │   │   ├── token (kind: TokenComma): ','
+    │   │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │   │   │   └── item #2 (kind: ExprPath)
+    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │           └── ident (kind: TerminalIdentifier)
+    │   │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │   │   │               ├── token (kind: TokenIdentifier): 'z'
+    │   │   │   │               └── trailing_trivia (kind: Trivia) []
+    │   │   │   └── rparen (kind: TerminalRParen)
+    │   │   │       ├── leading_trivia (kind: Trivia) []
+    │   │   │       ├── token (kind: TokenRParen): ')'
+    │   │   │       └── trailing_trivia (kind: Trivia) []
+    │   │   └── semicolon (kind: TerminalSemicolon)
+    │   │       ├── leading_trivia (kind: Trivia) []
+    │   │       ├── token (kind: TokenSemicolon): ';'
+    │   │       └── trailing_trivia (kind: Trivia)
+    │   │           └── child #0 (kind: TokenNewline).
+    │   └── child #12: Missing []
     └── eof (kind: TerminalEndOfFile)
         ├── leading_trivia (kind: Trivia) []
         ├── token (kind: TokenEndOfFile).

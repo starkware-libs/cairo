@@ -56,8 +56,8 @@ pub struct Parser<'a> {
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 1000;
-const TOP_LEVEL_ITEM_DESCRIPTION: &str =
-    "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
+const TOP_LEVEL_ITEM_DESCRIPTION: &str = "Const/Module/Use/FreeFunction/ExternFunction/ExternType/\
+                                          Trait/Impl/Struct/Enum/TypeAlias/InlineMacro";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
 const IMPL_ITEM_DESCRIPTION: &str = "impl item";
 
@@ -173,7 +173,6 @@ impl<'a> Parser<'a> {
             Some(attributes) => (true, attributes),
             None => (false, AttributeList::new_green(self.db, vec![])),
         };
-
         match self.peek().kind {
             SyntaxKind::TerminalConst => Some(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Some(self.expect_module(attributes).into()),
@@ -185,6 +184,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_item_impl(attributes)),
+            SyntaxKind::TerminalIdentifier => Some(self.expect_item_macro(attributes).into()),
             _ => {
                 if has_attrs {
                     Some(self.create_and_report_missing::<Item>(
@@ -720,6 +720,22 @@ impl<'a> Parser<'a> {
                 }
             }
         }
+    }
+
+    /// Assumes the current token is TerminalIdentifier.
+    fn expect_item_macro(&mut self, attributes: AttributeListGreen) -> ItemInlineMacroGreen {
+        let macro_name = self.take::<TerminalIdentifier>();
+        let bang = self.parse_token::<TerminalNot>();
+        let wrapped_expr_list = self.parse_wrapped_expr_list();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        ItemInlineMacro::new_green(
+            self.db,
+            attributes,
+            macro_name,
+            bang,
+            wrapped_expr_list,
+            semicolon,
+        )
     }
 
     // ------------------------------- Expressions -------------------------------

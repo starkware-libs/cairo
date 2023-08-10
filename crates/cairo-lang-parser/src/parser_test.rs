@@ -339,6 +339,7 @@ cairo_lang_test_utils::test_file_test!(
         function_call: "function_call",
         unary_only_operators: "unary_only_operators",
         item_trait: "item_trait",
+        item_macro: "item_macro",
         let_statement: "let_statement",
         if_else: "if_else",
         impl_alias: "impl_alias",
