@@ -264,6 +264,7 @@ impl QueryAttrs for Item {
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
             Item::Missing(_) => vec![],
+            Item::InlineMacro(_) => vec![],
         }
     }
 }

@@ -13,7 +13,7 @@ Item
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:1
 3
 ^

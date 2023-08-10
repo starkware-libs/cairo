@@ -56,8 +56,8 @@ pub struct Parser<'a> {
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 1000;
-const TOP_LEVEL_ITEM_DESCRIPTION: &str =
-    "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
+const TOP_LEVEL_ITEM_DESCRIPTION: &str = "Const/Module/Use/FreeFunction/ExternFunction/ExternType/\
+                                          Trait/Impl/Struct/Enum/TypeAlias/InlineMacro";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
 const IMPL_ITEM_DESCRIPTION: &str = "impl item";
 
@@ -186,6 +186,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalUse => Some(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Some(self.expect_trait(attributes).into()),
             SyntaxKind::TerminalImpl => Some(self.expect_item_impl(attributes)),
+            SyntaxKind::TerminalIdentifier => Some(self.try_parse_item_macro()?.into()),
             _ => {
                 if has_attrs {
                     Some(self.create_and_report_missing::<Item>(
@@ -728,6 +729,16 @@ impl<'a> Parser<'a> {
                 }
             }
         }
+    }
+
+    /// Returns a GreenId of a node with a ItemInitMacro kind (see
+    /// [syntax::node::ast::ItemInlineMacro]), or None if a macro can't be parsed.
+    fn try_parse_item_macro(&mut self) -> Option<ItemInlineMacroGreen> {
+        let macro_name = self.try_parse_identifier()?;
+        let bang = self.parse_token::<TerminalNot>();
+        let wrapped_expr_list = self.parse_wrapped_expr_list();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        ItemInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list, semicolon).into()
     }
 
     // ------------------------------- Expressions -------------------------------

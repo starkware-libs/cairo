@@ -257,6 +257,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemImpl => {
             vec![/* name */ children[2]]
         }
+        SyntaxKind::ItemInlineMacro => {
+            vec![]
+        }
         SyntaxKind::ImplBody => {
             vec![]
         }

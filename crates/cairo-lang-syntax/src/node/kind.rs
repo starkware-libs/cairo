@@ -97,6 +97,7 @@ pub enum SyntaxKind {
     TraitItemMissing,
     TraitItemFunction,
     ItemImpl,
+    ItemInlineMacro,
     ImplBody,
     ImplItemList,
     ImplItemMissing,

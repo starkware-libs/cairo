@@ -454,6 +454,9 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
                 ast::Item::Missing(_) => {}
+                ast::Item::InlineMacro(_) => {
+                    todo!("Not implemented yet.")
+                }
             }
         }
     }
