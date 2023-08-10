@@ -79,7 +79,6 @@ test::foo@0([0]: SegmentArena) -> (SegmentArena, Felt252Dict<felt252>);
 SmallE2ETestRunner
 
 //! > cairo
-use dict::Felt252DictTrait;
 fn foo(ref dict: Felt252Dict::<felt252>, key: felt252, value: felt252) {
     dict.insert(key, value);
 }
@@ -135,7 +134,6 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252, [2]: felt252) -> (Felt252Di
 SmallE2ETestRunner
 
 //! > cairo
-use dict::Felt252DictTrait;
 fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) -> felt252 {
     dict.get(key)
 }
@@ -191,7 +189,6 @@ test::foo@0([0]: Felt252Dict<felt252>, [1]: felt252) -> (Felt252Dict<felt252>, f
 SmallE2ETestRunner
 
 //! > cairo
-use dict::Felt252DictTrait;
 fn foo(ref dict: Felt252Dict::<felt252>, key: felt252) {
     dict.get(key);
     let a = dict.get(key);

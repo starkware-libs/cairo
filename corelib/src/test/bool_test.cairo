@@ -1,5 +1,4 @@
 use test::test_utils::{assert_eq, assert_ne};
-use traits::Into;
 
 #[test]
 fn test_bool_operators() {

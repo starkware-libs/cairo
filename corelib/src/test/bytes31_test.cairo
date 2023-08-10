@@ -1,6 +1,4 @@
-use option::OptionTrait;
-use traits::{Into, TryInto};
-use bytes_31::{Bytes31Trait, split_bytes31, U128IntoBytes31, U8IntoBytes31};
+use bytes_31::split_bytes31;
 
 const POW_2_248: felt252 = 0x100000000000000000000000000000000000000000000000000000000000000;
 

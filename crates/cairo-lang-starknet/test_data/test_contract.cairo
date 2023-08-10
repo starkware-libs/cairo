@@ -10,7 +10,6 @@ mod test_contract {
         IAnotherContractDispatcher, IAnotherContractLibraryDispatcher,
         IAnotherContractDispatcherTrait, MyType
     };
-    use dict::Felt252DictTrait;
 
     #[storage]
     struct Storage {

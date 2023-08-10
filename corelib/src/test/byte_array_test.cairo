@@ -1,9 +1,3 @@
-use array::{ArrayTrait, SpanTrait};
-use byte_array::ByteArrayTrait;
-use bytes_31::Bytes31IntoFelt252;
-use option::OptionTrait;
-use traits::Into;
-
 #[test]
 #[available_gas(1000000)]
 fn test_append_byte() {

@@ -1,14 +1,7 @@
 use core::debug::PrintTrait;
-use core::traits::Into;
-use core::result::ResultTrait;
 use test::test_utils::{assert_eq, assert_ne};
 use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
-use traits::TryInto;
-use option::OptionTrait;
 use starknet::SyscallResultTrait;
-use starknet::class_hash::Felt252TryIntoClassHash;
-use array::ArrayTrait;
-use array::SpanTrait;
 
 #[starknet::interface]
 trait IContractWithEvent<T> {
@@ -17,7 +10,6 @@ trait IContractWithEvent<T> {
 
 #[starknet::contract]
 mod contract_with_event {
-    use traits::Into;
     use starknet::info::get_contract_address;
     #[storage]
     struct Storage {
@@ -121,8 +113,8 @@ fn test_events() {
 fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
     starknet::testing::set_contract_address(contract_address);
-    let mut keys = Default::default();
-    let mut data = Default::default();
+    let mut keys = array![];
+    let mut data = array![];
     keys.append(1234);
     data.append(2345);
     starknet::emit_event_syscall(keys.span(), data.span());

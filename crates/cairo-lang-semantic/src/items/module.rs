@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::sync::Arc;
 
 use cairo_lang_defs::diagnostic_utils::StableLocation;
@@ -5,6 +6,7 @@ use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId, TraitId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use smol_str::SmolStr;
 
 use super::us::SemanticUseEx;
@@ -103,11 +105,12 @@ pub fn module_attributes(db: &dyn SemanticGroup, module_id: ModuleId) -> Maybe<V
 pub fn module_usable_trait_ids(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
-) -> Maybe<Arc<Vec<TraitId>>> {
-    let mut module_traits = (*db.module_traits_ids(module_id)?).clone();
+) -> Maybe<Arc<OrderedHashSet<TraitId>>> {
+    let mut module_traits =
+        OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
     for use_id in db.module_uses_ids(module_id)?.iter().copied() {
         if let Ok(ResolvedGenericItem::Trait(trait_id)) = db.use_resolved_item(use_id) {
-            module_traits.push(trait_id);
+            module_traits.insert(trait_id);
         }
     }
     Ok(module_traits.into())

@@ -5,8 +5,6 @@ use starknet::{
 use integer::{
     U128IntoFelt252, Felt252IntoU256, Felt252TryIntoU64, U256TryIntoFelt252, u256_from_felt252
 };
-use traits::{TryInto, Into};
-use option::OptionTrait;
 
 impl U256TryIntoU64 of TryInto<u256, u64> {
     fn try_into(self: u256) -> Option<u64> {

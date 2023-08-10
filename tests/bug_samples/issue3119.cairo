@@ -1,5 +1,3 @@
-use array::{SpanTrait, ArrayTrait};
-
 fn index_of_min<
     T,
     impl TPartialEq: PartialEq<T>,

@@ -1,8 +1,6 @@
 use starknet::{
     eth_address::U256IntoEthAddress, EthAddress, secp256r1::Secp256r1Impl, SyscallResultTrait
 };
-use option::OptionTrait;
-use traits::{Into, TryInto};
 use starknet::secp256_trait::{
     recover_public_key, verify_eth_signature, Secp256PointTrait, Signature
 };

@@ -239,8 +239,6 @@ fn foo(x: MyEnum) -> felt252 {
 foo
 
 //! > module_code
-use box::BoxTrait;
-
 enum MyEnum {
   A: (),
   B: felt252,

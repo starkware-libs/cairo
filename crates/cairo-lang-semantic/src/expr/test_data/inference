@@ -484,16 +484,6 @@ foo
 //! > module_code
 impl Felt252Copy of Copy::<felt252>;
 
-trait Clone<T> {
-    fn clone(self: @T) -> T;
-}
-
-impl CloneImpl<T, impl TCopy: Copy::<T>> of Clone::<T> {
-    fn clone(self: @T) -> T {
-        *self
-    }
-}
-
 //! > expected_diagnostics
 
 //! > ==========================================================================

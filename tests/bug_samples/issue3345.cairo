@@ -13,7 +13,6 @@ trait ITree<TContractState> {
 mod example_failure {
     use super::Node;
     use super::ITree;
-    use array::{ArrayTrait, Array};
 
     #[storage]
     struct Storage {

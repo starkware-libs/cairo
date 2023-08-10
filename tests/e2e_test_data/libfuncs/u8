@@ -330,8 +330,6 @@ SmallE2ETestRunner
 
 //! > cairo
 use zeroable::IsZeroResult;
-use zeroable::NonZeroIntoImpl;
-use traits::Into;
 fn foo(a: u8) -> u8 {
     match integer::u8_is_zero(a) {
         IsZeroResult::Zero => 123_u8,

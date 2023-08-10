@@ -1,11 +1,7 @@
 #[starknet::contract]
 mod account {
-    use array::{ArraySerde, ArrayTrait, SpanTrait};
-    use box::BoxTrait;
     use ecdsa::check_ecdsa_signature;
-    use option::OptionTrait;
     use starknet::{account::Call, ContractAddress, call_contract_syscall, SyscallResultTrait};
-    use zeroable::Zeroable;
 
     #[storage]
     struct Storage {
