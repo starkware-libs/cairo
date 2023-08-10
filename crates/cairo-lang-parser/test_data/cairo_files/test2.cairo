@@ -27,4 +27,4 @@ mod my_mod{
 
 }
 
-skipped tokens
+bad tokens

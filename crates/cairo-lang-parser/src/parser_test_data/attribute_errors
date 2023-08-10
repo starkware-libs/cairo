@@ -18,7 +18,7 @@ error: Missing tokens. Expected an item after attributes.
 #[aaa]
       ^
 
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:1
 3
 ^
@@ -116,7 +116,7 @@ error: Missing tokens. Expected an item after attributes.
 #[bbb]
       ^
 
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:3:1
 2
 ^
@@ -148,17 +148,27 @@ error: Missing tokens. Expected an item after attributes.
 #[aaa]
       ^
 
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:1
 [bbb]
 ^
 
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
- --> dummy_file.cairo:2:2
+error: Missing token TerminalBang.
+ --> dummy_file.cairo:2:5
 [bbb]
- ^*^
+    ^
 
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Missing tokens. Expected an expression.
+ --> dummy_file.cairo:2:5
+[bbb]
+    ^
+
+error: Missing token TerminalSemicolon.
+ --> dummy_file.cairo:2:5
+[bbb]
+    ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:5
 [bbb]
     ^
@@ -171,4 +181,10 @@ error: Missing tokens. Expected an item after attributes.
 //! > expected_tree
 └── Top level kind: ItemList
     ├── child #0: Missing []
-    └── child #1: Missing []
+    ├── child #1 (kind: ItemInlineMacro)
+    │   ├── attributes (kind: AttributeList) []
+    │   ├── name (kind: TokenIdentifier): 'bbb'
+    │   ├── bang: Missing
+    │   ├── arguments: Missing []
+    │   └── semicolon: Missing
+    └── child #2: Missing []

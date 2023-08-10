@@ -710,10 +710,30 @@
     │   │   │           │                   └── ident (kind: TokenIdentifier): 'T'
     │   │   │           └── rangle (kind: TokenGT): '>'
     │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   └── child #11: Missing []
+    │   ├── child #11 (kind: ItemInlineMacro)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── name (kind: TokenIdentifier): 'inline_item_macro'
+    │   │   ├── bang (kind: TokenBang): '!'
+    │   │   ├── arguments (kind: ExprListParenthesized)
+    │   │   │   ├── lparen (kind: TokenLParen): '('
+    │   │   │   ├── expressions (kind: ExprList)
+    │   │   │   │   ├── item #0 (kind: ExprPath)
+    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │       └── ident (kind: TokenIdentifier): 'x'
+    │   │   │   │   ├── separator #0 (kind: TokenComma): ','
+    │   │   │   │   ├── item #1 (kind: ExprPath)
+    │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │   │       └── ident (kind: TokenIdentifier): 'y'
+    │   │   │   │   ├── separator #1 (kind: TokenComma): ','
+    │   │   │   │   └── item #2 (kind: ExprPath)
+    │   │   │   │       └── item #0 (kind: PathSegmentSimple)
+    │   │   │   │           └── ident (kind: TokenIdentifier): 'z'
+    │   │   │   └── rparen (kind: TokenRParen): ')'
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #12: Missing []
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> test1.cairo:6:1
 ;
 ^
@@ -734,7 +754,7 @@ error: Missing token TerminalRBrace.
              ^
 
 error: Missing tokens. Expected an item after attributes.
- --> test1.cairo:60:26
+ --> test1.cairo:62:26
 #[attribute_without_item]
                          ^
 
