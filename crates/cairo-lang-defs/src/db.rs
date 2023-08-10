@@ -453,10 +453,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
+                ast::Item::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
+                    module_file_id,
+                    PluginDiagnostic {
+                        stable_ptr: inline_macro_ast.stable_ptr().untyped(),
+                        message: "Unknown item macro.".into(),
+                    },
+                )),
                 ast::Item::Missing(_) => {}
-                ast::Item::InlineMacro(_) => {
-                    todo!("Not implemented yet.")
-                }
             }
         }
     }
