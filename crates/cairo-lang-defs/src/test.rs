@@ -444,3 +444,24 @@ fn test_plugin_chain() {
          ExternTypeId(test::B)]"
     )
 }
+
+// Test that unknown inline item macros are raising an error.
+#[test]
+fn test_unknown_item_macro() {
+    let mut db_val = DatabaseForTesting::default();
+    let db = &mut db_val;
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    set_file_content(db, "src/lib.cairo", "unknown_item_macro!();");
+
+    // Find submodules.
+    let module_id = ModuleId::CrateRoot(crate_id);
+    assert_eq!(
+        format!("{:?}", db.module_plugin_diagnostics(module_id).unwrap()),
+        "[(ModuleFileId(CrateRoot(CrateId(0)), FileIndex(0)), PluginDiagnostic { stable_ptr: \
+         SyntaxStablePtrId(3), message: \"Unknown inline item macro: 'unknown_item_macro'.\" })]"
+    )
+}
