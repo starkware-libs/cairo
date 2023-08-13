@@ -1,0 +1,208 @@
+//! > Test expansion of the outside implementations.
+
+//! > test_runner_name
+ExpandContractTestRunner
+
+//! > cairo_code
+#[starknet::includable(v0)]
+#[generate_trait]
+impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
+    #[external]
+    fn ret_3(self: @TContractState) -> felt252 {
+        3
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage { value: felt252, }
+
+    #[include(v0)]
+    impl WorkingUsage = super::OutsideImpl<ContractState>;
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::includable(v0)]
+#[generate_trait]
+impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
+    #[external]
+    fn ret_3(self: @TContractState) -> felt252 {
+        3
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage { value: felt252, }
+
+    #[include(v0)]
+    impl WorkingUsage = super::OutsideImpl<ContractState>;
+}
+
+generate_trait:
+
+trait OutsideTrait<TContractState>  {
+    fn ret_3(self: @TContractState) -> felt252;
+}
+
+
+includable:
+
+trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    let res = OutsideImpl::<TContractState>::ret_3(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<felt252>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __externalOutsideImpl {
+        use super::__wrapper_ret_3 as ret_3;
+}
+
+mod __l1_handlerOutsideImpl {
+}
+
+mod __constructorOutsideImpl {
+}
+
+
+contract:
+
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0xd52d03758d22d90ef3afcf64c42abe4353ae6b3bd7d4f8910761d4d678383a;
+use starknet::event::EventEmitter;
+    struct ContractState {
+        value: value::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            value: value::ContractMemberState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+
+
+    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+    use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
+    mod value {
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> felt252;
+            fn write(ref self: ContractMemberState, value: felt252);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x1afeeaff0ed5cee7d05a21078399c2f56226b0cd5657062500cef4c4e736f85>()
+            }
+            fn read(self: @ContractMemberState) -> felt252 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: felt252) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<felt252>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+
+impl ContractStateOutsideImpl of super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+
+    mod __external {
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+    }
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
