@@ -1,22 +1,30 @@
 use anyhow::{bail, Context};
 use cairo_felt::Felt252;
 use cairo_lang_defs::ids::{
-    FreeFunctionId, LanguageElementId, ModuleId, ModuleItemId, SubmoduleId,
+    FileIndex, FreeFunctionId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId,
+    ModuleItemId, SubmoduleId,
 };
 use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::items::functions::GenericFunctionId;
+use cairo_lang_semantic::diagnostic::{NotFoundItemType, SemanticDiagnostics};
+use cairo_lang_semantic::expr::inference::canonic::ResultNoErrEx;
+use cairo_lang_semantic::expr::inference::InferenceId;
+use cairo_lang_semantic::items::functions::{
+    ConcreteFunctionWithBodyId as SemanticConcreteFunctionWithBodyId, GenericFunctionId,
+};
 use cairo_lang_semantic::items::us::SemanticUseEx;
-use cairo_lang_semantic::resolve::ResolvedGenericItem;
+use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
+use cairo_lang_semantic::substitution::SemanticRewriter;
 use cairo_lang_semantic::Expr;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
-use cairo_lang_syntax::node::helpers::GetIdentifier;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use itertools::chain;
 use num_bigint::BigUint;
 use sha3::{Digest, Keccak256};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
@@ -24,6 +32,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 use crate::aliased::Aliased;
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
+use crate::plugin::consts::INCLUDE_ATTR;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -101,23 +110,28 @@ pub fn find_contracts(db: &dyn SemanticGroup, crate_ids: &[CrateId]) -> Vec<Cont
     contract_declarations
 }
 
-/// Returns the ABI functions in a given module.
-pub fn get_module_abi_functions(
+/// Returns the ABI functions of a given contract.
+/// Assumes the given module is a contract module.
+pub fn get_contract_abi_functions(
     db: &dyn SemanticGroup,
     contract: &ContractDeclaration,
     module_name: &str,
 ) -> anyhow::Result<Vec<Aliased<semantic::ConcreteFunctionWithBodyId>>> {
+    Ok(chain!(
+        get_contract_module_abi_functions(db, contract, module_name)?,
+        get_impl_aliases_abi_functions(db, contract, module_name)?
+    )
+    .collect())
+}
+
+/// Returns the ABI functions in a given internal module in the contract.
+fn get_contract_module_abi_functions(
+    db: &dyn SemanticGroup,
+    contract: &ContractDeclaration,
+    module_name: &str,
+) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
     let generated_module_id = get_generated_contract_module(db, contract)?;
-    let module_id = match db
-        .module_item_by_name(generated_module_id, module_name.into())
-        .to_option()
-        .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
-    {
-        Some(ModuleItemId::Submodule(external_module_id)) => {
-            ModuleId::Submodule(external_module_id)
-        }
-        _ => anyhow::bail!("Failed to get the external module."),
-    };
+    let module_id = get_submodule_id(db.upcast(), generated_module_id, module_name)?;
     get_module_aliased_functions(db, module_id)?
         .into_iter()
         .map(|f| f.try_map(|f| semantic::ConcreteFunctionWithBodyId::from_no_generics_free(db, f)))
@@ -153,6 +167,88 @@ fn get_module_aliased_functions(
         .collect::<Result<Vec<_>, _>>()
 }
 
+/// Returns the abi functions of the impl aliases included in the given contract.
+/// `module_prefix` is the prefix of the generated module name outside of the contract, the rest of
+/// the name is defined by the name of the aliased impl.
+fn get_impl_aliases_abi_functions(
+    db: &dyn SemanticGroup,
+    contract: &ContractDeclaration,
+    module_prefix: &str,
+) -> anyhow::Result<Vec<Aliased<SemanticConcreteFunctionWithBodyId>>> {
+    let syntax_db = db.upcast();
+    let generated_module_id = get_generated_contract_module(db, contract)?;
+    let module_file_id = ModuleFileId(generated_module_id, FileIndex(0));
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
+    let mut all_abi_functions = vec![];
+    for (impl_alias_id, impl_alias) in db
+        .module_impl_aliases(generated_module_id)
+        .to_option()
+        .with_context(|| "Failed to get external module impl aliases.")?
+        .iter()
+    {
+        if !impl_alias.has_attr(syntax_db, INCLUDE_ATTR) {
+            continue;
+        }
+        let resolver_data = db
+            .impl_alias_resolver_data(*impl_alias_id)
+            .to_option()
+            .with_context(|| "Internal error: Failed to get impl alias resolver data.")?;
+        let mut resolver = Resolver::with_data(
+            db,
+            resolver_data.clone_with_inference_id(
+                db,
+                InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
+                    ModuleItemId::ImplAlias(*impl_alias_id),
+                )),
+            ),
+        );
+
+        let impl_path_elements = impl_alias.impl_path(syntax_db).elements(syntax_db);
+        let Some((impl_final_part, impl_module)) = impl_path_elements.split_last() else {
+            unreachable!("impl_path should have at least one segment")
+        };
+        let impl_name = impl_final_part.identifier(syntax_db);
+        let generic_args = impl_final_part.generic_args(syntax_db).unwrap_or_default();
+        let ResolvedConcreteItem::Module(impl_module) = resolver
+            .resolve_concrete_path(
+                &mut diagnostics,
+                impl_module.to_vec(),
+                NotFoundItemType::Identifier,
+            )
+            .to_option()
+            .with_context(|| "Internal error: Failed to resolve impl module.")?
+        else {
+            unreachable!("impl must be within some module.");
+        };
+        let module_id = get_submodule_id(db, impl_module, &format!("{module_prefix}_{impl_name}"))?;
+        for abi_function in get_module_aliased_functions(db, module_id)? {
+            all_abi_functions.extend(abi_function.try_map(|f| {
+                let concrete_wrapper = resolver
+                    .specialize_function(
+                        &mut diagnostics,
+                        impl_alias.stable_ptr().untyped(),
+                        GenericFunctionId::Free(f),
+                        generic_args.clone(),
+                    )
+                    .to_option()?
+                    .get_concrete(db)
+                    .body(db)
+                    .to_option()??;
+                assert_eq!(
+                    resolver.inference().finalize(),
+                    None,
+                    "All inferences should be solved at this point."
+                );
+                Some(resolver.inference().rewrite(concrete_wrapper).no_err())
+            }));
+        }
+    }
+    diagnostics
+        .build()
+        .expect_with_db(db.elongate(), "Internal error: Inference for wrappers generics failed.");
+    Ok(all_abi_functions)
+}
+
 /// Returns the generated contract module.
 fn get_generated_contract_module(
     db: &dyn SemanticGroup,
@@ -170,6 +266,25 @@ fn get_generated_contract_module(
             Ok(ModuleId::Submodule(generated_module_id))
         }
         _ => anyhow::bail!(format!("Failed to get generated module {contract_name}.")),
+    }
+}
+
+/// Returns the module id of the submodule of a module.
+fn get_submodule_id(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+    submodule_name: &str,
+) -> anyhow::Result<ModuleId> {
+    match db
+        .module_item_by_name(module_id, submodule_name.into())
+        .to_option()
+        .with_context(|| "Failed to initiate a lookup in the {module_name} module.")?
+    {
+        Some(ModuleItemId::Submodule(submodule_id)) => Ok(ModuleId::Submodule(submodule_id)),
+        _ => anyhow::bail!(
+            "Failed to get the submodule `{submodule_name}` of `{}`.",
+            module_id.full_path(db.upcast())
+        ),
     }
 }
 

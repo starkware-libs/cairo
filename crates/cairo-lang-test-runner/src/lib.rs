@@ -24,7 +24,7 @@ use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
-    find_contracts, get_contracts_info, get_module_abi_functions, ContractInfo,
+    find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
@@ -112,9 +112,9 @@ impl TestRunner {
                 .iter()
                 .flat_map(|contract| {
                     chain!(
-                        get_module_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                        get_module_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                        get_module_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap()
+                        get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
+                        get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
+                        get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
                     )
                 })
                 .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
