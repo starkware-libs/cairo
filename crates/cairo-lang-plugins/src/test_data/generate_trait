@@ -25,7 +25,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn with_nopanic(self: T) -> T nopanic {
         self
     }
-    fn with_implicits(self: T) -> T implicits (RangeCheck) {
+    fn with_implicits(self: T) -> T implicits(RangeCheck) {
         self
     }
 }
@@ -52,14 +52,14 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn with_nopanic(self: T) -> T nopanic {
         self
     }
-    fn with_implicits(self: T) -> T implicits (RangeCheck) {
+    fn with_implicits(self: T) -> T implicits(RangeCheck) {
         self
     }
 }
 trait SomeTrait<T>  {
-    fn by_val(self: T)-> T ;
+    fn by_val(self: T) -> T;
 
-    fn by_snap(self: @T)-> T ;
+    fn by_snap(self: @T) -> T;
 
     fn by_ref(ref a: T);
 
@@ -67,11 +67,11 @@ trait SomeTrait<T>  {
 
     fn multi_val(ref a: T, b: T, c: @T);
 
-    fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>)-> Box<(T, V)> ;
+    fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)>;
 
-    fn with_nopanic(self: T)-> T nopanic ;
+    fn with_nopanic(self: T) -> T nopanic;
 
-    fn with_implicits(self: T)-> T implicits (RangeCheck) ;
+    fn with_implicits(self: T) -> T implicits(RangeCheck);
 }
 
 //! > expected_diagnostics
@@ -124,7 +124,7 @@ impl SomeImpl of SomeTrait {
 trait SomeTrait {
     fn foo();
 
-    fn bar(a: usize)-> usize ;
+    fn bar(a: usize) -> usize;
 }
 
 //! > expected_diagnostics

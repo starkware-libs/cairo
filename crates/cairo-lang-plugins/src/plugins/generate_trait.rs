@@ -123,7 +123,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
             ImplItem::Function(item) => {
                 let decl = item.declaration(db);
                 let name = decl.name(db).text(db);
-                let generic_params = decl.generic_params(db).as_syntax_node().get_text(db);
+                let generic_params = decl.generic_params(db).as_syntax_node().get_text_without_trivia(db);
                 let signature = decl.signature(db);
                 let params = signature.parameters(db).elements(db).into_iter().map(|param| {
                     let modifiers = param.modifiers(db).elements(db).into_iter().filter_map(|modifier|{
@@ -134,12 +134,16 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
                         }
                     }).join("");
                     let name = param.name(db).text(db);
-                    let type_clause = param.type_clause(db).as_syntax_node().get_text(db);
+                    let type_clause = param.type_clause(db).as_syntax_node().get_text_without_trivia(db);
                     format!("{modifiers}{name}{type_clause}")
                 }).join(", ");
-                let ret_ty = signature.ret_ty(db).as_syntax_node().get_text(db);
-                let implicits_clause = signature.implicits_clause(db).as_syntax_node().get_text(db);
-                let optional_no_panic = signature.optional_no_panic(db).as_syntax_node().get_text(db);
+
+                let mut ret_ty = signature.ret_ty(db).as_syntax_node().get_text_without_trivia(db);
+                add_space_if_non_empty(&mut ret_ty);
+                let mut implicits_clause = signature.implicits_clause(db).as_syntax_node().get_text_without_trivia(db);
+                add_space_if_non_empty(&mut implicits_clause);
+                let mut optional_no_panic = signature.optional_no_panic(db).as_syntax_node().get_text_without_trivia(db);
+                add_space_if_non_empty(&mut optional_no_panic);
                 Some(format!("    fn {name}{generic_params}({params}){ret_ty}{implicits_clause}{optional_no_panic};\n"))
             },
             // Only functions are supported as trait items for now.
@@ -159,5 +163,11 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         }),
         diagnostics,
         remove_original_item: false,
+    }
+}
+
+fn add_space_if_non_empty(s: &mut String) {
+    if !s.is_empty() {
+        *s = format!(" {s}");
     }
 }
