@@ -26,7 +26,8 @@ use crate::allowed_libfuncs::{
 };
 use crate::compiler_version::{self};
 use crate::contract::{
-    find_contracts, get_module_abi_functions, get_selector_and_sierra_function, ContractDeclaration,
+    find_contracts, get_contract_abi_functions, get_selector_and_sierra_function,
+    ContractDeclaration,
 };
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
@@ -217,18 +218,19 @@ pub fn extract_semantic_entrypoints(
     db: &dyn LoweringGroup,
     contract: &ContractDeclaration,
 ) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
-    let external: Vec<_> = get_module_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
+    let external: Vec<_> = get_contract_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let l1_handler: Vec<_> = get_module_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
+    let l1_handler: Vec<_> = get_contract_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
         .into_iter()
         .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
         .collect();
-    let constructor: Vec<_> = get_module_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-        .into_iter()
-        .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
-        .collect();
+    let constructor: Vec<_> =
+        get_contract_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
+            .into_iter()
+            .map(|f| f.map(|f| ConcreteFunctionWithBodyId::from_semantic(db, f)))
+            .collect();
     if constructor.len() > 1 {
         anyhow::bail!("Expected at most one constructor.");
     }
