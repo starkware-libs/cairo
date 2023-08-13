@@ -5,9 +5,9 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
 };
-use cairo_lang_syntax::node::ast::{MaybeModuleBody, OptionWrappedGenericParamList};
+use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
@@ -15,16 +15,15 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::formatdoc;
 
 use super::consts::{
-    COMPONENT_ATTR, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, CONTRACT_ATTR,
+    COMPONENT_ATTR, CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONTRACT_ATTR, CONTRACT_STATE_NAME,
     DEPRECATED_CONTRACT_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE, STORAGE_ATTR,
-    STORAGE_STRUCT_NAME, WRAPPER_PREFIX,
+    INCLUDE_ATTR, L1_HANDLER_ATTR, L1_HANDLER_MODULE, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use super::entry_point::{
-    generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
+    handle_entry_point, has_external_attribute, has_include_attribute, EntryPointGenerationParams,
+    EntryPointKind, EntryPointsGenerationData,
 };
 use super::storage::handle_storage_struct;
-use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 
@@ -91,15 +90,6 @@ fn validate_module(
     }
 
     PluginResult::default()
-}
-
-/// Accumulated data for contract generation.
-#[derive(Default)]
-struct ContractGenerationData {
-    generated_wrapper_functions: Vec<RewriteNode>,
-    external_functions: Vec<RewriteNode>,
-    constructor_functions: Vec<RewriteNode>,
-    l1_handler_functions: Vec<RewriteNode>,
 }
 
 /// The kind of the starknet module (contract/component).
@@ -176,7 +166,7 @@ pub fn handle_module_by_storage(
             .collect(),
     );
 
-    let mut data = ContractGenerationData::default();
+    let mut data = EntryPointsGenerationData::default();
 
     // Generate the code for ContractState/ComponentState and the entry points.
     let state_struct_code = generate_entry_points_and_state_struct(
@@ -295,7 +285,7 @@ fn generate_entry_points_and_state_struct(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     body: ast::ModuleBody,
-    data: &mut ContractGenerationData,
+    data: &mut EntryPointsGenerationData,
     extra_uses_node: &RewriteNode,
     has_event: bool,
     module_kind: StarknetModuleKind,
@@ -324,6 +314,9 @@ fn generate_entry_points_and_state_struct(
                 state_struct_code = state_struct_rewrite_node;
                 diagnostics.extend(storage_diagnostics);
             }
+            ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, INCLUDE_ATTR) => {
+                handle_include_impl_alias(db, diagnostics, alias_ast, data);
+            }
             _ => {}
         }
     }
@@ -335,7 +328,7 @@ fn handle_contract_free_function(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item_function: &ast::FunctionWithBody,
-    data: &mut ContractGenerationData,
+    data: &mut EntryPointsGenerationData,
 ) {
     let Some(entry_point_kind) =
         EntryPointKind::try_from_function_with_body(db, diagnostics, item_function)
@@ -360,7 +353,7 @@ fn handle_contract_impl(
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::Item,
     item_impl: &ast::ItemImpl,
-    data: &mut ContractGenerationData,
+    data: &mut EntryPointsGenerationData,
 ) {
     let is_external = has_external_attribute(db, diagnostics, item);
     if !(is_external || has_include_attribute(db, diagnostics, item)) {
@@ -380,12 +373,10 @@ fn handle_contract_impl(
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if is_external || item_function.has_attr(db, EXTERNAL_ATTR) {
+        let entry_point_kind = if is_external {
             EntryPointKind::External
-        } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
-            EntryPointKind::Constructor
-        } else if item_function.has_attr(db, L1_HANDLER_ATTR) {
-            EntryPointKind::L1Handler
+        } else if let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) {
+            entry_point_kind
         } else {
             continue;
         };
@@ -531,111 +522,103 @@ fn handle_contract_entry_point(
     wrapped_function_path: RewriteNode,
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    data: &mut ContractGenerationData,
+    data: &mut EntryPointsGenerationData,
 ) {
-    let name_node = item_function.declaration(db).name(db);
-    if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("The constructor function must be called `{CONSTRUCTOR_NAME}`."),
-            stable_ptr: name_node.stable_ptr().untyped(),
-        });
-    }
-
-    let declaration = item_function.declaration(db);
-    if let OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) =
-        declaration.generic_params(db)
-    {
-        diagnostics.push(PluginDiagnostic {
-            message: "Contract entry points cannot have generic arguments".to_string(),
-            stable_ptr: generic_params.stable_ptr().untyped(),
-        })
-    }
-
-    // TODO(ilya): Validate that an account contract has all the required functions.
-
-    let mut declaration_node = RewriteNode::new_trimmed(declaration.as_syntax_node());
-    let original_parameters = declaration_node
-        .modify_child(db, ast::FunctionDeclaration::INDEX_SIGNATURE)
-        .modify_child(db, ast::FunctionSignature::INDEX_PARAMETERS);
-    let params = declaration.signature(db).parameters(db);
-    for (param_idx, param) in params.elements(db).iter().enumerate() {
-        // This assumes `mut` can only appear alone.
-        if is_mut_param(db, param) {
-            original_parameters
-                .modify_child(db, param_idx * 2)
-                .modify_child(db, ast::Param::INDEX_MODIFIERS)
-                .set_str("".to_string());
-        }
-    }
-    let function_name = RewriteNode::new_trimmed(name_node.as_syntax_node());
-    let wrapper_function_name = RewriteNode::interpolate_patched(
-        format!("{WRAPPER_PREFIX}$function_name$").as_str(),
-        [("function_name".into(), function_name.clone())].into(),
-    );
-    match generate_entry_point_wrapper(
+    handle_entry_point(
         db,
-        item_function,
-        wrapped_function_path,
-        wrapper_function_name.clone(),
-    ) {
-        Ok(generated_function) => {
-            data.generated_wrapper_functions.push(generated_function);
-            data.generated_wrapper_functions.push(RewriteNode::Text("\n".to_string()));
-            let generated = match entry_point_kind {
-                EntryPointKind::Constructor => &mut data.constructor_functions,
-                EntryPointKind::L1Handler => {
-                    validate_l1_handler_first_parameter(db, &params, diagnostics);
-                    &mut data.l1_handler_functions
-                }
-                EntryPointKind::External => &mut data.external_functions,
-            };
-            generated.push(RewriteNode::interpolate_patched(
-                "\n        use super::$wrapper_function_name$ as $function_name$;",
-                [
-                    ("wrapper_function_name".into(), wrapper_function_name),
-                    ("function_name".into(), function_name),
-                ]
-                .into(),
-            ));
-        }
-        Err(entry_point_diagnostics) => {
-            diagnostics.extend(entry_point_diagnostics);
-        }
-    }
+        EntryPointGenerationParams {
+            entry_point_kind,
+            item_function,
+            wrapped_function_path,
+            unsafe_new_contract_state_prefix: "",
+            generic_params: RewriteNode::empty(),
+        },
+        diagnostics,
+        data,
+    )
 }
 
-/// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:
-/// felt252`.
-fn validate_l1_handler_first_parameter(
+/// Handles an include by impl alias.
+fn handle_include_impl_alias(
     db: &dyn SyntaxGroup,
-    params: &ast::ParamList,
     diagnostics: &mut Vec<PluginDiagnostic>,
+    alias_ast: &ast::ItemImplAlias,
+    data: &mut EntryPointsGenerationData,
 ) {
-    if let Some(first_param) = params.elements(db).get(1) {
-        // Validate type
-        if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
-            diagnostics.push(PluginDiagnostic {
-                message: "The second parameter of an L1 handler must be of type `felt252`."
-                    .to_string(),
-                stable_ptr: first_param.stable_ptr().untyped(),
-            });
+    let has_generic_params = match alias_ast.generic_params(db) {
+        ast::OptionWrappedGenericParamList::Empty(_) => false,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList(generics) => {
+            !generics.generic_params(db).elements(db).is_empty()
         }
-
-        // Validate name
-        if maybe_strip_underscore(first_param.name(db).text(db).as_str())
-            != L1_HANDLER_FIRST_PARAM_NAME
-        {
-            diagnostics.push(PluginDiagnostic {
-                message: "The second parameter of an L1 handler must be named 'from_address'."
-                    .to_string(),
-                stable_ptr: first_param.stable_ptr().untyped(),
-            });
-        }
-    } else {
-        diagnostics.push(PluginDiagnostic {
-            message: "An L1 handler must have the 'from_address' as its second parameter."
-                .to_string(),
-            stable_ptr: params.stable_ptr().untyped(),
-        });
     };
+    if has_generic_params {
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: alias_ast.stable_ptr().untyped(),
+            message: "Generic parameters are not supported in impl aliases with `#[include]`."
+                .to_string(),
+        });
+        return;
+    }
+    let elements = alias_ast.impl_path(db).elements(db);
+    let Some((impl_final_part, impl_module)) = elements.split_last() else {
+        unreachable!("impl_path should have at least one segment")
+    };
+
+    if !is_first_generic_arg_contract_state(db, impl_final_part) {
+        diagnostics.push(PluginDiagnostic {
+            stable_ptr: alias_ast.stable_ptr().untyped(),
+            message: "First generic argument of impl alias with `#[include]` must be \
+                      `ContractState`."
+                .to_string(),
+        });
+        return;
+    }
+    let impl_name = impl_final_part.identifier_ast(db);
+    let impl_module = RewriteNode::new_modified(
+        impl_module
+            .iter()
+            .flat_map(|segment| {
+                vec![
+                    RewriteNode::new_trimmed(segment.as_syntax_node()),
+                    RewriteNode::Text("::".to_string()),
+                ]
+            })
+            .collect(),
+    );
+    data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
+        formatdoc! {"
+        impl ContractState$impl_name$ of
+            $impl_module$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+            fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
+                unsafe_new_contract_state()
+            }}
+        }}
+    "}
+        .as_str(),
+        [
+            ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
+            ("impl_module".to_string(), impl_module),
+        ]
+        .into(),
+    ));
+}
+
+/// Checks whether the first generic argument in the path segment is `CONTRACT_STATE_NAME`.
+fn is_first_generic_arg_contract_state(
+    db: &dyn SyntaxGroup,
+    final_path_segment: &ast::PathSegment,
+) -> bool {
+    let Some(generic_args) = final_path_segment.generic_args(db) else {
+        return false;
+    };
+    let Some(ast::GenericArg::Unnamed(first_generic_arg)) = generic_args.first() else {
+        return false;
+    };
+    let ast::GenericArgValue::Expr(first_generic_arg) = first_generic_arg.value(db) else {
+        return false;
+    };
+    let ast::Expr::Path(first_generic_arg) = first_generic_arg.expr(db) else {
+        return false;
+    };
+    first_generic_arg.identifier(db) == CONTRACT_STATE_NAME
 }
