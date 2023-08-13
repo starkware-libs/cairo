@@ -19,12 +19,13 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::abi::{AbiBuilder, Contract};
+use crate::aliased::Aliased;
 use crate::allowed_libfuncs::{
     validate_compatible_sierra_version, AllowedLibfuncsError, ListSelector,
 };
 use crate::compiler_version::{self};
 use crate::contract::{
-    find_contracts, get_module_functions, get_selector_and_sierra_function, ContractDeclaration,
+    find_contracts, get_module_abi_functions, get_selector_and_sierra_function, ContractDeclaration,
 };
 use crate::felt252_serde::sierra_to_felt252s;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
@@ -168,7 +169,7 @@ fn compile_contract_with_prepared_and_checked_db(
         extract_semantic_entrypoints(db, contract)?;
     let mut sierra_program = db
         .get_sierra_program_for_functions(
-            chain!(&external, &l1_handler, &constructor).cloned().collect(),
+            chain!(&external, &l1_handler, &constructor).map(|f| f.value).collect(),
         )
         .to_option()
         .with_context(|| "Compilation failed without any diagnostics.")?;
@@ -205,9 +206,9 @@ fn compile_contract_with_prepared_and_checked_db(
 }
 
 pub struct SemanticEntryPoints {
-    pub external: Vec<ConcreteFunctionWithBodyId>,
-    pub l1_handler: Vec<ConcreteFunctionWithBodyId>,
-    pub constructor: Vec<ConcreteFunctionWithBodyId>,
+    pub external: Vec<Aliased<ConcreteFunctionWithBodyId>>,
+    pub l1_handler: Vec<Aliased<ConcreteFunctionWithBodyId>>,
+    pub constructor: Vec<Aliased<ConcreteFunctionWithBodyId>>,
 }
 
 /// Extracts functions from the contract.
@@ -215,20 +216,23 @@ pub fn extract_semantic_entrypoints(
     db: &dyn SierraGenGroup,
     contract: &ContractDeclaration,
 ) -> core::result::Result<SemanticEntryPoints, anyhow::Error> {
-    let external: Vec<_> = get_module_functions(db.upcast(), contract, EXTERNAL_MODULE)?
-        .iter()
-        .copied()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+    let external: Vec<_> = get_module_abi_functions(db.upcast(), contract, EXTERNAL_MODULE)?
+        .into_iter()
+        .flat_map(|f| {
+            f.try_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        })
         .collect();
-    let l1_handler: Vec<_> = get_module_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
-        .iter()
-        .copied()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+    let l1_handler: Vec<_> = get_module_abi_functions(db.upcast(), contract, L1_HANDLER_MODULE)?
+        .into_iter()
+        .flat_map(|f| {
+            f.try_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        })
         .collect();
-    let constructor: Vec<_> = get_module_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
-        .iter()
-        .copied()
-        .flat_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+    let constructor: Vec<_> = get_module_abi_functions(db.upcast(), contract, CONSTRUCTOR_MODULE)?
+        .into_iter()
+        .flat_map(|f| {
+            f.try_map(|f| ConcreteFunctionWithBodyId::from_no_generics_free(db.upcast(), f))
+        })
         .collect();
     if constructor.len() > 1 {
         anyhow::bail!("Expected at most one constructor.");
@@ -239,13 +243,13 @@ pub fn extract_semantic_entrypoints(
 /// Returns the entry points given their IDs sorted by selectors.
 fn get_entry_points(
     db: &RootDatabase,
-    entry_point_functions: &[ConcreteFunctionWithBodyId],
+    entry_point_functions: &[Aliased<ConcreteFunctionWithBodyId>],
     replacer: &CanonicalReplacer,
 ) -> Result<Vec<ContractEntryPoint>> {
     let mut entry_points = vec![];
     for function_with_body_id in entry_point_functions {
         let (selector, sierra_id) =
-            get_selector_and_sierra_function(db, *function_with_body_id, replacer);
+            get_selector_and_sierra_function(db, function_with_body_id, replacer);
 
         entry_points.push(ContractEntryPoint {
             selector: selector.to_biguint(),

@@ -24,7 +24,7 @@ use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
-    find_contracts, get_contracts_info, get_module_functions, ContractInfo,
+    find_contracts, get_contracts_info, get_module_abi_functions, ContractInfo,
 };
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
@@ -106,12 +106,12 @@ impl TestRunner {
                 .iter()
                 .flat_map(|contract| {
                     chain!(
-                        get_module_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                        get_module_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                        get_module_functions(db, contract, L1_HANDLER_MODULE).unwrap()
+                        get_module_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
+                        get_module_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
+                        get_module_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap()
                     )
                 })
-                .flat_map(|func_id| ConcreteFunctionWithBodyId::from_no_generics_free(db, func_id))
+                .flat_map(|func| ConcreteFunctionWithBodyId::from_no_generics_free(db, func.value))
                 .collect()
         } else {
             vec![]
