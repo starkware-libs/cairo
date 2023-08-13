@@ -14,6 +14,7 @@ mod contract;
 mod dispatcher;
 mod entry_point;
 pub mod events;
+mod includable;
 mod storage;
 mod storage_access;
 mod utils;
@@ -23,6 +24,7 @@ use events::derive_event_needed;
 use storage_access::derive_storage_access_needed;
 
 use self::contract::{handle_module, handle_module_by_storage};
+use self::includable::handle_includable;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -33,6 +35,9 @@ impl MacroPlugin for StarkNetPlugin {
         match item_ast {
             ast::Item::Module(module_ast) => handle_module(db, module_ast),
             ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
+            ast::Item::Impl(impl_ast) if impl_ast.has_attr(db, INCLUDABLE_ATTR) => {
+                handle_includable(db, impl_ast)
+            }
             ast::Item::Struct(struct_ast) if derive_event_needed(&struct_ast, db) => {
                 events::handle_struct(db, struct_ast)
             }
