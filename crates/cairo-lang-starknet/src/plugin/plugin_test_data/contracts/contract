@@ -108,9 +108,9 @@ contract:
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 use starknet::event::EventEmitter;
-#[derive(Drop)]
     struct ContractState {
     }
+    impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
@@ -138,7 +138,6 @@ use starknet::event::EventEmitter;
             )
         }
     }
-
 
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
@@ -253,19 +252,19 @@ fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 
+    mod __external {
+        use super::__wrapper_get_something as get_something;
+        use super::__wrapper_set_something as set_something;
+        use super::__wrapper_test_serde as test_serde;
+    }
 
-mod __external {
-    use super::__wrapper_get_something as get_something;
-    use super::__wrapper_set_something as set_something;
-    use super::__wrapper_test_serde as test_serde;
-}
+    mod __l1_handler {
+        use super::__wrapper_l1_handler_func as l1_handler_func;
+    }
 
-mod __l1_handler {
-    use super::__wrapper_l1_handler_func as l1_handler_func;
-}
+    mod __constructor {
+    }
 
-mod __constructor {
-}
 
 
 impls:
@@ -372,9 +371,5 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
         Option::Some(BestEventEver {})
     }
 }
-
-impls:
-
-impl ContractStateDrop of Drop::<ContractState>;
 
 //! > expected_diagnostics

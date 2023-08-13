@@ -3127,7 +3127,7 @@
       ],
       [
         99,
-        "function_call<user@test::erc_20::name::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read>"
       ],
       [
         100,
@@ -3167,7 +3167,7 @@
       ],
       [
         109,
-        "function_call<user@test::erc_20::symbol::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read>"
       ],
       [
         110,
@@ -3175,7 +3175,7 @@
       ],
       [
         111,
-        "function_call<user@test::erc_20::decimals::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read>"
       ],
       [
         112,
@@ -3207,7 +3207,7 @@
       ],
       [
         119,
-        "function_call<user@test::erc_20::total_supply::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read>"
       ],
       [
         120,
@@ -3275,7 +3275,7 @@
       ],
       [
         136,
-        "function_call<user@test::erc_20::balances::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>"
       ],
       [
         137,
@@ -3291,7 +3291,7 @@
       ],
       [
         140,
-        "function_call<user@test::erc_20::allowances::InternalContractStateImpl::read>"
+        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>"
       ],
       [
         141,
@@ -3439,7 +3439,7 @@
       ],
       [
         177,
-        "function_call<user@test::erc_20::name::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write>"
       ],
       [
         178,
@@ -3447,7 +3447,7 @@
       ],
       [
         179,
-        "function_call<user@test::erc_20::symbol::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write>"
       ],
       [
         180,
@@ -3455,7 +3455,7 @@
       ],
       [
         181,
-        "function_call<user@test::erc_20::decimals::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write>"
       ],
       [
         182,
@@ -3519,7 +3519,7 @@
       ],
       [
         197,
-        "function_call<user@test::erc_20::total_supply::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write>"
       ],
       [
         198,
@@ -3527,7 +3527,7 @@
       ],
       [
         199,
-        "function_call<user@test::erc_20::balances::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>"
       ],
       [
         200,
@@ -3675,11 +3675,11 @@
       ],
       [
         236,
-        "function_call<user@test::erc_20::balances::InternalContractStateImpl::address>"
+        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>"
       ],
       [
         237,
-        "function_call<user@test::erc_20::allowances::InternalContractStateImpl::address>"
+        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>"
       ],
       [
         238,
@@ -3779,7 +3779,7 @@
       ],
       [
         262,
-        "function_call<user@test::erc_20::allowances::InternalContractStateImpl::write>"
+        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>"
       ],
       [
         263,
@@ -4461,19 +4461,19 @@
       ],
       [
         31,
-        "test::erc_20::name::InternalContractStateImpl::read"
+        "test::erc_20::name::InternalContractMemberStateImpl::read"
       ],
       [
         32,
-        "test::erc_20::symbol::InternalContractStateImpl::read"
+        "test::erc_20::symbol::InternalContractMemberStateImpl::read"
       ],
       [
         33,
-        "test::erc_20::decimals::InternalContractStateImpl::read"
+        "test::erc_20::decimals::InternalContractMemberStateImpl::read"
       ],
       [
         34,
-        "test::erc_20::total_supply::InternalContractStateImpl::read"
+        "test::erc_20::total_supply::InternalContractMemberStateImpl::read"
       ],
       [
         35,
@@ -4481,11 +4481,11 @@
       ],
       [
         36,
-        "test::erc_20::balances::InternalContractStateImpl::read"
+        "test::erc_20::balances::InternalContractMemberStateImpl::read"
       ],
       [
         37,
-        "test::erc_20::allowances::InternalContractStateImpl::read"
+        "test::erc_20::allowances::InternalContractMemberStateImpl::read"
       ],
       [
         38,
@@ -4521,23 +4521,23 @@
       ],
       [
         46,
-        "test::erc_20::name::InternalContractStateImpl::write"
+        "test::erc_20::name::InternalContractMemberStateImpl::write"
       ],
       [
         47,
-        "test::erc_20::symbol::InternalContractStateImpl::write"
+        "test::erc_20::symbol::InternalContractMemberStateImpl::write"
       ],
       [
         48,
-        "test::erc_20::decimals::InternalContractStateImpl::write"
+        "test::erc_20::decimals::InternalContractMemberStateImpl::write"
       ],
       [
         49,
-        "test::erc_20::total_supply::InternalContractStateImpl::write"
+        "test::erc_20::total_supply::InternalContractMemberStateImpl::write"
       ],
       [
         50,
-        "test::erc_20::balances::InternalContractStateImpl::write"
+        "test::erc_20::balances::InternalContractMemberStateImpl::write"
       ],
       [
         51,
@@ -4565,11 +4565,11 @@
       ],
       [
         57,
-        "test::erc_20::balances::InternalContractStateImpl::address"
+        "test::erc_20::balances::InternalContractMemberStateImpl::address"
       ],
       [
         58,
-        "test::erc_20::allowances::InternalContractStateImpl::address"
+        "test::erc_20::allowances::InternalContractMemberStateImpl::address"
       ],
       [
         59,
@@ -4585,7 +4585,7 @@
       ],
       [
         62,
-        "test::erc_20::allowances::InternalContractStateImpl::write"
+        "test::erc_20::allowances::InternalContractMemberStateImpl::write"
       ],
       [
         63,
