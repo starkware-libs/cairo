@@ -460,7 +460,7 @@ impl VMWrapper for VirtualMachine {
     }
 }
 
-/// Creates a new segment in the VM memory and writes data to it, returing the start and end
+/// Creates a new segment in the VM memory and writes data to it, returning the start and end
 /// pointers of the segment.
 fn segment_with_data<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
     vm: &mut dyn VMWrapper,
@@ -1190,8 +1190,8 @@ fn secp256k1_new(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256K1_NEW);
-    let modulos = <secp256k1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulos || y >= modulos {
+    let modulus = <secp256k1::Fq as PrimeField>::MODULUS.into();
+    if x >= modulus || y >= modulus {
         fail_syscall!(b"Coordinates out of range");
     }
     let p = if x.is_zero() && y.is_zero() {
@@ -1317,8 +1317,8 @@ fn secp256r1_new(
     exec_scopes: &mut ExecutionScopes,
 ) -> Result<SyscallResult, HintError> {
     deduct_gas!(gas_counter, SECP256R1_GET_POINT_FROM_X);
-    let modulos = <secp256r1::Fq as PrimeField>::MODULUS.into();
-    if x >= modulos || y >= modulos {
+    let modulus = <secp256r1::Fq as PrimeField>::MODULUS.into();
+    if x >= modulus || y >= modulus {
         fail_syscall!(b"Coordinates out of range");
     }
     let p = if x.is_zero() && y.is_zero() {

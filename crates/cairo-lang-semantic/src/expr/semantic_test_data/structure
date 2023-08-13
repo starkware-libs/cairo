@@ -103,7 +103,7 @@ Block(
 
 //! > ==========================================================================
 
-//! > Test strcut constructor
+//! > Test struct constructor
 
 //! > test_runner_name
 test_expr_semantics

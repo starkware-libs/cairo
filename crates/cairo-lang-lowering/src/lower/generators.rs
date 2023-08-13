@@ -138,7 +138,7 @@ impl Snapshot {
         let input_ty = input_var.ty;
         let ty = ctx.db.intern_type(semantic::TypeLongId::Snapshot(input_ty));
 
-        // The location of the original input var is likely to be more relevent to the user.
+        // The location of the original input var is likely to be more relevant to the user.
         let output_original =
             ctx.new_var(VarRequest { ty: input_ty, location: input_var.location });
         let output_snapshot = ctx.new_var(VarRequest { ty, location: self.location });

@@ -71,7 +71,7 @@ pub fn analyze_ap_changes(
         // Add 'locals' to the set a variable that is not ap based.
         ctx.non_ap_based.extend(locals.iter().cloned());
 
-        // Find all the variables that need ap alignement.
+        // Find all the variables that need ap alignment.
         for (block_id, callers) in std::mem::take(&mut ctx.block_callers) {
             if callers.len() <= 1 {
                 continue;
@@ -224,7 +224,7 @@ impl<'a> FindLocalsContext<'a> {
     /// revoked.
     ///
     /// Note that vars in `peeled_used_after_revoke` are going to be non-ap based once we make the
-    /// relevent variables local.
+    /// relevant variables local.
     pub fn might_be_revoked(
         &self,
         peeled_used_after_revoke: &OrderedHashSet<VariableId>,
