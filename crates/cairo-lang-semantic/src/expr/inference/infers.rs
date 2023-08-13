@@ -256,7 +256,7 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         ))
     }
 
-    /// Infers a generic argument to be passed as a generic paramter.
+    /// Infers a generic argument to be passed as a generic parameter.
     /// Allocates a new inference variable of the correct kind, and wraps in a generic argument.
     fn infer_generic_arg(
         &mut self,

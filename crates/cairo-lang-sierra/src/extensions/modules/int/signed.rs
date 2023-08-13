@@ -28,7 +28,7 @@ pub trait SintTraits: IntTraits {
     /// The generic libfunc id for subtraction.
     const OVERFLOWING_SUB: &'static str;
     /// The generic libfunc id for difference of signed integers, logically equivalent to
-    /// substraction of unsigned integers.
+    /// subtraction of unsigned integers.
     const DIFF: &'static str;
     /// The generic type id of the equivalent unsigned integer type.
     const UNSIGNED_INT_TYPE: GenericTypeId;

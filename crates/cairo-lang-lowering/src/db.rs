@@ -141,7 +141,7 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     #[salsa::invoke(crate::implicits::function_implicits)]
     fn function_implicits(&self, function: ids::FunctionId) -> Maybe<Vec<TypeId>>;
 
-    /// Returns all the implicitis used by a strongly connected component of functions.
+    /// Returns all the implicits used by a strongly connected component of functions.
     #[salsa::invoke(crate::implicits::scc_implicits)]
     fn scc_implicits(&self, function: ConcreteSCCRepresentative) -> Maybe<Vec<TypeId>>;
 

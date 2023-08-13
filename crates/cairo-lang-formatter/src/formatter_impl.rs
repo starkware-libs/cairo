@@ -182,7 +182,7 @@ struct LineBuilder {
     /// Indicates whether this builder is open, which means any new child should
     /// be (recursively) appended to it. Otherwise, new children will be appended as its sibling.
     is_open: bool,
-    /// Added break line points are temporarly collected into this vector. The vector is flushed
+    /// Added break line points are temporarily collected into this vector. The vector is flushed
     /// into the children vector if any other LineComponent is pushed. This prevents break line
     /// points being added to the end of a line.
     pending_break_line_points: Vec<LineComponent>,
@@ -317,7 +317,7 @@ impl LineBuilder {
         // TODO(gil): improve the complexity of this function. Right now the line builder is
         // entirely cloned for each protected zone, which results in a worst case complexity of
         // O(n*m) where n is the line length and m is the number of protected zones. The actual
-        // complexity is lower since the line is broken into smaller pieces and each one is handeled
+        // complexity is lower since the line is broken into smaller pieces and each one is handled
         // separately.
         let mut sub_builders = self.break_line_tree_single_level(max_line_width, tab_size);
         // If the line was not broken into several lines (i.e. only one sub_builder), open the

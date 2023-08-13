@@ -249,7 +249,7 @@ pub fn function_implicits(db: &dyn LoweringGroup, function: FunctionId) -> Maybe
 
 /// A trait to add helper methods in [LoweringGroup].
 pub trait FunctionImplicitsTrait<'a>: Upcast<dyn LoweringGroup + 'a> {
-    /// Returns all the implicitis used by a [ConcreteFunctionWithBodyId].
+    /// Returns all the implicits used by a [ConcreteFunctionWithBodyId].
     fn function_with_body_implicits(
         &self,
         function: ConcreteFunctionWithBodyId,

@@ -312,7 +312,7 @@ fn build_ec_state_init(
 
     // Sample a random point on the curve.
     casm_build_extend! {casm_builder,
-        // Auxilliary variables.
+        // Auxiliary variables.
         tempvar y2;
         tempvar aux0;
         tempvar aux1;
@@ -323,7 +323,7 @@ fn build_ec_state_init(
         tempvar random_y;
         tempvar random_ptr;
         hint RandomEcPoint {} into { x: random_x, y: random_y };
-        // Initalize `random_ptr` and copy the random point into it.
+        // Initialize `random_ptr` and copy the random point into it.
         const ec_point_size = 2;
         hint AllocConstantSize { size: ec_point_size } into {dst: random_ptr};
         assert random_x = random_ptr[0];

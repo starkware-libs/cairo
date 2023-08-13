@@ -139,19 +139,19 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+error: Plugin diagnostic: The first parameter of an entry point must be `self`.
  --> lib.cairo:7:11
     fn foo() {}
           ^^
 
-error: Plugin diagnostic: The first paramater of an entry point must be `self`.
+error: Plugin diagnostic: The first parameter of an entry point must be `self`.
  --> lib.cairo:10:12
     fn bar(_n: u32) {}
            ^*****^
 
 //! > ==========================================================================
 
-//! > Test invalid constractor name.
+//! > Test invalid constructor name.
 
 //! > test_runner_name
 ExpandContractTestRunner

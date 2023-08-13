@@ -104,7 +104,7 @@ fn build_redeposit_gas(
     ))
 }
 
-/// Handles the withdraw_gas invocation with the builtin costs arguement.
+/// Handles the withdraw_gas invocation with the builtin costs argument.
 fn build_builtin_withdraw_gas(
     builder: CompiledInvocationBuilder<'_>,
 ) -> Result<CompiledInvocation, InvocationError> {

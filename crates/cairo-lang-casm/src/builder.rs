@@ -76,7 +76,7 @@ impl State {
         } else {
             self.steps = self.steps.max(other.steps);
         }
-        // Allowing removal of variables as valid code won't be producable in that case anyway, and
+        // Allowing removal of variables as valid code won't be producible in that case anyway, and
         // otherwise merging branches becomes very difficult.
         self.vars.retain(|var, value| {
             other

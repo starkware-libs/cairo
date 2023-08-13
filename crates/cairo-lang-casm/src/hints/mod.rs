@@ -166,7 +166,7 @@ pub enum CoreHint {
     /// Fetch the previous value of a key in a dict, and write it in a new dict access.
     #[codec(index = 11)]
     Felt252DictEntryInit { dict_ptr: ResOperand, key: ResOperand },
-    /// Similar to Felt252DictWrite, but updates an existing entry and does not wirte the previous
+    /// Similar to Felt252DictWrite, but updates an existing entry and does not write the previous
     /// value to the stack.
     #[codec(index = 12)]
     Felt252DictEntryUpdate { dict_ptr: ResOperand, value: ResOperand },

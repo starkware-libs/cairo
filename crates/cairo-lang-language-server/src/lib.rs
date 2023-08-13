@@ -1301,7 +1301,7 @@ fn get_uri(db: &dyn FilesGroup, file_id: FileId) -> Url {
     uri
 }
 
-/// Converts an internal diagnsotic location to an LSP range.
+/// Converts an internal diagnostic location to an LSP range.
 fn get_range(db: &dyn FilesGroup, location: &DiagnosticLocation) -> Range {
     let start = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
     let end = from_pos(location.span.start.position_in_file(db, location.file_id).unwrap());
