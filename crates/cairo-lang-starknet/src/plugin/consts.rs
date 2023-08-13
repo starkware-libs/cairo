@@ -15,6 +15,7 @@ pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub(super) const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
+pub const INCLUDABLE_ATTR: &str = "starknet::includable";
 pub const INCLUDE_ATTR: &str = "include";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";

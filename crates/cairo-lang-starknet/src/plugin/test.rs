@@ -62,6 +62,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         diagnostics: "diagnostics",
         contract: "contract",
         events: "events",
+        included_impl: "included_impl",
         raw_output: "raw_output",
         storage: "storage",
         hello_starknet: "hello_starknet",
