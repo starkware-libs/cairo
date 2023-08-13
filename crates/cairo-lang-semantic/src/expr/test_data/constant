@@ -99,7 +99,7 @@ foo
 const DEFAULT_VAR: bool = 1;
 
 //! > expected_diagnostics
-error: A literal with this type cannot be created.
+error: A literal of type core::bool cannot be created.
  --> lib.cairo:1:27
 const DEFAULT_VAR: bool = 1;
                           ^

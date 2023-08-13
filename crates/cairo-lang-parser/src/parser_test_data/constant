@@ -33,9 +33,7 @@ ItemConstant
     │               │               └── ident (kind: TokenIdentifier): 'felt252'
     │               └── rangle (kind: TokenGT): '>'
     ├── eq (kind: TokenEq): '='
-    ├── value (kind: LiteralNumber)
-    │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   └── number (kind: TokenNumber): '0x1234'
+    ├── value (kind: TokenLiteralNumber): '0x1234'
     └── semicolon (kind: TokenSemicolon): ';'
 
 //! > ==========================================================================
@@ -68,7 +66,5 @@ const X = 0x1234;
     │   ├── colon: Missing
     │   └── ty: Missing []
     ├── eq (kind: TokenEq): '='
-    ├── value (kind: LiteralNumber)
-    │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   └── number (kind: TokenNumber): '0x1234'
+    ├── value (kind: TokenLiteralNumber): '0x1234'
     └── semicolon (kind: TokenSemicolon): ';'

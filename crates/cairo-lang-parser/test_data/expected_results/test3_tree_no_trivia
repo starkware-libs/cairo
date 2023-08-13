@@ -40,23 +40,17 @@
     │   │       │       │       │   ├── item #0 (kind: Arg)
     │   │       │       │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │       │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │       │       │       │   │       └── value (kind: LiteralNumber)
-    │   │       │       │       │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │       │       │   │           └── number (kind: TokenNumber): '1'
+    │   │       │       │       │   │       └── value (kind: TokenLiteralNumber): '1'
     │   │       │       │       │   ├── separator #0 (kind: TokenComma): ','
     │   │       │       │       │   ├── item #1 (kind: Arg)
     │   │       │       │       │   │   ├── modifiers (kind: ModifierList) []
     │   │       │       │       │   │   └── arg_clause (kind: ArgClauseUnnamed)
-    │   │       │       │       │   │       └── value (kind: LiteralNumber)
-    │   │       │       │       │   │           ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │       │       │   │           └── number (kind: TokenNumber): '1'
+    │   │       │       │       │   │       └── value (kind: TokenLiteralNumber): '1'
     │   │       │       │       │   ├── separator #1 (kind: TokenComma): ','
     │   │       │       │       │   └── item #2 (kind: Arg)
     │   │       │       │       │       ├── modifiers (kind: ModifierList) []
     │   │       │       │       │       └── arg_clause (kind: ArgClauseUnnamed)
-    │   │       │       │       │           └── value (kind: LiteralNumber)
-    │   │       │       │       │               ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │       │       │               └── number (kind: TokenNumber): '13'
+    │   │       │       │       │           └── value (kind: TokenLiteralNumber): '13'
     │   │       │       │       └── rparen (kind: TokenRParen): ')'
     │   │       │       └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     │   │       └── rbrace (kind: TokenRBrace): '}'
@@ -150,9 +144,7 @@
     │   │       │       │   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │       │   ├── arms (kind: MatchArms)
     │   │       │       │   │   ├── item #0 (kind: MatchArm)
-    │   │       │       │   │   │   ├── pattern (kind: LiteralNumber)
-    │   │       │       │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │       │   │   │   │   └── number (kind: TokenNumber): '0'
+    │   │       │       │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
     │   │       │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │   │       │       │   │   │   └── expression (kind: ExprFunctionCall)
     │   │       │       │   │   │       ├── path (kind: ExprPath)
@@ -209,9 +201,7 @@
     │   │       │       │   │   │           │               │   └── item #0 (kind: PathSegmentSimple)
     │   │       │       │   │   │           │               │       └── ident (kind: TokenIdentifier): 'n'
     │   │       │       │   │   │           │               ├── op (kind: TokenMinus): '-'
-    │   │       │       │   │   │           │               └── rhs (kind: LiteralNumber)
-    │   │       │       │   │   │           │                   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │   │       │       │   │   │           │                   └── number (kind: TokenNumber): '1'
+    │   │       │       │   │   │           │               └── rhs (kind: TokenLiteralNumber): '1'
     │   │       │       │   │   │           └── rparen (kind: TokenRParen): ')'
     │   │       │       │   │   └── separator #1 (kind: TokenComma): ','
     │   │       │       │   └── rbrace (kind: TokenRBrace): '}'
@@ -313,9 +303,7 @@
     │           │       │   ├── lbrace (kind: TokenLBrace): '{'
     │           │       │   ├── arms (kind: MatchArms)
     │           │       │   │   ├── item #0 (kind: MatchArm)
-    │           │       │   │   │   ├── pattern (kind: LiteralNumber)
-    │           │       │   │   │   │   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │           │       │   │   │   │   └── number (kind: TokenNumber): '0'
+    │           │       │   │   │   ├── pattern (kind: TokenLiteralNumber): '0'
     │           │       │   │   │   ├── arrow (kind: TokenMatchArrow): '=>'
     │           │       │   │   │   └── expression (kind: ExprListParenthesized)
     │           │       │   │   │       ├── lparen (kind: TokenLParen): '('
@@ -394,9 +382,7 @@
     │           │       │   │   │           │               │   └── item #0 (kind: PathSegmentSimple)
     │           │       │   │   │           │               │       └── ident (kind: TokenIdentifier): 'n'
     │           │       │   │   │           │               ├── op (kind: TokenMinus): '-'
-    │           │       │   │   │           │               └── rhs (kind: LiteralNumber)
-    │           │       │   │   │           │                   ├── sign (kind: OptionTerminalMinusEmpty) []
-    │           │       │   │   │           │                   └── number (kind: TokenNumber): '1'
+    │           │       │   │   │           │               └── rhs (kind: TokenLiteralNumber): '1'
     │           │       │   │   │           └── rparen (kind: TokenRParen): ')'
     │           │       │   │   └── separator #1 (kind: TokenComma): ','
     │           │       │   └── rbrace (kind: TokenRBrace): '}'

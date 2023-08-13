@@ -33,9 +33,7 @@ StatementLet
     │       │   └── child #0 (kind: StatementBreak)
     │       │       ├── break_kw (kind: TokenBreak): 'break'
     │       │       ├── expr_clause (kind: ExprClause)
-    │       │       │   └── expr (kind: LiteralNumber)
-    │       │       │       ├── sign (kind: OptionTerminalMinusEmpty) []
-    │       │       │       └── number (kind: TokenNumber): '5'
+    │       │       │   └── expr (kind: TokenLiteralNumber): '5'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── semicolon (kind: TokenSemicolon): ';'

@@ -5,8 +5,8 @@ pub fn get_unary_operator_precedence(kind: SyntaxKind) -> Option<usize> {
         SyntaxKind::TerminalAt
         | SyntaxKind::TerminalNot
         | SyntaxKind::TerminalBitNot
-        | SyntaxKind::TerminalMul => Some(2),
-        SyntaxKind::TerminalMinus => Some(3),
+        | SyntaxKind::TerminalMul
+        | SyntaxKind::TerminalMinus => Some(2),
         _ => None,
     }
 }
