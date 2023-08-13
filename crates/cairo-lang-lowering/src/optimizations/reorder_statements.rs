@@ -16,12 +16,12 @@ use crate::{
     BlockId, FlatLowered, MatchInfo, Statement, StatementCall, VarRemapping, VarUsage, VariableId,
 };
 
-/// Reorder the statments in the lowering in order to move variable definitions closer to their
+/// Reorder the statements in the lowering in order to move variable definitions closer to their
 /// usage. Statement with no side effects and unused outputs are removed.
 ///
 /// The list of call statements that can be moved is currently hardcoded.
 ///
-/// Removing unnessary remapping before this optimization will result in better code.
+/// Removing unnecessary remapping before this optimization will result in better code.
 pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let semantic_db = db.upcast();
@@ -55,17 +55,17 @@ pub fn reorder_statements(db: &dyn LoweringGroup, lowered: &mut FlatLowered) {
         }
 
         for (block_id, block_changes) in changes_by_block.into_iter() {
-            let statments = &mut lowered.blocks[block_id].statements;
+            let statements = &mut lowered.blocks[block_id].statements;
 
-            // Apply block changes in revese order to prevent a change from invalidating the
+            // Apply block changes in reverse order to prevent a change from invalidating the
             // indices of the other changes.
-            for (index, opt_statment) in
+            for (index, opt_statement) in
                 block_changes.into_iter().sorted_by_key(|(index, _)| Reverse(*index))
             {
-                match opt_statment {
-                    Some(stmt) => statments.insert(index, stmt),
+                match opt_statement {
+                    Some(stmt) => statements.insert(index, stmt),
                     None => {
-                        statments.remove(index);
+                        statements.remove(index);
                     }
                 }
             }

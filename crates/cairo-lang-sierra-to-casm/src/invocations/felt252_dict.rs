@@ -477,9 +477,9 @@ fn build_squash_dict_inner(
         #{ unique_key_steps += steps; steps = 0; }
         jump SquashDictInnerContinueRecursion if new_remaining_accesses != 0;
         // Return from squash_dict_inner, push values to the stack and return;
-        tempvar retuened_range_check_ptr = arg_range_check_ptr;
+        tempvar returned_range_check_ptr = arg_range_check_ptr;
         const dict_access_size = DICT_ACCESS_SIZE;
-        tempvar retuened_squashed_dict =
+        tempvar returned_squashed_dict =
             squash_dict_inner_arg_squashed_dict_end + dict_access_size;
         ret;
         #{ fixed_steps += steps; steps = 0; }

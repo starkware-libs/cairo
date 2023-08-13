@@ -13,9 +13,9 @@ mod SRC5 {
 
     use openzeppelin::introspection::first;
 
-        mod A{}
-        mod G;
-        mod F;
+    mod A {}
+    mod G;
+    mod F;
 
     #[external(v0)]
     impl SRC5Impl of interface::ISRC5<ContractState> {

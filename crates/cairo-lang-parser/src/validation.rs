@@ -50,7 +50,7 @@ pub fn validate(
 /// Cairo parser tries to consume even not proper tokens in order to support code editions in IDEs.
 /// This means that it omits some crucial details in the literals that make the code uncompilable.
 /// This function validates that the literal:
-/// 1. Is parseable according to its radix.
+/// 1. Is parsable according to its radix.
 /// 2. Has properly formatted suffix.
 fn validate_literal_number(
     node: ast::TerminalLiteralNumber,
@@ -67,7 +67,7 @@ fn validate_literal_number(
         None => (text.as_str(), None),
     };
 
-    // Verify number value is parseable.
+    // Verify number value is parsable.
     {
         let (text, radix) = if let Some(num_no_prefix) = text.strip_prefix("0x") {
             (num_no_prefix, 16)

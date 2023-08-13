@@ -86,7 +86,7 @@ pub type VariableId = Id<Variable>;
 ///        ^
 /// and it is different from the location in the VarUsage.
 ///
-/// The tail expression `1 + a`  is also going to be assinged a variable and a VarUsage.
+/// The tail expression `1 + a`  is also going to be assigned a variable and a VarUsage.
 /// in that case, the location of both the variable and the usage will be the same.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct VarUsage {
@@ -303,7 +303,7 @@ pub struct MatchArm {
     /// The id of the arm variant.
     pub variant_id: ConcreteVariant,
 
-    /// The block_id where the relevent arm is implemented.
+    /// The block_id where the relevant arm is implemented.
     pub block_id: BlockId,
 
     /// The list of variable ids introduced in this arm.

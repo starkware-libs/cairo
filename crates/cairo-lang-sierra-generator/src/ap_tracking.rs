@@ -81,7 +81,7 @@ impl ApTrackingAnalysisInfo {
                 indexmap::map::Entry::Occupied(mut e) => {
                     let blocks = e.get_mut();
 
-                    // Since the blocks are visitied in reverse order and the blocks vector is in
+                    // Since the blocks are visited in reverse order and the blocks vector is in
                     // reverse order, we can just check the last element to see if 'block_id'
                     // was already added.
                     if blocks.last() != Some(&block_id) {

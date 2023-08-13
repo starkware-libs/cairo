@@ -153,7 +153,7 @@ mod contract_failed_entrypoint {
 
 #[test]
 #[available_gas(30000000)]
-fn test_non_empty_calldata_unexistent_constructor() {
+fn test_non_empty_calldata_nonexistent_constructor() {
     let mut err = deploy_syscall(
         contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(),
         0,

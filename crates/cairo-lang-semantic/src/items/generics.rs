@@ -253,7 +253,7 @@ pub fn generic_param_data_cycle(
     );
     Err(diagnostics.report_by_ptr(
         generic_param_id.stable_ptr(db.upcast()).untyped(),
-        SemanticDiagnosticKind::ImplRequirmentCycle,
+        SemanticDiagnosticKind::ImplRequirementCycle,
     ))
 }
 

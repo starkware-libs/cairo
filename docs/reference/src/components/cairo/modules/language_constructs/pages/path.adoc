@@ -22,7 +22,7 @@ Generic paths are used at:
 * Enum variant pattern.
 
 == Concrete paths
-Concrete paths are composed of concrete segments, which are identifers that may be followed by a
+Concrete paths are composed of concrete segments, which are identifiers that may be followed by a
 xref:generics.adoc[generic] argument clause like this:
 
 ```
