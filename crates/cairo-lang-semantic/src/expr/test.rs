@@ -24,6 +24,7 @@ cairo_lang_test_utils::test_file_test!(
         generics: "generics",
         if_: "if",
         inference: "inference",
+        inline_macros: "inline_macros",
         let_statement: "let_statement",
         literal: "literal",
         logical_operator: "logical_operator",
@@ -47,6 +48,7 @@ cairo_lang_test_utils::test_file_test!(
         assignment: "assignment",
         block: "block",
         call: "call",
+        inline_macros: "inline_macros",
         let_statement: "let_statement",
         literals: "literals",
         match_: "match",
@@ -59,16 +61,19 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_expr_semantics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
     let db = &SemanticDatabaseForTesting::default();
-    let test_expr = setup_test_expr(
+    let (test_expr, diagnostics) = setup_test_expr(
         db,
         inputs["expr_code"].as_str(),
         inputs.get("module_code").map(|s| s.as_str()).unwrap_or(""),
         inputs.get("function_body").map(|s| s.as_str()).unwrap_or(""),
     )
-    .unwrap();
+    .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
-    OrderedHashMap::from([("expected".into(), format!("{:#?}", expr.debug(&expr_formatter)))])
+    OrderedHashMap::from([
+        ("expected".into(), format!("{:#?}", expr.debug(&expr_formatter))),
+        ("semantic_diagnostics".into(), diagnostics),
+    ])
 }
 
 #[test]
