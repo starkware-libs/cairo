@@ -2,6 +2,7 @@ use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
+use one::One;
 use serde::Serde;
 use array::ArrayTrait;
 use array::SpanTrait;
