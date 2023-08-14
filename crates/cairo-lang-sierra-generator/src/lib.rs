@@ -7,6 +7,7 @@ mod block_generator;
 pub mod canonical_id_replacer;
 pub mod db;
 mod expr_generator_context;
+mod extra_sierra_info;
 mod function_generator;
 #[cfg(any(feature = "testing", test))]
 pub mod function_generator_test_utils;

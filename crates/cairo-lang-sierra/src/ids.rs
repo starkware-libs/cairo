@@ -29,6 +29,11 @@ macro_rules! define_generic_identity {
                 Self::from_string(name)
             }
         }
+        impl From<SmolStr> for $type_name {
+            fn from(name: SmolStr) -> Self {
+                Self::from_string(name)
+            }
+        }
     };
 }
 
@@ -65,6 +70,11 @@ macro_rules! define_identity {
         }
         impl From<String> for $type_name {
             fn from(name: String) -> Self {
+                Self::from_string(name)
+            }
+        }
+        impl From<SmolStr> for $type_name {
+            fn from(name: SmolStr) -> Self {
                 Self::from_string(name)
             }
         }

@@ -16,8 +16,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i128 = i128;
-type felt252 = felt252;
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_to_felt252 = i128_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -76,11 +76,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type i128 = i128;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::integer::i128> = Enum<ut@core::option::Option::<core::integer::i128>, i128, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::integer::i128> = Enum<ut@core::option::Option::<core::integer::i128>, i128, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_try_from_felt252 = i128_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -135,9 +135,9 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type i128 = i128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_eq = i128_eq;
 libfunc branch_align = branch_align;
@@ -189,9 +189,9 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type i128 = i128;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_const<11> = i128_const<11>;
 libfunc i128_const<12> = i128_const<12>;
@@ -267,9 +267,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i128 = i128;
-type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_overflowing_add_impl = i128_overflowing_add_impl;
 libfunc branch_align = branch_align;
@@ -347,9 +347,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1070})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i128 = i128;
-type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i128> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i128>, i128, i128, i128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_overflowing_sub_impl = i128_overflowing_sub_impl;
 libfunc branch_align = branch_align;
@@ -410,8 +410,8 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type i128 = i128;
-type NonZero<i128> = NonZero<i128>;
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<i128> = NonZero<i128> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_is_zero = i128_is_zero;
 libfunc branch_align = branch_align;
@@ -468,10 +468,10 @@ ret;
 test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i128 = i128;
-type u128 = u128;
-type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u128 = u128 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::integer::u128, core::integer::u128> = Enum<ut@core::result::Result::<core::integer::u128, core::integer::u128>, u128, u128> [storable: true, drop: true, dup: true, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i128_diff = i128_diff;
 libfunc branch_align = branch_align;

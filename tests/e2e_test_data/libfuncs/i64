@@ -16,8 +16,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i64 = i64;
-type felt252 = felt252;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_to_felt252 = i64_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -78,11 +78,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1510})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type i64 = i64;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::integer::i64> = Enum<ut@core::option::Option::<core::integer::i64>, i64, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::integer::i64> = Enum<ut@core::option::Option::<core::integer::i64>, i64, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_try_from_felt252 = i64_try_from_felt252;
 libfunc branch_align = branch_align;
@@ -137,9 +137,9 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type i64 = i64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_eq = i64_eq;
 libfunc branch_align = branch_align;
@@ -191,9 +191,9 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type i64 = i64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_const<11> = i64_const<11>;
 libfunc i64_const<12> = i64_const<12>;
@@ -270,9 +270,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1140})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i64 = i64;
-type core::integer::SignedIntegerResult::<core::integer::i64> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i64>, i64, i64, i64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i64> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i64>, i64, i64, i64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_overflowing_add_impl = i64_overflowing_add_impl;
 libfunc branch_align = branch_align;
@@ -351,9 +351,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1140})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i64 = i64;
-type core::integer::SignedIntegerResult::<core::integer::i64> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i64>, i64, i64, i64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::integer::SignedIntegerResult::<core::integer::i64> = Enum<ut@core::integer::SignedIntegerResult::<core::integer::i64>, i64, i64, i64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_overflowing_sub_impl = i64_overflowing_sub_impl;
 libfunc branch_align = branch_align;
@@ -414,8 +414,8 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type i64 = i64;
-type NonZero<i64> = NonZero<i64>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<i64> = NonZero<i64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_is_zero = i64_is_zero;
 libfunc branch_align = branch_align;
@@ -472,10 +472,10 @@ ret;
 test::foo: OrderedHashMap({Const: 880})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type i64 = i64;
-type u64 = u64;
-type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type u64 = u64 [storable: true, drop: true, dup: true, zero_sized: false];
+type core::result::Result::<core::integer::u64, core::integer::u64> = Enum<ut@core::result::Result::<core::integer::u64, core::integer::u64>, u64, u64> [storable: true, drop: true, dup: true, zero_sized: false];
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_diff = i64_diff;
 libfunc branch_align = branch_align;
@@ -523,8 +523,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i64 = i64;
-type i128 = i128;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type i128 = i128 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_wide_mul = i64_wide_mul;
 libfunc store_temp<i128> = store_temp<i128>;
