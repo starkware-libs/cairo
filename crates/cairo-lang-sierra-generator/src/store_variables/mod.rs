@@ -249,8 +249,8 @@ impl<'a> AddStoreVariableStatements<'a> {
             res_deferred_info = Some(deferred_info);
         }
 
-        if self.state().temporary_variables.get(arg).is_some() {
-            self.store_temp_as_local(arg);
+        if self.state().temporary_variables.get(arg).is_some() && self.store_temp_as_local(arg) {
+            self.known_stack().remove_variable(arg);
         }
 
         (false, res_deferred_info)
@@ -365,11 +365,13 @@ impl<'a> AddStoreVariableStatements<'a> {
 
     /// Copies the given variable into a local variable if it is marked as local.
     /// Removes it from [State::temporary_variables].
-    fn store_temp_as_local(&mut self, var: &sierra::ids::VarId) {
+    fn store_temp_as_local(&mut self, var: &sierra::ids::VarId) -> bool {
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
             let ty = self.state().temporary_variables.swap_remove(var).unwrap();
             self.store_local(var, &uninitialized_local_var_id, &ty);
+            return true;
         }
+        false
     }
 
     /// Stores all the deffered and temporary variables as local variables.
