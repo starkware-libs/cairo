@@ -1,19 +1,18 @@
-use traits::{Into, TryInto};
-use bytes_31::{U128IntoBytes31, U8IntoBytes31};
 use array::{ArrayTrait, SpanTrait};
-use option::OptionTrait;
-use clone::Clone;
-use integer::{u128_safe_divmod, U32TryIntoNonZero};
 use bytes_31::{
     BYTES_IN_BYTES31, Bytes31Trait, one_shift_left_bytes_felt252, one_shift_left_bytes_u128,
-    POW_2_128
+    POW_2_128, POW_2_8, U128IntoBytes31, U8IntoBytes31
 };
+use clone::Clone;
+use cmp::min;
+use integer::{u128_safe_divmod, U32TryIntoNonZero};
+use option::OptionTrait;
+use traits::{Into, TryInto};
 use zeroable::NonZeroIntoImpl;
 
 const BYTES_IN_U128: usize = 16;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
-const POW_2_8: felt252 = 256;
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
 #[derive(Drop, Clone, PartialEq)]
@@ -167,7 +166,7 @@ impl ByteArrayImpl of ByteArrayTrait {
             return;
         }
 
-        let new_pending = self.pending_word * POW_2_8 + byte.into();
+        let new_pending = self.pending_word * POW_2_8.into() + byte.into();
 
         if self.pending_word_len != BYTES_IN_BYTES31_MINUS_ONE {
             self.pending_word = new_pending;
@@ -210,6 +209,60 @@ impl ByteArrayImpl of ByteArrayTrait {
         // index_in_word is from MSB, we need index from LSB.
         let index_from_lsb = BYTES_IN_BYTES31 - 1 - index_in_word;
         Option::Some(self.data.at(word_index).at(index_from_lsb))
+    }
+
+    /// Returns a ByteArray with the reverse order of `self`.
+    fn rev(self: @ByteArray) -> ByteArray {
+        let mut result = Default::default();
+
+        result.append_word_rev(*self.pending_word, *self.pending_word_len);
+
+        let mut data = self.data.span();
+        loop {
+            match data.pop_back() {
+                Option::Some(current_word) => {
+                    result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
+                },
+                Option::None => {
+                    break;
+                }
+            };
+        };
+        result
+    }
+
+    /// Appends the reverse of the given word to the end `self`.
+    /// Assumptions:
+    /// 1. len < 31
+    /// 2. word is validly convertible to bytes31 of length `len`.
+    fn append_word_rev(ref self: ByteArray, word: felt252, len: usize) {
+        let mut index = 0;
+
+        let u256{low, high } = word.into();
+        let low_part_limit = min(len, BYTES_IN_U128);
+        loop {
+            if index == low_part_limit {
+                break;
+            }
+            let curr_byte_as_u128 = (low / one_shift_left_bytes_u128(index)) % POW_2_8;
+
+            self.append_byte(curr_byte_as_u128.try_into().unwrap());
+            index += 1;
+        };
+        if low_part_limit == BYTES_IN_U128 {
+            let mut index_in_high_part = 0;
+            let high_part_len = len - BYTES_IN_U128;
+            loop {
+                if index_in_high_part == high_part_len {
+                    break;
+                }
+                let curr_byte_as_u128 = (high
+                    / one_shift_left_bytes_u128(index_in_high_part)) % POW_2_8;
+
+                self.append_byte(curr_byte_as_u128.try_into().unwrap());
+                index_in_high_part += 1;
+            }
+        }
     }
 
     // === Helpers ===
