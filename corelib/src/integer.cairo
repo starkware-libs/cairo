@@ -1868,6 +1868,7 @@ impl U256Zeroable of Zeroable<u256> {
 // === One ===
 
 impl U8One of One<u8> {
+    #[inline(always)]
     fn one() -> u8 {
         1
     }
@@ -1882,6 +1883,7 @@ impl U8One of One<u8> {
 }
 
 impl U16One of One<u16> {
+    #[inline(always)]
     fn one() -> u16 {
         1
     }
@@ -1896,6 +1898,7 @@ impl U16One of One<u16> {
 }
 
 impl U32One of One<u32> {
+    #[inline(always)]
     fn one() -> u32 {
         1
     }
@@ -1910,6 +1913,7 @@ impl U32One of One<u32> {
 }
 
 impl U64One of One<u64> {
+    #[inline(always)]
     fn one() -> u64 {
         1
     }
@@ -1924,6 +1928,7 @@ impl U64One of One<u64> {
 }
 
 impl U128One of One<u128> {
+    #[inline(always)]
     fn one() -> u128 {
         1
     }
@@ -1938,6 +1943,7 @@ impl U128One of One<u128> {
 }
 
 impl U256One of One<u256> {
+    #[inline(always)]
     fn one() -> u256 {
         1
     }

@@ -10,6 +10,7 @@ trait One<T> {
 }
 
 impl Felt252One of One<felt252> {
+    #[inline(always)]
     fn one() -> felt252 {
         1
     }
