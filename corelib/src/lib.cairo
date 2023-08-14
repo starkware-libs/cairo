@@ -333,7 +333,8 @@ use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 // to_byte_array.
 mod to_byte_array;
 use to_byte_array::{
-    FormatAsByteArrayHex, FormatAsByteArrayDec, FormatAsByteArrayOct, FormatAsByteArrayBin
+    FormatAsByteArray, FormatAsByteArrayBin, FormatAsByteArrayDec, FormatAsByteArrayHex,
+    FormatAsByteArrayOct
 };
 
 #[cfg(test)]

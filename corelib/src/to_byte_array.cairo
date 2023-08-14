@@ -16,6 +16,10 @@ trait FormatAsByteArrayBin<T> {
     fn format_as_byte_array_bin(self: T) -> ByteArray;
 }
 
+trait FormatAsByteArray<T> {
+    fn format_as_byte_array(self: T, base: T) -> Result<ByteArray, felt252>;
+}
+
 // === Hexadecimal base ===
 
 impl U8FormatAsByteArrayHex of FormatAsByteArrayHex<u8> {
@@ -273,4 +277,90 @@ fn to_byte_array_bin<
         };
     };
     "0b" + result.rev()
+}
+
+
+// === General base ===
+
+impl U8FormatAsByteArray of FormatAsByteArray<u8> {
+    fn format_as_byte_array(self: u8, base: u8) -> Result<ByteArray, felt252> {
+        // TODO(yuval): once supported, change if with match. Here and in the other implementations
+        // below.
+        let res = if base == 2 {
+            to_byte_array_bin(self, base.try_into().unwrap())
+        } else if base == 8 {
+            to_byte_array_oct(self, base.try_into().unwrap())
+        } else if base == 10 {
+            to_byte_array_dec(self, base.try_into().unwrap())
+        } else if base == 16 {
+            to_byte_array_hex(self, base.try_into().unwrap())
+        } else {
+            return Result::Err('Unsupported base');
+        };
+        Result::Ok(res)
+    }
+}
+impl U16FormatAsByteArray of FormatAsByteArray<u16> {
+    fn format_as_byte_array(self: u16, base: u16) -> Result<ByteArray, felt252> {
+        let res = if base == 2 {
+            to_byte_array_bin(self, base.try_into().unwrap())
+        } else if base == 8 {
+            to_byte_array_oct(self, base.try_into().unwrap())
+        } else if base == 10 {
+            to_byte_array_dec(self, base.try_into().unwrap())
+        } else if base == 16 {
+            to_byte_array_hex(self, base.try_into().unwrap())
+        } else {
+            return Result::Err('Unsupported base');
+        };
+        Result::Ok(res)
+    }
+}
+impl U32FormatAsByteArray of FormatAsByteArray<u32> {
+    fn format_as_byte_array(self: u32, base: u32) -> Result<ByteArray, felt252> {
+        let res = if base == 2 {
+            to_byte_array_bin(self, base.try_into().unwrap())
+        } else if base == 8 {
+            to_byte_array_oct(self, base.try_into().unwrap())
+        } else if base == 10 {
+            to_byte_array_dec(self, base.try_into().unwrap())
+        } else if base == 16 {
+            to_byte_array_hex(self, base.try_into().unwrap())
+        } else {
+            return Result::Err('Unsupported base');
+        };
+        Result::Ok(res)
+    }
+}
+impl U64FormatAsByteArray of FormatAsByteArray<u64> {
+    fn format_as_byte_array(self: u64, base: u64) -> Result<ByteArray, felt252> {
+        let res = if base == 2 {
+            to_byte_array_bin(self, base.try_into().unwrap())
+        } else if base == 8 {
+            to_byte_array_oct(self, base.try_into().unwrap())
+        } else if base == 10 {
+            to_byte_array_dec(self, base.try_into().unwrap())
+        } else if base == 16 {
+            to_byte_array_hex(self, base.try_into().unwrap())
+        } else {
+            return Result::Err('Unsupported base');
+        };
+        Result::Ok(res)
+    }
+}
+impl U128FormatAsByteArray of FormatAsByteArray<u128> {
+    fn format_as_byte_array(self: u128, base: u128) -> Result<ByteArray, felt252> {
+        let res = if base == 2 {
+            to_byte_array_bin(self, base.try_into().unwrap())
+        } else if base == 8 {
+            to_byte_array_oct(self, base.try_into().unwrap())
+        } else if base == 10 {
+            to_byte_array_dec(self, base.try_into().unwrap())
+        } else if base == 16 {
+            to_byte_array_hex(self, base.try_into().unwrap())
+        } else {
+            return Result::Err('Unsupported base');
+        };
+        Result::Ok(res)
+    }
 }

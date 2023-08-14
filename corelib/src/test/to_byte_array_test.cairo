@@ -2,7 +2,7 @@ use test::test_utils::assert_eq;
 
 #[test]
 #[available_gas(10000000)]
-fn test_to_string_hex_u8() {
+fn test_to_string_hex() {
     let expected_string = "0x0";
     let serialized: ByteArray = 0_u8.format_as_byte_array_hex();
     assert_eq(@serialized, @expected_string, 'Bad hex representation of 0');
@@ -138,4 +138,27 @@ fn test_to_string_bin() {
     assert_eq(@serialized, @expected_string, 'Bad u256 bin representation');
     let serialized: ByteArray = 111_felt252.format_as_byte_array_bin();
     assert_eq(@serialized, @expected_string, 'Bad felt252 bin representation');
+}
+
+#[test]
+#[available_gas(10000000)]
+fn test_to_string_general_base() {
+    let expected_string = "0b1101111";
+    let serialized: ByteArray = 111_u8.format_as_byte_array(base: 2).unwrap();
+    assert_eq(@serialized, @expected_string, 'Bad bin representation of 0');
+
+    let expected_string = "0o157";
+    let serialized: ByteArray = 111_u8.format_as_byte_array(base: 8).unwrap();
+    assert_eq(@serialized, @expected_string, 'Bad bin representation of 0');
+
+    let expected_string = "111";
+    let serialized: ByteArray = 111_u8.format_as_byte_array(base: 10).unwrap();
+    assert_eq(@serialized, @expected_string, 'Bad bin representation of 0');
+
+    let expected_string = "0x6F";
+    let serialized: ByteArray = 111_u8.format_as_byte_array(base: 16).unwrap();
+    assert_eq(@serialized, @expected_string, 'Bad bin representation of 0');
+
+    assert(111_u8.format_as_byte_array(base: 0).is_err(), '0 is not a valid base');
+    assert(111_u8.format_as_byte_array(base: 13).is_err(), '13 is not a valid base');
 }
