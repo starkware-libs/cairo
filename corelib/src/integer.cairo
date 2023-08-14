@@ -1864,6 +1864,92 @@ impl U256Zeroable of Zeroable<u256> {
     }
 }
 
+// === One ===
+
+impl U8One of One<u8> {
+    fn one() -> u8 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u8) -> bool {
+        self == U8One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u8) -> bool {
+        self != U8One::one()
+    }
+}
+
+impl U16One of One<u16> {
+    fn one() -> u16 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u16) -> bool {
+        self == U16One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u16) -> bool {
+        self != U16One::one()
+    }
+}
+
+impl U32One of One<u32> {
+    fn one() -> u32 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u32) -> bool {
+        self == U32One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u32) -> bool {
+        self != U32One::one()
+    }
+}
+
+impl U64One of One<u64> {
+    fn one() -> u64 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u64) -> bool {
+        self == U64One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u64) -> bool {
+        self != U64One::one()
+    }
+}
+
+impl U128One of One<u128> {
+    fn one() -> u128 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u128) -> bool {
+        self == U128One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u128) -> bool {
+        self != U128One::one()
+    }
+}
+
+impl U256One of One<u256> {
+    fn one() -> u256 {
+        1
+    }
+    #[inline(always)]
+    fn is_one(self: u256) -> bool {
+        self == U256One::one()
+    }
+    #[inline(always)]
+    fn is_non_one(self: u256) -> bool {
+        self != U256One::one()
+    }
+}
+
 enum SignedIntegerResult<T> {
     InRange: T,
     Underflow: T,
