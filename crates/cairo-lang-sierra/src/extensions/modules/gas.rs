@@ -141,7 +141,7 @@ pub enum CostTokenType {
     Const,
     /// One invocation of the pedersen hash function.
     Pedersen,
-    /// One invocation of the Posedion hades perumuation.
+    /// One invocation of the Poseidon hades permutation.
     Poseidon,
     /// One invocation of the bitwise builtin.
     Bitwise,

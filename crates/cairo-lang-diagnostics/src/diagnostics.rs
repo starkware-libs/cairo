@@ -26,7 +26,7 @@ pub trait DiagnosticEntry: Clone + std::fmt::Debug + Eq + std::hash::Hash {
     // TODO(spapini): Add a way to inspect the diagnostic programmatically, e.g, downcast.
 }
 
-// The represenation of a source location inside a diagnostic.
+// The representation of a source location inside a diagnostic.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticLocation {
     pub file_id: FileId,
@@ -52,7 +52,7 @@ impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
 }
 
 /// A note about a diagnostic.
-/// may include a relevent diagnostic location.
+/// May include a relevant diagnostic location.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct DiagnosticNote {
     pub text: String,

@@ -174,35 +174,35 @@ macro_rules! prune_single {
 #[macro_export]
 macro_rules! add_basic_rewrites {
     (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
-        macro_rules! __identitity_helper {
+        macro_rules! __identity_helper {
             ($item:ident) => { $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
         macro_rules! __regular_helper {
             ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
-        $crate::prune_single!(__identitity_helper, InferenceId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ParamId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, LiteralId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, FreeFunctionId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ExternFunctionId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ExternTypeId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ImplDefId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ImplAliasId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, TraitId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, TraitFunctionId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, VariantId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ImplFunctionId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, EnumId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, StructId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, GenericParamId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, TypeVar, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, VarId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, MemberId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, LocalVarId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, LocalImplVarId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, LocalTypeVarId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, InferenceVar, $($exclude)*);
+        $crate::prune_single!(__identity_helper, InferenceId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ParamId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, LiteralId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, FreeFunctionId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ExternFunctionId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ExternTypeId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplDefId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplAliasId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, TraitId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, TraitFunctionId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, VariantId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ImplFunctionId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, EnumId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, StructId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, GenericParamId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, TypeVar, $($exclude)*);
+        $crate::prune_single!(__identity_helper, VarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, MemberId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, LocalVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, LocalImplVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, LocalTypeVarId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, InferenceVar, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Signature, $($exclude)*);
         $crate::prune_single!(__regular_helper, GenericFunctionId, $($exclude)*);
@@ -248,17 +248,17 @@ macro_rules! add_basic_rewrites {
 #[macro_export]
 macro_rules! add_expr_rewrites {
     (<$($generics:lifetime),*>, $self_ty:ty, $err_ty:ty, @exclude $($exclude:ident)*) => {
-        macro_rules! __identitity_helper {
+        macro_rules! __identity_helper {
             ($item:ident) => { $crate::add_rewrite_identity!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
         macro_rules! __regular_helper {
             ($item:ident) => { $crate::add_rewrite!(<$($generics),*>, $self_ty, $err_ty, $item); }
         }
 
-        $crate::prune_single!(__identitity_helper, ExprId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, PatternId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, StatementId, $($exclude)*);
-        $crate::prune_single!(__identitity_helper, ConstantId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ExprId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, PatternId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, StatementId, $($exclude)*);
+        $crate::prune_single!(__identity_helper, ConstantId, $($exclude)*);
 
         $crate::prune_single!(__regular_helper, Expr, $($exclude)*);
         $crate::prune_single!(__regular_helper, ExprTuple, $($exclude)*);

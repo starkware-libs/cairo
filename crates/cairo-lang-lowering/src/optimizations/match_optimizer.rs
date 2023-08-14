@@ -16,7 +16,7 @@ use crate::{
 pub type MatchOptimizerDemand = Demand<VariableId, (), ()>;
 
 /// Optimizes Statement::EnumConstruct that is followed by a match to jump to the target of the
-/// relevent match arm.
+/// relevant match arm.
 pub fn optimize_matches(lowered: &mut FlatLowered) {
     if !lowered.blocks.is_empty() {
         let ctx = MatchOptimizerContext { fixes: vec![] };
@@ -32,7 +32,7 @@ pub fn optimize_matches(lowered: &mut FlatLowered) {
             assert_eq!(
                 block.statements.len() - 1,
                 statement_location.1,
-                "The optimization can only be applied to the last statment in the block."
+                "The optimization can only be applied to the last statement in the block."
             );
             block.statements.pop();
 
@@ -193,7 +193,7 @@ impl<'a> Analyzer<'a> for MatchOptimizerContext {
 
                 if remapping.len() != expected_remappings {
                     // Remapping is currently not supported as it breaks SSA when we use the same
-                    // remapping with diffrent destantation blocks.
+                    // remapping with different destination blocks.
 
                     // TODO(ilya): Support multiple remappings.
                     info.candidate = None;

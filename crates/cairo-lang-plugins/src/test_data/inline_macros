@@ -133,7 +133,7 @@ fn some_func()
 
 //! > ==========================================================================
 
-//! > Test recursive consteval_int! 
+//! > Test recursive consteval_int!
 
 //! > test_runner_name
 test_expand_plugin
@@ -158,7 +158,7 @@ error: Unsupported expression in consteval_int macro
 
 //! > ==========================================================================
 
-//! > Test unknwon macro
+//! > Test unknown macro
 
 //! > test_runner_name
 test_expand_plugin

@@ -370,7 +370,7 @@ pub fn get_impl_at_context(
 }
 
 // TODO(spapini): type info lookup for non generic types needs to not depend on lookup_context.
-// This is to ensure that sierra genreator will see a consistent type info of types.
+// This is to ensure that sierra generator will see a consistent type info of types.
 /// Query implementation of [crate::db::SemanticGroup::type_info].
 pub fn type_info(
     db: &dyn SemanticGroup,

@@ -189,7 +189,7 @@ impl CairoFormatter {
     }
 
     /// Formats the path in place, writing changes to the files.
-    /// The ['FormattaableInput'] trait implementation defines the method for persisting changes.
+    /// The ['FormattableInput'] trait implementation defines the method for persisting changes.
     pub fn format_in_place(&self, input: &dyn FormattableInput) -> Result<FormatOutcome> {
         match format_input(input, &self.formatter_config)? {
             FormatOutcome::DiffFound(diff) => {

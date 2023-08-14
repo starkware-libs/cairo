@@ -82,7 +82,7 @@ impl DiagnosticEntry for LoweringDiagnostic {
                 "Currently, loops must change the entire variable.".into()
             }
             LoweringDiagnosticKind::UnexpectedError => {
-                "Unexpected error has occured, Please submit a full bug report. \
+                "Unexpected error has occurred, Please submit a full bug report. \
                 See https://github.com/starkware-libs/cairo/issues/new/choose for instructions.\
                 "
                 .into()

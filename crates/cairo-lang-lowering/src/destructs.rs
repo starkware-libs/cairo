@@ -25,7 +25,7 @@ use crate::{
 
 pub type DestructAdderDemand = Demand<VariableId, (), PanicState>;
 
-/// Context for the dectructor call addition phase,
+/// Context for the destructor call addition phase,
 pub struct DestructAdder<'a> {
     db: &'a dyn LoweringGroup,
     lowered: &'a FlatLowered,

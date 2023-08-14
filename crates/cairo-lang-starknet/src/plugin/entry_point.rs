@@ -59,13 +59,13 @@ pub fn generate_entry_point_wrapper(
 
     let Some((0, first_param)) = params.next() else {
         return Err(vec![PluginDiagnostic {
-            message: "The first paramater of an entry point must be `self`.".into(),
+            message: "The first parameter of an entry point must be `self`.".into(),
             stable_ptr: sig.stable_ptr().untyped(),
         }]);
     };
     if first_param.name(db).text(db) != "self" {
         return Err(vec![PluginDiagnostic {
-            message: "The first paramater of an entry point must be `self`.".into(),
+            message: "The first parameter of an entry point must be `self`.".into(),
             stable_ptr: first_param.stable_ptr().untyped(),
         }]);
     };

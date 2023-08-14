@@ -1077,31 +1077,31 @@ impl<'a> Parser<'a> {
     fn try_parse_argument_clause(&mut self) -> Option<ArgClauseGreen> {
         if self.peek().kind == SyntaxKind::TerminalColon {
             let colon = self.take::<TerminalColon>();
-            let argname = self.parse_identifier();
+            let name = self.parse_identifier();
             return Some(
                 ArgClauseFieldInitShorthand::new_green(
                     self.db,
                     colon,
-                    ExprFieldInitShorthand::new_green(self.db, argname),
+                    ExprFieldInitShorthand::new_green(self.db, name),
                 )
                 .into(),
             );
         }
 
         // Read an expression.
-        let expr_or_argname = self.try_parse_expr()?;
+        let value = self.try_parse_expr()?;
 
         // If the next token is `:` and the expression is an identifier, this is the argument's
         // name.
         if self.peek().kind == SyntaxKind::TerminalColon {
-            if let Some(argname) = self.try_extract_identifier(expr_or_argname) {
+            if let Some(argname) = self.try_extract_identifier(value) {
                 let colon = self.take::<TerminalColon>();
                 let expr = self.parse_expr();
                 return Some(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
             }
         }
 
-        Some(ArgClauseUnnamed::new_green(self.db, expr_or_argname).into())
+        Some(ArgClauseUnnamed::new_green(self.db, value).into())
     }
 
     /// If the given `expr` is a simple identifier, returns the corresponding green node.

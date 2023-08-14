@@ -65,7 +65,7 @@ pub enum StarknetSierraCompilationError {
     #[error("Invalid entry point signature.")]
     InvalidEntryPointSignature,
     #[error("Invalid constructor entry point.")]
-    InvalidContructorEntryPoint,
+    InvalidConstructorEntryPoint,
     #[error("{0} is not a supported builtin type.")]
     InvalidBuiltinType(ConcreteTypeId),
     #[error("Invalid entry point signature - builtins are not in the expected order.")]
@@ -242,7 +242,7 @@ impl CasmContractClass {
             [ContractEntryPoint { selector, .. }]
                 if selector == &*CONSTRUCTOR_ENTRY_POINT_SELECTOR => {}
             _ => {
-                return Err(StarknetSierraCompilationError::InvalidContructorEntryPoint);
+                return Err(StarknetSierraCompilationError::InvalidConstructorEntryPoint);
             }
         };
 

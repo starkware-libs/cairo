@@ -67,7 +67,7 @@ pub struct OutputReferenceValue {
     pub ty: ConcreteTypeId,
     /// The index of the variable on the continuous-stack.
     pub stack_idx: Option<usize>,
-    /// The statememt and output index where the value was introduced.
+    /// The statement and output index where the value was introduced.
     /// Statement may be New if it is to be populated later.
     pub introduction_point: OutputReferenceValueIntroductionPoint,
 }

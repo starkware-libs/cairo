@@ -99,7 +99,7 @@ impl ConfigMacroHelper {
     }
 
     /// Checks if any items within the trait should be dropped.
-    /// This is a more shallow lookup than full travese.
+    /// This is a more shallow lookup than full traverse.
     fn is_rewrite_needed_for_trait(&mut self, db: &dyn SyntaxGroup, item: &ast::ItemTrait) -> bool {
         match item.body(db) {
             ast::MaybeTraitBody::Some(body) => {
@@ -110,7 +110,7 @@ impl ConfigMacroHelper {
     }
 
     /// Checks if any items within the impl should be dropped.
-    /// This is a more shallow lookup than full travese.
+    /// This is a more shallow lookup than full traverse.
     fn is_rewrite_needed_for_impl(&mut self, db: &dyn SyntaxGroup, item: &ast::ItemImpl) -> bool {
         match item.body(db) {
             ast::MaybeImplBody::Some(body) => {
@@ -121,7 +121,7 @@ impl ConfigMacroHelper {
     }
 
     /// Checks if any items within the module should be dropped.
-    /// This is a more shallow lookup than full travese.
+    /// This is a more shallow lookup than full traverse.
     fn is_rewrite_needed_for_module(
         &mut self,
         db: &dyn SyntaxGroup,
@@ -138,7 +138,7 @@ impl ConfigMacroHelper {
     }
 
     /// Checks if any items within this item should be dropped.
-    /// This is a more shallow lookup than full travese.
+    /// This is a more shallow lookup than full traverse.
     fn is_rewrite_needed_for_item(&mut self, db: &dyn SyntaxGroup, item: &ast::Item) -> bool {
         match item {
             ast::Item::Module(module_item) => self.is_rewrite_needed_for_module(db, module_item),

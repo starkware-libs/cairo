@@ -444,7 +444,7 @@ fn lower_single_pattern(
                 .map(|var_id| {
                     LoweredExpr::AtVariable(VarUsage {
                         var_id,
-                        // The variable is used immediatly after the destructure, so the usage
+                        // The variable is used immediately after the destructure, so the usage
                         // location is the same as the definition location.
                         location: ctx.variables[var_id].location,
                     })
@@ -880,7 +880,7 @@ fn perform_function_call(
 
         if ret_ty == never_ty(ctx.db.upcast()) {
             // If the function returns never, the control flow is not allowed to continue.
-            // This special case is required because without it the followoing code:
+            // This special case is required because without it the following code:
             // ```
             //    let res: felt252 = match a {
             //        true => 1,

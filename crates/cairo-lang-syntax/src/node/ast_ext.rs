@@ -51,7 +51,7 @@ impl TerminalLiteralNumber {
         };
 
         // Catch an edge case, where literal seems to have a suffix that is valid numeric part
-        // according to the radix. Interpret this as an untyped numer.
+        // according to the radix. Interpret this as an untyped number.
         // Example: 0x1_f32 is interpreted as 0x1F32 without suffix.
         if let Ok(value) = BigInt::from_str_radix(text, radix) {
             Some((value, None))

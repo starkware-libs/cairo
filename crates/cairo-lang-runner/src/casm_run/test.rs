@@ -92,7 +92,7 @@ use crate::casm_run::run_function_with_starknet_context;
     casm! {
         [ap + 0] = 2, ap++;
         [ap + 0] = 1, ap++;
-        [ap - 1] = [ap + 0] * [ap - 2], ap++; // Caclulates.
+        [ap - 1] = [ap + 0] * [ap - 2], ap++; // Calculates.
         [ap - 2] = [ap - 1] * [ap - 3]; // Validates the calculation.
         ret;
     },

@@ -57,7 +57,7 @@ pub struct TypeVar {
     pub id: LocalTypeVarId,
 }
 
-/// An id for an inference context. Each inference variablwe is associated with an inference id.
+/// An id for an inference context. Each inference variable is associated with an inference id.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub enum InferenceId {
@@ -68,7 +68,7 @@ pub enum InferenceId {
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
     Canonical,
-    /// For resolving that will not be used anywhere in the semnatic model.
+    /// For resolving that will not be used anywhere in the semantic model.
     NoContext,
 }
 

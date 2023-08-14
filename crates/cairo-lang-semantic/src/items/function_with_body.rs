@@ -310,7 +310,7 @@ pub fn get_implicit_precedence<'a>(
     // Pick the last attribute if any.
     let Some(attr) = attributes.next() else { return Ok((ImplicitPrecedence::UNSPECIFIED, None)) };
 
-    // Report warnings for overriden attributes if any.
+    // Report warnings for overridden attributes if any.
     for attr in attributes {
         diagnostics.report_by_ptr(
             attr.id_stable_ptr.untyped(),
