@@ -196,7 +196,7 @@ impl BlockUsages {
                     .usage
                     .insert(MemberPath::Var(expr.var), ExprVarMemberPath::Var(expr.clone()));
             }
-            Expr::Literal(_) => {}
+            Expr::Literal(_) | Expr::StringLiteral(_) => {}
             Expr::MemberAccess(expr) => {
                 if let Some(member_path) = &expr.member_path {
                     current.usage.insert(member_path.into(), member_path.clone());
@@ -221,7 +221,7 @@ impl BlockUsages {
     fn handle_pattern(arena: &Arena<semantic::Pattern>, pattern: PatternId, current: &mut Usage) {
         let pattern = &arena[pattern];
         match pattern {
-            Pattern::Literal(_) => {}
+            Pattern::Literal(_) | Pattern::StringLiteral(_) => {}
             Pattern::Variable(pattern) => {
                 current.introductions.insert(VarId::Local(pattern.var.id));
             }
