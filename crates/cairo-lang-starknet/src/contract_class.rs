@@ -10,6 +10,7 @@ use cairo_lang_diagnostics::ToOption;
 use cairo_lang_filesystem::ids::CrateId;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
+use cairo_lang_sierra as sierra;
 use cairo_lang_sierra_generator::canonical_id_replacer::CanonicalReplacer;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{replace_sierra_ids_in_program, SierraIdReplacer};
@@ -28,7 +29,7 @@ use crate::compiler_version::{self};
 use crate::contract::{
     find_contracts, get_module_abi_functions, get_selector_and_sierra_function, ContractDeclaration,
 };
-use crate::felt252_serde::sierra_to_felt252s;
+use crate::felt252_serde::{sierra_from_felt252s, sierra_to_felt252s, Felt252SerdeError};
 use crate::inline_macros::selector::SelectorMacro;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::plugin::StarkNetPlugin;
@@ -53,6 +54,17 @@ pub struct ContractClass {
     pub contract_class_version: String,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Option<Contract>,
+}
+impl ContractClass {
+    /// Extracts Sierra program from the ContractClass and populates it with debug info if
+    /// available.
+    pub fn extract_sierra_program(&self) -> Result<sierra::program::Program, Felt252SerdeError> {
+        let (_, _, mut sierra_program) = sierra_from_felt252s(&self.sierra_program)?;
+        if let Some(info) = &self.sierra_program_debug_info {
+            info.populate(&mut sierra_program);
+        }
+        Ok(sierra_program)
+    }
 }
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";

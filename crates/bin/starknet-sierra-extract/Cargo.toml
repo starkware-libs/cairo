@@ -1,0 +1,16 @@
+[package]
+name = "starknet-sierra-extract"
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license-file.workspace = true
+description = "Compiler executable for printing Starknet Sierra json included code"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+cairo-lang-sierra = { path = "../../cairo-lang-sierra", version = "2.1.1" }
+cairo-lang-starknet = { path = "../../cairo-lang-starknet", version = "2.1.1" }
