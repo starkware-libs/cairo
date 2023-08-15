@@ -1,3 +1,4 @@
+use core::math::Oneable;
 use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
@@ -1873,12 +1874,12 @@ impl U8One of One<u8> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u8) -> bool {
-        self == U8One::one()
+    fn is_one(self: @u8) -> bool {
+        self == @U8One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u8) -> bool {
-        self != U8One::one()
+    fn is_non_one(self: @u8) -> bool {
+        !self.is_one()
     }
 }
 
@@ -1888,12 +1889,12 @@ impl U16One of One<u16> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u16) -> bool {
-        self == U16One::one()
+    fn is_one(self: @u16) -> bool {
+        self == @U16One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u16) -> bool {
-        self != U16One::one()
+    fn is_non_one(self: @u16) -> bool {
+        !self.is_one()
     }
 }
 
@@ -1903,12 +1904,12 @@ impl U32One of One<u32> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u32) -> bool {
-        self == U32One::one()
+    fn is_one(self: @u32) -> bool {
+        self == @U32One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u32) -> bool {
-        self != U32One::one()
+    fn is_non_one(self: @u32) -> bool {
+        !self.is_one()
     }
 }
 
@@ -1918,12 +1919,12 @@ impl U64One of One<u64> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u64) -> bool {
-        self == U64One::one()
+    fn is_one(self: @u64) -> bool {
+        self == @U64One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u64) -> bool {
-        self != U64One::one()
+    fn is_non_one(self: @u64) -> bool {
+        !self.is_one()
     }
 }
 
@@ -1933,12 +1934,12 @@ impl U128One of One<u128> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u128) -> bool {
-        self == U128One::one()
+    fn is_one(self: @u128) -> bool {
+        self == @U128One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u128) -> bool {
-        self != U128One::one()
+    fn is_non_one(self: @u128) -> bool {
+        !self.is_one()
     }
 }
 
@@ -1948,12 +1949,12 @@ impl U256One of One<u256> {
         1
     }
     #[inline(always)]
-    fn is_one(self: u256) -> bool {
-        self == U256One::one()
+    fn is_one(self: @u256) -> bool {
+        self == @U256One::one()
     }
     #[inline(always)]
-    fn is_non_one(self: u256) -> bool {
-        self != U256One::one()
+    fn is_non_one(self: @u256) -> bool {
+        !self.is_one()
     }
 }
 
