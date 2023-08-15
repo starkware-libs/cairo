@@ -22,8 +22,8 @@ impl fmt::Display for Program {
             writeln!(f, "{declaration};")?;
         }
         writeln!(f)?;
-        for statement in &self.statements {
-            writeln!(f, "{statement};")?;
+        for (i, statement) in self.statements.iter().enumerate() {
+            writeln!(f, "{statement}; // {i}")?;
         }
         writeln!(f)?;
         for func in &self.funcs {

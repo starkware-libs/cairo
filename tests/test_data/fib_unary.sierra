@@ -19,51 +19,51 @@ libfunc dup<felt252> = dup<felt252>;
 libfunc felt252_add = felt252_add;
 libfunc felt252_const<1> = felt252_const<1>;
 
-disable_ap_tracking() -> ();
-felt252_const<-1>() -> ([1]);
-felt252_const<-1>() -> ([2]);
-store_temp<felt252>([1]) -> ([4]);
-store_temp<felt252>([2]) -> ([5]);
-store_temp<felt252>([0]) -> ([6]);
-function_call<user@examples::fib_unary::inner::inner::fib_inner>([4], [5], [6]) -> ([3]);
-felt252_const<-1>() -> ([7]);
-felt252_mul([3], [7]) -> ([8]);
-store_temp<felt252>([8]) -> ([9]);
-return([9]);
-disable_ap_tracking() -> ();
-snapshot_take<felt252>([2]) -> ([3], [4]);
-felt252_const<0>() -> ([5]);
-snapshot_take<felt252>([5]) -> ([6], [7]);
-drop<felt252>([6]) -> ();
-rename<felt252>([4]) -> ([8]);
-snapshot_take<felt252>([8]) -> ([9], [10]);
-drop<felt252>([9]) -> ();
-rename<felt252>([7]) -> ([11]);
-snapshot_take<felt252>([11]) -> ([12], [13]);
-drop<felt252>([12]) -> ();
-rename<felt252>([10]) -> ([14]);
-rename<felt252>([13]) -> ([15]);
-felt252_sub([14], [15]) -> ([16]);
-store_temp<felt252>([16]) -> ([16]);
-felt252_is_zero([16]) { fallthrough() 32([17]) };
-branch_align() -> ();
-drop<felt252>([1]) -> ();
-drop<felt252>([3]) -> ();
-store_temp<felt252>([0]) -> ([18]);
-jump() { 43() };
-branch_align() -> ();
-drop<NonZero<felt252>>([17]) -> ();
-dup<felt252>([1]) -> ([1], [20]);
-felt252_add([0], [20]) -> ([19]);
-felt252_const<1>() -> ([21]);
-felt252_sub([3], [21]) -> ([22]);
-store_temp<felt252>([1]) -> ([24]);
-store_temp<felt252>([19]) -> ([25]);
-store_temp<felt252>([22]) -> ([26]);
-function_call<user@examples::fib_unary::inner::inner::fib_inner>([24], [25], [26]) -> ([23]);
-rename<felt252>([23]) -> ([18]);
-rename<felt252>([18]) -> ([27]);
-return([27]);
+disable_ap_tracking() -> (); // 0
+felt252_const<-1>() -> ([1]); // 1
+felt252_const<-1>() -> ([2]); // 2
+store_temp<felt252>([1]) -> ([4]); // 3
+store_temp<felt252>([2]) -> ([5]); // 4
+store_temp<felt252>([0]) -> ([6]); // 5
+function_call<user@examples::fib_unary::inner::inner::fib_inner>([4], [5], [6]) -> ([3]); // 6
+felt252_const<-1>() -> ([7]); // 7
+felt252_mul([3], [7]) -> ([8]); // 8
+store_temp<felt252>([8]) -> ([9]); // 9
+return([9]); // 10
+disable_ap_tracking() -> (); // 11
+snapshot_take<felt252>([2]) -> ([3], [4]); // 12
+felt252_const<0>() -> ([5]); // 13
+snapshot_take<felt252>([5]) -> ([6], [7]); // 14
+drop<felt252>([6]) -> (); // 15
+rename<felt252>([4]) -> ([8]); // 16
+snapshot_take<felt252>([8]) -> ([9], [10]); // 17
+drop<felt252>([9]) -> (); // 18
+rename<felt252>([7]) -> ([11]); // 19
+snapshot_take<felt252>([11]) -> ([12], [13]); // 20
+drop<felt252>([12]) -> (); // 21
+rename<felt252>([10]) -> ([14]); // 22
+rename<felt252>([13]) -> ([15]); // 23
+felt252_sub([14], [15]) -> ([16]); // 24
+store_temp<felt252>([16]) -> ([16]); // 25
+felt252_is_zero([16]) { fallthrough() 32([17]) }; // 26
+branch_align() -> (); // 27
+drop<felt252>([1]) -> (); // 28
+drop<felt252>([3]) -> (); // 29
+store_temp<felt252>([0]) -> ([18]); // 30
+jump() { 43() }; // 31
+branch_align() -> (); // 32
+drop<NonZero<felt252>>([17]) -> (); // 33
+dup<felt252>([1]) -> ([1], [20]); // 34
+felt252_add([0], [20]) -> ([19]); // 35
+felt252_const<1>() -> ([21]); // 36
+felt252_sub([3], [21]) -> ([22]); // 37
+store_temp<felt252>([1]) -> ([24]); // 38
+store_temp<felt252>([19]) -> ([25]); // 39
+store_temp<felt252>([22]) -> ([26]); // 40
+function_call<user@examples::fib_unary::inner::inner::fib_inner>([24], [25], [26]) -> ([23]); // 41
+rename<felt252>([23]) -> ([18]); // 42
+rename<felt252>([18]) -> ([27]); // 43
+return([27]); // 44
 
 examples::fib_unary::fib@0([0]: felt252) -> (felt252);
 examples::fib_unary::inner::inner::fib_inner@11([0]: felt252, [1]: felt252, [2]: felt252) -> (felt252);

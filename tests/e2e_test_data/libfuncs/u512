@@ -177,36 +177,36 @@ libfunc u128_mul_guarantee_verify = u128_mul_guarantee_verify;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]);
-store_temp<RangeCheck>([3]) -> ([13]);
-store_temp<U128MulGuarantee>([10]) -> ([14]);
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([13], [14]) -> ([11], [12]);
-drop<Unit>([12]) -> ();
-store_temp<RangeCheck>([11]) -> ([17]);
-store_temp<U128MulGuarantee>([9]) -> ([18]);
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([17], [18]) -> ([15], [16]);
-drop<Unit>([16]) -> ();
-store_temp<RangeCheck>([15]) -> ([21]);
-store_temp<U128MulGuarantee>([8]) -> ([22]);
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([21], [22]) -> ([19], [20]);
-drop<Unit>([20]) -> ();
-store_temp<RangeCheck>([19]) -> ([25]);
-store_temp<U128MulGuarantee>([7]) -> ([26]);
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([25], [26]) -> ([23], [24]);
-drop<Unit>([24]) -> ();
-store_temp<RangeCheck>([23]) -> ([29]);
-store_temp<U128MulGuarantee>([6]) -> ([30]);
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([29], [30]) -> ([27], [28]);
-drop<Unit>([28]) -> ();
-struct_construct<Tuple<core::integer::u512, core::integer::u256>>([4], [5]) -> ([31]);
-store_temp<RangeCheck>([27]) -> ([32]);
-store_temp<Tuple<core::integer::u512, core::integer::u256>>([31]) -> ([33]);
-return([32], [33]);
-u128_mul_guarantee_verify([0], [1]) -> ([2]);
-struct_construct<Unit>() -> ([3]);
-store_temp<RangeCheck>([2]) -> ([4]);
-store_temp<Unit>([3]) -> ([5]);
-return([4], [5]);
+u512_safe_divmod_by_u256([0], [1], [2]) -> ([3], [4], [5], [6], [7], [8], [9], [10]); // 0
+store_temp<RangeCheck>([3]) -> ([13]); // 1
+store_temp<U128MulGuarantee>([10]) -> ([14]); // 2
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([13], [14]) -> ([11], [12]); // 3
+drop<Unit>([12]) -> (); // 4
+store_temp<RangeCheck>([11]) -> ([17]); // 5
+store_temp<U128MulGuarantee>([9]) -> ([18]); // 6
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([17], [18]) -> ([15], [16]); // 7
+drop<Unit>([16]) -> (); // 8
+store_temp<RangeCheck>([15]) -> ([21]); // 9
+store_temp<U128MulGuarantee>([8]) -> ([22]); // 10
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([21], [22]) -> ([19], [20]); // 11
+drop<Unit>([20]) -> (); // 12
+store_temp<RangeCheck>([19]) -> ([25]); // 13
+store_temp<U128MulGuarantee>([7]) -> ([26]); // 14
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([25], [26]) -> ([23], [24]); // 15
+drop<Unit>([24]) -> (); // 16
+store_temp<RangeCheck>([23]) -> ([29]); // 17
+store_temp<U128MulGuarantee>([6]) -> ([30]); // 18
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([29], [30]) -> ([27], [28]); // 19
+drop<Unit>([28]) -> (); // 20
+struct_construct<Tuple<core::integer::u512, core::integer::u256>>([4], [5]) -> ([31]); // 21
+store_temp<RangeCheck>([27]) -> ([32]); // 22
+store_temp<Tuple<core::integer::u512, core::integer::u256>>([31]) -> ([33]); // 23
+return([32], [33]); // 24
+u128_mul_guarantee_verify([0], [1]) -> ([2]); // 25
+struct_construct<Unit>() -> ([3]); // 26
+store_temp<RangeCheck>([2]) -> ([4]); // 27
+store_temp<Unit>([3]) -> ([5]); // 28
+return([4], [5]); // 29
 
 test::foo@0([0]: RangeCheck, [1]: core::integer::u512, [2]: NonZero<core::integer::u256>) -> (RangeCheck, Tuple<core::integer::u512, core::integer::u256>);
 core::integer::U128MulGuaranteeDestruct::destruct@25([0]: RangeCheck, [1]: U128MulGuarantee) -> (RangeCheck, Unit);

@@ -28,9 +28,9 @@ type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_si
 libfunc into_box<felt252> = into_box<felt252>;
 libfunc rename<Box<felt252>> = rename<Box<felt252>>;
 
-into_box<felt252>([0]) -> ([1]);
-rename<Box<felt252>>([1]) -> ([2]);
-return([2]);
+into_box<felt252>([0]) -> ([1]); // 0
+rename<Box<felt252>>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: felt252) -> (Box<felt252>);
 
@@ -60,9 +60,9 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc unbox<felt252> = unbox<felt252>;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-unbox<felt252>([0]) -> ([1]);
-store_temp<felt252>([1]) -> ([2]);
-return([2]);
+unbox<felt252>([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: Box<felt252>) -> (felt252);
 
@@ -100,9 +100,9 @@ type Box<core::integer::u256> = Box<core::integer::u256> [storable: true, drop: 
 libfunc into_box<core::integer::u256> = into_box<core::integer::u256>;
 libfunc rename<Box<core::integer::u256>> = rename<Box<core::integer::u256>>;
 
-into_box<core::integer::u256>([0]) -> ([1]);
-rename<Box<core::integer::u256>>([1]) -> ([2]);
-return([2]);
+into_box<core::integer::u256>([0]) -> ([1]); // 0
+rename<Box<core::integer::u256>>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: core::integer::u256) -> (Box<core::integer::u256>);
 
@@ -134,9 +134,9 @@ type core::integer::u256 = Struct<ut@core::integer::u256, u128, u128> [storable:
 libfunc unbox<core::integer::u256> = unbox<core::integer::u256>;
 libfunc store_temp<core::integer::u256> = store_temp<core::integer::u256>;
 
-unbox<core::integer::u256>([0]) -> ([1]);
-store_temp<core::integer::u256>([1]) -> ([2]);
-return([2]);
+unbox<core::integer::u256>([0]) -> ([1]); // 0
+store_temp<core::integer::u256>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: Box<core::integer::u256>) -> (core::integer::u256);
 
@@ -168,11 +168,11 @@ libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc into_box<Unit> = into_box<Unit>;
 libfunc rename<Box<Unit>> = rename<Box<Unit>>;
 
-struct_construct<Unit>() -> ([0]);
-store_temp<Unit>([0]) -> ([0]);
-into_box<Unit>([0]) -> ([1]);
-rename<Box<Unit>>([1]) -> ([2]);
-return([2]);
+struct_construct<Unit>() -> ([0]); // 0
+store_temp<Unit>([0]) -> ([0]); // 1
+into_box<Unit>([0]) -> ([1]); // 2
+rename<Box<Unit>>([1]) -> ([2]); // 3
+return([2]); // 4
 
 test::foo@0() -> (Box<Unit>);
 
@@ -201,9 +201,9 @@ type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized:
 libfunc unbox<Unit> = unbox<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
-unbox<Unit>([0]) -> ([1]);
-store_temp<Unit>([1]) -> ([2]);
-return([2]);
+unbox<Unit>([0]) -> ([1]); // 0
+store_temp<Unit>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: Box<Unit>) -> (Unit);
 
@@ -236,11 +236,11 @@ libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 libfunc into_box<test::Empty> = into_box<test::Empty>;
 libfunc rename<Box<test::Empty>> = rename<Box<test::Empty>>;
 
-struct_construct<test::Empty>() -> ([0]);
-store_temp<test::Empty>([0]) -> ([0]);
-into_box<test::Empty>([0]) -> ([1]);
-rename<Box<test::Empty>>([1]) -> ([2]);
-return([2]);
+struct_construct<test::Empty>() -> ([0]); // 0
+store_temp<test::Empty>([0]) -> ([0]); // 1
+into_box<test::Empty>([0]) -> ([1]); // 2
+rename<Box<test::Empty>>([1]) -> ([2]); // 3
+return([2]); // 4
 
 test::foo@0() -> (Box<test::Empty>);
 
@@ -270,8 +270,8 @@ type test::Empty = Struct<ut@test::Empty> [storable: true, drop: true, dup: true
 libfunc unbox<test::Empty> = unbox<test::Empty>;
 libfunc store_temp<test::Empty> = store_temp<test::Empty>;
 
-unbox<test::Empty>([0]) -> ([1]);
-store_temp<test::Empty>([1]) -> ([2]);
-return([2]);
+unbox<test::Empty>([0]) -> ([1]); // 0
+store_temp<test::Empty>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: Box<test::Empty>) -> (test::Empty);

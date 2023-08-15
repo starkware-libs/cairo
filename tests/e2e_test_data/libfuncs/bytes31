@@ -21,9 +21,9 @@ type bytes31 = bytes31 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc bytes31_const<256> = bytes31_const<256>;
 libfunc store_temp<bytes31> = store_temp<bytes31>;
 
-bytes31_const<256>() -> ([0]);
-store_temp<bytes31>([0]) -> ([1]);
-return([1]);
+bytes31_const<256>() -> ([0]); // 0
+store_temp<bytes31>([0]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0() -> (bytes31);
 
@@ -101,20 +101,20 @@ libfunc enum_init<core::option::Option::<core::bytes_31::bytes31>, 1> = enum_ini
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::bytes_31::bytes31>> = rename<core::option::Option::<core::bytes_31::bytes31>>;
 
-bytes31_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::bytes_31::bytes31>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([6]);
-store_temp<core::option::Option::<core::bytes_31::bytes31>>([5]) -> ([7]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([8]);
-enum_init<core::option::Option::<core::bytes_31::bytes31>, 1>([8]) -> ([9]);
-store_temp<RangeCheck>([4]) -> ([6]);
-store_temp<core::option::Option::<core::bytes_31::bytes31>>([9]) -> ([7]);
-rename<RangeCheck>([6]) -> ([10]);
-rename<core::option::Option::<core::bytes_31::bytes31>>([7]) -> ([11]);
-return([10], [11]);
+bytes31_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::bytes_31::bytes31>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([6]); // 3
+store_temp<core::option::Option::<core::bytes_31::bytes31>>([5]) -> ([7]); // 4
+jump() { 11() }; // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([8]); // 7
+enum_init<core::option::Option::<core::bytes_31::bytes31>, 1>([8]) -> ([9]); // 8
+store_temp<RangeCheck>([4]) -> ([6]); // 9
+store_temp<core::option::Option::<core::bytes_31::bytes31>>([9]) -> ([7]); // 10
+rename<RangeCheck>([6]) -> ([10]); // 11
+rename<core::option::Option::<core::bytes_31::bytes31>>([7]) -> ([11]); // 12
+return([10], [11]); // 13
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::bytes_31::bytes31>);
 
@@ -144,8 +144,8 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc bytes31_to_felt252 = bytes31_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-bytes31_to_felt252([0]) -> ([1]);
-store_temp<felt252>([1]) -> ([2]);
-return([2]);
+bytes31_to_felt252([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: bytes31) -> (felt252);

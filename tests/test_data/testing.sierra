@@ -11,10 +11,10 @@ libfunc struct_construct<Tuple<Unit>> = struct_construct<Tuple<Unit>>;
 libfunc enum_init<core::panics::PanicResult::<((),)>, 0> = enum_init<core::panics::PanicResult::<((),)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics::PanicResult::<((),)>>;
 
-struct_construct<Unit>() -> ([0]);
-struct_construct<Tuple<Unit>>([0]) -> ([1]);
-enum_init<core::panics::PanicResult::<((),)>, 0>([1]) -> ([2]);
-store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([3]);
-return([3]);
+struct_construct<Unit>() -> ([0]); // 0
+struct_construct<Tuple<Unit>>([0]) -> ([1]); // 1
+enum_init<core::panics::PanicResult::<((),)>, 0>([1]) -> ([2]); // 2
+store_temp<core::panics::PanicResult::<((),)>>([2]) -> ([3]); // 3
+return([3]); // 4
 
 examples::testing::run_tests@0() -> (core::panics::PanicResult::<((),)>);

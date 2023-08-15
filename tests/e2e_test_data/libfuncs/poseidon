@@ -31,11 +31,11 @@ libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tu
 libfunc store_temp<Poseidon> = store_temp<Poseidon>;
 libfunc store_temp<Tuple<felt252, felt252, felt252>> = store_temp<Tuple<felt252, felt252, felt252>>;
 
-hades_permutation([0], [1], [2], [3]) -> ([4], [5], [6], [7]);
-struct_construct<Tuple<felt252, felt252, felt252>>([5], [6], [7]) -> ([8]);
-store_temp<Poseidon>([4]) -> ([9]);
-store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([10]);
-return([9], [10]);
+hades_permutation([0], [1], [2], [3]) -> ([4], [5], [6], [7]); // 0
+struct_construct<Tuple<felt252, felt252, felt252>>([5], [6], [7]) -> ([8]); // 1
+store_temp<Poseidon>([4]) -> ([9]); // 2
+store_temp<Tuple<felt252, felt252, felt252>>([8]) -> ([10]); // 3
+return([9], [10]); // 4
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, Tuple<felt252, felt252, felt252>);
 
@@ -162,109 +162,109 @@ libfunc drop<felt252> = drop<felt252>;
 libfunc rename<Poseidon> = rename<Poseidon>;
 libfunc rename<felt252> = rename<felt252>;
 
-felt252_const<0>() -> ([4]);
-felt252_const<0>() -> ([5]);
-felt252_const<0>() -> ([6]);
-struct_construct<Unit>() -> ([7]);
-enum_init<core::bool, 0>([7]) -> ([8]);
-struct_construct<core::poseidon::HashState>([4], [5], [6], [8]) -> ([9]);
-struct_construct<Tuple<felt252, felt252, felt252>>([1], [2], [3]) -> ([10]);
-struct_deconstruct<Tuple<felt252, felt252, felt252>>([10]) -> ([11], [12], [13]);
-struct_deconstruct<core::poseidon::HashState>([9]) -> ([14], [15], [16], [17]);
-store_temp<core::bool>([17]) -> ([17]);
-store_temp<felt252>([13]) -> ([13]);
-store_temp<felt252>([11]) -> ([11]);
-store_temp<felt252>([12]) -> ([12]);
-store_temp<felt252>([14]) -> ([14]);
-store_temp<felt252>([15]) -> ([15]);
-store_temp<felt252>([16]) -> ([16]);
-enum_match<core::bool>([17]) { fallthrough([18]) 26([19]) };
-branch_align() -> ();
-drop<Unit>([18]) -> ();
-felt252_add([14], [11]) -> ([20]);
-struct_construct<Unit>() -> ([21]);
-enum_init<core::bool, 1>([21]) -> ([22]);
-struct_construct<core::poseidon::HashState>([20], [15], [16], [22]) -> ([23]);
-store_temp<Poseidon>([0]) -> ([24]);
-store_temp<core::poseidon::HashState>([23]) -> ([25]);
-jump() { 36() };
-branch_align() -> ();
-drop<Unit>([19]) -> ();
-felt252_add([15], [11]) -> ([26]);
-store_temp<felt252>([26]) -> ([26]);
-hades_permutation([0], [14], [26], [16]) -> ([27], [28], [29], [30]);
-struct_construct<Unit>() -> ([31]);
-enum_init<core::bool, 0>([31]) -> ([32]);
-struct_construct<core::poseidon::HashState>([28], [29], [30], [32]) -> ([33]);
-store_temp<Poseidon>([27]) -> ([24]);
-store_temp<core::poseidon::HashState>([33]) -> ([25]);
-struct_deconstruct<core::poseidon::HashState>([25]) -> ([34], [35], [36], [37]);
-enum_match<core::bool>([37]) { fallthrough([38]) 47([39]) };
-branch_align() -> ();
-drop<Unit>([38]) -> ();
-felt252_add([34], [12]) -> ([40]);
-struct_construct<Unit>() -> ([41]);
-enum_init<core::bool, 1>([41]) -> ([42]);
-struct_construct<core::poseidon::HashState>([40], [35], [36], [42]) -> ([43]);
-store_temp<Poseidon>([24]) -> ([44]);
-store_temp<core::poseidon::HashState>([43]) -> ([45]);
-jump() { 57() };
-branch_align() -> ();
-drop<Unit>([39]) -> ();
-felt252_add([35], [12]) -> ([46]);
-store_temp<felt252>([46]) -> ([46]);
-hades_permutation([24], [34], [46], [36]) -> ([47], [48], [49], [50]);
-struct_construct<Unit>() -> ([51]);
-enum_init<core::bool, 0>([51]) -> ([52]);
-struct_construct<core::poseidon::HashState>([48], [49], [50], [52]) -> ([53]);
-store_temp<Poseidon>([47]) -> ([44]);
-store_temp<core::poseidon::HashState>([53]) -> ([45]);
-struct_deconstruct<core::poseidon::HashState>([45]) -> ([54], [55], [56], [57]);
-enum_match<core::bool>([57]) { fallthrough([58]) 68([59]) };
-branch_align() -> ();
-drop<Unit>([58]) -> ();
-felt252_add([54], [13]) -> ([60]);
-struct_construct<Unit>() -> ([61]);
-enum_init<core::bool, 1>([61]) -> ([62]);
-struct_construct<core::poseidon::HashState>([60], [55], [56], [62]) -> ([63]);
-store_temp<Poseidon>([44]) -> ([64]);
-store_temp<core::poseidon::HashState>([63]) -> ([65]);
-jump() { 78() };
-branch_align() -> ();
-drop<Unit>([59]) -> ();
-felt252_add([55], [13]) -> ([66]);
-store_temp<felt252>([66]) -> ([66]);
-hades_permutation([44], [54], [66], [56]) -> ([67], [68], [69], [70]);
-struct_construct<Unit>() -> ([71]);
-enum_init<core::bool, 0>([71]) -> ([72]);
-struct_construct<core::poseidon::HashState>([68], [69], [70], [72]) -> ([73]);
-store_temp<Poseidon>([67]) -> ([64]);
-store_temp<core::poseidon::HashState>([73]) -> ([65]);
-struct_deconstruct<core::poseidon::HashState>([65]) -> ([74], [75], [76], [77]);
-enum_match<core::bool>([77]) { fallthrough([78]) 91([79]) };
-branch_align() -> ();
-drop<Unit>([78]) -> ();
-felt252_const<1>() -> ([80]);
-felt252_add([74], [80]) -> ([81]);
-store_temp<felt252>([81]) -> ([81]);
-hades_permutation([64], [81], [75], [76]) -> ([82], [83], [84], [85]);
-drop<felt252>([84]) -> ();
-drop<felt252>([85]) -> ();
-store_temp<Poseidon>([82]) -> ([86]);
-store_temp<felt252>([83]) -> ([87]);
-jump() { 101() };
-branch_align() -> ();
-drop<Unit>([79]) -> ();
-felt252_const<1>() -> ([88]);
-felt252_add([75], [88]) -> ([89]);
-store_temp<felt252>([89]) -> ([89]);
-hades_permutation([64], [74], [89], [76]) -> ([90], [91], [92], [93]);
-drop<felt252>([92]) -> ();
-drop<felt252>([93]) -> ();
-store_temp<Poseidon>([90]) -> ([86]);
-store_temp<felt252>([91]) -> ([87]);
-rename<Poseidon>([86]) -> ([94]);
-rename<felt252>([87]) -> ([95]);
-return([94], [95]);
+felt252_const<0>() -> ([4]); // 0
+felt252_const<0>() -> ([5]); // 1
+felt252_const<0>() -> ([6]); // 2
+struct_construct<Unit>() -> ([7]); // 3
+enum_init<core::bool, 0>([7]) -> ([8]); // 4
+struct_construct<core::poseidon::HashState>([4], [5], [6], [8]) -> ([9]); // 5
+struct_construct<Tuple<felt252, felt252, felt252>>([1], [2], [3]) -> ([10]); // 6
+struct_deconstruct<Tuple<felt252, felt252, felt252>>([10]) -> ([11], [12], [13]); // 7
+struct_deconstruct<core::poseidon::HashState>([9]) -> ([14], [15], [16], [17]); // 8
+store_temp<core::bool>([17]) -> ([17]); // 9
+store_temp<felt252>([13]) -> ([13]); // 10
+store_temp<felt252>([11]) -> ([11]); // 11
+store_temp<felt252>([12]) -> ([12]); // 12
+store_temp<felt252>([14]) -> ([14]); // 13
+store_temp<felt252>([15]) -> ([15]); // 14
+store_temp<felt252>([16]) -> ([16]); // 15
+enum_match<core::bool>([17]) { fallthrough([18]) 26([19]) }; // 16
+branch_align() -> (); // 17
+drop<Unit>([18]) -> (); // 18
+felt252_add([14], [11]) -> ([20]); // 19
+struct_construct<Unit>() -> ([21]); // 20
+enum_init<core::bool, 1>([21]) -> ([22]); // 21
+struct_construct<core::poseidon::HashState>([20], [15], [16], [22]) -> ([23]); // 22
+store_temp<Poseidon>([0]) -> ([24]); // 23
+store_temp<core::poseidon::HashState>([23]) -> ([25]); // 24
+jump() { 36() }; // 25
+branch_align() -> (); // 26
+drop<Unit>([19]) -> (); // 27
+felt252_add([15], [11]) -> ([26]); // 28
+store_temp<felt252>([26]) -> ([26]); // 29
+hades_permutation([0], [14], [26], [16]) -> ([27], [28], [29], [30]); // 30
+struct_construct<Unit>() -> ([31]); // 31
+enum_init<core::bool, 0>([31]) -> ([32]); // 32
+struct_construct<core::poseidon::HashState>([28], [29], [30], [32]) -> ([33]); // 33
+store_temp<Poseidon>([27]) -> ([24]); // 34
+store_temp<core::poseidon::HashState>([33]) -> ([25]); // 35
+struct_deconstruct<core::poseidon::HashState>([25]) -> ([34], [35], [36], [37]); // 36
+enum_match<core::bool>([37]) { fallthrough([38]) 47([39]) }; // 37
+branch_align() -> (); // 38
+drop<Unit>([38]) -> (); // 39
+felt252_add([34], [12]) -> ([40]); // 40
+struct_construct<Unit>() -> ([41]); // 41
+enum_init<core::bool, 1>([41]) -> ([42]); // 42
+struct_construct<core::poseidon::HashState>([40], [35], [36], [42]) -> ([43]); // 43
+store_temp<Poseidon>([24]) -> ([44]); // 44
+store_temp<core::poseidon::HashState>([43]) -> ([45]); // 45
+jump() { 57() }; // 46
+branch_align() -> (); // 47
+drop<Unit>([39]) -> (); // 48
+felt252_add([35], [12]) -> ([46]); // 49
+store_temp<felt252>([46]) -> ([46]); // 50
+hades_permutation([24], [34], [46], [36]) -> ([47], [48], [49], [50]); // 51
+struct_construct<Unit>() -> ([51]); // 52
+enum_init<core::bool, 0>([51]) -> ([52]); // 53
+struct_construct<core::poseidon::HashState>([48], [49], [50], [52]) -> ([53]); // 54
+store_temp<Poseidon>([47]) -> ([44]); // 55
+store_temp<core::poseidon::HashState>([53]) -> ([45]); // 56
+struct_deconstruct<core::poseidon::HashState>([45]) -> ([54], [55], [56], [57]); // 57
+enum_match<core::bool>([57]) { fallthrough([58]) 68([59]) }; // 58
+branch_align() -> (); // 59
+drop<Unit>([58]) -> (); // 60
+felt252_add([54], [13]) -> ([60]); // 61
+struct_construct<Unit>() -> ([61]); // 62
+enum_init<core::bool, 1>([61]) -> ([62]); // 63
+struct_construct<core::poseidon::HashState>([60], [55], [56], [62]) -> ([63]); // 64
+store_temp<Poseidon>([44]) -> ([64]); // 65
+store_temp<core::poseidon::HashState>([63]) -> ([65]); // 66
+jump() { 78() }; // 67
+branch_align() -> (); // 68
+drop<Unit>([59]) -> (); // 69
+felt252_add([55], [13]) -> ([66]); // 70
+store_temp<felt252>([66]) -> ([66]); // 71
+hades_permutation([44], [54], [66], [56]) -> ([67], [68], [69], [70]); // 72
+struct_construct<Unit>() -> ([71]); // 73
+enum_init<core::bool, 0>([71]) -> ([72]); // 74
+struct_construct<core::poseidon::HashState>([68], [69], [70], [72]) -> ([73]); // 75
+store_temp<Poseidon>([67]) -> ([64]); // 76
+store_temp<core::poseidon::HashState>([73]) -> ([65]); // 77
+struct_deconstruct<core::poseidon::HashState>([65]) -> ([74], [75], [76], [77]); // 78
+enum_match<core::bool>([77]) { fallthrough([78]) 91([79]) }; // 79
+branch_align() -> (); // 80
+drop<Unit>([78]) -> (); // 81
+felt252_const<1>() -> ([80]); // 82
+felt252_add([74], [80]) -> ([81]); // 83
+store_temp<felt252>([81]) -> ([81]); // 84
+hades_permutation([64], [81], [75], [76]) -> ([82], [83], [84], [85]); // 85
+drop<felt252>([84]) -> (); // 86
+drop<felt252>([85]) -> (); // 87
+store_temp<Poseidon>([82]) -> ([86]); // 88
+store_temp<felt252>([83]) -> ([87]); // 89
+jump() { 101() }; // 90
+branch_align() -> (); // 91
+drop<Unit>([79]) -> (); // 92
+felt252_const<1>() -> ([88]); // 93
+felt252_add([75], [88]) -> ([89]); // 94
+store_temp<felt252>([89]) -> ([89]); // 95
+hades_permutation([64], [74], [89], [76]) -> ([90], [91], [92], [93]); // 96
+drop<felt252>([92]) -> (); // 97
+drop<felt252>([93]) -> (); // 98
+store_temp<Poseidon>([90]) -> ([86]); // 99
+store_temp<felt252>([91]) -> ([87]); // 100
+rename<Poseidon>([86]) -> ([94]); // 101
+rename<felt252>([87]) -> ([95]); // 102
+return([94], [95]); // 103
 
 test::foo@0([0]: Poseidon, [1]: felt252, [2]: felt252, [3]: felt252) -> (Poseidon, felt252);

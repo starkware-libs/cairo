@@ -61,10 +61,10 @@ libfunc storage_base_address_from_felt252 = storage_base_address_from_felt252;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<StorageBaseAddress> = store_temp<StorageBaseAddress>;
 
-storage_base_address_from_felt252([0], [1]) -> ([2], [3]);
-store_temp<RangeCheck>([2]) -> ([4]);
-store_temp<StorageBaseAddress>([3]) -> ([5]);
-return([4], [5]);
+storage_base_address_from_felt252([0], [1]) -> ([2], [3]); // 0
+store_temp<RangeCheck>([2]) -> ([4]); // 1
+store_temp<StorageBaseAddress>([3]) -> ([5]); // 2
+return([4], [5]); // 3
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, StorageBaseAddress);
 
@@ -97,9 +97,9 @@ type u8 = u8 [storable: true, drop: true, dup: true, zero_sized: false];
 libfunc storage_address_from_base_and_offset = storage_address_from_base_and_offset;
 libfunc store_temp<StorageAddress> = store_temp<StorageAddress>;
 
-storage_address_from_base_and_offset([0], [1]) -> ([2]);
-store_temp<StorageAddress>([2]) -> ([3]);
-return([3]);
+storage_address_from_base_and_offset([0], [1]) -> ([2]); // 0
+store_temp<StorageAddress>([2]) -> ([3]); // 1
+return([3]); // 2
 
 test::foo@0([0]: StorageBaseAddress, [1]: u8) -> (StorageAddress);
 
@@ -179,19 +179,19 @@ libfunc enum_init<core::option::Option::<core::starknet::storage_access::Storage
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::starknet::storage_access::StorageAddress>> = rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>;
 
-storage_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([5]) -> ([7]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([8]);
-enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>([8]) -> ([9]);
-store_temp<RangeCheck>([4]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([9]) -> ([7]);
-rename<RangeCheck>([6]) -> ([10]);
-rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>([7]) -> ([11]);
-return([10], [11]);
+storage_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([6]); // 3
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([5]) -> ([7]); // 4
+jump() { 11() }; // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([8]); // 7
+enum_init<core::option::Option::<core::starknet::storage_access::StorageAddress>, 1>([8]) -> ([9]); // 8
+store_temp<RangeCheck>([4]) -> ([6]); // 9
+store_temp<core::option::Option::<core::starknet::storage_access::StorageAddress>>([9]) -> ([7]); // 10
+rename<RangeCheck>([6]) -> ([10]); // 11
+rename<core::option::Option::<core::starknet::storage_access::StorageAddress>>([7]) -> ([11]); // 12
+return([10], [11]); // 13
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::storage_access::StorageAddress>);
