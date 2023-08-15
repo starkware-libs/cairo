@@ -81,8 +81,8 @@ fn test_populate_names() {
             libfunc rename_u128 = rename<u128>;
             libfunc rename_gb = rename<GasBuiltin>;
 
-            rename_u128(a) -> (a);
-            rename_gb(gb) -> (gb);
+            rename_u128(a) -> (a); // 0
+            rename_gb(gb) -> (gb); // 1
 
             Func1@1(a: u128, gb: GasBuiltin) -> (GasBuiltin);
             Func2@6() -> ();

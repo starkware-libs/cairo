@@ -72,20 +72,20 @@ libfunc enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>,
 libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<core::option::Option::<core::starknet::class_hash::ClassHash>> = rename<core::option::Option::<core::starknet::class_hash::ClassHash>>;
 
-class_hash_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) };
-branch_align() -> ();
-enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 0>([3]) -> ([5]);
-store_temp<RangeCheck>([2]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::class_hash::ClassHash>>([5]) -> ([7]);
-jump() { 11() };
-branch_align() -> ();
-struct_construct<Unit>() -> ([8]);
-enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 1>([8]) -> ([9]);
-store_temp<RangeCheck>([4]) -> ([6]);
-store_temp<core::option::Option::<core::starknet::class_hash::ClassHash>>([9]) -> ([7]);
-rename<RangeCheck>([6]) -> ([10]);
-rename<core::option::Option::<core::starknet::class_hash::ClassHash>>([7]) -> ([11]);
-return([10], [11]);
+class_hash_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
+branch_align() -> (); // 1
+enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 0>([3]) -> ([5]); // 2
+store_temp<RangeCheck>([2]) -> ([6]); // 3
+store_temp<core::option::Option::<core::starknet::class_hash::ClassHash>>([5]) -> ([7]); // 4
+jump() { 11() }; // 5
+branch_align() -> (); // 6
+struct_construct<Unit>() -> ([8]); // 7
+enum_init<core::option::Option::<core::starknet::class_hash::ClassHash>, 1>([8]) -> ([9]); // 8
+store_temp<RangeCheck>([4]) -> ([6]); // 9
+store_temp<core::option::Option::<core::starknet::class_hash::ClassHash>>([9]) -> ([7]); // 10
+rename<RangeCheck>([6]) -> ([10]); // 11
+rename<core::option::Option::<core::starknet::class_hash::ClassHash>>([7]) -> ([11]); // 12
+return([10], [11]); // 13
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::class_hash::ClassHash>);
 
@@ -117,8 +117,8 @@ type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false
 libfunc class_hash_to_felt252 = class_hash_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
-class_hash_to_felt252([0]) -> ([1]);
-store_temp<felt252>([1]) -> ([2]);
-return([2]);
+class_hash_to_felt252([0]) -> ([1]); // 0
+store_temp<felt252>([1]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: ClassHash) -> (felt252);
