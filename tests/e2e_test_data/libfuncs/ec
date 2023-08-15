@@ -471,23 +471,9 @@ ret;
 test::foo: OrderedHashMap({Const: 1500})
 
 //! > sierra_code
-<<<<<<< HEAD
-type EcState = EcState;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-||||||| parent of 4571a1e5d... Self ref user type support.
-type EcState = EcState;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
-=======
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
-type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
->>>>>>> 4571a1e5d... Self ref user type support.
 
 libfunc ec_state_try_finalize_nz = ec_state_try_finalize_nz;
 libfunc branch_align = branch_align;
