@@ -1,24 +1,27 @@
-pub mod array;
-pub mod consteval_int;
+mod array;
+mod consteval_int;
 
-use cairo_lang_defs::plugin::{InlineMacroPlugin, InlinePluginResult, PluginDiagnostic};
+use std::sync::Arc;
+
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic};
 use cairo_lang_syntax::node::ast::{self};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::inline_macros::array::ArrayMacro;
 use super::inline_macros::consteval_int::ConstevalIntMacro;
 
-/// Returns the inline macro plugin for the given macro name, or None if no such plugin exists.
-pub fn get_inline_macro_plugin(macro_name: &str) -> Option<Box<dyn InlineMacroPlugin>> {
-    match macro_name {
-        "array" => Some(Box::new(ArrayMacro)),
-        "consteval_int" => Some(Box::new(ConstevalIntMacro)),
-        _ => None,
-    }
+/// Gets the default plugins to load into the Cairo compiler.
+pub fn get_default_inline_macro_plugins() -> OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>
+{
+    let mut res = OrderedHashMap::<String, Arc<dyn InlineMacroExprPlugin>>::default();
+    res.insert("array".to_string(), Arc::new(ArrayMacro));
+    res.insert("consteval_int".to_string(), Arc::new(ConstevalIntMacro));
+    res
 }
 
-pub fn unsupported_bracket_diagnostic(
+fn unsupported_bracket_diagnostic(
     db: &dyn SyntaxGroup,
     macro_ast: &ast::ExprInlineMacro,
 ) -> InlinePluginResult {

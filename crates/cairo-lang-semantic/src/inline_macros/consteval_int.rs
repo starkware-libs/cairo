@@ -1,4 +1,4 @@
-use cairo_lang_defs::plugin::{InlineMacroPlugin, InlinePluginResult, PluginDiagnostic};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
@@ -8,7 +8,7 @@ use super::unsupported_bracket_diagnostic;
 #[derive(Debug)]
 pub struct ConstevalIntMacro;
 
-impl InlineMacroPlugin for ConstevalIntMacro {
+impl InlineMacroExprPlugin for ConstevalIntMacro {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,

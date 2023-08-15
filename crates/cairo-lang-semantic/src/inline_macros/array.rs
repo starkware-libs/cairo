@@ -1,4 +1,4 @@
-use cairo_lang_defs::plugin::{InlineMacroPlugin, InlinePluginResult};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
@@ -6,7 +6,7 @@ use super::unsupported_bracket_diagnostic;
 
 #[derive(Debug)]
 pub struct ArrayMacro;
-impl InlineMacroPlugin for ArrayMacro {
+impl InlineMacroExprPlugin for ArrayMacro {
     fn generate_code(
         &self,
         db: &dyn SyntaxGroup,
