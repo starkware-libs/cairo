@@ -10,7 +10,10 @@ use std::path::Path;
 use cairo_lang_formatter::CairoFormatter;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use colored::Colorize;
-use cairo_lang_lean::lean_generator::write_lean_soundness_file;
+use cairo_lang_lean::lean_generator::{
+    write_lean_soundness_file,
+    write_lean_code_file,
+};
 
 const TAG_PREFIX: &str = "//! > ";
 const TEST_SEPARATOR: &str =
@@ -421,6 +424,7 @@ pub fn run_test_file(
 
         if gen_lean_mode {
             write_lean_soundness_file(&path, &test_name, outputs.get("lean_soundness"), is_lean3_version)?;
+            write_lean_code_file(&path, &test_name, outputs.get("casm"), is_lean3_version)?;
         }
 
         // Fix if in fix mode, unrelated to the result.

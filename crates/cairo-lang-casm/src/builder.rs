@@ -799,7 +799,7 @@ pub struct CasmBuilderAuxiliaryInfo {
     pub consts: Vec<ConstDesc>,
     pub args: Vec<(Var, CellExpression)>,
     pub statements: Vec<StatementDesc>,
-    pub return_args: Vec<RetBranchDesc>,
+    pub return_branches: Vec<RetBranchDesc>,
     pub core_libfunc_instr_num: usize,
 }
 
@@ -814,7 +814,7 @@ impl CasmBuilderAuxiliaryInfo {
     }
 
     pub fn add_return_branch(&mut self, branch_name: &str, vars: &[&[Var]]) {
-        self.return_args.push(RetBranchDesc {
+        self.return_branches.push(RetBranchDesc {
             name: String::from(branch_name),
             exprs: vars.iter().map(|v| RetExprDesc {
                 names: v.iter().map(
@@ -974,7 +974,7 @@ impl Default for CasmBuilderAuxiliaryInfo {
             consts: Default::default(),
             args: Default::default(),
             statements: Default::default(),
-            return_args: Default::default(),
+            return_branches: Default::default(),
             core_libfunc_instr_num: 0,
         }
     }

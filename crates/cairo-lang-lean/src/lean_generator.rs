@@ -149,13 +149,16 @@ impl RetArgs {
 /// of the stack. Returns a vector of tuples where the first element of the tuple is the number of statements in
 /// the branch return block, the second is the position of the branch ID return argument inside that block, and the third
 /// indicates whether the block begins with a ap step (ap += <count>).
-fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> Vec<(usize, Option<usize>, bool)> {
+fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, casm_start: usize, casm_end: usize) -> Vec<(usize, Option<usize>, bool)> {
     let mut count = 0;
     let mut branch_id_pos: Option<usize> = None;
     let mut branch_counts: Vec<(usize, Option<usize>, bool)> = Vec::new();
 
+    let mut current_branch =
+        if 0 < aux_info.return_branches.len() { Some(aux_info.return_branches.len() - 1) } else { None };
+
     let set_branch =
-        |branch_counts: &mut Vec<(usize, Option<usize>, bool)>, count: &mut usize, branch_id_pos: &mut Option<usize>, ap_step: bool| {
+        |branch_counts: &mut Vec<(usize, Option<usize>, bool)>, count: &mut usize, branch_id_pos: &mut Option<usize>, ap_step: bool| -> bool {
             if *count != 0 {
                 match *branch_id_pos {
                     Some(pos) => branch_counts.push((*count, Some(*count - pos - 1), ap_step)),
@@ -163,26 +166,46 @@ fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProg
                 };
                 *count = 0;
                 *branch_id_pos = None;
+                true
+            } else {
+                false
             }
         };
 
-    for pos in (aux_info.core_libfunc_instr_num..cairo_program.instructions.len()).rev() {
-
-        let branch_num = aux_info.return_args.len() - 1 - branch_counts.len();
+    for pos in (casm_start..casm_end).rev() {
 
         // A branch return block begins with an ap += <step> or with the jmp or return at the end of the previous block.
         match &cairo_program.instructions[pos].body {
             InstructionBody::AddAp(_) => {
-                set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, true);
+                match current_branch {
+                    Some(branch_id) => {
+                        if set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, true) {
+                            current_branch = if 0 < branch_id { Some(branch_id - 1) } else { None }
+                        }
+                    },
+                    _ => { /* handle destructor */}
+                }
             },
-            InstructionBody::Ret(_) | InstructionBody::Jump(_) => {
-                set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false);
+            InstructionBody::Ret(_) | InstructionBody::Jump(_) | InstructionBody::Call(_) => {
+                match current_branch {
+                    Some(branch_id) => {
+                        if set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false) {
+                            current_branch = if 0 < branch_id { Some(branch_id - 1) } else { None }
+                        }
+                    },
+                    _ => { /* handle destructor */ }
+                }
             },
             InstructionBody::AssertEq(assert_eq) => {
                 match &assert_eq.b {
                     ResOperand::Immediate(value) => {
-                        if *value == BigIntAsHex::from(branch_num) {
-                            branch_id_pos = Some(count);
+                        match current_branch {
+                            Some(branch_id ) => {
+                                if *value == BigIntAsHex::from(branch_id) {
+                                    branch_id_pos = Some(count);
+                                }
+                            },
+                            _ => {}
                         }
                     },
                     _ => { }
@@ -193,7 +216,10 @@ fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProg
         }
     }
 
-    set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false);
+    match current_branch {
+        Some(_) => { set_branch(&mut branch_counts, &mut count, &mut branch_id_pos, false); },
+        _ => { /* handle destructor */}
+    }
 
     branch_counts.reverse();
     branch_counts
@@ -373,6 +399,8 @@ struct LeanFuncInfo<'a> {
     func_name: String,
     aux_info: &'a CasmBuilderAuxiliaryInfo,
     casm_instructions: &'a Vec<Instruction>,
+    casm_start: usize,
+    casm_end: usize,
     ret_args: RetArgs,
     ret_branch_ap_steps: Vec<bool>,
 }
@@ -382,10 +410,12 @@ impl<'a> LeanFuncInfo<'a> {
         pub fn new(
             func_name: String,
             aux_info: &'a CasmBuilderAuxiliaryInfo,
+            casm_start: usize,
+            casm_end: usize,
             cairo_program: &'a CairoProgram
         ) -> Self {
-            let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program);
-            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, ret_args, ret_branch_ap_steps }
+            let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program, casm_start, casm_end);
+            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps }
         }
 
         pub fn is_range_check_var(&self, name: &str) -> bool {
@@ -396,9 +426,9 @@ impl<'a> LeanFuncInfo<'a> {
             self.aux_info.consts.iter().any(|c| c.name == name)
         }
 
-        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> (RetArgs, Vec<bool>) {
-            let ret_blocks = get_ret_blocks(aux_info, cairo_program);
-            check_ret_blocks(&ret_blocks, aux_info.return_args.len());
+        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, pc_start: usize, pc_end: usize) -> (RetArgs, Vec<bool>) {
+            let ret_blocks = get_ret_blocks(aux_info, cairo_program, pc_start, pc_end);
+            check_ret_blocks(&ret_blocks, aux_info.return_branches.len());
 
             let branch_id_pos = get_branch_id_pos(&ret_blocks);
             let mut ret_args = RetArgs {
@@ -408,7 +438,7 @@ impl<'a> LeanFuncInfo<'a> {
                 branch_id_pos: branch_id_pos,
                 num_implicit_ret_args: 0, // will be set later
             };
-            ret_args.set_arg_names(&aux_info.return_args);
+            ret_args.set_arg_names(&aux_info.return_branches);
             ret_args.set_implicit_ret_arg_num();
             (ret_args, ret_blocks.iter().map(|b| b.2).collect())
         }
@@ -1098,7 +1128,7 @@ impl AutoProof {
         } else {
             full_proof.push("by".to_string());
         }
-        
+
         full_proof.append(&mut self.main_proof.clone());
 
         if self.is_lean3 {
@@ -1179,7 +1209,7 @@ impl AutoProof {
             self.push_final(0, &format!("use_only [{var_name}, hl_{var_name}],"),
                 &format!("use_only {var_name}, hl_{var_name}"));
         } else {
-            self.push_main(indent, &format!("{{ exact hl_{var_name} }},"), 
+            self.push_main(indent, &format!("{{ exact hl_{var_name} }},"),
                 &format!("  exact hl_{var_name}"));
             self.push_final(0, &format!("use_only {var_name},"),
                 &format!("use_only {var_name}"));
@@ -1228,8 +1258,8 @@ impl LeanGenerator for AutoProof {
 
         let code_memory_str: String = "-- code is in memory at s.pc".to_string();
         self.push_statement(indent, &code_memory_str, &code_memory_str);
-        self.push_statement(indent, &format!("(h_mem : mem_at mem code_{func_name} σ.pc)"),
-            &format!("(h_mem : MemAt mem code_{func_name} σ.pc)"));
+        self.push_statement(indent, &format!("(h_mem : mem_at mem {func_name}_code σ.pc)"),
+            &format!("(h_mem : MemAt mem {func_name}_code σ.pc)"));
 
         if lean_info.has_args() {
             let input_args_str: String = "-- input arguments on the stack".to_string();
@@ -1292,7 +1322,7 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, "apply ensures_of_ensuresb, intro νbound,",
             "apply ensures_of_ensuresb; intro νbound");
         // unpack the memory
-        let mut line = format!("unpack_memory code_{func_name} at h_mem with ⟨");
+        let mut line = format!("unpack_memory {func_name}_code at h_mem with ⟨");
         for code_i in 0..lean_info.get_code_len() {
             if 95 < line.len() {
                 if code_i != 0 {
@@ -1402,7 +1432,7 @@ impl LeanGenerator for AutoProof {
             let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
 
             //     rc_app rc_h_range_check' 0 hl_sqrt0 rc_sqrt0
-            self.push_final(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"), 
+            self.push_final(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"),
                 &format!("rc_app rc_h_{rc_ptr}' {rc_checks} hl_{lhs} rc_{lhs}"));
             self.push_final(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"), "");
 
@@ -1723,7 +1753,16 @@ fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo) {
 
     lean_gen.generate_statement(func_name, lean_info, 0);
     lean_gen.generate_intro(func_name, lean_info, 2);
-    generate_auto_block(lean_gen, lean_info, &mut rebind, 0, 0, 0, 0, 2);
+    generate_auto_block(
+        lean_gen,
+        lean_info,
+        &mut rebind,
+        0,
+        0,
+        lean_info.casm_start,
+        lean_info.get_pc_at(lean_info.casm_start),
+        2
+    );
 }
 
 fn generate_auto_block(
@@ -1893,18 +1932,18 @@ fn generate_auto_ret_block(
     ret_block_name: &str,
     indent: usize
 ) {
-    let branch_id = lean_info.aux_info.return_args.iter().position(
+    let branch_id = lean_info.aux_info.return_branches.iter().position(
         |b| b.name == ret_block_name
     ).expect("Could not find return block.");
 
     let ret_arg_names = lean_info.get_all_ret_arg_names();
-    let flat_exprs = lean_info.aux_info.return_args[branch_id].flat_exprs();
+    let flat_exprs = lean_info.aux_info.return_branches[branch_id].flat_exprs();
 
     lean_gen.generate_return_args(
         branch_id, &ret_arg_names, &flat_exprs, lean_info, rebind, rc_checks, indent);
 }
 
-fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> bool {
+/*fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram) -> bool {
 
     if !test_name.ends_with("libfunc") {
         return false;
@@ -1916,22 +1955,69 @@ fn check_supported(test_name: &str, aux_info: &CasmBuilderAuxiliaryInfo, cairo_p
             _ => false
          }
     )
+}*/
+
+/// Find the start offset (in the casm) of the different functions.
+fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
+    let mut offsets: Vec<(usize, usize)> = Vec::new();
+
+    let mut start_pos: usize = 0;
+    let mut pos: usize = 0;
+
+    for instr in &cairo_program.instructions {
+        pos += 1;
+        if match instr.body { InstructionBody::Ret(_) => true, _ => false } {
+            offsets.push((start_pos, pos));
+            start_pos = pos;
+        }
+    }
+    offsets
 }
 
 pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) -> String {
 
-    let aux_info = match cairo_program.aux_info.as_ref() {
-        Some(info) => info,
-        _ => { return String::from("-- Could not find lean info."); }
-    };
+    //let aux_info = match cairo_program.aux_info.as_ref() {
+    //    Some(info) => info,
+    //    _ => { return String::from("-- Could not find lean info."); }
+    //};
 
-    if !check_supported(test_name, aux_info, cairo_program) {
-        return "".into();
+    //if !check_supported(test_name, aux_info, cairo_program) {
+    //    return "".into();
+    //}
+
+    // Start and end offsets of each of the functions.
+    let offsets = find_func_offsets(cairo_program);
+    assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
+
+    let func_name = test_name.split_whitespace().next().unwrap().to_string();
+    let mut soundness = String::new();
+
+    for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
+        let casm_start = (*func_offsets).0;
+        let casm_end = (*func_offsets).1;
+        let func_name_suffix = if casm_start == 0 { "".to_string() } else { "_destr".to_string() + &casm_start.to_string() };
+        soundness.push_str(
+            &generate_func_lean_soundness(&format!("{func_name}{func_name_suffix}"),
+                cairo_program,
+                &aux_info,
+                casm_start,
+                casm_end,
+            )
+        )
     }
 
+    soundness
+}
+
+fn generate_func_lean_soundness(
+    func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, pc_start: usize, pc_end: usize,
+) -> String {
+
     let lean_info = LeanFuncInfo::new(
-        test_name.split_whitespace().next().unwrap().to_string(),
+        func_name.into(),
         aux_info,
+        pc_start,
+        pc_end,
         cairo_program
     );
 
@@ -1970,12 +2056,27 @@ pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: O
     fs::write(soundness_file_path, soundness_str)
 }
 
-// Old code
-
 /// Generates the lean assembly code file for a single function.
-pub fn generate_lean_casm(
-    test_path: &Path, test_name: &str, casm: Option<&String>
+pub fn write_lean_code_file(
+    test_path: &Path, test_name: &str, casm: Option<&String>, is_lean3: bool
 ) -> Result<(), std::io::Error> {
+
+    if is_lean3 {
+        return Ok(()); // Not supported in Lean 3.
+    }
+
+    let orig_casm_lines = match casm { Some(code) => &code[..], _ => "-- No casm generated." }.split('\n');
+    let mut casm_lines: Vec<String> = Vec::new();
+    // Comment out the hints (and indent)
+    let mut in_hint = false;
+    for line in orig_casm_lines {
+        if line.is_empty() {
+            continue;
+        }
+        in_hint = in_hint || line.contains("%{");
+        casm_lines.push(if in_hint { format!("  -- {line}") } else { format!("  {line}") });
+        in_hint = !(!in_hint || line.contains("%}"));
+    }
 
     let func_name = test_name.split_whitespace().next().unwrap();
     let lean_path = lean_verification_path(test_path);
@@ -1985,24 +2086,15 @@ pub fn generate_lean_casm(
     fs::create_dir_all(lean_path)?;
 
     let mut lean_casm = String::new();
-    lean_casm.push_str("import starkware.cairo.lean.semantics.soundness.hoare\n\n");
-    lean_casm.push_str("variables {F : Type} [field F] [decidable_eq F]\n\n");
-    let casm_body = format!("def code_{func_name} : list F := [\n");
-    lean_casm.push_str(&casm_body);
-    // Temporary, not valid Lean yet.
-    lean_casm.push_str(
-        match casm {
-            Some(casm_str) => casm_str,
-            _ => "-- No casm generated for this function.",
-        }
-    );
-    lean_casm.push_str("]\n");
-
-    // For debugging!
-    println!("{}", lean_casm);
+    lean_casm.push_str("import Verification.Semantics.Assembly\n\n");
+    lean_casm.push_str("open Casm\n\n");
+    lean_casm.push_str("variable {F : Type} [Field F] [DecidableEq F]\n\n");
+    lean_casm.push_str(&format!("def {func_name}_code : List F := casm_code!{{\n"));
+    lean_casm.push_str(&casm_lines.join("\n"));
+    lean_casm.push_str("\n");
+    lean_casm.push_str("}\n");
 
     fs::write(code_file_path, lean_casm)
-
 }
 
 /* pub fn dump_to_test_file(
