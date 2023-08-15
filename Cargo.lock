@@ -2950,6 +2950,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "starknet-sierra-extract-code"
+version = "2.1.1"
+dependencies = [
+ "anyhow",
+ "cairo-lang-sierra",
+ "cairo-lang-starknet",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "string_cache"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
