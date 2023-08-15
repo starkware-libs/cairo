@@ -34,7 +34,7 @@ fn test_secp256k1_recover_public_key() {
 
 #[test]
 fn test_signature_from_vrs() {
-    let v = 18;
+    let v = 27;
     let r = 1;
     let s = 2;
     let signature = signature_from_vrs(v, r, s);
