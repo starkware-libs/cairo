@@ -1875,7 +1875,7 @@ impl U8One of One<u8> {
     }
     #[inline(always)]
     fn is_one(self: @u8) -> bool {
-        self == @U8One::one()
+        *self == U8One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u8) -> bool {
@@ -1890,7 +1890,7 @@ impl U16One of One<u16> {
     }
     #[inline(always)]
     fn is_one(self: @u16) -> bool {
-        self == @U16One::one()
+        *self == U16One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u16) -> bool {
@@ -1905,7 +1905,7 @@ impl U32One of One<u32> {
     }
     #[inline(always)]
     fn is_one(self: @u32) -> bool {
-        self == @U32One::one()
+        *self == U32One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u32) -> bool {
@@ -1920,7 +1920,7 @@ impl U64One of One<u64> {
     }
     #[inline(always)]
     fn is_one(self: @u64) -> bool {
-        self == @U64One::one()
+        *self == U64One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u64) -> bool {
@@ -1935,7 +1935,7 @@ impl U128One of One<u128> {
     }
     #[inline(always)]
     fn is_one(self: @u128) -> bool {
-        self == @U128One::one()
+        *self == U128One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u128) -> bool {
@@ -1950,7 +1950,7 @@ impl U256One of One<u256> {
     }
     #[inline(always)]
     fn is_one(self: @u256) -> bool {
-        self == @U256One::one()
+        *self == U256One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @u256) -> bool {

@@ -16,7 +16,7 @@ impl Felt252One of One<felt252> {
     }
     #[inline(always)]
     fn is_one(self: @felt252) -> bool {
-        self == @Felt252One::one()
+        *self == Felt252One::one()
     }
     #[inline(always)]
     fn is_non_one(self: @felt252) -> bool {
