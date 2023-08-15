@@ -1831,7 +1831,16 @@ impl<'a> Parser<'a> {
             _ => self.try_parse_type_expr()?,
         };
 
-        Some(GenericArgExpr::new_green(self.db, expr).into())
+        // If the next token is `:` and the expression is an identifier, this is the argument's
+        // name.
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            if let Some(argname) = self.try_extract_identifier(expr) {
+                let colon = self.take::<TerminalColon>();
+                let expr = self.try_parse_type_expr()?;
+                return Some(ArgClauseNamed::new_green(self.db, argname, colon, expr).into());
+            }
+        }
+        Some(ArgClauseUnnamed::new_green(self.db, expr).into())
     }
 
     /// Assumes the current token is LT.

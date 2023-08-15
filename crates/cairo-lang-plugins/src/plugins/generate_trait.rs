@@ -79,7 +79,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
                 let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
                 zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
-                        let GenericArg::Expr(trait_generic_arg) = trait_generic_arg else {
+                        let GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
                         };
                         let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.value(db) else {

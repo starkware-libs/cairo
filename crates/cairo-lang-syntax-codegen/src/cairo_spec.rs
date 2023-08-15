@@ -596,7 +596,8 @@ pub fn get_spec() -> Vec<Node> {
     .add_enum(
         EnumBuilder::new("GenericArg")
         .node_with_explicit_kind("Underscore", "TerminalUnderscore")
-        .node("Expr")
+        .node_with_explicit_kind("Unnamed", "ArgClauseUnnamed")
+        .node_with_explicit_kind("Named", "ArgClauseNamed")
     )
     .add_struct(StructBuilder::new("GenericArgs")
         .node("langle", "TerminalLT")

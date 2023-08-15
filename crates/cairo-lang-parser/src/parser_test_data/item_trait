@@ -51,7 +51,7 @@ FunctionWithBody
     │       │       └── generic_args (kind: GenericArgs)
     │       │           ├── langle (kind: TokenLT): '<'
     │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgExpr)
+    │       │           │   └── item #0 (kind: ArgClauseUnnamed)
     │       │           │       └── value (kind: ExprPath)
     │       │           │           └── item #0 (kind: PathSegmentSimple)
     │       │           │               └── ident (kind: TokenIdentifier): 'S'
@@ -154,7 +154,7 @@ SyntaxFile
     │       │       └── generic_args (kind: GenericArgs)
     │       │           ├── langle (kind: TokenLT): '<'
     │       │           ├── generic_args (kind: GenericArgList)
-    │       │           │   └── item #0 (kind: GenericArgExpr)
+    │       │           │   └── item #0 (kind: ArgClauseUnnamed)
     │       │           │       └── value (kind: ExprPath)
     │       │           │           └── item #0 (kind: PathSegmentSimple)
     │       │           │               └── ident (kind: TokenIdentifier): 'S'

@@ -12201,7 +12201,8 @@ impl TypedSyntaxNode for GenericArgExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum GenericArg {
     Underscore(TerminalUnderscore),
-    Expr(GenericArgExpr),
+    Unnamed(ArgClauseUnnamed),
+    Named(ArgClauseNamed),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
 pub struct GenericArgPtr(pub SyntaxStablePtrId);
@@ -12218,8 +12219,13 @@ impl From<TerminalUnderscorePtr> for GenericArgPtr {
         Self(value.0)
     }
 }
-impl From<GenericArgExprPtr> for GenericArgPtr {
-    fn from(value: GenericArgExprPtr) -> Self {
+impl From<ArgClauseUnnamedPtr> for GenericArgPtr {
+    fn from(value: ArgClauseUnnamedPtr) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ArgClauseNamedPtr> for GenericArgPtr {
+    fn from(value: ArgClauseNamedPtr) -> Self {
         Self(value.0)
     }
 }
@@ -12228,8 +12234,13 @@ impl From<TerminalUnderscoreGreen> for GenericArgGreen {
         Self(value.0)
     }
 }
-impl From<GenericArgExprGreen> for GenericArgGreen {
-    fn from(value: GenericArgExprGreen) -> Self {
+impl From<ArgClauseUnnamedGreen> for GenericArgGreen {
+    fn from(value: ArgClauseUnnamedGreen) -> Self {
+        Self(value.0)
+    }
+}
+impl From<ArgClauseNamedGreen> for GenericArgGreen {
+    fn from(value: ArgClauseNamedGreen) -> Self {
         Self(value.0)
     }
 }
@@ -12248,8 +12259,11 @@ impl TypedSyntaxNode for GenericArg {
             SyntaxKind::TerminalUnderscore => {
                 GenericArg::Underscore(TerminalUnderscore::from_syntax_node(db, node))
             }
-            SyntaxKind::GenericArgExpr => {
-                GenericArg::Expr(GenericArgExpr::from_syntax_node(db, node))
+            SyntaxKind::ArgClauseUnnamed => {
+                GenericArg::Unnamed(ArgClauseUnnamed::from_syntax_node(db, node))
+            }
+            SyntaxKind::ArgClauseNamed => {
+                GenericArg::Named(ArgClauseNamed::from_syntax_node(db, node))
             }
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "GenericArg"),
         }
@@ -12257,7 +12271,8 @@ impl TypedSyntaxNode for GenericArg {
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
             GenericArg::Underscore(x) => x.as_syntax_node(),
-            GenericArg::Expr(x) => x.as_syntax_node(),
+            GenericArg::Unnamed(x) => x.as_syntax_node(),
+            GenericArg::Named(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
@@ -12269,7 +12284,8 @@ impl GenericArg {
     pub fn is_variant(kind: SyntaxKind) -> bool {
         match kind {
             SyntaxKind::TerminalUnderscore => true,
-            SyntaxKind::GenericArgExpr => true,
+            SyntaxKind::ArgClauseUnnamed => true,
+            SyntaxKind::ArgClauseNamed => true,
             _ => false,
         }
     }

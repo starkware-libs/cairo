@@ -48,7 +48,7 @@ FunctionSignature
     │                       │   ├── token (kind: TokenLT): '<'
     │                       │   └── trailing_trivia (kind: Trivia) []
     │                       ├── generic_args (kind: GenericArgList)
-    │                       │   └── item #0 (kind: GenericArgExpr)
+    │                       │   └── item #0 (kind: ArgClauseUnnamed)
     │                       │       └── value (kind: ExprPath)
     │                       │           └── item #0 (kind: PathSegmentSimple)
     │                       │               └── ident (kind: TerminalIdentifier)
