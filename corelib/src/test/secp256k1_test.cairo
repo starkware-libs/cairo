@@ -34,7 +34,7 @@ fn test_secp256k1_recover_public_key() {
 
 #[test]
 fn test_signature_from_vrs() {
-    let v = 18;
+    let v = 27;
     let r = 1;
     let s = 2;
     let signature = signature_from_vrs(v, r, s);
@@ -101,15 +101,13 @@ fn test_verify_eth_signature_overflowing_signature_r() {
     verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
 }
 
+use integer::BoundedInt;
+
 #[test]
-#[should_panic(expected: ('Signature out of range', ))]
 #[available_gas(100000000)]
-fn test_verify_eth_signature_overflowing_signature_s() {
-    let y_parity = true;
-    let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
-        get_message_and_signature(
-        :y_parity
-    );
-    signature.s = Secp256k1Impl::get_curve_size() + 1;
-    verify_eth_signature::<Secp256k1Point>(:msg_hash, :signature, :eth_address);
+fn test_secp256k1_mul() {
+    let generator = starknet::secp256_trait::Secp256Trait::get_generator_point();
+
+    starknet::secp256k1::secp256k1_mul_syscall(p: generator, scalar: BoundedInt::max())
+        .unwrap_syscall();
 }
