@@ -22,9 +22,9 @@ ret;
 test::foo: OrderedHashMap({Poseidon: 1, Const: 700})
 
 //! > sierra_code
-type Poseidon = Poseidon;
-type felt252 = felt252;
-type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252>;
+type Poseidon = Poseidon [storable: true, drop: false, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252, felt252> = Struct<ut@Tuple, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc hades_permutation = hades_permutation;
 libfunc struct_construct<Tuple<felt252, felt252, felt252>> = struct_construct<Tuple<felt252, felt252, felt252>>;
