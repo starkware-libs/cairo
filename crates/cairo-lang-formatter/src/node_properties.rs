@@ -567,7 +567,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 parent_kind(db, &path_node),
                 Some(SyntaxKind::ItemImpl)
                     | Some(SyntaxKind::GenericParamImpl)
-                    | Some(SyntaxKind::GenericArgExpr)
+                    | Some(SyntaxKind::GenericArgValueExpr)
             )
         } else {
             false

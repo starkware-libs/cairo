@@ -51,11 +51,14 @@ pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     }
     let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
-    let [ast::GenericArg::Expr(arg_expr)] = args.as_slice() else {
+    let [ast::GenericArg::Unnamed(arg_expr)] = args.as_slice() else {
+        return false;
+    };
+    let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {
         return false;
     };
 
-    is_felt252(db, &arg_expr.value(db))
+    is_felt252(db, &arg_expr.expr(db))
 }
 
 /// Strips one preceding underscore from the given string slice, if any.

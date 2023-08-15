@@ -1239,11 +1239,13 @@ fn validate_impl_function_signature(
     let concrete_trait_signature = db.concrete_trait_function_signature(concrete_trait_function)?;
 
     // Match generics of the function.
+    // TODO(spapini): Compare the actual kinds and traits for the generic params.
+
     let func_generics = db.concrete_trait_function_generic_params(concrete_trait_function)?;
     if impl_func_generics.len() != func_generics.len() {
         diagnostics.report(
             &function_syntax.declaration(syntax_db).name(syntax_db),
-            WrongNumberOfGenericArguments {
+            WrongNumberOfGenericParamsForImplFunction {
                 expected: func_generics.len(),
                 actual: impl_func_generics.len(),
             },

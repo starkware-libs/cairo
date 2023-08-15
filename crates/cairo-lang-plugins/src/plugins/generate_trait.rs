@@ -2,9 +2,6 @@ use std::iter::zip;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
-use cairo_lang_syntax::node::ast::{
-    Expr, GenericArg, ImplItem, ItemImpl, OptionWrappedGenericParamList,
-};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
@@ -24,7 +21,7 @@ impl MacroPlugin for GenerateTraitPlugin {
     }
 }
 
-fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginResult {
+fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
     let Some(attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
         return PluginResult::default();
     };
@@ -46,7 +43,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         .args
         .into_iter()
         .flat_map(|attr_arg| match attr_arg.variant {
-            AttributeArgVariant::Unnamed { value: Expr::FunctionCall(attr_arg), .. }
+            AttributeArgVariant::Unnamed { value: ast::Expr::FunctionCall(attr_arg), .. }
                 if attr_arg.path(db).as_syntax_node().get_text_without_trivia(db)
                     == "trait_attrs" =>
             {
@@ -72,17 +69,23 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
     let (trait_identifier, generic_params_match) = match trait_ast_segment {
         ast::PathSegment::WithGenericArgs(segment) => (
             segment.ident(db),
-            if let OptionWrappedGenericParamList::WrappedGenericParamList(impl_generic_params) =
-                impl_generic_params.clone()
+            if let ast::OptionWrappedGenericParamList::WrappedGenericParamList(
+                impl_generic_params,
+            ) = impl_generic_params.clone()
             {
                 let trait_generic_args = segment.generic_args(db).generic_args(db).elements(db);
                 let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
                 zip(trait_generic_args, impl_generic_params).all(
                     |(trait_generic_arg, impl_generic_param)| {
-                        let GenericArg::Expr(trait_generic_arg) = trait_generic_arg else {
+                        let ast::GenericArg::Unnamed(trait_generic_arg) = trait_generic_arg else {
                             return false;
                         };
-                        let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.value(db) else {
+                        let ast::GenericArgValue::Expr(trait_generic_arg) =
+                            trait_generic_arg.value(db)
+                        else {
+                            return false;
+                        };
+                        let ast::Expr::Path(trait_generic_arg) = trait_generic_arg.expr(db) else {
                             return false;
                         };
                         let [ast::PathSegment::Simple(trait_generic_arg)] =
@@ -103,9 +106,10 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
                 false
             },
         ),
-        ast::PathSegment::Simple(seg) => {
-            (seg.ident(db), matches!(impl_generic_params, OptionWrappedGenericParamList::Empty(_)))
-        }
+        ast::PathSegment::Simple(seg) => (
+            seg.ident(db),
+            matches!(impl_generic_params, ast::OptionWrappedGenericParamList::Empty(_)),
+        ),
     };
     let trait_identifier = trait_identifier.text(db);
     if !generic_params_match {
@@ -120,7 +124,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ItemImpl) -> PluginRe
         ast::MaybeImplBody::None(_) => vec![],
     }.into_iter().filter_map(|item| {
         match item {
-            ImplItem::Function(item) => {
+            ast::ImplItem::Function(item) => {
                 let decl = item.declaration(db);
                 let name = decl.name(db).text(db);
                 let generic_params = decl.generic_params(db).as_syntax_node().get_text_without_trivia(db);

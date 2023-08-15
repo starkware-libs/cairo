@@ -1816,7 +1816,8 @@ impl<'a> Parser<'a> {
     /// expression can't be parsed.
     fn try_parse_generic_arg(&mut self) -> Option<GenericArgGreen> {
         if self.peek().kind == SyntaxKind::TerminalUnderscore {
-            return Some(self.take::<TerminalUnderscore>().into());
+            let underscore = self.take::<TerminalUnderscore>().into();
+            return Some(GenericArgUnnamed::new_green(self.db, underscore).into());
         }
 
         let expr = match self.peek().kind {
@@ -1831,7 +1832,27 @@ impl<'a> Parser<'a> {
             _ => self.try_parse_type_expr()?,
         };
 
-        Some(GenericArgExpr::new_green(self.db, expr).into())
+        // If the next token is `:` and the expression is an identifier, this is the argument's
+        // name.
+        if self.peek().kind == SyntaxKind::TerminalColon {
+            if let Some(argname) = self.try_extract_identifier(expr) {
+                let colon = self.take::<TerminalColon>();
+                let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
+                    self.take::<TerminalUnderscore>().into()
+                } else {
+                    let expr = self.try_parse_type_expr()?;
+                    GenericArgValueExpr::new_green(self.db, expr).into()
+                };
+                return Some(GenericArgNamed::new_green(self.db, argname, colon, expr).into());
+            }
+        }
+        Some(
+            GenericArgUnnamed::new_green(
+                self.db,
+                GenericArgValueExpr::new_green(self.db, expr).into(),
+            )
+            .into(),
+        )
     }
 
     /// Assumes the current token is LT.

@@ -289,7 +289,13 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::OptionAliasClauseEmpty => {
             vec![]
         }
-        SyntaxKind::GenericArgExpr => {
+        SyntaxKind::GenericArgNamed => {
+            vec![]
+        }
+        SyntaxKind::GenericArgUnnamed => {
+            vec![]
+        }
+        SyntaxKind::GenericArgValueExpr => {
             vec![]
         }
         SyntaxKind::GenericArgs => {

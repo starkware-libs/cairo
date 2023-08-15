@@ -788,26 +788,81 @@ impl<'db> Resolver<'db> {
         generic_args_syntax: Vec<ast::GenericArg>,
         stable_ptr: SyntaxStablePtrId,
     ) -> Maybe<Vec<GenericArgumentId>> {
+        let syntax_db = self.db.upcast();
         let mut substitution = GenericSubstitution::default();
         let mut resolved_args = vec![];
+        let mut arg_syntax_for_param =
+            UnorderedHashMap::<GenericParamId, ast::GenericArgValue>::default();
+        let mut last_named_arg_index = None;
+        let generic_param_by_name = generic_params
+            .iter()
+            .enumerate()
+            .map(|(i, param)| (param.id().name(self.db.upcast()), (i, param.id())))
+            .collect::<UnorderedHashMap<_, _>>();
 
-        // If too many generic argument are given, trim and report.
-        if generic_args_syntax.len() > generic_params.len() {
-            diagnostics.report_by_ptr(
-                stable_ptr,
-                WrongNumberOfGenericArguments {
-                    expected: generic_params.len(),
-                    actual: generic_args_syntax.len(),
-                },
-            );
+        for (i, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
+            match generic_arg_syntax {
+                ast::GenericArg::Named(arg_syntax) => {
+                    let name = arg_syntax.name(syntax_db).text(syntax_db);
+                    let Some((index, generic_param_id)) = generic_param_by_name.get(&name) else {
+                        return Err(diagnostics.report(arg_syntax, UnknownGenericParam { name }));
+                    };
+                    if let Some(prev_index) = last_named_arg_index {
+                        if prev_index > index {
+                            return Err(
+                                diagnostics.report(arg_syntax, GenericArgOutOfOrder { name })
+                            );
+                        }
+                    }
+                    last_named_arg_index = Some(index);
+                    if arg_syntax_for_param
+                        .insert(*generic_param_id, arg_syntax.value(syntax_db))
+                        .is_some()
+                    {
+                        return Err(diagnostics.report(arg_syntax, GenericArgDuplicate { name }));
+                    }
+                }
+                ast::GenericArg::Unnamed(arg_syntax) => {
+                    if last_named_arg_index.is_some() {
+                        return Err(diagnostics.report(arg_syntax, PositionalGenericAfterNamed));
+                    }
+                    let generic_param = generic_params.get(i).ok_or_else(|| {
+                        diagnostics.report(
+                            arg_syntax,
+                            TooManyGenericArguments {
+                                expected: generic_params.len(),
+                                actual: generic_args_syntax.len(),
+                            },
+                        )
+                    })?;
+                    if arg_syntax_for_param
+                        .insert(generic_param.id(), arg_syntax.value(syntax_db))
+                        .is_some()
+                    {
+                        return Err(diagnostics.report(
+                            arg_syntax,
+                            GenericArgDuplicate { name: generic_param.id().name(self.db.upcast()) },
+                        ));
+                    }
+                }
+            }
         }
 
-        for (i, generic_param) in generic_params.iter().enumerate() {
+        for generic_param in generic_params.iter() {
             let generic_param = SubstitutionRewriter { db: self.db, substitution: &substitution }
                 .rewrite(*generic_param)?;
             let generic_arg = self.resolve_generic_arg(
                 generic_param,
-                generic_args_syntax.get(i),
+                arg_syntax_for_param
+                    .get(&generic_param.id())
+                    .and_then(|arg_syntax| {
+                        if let ast::GenericArgValue::Expr(expr) = arg_syntax {
+                            Some(expr.expr(syntax_db))
+                        } else {
+                            None
+                        }
+                    })
+                    .as_ref(),
                 stable_ptr,
                 diagnostics,
             )?;
@@ -821,28 +876,23 @@ impl<'db> Resolver<'db> {
     fn resolve_generic_arg(
         &mut self,
         generic_param: GenericParam,
-        generic_arg_syntax_opt: Option<&ast::GenericArg>,
+        generic_arg_syntax_opt: Option<&ast::Expr>,
         stable_ptr: SyntaxStablePtrId,
         diagnostics: &mut SemanticDiagnostics,
     ) -> Result<GenericArgumentId, cairo_lang_diagnostics::DiagnosticAdded> {
-        let generic_arg_syntax = match generic_arg_syntax_opt {
-            None | Some(ast::GenericArg::Underscore(_)) => {
-                let lookup_context = self.impl_lookup_context();
-                return self
-                    .data
-                    .inference_data
-                    .inference(self.db)
-                    .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
-                    .map_err(|err| err.report(diagnostics, stable_ptr));
-            }
-            Some(ast::GenericArg::Expr(generic_arg_expr)) => {
-                generic_arg_expr.value(self.db.upcast())
-            }
+        let Some(generic_arg_syntax) = generic_arg_syntax_opt else {
+            let lookup_context = self.impl_lookup_context();
+            return self
+                .data
+                .inference_data
+                .inference(self.db)
+                .infer_generic_arg(&generic_param, lookup_context, Some(stable_ptr))
+                .map_err(|err| err.report(diagnostics, stable_ptr));
         };
 
         Ok(match generic_param {
             GenericParam::Type(_) => {
-                let ty = resolve_type(self.db, diagnostics, self, &generic_arg_syntax);
+                let ty = resolve_type(self.db, diagnostics, self, generic_arg_syntax);
                 GenericArgumentId::Type(ty)
             }
             GenericParam::Const(_) => {
@@ -852,7 +902,7 @@ impl<'db> Resolver<'db> {
                 // TODO(mkaput): This is a dumb heuristic, the expr here should be const-evaluated.
                 let syntax_db = self.db.upcast();
 
-                let value = match &generic_arg_syntax {
+                let value = match generic_arg_syntax {
                     Expr::Literal(literal) => literal.numeric_value(syntax_db).unwrap_or_default(),
 
                     Expr::ShortString(literal) => {
@@ -862,18 +912,18 @@ impl<'db> Resolver<'db> {
                     // TODO(yuval): support string const generic arguments?
                     Expr::Unary(unary) => {
                         if !matches!(unary.op(syntax_db), ast::UnaryOperator::Minus(_)) {
-                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
                         }
 
                         if let Expr::Literal(literal) = unary.expr(syntax_db) {
                             literal.numeric_value(syntax_db).unwrap_or_default().neg()
                         } else {
-                            return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                            return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
                         }
                     }
 
                     _ => {
-                        return Err(diagnostics.report(&generic_arg_syntax, UnknownLiteral));
+                        return Err(diagnostics.report(generic_arg_syntax, UnknownLiteral));
                     }
                 };
 
@@ -881,13 +931,13 @@ impl<'db> Resolver<'db> {
                 GenericArgumentId::Literal(self.db.intern_literal(literal))
             }
             GenericParam::Impl(param) => {
-                let expr_path = try_extract_matches!(&generic_arg_syntax, ast::Expr::Path)
-                    .ok_or_else(|| diagnostics.report(&generic_arg_syntax, UnknownImpl))?;
+                let expr_path = try_extract_matches!(generic_arg_syntax, ast::Expr::Path)
+                    .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
                 let resolved_impl = try_extract_matches!(
                     self.resolve_concrete_path(diagnostics, expr_path, NotFoundItemType::Impl,)?,
                     ResolvedConcreteItem::Impl
                 )
-                .ok_or_else(|| diagnostics.report(&generic_arg_syntax, UnknownImpl))?;
+                .ok_or_else(|| diagnostics.report(generic_arg_syntax, UnknownImpl))?;
                 let impl_def_concrete_trait = self.db.impl_concrete_trait(resolved_impl)?;
                 let expected_concrete_trait = param.concrete_trait?;
                 if self
@@ -897,7 +947,7 @@ impl<'db> Resolver<'db> {
                     .conform_traits(impl_def_concrete_trait, expected_concrete_trait)
                     .is_err()
                 {
-                    diagnostics.report(&generic_arg_syntax, TraitMismatch);
+                    diagnostics.report(generic_arg_syntax, TraitMismatch);
                 }
                 GenericArgumentId::Impl(resolved_impl)
             }
