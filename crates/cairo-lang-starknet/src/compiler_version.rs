@@ -18,10 +18,9 @@ pub fn current_compiler_version_id() -> VersionId {
 }
 
 /// The version of the Sierra compiler that compiled the contract.
-///
-/// When this value is changed, it should be updated to be the same as the current compiler version.
-/// However, if the only changes in a version are in the high-level compiler, then the Sierra
-/// version should not change.
+/// Major version should be updated in any non-backwards compatible change of the Sierra compiler.
+/// Minor version should be updated in any backwards compatible change of the Sierra compiler.
+/// For more information see docs/CONTRIBUTING.md.
 pub fn current_sierra_version_id() -> VersionId {
     VersionId { major: 1, minor: 3, patch: 0 }
 }
