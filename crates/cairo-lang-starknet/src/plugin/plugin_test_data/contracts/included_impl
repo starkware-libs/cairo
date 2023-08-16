@@ -127,8 +127,6 @@ mod __constructor_OutsideImpl {
 
 contract:
 
-#[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xd52d03758d22d90ef3afcf64c42abe4353ae6b3bd7d4f8910761d4d678383a;
 use starknet::event::EventEmitter;
     struct ContractState {
         value: value::ContractMemberState,
@@ -201,6 +199,8 @@ use starknet::event::EventEmitter;
             }
         }
     }
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0xd52d03758d22d90ef3afcf64c42abe4353ae6b3bd7d4f8910761d4d678383a;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
