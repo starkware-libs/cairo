@@ -26,6 +26,7 @@ use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contracts_info, get_module_functions, ContractInfo,
 };
+use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_utils::casts::IntoOrPanic;
@@ -75,7 +76,8 @@ impl TestRunner {
             b.with_macro_plugin(Arc::new(TestPlugin::default()));
 
             if starknet {
-                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()));
+                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro));
             }
 
             b.build()?

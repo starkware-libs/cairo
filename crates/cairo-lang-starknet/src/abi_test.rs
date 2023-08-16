@@ -9,6 +9,7 @@ use indoc::indoc;
 use pretty_assertions::assert_eq;
 
 use crate::abi::AbiBuilder;
+use crate::inline_macros::selector::SelectorMacro;
 use crate::plugin::StarkNetPlugin;
 
 #[test]
@@ -201,6 +202,7 @@ fn test_abi_failure() {
     let db = &mut RootDatabase::builder()
         .detect_corelib()
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()
         .unwrap();
     let module_id = setup_test_module(
