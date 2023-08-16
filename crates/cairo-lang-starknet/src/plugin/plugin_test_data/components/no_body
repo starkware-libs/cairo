@@ -1,7 +1,7 @@
 //! > Test expansion of a component without body.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]

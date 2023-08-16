@@ -1,7 +1,7 @@
 //! > Test a syntax tree with literals
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 #[derive(Copy, Drop)]

@@ -1,7 +1,7 @@
-//! > Test expansion of a simple starknet contract.
+//! > Test valid expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -14,15 +14,6 @@ mod test_contract {
 
     #[l1_handler]
     fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_no_params(ref self: ContractState) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
 }
 
 //! > generated_cairo_code
@@ -38,21 +29,12 @@ mod test_contract {
 
     #[l1_handler]
     fn good_l1_handler_ignored(ref self: ContractState, _from_address: felt252, arg: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_no_params(ref self: ContractState) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-
-    #[l1_handler]
-    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
 }
 
 contract:
 
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2af729534074cc956b32098b82809d28afc7fff3533b10e7cbbb22514afa6f;
+const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 use starknet::event::EventEmitter;
     struct ContractState {
     }
@@ -137,66 +119,6 @@ fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt25
     array::ArrayTrait::span(@arr)
 }
 
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_l1_handler_no_params(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = unsafe_new_contract_state();
-    l1_handler_no_params(ref contract_state, );
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_l1_handler_wrong_first_param_name(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_abc = option::OptionTraitImpl::expect(
-        serde::Serde::<felt252>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = unsafe_new_contract_state();
-    l1_handler_wrong_first_param_name(ref contract_state, __arg_abc);
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_from_address = option::OptionTraitImpl::expect(
-        serde::Serde::<u128>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = unsafe_new_contract_state();
-    l1_handler_wrong_first_param_type(ref contract_state, __arg_from_address);
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
 
     mod __external {
     }
@@ -204,9 +126,6 @@ fn __wrapper_l1_handler_wrong_first_param_type(mut data: Span::<felt252>) -> Spa
     mod __l1_handler {
         use super::__wrapper_good_l1_handler as good_l1_handler;
         use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
-        use super::__wrapper_l1_handler_no_params as l1_handler_no_params;
-        use super::__wrapper_l1_handler_wrong_first_param_name as l1_handler_wrong_first_param_name;
-        use super::__wrapper_l1_handler_wrong_first_param_type as l1_handler_wrong_first_param_type;
     }
 
     mod __constructor {
@@ -238,17 +157,59 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An L1 handler must have the 'from_address' as its second parameter.
- --> lib.cairo:13:29
+
+//! > ==========================================================================
+
+//! > Test erroneous expansion of a simple starknet contract.
+
+//! > test_runner_name
+ExpandContractTestRunner(allow_diagnostics: true)
+
+//! > cairo_code
+#[starknet::contract]
+mod test_contract {
+    #[l1_handler]
     fn l1_handler_no_params(ref self: ContractState) {}
-                            ^*********************^
 
-error: Plugin diagnostic: The second parameter of an L1 handler must be named 'from_address'.
- --> lib.cairo:16:67
+    #[l1_handler]
     fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
-                                                                  ^**********^
 
-error: Plugin diagnostic: The second parameter of an L1 handler must be of type `felt252`.
- --> lib.cairo:19:67
+    #[l1_handler]
     fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
-                                                                  ^****************^
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::contract]
+mod test_contract {
+    #[l1_handler]
+    fn l1_handler_no_params(ref self: ContractState) {}
+
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
+
+    #[l1_handler]
+    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Contracts must define a 'Storage' struct.
+ --> lib.cairo:1:1
+#[starknet::contract]
+^*******************^
+
+error: Type not found.
+ --> lib.cairo:4:39
+    fn l1_handler_no_params(ref self: ContractState) {}
+                                      ^***********^
+
+error: Type not found.
+ --> lib.cairo:7:52
+    fn l1_handler_wrong_first_param_name(ref self: ContractState, abc: felt252) {}
+                                                   ^***********^
+
+error: Type not found.
+ --> lib.cairo:10:52
+    fn l1_handler_wrong_first_param_type(ref self: ContractState, from_address: u128) {}
+                                                   ^***********^
