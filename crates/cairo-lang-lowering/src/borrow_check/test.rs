@@ -16,7 +16,10 @@ cairo_lang_test_utils::test_file_test!(
     test_borrow_check
 );
 
-fn test_borrow_check(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_borrow_check(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -44,9 +47,9 @@ fn test_borrow_check(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<
         "".into()
     };
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering".into(), lowering),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-    ])
+    ]))
 }

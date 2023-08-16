@@ -28,7 +28,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn check_find_local_variables(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
@@ -61,10 +62,10 @@ fn check_find_local_variables(
         .map(|var_id| format!("{:?}", var_id.debug(&lowered_formatter)))
         .join(", ");
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("local_variables".into(), local_variables_str),
-    ])
+    ]))
 }
 
 cairo_lang_test_utils::test_file_test!(

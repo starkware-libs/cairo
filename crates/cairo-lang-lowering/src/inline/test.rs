@@ -22,7 +22,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_function_inlining(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -40,7 +41,7 @@ fn test_function_inlining(
     let mut after = before.deref().clone();
     apply_inlining(db, function_id, &mut after).unwrap();
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),
@@ -51,5 +52,5 @@ fn test_function_inlining(
             format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
         ),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-    ])
+    ]))
 }

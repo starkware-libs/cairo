@@ -253,9 +253,10 @@ pub fn setup_test_block(
 
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SemanticDatabaseForTesting::default();
-    OrderedHashMap::from([(
+    Ok(OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
             db,
@@ -264,14 +265,15 @@ pub fn test_expr_diagnostics(
             inputs["function_body"].as_str(),
         )
         .get_diagnostics(),
-    )])
+    )]))
 }
 
 pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SemanticDatabaseForTesting::default();
-    OrderedHashMap::from([(
+    Ok(OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_function(
             db,
@@ -280,7 +282,7 @@ pub fn test_function_diagnostics(
             inputs["module_code"].as_str(),
         )
         .get_diagnostics(),
-    )])
+    )]))
 }
 
 /// Gets the diagnostics for all the modules (including nested) in the given crate.
