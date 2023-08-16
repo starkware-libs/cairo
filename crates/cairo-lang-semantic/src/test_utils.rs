@@ -115,6 +115,7 @@ pub fn setup_test_crate(db: &dyn SemanticGroup, content: &str) -> CrateId {
         parent: None,
         name: "lib.cairo".into(),
         content: Arc::new(content.into()),
+        diagnostics_mappings: Default::default(),
         kind: FileKind::Module,
     }));
 

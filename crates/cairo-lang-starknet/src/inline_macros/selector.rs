@@ -1,4 +1,6 @@
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic};
+use cairo_lang_defs::plugin::{
+    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+};
 use cairo_lang_semantic::inline_macros::unsupported_bracket_diagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -40,7 +42,14 @@ impl InlineMacroExprPlugin for SelectorMacro {
         let selector_string = input_string.string_value(db).unwrap();
 
         let selector = starknet_keccak(selector_string.as_bytes());
-        let code: String = format!("0x{}", selector.to_str_radix(16));
-        InlinePluginResult { code: Some(code), diagnostics: vec![] }
+        InlinePluginResult {
+            code: Some(PluginGeneratedFile {
+                name: "selector_inline_macro".into(),
+                content: format!("0x{}", selector.to_str_radix(16)),
+                diagnostics_mappings: vec![],
+                aux_data: None,
+            }),
+            diagnostics: vec![],
+        }
     }
 }

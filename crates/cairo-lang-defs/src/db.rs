@@ -13,7 +13,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
-use crate::patcher::Patches;
 use crate::plugin::{
     DynGeneratedFileAuxData, InlineMacroExprPlugin, MacroPlugin, PluginDiagnostic,
 };
@@ -256,7 +255,6 @@ pub struct GeneratedFileInfo {
     pub aux_data: Option<DynGeneratedFileAuxData>,
     /// The module and file index from which the current file was generated.
     pub origin: ModuleFileId,
-    pub patches: Arc<Patches>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -355,12 +353,12 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                         parent: Some(module_file),
                         name: generated.name,
                         content: Arc::new(generated.content),
+                        diagnostics_mappings: Arc::new(generated.diagnostics_mappings),
                         kind: FileKind::Module,
                     }));
                     generated_file_infos.push(Some(GeneratedFileInfo {
                         aux_data: generated.aux_data,
                         origin: module_file_id,
-                        patches: Arc::new(generated.patches),
                     }));
                     module_queue
                         .push_back((new_file, db.file_module_syntax(new_file)?.items(syntax_db)));

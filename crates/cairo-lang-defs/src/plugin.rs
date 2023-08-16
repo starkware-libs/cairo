@@ -2,12 +2,11 @@ use std::any::Any;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use cairo_lang_filesystem::ids::DiagnosticMapping;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use smol_str::SmolStr;
-
-use crate::patcher::Patches;
 
 /// A trait for arbitrary data that a macro generates along with a generated file.
 pub trait GeneratedFileAuxData: std::fmt::Debug + Sync + Send {
@@ -44,7 +43,7 @@ pub struct PluginGeneratedFile {
     pub content: String,
     /// A diagnostics mapper, to allow more readable diagnostics that originate in plugin generated
     /// virtual files.
-    pub patches: Patches,
+    pub diagnostics_mappings: Vec<DiagnosticMapping>,
     /// Arbitrary data that the plugin generates along with the file.
     pub aux_data: Option<DynGeneratedFileAuxData>,
 }
@@ -78,7 +77,7 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
 /// Result of plugin code generation.
 #[derive(Default)]
 pub struct InlinePluginResult {
-    pub code: Option<String>,
+    pub code: Option<PluginGeneratedFile>,
     /// Diagnostics.
     pub diagnostics: Vec<PluginDiagnostic>,
 }

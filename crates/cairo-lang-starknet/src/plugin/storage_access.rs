@@ -144,7 +144,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            patches: Default::default(),
+            diagnostics_mappings: Default::default(),
             aux_data: None,
         }),
         diagnostics,
@@ -280,7 +280,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "storage_access_impl".into(),
             content: sa_impl,
-            patches: Default::default(),
+            diagnostics_mappings: Default::default(),
             aux_data: None,
         }),
         diagnostics,

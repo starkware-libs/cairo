@@ -116,7 +116,7 @@ fn generate_panicable_code(
                     }}
                 "#
             ),
-            patches: Default::default(),
+            diagnostics_mappings: Default::default(),
             aux_data: None,
         }),
         diagnostics: vec![],

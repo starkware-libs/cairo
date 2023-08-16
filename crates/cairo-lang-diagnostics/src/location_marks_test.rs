@@ -24,6 +24,7 @@ fn test_location_marks() {
         parent: None,
         name: "name".into(),
         content: Arc::new(content.into()),
+        diagnostics_mappings: Arc::new(vec![]),
         kind: FileKind::Module,
     }));
     let summary = db.file_summary(file).unwrap();

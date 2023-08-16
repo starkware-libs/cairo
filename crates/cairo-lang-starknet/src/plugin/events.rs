@@ -117,7 +117,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            patches: builder.patches,
+            diagnostics_mappings: builder.diagnostics_mappings,
             aux_data: Some(DynGeneratedFileAuxData::new(StarkNetEventAuxData { event_data })),
         }),
         diagnostics,
@@ -313,7 +313,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         code: Some(PluginGeneratedFile {
             name: "event_impl".into(),
             content: builder.code,
-            patches: builder.patches,
+            diagnostics_mappings: builder.diagnostics_mappings,
             aux_data: Some(DynGeneratedFileAuxData::new(StarkNetEventAuxData { event_data })),
         }),
         diagnostics,
