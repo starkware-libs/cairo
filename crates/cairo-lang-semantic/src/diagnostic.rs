@@ -181,9 +181,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::WrongNumberOfArguments { expected, actual } => {
                 format!("Wrong number of arguments. Expected {expected}, found: {actual}")
             }
-            SemanticDiagnosticKind::WrongNumberOfGenericArguments { expected, actual } => {
-                format!("Wrong number of generic arguments. Expected {expected}, found: {actual}")
-            }
             SemanticDiagnosticKind::WrongParameterType {
                 impl_def_id,
                 impl_function_id,
@@ -290,6 +287,16 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     r#"Unexpected return type. Expected: "{}", found: "{}"."#,
                     expected_ty.format(db),
                     actual_ty.format(db)
+                )
+            }
+            SemanticDiagnosticKind::WrongNumberOfGenericParamsForImplFunction {
+                expected,
+                actual,
+            } => {
+                format!(
+                    "Wrong number of generic parameters for impl function. Expected: {}, found: \
+                     {}.",
+                    expected, actual
                 )
             }
             SemanticDiagnosticKind::WrongReturnTypeForImpl {
@@ -445,6 +452,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnexpectedTuplePattern { ty } => {
                 format!(r#"Unexpected type for tuple pattern. "{}" is not a tuple."#, ty.format(db),)
             }
+            SemanticDiagnosticKind::WrongNumberOfTupleElements { expected, actual } => format!(
+                r#"Wrong number of tuple elements in pattern. Expected: {}. Got: {}."#,
+                expected, actual
+            ),
             SemanticDiagnosticKind::WrongEnum { expected_enum, actual_enum } => {
                 format!(
                     r#"Wrong enum in pattern. Expected: "{}". Got: "{}"."#,
@@ -599,6 +610,21 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::InlineMacroFailed { macro_name } => {
                 format!("Inline macro `{}` failed.", macro_name)
             }
+            SemanticDiagnosticKind::UnknownGenericParam { name } => {
+                format!("Unknown generic parameter `{}`.", name)
+            }
+            SemanticDiagnosticKind::PositionalGenericAfterNamed => {
+                "Positional generic parameters must come before named generic parameters.".into()
+            }
+            SemanticDiagnosticKind::GenericArgDuplicate { name } => {
+                format!("Generic argument `{}` is specified more than once.", name)
+            }
+            SemanticDiagnosticKind::TooManyGenericArguments { expected, actual } => {
+                format!("Expected {} generic arguments, found {}.", expected, actual)
+            }
+            SemanticDiagnosticKind::GenericArgOutOfOrder { name } => {
+                format!("Generic argument `{}` is out of order.", name)
+            }
         }
     }
 
@@ -674,10 +700,6 @@ pub enum SemanticDiagnosticKind {
         expected: usize,
         actual: usize,
     },
-    WrongNumberOfGenericArguments {
-        expected: usize,
-        actual: usize,
-    },
     WrongParameterType {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
@@ -721,6 +743,10 @@ pub enum SemanticDiagnosticKind {
     WrongReturnType {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
+    },
+    WrongNumberOfGenericParamsForImplFunction {
+        expected: usize,
+        actual: usize,
     },
     WrongReturnTypeForImpl {
         impl_def_id: ImplDefId,
@@ -819,6 +845,10 @@ pub enum SemanticDiagnosticKind {
     UnexpectedTuplePattern {
         ty: semantic::TypeId,
     },
+    WrongNumberOfTupleElements {
+        expected: usize,
+        actual: usize,
+    },
     WrongEnum {
         expected_enum: EnumId,
         actual_enum: EnumId,
@@ -886,6 +916,20 @@ pub enum SemanticDiagnosticKind {
     },
     InlineMacroFailed {
         macro_name: SmolStr,
+    },
+    UnknownGenericParam {
+        name: SmolStr,
+    },
+    PositionalGenericAfterNamed,
+    GenericArgDuplicate {
+        name: SmolStr,
+    },
+    TooManyGenericArguments {
+        expected: usize,
+        actual: usize,
+    },
+    GenericArgOutOfOrder {
+        name: SmolStr,
     },
 }
 

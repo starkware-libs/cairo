@@ -111,20 +111,10 @@ error: Trait not found.
 fn bar<A, const B: usize, impl C: MyTrait::<felt252>>(){}
                                   ^*****^
 
-error: Wrong number of generic arguments. Expected 3, found: 4
- --> lib.cairo:3:5
+error: Expected 3 generic arguments, found 4.
+ --> lib.cairo:3:17
     bar::<1,1,1,1>();
-    ^*^
-
-error: Unknown type.
- --> lib.cairo:3:11
-    bar::<1,1,1,1>();
-          ^
-
-error: Unknown impl.
- --> lib.cairo:3:15
-    bar::<1,1,1,1>();
-              ^
+                ^
 
 error: Unknown literal.
  --> lib.cairo:4:19
@@ -331,3 +321,69 @@ struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test named generics
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    // Failures.
+    bar::<felt252, G: felt252>();
+    bar::<T: felt252, u32>();
+    bar::<T: felt252, T: u32>();
+    bar::<felt252, T: u32>();
+    bar::<felt252, u32, AFelt, BUint, u64>();
+    bar::<S: felt252, T: u32>();
+
+    // Successes.
+    bar::<felt252, S: u32>();
+    bar::<felt252, S: u32, X: _>();
+    bar::<S: _, X: AFelt, Y: BUint>();
+    bar::<felt252, u32, X: AFelt, Y: BUint>();
+}
+
+//! > function_name
+foo
+
+//! > module_code
+trait ATrait<T> {}
+impl AFelt of ATrait<felt252> {}
+trait BTrait<T> {}
+impl BUint of BTrait<u32> {}
+
+fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>(){}
+
+//! > expected_diagnostics
+error: Unknown generic parameter `G`.
+ --> lib.cairo:9:20
+    bar::<felt252, G: felt252>();
+                   ^********^
+
+error: Positional generic parameters must come before named generic parameters.
+ --> lib.cairo:10:23
+    bar::<T: felt252, u32>();
+                      ^*^
+
+error: Generic argument `T` is specified more than once.
+ --> lib.cairo:11:23
+    bar::<T: felt252, T: u32>();
+                      ^****^
+
+error: Generic argument `T` is specified more than once.
+ --> lib.cairo:12:20
+    bar::<felt252, T: u32>();
+                   ^****^
+
+error: Expected 4 generic arguments, found 5.
+ --> lib.cairo:13:39
+    bar::<felt252, u32, AFelt, BUint, u64>();
+                                      ^*^
+
+error: Generic argument `T` is out of order.
+ --> lib.cairo:14:23
+    bar::<S: felt252, T: u32>();
+                      ^****^

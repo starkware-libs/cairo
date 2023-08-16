@@ -112,6 +112,13 @@ impl<Key: Hash + Eq, Value> OrderedHashMap<Key, Value> {
     pub fn swap_remove<Q: ?Sized + Hash + Equivalent<Key>>(&mut self, key: &Q) -> Option<Value> {
         self.0.swap_remove(key)
     }
+
+    /// Removes the entry at the given index.
+    ///
+    /// Returns the key-value pair at the given index (if present).
+    pub fn shift_remove_index(&mut self, index: usize) -> Option<(Key, Value)> {
+        self.0.shift_remove_index(index)
+    }
 }
 
 impl<Key: Hash + Eq, Value> IntoIterator for OrderedHashMap<Key, Value> {

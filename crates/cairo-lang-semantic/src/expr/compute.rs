@@ -1317,10 +1317,7 @@ fn maybe_compute_pattern_semantic(
             if tys.len() != patterns_ast.len() {
                 return Err(ctx.diagnostics.report(
                     pattern_tuple,
-                    WrongNumberOfGenericArguments {
-                        expected: tys.len(),
-                        actual: patterns_ast.len(),
-                    },
+                    WrongNumberOfTupleElements { expected: tys.len(), actual: patterns_ast.len() },
                 ));
             }
             // Iterator of Option<Pattern?, for each field.

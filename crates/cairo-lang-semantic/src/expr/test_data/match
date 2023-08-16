@@ -31,7 +31,7 @@ error: Identifier not found.
         (7, 1) => { x },
                     ^
 
-error: Wrong number of generic arguments. Expected 2, found: 3
+error: Wrong number of tuple elements in pattern. Expected: 2. Got: 3.
  --> lib.cairo:10:9
         (A::b(x), 1, _) => { x },
         ^*************^
