@@ -139,8 +139,8 @@ impl RetArgs {
             |name| { !implicit_args.contains(&name.as_str()) }
         ) {
             self.num_implicit_ret_args = pos;
-        } else {
-            self.num_implicit_ret_args = 0;
+        } else { // all arguments are implicit.
+            self.num_implicit_ret_args = self.arg_names.len();
         }
     }
 }
@@ -172,7 +172,7 @@ fn get_ret_blocks(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProg
             }
         };
 
-    for pos in (casm_start..casm_end).rev() {
+    for pos in (casm_start + aux_info.core_libfunc_instr_num .. casm_end).rev() {
 
         // A branch return block begins with an ap += <step> or with the jmp or return at the end of the previous block.
         match &cairo_program.instructions[pos].body {
@@ -396,6 +396,7 @@ fn deref_or_imm_to_lean(expr: &DerefOrImmediate, paren: bool) -> String {
 
 /// All the information needed to generate the Lean code for a single function.
 struct LeanFuncInfo<'a> {
+    main_func_name: String,
     func_name: String,
     aux_info: &'a CasmBuilderAuxiliaryInfo,
     casm_instructions: &'a Vec<Instruction>,
@@ -408,6 +409,7 @@ struct LeanFuncInfo<'a> {
 impl<'a> LeanFuncInfo<'a> {
 
         pub fn new(
+            main_func_name: String,
             func_name: String,
             aux_info: &'a CasmBuilderAuxiliaryInfo,
             casm_start: usize,
@@ -415,7 +417,7 @@ impl<'a> LeanFuncInfo<'a> {
             cairo_program: &'a CairoProgram
         ) -> Self {
             let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program, casm_start, casm_end);
-            Self { func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps }
+            Self { main_func_name, func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps }
         }
 
         pub fn is_range_check_var(&self, name: &str) -> bool {
@@ -426,8 +428,8 @@ impl<'a> LeanFuncInfo<'a> {
             self.aux_info.consts.iter().any(|c| c.name == name)
         }
 
-        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, pc_start: usize, pc_end: usize) -> (RetArgs, Vec<bool>) {
-            let ret_blocks = get_ret_blocks(aux_info, cairo_program, pc_start, pc_end);
+        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, casm_start: usize, casm_end: usize) -> (RetArgs, Vec<bool>) {
+            let ret_blocks = get_ret_blocks(aux_info, cairo_program, casm_start, casm_end);
             check_ret_blocks(&ret_blocks, aux_info.return_branches.len());
 
             let branch_id_pos = get_branch_id_pos(&ret_blocks);
@@ -439,7 +441,11 @@ impl<'a> LeanFuncInfo<'a> {
                 num_implicit_ret_args: 0, // will be set later
             };
             ret_args.set_arg_names(&aux_info.return_branches);
-            ret_args.set_implicit_ret_arg_num();
+            // Called functions need all their arguments to be explicit, so call this only
+            // for the main function.
+            if casm_start == 0 {
+                ret_args.set_implicit_ret_arg_num();
+            }
             (ret_args, ret_blocks.iter().map(|b| b.2).collect())
         }
 
@@ -628,10 +634,10 @@ fn rebind_assignment(
 
 // Soundness generation functions
 
-fn generate_soundness_prelude(lean_info: &LeanFuncInfo) -> Vec<String> {
+fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import starkware.cairo.lean.semantics.soundness.prelude"));
-    prelude.push(format!("import .{}", lean_code_file_name(&lean_info.func_name[..], false)));
+    prelude.push(format!("import .{}", lean_code_file_name(main_func_name, false)));
     prelude.push(String::from("open tactic"));
     prelude.push(String::from(""));
     prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F] [prelude_hyps F]"));
@@ -680,6 +686,7 @@ trait LeanGenerator {
 
     fn generate_statement(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -687,6 +694,7 @@ trait LeanGenerator {
 
     fn generate_intro(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -890,6 +898,7 @@ impl LeanGenerator for AutoSpecs {
 
     fn generate_statement(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -906,6 +915,7 @@ impl LeanGenerator for AutoSpecs {
 
     fn generate_intro(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -1236,6 +1246,7 @@ impl LeanGenerator for AutoProof {
 
     fn generate_statement(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -1256,10 +1267,12 @@ impl LeanGenerator for AutoProof {
             self.push_statement(indent, &arguments_str, &arguments_str);
         }
 
-        let code_memory_str: String = "-- code is in memory at s.pc".to_string();
+        let code_memory_str: String = "-- code is in memory at σ.pc + start offset".to_string();
         self.push_statement(indent, &code_memory_str, &code_memory_str);
-        self.push_statement(indent, &format!("(h_mem : mem_at mem {func_name}_code σ.pc)"),
-            &format!("(h_mem : MemAt mem {func_name}_code σ.pc)"));
+        let pc_start = lean_info.get_pc_at(lean_info.casm_start);
+        let pc_str = if pc_start == 0 { "σ.pc".into() } else { format!("(σ.pc + {pc_start})") };
+        self.push_statement(indent, &format!("(h_mem : mem_at mem {main_func_name}_code {pc_str})"),
+            &format!("(h_mem : MemAt mem {main_func_name}_code {pc_str})"));
 
         if lean_info.has_args() {
             let input_args_str: String = "-- input arguments on the stack".to_string();
@@ -1315,6 +1328,7 @@ impl LeanGenerator for AutoProof {
 
     fn generate_intro(
         &mut self,
+        main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
         indent: usize,
@@ -1322,15 +1336,17 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, "apply ensures_of_ensuresb, intro νbound,",
             "apply ensures_of_ensuresb; intro νbound");
         // unpack the memory
-        let mut line = format!("unpack_memory {func_name}_code at h_mem with ⟨");
-        for code_i in 0..lean_info.get_code_len() {
+        let mut line = format!("unpack_memory {main_func_name}_code at h_mem with ⟨");
+        let pc_start = lean_info.get_pc_at(lean_info.casm_start);
+        let pc_end = lean_info.get_pc_at(lean_info.casm_end);
+        for code_i in pc_start..pc_end {
             if 95 < line.len() {
-                if code_i != 0 {
+                if code_i != pc_start {
                     line.push(',');
                 }
                 self.push_main(indent, &line, &line);
                 line = "".into();
-            } else if code_i != 0 {
+            } else if code_i != pc_start {
                 line.push_str(", ");
             }
             line.push_str(&format!("hpc{code_i}"));
@@ -1556,7 +1572,7 @@ impl LeanGenerator for AutoProof {
         // for this block. Assumes that each block has one assert per return argument
         // and a jump or return at the end of the block. In addition, each block may begin
         // with an ap step.
-        let mut casm_pos = lean_info.casm_instructions.len()
+        let mut casm_pos = lean_info.casm_end
             - (lean_info.ret_args.branch_num - branch_id) * (lean_info.ret_arg_num() + 1)
             - num_later_ap_step;
         let mut pc = lean_info.get_pc_at(casm_pos);
@@ -1745,14 +1761,13 @@ fn generate_soundness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
 }
 
 fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo) {
-    let func_name = &lean_info.func_name[..];
     let mut rebind = VarRebind::new();
     for arg in lean_info.get_arg_names() {
         rebind.rebind(&arg);
     }
 
-    lean_gen.generate_statement(func_name, lean_info, 0);
-    lean_gen.generate_intro(func_name, lean_info, 2);
+    lean_gen.generate_statement(&lean_info.main_func_name, &lean_info.func_name, lean_info, 0);
+    lean_gen.generate_intro(&lean_info.main_func_name, &lean_info.func_name, lean_info, 2);
     generate_auto_block(
         lean_gen,
         lean_info,
@@ -1989,41 +2004,46 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
     let offsets = find_func_offsets(cairo_program);
     assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
 
-    let func_name = test_name.split_whitespace().next().unwrap().to_string();
-    let mut soundness = String::new();
+    let main_func_name = test_name.split_whitespace().next().unwrap().to_string();
+    let mut soundness: Vec<String> = Vec::new();
+
+    // Generate the prelude
+    soundness.append(generate_soundness_prelude(&main_func_name).as_mut());
 
     for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
         let casm_start = (*func_offsets).0;
         let casm_end = (*func_offsets).1;
         let func_name_suffix = if casm_start == 0 { "".to_string() } else { "_destr".to_string() + &casm_start.to_string() };
-        soundness.push_str(
-            &generate_func_lean_soundness(&format!("{func_name}{func_name_suffix}"),
+        soundness.append(
+            generate_func_lean_soundness(
+                &main_func_name,
+                &format!("{main_func_name}{func_name_suffix}"),
                 cairo_program,
                 &aux_info,
                 casm_start,
                 casm_end,
-            )
-        )
+            ).as_mut()
+        );
+        soundness.push("".into());
     }
 
-    soundness
+    soundness.join("\n")
 }
 
 fn generate_func_lean_soundness(
-    func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, pc_start: usize, pc_end: usize,
-) -> String {
+    main_func_name: &str, func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, casm_start: usize, casm_end: usize,
+) -> Vec<String> {
 
     let lean_info = LeanFuncInfo::new(
+        main_func_name.into(),
         func_name.into(),
         aux_info,
-        pc_start,
-        pc_end,
+        casm_start,
+        casm_end,
         cairo_program
     );
 
     let mut soundness: Vec<String> = Vec::new();
-    // Generate the prelude
-    soundness.append(generate_soundness_prelude(&lean_info).as_mut());
 
     // Generate the constant definitions
     soundness.append(generate_consts(&lean_info).as_mut());
@@ -2043,7 +2063,7 @@ fn generate_func_lean_soundness(
     soundness.push(String::from(""));
     soundness.append(generate_soundness_auto_theorem(&lean_info).as_mut());
 
-    soundness.join("\n")
+    soundness
 }
 
 pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>, is_lean3: bool) -> Result<(), std::io::Error> {
