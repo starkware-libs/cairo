@@ -66,13 +66,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::AwesomeEvent(val) => {
-                array::ArrayTrait::append(ref keys, 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82);
+                array::ArrayTrait::append(ref keys, selector!("AwesomeEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             Event::BestEventEver(val) => {
-                array::ArrayTrait::append(ref keys, 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed);
+                array::ArrayTrait::append(ref keys, selector!("BestEventEver"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -84,13 +84,13 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-            if selector == 0x2fbea1ee750e49ff764a5c7183b4201cc4beb8ead010fbb75b671e6f31bb82 {
+            if selector == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::AwesomeEvent(val));
             }
-            if selector == 0x7b89143e59dd87ddfbccfa6075ca9296b9b5f26183bc738db54c2313fab4ed {
+            if selector == selector!("BestEventEver") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
