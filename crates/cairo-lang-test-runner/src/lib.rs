@@ -45,6 +45,7 @@ mod test_config;
 pub struct TestRunner {
     pub db: RootDatabase,
     pub main_crate_ids: Vec<CrateId>,
+    pub test_crate_ids: Vec<CrateId>,
     pub filter: String,
     pub include_ignored: bool,
     pub ignored: bool,
@@ -89,6 +90,7 @@ impl TestRunner {
 
         Ok(Self {
             db: db.snapshot(),
+            test_crate_ids: main_crate_ids.clone(),
             main_crate_ids,
             filter: filter.into(),
             include_ignored,
@@ -99,6 +101,10 @@ impl TestRunner {
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
+        if !self.test_crate_ids.iter().all(|id| self.main_crate_ids.contains(id)) {
+            bail!("The test runner can only run tests from the main crates.");
+        }
+
         let db = &self.db;
 
         let all_entry_points = if self.starknet {
@@ -126,7 +132,7 @@ impl TestRunner {
                     )
                 })
                 .collect();
-        let all_tests = find_all_tests(db, self.main_crate_ids.clone());
+        let all_tests = find_all_tests(db, self.test_crate_ids.clone());
         let sierra_program = self
             .db
             .get_sierra_program_for_functions(
