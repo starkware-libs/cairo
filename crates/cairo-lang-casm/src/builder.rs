@@ -805,7 +805,18 @@ pub struct CasmBuilderAuxiliaryInfo {
 
 impl CasmBuilderAuxiliaryInfo {
     pub fn not_empty(&self) -> bool {
-        0 < self.statements.len()
+        if 0 == self.statements.len() {
+            false
+        } else if self.statements.len() == 1 {
+            // Heuristic: check that this block is not simply a non-conditional 'jump'
+            // Where such blocks come from is not yet clear to me.
+            match &self.statements[0] {
+                StatementDesc::Jump(jmp) => { !jmp.cond_var.is_none() },
+                _ => true
+            }
+        } else {
+            true
+        }
     }
 
     pub fn add_arg(&mut self, var_name: &str, var: Var, cell_expr: CellExpression) {
