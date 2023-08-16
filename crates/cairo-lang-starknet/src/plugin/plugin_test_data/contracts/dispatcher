@@ -49,7 +49,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
-            0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+            selector!("get_something"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
@@ -64,7 +64,7 @@ impl IContractDispatcherImpl of IContractDispatcherTrait<IContractDispatcher> {
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
-            0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+            selector!("empty"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
@@ -86,7 +86,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+            selector!("get_something"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
@@ -101,7 +101,7 @@ impl IContractLibraryDispatcherImpl of IContractDispatcherTrait<IContractLibrary
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+            selector!("empty"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
@@ -128,7 +128,7 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+            selector!("get_something"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
@@ -145,7 +145,7 @@ impl IContractSafeLibraryDispatcherImpl of IContractSafeDispatcherTrait<IContrac
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
-            0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+            selector!("empty"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
@@ -168,7 +168,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
-            0x3c52d61651de3dcab6ceaa9f6505f7aed8f1ffc0f694ce2a9ed76e758d87a3,
+            selector!("get_something"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;
@@ -185,7 +185,7 @@ impl IContractSafeDispatcherImpl of IContractSafeDispatcherTrait<IContractSafeDi
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
-            0x1fc3f77ebc090777f567969ad9823cf6334ab888acb385ca72668ec5adbde80,
+            selector!("empty"),
             array::ArrayTrait::span(@__calldata__),
         );
         let mut ret_data = ret_data?;

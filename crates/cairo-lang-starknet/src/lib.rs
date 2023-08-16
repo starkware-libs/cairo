@@ -13,6 +13,7 @@ pub mod contract;
 pub mod contract_class;
 mod felt252_serde;
 mod felt252_vec_compression;
+pub mod inline_macros;
 pub mod plugin;
 
 #[cfg(test)]
