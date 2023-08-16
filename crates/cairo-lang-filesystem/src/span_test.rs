@@ -76,7 +76,7 @@ fn test_span() {
 
 #[test]
 #[should_panic(expected = "TextOffset out of range. TextWidth(21) > TextWidth(20).")]
-fn test_span_out_of_range() {
+fn should_panic_test_span_out_of_range() {
     let db = FilesDatabaseForTesting::default();
     let file = db.intern_file(FileLongId::Virtual(VirtualFile {
         parent: None,
