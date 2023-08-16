@@ -43,7 +43,6 @@ mod component {
 
 component:
 
-
 use starknet::event::EventEmitter;
     struct ComponentState<TCS> {
         data: data::ComponentMemberState,
@@ -159,8 +158,6 @@ use starknet::event::EventEmitter;
             }
         }
     }
-
-
 
 
 
