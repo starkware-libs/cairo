@@ -21,7 +21,7 @@ pub fn get_default_inline_macro_plugins() -> OrderedHashMap<String, Arc<dyn Inli
     res
 }
 
-fn unsupported_bracket_diagnostic(
+pub fn unsupported_bracket_diagnostic(
     db: &dyn SyntaxGroup,
     macro_ast: &ast::ExprInlineMacro,
 ) -> InlinePluginResult {

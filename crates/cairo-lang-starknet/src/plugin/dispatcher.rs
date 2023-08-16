@@ -10,7 +10,6 @@ use itertools::Itertools;
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::is_ref_param;
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR};
-use crate::contract::starknet_keccak;
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
@@ -148,10 +147,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", false))]
                         .into(),
                 ));
-                let entry_point_selector = RewriteNode::Text(format!(
-                    "0x{:x}",
-                    starknet_keccak(declaration.name(db).text(db).as_bytes())
-                ));
+                let entry_point_selector =
+                    RewriteNode::Text(format!("selector!(\"{}\")", declaration.name(db).text(db)));
                 contract_caller_method_impls.push(declaration_method_impl(
                     dispatcher_signature(db, &declaration, &contract_caller_name, true),
                     entry_point_selector.clone(),

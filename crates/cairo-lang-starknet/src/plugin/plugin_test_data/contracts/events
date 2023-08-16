@@ -164,13 +164,13 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     ) {
         match self {
             MyEventEnum::A(val) => {
-                array::ArrayTrait::append(ref keys, 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760);
+                array::ArrayTrait::append(ref keys, selector!("A"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
             },
             MyEventEnum::B(val) => {
-                array::ArrayTrait::append(ref keys, 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111);
+                array::ArrayTrait::append(ref keys, selector!("B"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -182,13 +182,13 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     ) -> Option<MyEventEnum> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-            if selector == 0x3783fac2efed8fbc9ad443e592ee30e61d65f471140c10ca155e937b435b760 {
+            if selector == selector!("A") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::A(val));
             }
-            if selector == 0x3675bff07515f5df96737194ea945c36c41e7b4fcef307b7cd4d0e602a69111 {
+            if selector == selector!("B") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;

@@ -29,6 +29,7 @@ use crate::contract::{
     find_contracts, get_module_abi_functions, get_selector_and_sierra_function, ContractDeclaration,
 };
 use crate::felt252_serde::sierra_to_felt252s;
+use crate::inline_macros::selector::SelectorMacro;
 use crate::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
 use crate::plugin::StarkNetPlugin;
 
@@ -85,6 +86,7 @@ pub fn compile_path(
     let mut db = RootDatabase::builder()
         .detect_corelib()
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()?;
 
     let main_crate_ids = setup_project(&mut db, Path::new(&path))?;
