@@ -194,6 +194,11 @@ impl RewriteNode {
         RewriteNode::new_modified(children)
     }
 }
+impl Default for RewriteNode {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
 impl From<SyntaxNode> for RewriteNode {
     fn from(node: SyntaxNode) -> Self {
         RewriteNode::Copied(node)
