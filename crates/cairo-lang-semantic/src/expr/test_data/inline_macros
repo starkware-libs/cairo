@@ -24,6 +24,8 @@ const e: felt252 = consteval_int![4 + 5];
 
 const f: felt252 = consteval_int!{4 + 5};
 
+const out_of_range: u8 = consteval_int!(120 + 160);
+
 //! > expected_diagnostics
 error: The name `e` is defined multiple times.
  --> lib.cairo:11:7
@@ -134,6 +136,11 @@ error: Only literal constants are currently supported.
  --> lib.cairo:13:20
 const f: felt252 = consteval_int!{4 + 5};
                    ^*******************^
+
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:15:26
+const out_of_range: u8 = consteval_int!(120 + 160);
+                         ^***********************^
 
 //! > ==========================================================================
 
