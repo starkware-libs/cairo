@@ -144,6 +144,40 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 
 //! > ==========================================================================
 
+//! > Test bad array! macros
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+    let x = array!(0);
+    let x = array![0_felt252, 1_u8];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Macro array does not support this bracket type
+ --> lib.cairo:2:13
+    let x = array!(0);
+            ^*******^
+
+error: Inline macro `array` failed.
+ --> lib.cairo:2:13
+    let x = array!(0);
+            ^*******^
+
+error: Plugin diagnostic: Unexpected argument type. Expected: "core::felt252", found: "core::integer::u8".
+ --> lib.cairo:3:31
+    let x = array![0_felt252, 1_u8];
+                              ^**^
+
+//! > ==========================================================================
+
 //! > Test unknown macro
 
 //! > test_runner_name
