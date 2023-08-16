@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::db::{DefsGroup, GeneratedFileInfo};
+use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
@@ -10,7 +10,7 @@ use cairo_lang_defs::ids::{
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
-use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, FileId, FileLongId, VirtualFile};
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::attribute::structured::Attribute;
 use cairo_lang_syntax::node::ast::{self, TraitItemFunction};
@@ -1076,62 +1076,59 @@ fn module_semantic_diagnostics(
         }
     }
 
-    Ok(map_diagnostics(
-        db.elongate(),
-        module_id,
-        &db.module_generated_file_infos(module_id)?,
-        diagnostics.build(),
-    )
-    .1)
+    Ok(map_diagnostics(db.elongate(), diagnostics.build()).1)
 }
 
 /// Transforms diagnostics that originate from plugin generated files. Uses the plugin's diagnostic
 /// mapper.
 fn map_diagnostics(
     db: &(dyn SemanticGroup + 'static),
-    module_id: ModuleId,
-    generated_file_info: &[Option<GeneratedFileInfo>],
     original_diagnostics: Diagnostics<SemanticDiagnostic>,
 ) -> (bool, Diagnostics<SemanticDiagnostic>) {
     let mut diagnostics = DiagnosticsBuilder::default();
     let mut has_change: bool = false;
 
     for tree in &original_diagnostics.0.subtrees {
-        let (changed, new_diags) =
-            map_diagnostics(db, module_id, generated_file_info, tree.clone());
+        let (changed, new_diags) = map_diagnostics(db, tree.clone());
         diagnostics.extend(new_diags);
         has_change |= changed;
     }
 
     for diag in &original_diagnostics.0.leaves {
-        let module_files = db.module_files(module_id).unwrap_or_default();
-        // Find the position of file_id in module_files.
-        let Some(file_index) = module_files
-            .iter()
-            .position(|file_id| file_id == &diag.stable_location.file_id(db.upcast()))
-        else {
-            continue;
-        };
-        if let Some(file_info) = &generated_file_info[file_index] {
-            let opt_span = file_info
-                .patches
-                .translate(diag.stable_location.diagnostic_location(db.upcast()).span);
-            if let Some(span) = opt_span {
-                // We don't have a real location, so we give a dummy location in the correct file.
-                // SemanticDiagnostic struct knowns to give the proper span for
-                // WrappedPluginDiagnostic.
-                let stable_location = diag.stable_location;
-                let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
-                    diagnostic: PluginMappedDiagnostic { span, message: diag.format(db) },
-                    original_diag: Box::new(diag.clone()),
-                    file_id: file_info.origin.file_id(db.upcast()).unwrap(),
-                };
-                diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
-                has_change = true;
-                continue;
+        let mut diag_mapped = false;
+        let mut mapped_span = diag.stable_location.diagnostic_location(db.upcast()).span;
+        let mut orig_file = diag.stable_location.file_id(db.upcast());
+        while let FileLongId::Virtual(VirtualFile {
+            parent: Some(parent),
+            diagnostics_mappings,
+            ..
+        }) = db.lookup_intern_file(orig_file)
+        {
+            if let Some(span) =
+                diagnostics_mappings.iter().find_map(|mapping| mapping.translate(mapped_span))
+            {
+                mapped_span = span;
+                diag_mapped = true;
+                orig_file = parent;
+            } else {
+                break;
             }
         }
-        diagnostics.add(diag.clone());
+        if !diag_mapped {
+            diagnostics.add(diag.clone());
+            continue;
+        }
+        // We don't have a real location, so we give a dummy location in the correct file.
+        // SemanticDiagnostic struct knowns to give the proper span for
+        // WrappedPluginDiagnostic.
+        let stable_location = diag.stable_location;
+        let kind = SemanticDiagnosticKind::WrappedPluginDiagnostic {
+            diagnostic: PluginMappedDiagnostic { span: mapped_span, message: diag.format(db) },
+            original_diag: Box::new(diag.clone()),
+            file_id: orig_file,
+        };
+        diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
+        has_change = true;
     }
 
     if !has_change {

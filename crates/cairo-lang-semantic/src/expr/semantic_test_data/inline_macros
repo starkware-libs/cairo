@@ -205,7 +205,7 @@ Block(
 
 //! > semantic_diagnostics
 error: Type annotations needed. Failed to infer ?0
- --> inline_macro.cairo:2:54
+ --> array_inline_macro:2:54
             let mut __array_builder_macro_result__ = ArrayTrait::new();
                                                      ^********^
 

@@ -162,7 +162,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 {trait_attrs}trait {trait_identifier}{impl_generic_params} {{
                 {signatures}}}
             "},
-            patches: Default::default(),
+            diagnostics_mappings: Default::default(),
             aux_data: None,
         }),
         diagnostics,
