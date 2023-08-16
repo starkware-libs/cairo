@@ -19,7 +19,6 @@ use super::aux_data::StarkNetEventAuxData;
 use super::consts::{EVENT_ATTR, EVENT_TYPE_NAME};
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
-use crate::contract::starknet_keccak;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -223,7 +222,6 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         };
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
-        let variant_selector = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let member_kind =
             get_field_kind_for_variant(db, &mut diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
@@ -231,12 +229,11 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let append_variant = RewriteNode::interpolate_patched(
             "
             $enum_name$::$variant_name$(val) => {
-                array::ArrayTrait::append(ref keys, $variant_selector$);$append_member$
+                array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));$append_member$
             },",
             [
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name.clone()),
-                (String::from("variant_selector"), RewriteNode::Text(variant_selector.clone())),
                 (String::from("append_member"), append_member),
             ]
             .into(),
@@ -244,13 +241,12 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let deserialize_member = deserialize_field(member_kind, RewriteNode::Text("val".into()));
         let deserialize_variant = RewriteNode::interpolate_patched(
             "
-            if selector == $variant_selector$ {$deserialize_member$
+            if selector == selector!(\"$variant_name$\") {$deserialize_member$
                 return Option::Some($enum_name$::$variant_name$(val));
             }",
             [
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name.clone()),
-                (String::from("variant_selector"), RewriteNode::Text(variant_selector)),
                 (String::from("deserialize_member"), deserialize_member),
             ]
             .into(),

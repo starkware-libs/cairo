@@ -100,10 +100,10 @@ impl RootDatabaseBuilder {
 
     pub fn with_inline_macro_plugin(
         &mut self,
-        name: String,
+        name: &str,
         plugin: Arc<dyn InlineMacroExprPlugin>,
     ) -> &mut Self {
-        self.inline_macro_plugins.insert(name, plugin);
+        self.inline_macro_plugins.insert(name.into(), plugin);
         self
     }
 
