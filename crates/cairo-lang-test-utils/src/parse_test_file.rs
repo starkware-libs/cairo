@@ -7,6 +7,7 @@ use std::path::Path;
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ResultHelper;
+use colored::Colorize;
 
 const TAG_PREFIX: &str = "//! > ";
 const TEST_SEPARATOR: &str =
@@ -308,15 +309,18 @@ pub fn run_test_file(
     let mut new_tests = OrderedHashMap::<String, Test>::default();
 
     let mut errors = Vec::new();
+    let mut passed_tests = 0;
+    let mut failed_tests = Vec::new();
     for (test_name, test) in tests {
         let line_num = test.line_num;
+        let test_path = format!(r#"{runner_name}::{filename}::"{test_name}" (line: {line_num})"#);
         let full_filename = std::fs::canonicalize(path)?;
         let full_filename_str = full_filename.to_str().unwrap();
 
         let get_attr = |key: &str| {
             test.attributes.get(key).unwrap_or_else(|| {
                 panic!(
-                    "Missing attribute '{key}' in test '{test_name}'.\nIn \
+                    "Missing attribute '{key}' in test '{test_path}'.\nIn \
                      {full_filename_str}:{line_num}"
                 )
             })
@@ -342,12 +346,20 @@ pub fn run_test_file(
         pretty_assertions::assert_eq!(name, runner_name);
 
         // Run the test.
-        log::debug!(r#"Running test: {runner_name}::{filename}::"{test_name}""#);
-        let Ok(outputs) = runner.run(&test.attributes, &runner_args) else {
-            panic!(
-                "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
-                 CAIRO_FIX_TESTS=1 to fix."
-            );
+        log::debug!("Running test: {test_path}");
+        let outputs = match runner.run(&test.attributes, &runner_args) {
+            Ok(outputs) => outputs,
+            Err(err) => {
+                errors.push(format!(
+                    "Test \"{test_name}\" failed.\nIn \
+                     {full_filename_str}:{line_num}.\n{err}\nRerun with CAIRO_FIX_TESTS=1 to fix."
+                ));
+                failed_tests.push(test_path);
+                if is_fix_mode {
+                    new_tests.insert(test_name.to_string(), test.clone());
+                }
+                continue;
+            }
         };
 
         if is_fix_mode {
@@ -356,6 +368,7 @@ pub fn run_test_file(
                 new_test.attributes.insert(key.to_string(), value.trim().to_string());
             }
             new_tests.insert(test_name.to_string(), new_test);
+            passed_tests += 1;
         } else {
             let mut cur_test_errors = Vec::new();
             for (key, value) in outputs {
@@ -368,12 +381,15 @@ pub fn run_test_file(
                     ));
                 }
             }
-            if !cur_test_errors.is_empty() {
+            if cur_test_errors.is_empty() {
+                passed_tests += 1;
+            } else {
                 errors.push(format!(
                     "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
                      CAIRO_FIX_TESTS=1 to fix.\n{err}",
                     err = cur_test_errors.join("")
                 ));
+                failed_tests.push(test_path);
             }
         }
     }
@@ -381,7 +397,18 @@ pub fn run_test_file(
         dump_to_test_file(new_tests, path.to_str().unwrap())?;
     }
 
-    assert!(errors.is_empty(), "\n\n{}", errors.join("\n\n"));
+    assert!(
+        errors.is_empty(),
+        "\n\n{}\n\n{}\n",
+        errors.join("\n\n"),
+        summary(passed_tests, &failed_tests)
+    );
 
     Ok(())
+}
+
+fn summary(passed_tests: usize, failed_tests: &[String]) -> String {
+    let passed = format!("{} passed", passed_tests).green();
+    let failed = format!("{} failed", failed_tests.len()).red();
+    format!("Summary: {passed}, {failed}:\n{}", failed_tests.join("\n"))
 }
