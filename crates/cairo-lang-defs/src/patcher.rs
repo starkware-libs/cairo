@@ -40,6 +40,11 @@ pub enum RewriteNode {
     Modified(ModifiedNode),
     Text(String),
 }
+impl Default for RewriteNode {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
 impl RewriteNode {
     pub fn new_trimmed(syntax_node: SyntaxNode) -> Self {
         Self::Trimmed { node: syntax_node, trim_left: true, trim_right: true }

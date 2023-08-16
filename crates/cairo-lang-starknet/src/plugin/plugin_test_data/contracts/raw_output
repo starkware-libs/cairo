@@ -45,8 +45,6 @@ mod test_contract {
 
 contract:
 
-#[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 use starknet::event::EventEmitter;
     struct ContractState {
     }
@@ -80,6 +78,8 @@ use starknet::event::EventEmitter;
         }
     }
 
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {

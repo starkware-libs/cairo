@@ -93,13 +93,112 @@ fn validate_module(
     PluginResult::default()
 }
 
-/// Accumulated data for contract generation.
 #[derive(Default)]
 struct ContractGenerationData {
+    pub common: StarknetModuleCommonGenerationData,
+    pub specific: ContractSpecificGenerationData,
+}
+impl ContractGenerationData {
+    fn to_rewrite_node(self) -> RewriteNode {
+        RewriteNode::interpolate_patched(
+            "$common$
+$specific$",
+            [
+                ("common".to_string(), self.common.to_rewrite_node()),
+                ("specific".to_string(), self.specific.to_rewrite_node()),
+            ]
+            .into(),
+        )
+    }
+}
+#[derive(Default)]
+struct ComponentGenerationData {
+    pub common: StarknetModuleCommonGenerationData,
+    pub specific: ComponentSpecificGenerationData,
+}
+impl ComponentGenerationData {
+    fn to_rewrite_node(self) -> RewriteNode {
+        RewriteNode::interpolate_patched(
+            "$common$
+$specific$",
+            [
+                ("common".to_string(), self.common.to_rewrite_node()),
+                ("specific".to_string(), self.specific.to_rewrite_node()),
+            ]
+            .into(),
+        )
+    }
+}
+
+/// Accumulated data for generation that is common to both contracts and components.
+#[derive(Default)]
+pub struct StarknetModuleCommonGenerationData {
+    /// The code of the state struct.
+    pub state_struct_code: RewriteNode,
+    /// Whether an event exists in the given module. If it doesn't, we need to generate an empty
+    /// one.
+    pub has_event: bool,
+    /// Use declarations to add to the internal submodules.
+    pub extra_uses_node: RewriteNode,
+}
+impl StarknetModuleCommonGenerationData {
+    fn to_rewrite_node(self) -> RewriteNode {
+        RewriteNode::interpolate_patched(
+            "$state_struct_code$",
+            [("state_struct_code".to_string(), self.state_struct_code)].into(),
+        )
+    }
+}
+
+/// Accumulated data specific for contract generation.
+#[derive(Default)]
+struct ContractSpecificGenerationData {
     generated_wrapper_functions: Vec<RewriteNode>,
     external_functions: Vec<RewriteNode>,
     constructor_functions: Vec<RewriteNode>,
     l1_handler_functions: Vec<RewriteNode>,
+    test_config: RewriteNode,
+}
+impl ContractSpecificGenerationData {
+    fn to_rewrite_node(self) -> RewriteNode {
+        let generated_external_module =
+            generate_submodule(EXTERNAL_MODULE, RewriteNode::new_modified(self.external_functions));
+        let generated_l1_handler_module = generate_submodule(
+            L1_HANDLER_MODULE,
+            RewriteNode::new_modified(self.l1_handler_functions),
+        );
+        let generated_constructor_module = generate_submodule(
+            CONSTRUCTOR_MODULE,
+            RewriteNode::new_modified(self.constructor_functions),
+        );
+        RewriteNode::interpolate_patched(
+            "$test_config$
+$generated_wrapper_functions$
+    $generated_external_module$
+    $generated_l1_handler_module$
+    $generated_constructor_module$",
+            [
+                ("test_config".to_string(), self.test_config),
+                (
+                    "generated_wrapper_functions".to_string(),
+                    RewriteNode::new_modified(self.generated_wrapper_functions),
+                ),
+                ("generated_external_module".to_string(), generated_external_module),
+                ("generated_l1_handler_module".to_string(), generated_l1_handler_module),
+                ("generated_constructor_module".to_string(), generated_constructor_module),
+            ]
+            .into(),
+        )
+    }
+}
+
+/// Accumulated data specific for component generation.
+#[derive(Default)]
+struct ComponentSpecificGenerationData {}
+impl ComponentSpecificGenerationData {
+    fn to_rewrite_node(self) -> RewriteNode {
+        RewriteNode::empty()
+    }
 }
 
 /// The kind of the starknet module (contract/component).
@@ -150,11 +249,10 @@ pub fn handle_module_by_storage(
 
     let body = extract_matches!(module_ast.body(db), MaybeModuleBody::Some);
     let mut diagnostics = vec![];
+    let mut common_data = StarknetModuleCommonGenerationData::default();
 
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
-    // Whether an event exists in the given module. If it doesn't, we need to generate an empty one.
-    let mut has_event = false;
     for item in body.items(db).elements(db) {
         // Skip elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
@@ -163,95 +261,62 @@ pub fn handle_module_by_storage(
         }
 
         if is_starknet_event(db, &mut diagnostics, &item, module_kind) {
-            has_event = true;
+            common_data.has_event = true;
         }
 
         maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
-    let extra_uses_node = RewriteNode::new_modified(
+    common_data.extra_uses_node = RewriteNode::new_modified(
         extra_uses
             .values()
             .map(|use_path| RewriteNode::Text(format!("\n        use {use_path};")))
             .collect(),
     );
 
-    let mut data = ContractGenerationData::default();
-
     // Generate the code for ContractState/ComponentState and the entry points.
-    let state_struct_code = generate_entry_points_and_state_struct(
-        db,
-        &mut diagnostics,
-        body,
-        &mut data,
-        &extra_uses_node,
-        has_event,
-        module_kind,
-    );
+    let module_kind_specific_code = match module_kind {
+        StarknetModuleKind::Contract => {
+            let mut generation_data =
+                ContractGenerationData { common: common_data, ..Default::default() };
+            for item in body.items(db).elements(db) {
+                handle_contract_item(db, &mut diagnostics, &item, &mut generation_data);
+            }
+
+            let test_class_hash = format!(
+                "0x{:x}",
+                starknet_keccak(
+                    module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
+                )
+            );
+
+            generation_data.specific.test_config = RewriteNode::Text(formatdoc!(
+                "#[cfg(test)]
+            const TEST_CLASS_HASH: felt252 = {test_class_hash};
+"
+            ));
+
+            generation_data.to_rewrite_node()
+        }
+        StarknetModuleKind::Component => {
+            let mut generation_data =
+                ComponentGenerationData { common: common_data, ..Default::default() };
+            for item in body.items(db).elements(db) {
+                handle_component_item(db, &mut diagnostics, &item, &mut generation_data);
+            }
+            generation_data.to_rewrite_node()
+        }
+    };
 
     let module_name_ast = module_ast.name(db);
-    let test_class_hash = format!(
-        "0x{:x}",
-        starknet_keccak(
-            module_ast.as_syntax_node().get_text_without_trivia(db).as_str().as_bytes(),
-        )
-    );
 
-    let internal_modules_node = match module_kind {
-        StarknetModuleKind::Contract => {
-            let generated_external_module = generate_submodule(
-                EXTERNAL_MODULE,
-                RewriteNode::new_modified(data.external_functions),
-            );
-            let generated_l1_handler_module = generate_submodule(
-                L1_HANDLER_MODULE,
-                RewriteNode::new_modified(data.l1_handler_functions),
-            );
-            let generated_constructor_module = generate_submodule(
-                CONSTRUCTOR_MODULE,
-                RewriteNode::new_modified(data.constructor_functions),
-            );
-            RewriteNode::interpolate_patched(
-                "    $generated_external_module$
-    $generated_l1_handler_module$
-    $generated_constructor_module$",
-                [
-                    ("generated_external_module".to_string(), generated_external_module),
-                    ("generated_l1_handler_module".to_string(), generated_l1_handler_module),
-                    ("generated_constructor_module".to_string(), generated_constructor_module),
-                ]
-                .into(),
-            )
-        }
-        StarknetModuleKind::Component => RewriteNode::empty(),
-    };
-    let test_config = match module_kind {
-        StarknetModuleKind::Contract => formatdoc!(
-            "
-            #[cfg(test)]
-            const TEST_CLASS_HASH: felt252 = {test_class_hash};"
-        ),
-        StarknetModuleKind::Component => "".to_string(),
-    };
     let generated_module = RewriteNode::interpolate_patched(
         formatdoc!(
-            "
-            {test_config}
-            $state_struct_code$
-            $generated_wrapper_functions$
-            $internal_modules_node$
-        "
+            "$module_kind_specific_code$
+"
         )
         .as_str(),
-        [
-            ("state_struct_code".to_string(), state_struct_code),
-            (
-                "generated_wrapper_functions".to_string(),
-                RewriteNode::new_modified(data.generated_wrapper_functions),
-            ),
-            ("internal_modules_node".to_string(), internal_modules_node),
-        ]
-        .into(),
+        [("module_kind_specific_code".to_string(), module_kind_specific_code)].into(),
     );
 
     let mut builder = PatchBuilder::new(db);
@@ -290,44 +355,53 @@ fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) 
     generated_external_module
 }
 
-/// Generates the code for the entry points of the contract/component, and for its state struct.
-fn generate_entry_points_and_state_struct(
+fn handle_contract_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    body: ast::ModuleBody,
+    item: &ast::Item,
     data: &mut ContractGenerationData,
-    extra_uses_node: &RewriteNode,
-    has_event: bool,
-    module_kind: StarknetModuleKind,
-) -> RewriteNode {
-    let mut state_struct_code = RewriteNode::Text("".to_string());
-    for item in body.items(db).elements(db) {
-        match &item {
-            ast::Item::FreeFunction(item_function)
-                if module_kind == StarknetModuleKind::Contract =>
-            {
-                handle_contract_free_function(db, diagnostics, item_function, data);
-            }
-            ast::Item::Impl(item_impl) if module_kind == StarknetModuleKind::Contract => {
-                handle_contract_impl(db, diagnostics, &item, item_impl, data);
-            }
-            ast::Item::Struct(item_struct)
-                if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME =>
-            {
-                let (state_struct_rewrite_node, storage_diagnostics) = handle_storage_struct(
-                    db,
-                    item_struct.clone(),
-                    extra_uses_node,
-                    has_event,
-                    module_kind,
-                );
-                state_struct_code = state_struct_rewrite_node;
-                diagnostics.extend(storage_diagnostics);
-            }
-            _ => {}
+) {
+    match &item {
+        ast::Item::FreeFunction(item_function) => {
+            handle_contract_free_function(db, diagnostics, item_function, &mut data.specific);
         }
+        ast::Item::Impl(item_impl) => {
+            handle_contract_impl(db, diagnostics, &item, item_impl, &mut data.specific);
+        }
+        ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
+            handle_storage_struct(
+                db,
+                diagnostics,
+                item_struct.clone(),
+                StarknetModuleKind::Contract,
+                &mut data.common,
+            );
+        }
+        _ => {}
     }
-    state_struct_code
+}
+
+fn handle_component_item(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+    data: &mut ComponentGenerationData,
+) {
+    match &item {
+        ast::Item::Impl(item_impl) => {
+            handle_component_impl(db, diagnostics, item_impl, data);
+        }
+        ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
+            handle_storage_struct(
+                db,
+                diagnostics,
+                item_struct.clone(),
+                StarknetModuleKind::Component,
+                &mut data.common,
+            );
+        }
+        _ => {}
+    }
 }
 
 /// Handles a free function inside a contract module.
@@ -335,7 +409,7 @@ fn handle_contract_free_function(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item_function: &ast::FunctionWithBody,
-    data: &mut ContractGenerationData,
+    data: &mut ContractSpecificGenerationData,
 ) {
     let Some(entry_point_kind) =
         EntryPointKind::try_from_function_with_body(db, diagnostics, item_function)
@@ -360,7 +434,7 @@ fn handle_contract_impl(
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::Item,
     item_impl: &ast::ItemImpl,
-    data: &mut ContractGenerationData,
+    data: &mut ContractSpecificGenerationData,
 ) {
     let is_external = has_external_attribute(db, diagnostics, item);
     if !(is_external || has_include_attribute(db, diagnostics, item)) {
@@ -408,6 +482,16 @@ fn handle_contract_impl(
             data,
         );
     }
+}
+
+/// Handles an impl inside a component module.
+fn handle_component_impl(
+    _db: &dyn SyntaxGroup,
+    _diagnostics: &mut Vec<PluginDiagnostic>,
+    _item_impl: &ast::ItemImpl,
+    _data: &mut ComponentGenerationData,
+) {
+    // TODO(yuval): handle includable_as impls.
 }
 
 /// Adds extra uses, to be used in the generated submodules.
@@ -531,7 +615,7 @@ fn handle_contract_entry_point(
     wrapped_function_path: RewriteNode,
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    data: &mut ContractGenerationData,
+    data: &mut ContractSpecificGenerationData,
 ) {
     let name_node = item_function.declaration(db).name(db);
     if entry_point_kind == EntryPointKind::Constructor && name_node.text(db) != CONSTRUCTOR_NAME {
