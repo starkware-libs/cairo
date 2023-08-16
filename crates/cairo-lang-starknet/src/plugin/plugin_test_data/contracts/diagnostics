@@ -1,7 +1,7 @@
 //! > Test first param must be self.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -120,7 +120,7 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
 //! > Test invalid constructor name.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -247,7 +247,7 @@ error: Plugin diagnostic: The constructor function must be called `constructor`.
 //! > Test diagnostics non legacy storage variable.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -370,7 +370,7 @@ error: Plugin diagnostic: Identifier not found.
 //! > Test non-v0 external function.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -561,7 +561,7 @@ error: Plugin diagnostic: Only #[external(v0)] is supported.
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -687,7 +687,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test diagnostics of non-serializable return type in entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -815,7 +815,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test diagnostics of generic entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -962,7 +962,7 @@ note: Trait has no implementation in context: core::traits::Destruct::<T>
 //! > Test multiple diagnostics from entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1097,7 +1097,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test account contract_entry point on a non-account contract.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1287,7 +1287,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test raw_outputs diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1473,7 +1473,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1624,7 +1624,7 @@ error: Plugin diagnostic: The name `same_name` is defined multiple times.
 //! > Contract with no storage.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1655,7 +1655,7 @@ error: Plugin diagnostic: Contracts must define a 'Storage' struct.
 //! > Not annotated storage struct.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1692,7 +1692,7 @@ error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
 //! > Non v0 impls.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1822,7 +1822,7 @@ error: Plugin diagnostic: Only #[external(v0)] is supported.
 //! > old contract attribute.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[contract]
@@ -1864,7 +1864,7 @@ error: Plugin diagnostic: The 'abi' attribute was deprecated, please use `starkn
 //! > Attributes in external impl.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -2068,7 +2068,7 @@ error: Plugin diagnostic: The 'constructor' attribute is not allowed inside an e
 //! > "Event" enum without #[event].
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -2179,7 +2179,7 @@ error: Plugin diagnostic: Contract type that is named `Event` must be marked wit
 //! > #[event] enum that isn't named "Event".
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]

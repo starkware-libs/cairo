@@ -6,7 +6,7 @@
     * `!b;` (not `b`)
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn foo() {

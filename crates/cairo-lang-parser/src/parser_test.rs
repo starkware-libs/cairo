@@ -2,6 +2,7 @@
 use std::fmt::Write;
 use std::path::PathBuf;
 
+use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use test_case::test_case;
 
@@ -283,7 +284,7 @@ pub fn test_partial_parser_tree_with_trivia(
 }
 fn test_partial_parser_tree_inner(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
     print_trivia: bool,
 ) -> Result<OrderedHashMap<String, String>, String> {
     // TODO(yuval): allow pointing to a code in another file.
@@ -291,6 +292,9 @@ fn test_partial_parser_tree_inner(
     let file_id = create_virtual_file(db, "dummy_file.cairo", &inputs["cairo_code"]);
     let (syntax_root, diagnostics) =
         get_syntax_root_and_diagnostics(db, file_id, &inputs["cairo_code"]);
+
+    let diagnostics = diagnostics.format(db);
+    has_disallowed_diagnostics(args, &diagnostics)?;
 
     let ignored_kinds: Vec<&str> = inputs["ignored_kinds"].split('\n').collect();
     Ok(OrderedHashMap::from([
@@ -304,7 +308,7 @@ fn test_partial_parser_tree_inner(
                 print_trivia,
             ),
         ),
-        ("expected_diagnostics".into(), diagnostics.format(db)),
+        ("expected_diagnostics".into(), diagnostics),
     ]))
 }
 

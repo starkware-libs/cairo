@@ -1,7 +1,7 @@
 //! > Test expansion of panic_with.
 
 //! > test_runner_name
-test_expand_plugin
+test_expand_plugin(allow_diagnostics: false)
 
 //! > cairo_code
 #[panic_with('1', foo_improved)]
@@ -114,7 +114,7 @@ fn wrapped_possibly_panic() -> felt252 {
 //! > Test diagnostics of panic with.
 
 //! > test_runner_name
-test_expand_plugin
+test_expand_plugin(allow_diagnostics: true)
 
 //! > cairo_code
 #[panic_with(123, foo_bad_err_code)]

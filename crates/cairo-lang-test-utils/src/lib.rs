@@ -3,6 +3,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Mutex, MutexGuard};
 
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 pub use parse_test_file::parse_test_file;
 
 /// Returns the content of the relevant test file.
@@ -33,4 +34,24 @@ pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
         // Allow other test to take the lock if it was poisoned by a thread that panicked.
         Err(poisoned) => poisoned.into_inner(),
     }
+}
+
+// Disallow diagnostics if args.allow_diagnostics == false.
+pub fn has_disallowed_diagnostics(
+    args: &OrderedHashMap<String, String>,
+    diagnostics: &str,
+) -> Result<(), String> {
+    if let Some(allow_diagnostics) = args.get("allow_diagnostics") {
+        let trimmed_allow_diagnostics = allow_diagnostics.trim();
+        if (trimmed_allow_diagnostics == "false" || trimmed_allow_diagnostics == "False")
+            && !diagnostics.is_empty()
+        {
+            return Err(format!(
+                "allow_diagnostics == false, but diagnostics were generated:\n{}",
+                diagnostics
+            ));
+        }
+    }
+
+    Ok(())
 }
