@@ -10,7 +10,8 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 /// Compiles a single function to Sierra and checks the generated code.
 pub fn test_function_generator(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
@@ -39,12 +40,12 @@ pub fn test_function_generator(
             .join("\n")
     });
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "lowering_diagnostics".into(),
             lowering_diagnostics.map_or("".into(), |diagnostics| diagnostics.format(db)),
         ),
         ("sierra_code".into(), sierra_code),
-    ])
+    ]))
 }

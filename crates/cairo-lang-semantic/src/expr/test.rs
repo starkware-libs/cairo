@@ -59,7 +59,10 @@ cairo_lang_test_utils::test_file_test!(
     test_expr_semantics
 );
 
-fn test_expr_semantics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_expr_semantics(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SemanticDatabaseForTesting::default();
     let (test_expr, diagnostics) = setup_test_expr(
         db,
@@ -70,10 +73,10 @@ fn test_expr_semantics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMa
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("expected".into(), format!("{:#?}", expr.debug(&expr_formatter))),
         ("semantic_diagnostics".into(), diagnostics),
-    ])
+    ]))
 }
 
 #[test]

@@ -25,7 +25,8 @@ cairo_lang_test_utils::test_file_test!(
 
 pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut SimpleParserDatabase::default();
 
     let cfg_set: Option<CfgSet> =
@@ -77,8 +78,8 @@ pub fn test_expand_plugin(
         generated_items.extend(local_generated_items);
     }
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("generated_cairo_code".into(), generated_items.join("\n")),
         ("expected_diagnostics".into(), diagnostic_items.join("\n")),
-    ])
+    ]))
 }
