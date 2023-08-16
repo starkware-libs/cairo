@@ -306,6 +306,8 @@ pub fn run_test_file(
     let is_fix_mode = std::env::var("CAIRO_FIX_TESTS") == Ok("1".into());
     let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
+
+    let mut errors = Vec::new();
     for (test_name, test) in tests {
         let line_num = test.line_num;
         let full_filename = std::fs::canonicalize(path)?;
@@ -355,18 +357,31 @@ pub fn run_test_file(
             }
             new_tests.insert(test_name.to_string(), new_test);
         } else {
+            let mut cur_test_errors = Vec::new();
             for (key, value) in outputs {
-                pretty_assertions::assert_eq!(
-                    value.trim(),
-                    get_attr(&key),
+                let expected_value = get_attr(&key);
+                let actual_value = value.trim();
+                if actual_value != expected_value {
+                    cur_test_errors.push(format!(
+                        "Output tag '{key}' does not \
+                         match.\nActual:\n{actual_value}\nExpected:\n{expected_value}\n\n",
+                    ));
+                }
+            }
+            if !cur_test_errors.is_empty() {
+                errors.push(format!(
                     "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
-                     CAIRO_FIX_TESTS=1 to fix."
-                );
+                     CAIRO_FIX_TESTS=1 to fix.\n{err}",
+                    err = cur_test_errors.join("")
+                ));
             }
         }
     }
     if is_fix_mode {
         dump_to_test_file(new_tests, path.to_str().unwrap())?;
     }
+
+    assert!(errors.is_empty(), "\n\n{}", errors.join("\n\n"));
+
     Ok(())
 }
