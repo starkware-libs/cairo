@@ -1,7 +1,7 @@
 //! > Test +=, -=, *=, /=, %=
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
@@ -79,7 +79,7 @@ StatementLet
 //! > Test error of `+=` with `let`.
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 fn foo() {
