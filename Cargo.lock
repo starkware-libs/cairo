@@ -1019,6 +1019,7 @@ name = "cairo-lang-test-utils"
 version = "2.1.0"
 dependencies = [
  "cairo-lang-utils",
+ "colored",
  "env_logger",
  "log",
  "pretty_assertions",
