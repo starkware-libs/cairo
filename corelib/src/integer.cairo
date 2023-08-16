@@ -1881,6 +1881,15 @@ extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
 
+impl I8Serde of Serde<i8> {
+    fn serialize(self: @i8, ref output: Array<felt252>) {
+        Into::<i8, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<i8> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl I8PartialEq of PartialEq<i8> {
     #[inline(always)]
     fn eq(lhs: @i8, rhs: @i8) -> bool {
@@ -1979,6 +1988,15 @@ extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
 
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
+
+impl I16Serde of Serde<i16> {
+    fn serialize(self: @i16, ref output: Array<felt252>) {
+        Into::<i16, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<i16> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
 
 impl I16PartialEq of PartialEq<i16> {
     #[inline(always)]
@@ -2079,6 +2097,15 @@ extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 
+impl I32Serde of Serde<i32> {
+    fn serialize(self: @i32, ref output: Array<felt252>) {
+        Into::<i32, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<i32> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl I32PartialEq of PartialEq<i32> {
     #[inline(always)]
     fn eq(lhs: @i32, rhs: @i32) -> bool {
@@ -2178,6 +2205,15 @@ extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 
+impl I64Serde of Serde<i64> {
+    fn serialize(self: @i64, ref output: Array<felt252>) {
+        Into::<i64, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<i64> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
+
 impl I64PartialEq of PartialEq<i64> {
     #[inline(always)]
     fn eq(lhs: @i64, rhs: @i64) -> bool {
@@ -2276,6 +2312,15 @@ extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
 
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
+
+impl I128Serde of Serde<i128> {
+    fn serialize(self: @i128, ref output: Array<felt252>) {
+        Into::<i128, felt252>::into(*self).serialize(ref output);
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<i128> {
+        Option::Some(((*serialized.pop_front()?).try_into())?)
+    }
+}
 
 impl I128PartialEq of PartialEq<i128> {
     #[inline(always)]
