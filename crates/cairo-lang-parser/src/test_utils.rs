@@ -13,13 +13,16 @@ pub fn read_file(filename: &str) -> String {
         .unwrap_or_else(|_| panic!("Something went wrong reading file {filename}"))
 }
 
-pub fn get_diagnostics(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+pub fn get_diagnostics(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SimpleParserDatabase::default();
     let code = &inputs["cairo_code"];
 
     let file_id = create_virtual_file(db, "dummy_file.cairo", code);
     let (_, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, code);
-    OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.format(db))])
+    Ok(OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.format(db))]))
 }
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.

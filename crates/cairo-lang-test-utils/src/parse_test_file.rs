@@ -138,7 +138,11 @@ impl TestBuilder {
 pub trait TestFileRunner {
     /// Reads tags from the input map, and returns the output map, that should match the expected
     /// outputs.
-    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String>;
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        runner_args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String>;
 }
 
 /// Creates a test that reads test files for a given function.
@@ -204,34 +208,43 @@ macro_rules! test_file_test_with_runner {
 
 /// Simple runner wrapping a test function.
 pub struct SimpleRunner {
-    pub func: fn(&OrderedHashMap<String, String>) -> OrderedHashMap<String, String>,
+    pub func: fn(
+        inputs: &OrderedHashMap<String, String>,
+        args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String>,
 }
 impl TestFileRunner for SimpleRunner {
-    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
-        (self.func)(inputs)
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        runner_args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String> {
+        (self.func)(inputs, runner_args)
     }
 }
 
 /// Creates a test that reads test files for a given function.
 /// test_name - the name of the test.
-/// filenames - a vector of tests files the test applies to.
+/// filenames - a vector of test files the test applies to.
 /// func - the function to be applied on the test params to generate the tested result.
 ///
 /// The signature of `func` should be of the form:
 /// ```ignore
 /// fn func(
-///     inputs: &OrderedHashMap<String, String>
+///     inputs: &OrderedHashMap<String, String>,
+///     args: &OrderedHashMap<String, String>,
 /// ) -> OrderedHashMap<String, String>;
 /// ```
-/// And `func` can read the tags from the file from the input map. It should return the expected
-/// outputs with the same tags as the file, in the output map.
+/// And `func` can read the tags from the file from the `inputs` map. It should return the expected
+/// outputs with the same tags as the file.
+/// `args` can be provided in the "test_runner_name" tag and can be used in `func` as needed.
 ///
 /// The structure of the file must be of the following form:
 /// ```text
-/// //! > test description
+/// //! > <test description>
 ///
 /// //! > test_runner_name
-/// test_to_upper
+/// test_to_upper(optional_arg1: val1, optional_arg2: val2)
 ///
 /// //! > input1
 /// hello
@@ -294,8 +307,6 @@ pub fn run_test_file(
     let tests = parse_test_file(path)?;
     let mut new_tests = OrderedHashMap::<String, Test>::default();
     for (test_name, test) in tests {
-        log::debug!(r#"Running test: {runner_name}::{filename}::"{test_name}""#);
-        let outputs = runner.run(&test.attributes);
         let line_num = test.line_num;
         let full_filename = std::fs::canonicalize(path)?;
         let full_filename_str = full_filename.to_str().unwrap();
@@ -309,7 +320,33 @@ pub fn run_test_file(
             })
         };
 
-        pretty_assertions::assert_eq!(get_attr("test_runner_name"), runner_name);
+        let runner_tag = get_attr("test_runner_name").as_str();
+        let (name, runner_args) = if let Some((name, args_str)) = runner_tag.split_once('(') {
+            (
+                name,
+                args_str
+                    .strip_suffix(')')
+                    .unwrap()
+                    .split(',')
+                    .map(|param| {
+                        let (param_name, param_value) = param.split_once(':').unwrap();
+                        (param_name.to_string(), param_value.to_string())
+                    })
+                    .collect::<OrderedHashMap<_, _>>(),
+            )
+        } else {
+            (runner_tag, OrderedHashMap::default())
+        };
+        pretty_assertions::assert_eq!(name, runner_name);
+
+        // Run the test.
+        log::debug!(r#"Running test: {runner_name}::{filename}::"{test_name}""#);
+        let Ok(outputs) = runner.run(&test.attributes, &runner_args) else {
+            panic!(
+                "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
+                 CAIRO_FIX_TESTS=1 to fix."
+            );
+        };
 
         if is_fix_mode {
             let mut new_test = test.clone();

@@ -271,18 +271,21 @@ pub fn fix_parser_tests() {
 ///   the irrelevant kinds.
 pub fn test_partial_parser_tree(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
-    test_partial_parser_tree_inner(inputs, false)
+    args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
+    test_partial_parser_tree_inner(inputs, args, false)
 }
 pub fn test_partial_parser_tree_with_trivia(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
-    test_partial_parser_tree_inner(inputs, true)
+    args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
+    test_partial_parser_tree_inner(inputs, args, true)
 }
 fn test_partial_parser_tree_inner(
     inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
     print_trivia: bool,
-) -> OrderedHashMap<String, String> {
+) -> Result<OrderedHashMap<String, String>, String> {
     // TODO(yuval): allow pointing to a code in another file.
     let db = &SimpleParserDatabase::default();
     let file_id = create_virtual_file(db, "dummy_file.cairo", &inputs["cairo_code"]);
@@ -290,7 +293,7 @@ fn test_partial_parser_tree_inner(
         get_syntax_root_and_diagnostics(db, file_id, &inputs["cairo_code"]);
 
     let ignored_kinds: Vec<&str> = inputs["ignored_kinds"].split('\n').collect();
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         (
             "expected_tree".into(),
             print_partial_tree(
@@ -302,7 +305,7 @@ fn test_partial_parser_tree_inner(
             ),
         ),
         ("expected_diagnostics".into(), diagnostics.format(db)),
-    ])
+    ]))
 }
 
 cairo_lang_test_utils::test_file_test!(

@@ -12,7 +12,11 @@ use crate::test_utils::SHARED_DB;
 struct ExpandContractTestRunner {}
 
 impl TestFileRunner for ExpandContractTestRunner {
-    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String> {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (test_module, _semantic_diagnostics) =
             setup_test_module(&db, inputs["cairo_code"].as_str()).split();
@@ -41,13 +45,13 @@ impl TestFileRunner for ExpandContractTestRunner {
             file_contents.push(db.file_content(file).unwrap().as_ref().clone());
         }
 
-        OrderedHashMap::from([
+        Ok(OrderedHashMap::from([
             ("generated_cairo_code".into(), file_contents.join("\n\n")),
             (
                 "expected_diagnostics".into(),
                 get_diagnostics_as_string(&db, &[test_module.crate_id]),
             ),
-        ])
+        ]))
     }
 }
 
