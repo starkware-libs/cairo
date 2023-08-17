@@ -34,22 +34,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -66,6 +51,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 
