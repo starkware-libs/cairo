@@ -1,12 +1,13 @@
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use indent::indent_by;
 use indoc::formatdoc;
 use itertools::Itertools;
 
-use super::DeriveInfo;
+use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
 use crate::plugins::derive::TypeVariantInfo;
 
-/// Returns the derived implementation of the `Serde` trait.
-pub fn get_serde_impl(info: &DeriveInfo) -> String {
+/// Adds drive result for the `Serde` trait.
+pub fn handle_serde(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mut DeriveResult) {
     let header = info.format_impl_header("Serde", &["Serde", "Destruct"]);
     let full_typename = info.full_typename();
     let ty = &info.name;
@@ -35,7 +36,10 @@ pub fn get_serde_impl(info: &DeriveInfo) -> String {
                     )
                 })
                 .join(";\n"),
-            TypeVariantInfo::Extern => unreachable!(),
+            TypeVariantInfo::Extern => {
+                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
+                return;
+            }
         },
     );
     let deserialize_body = indent_by(
@@ -68,10 +72,13 @@ pub fn get_serde_impl(info: &DeriveInfo) -> String {
                     )).join("\n    "),
                 }
             }
-            TypeVariantInfo::Extern => unreachable!(),
+            TypeVariantInfo::Extern => {
+                result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
+                return;
+            }
         },
     );
-    formatdoc! {"
+    result.impls.push(formatdoc! {"
         {header} {{
             fn serialize(self: @{full_typename}, ref output: array::Array<felt252>) {{
                 {serialize_body}
@@ -80,5 +87,5 @@ pub fn get_serde_impl(info: &DeriveInfo) -> String {
                 {deserialize_body}
             }}
         }}
-    "}
+    "});
 }
