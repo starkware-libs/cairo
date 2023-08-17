@@ -140,36 +140,6 @@ impl StarknetState {
         self.next_id += Felt252::from(1);
         self.next_id.clone()
     }
-<<<<<<< HEAD
-
-    /// Replaces the addresses in the context.
-    pub fn open_caller_context(&mut self, new_contract_address: Felt252) -> (Felt252, Felt252) {
-        let old_contract_address =
-            std::mem::replace(&mut self.exec_info.contract_address, new_contract_address.clone());
-        let old_caller_address =
-            std::mem::replace(&mut self.exec_info.caller_address, old_contract_address.clone());
-        (old_contract_address, old_caller_address)
-    }
-
-    /// Restores the addresses in the context.
-    pub fn close_caller_context(
-        &mut self,
-        (old_contract_address, old_caller_address): (Felt252, Felt252),
-    ) {
-        self.exec_info.contract_address = old_contract_address;
-        self.exec_info.caller_address = old_caller_address;
-    }
-}
-
-/// Object storing logs for a contract.
-#[derive(Clone, Default)]
-struct ContractLogs {
-    /// Events.
-    events: VecDeque<Log>,
-    /// Messages sent to L1.
-    l2_to_l1_messages: VecDeque<L2ToL1Message>,
-||||||| 0f77760aa
-=======
 
     /// Replaces the addresses in the context.
     pub fn open_caller_context(
@@ -191,7 +161,15 @@ struct ContractLogs {
         self.exec_info.contract_address = old_contract_address;
         self.exec_info.caller_address = old_caller_address;
     }
->>>>>>> origin/dev-v2.1.1
+}
+
+/// Object storing logs for a contract.
+#[derive(Clone, Default)]
+struct ContractLogs {
+    /// Events.
+    events: VecDeque<Log>,
+    /// Messages sent to L1.
+    l2_to_l1_messages: VecDeque<L2ToL1Message>,
 }
 
 /// Copy of the cairo `ExecutionInfo` struct.
@@ -935,18 +913,6 @@ impl<'a> CairoHintProcessor<'a> {
 
         // Call constructor if it exists.
         let (res_data_start, res_data_end) = if let Some(constructor) = &contract_info.constructor {
-<<<<<<< HEAD
-            let old_addrs =
-                self.starknet_state.open_caller_context(deployed_contract_address.clone());
-||||||| 0f77760aa
-            // Replace the contract address in the context.
-            let old_contract_address = std::mem::replace(
-                &mut self.starknet_state.exec_info.contract_address,
-                deployed_contract_address.clone(),
-            );
-
-            // Run the constructor.
-=======
             let new_caller_address = if deploy_from_zero {
                 Felt252::zero()
             } else {
@@ -955,7 +921,6 @@ impl<'a> CairoHintProcessor<'a> {
             let old_addrs = self
                 .starknet_state
                 .open_caller_context((deployed_contract_address.clone(), new_caller_address));
->>>>>>> origin/dev-v2.1.1
             let res = self.call_entry_point(gas_counter, runner, constructor, calldata, vm);
             self.starknet_state.close_caller_context(old_addrs);
             match res {
@@ -1009,25 +974,10 @@ impl<'a> CairoHintProcessor<'a> {
             fail_syscall!(b"ENTRYPOINT_NOT_FOUND");
         };
 
-<<<<<<< HEAD
-        let old_addrs = self.starknet_state.open_caller_context(contract_address.clone());
-||||||| 0f77760aa
-        // Replace the contract address in the context.
-        let old_contract_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.contract_address,
-            contract_address.clone(),
-        );
-        let old_caller_address = std::mem::replace(
-            &mut self.starknet_state.exec_info.caller_address,
-            old_contract_address.clone(),
-        );
-
-=======
         let old_addrs = self.starknet_state.open_caller_context((
             contract_address.clone(),
             self.starknet_state.exec_info.contract_address.clone(),
         ));
->>>>>>> origin/dev-v2.1.1
         let res = self.call_entry_point(gas_counter, runner, entry_point, calldata, vm);
         self.starknet_state.close_caller_context(old_addrs);
 
