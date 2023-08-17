@@ -29,7 +29,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn check_variable_lifetime(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
@@ -90,9 +91,9 @@ fn check_variable_lifetime(
         })
         .join("\n");
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("last_use".into(), last_use_str),
         ("drops".into(), drop_str),
-    ])
+    ]))
 }

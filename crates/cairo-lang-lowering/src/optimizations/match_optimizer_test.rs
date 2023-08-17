@@ -25,7 +25,10 @@ cairo_lang_test_utils::test_file_test!(
     test_match_optimizer
 );
 
-fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_match_optimizer(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -50,7 +53,7 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let mut after = before.clone();
     optimize_matches(&mut after);
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),
@@ -61,5 +64,5 @@ fn test_match_optimizer(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
             format!("{:?}", after.debug(&LoweredFormatter::new(db, &after.variables))),
         ),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
-    ])
+    ]))
 }

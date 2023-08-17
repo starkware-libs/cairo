@@ -66,7 +66,8 @@ cairo_lang_test_utils::test_file_test!(
 
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -89,11 +90,11 @@ fn test_function_lowering(
     let lowering_format =
         lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or_default();
 
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
         ("lowering_flat".into(), lowering_format),
-    ])
+    ]))
 }
 
 /// Tests all the lowering phases of a function (tracking logic in
@@ -101,7 +102,8 @@ fn test_function_lowering(
 /// Can be used to debug cases where the transition of a specific lowering phase fails.
 fn test_function_lowering_phases(
     inputs: &OrderedHashMap<String, String>,
-) -> OrderedHashMap<String, String> {
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = LoweringDatabaseForTesting::default();
 
     let (test_function, semantic_diagnostics) = setup_test_function(
@@ -158,14 +160,14 @@ fn test_function_lowering_phases(
 
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
-    OrderedHashMap::from_iter(chain!(
+    Ok(OrderedHashMap::from_iter(chain!(
         [
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), diagnostics.format(&db)),
         ]
         .into_iter(),
         stage_states.into_iter()
-    ))
+    )))
 }
 
 fn formatted_lowered(db: &dyn LoweringGroup, lowered: &FlatLowered) -> String {

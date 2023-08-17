@@ -69,7 +69,10 @@ cairo_lang_test_utils::test_file_test!(
     },
     test_generic_item_id
 );
-fn test_generic_item_id(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_generic_item_id(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let mut db_val = DatabaseForTesting::default();
     let module_id = setup_test_module(&mut db_val, inputs["module_code"].as_str());
 
@@ -112,7 +115,7 @@ fn test_generic_item_id(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     }
     find_generics(db, module_file_id, node, &mut output);
 
-    OrderedHashMap::from([("output".into(), output)])
+    Ok(OrderedHashMap::from([("output".into(), output)]))
 }
 
 pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(

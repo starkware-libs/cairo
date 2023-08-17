@@ -92,7 +92,11 @@ cairo_lang_test_utils::test_file_test_with_runner!(
 #[derive(Default)]
 struct SmallE2ETestRunner;
 impl TestFileRunner for SmallE2ETestRunner {
-    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String> {
         let locked_db = test_lock(&SHARED_DB);
         // Parse code and create semantic model.
         let db = locked_db.snapshot();
@@ -122,18 +126,22 @@ impl TestFileRunner for SmallE2ETestRunner {
             .to_string();
         drop(locked_db);
 
-        OrderedHashMap::from([
+        Ok(OrderedHashMap::from([
             ("casm".into(), casm),
             ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),
-        ])
+        ]))
     }
 }
 
 #[derive(Default)]
 struct SmallE2ETestRunnerSkipAddGas;
 impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
-    fn run(&mut self, inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> Result<OrderedHashMap<String, String>, String> {
         let mut locked_db = test_lock(&SHARED_DB);
         let add_withdraw_gas_flag_id =
             FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
@@ -166,10 +174,10 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
             .unwrap()
             .to_string();
 
-        OrderedHashMap::from([
+        Ok(OrderedHashMap::from([
             ("casm".into(), casm),
             ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),
-        ])
+        ]))
     }
 }

@@ -35,7 +35,10 @@ cairo_lang_test_utils::test_file_test!(
     block_generator_test
 );
 
-fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn block_generator_test(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut SierraGenDatabaseForTesting::new_empty();
 
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
@@ -61,12 +64,12 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     let lowered = match db.concrete_function_with_body_lowered(function_id) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,
         _ => {
-            return OrderedHashMap::from([
+            return Ok(OrderedHashMap::from([
                 ("semantic_diagnostics".into(), semantic_diagnostics),
                 ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
                 ("sierra_gen_diagnostics".into(), "".into()),
                 ("sierra_code".into(), "".into()),
-            ]);
+            ]));
         }
     };
 
@@ -90,10 +93,10 @@ fn block_generator_test(inputs: &OrderedHashMap<String, String>) -> OrderedHashM
     }
 
     let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-    OrderedHashMap::from([
+    Ok(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
         ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),
         ("sierra_code".into(), expected_sierra_code),
-    ])
+    ]))
 }

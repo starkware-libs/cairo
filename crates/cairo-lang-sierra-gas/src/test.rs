@@ -23,7 +23,10 @@ fn get_example_program(name: &str) -> Program {
     cairo_lang_sierra::ProgramParser::new().parse(&fs::read_to_string(path).unwrap()).unwrap()
 }
 
-fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<String, String> {
+fn test_solve_gas(
+    inputs: &OrderedHashMap<String, String>,
+    _args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
     let path = &inputs["test_file_name"];
     let program = get_example_program(path);
 
@@ -32,5 +35,5 @@ fn test_solve_gas(inputs: &OrderedHashMap<String, String>) -> OrderedHashMap<Str
         calc_gas_postcost_info(&program, Default::default(), &gas_info0, |_| 0).unwrap();
     let gas_info = gas_info0.combine(gas_info1);
 
-    OrderedHashMap::from([("gas_solution".into(), format!("{gas_info}"))])
+    Ok(OrderedHashMap::from([("gas_solution".into(), format!("{gas_info}"))]))
 }
