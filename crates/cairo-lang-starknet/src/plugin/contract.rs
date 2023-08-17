@@ -24,6 +24,9 @@ use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
 };
 use super::events::generate_event_code;
+use super::generation_data::{
+    ComponentGenerationData, ContractGenerationData, StarknetModuleCommonGenerationData,
+};
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -94,119 +97,6 @@ fn validate_module(
     PluginResult::default()
 }
 
-#[derive(Default)]
-struct ContractGenerationData {
-    pub common: StarknetModuleCommonGenerationData,
-    pub specific: ContractSpecificGenerationData,
-}
-impl ContractGenerationData {
-    fn to_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$common$
-$specific$",
-            [
-                ("common".to_string(), self.common.to_rewrite_node()),
-                ("specific".to_string(), self.specific.to_rewrite_node()),
-            ]
-            .into(),
-        )
-    }
-}
-#[derive(Default)]
-struct ComponentGenerationData {
-    pub common: StarknetModuleCommonGenerationData,
-    pub specific: ComponentSpecificGenerationData,
-}
-impl ComponentGenerationData {
-    fn to_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$common$
-$specific$",
-            [
-                ("common".to_string(), self.common.to_rewrite_node()),
-                ("specific".to_string(), self.specific.to_rewrite_node()),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data for generation that is common to both contracts and components.
-#[derive(Default)]
-pub struct StarknetModuleCommonGenerationData {
-    /// The code of the state struct.
-    pub state_struct_code: RewriteNode,
-    /// The generated event-related code.
-    pub event_code: RewriteNode,
-    /// Use declarations to add to the internal submodules.
-    pub extra_uses_node: RewriteNode,
-}
-impl StarknetModuleCommonGenerationData {
-    fn to_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$event_code$
-
-$state_struct_code$",
-            [
-                ("event_code".to_string(), self.event_code),
-                ("state_struct_code".to_string(), self.state_struct_code),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data specific for contract generation.
-#[derive(Default)]
-struct ContractSpecificGenerationData {
-    generated_wrapper_functions: Vec<RewriteNode>,
-    external_functions: Vec<RewriteNode>,
-    constructor_functions: Vec<RewriteNode>,
-    l1_handler_functions: Vec<RewriteNode>,
-    test_config: RewriteNode,
-}
-impl ContractSpecificGenerationData {
-    fn to_rewrite_node(self) -> RewriteNode {
-        let generated_external_module =
-            generate_submodule(EXTERNAL_MODULE, RewriteNode::new_modified(self.external_functions));
-        let generated_l1_handler_module = generate_submodule(
-            L1_HANDLER_MODULE,
-            RewriteNode::new_modified(self.l1_handler_functions),
-        );
-        let generated_constructor_module = generate_submodule(
-            CONSTRUCTOR_MODULE,
-            RewriteNode::new_modified(self.constructor_functions),
-        );
-        RewriteNode::interpolate_patched(
-            "$test_config$
-$generated_wrapper_functions$
-    $generated_external_module$
-    $generated_l1_handler_module$
-    $generated_constructor_module$",
-            [
-                ("test_config".to_string(), self.test_config),
-                (
-                    "generated_wrapper_functions".to_string(),
-                    RewriteNode::new_modified(self.generated_wrapper_functions),
-                ),
-                ("generated_external_module".to_string(), generated_external_module),
-                ("generated_l1_handler_module".to_string(), generated_l1_handler_module),
-                ("generated_constructor_module".to_string(), generated_constructor_module),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data specific for component generation.
-#[derive(Default)]
-struct ComponentSpecificGenerationData {}
-impl ComponentSpecificGenerationData {
-    fn to_rewrite_node(self) -> RewriteNode {
-        RewriteNode::empty()
-    }
-}
-
 /// The kind of the starknet module (contract/component).
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum StarknetModuleKind {
@@ -237,6 +127,23 @@ impl StarknetModuleKind {
             Self::Contract => "contract",
             Self::Component => "component",
         }
+    }
+
+    // Getters for generated names in the code, according to the module kind.
+    pub fn get_state_struct_name(self) -> String {
+        format!("{}State", self.to_str_capital())
+    }
+    pub fn get_generic_arg_str(self) -> &'static str {
+        if matches!(self, StarknetModuleKind::Component) { "<TCS>" } else { "" }
+    }
+    pub fn get_full_generic_arg_str(self) -> &'static str {
+        if matches!(self, StarknetModuleKind::Component) { "::<TCS>" } else { "" }
+    }
+    pub fn get_full_state_struct_name(self) -> String {
+        format!("{}{}", self.get_state_struct_name(), self.get_generic_arg_str())
+    }
+    pub fn get_member_state_name(self) -> String {
+        format!("{}MemberState", self.to_str_capital())
     }
 }
 
@@ -732,4 +639,55 @@ fn validate_l1_handler_first_parameter(
             stable_ptr: params.stable_ptr().untyped(),
         });
     };
+}
+
+/// Accumulated data specific for contract generation.
+#[derive(Default)]
+pub struct ContractSpecificGenerationData {
+    generated_wrapper_functions: Vec<RewriteNode>,
+    external_functions: Vec<RewriteNode>,
+    constructor_functions: Vec<RewriteNode>,
+    l1_handler_functions: Vec<RewriteNode>,
+    test_config: RewriteNode,
+}
+impl ContractSpecificGenerationData {
+    pub fn to_rewrite_node(self) -> RewriteNode {
+        let generated_external_module =
+            generate_submodule(EXTERNAL_MODULE, RewriteNode::new_modified(self.external_functions));
+        let generated_l1_handler_module = generate_submodule(
+            L1_HANDLER_MODULE,
+            RewriteNode::new_modified(self.l1_handler_functions),
+        );
+        let generated_constructor_module = generate_submodule(
+            CONSTRUCTOR_MODULE,
+            RewriteNode::new_modified(self.constructor_functions),
+        );
+        RewriteNode::interpolate_patched(
+            "$test_config$
+$generated_wrapper_functions$
+    $generated_external_module$
+    $generated_l1_handler_module$
+    $generated_constructor_module$",
+            [
+                ("test_config".to_string(), self.test_config),
+                (
+                    "generated_wrapper_functions".to_string(),
+                    RewriteNode::new_modified(self.generated_wrapper_functions),
+                ),
+                ("generated_external_module".to_string(), generated_external_module),
+                ("generated_l1_handler_module".to_string(), generated_l1_handler_module),
+                ("generated_constructor_module".to_string(), generated_constructor_module),
+            ]
+            .into(),
+        )
+    }
+}
+
+/// Accumulated data specific for component generation.
+#[derive(Default)]
+pub struct ComponentSpecificGenerationData {}
+impl ComponentSpecificGenerationData {
+    pub fn to_rewrite_node(self) -> RewriteNode {
+        RewriteNode::empty()
+    }
 }
