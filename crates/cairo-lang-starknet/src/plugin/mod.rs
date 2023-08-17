@@ -10,11 +10,10 @@ use cairo_lang_syntax::node::helpers::QueryAttrs;
 use consts::*;
 
 pub mod aux_data;
-mod contract;
 mod dispatcher;
 mod entry_point;
 pub mod events;
-mod generation_data;
+mod starknet_module;
 mod storage;
 mod storage_access;
 mod utils;
@@ -23,7 +22,7 @@ use dispatcher::handle_trait;
 use events::derive_event_needed;
 use storage_access::derive_storage_access_needed;
 
-use self::contract::{handle_module, handle_module_by_storage};
+use self::starknet_module::{handle_module, handle_module_by_storage};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]

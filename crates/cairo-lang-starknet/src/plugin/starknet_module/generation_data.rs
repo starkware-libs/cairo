@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 
-use super::contract::{ComponentSpecificGenerationData, ContractSpecificGenerationData};
+use super::component::ComponentSpecificGenerationData;
+use super::contract::ContractSpecificGenerationData;
 
 #[derive(Default)]
 pub struct ContractGenerationData {

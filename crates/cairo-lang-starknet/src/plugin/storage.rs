@@ -6,8 +6,8 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
-use super::contract::StarknetModuleKind;
-use super::generation_data::StarknetModuleCommonGenerationData;
+use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
+use super::starknet_module::StarknetModuleKind;
 use crate::contract::starknet_keccak;
 
 /// Generate getters and setters for the variables in the storage struct.
