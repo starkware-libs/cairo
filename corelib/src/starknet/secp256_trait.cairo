@@ -19,9 +19,18 @@ struct Signature {
 }
 
 
-/// Creates an ECDSA signature from the v, r and s values.
+/// Creates an ECDSA signature from the `v`, `r` and `s` values.
+/// `v` is the sum of an odd number and the parity of the y coordinate of the ec point whose x
+/// coordinate is `r`.
+/// See https://eips.ethereum.org/EIPS/eip-155 for more details.
 fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
+<<<<<<< HEAD
     Signature { r, s, y_parity: v % 2 == 1, }
+||||||| 0f77760aa
+    Signature { r, s, y_parity: v % 2 == 1,  }
+=======
+    Signature { r, s, y_parity: v % 2 == 0 }
+>>>>>>> origin/dev-v2.1.1
 }
 
 trait Secp256Trait<Secp256Point> {

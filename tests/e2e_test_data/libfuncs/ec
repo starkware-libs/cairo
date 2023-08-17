@@ -19,7 +19,7 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_zero = ec_point_zero;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
@@ -65,11 +65,11 @@ ret;
 test::foo: OrderedHashMap({Const: 1100})
 
 //! > sierra_code
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_try_new_nz = ec_point_try_new_nz;
 libfunc branch_align = branch_align;
@@ -160,12 +160,12 @@ ret;
 test::foo: OrderedHashMap({Const: 2110})
 
 //! > sierra_code
-type RangeCheck = RangeCheck;
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
-type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_from_x_nz = ec_point_from_x_nz;
 libfunc branch_align = branch_align;
@@ -218,10 +218,10 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type felt252 = felt252;
-type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252>;
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<felt252, felt252> = Struct<ut@Tuple, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_unwrap = ec_point_unwrap;
 libfunc struct_construct<Tuple<felt252, felt252>> = struct_construct<Tuple<felt252, felt252>>;
@@ -266,9 +266,9 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type felt252 = felt252;
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_point_is_zero = ec_point_is_zero;
 libfunc branch_align = branch_align;
@@ -316,7 +316,7 @@ ret;
 test::foo: OrderedHashMap({Const: 200})
 
 //! > sierra_code
-type EcPoint = EcPoint;
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_neg = ec_neg;
 libfunc store_temp<EcPoint> = store_temp<EcPoint>;
@@ -366,7 +366,7 @@ ret;
 test::foo: OrderedHashMap({Const: 700})
 
 //! > sierra_code
-type EcState = EcState;
+type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_state_init = ec_state_init;
 libfunc rename<EcState> = rename<EcState>;
@@ -412,10 +412,10 @@ ret;
 test::foo: OrderedHashMap({Const: 1300})
 
 //! > sierra_code
-type EcState = EcState;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
+type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_state_add = ec_state_add;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
@@ -473,11 +473,21 @@ ret;
 test::foo: OrderedHashMap({Const: 1600})
 
 //! > sierra_code
+<<<<<<< HEAD
 type EcState = EcState;
 type EcPoint = EcPoint;
 type NonZero<EcPoint> = NonZero<EcPoint>;
 type Unit = Struct<ut@Tuple>;
 type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit>;
+||||||| 0f77760aa
+type EcState = EcState;
+type EcPoint = EcPoint;
+type NonZero<EcPoint> = NonZero<EcPoint>;
+=======
+type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+>>>>>>> origin/dev-v2.1.1
 
 libfunc ec_state_try_finalize_nz = ec_state_try_finalize_nz;
 libfunc branch_align = branch_align;
@@ -532,12 +542,12 @@ ret;
 test::foo: OrderedHashMap({EcOp: 1, Const: 900})
 
 //! > sierra_code
-type EcOp = EcOp;
-type EcState = EcState;
-type felt252 = felt252;
-type EcPoint = EcPoint;
-type NonZero<EcPoint> = NonZero<EcPoint>;
-type Unit = Struct<ut@Tuple>;
+type EcOp = EcOp [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc ec_state_add_mul = ec_state_add_mul;
 libfunc struct_construct<Unit> = struct_construct<Unit>;

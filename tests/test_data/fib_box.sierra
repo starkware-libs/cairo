@@ -1,6 +1,6 @@
-type felt252 = felt252;
-type Box<felt252> = Box<felt252>;
-type NonZero<felt252> = NonZero<felt252>;
+type Box<felt252> = Box<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc disable_ap_tracking = disable_ap_tracking;
 libfunc unbox<felt252> = unbox<felt252>;

@@ -16,8 +16,8 @@ ret;
 test::foo: OrderedHashMap({Const: 100})
 
 //! > sierra_code
-type i64 = i64;
-type felt252 = felt252;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_to_felt252 = i64_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
@@ -137,9 +137,9 @@ ret;
 test::foo: OrderedHashMap({Const: 400})
 
 //! > sierra_code
-type i64 = i64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_eq = i64_eq;
 libfunc branch_align = branch_align;
@@ -191,9 +191,9 @@ ret;
 test::foo: OrderedHashMap({Const: 500})
 
 //! > sierra_code
-type i64 = i64;
-type Unit = Struct<ut@Tuple>;
-type core::bool = Enum<ut@core::bool, Unit, Unit>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type core::bool = Enum<ut@core::bool, Unit, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_const<11> = i64_const<11>;
 libfunc i64_const<12> = i64_const<12>;
@@ -416,8 +416,8 @@ ret;
 test::foo: OrderedHashMap({Const: 300})
 
 //! > sierra_code
-type i64 = i64;
-type NonZero<i64> = NonZero<i64>;
+type i64 = i64 [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<i64> = NonZero<i64> [storable: true, drop: true, dup: true, zero_sized: false];
 
 libfunc i64_is_zero = i64_is_zero;
 libfunc branch_align = branch_align;
