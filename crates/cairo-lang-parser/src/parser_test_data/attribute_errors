@@ -8,22 +8,24 @@ test_partial_parser_tree
 3
 
 //! > top_level_kind
-Item
+ItemList
 
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:7
+#[aaa]
+      ^
+
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> dummy_file.cairo:2:1
 3
 ^
 
-error: Missing tokens. Expected an item after attributes.
- --> dummy_file.cairo:2:2
-3
- ^
-
 //! > expected_tree
+└── Top level kind: ItemList
+    └── child #0: Missing []
 
 //! > ==========================================================================
 
@@ -39,22 +41,24 @@ trait Abc {
 }
 
 //! > top_level_kind
-Item
+TraitItemList
 
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected a trait item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
 error: Skipped tokens. Expected: trait item or an attribute.
  --> dummy_file.cairo:3:5
     3
     ^
 
-error: Missing tokens. Expected a trait item after attributes.
- --> dummy_file.cairo:3:6
-    3
-     ^
-
 //! > expected_tree
+└── Top level kind: TraitItemList
+    └── child #0: Missing []
 
 //! > ==========================================================================
 
@@ -70,19 +74,97 @@ impl Abc of Def {
 }
 
 //! > top_level_kind
-Item
+ImplItemList
 
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an impl item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
 error: Skipped tokens. Expected: impl item or an attribute.
  --> dummy_file.cairo:3:5
     3
     ^
 
-error: Missing tokens. Expected an impl item after attributes.
- --> dummy_file.cairo:3:6
-    3
-     ^
+//! > expected_tree
+└── Top level kind: ImplItemList
+    └── child #0: Missing []
+
+//! > ==========================================================================
+
+//! > Test repeated attributes without an item.
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+#[aaa]
+#[bbb]
+2
+
+//! > top_level_kind
+ItemList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:2:7
+#[bbb]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> dummy_file.cairo:3:1
+2
+^
 
 //! > expected_tree
+└── Top level kind: ItemList
+    └── child #0: Missing []
+
+//! > ==========================================================================
+
+//! > Test repeated attributed literals.
+
+//! > test_runner_name
+test_partial_parser_tree
+
+//! > cairo_code
+#[aaa]
+1
+#[bbb]
+2
+
+//! > top_level_kind
+ItemList
+
+//! > ignored_kinds
+
+//! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:7
+#[aaa]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> dummy_file.cairo:2:1
+1
+^
+
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:3:7
+#[bbb]
+      ^
+
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
+ --> dummy_file.cairo:4:1
+2
+^
+
+//! > expected_tree
+└── Top level kind: ItemList
+    ├── child #0: Missing []
+    └── child #1: Missing []
