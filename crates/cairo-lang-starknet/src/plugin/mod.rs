@@ -14,6 +14,7 @@ mod contract;
 mod dispatcher;
 mod entry_point;
 pub mod events;
+mod generation_data;
 mod includable;
 mod storage;
 mod storage_access;

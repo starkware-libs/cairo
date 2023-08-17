@@ -6,7 +6,8 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
-use super::contract::{StarknetModuleCommonGenerationData, StarknetModuleKind};
+use super::contract::StarknetModuleKind;
+use super::generation_data::StarknetModuleCommonGenerationData;
 use crate::contract::starknet_keccak;
 
 /// Generate getters and setters for the variables in the storage struct.
@@ -21,15 +22,11 @@ pub fn handle_storage_struct(
     let mut members_init_code = Vec::new();
     let mut vars_code = Vec::new();
 
-    let state_struct_name = format!("{}State", starknet_module_kind.to_str_capital());
-    let member_state_name = format!("{}MemberState", starknet_module_kind.to_str_capital());
-    let (generic_arg_str, full_generic_arg_str) =
-        if starknet_module_kind == StarknetModuleKind::Component {
-            ("<TCS>", "::<TCS>")
-        } else {
-            ("", "")
-        };
-    let full_state_struct_name = format!("{state_struct_name}{generic_arg_str}");
+    let state_struct_name = starknet_module_kind.get_state_struct_name();
+    let generic_arg_str = starknet_module_kind.get_generic_arg_str();
+    let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
+    let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
+    let member_state_name = starknet_module_kind.get_member_state_name();
 
     for member in struct_ast.members(db).elements(db) {
         let name_node = member.name(db).as_syntax_node();

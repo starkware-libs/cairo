@@ -15,7 +15,8 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
-use super::contract::{StarknetModuleCommonGenerationData, StarknetModuleKind};
+use super::contract::StarknetModuleKind;
+use super::generation_data::StarknetModuleCommonGenerationData;
 use crate::contract::starknet_keccak;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
@@ -397,10 +398,9 @@ pub fn generate_event_code(
     starknet_module_kind: StarknetModuleKind,
     has_event: bool,
 ) {
-    let state_struct_name = format!("{}State", starknet_module_kind.to_str_capital());
-    let generic_arg_str =
-        if starknet_module_kind == StarknetModuleKind::Component { "<TCS>" } else { "" };
-    let full_state_struct_name = format!("{state_struct_name}{generic_arg_str}");
+    let state_struct_name = starknet_module_kind.get_state_struct_name();
+    let generic_arg_str = starknet_module_kind.get_generic_arg_str();
+    let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
     let empty_event_code =
         if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
