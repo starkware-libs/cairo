@@ -8,7 +8,7 @@ pub mod abi;
 mod aliased;
 pub mod allowed_libfuncs;
 pub mod casm_contract_class;
-mod compiler_version;
+pub mod compiler_version;
 pub mod contract;
 pub mod contract_class;
 mod felt252_serde;
