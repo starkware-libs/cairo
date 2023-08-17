@@ -182,8 +182,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]), or
     /// TryParseFauilre if a top-level item can't be parsed.
     pub fn try_parse_top_level_item(&mut self) -> TryParseResult<ItemGreen> {
-        let maybe_attributes = self
-            .try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Ok(attributes) => (true, attributes),
@@ -515,10 +514,9 @@ impl<'a> Parser<'a> {
     fn try_parse_attribute_list(
         &mut self,
         expected_elements_str: &str,
-        should_stop: fn(SyntaxKind) -> bool,
     ) -> TryParseResult<AttributeListGreen> {
         if self.peek().kind == SyntaxKind::TerminalHash {
-            Ok(self.parse_attribute_list(expected_elements_str, should_stop))
+            Ok(self.parse_attribute_list(expected_elements_str))
         } else {
             Err(TryParseFailure::SkipToken)
         }
@@ -527,16 +525,12 @@ impl<'a> Parser<'a> {
     /// Parses an attribute list.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
     /// Note: it should not include "attribute".
-    fn parse_attribute_list(
-        &mut self,
-        expected_elements_str: &str,
-        should_stop: fn(SyntaxKind) -> bool,
-    ) -> AttributeListGreen {
+    fn parse_attribute_list(&mut self, expected_elements_str: &str) -> AttributeListGreen {
         AttributeList::new_green(
             self.db,
             self.parse_list(
                 Self::try_parse_attribute,
-                should_stop,
+                |x| x != SyntaxKind::TerminalHash,
                 format!("{expected_elements_str} or an attribute").as_str(),
             ),
         )
@@ -607,8 +601,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a TraitItem.* kind (see
     /// [syntax::node::ast::TraitItem]), or TryParseFailure if a trait item can't be parsed.
     pub fn try_parse_trait_item(&mut self) -> TryParseResult<TraitItemGreen> {
-        let maybe_attributes =
-            self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Ok(attributes) => (true, attributes),
@@ -713,8 +706,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a ImplItem.* kind (see
     /// [syntax::node::ast::ImplItem]), or TryParseFailure if an impl item can't be parsed.
     pub fn try_parse_impl_item(&mut self) -> TryParseResult<ImplItemGreen> {
-        let maybe_attributes =
-            self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Ok(attributes) => (true, attributes),
@@ -1660,8 +1652,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Member or TryParseFailure if a struct member can't be parsed.
     fn try_parse_member(&mut self) -> TryParseResult<MemberGreen> {
-        let attributes =
-            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+        let attributes = self.try_parse_attribute_list("Struct member");
         let (name, attributes) = match attributes {
             Ok(attributes) => (self.parse_identifier(), attributes),
             Err(_) => (self.try_parse_identifier()?, AttributeList::new_green(self.db, vec![])),
@@ -1686,8 +1677,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Variant or TryParseFailure if an enum variant can't be parsed.
     fn try_parse_variant(&mut self) -> TryParseResult<VariantGreen> {
-        let attributes =
-            self.try_parse_attribute_list("Enum variant", |x| x != SyntaxKind::TerminalHash);
+        let attributes = self.try_parse_attribute_list("Enum variant");
         let (name, attributes) = match attributes {
             Ok(attributes) => (self.parse_identifier(), attributes),
             Err(_) => (self.try_parse_identifier()?, AttributeList::new_green(self.db, vec![])),
