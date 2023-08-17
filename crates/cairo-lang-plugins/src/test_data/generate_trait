@@ -179,3 +179,27 @@ impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 }
 trait OtherTrait<T>  {
 }
+
+//! > ==========================================================================
+
+//! > Test expansion of generate_trait with one impl generic parameter.
+
+//! > test_runner_name
+test_expand_plugin
+
+//! > cairo_code
+trait T {}
+
+#[generate_trait]
+impl MyImpl<impl I: T> of MyTrait<I>;
+
+//! > generated_cairo_code
+trait T {}
+
+
+#[generate_trait]
+impl MyImpl<impl I: T> of MyTrait<I>;
+trait MyTrait<impl I: T>  {
+}
+
+//! > expected_diagnostics
