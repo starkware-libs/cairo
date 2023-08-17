@@ -473,11 +473,21 @@ ret;
 test::foo: OrderedHashMap({Const: 1600})
 
 //! > sierra_code
+<<<<<<< HEAD
 type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
 type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
 type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
 type core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>> = Enum<ut@core::option::Option::<core::zeroable::NonZero::<core::ec::EcPoint>>, NonZero<EcPoint>, Unit> [storable: true, drop: true, dup: true, zero_sized: false];
+||||||| 0f77760aa
+type EcState = EcState;
+type EcPoint = EcPoint;
+type NonZero<EcPoint> = NonZero<EcPoint>;
+=======
+type EcState = EcState [storable: true, drop: true, dup: true, zero_sized: false];
+type EcPoint = EcPoint [storable: true, drop: true, dup: true, zero_sized: false];
+type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true, zero_sized: false];
+>>>>>>> origin/dev-v2.1.1
 
 libfunc ec_state_try_finalize_nz = ec_state_try_finalize_nz;
 libfunc branch_align = branch_align;
