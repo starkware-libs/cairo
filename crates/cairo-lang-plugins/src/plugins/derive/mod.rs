@@ -15,6 +15,7 @@ use smol_str::SmolStr;
 mod clone;
 mod default;
 mod destruct;
+mod hash;
 mod panic_destruct;
 mod partial_eq;
 mod serde;
@@ -112,6 +113,21 @@ impl GenericParamsInfo {
 
     /// Formats the generic params for the type.
     /// `additional_demands` formats the generic type params as additional trait bounds.
+    /// Does not print including the `<>`.
+    fn format_generics_with_trait_params_only(
+        &self,
+        additional_demands: impl Fn(&SmolStr) -> Vec<String>,
+    ) -> String {
+        chain!(
+            self.type_generics.iter().map(|s| s.to_string()),
+            self.other_generics.iter().cloned(),
+            self.type_generics.iter().flat_map(additional_demands)
+        )
+        .join(", ")
+    }
+
+    /// Formats the generic params for the type.
+    /// `additional_demands` formats the generic type params as additional trait bounds.
     fn format_generics_with_trait(
         &self,
         additional_demands: impl Fn(&SmolStr) -> Vec<String>,
@@ -119,15 +135,7 @@ impl GenericParamsInfo {
         if self.ordered.is_empty() {
             "".to_string()
         } else {
-            format!(
-                "<{}>",
-                chain!(
-                    self.type_generics.iter().map(|s| s.to_string()),
-                    self.other_generics.iter().cloned(),
-                    self.type_generics.iter().flat_map(additional_demands)
-                )
-                .join(", ")
-            )
+            format!("<{}>", self.format_generics_with_trait_params_only(additional_demands))
         }
     }
 
@@ -262,6 +270,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
                 "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),
                 "Default" => default::handle_default(db, &info, stable_ptr, &mut result),
                 "Destruct" => destruct::handle_destruct(&info, stable_ptr, &mut result),
+                "Hash" => hash::handle_hash(&info, stable_ptr, &mut result),
                 "PanicDestruct" => {
                     panic_destruct::handle_panic_destruct(&info, stable_ptr, &mut result)
                 }

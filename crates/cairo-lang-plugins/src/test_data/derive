@@ -4,19 +4,19 @@
 test_expand_plugin(allow_diagnostics: false)
 
 //! > cairo_code
-#[derive(Copy, Default, Drop)]
+#[derive(Copy, Default, Drop, Hash)]
 struct A{}
 
-#[derive(Copy, Default, Drop)]
+#[derive(Copy, Default, Drop, Hash)]
 struct B{}
 
-#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Copy, Destruct, PanicDestruct, Default)]
+#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -24,13 +24,13 @@ struct GenericStruct<T> {
 
 trait SomeTrait<T, U> {}
 
-#[derive(Drop, Clone, PartialEq, Serde)]
+#[derive(Drop, Clone, PartialEq, Serde, Hash)]
 struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
 }
 
-#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     #[default]
@@ -41,7 +41,7 @@ enum TwoVariantEnum {
 extern type ExternType;
 
 //! > generated_cairo_code
-#[derive(Copy, Default, Drop)]
+#[derive(Copy, Default, Drop, Hash)]
 struct A{}
 
 impl ACopy of Copy::<A>;
@@ -53,9 +53,20 @@ impl ADefault of Default::<A> {
     }
 }
 impl ADrop of Drop::<A>;
+impl AHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<A, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: A) -> __State {
+        
+        state
+    }
+}
 
 
-#[derive(Copy, Default, Drop)]
+#[derive(Copy, Default, Drop, Hash)]
 struct B{}
 
 impl BCopy of Copy::<B>;
@@ -67,9 +78,20 @@ impl BDefault of Default::<B> {
     }
 }
 impl BDrop of Drop::<B>;
+impl BHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<B, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: B) -> __State {
+        
+        state
+    }
+}
 
 
-#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
@@ -96,6 +118,18 @@ impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
         let TwoMemberStruct { a, b } = self;
         traits::Destruct::destruct(a);
         traits::Destruct::destruct(b);
+    }
+}
+impl TwoMemberStructHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<TwoMemberStruct, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: TwoMemberStruct) -> __State {
+        let state = hash::Hash::update_state(state, value.a);
+        let state = hash::Hash::update_state(state, value.b);
+        state
     }
 }
 impl TwoMemberStructPanicDestruct of PanicDestruct::<TwoMemberStruct> {
@@ -128,7 +162,7 @@ impl TwoMemberStructSerde of Serde::<TwoMemberStruct> {
 }
 
 
-#[derive(Copy, Destruct, PanicDestruct, Default)]
+#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -153,13 +187,24 @@ impl GenericStructDefault<T, impl TDefault: Default<T>, impl TDestruct: Destruct
         }
     }
 }
+impl GenericStructHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>T, impl THash: Hash<T>, impl TDrop: Drop<T>
+> of hash::Hash<GenericStruct<T>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: GenericStruct<T>) -> __State {
+        let state = hash::Hash::update_state(state, value.a);
+        state
+    }
+}
 
 
 
 trait SomeTrait<T, U> {}
 
 
-#[derive(Drop, Clone, PartialEq, Serde)]
+#[derive(Drop, Clone, PartialEq, Serde, Hash)]
 struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     a: T,
     b: U,
@@ -195,9 +240,21 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TS
         })
     }
 }
+impl TwoMemberGenericStructHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>T, U, impl USomeTrait: SomeTrait<U, T>, impl THash: Hash<T>, impl TDrop: Drop<T>, impl UHash: Hash<U>, impl UDrop: Drop<U>
+> of hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
+        let state = hash::Hash::update_state(state, value.a);
+        let state = hash::Hash::update_state(state, value.b);
+        state
+    }
+}
 
 
-#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
     #[default]
@@ -222,6 +279,25 @@ impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
         match self {
             TwoVariantEnum::First(x) => traits::Destruct::destruct(x),
             TwoVariantEnum::Second(x) => traits::Destruct::destruct(x),
+        }
+    }
+}
+impl TwoVariantEnumHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<TwoVariantEnum, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: TwoVariantEnum) -> __State {
+        match value {
+            TwoVariantEnum::First(x) => {
+                let state = hash::Hash::update_state(state, @0);
+                hash::Hash::update_state(state, x)
+            },
+            TwoVariantEnum::Second(x) => {
+                let state = hash::Hash::update_state(state, @1);
+                hash::Hash::update_state(state, x)
+            },
         }
     }
 }

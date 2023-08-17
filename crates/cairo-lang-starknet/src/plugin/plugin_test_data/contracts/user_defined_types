@@ -13,16 +13,9 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop, Serde, starknet::Store)]
+    #[derive(Drop, Hash, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
-    }
-
-    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
-        #[inline(always)]
-        fn update_state(state: S, value: WrappedFelt252) -> S {
-            state.update_with(value.value)
-        }
     }
 
     #[derive(Drop, Serde, starknet::Store)]
@@ -61,16 +54,9 @@ mod test_contract {
         var: WrappedFelt252,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
     }
-    #[derive(Drop, Serde, starknet::Store)]
+    #[derive(Drop, Hash, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
-    }
-
-    impl WrappedFelt252Hash<S, impl SHashState: hash::HashStateTrait<S>> of hash::Hash::<WrappedFelt252, S> {
-        #[inline(always)]
-        fn update_state(state: S, value: WrappedFelt252) -> S {
-            state.update_with(value.value)
-        }
     }
 
     #[derive(Drop, Serde, starknet::Store)]
@@ -139,7 +125,6 @@ use starknet::event::EventEmitter;
     mod var {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
@@ -182,7 +167,6 @@ use starknet::event::EventEmitter;
     mod mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
-        use super::WrappedFelt252Hash;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
@@ -223,7 +207,7 @@ use starknet::event::EventEmitter;
         }
     }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30a0e891f1a5b526d305;
+const TEST_CLASS_HASH: felt252 = 0x27d4af9f9b89330922d8f7b120ed011df3d289c49f94b1eee714c8ace7f4741;
 
 
     mod __external {
@@ -239,6 +223,17 @@ const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30
 impls:
 
 impl WrappedFelt252Drop of Drop::<WrappedFelt252>;
+impl WrappedFelt252Hash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<WrappedFelt252, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: WrappedFelt252) -> __State {
+        let state = hash::Hash::update_state(state, value.value);
+        state
+    }
+}
 impl WrappedFelt252Serde of Serde::<WrappedFelt252> {
     fn serialize(self: @WrappedFelt252, ref output: array::Array<felt252>) {
         serde::Serde::serialize(self.value, ref output)
@@ -551,6 +546,6 @@ impl EventIsEvent of starknet::Event<Event> {
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:41:9
+ --> lib.cairo:34:9
         #[default]
         ^********^
