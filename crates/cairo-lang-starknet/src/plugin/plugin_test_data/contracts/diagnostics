@@ -34,22 +34,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -66,6 +51,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b;
 
@@ -147,22 +146,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -179,6 +163,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
 
@@ -272,24 +270,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-        mapping: mapping::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            mapping: mapping::ContractMemberState{},
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -306,6 +287,22 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+        mapping: mapping::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            mapping: mapping::ContractMemberState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff1ecaecfe92dce54d9d;
 
@@ -356,7 +353,7 @@ error: Plugin diagnostic: Identifier not found.
         ^*****^
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
- --> contract:5:5
+ --> contract:22:5
     impl ContractStateDrop of Drop<ContractState> {}
     ^**********************************************^
 
@@ -409,22 +406,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -441,6 +423,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
 
@@ -588,22 +584,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -620,6 +601,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x124995404f8319289ef288de547438677d2604e15a5315c83676af341b004e8;
 
@@ -714,22 +709,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -746,6 +726,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
 
@@ -842,22 +836,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -874,6 +853,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
 
@@ -941,7 +934,7 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^*^
 
 error: Type not found.
- --> contract:43:24
+ --> contract:42:24
         serde::Serde::<T>::deserialize(ref data),
                        ^
 
@@ -989,22 +982,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1021,6 +999,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
 
@@ -1134,22 +1126,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1166,6 +1143,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
 
@@ -1362,22 +1353,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1394,6 +1370,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4837185259a4d5d8351;
 
@@ -1504,24 +1494,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-        same_name: same_name::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            same_name: same_name::ContractMemberState{},
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1538,6 +1511,22 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+        same_name: same_name::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            same_name: same_name::ContractMemberState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
     use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
     mod same_name {
         #[derive(Copy, Drop)]
@@ -1729,22 +1718,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1761,6 +1735,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18ccab86db3595169e73c;
 
@@ -1909,22 +1897,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -1941,6 +1914,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
 
@@ -2099,22 +2086,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
 
-
-    
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
             let event: Event = traits::Into::into(event);
@@ -2130,6 +2102,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71dafd3abf300622647b;
 
@@ -2212,22 +2198,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -2244,6 +2215,20 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b081753f226075310e440696;
 

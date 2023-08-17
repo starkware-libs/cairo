@@ -23,6 +23,7 @@ use super::consts::{
 use super::entry_point::{
     generate_entry_point_wrapper, has_external_attribute, has_include_attribute, EntryPointKind,
 };
+use super::events::generate_event_code;
 use super::storage::handle_storage_struct;
 use super::utils::{is_felt252, is_mut_param, maybe_strip_underscore};
 use crate::contract::starknet_keccak;
@@ -135,17 +136,22 @@ $specific$",
 pub struct StarknetModuleCommonGenerationData {
     /// The code of the state struct.
     pub state_struct_code: RewriteNode,
-    /// Whether an event exists in the given module. If it doesn't, we need to generate an empty
-    /// one.
-    pub has_event: bool,
+    /// The generated event-related code.
+    pub event_code: RewriteNode,
     /// Use declarations to add to the internal submodules.
     pub extra_uses_node: RewriteNode,
 }
 impl StarknetModuleCommonGenerationData {
     fn to_rewrite_node(self) -> RewriteNode {
         RewriteNode::interpolate_patched(
-            "$state_struct_code$",
-            [("state_struct_code".to_string(), self.state_struct_code)].into(),
+            "$event_code$
+
+$state_struct_code$",
+            [
+                ("event_code".to_string(), self.event_code),
+                ("state_struct_code".to_string(), self.state_struct_code),
+            ]
+            .into(),
         )
     }
 }
@@ -251,6 +257,8 @@ pub fn handle_module_by_storage(
     let mut diagnostics = vec![];
     let mut common_data = StarknetModuleCommonGenerationData::default();
 
+    // Whether an event exists in the given module. If it doesn't, we need to generate an empty one.
+    let mut has_event = false;
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
@@ -261,11 +269,13 @@ pub fn handle_module_by_storage(
         }
 
         if is_starknet_event(db, &mut diagnostics, &item, module_kind) {
-            common_data.has_event = true;
+            has_event = true;
         }
 
         maybe_add_extra_use(db, item, &mut extra_uses);
     }
+
+    generate_event_code(&mut common_data, module_kind, has_event);
 
     common_data.extra_uses_node = RewriteNode::new_modified(
         extra_uses

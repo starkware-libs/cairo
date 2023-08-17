@@ -105,56 +105,29 @@ pub fn handle_storage_struct(
         format!("unsafe_new_{}_state{generic_arg_str}", starknet_module_kind.to_str_lower());
     let for_testing_function_name =
         format!("{}_state_for_testing{generic_arg_str}", starknet_module_kind.to_str_lower());
-    let empty_event_code = if data.has_event {
-        ""
-    } else {
-        "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n"
-    };
     data.state_struct_code = RewriteNode::interpolate_patched(
         formatdoc!(
-            "
-            use starknet::event::EventEmitter;
-                struct {full_state_struct_name} {{$members_code$
-                }}
-                impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
+            "    struct {full_state_struct_name} {{$members_code$
+                 }}
+                 impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
              {{}}
-                #[inline(always)]
-                fn {unsafe_new_function_name}() -> {full_state_struct_name} {{
-                    {state_struct_name}{full_generic_arg_str} {{$member_init_code$
-                    }}
-                }}
-                #[cfg(test)]
-                #[inline(always)]
-                fn {for_testing_function_name}() -> {full_state_struct_name} {{
-                    {unsafe_new_function_name}()
-                }}
-
-
-                $empty_event_code$
-                impl {state_struct_name}EventEmitter{generic_arg_str} of \
-             EventEmitter<{full_state_struct_name}, Event> {{
-                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: \
-             {full_state_struct_name}, event: S) {{
-                        let event: Event = traits::Into::into(event);
-                        let mut keys = Default::<array::Array>::default();
-                        let mut data = Default::<array::Array>::default();
-                        starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-                        starknet::SyscallResultTraitImpl::unwrap_syscall(
-                            starknet::syscalls::emit_event_syscall(
-                                array::ArrayTrait::span(@keys),
-                                array::ArrayTrait::span(@data),
-                            )
-                        )
-                    }}
-                }}
-            $vars_code$",
+                 #[inline(always)]
+                 fn {unsafe_new_function_name}() -> {full_state_struct_name} {{
+                     {state_struct_name}{full_generic_arg_str} {{$member_init_code$
+                     }}
+                 }}
+                 #[cfg(test)]
+                 #[inline(always)]
+                 fn {for_testing_function_name}() -> {full_state_struct_name} {{
+                     {unsafe_new_function_name}()
+                 }}
+                 $vars_code$",
         )
         .as_str(),
         UnorderedHashMap::from([
             ("members_code".to_string(), RewriteNode::new_modified(members_code)),
-            ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
             ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
-            ("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string())),
+            ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
         ]),
     );
 }
