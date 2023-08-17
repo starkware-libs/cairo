@@ -100,6 +100,23 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
     struct ContractState {
         var: var::ContractMemberState,
         mapping: mapping::ContractMemberState,
@@ -117,25 +134,7 @@ use starknet::event::EventEmitter;
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
-
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
-
+    
     use var::InternalContractMemberStateTrait as varContractMemberStateTrait;
     mod var {
         use super::HashStateExTrait;
