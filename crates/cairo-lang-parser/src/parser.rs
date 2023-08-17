@@ -167,8 +167,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]), or none if
     /// a top-level item can't be parsed.
     pub fn try_parse_top_level_item(&mut self) -> Option<ItemGreen> {
-        let maybe_attributes = self
-            .try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Some(attributes) => (true, attributes),
@@ -500,10 +499,9 @@ impl<'a> Parser<'a> {
     fn try_parse_attribute_list(
         &mut self,
         expected_elements_str: &str,
-        should_stop: fn(SyntaxKind) -> bool,
     ) -> Option<AttributeListGreen> {
         if self.peek().kind == SyntaxKind::TerminalHash {
-            Some(self.parse_attribute_list(expected_elements_str, should_stop))
+            Some(self.parse_attribute_list(expected_elements_str))
         } else {
             None
         }
@@ -512,16 +510,12 @@ impl<'a> Parser<'a> {
     /// Parses an attribute list.
     /// `expected_elements_str` are the expected elements that these attributes are parsed for.
     /// Note: it should not include "attribute".
-    fn parse_attribute_list(
-        &mut self,
-        expected_elements_str: &str,
-        should_stop: fn(SyntaxKind) -> bool,
-    ) -> AttributeListGreen {
+    fn parse_attribute_list(&mut self, expected_elements_str: &str) -> AttributeListGreen {
         AttributeList::new_green(
             self.db,
             self.parse_list(
                 Self::try_parse_attribute,
-                should_stop,
+                |x| x != SyntaxKind::TerminalHash,
                 format!("{expected_elements_str} or an attribute").as_str(),
             ),
         )
@@ -592,8 +586,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a TraitItem.* kind (see
     /// [syntax::node::ast::TraitItem]), or none if a trait item can't be parsed.
     pub fn try_parse_trait_item(&mut self) -> Option<TraitItemGreen> {
-        let maybe_attributes =
-            self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(TRAIT_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Some(attributes) => (true, attributes),
@@ -698,8 +691,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with a ImplItem.* kind (see
     /// [syntax::node::ast::ImplItem]), or none if an impl item can't be parsed.
     pub fn try_parse_impl_item(&mut self) -> Option<ImplItemGreen> {
-        let maybe_attributes =
-            self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION, is_of_kind!(rbrace, top_level));
+        let maybe_attributes = self.try_parse_attribute_list(IMPL_ITEM_DESCRIPTION);
 
         let (has_attrs, attributes) = match maybe_attributes {
             Some(attributes) => (true, attributes),
@@ -1653,8 +1645,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Member or None if a struct member can't be parsed.
     fn try_parse_member(&mut self) -> Option<MemberGreen> {
-        let attributes =
-            self.try_parse_attribute_list("Struct member", |x| x != SyntaxKind::TerminalHash);
+        let attributes = self.try_parse_attribute_list("Struct member");
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {
@@ -1682,8 +1673,7 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with kind Variant or None if an enum variant can't be parsed.
     fn try_parse_variant(&mut self) -> Option<VariantGreen> {
-        let attributes =
-            self.try_parse_attribute_list("Enum variant", |x| x != SyntaxKind::TerminalHash);
+        let attributes = self.try_parse_attribute_list("Enum variant");
         let name = if attributes.is_some() {
             self.parse_identifier()
         } else {
