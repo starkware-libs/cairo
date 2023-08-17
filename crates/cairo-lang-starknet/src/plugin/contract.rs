@@ -24,6 +24,9 @@ use super::entry_point::{
     EntryPointKind, EntryPointsGenerationData,
 };
 use super::events::generate_event_code;
+use super::generation_data::{
+    ComponentGenerationData, ContractGenerationData, StarknetModuleCommonGenerationData,
+};
 use super::storage::handle_storage_struct;
 use crate::contract::starknet_keccak;
 use crate::plugin::aux_data::StarkNetContractAuxData;
@@ -93,102 +96,6 @@ fn validate_module(
     PluginResult::default()
 }
 
-/// The data for generating the code of a contract.
-#[derive(Default)]
-struct ContractGenerationData {
-    /// Common data - relevant for all starknet modules (component/contract).
-    pub common: StarknetModuleCommonGenerationData,
-    /// Specific data - relevant only for contracts.
-    pub specific: ContractSpecificGenerationData,
-}
-impl ContractGenerationData {
-    fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$common$\n$specific$",
-            [
-                ("common".to_string(), self.common.into_rewrite_node()),
-                ("specific".to_string(), self.specific.into_rewrite_node()),
-            ]
-            .into(),
-        )
-    }
-}
-/// The data for generating the code of a component.
-#[derive(Default)]
-struct ComponentGenerationData {
-    /// Common data - relevant for all starknet modules (component/contract).
-    pub common: StarknetModuleCommonGenerationData,
-    /// Specific data - relevant only for components.
-    pub specific: ComponentSpecificGenerationData,
-}
-impl ComponentGenerationData {
-    fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$common$\n$specific$",
-            [
-                ("common".to_string(), self.common.into_rewrite_node()),
-                ("specific".to_string(), self.specific.into_rewrite_node()),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data for code generation that is common to both contracts and components.
-#[derive(Default)]
-pub struct StarknetModuleCommonGenerationData {
-    /// The code of the state struct.
-    pub state_struct_code: RewriteNode,
-    /// The generated event-related code.
-    pub event_code: RewriteNode,
-    /// Use declarations to add to the internal submodules.
-    pub extra_uses_node: RewriteNode,
-}
-impl StarknetModuleCommonGenerationData {
-    fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            "$event_code$
-
-$state_struct_code$",
-            [
-                ("event_code".to_string(), self.event_code),
-                ("state_struct_code".to_string(), self.state_struct_code),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data specific for contract generation.
-#[derive(Default)]
-struct ContractSpecificGenerationData {
-    test_config: RewriteNode,
-    entry_points_code: EntryPointsGenerationData,
-}
-impl ContractSpecificGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::interpolate_patched(
-            indoc! {"
-                $test_config$
-                $entry_points_code$"},
-            [
-                ("test_config".to_string(), self.test_config),
-                ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
-            ]
-            .into(),
-        )
-    }
-}
-
-/// Accumulated data specific for component generation.
-#[derive(Default)]
-struct ComponentSpecificGenerationData {}
-impl ComponentSpecificGenerationData {
-    fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::empty()
-    }
-}
-
 /// The kind of the starknet module (contract/component).
 #[derive(PartialEq, Eq, Copy, Clone)]
 pub enum StarknetModuleKind {
@@ -219,6 +126,27 @@ impl StarknetModuleKind {
             Self::Contract => "contract",
             Self::Component => "component",
         }
+    }
+
+    /// Gets the State struct name, according to the module kind.
+    pub fn get_state_struct_name(self) -> String {
+        format!("{}State", self.to_str_capital())
+    }
+    /// Gets the generic argument text, according to the module kind.
+    pub fn get_generic_arg_str(self) -> &'static str {
+        if matches!(self, StarknetModuleKind::Component) { "<TCS>" } else { "" }
+    }
+    /// Gets the generic argument text, with preceding `::`, according to the module kind.
+    pub fn get_full_generic_arg_str(self) -> &'static str {
+        if matches!(self, StarknetModuleKind::Component) { "::<TCS>" } else { "" }
+    }
+    /// Gets the full State struct name (with the generic argument), according to the module kind.
+    pub fn get_full_state_struct_name(self) -> String {
+        format!("{}{}", self.get_state_struct_name(), self.get_generic_arg_str())
+    }
+    /// Gets the member State struct name, according to the module kind.
+    pub fn get_member_state_name(self) -> String {
+        format!("{}MemberState", self.to_str_capital())
     }
 }
 
@@ -710,4 +638,34 @@ fn is_first_generic_arg_contract_state(
         return false;
     };
     first_generic_arg.identifier(db) == CONTRACT_STATE_NAME
+}
+
+/// Accumulated data specific for contract generation.
+#[derive(Default)]
+pub struct ContractSpecificGenerationData {
+    test_config: RewriteNode,
+    entry_points_code: EntryPointsGenerationData,
+}
+impl ContractSpecificGenerationData {
+    pub fn into_rewrite_node(self) -> RewriteNode {
+        RewriteNode::interpolate_patched(
+            indoc! {"
+                $test_config$
+                $entry_points_code$"},
+            [
+                ("test_config".to_string(), self.test_config),
+                ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
+            ]
+            .into(),
+        )
+    }
+}
+
+/// Accumulated data specific for component generation.
+#[derive(Default)]
+pub struct ComponentSpecificGenerationData {}
+impl ComponentSpecificGenerationData {
+    pub fn into_rewrite_node(self) -> RewriteNode {
+        RewriteNode::empty()
+    }
 }
