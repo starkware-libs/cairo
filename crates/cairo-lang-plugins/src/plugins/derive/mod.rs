@@ -13,6 +13,7 @@ use itertools::{chain, Itertools};
 use smol_str::SmolStr;
 
 mod clone;
+mod default;
 mod destruct;
 mod panic_destruct;
 mod partial_eq;
@@ -58,7 +59,7 @@ impl MacroPlugin for DerivePlugin {
 struct MemberInfo {
     name: SmolStr,
     _ty: String,
-    _attributes: AttributeList,
+    attributes: AttributeList,
 }
 
 /// Information on the type being derived.
@@ -191,7 +192,7 @@ fn extract_members(db: &dyn SyntaxGroup, members: MemberList) -> Vec<MemberInfo>
         .map(|member| MemberInfo {
             name: member.name(db).text(db),
             _ty: member.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db),
-            _attributes: member.attributes(db),
+            attributes: member.attributes(db),
         })
         .collect()
 }
@@ -209,7 +210,7 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
                     t.ty(db).as_syntax_node().get_text_without_trivia(db)
                 }
             },
-            _attributes: variant.attributes(db),
+            attributes: variant.attributes(db),
         })
         .collect()
 }
@@ -259,6 +260,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             match derived.as_str() {
                 "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
                 "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),
+                "Default" => default::handle_default(db, &info, stable_ptr, &mut result),
                 "Destruct" => destruct::handle_destruct(&info, stable_ptr, &mut result),
                 "PanicDestruct" => {
                     panic_destruct::handle_panic_destruct(&info, stable_ptr, &mut result)
