@@ -82,7 +82,7 @@ impl AttributeStructurize for ast::Attribute {
                         .args(db)
                         .elements(db)
                         .into_iter()
-                        .map(|arg| AttributeArg::from(arg, db))
+                        .map(|arg| AttributeArg::from_ast(arg, db))
                         .collect()
                 }
                 ast::OptionArgListParenthesized::Empty(_) => vec![],
@@ -106,7 +106,7 @@ impl AttributeListStructurize for ast::AttributeList {
 
 impl AttributeArg {
     /// Build [`AttributeArg`] from [`ast::Arg`].
-    fn from(arg: ast::Arg, db: &dyn SyntaxGroup) -> AttributeArg {
+    pub fn from_ast(arg: ast::Arg, db: &dyn SyntaxGroup) -> AttributeArg {
         let variant = match arg.arg_clause(db) {
             ast::ArgClause::Unnamed(clause) => {
                 let value = clause.value(db);
