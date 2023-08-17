@@ -9,11 +9,13 @@ use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use indoc::indoc;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use indoc::{formatdoc, indoc};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
+use super::contract::{StarknetModuleCommonGenerationData, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
@@ -387,4 +389,47 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
             [(String::from("member_name"), member_name)].into(),
         ),
     }
+}
+
+/// Generates the required event-related code.
+pub fn generate_event_code(
+    data: &mut StarknetModuleCommonGenerationData,
+    starknet_module_kind: StarknetModuleKind,
+    has_event: bool,
+) {
+    let state_struct_name = format!("{}State", starknet_module_kind.to_str_capital());
+    let generic_arg_str =
+        if starknet_module_kind == StarknetModuleKind::Component { "<TCS>" } else { "" };
+    let full_state_struct_name = format!("{state_struct_name}{generic_arg_str}");
+
+    let empty_event_code =
+        if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
+
+    data.event_code = RewriteNode::interpolate_patched(
+        formatdoc!(
+            "use starknet::event::EventEmitter;
+            $empty_event_code$
+                impl {state_struct_name}EventEmitter{generic_arg_str} of \
+             EventEmitter<{full_state_struct_name}, Event> {{
+                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: \
+             {full_state_struct_name}, event: S) {{
+                        let event: Event = traits::Into::into(event);
+                        let mut keys = Default::<array::Array>::default();
+                        let mut data = Default::<array::Array>::default();
+                        starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+                        starknet::SyscallResultTraitImpl::unwrap_syscall(
+                            starknet::syscalls::emit_event_syscall(
+                                array::ArrayTrait::span(@keys),
+                                array::ArrayTrait::span(@data),
+                            )
+                        )
+                    }}
+                }}",
+        )
+        .as_str(),
+        UnorderedHashMap::from([(
+            "empty_event_code".to_string(),
+            RewriteNode::Text(empty_event_code.to_string()),
+        )]),
+    );
 }
