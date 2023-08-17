@@ -121,7 +121,6 @@ fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<fe
     }
 
 
-
 impls:
 
 impl EventDrop of Drop::<Event>;
