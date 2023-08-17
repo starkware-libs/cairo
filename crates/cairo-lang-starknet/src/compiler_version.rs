@@ -14,11 +14,17 @@ impl std::fmt::Display for VersionId {
 /// The version of the high level compiler that compiled the contract. Should be the same as the
 /// rust workspace version.
 pub fn current_compiler_version_id() -> VersionId {
+<<<<<<< HEAD
     VersionId {
         major: env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap(),
         minor: env!("CARGO_PKG_VERSION_MINOR").parse().unwrap(),
         patch: env!("CARGO_PKG_VERSION_PATCH").parse().unwrap(),
     }
+||||||| 0f77760aa
+    VersionId { major: 2, minor: 1, patch: 0 }
+=======
+    VersionId { major: 2, minor: 1, patch: 1 }
+>>>>>>> origin/dev-v2.1.1
 }
 
 /// The version of the Sierra compiler that compiled the contract.

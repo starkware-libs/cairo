@@ -7,8 +7,14 @@ license-file.workspace = true
 description = "Utilities for writing tests in the Cairo compiler project."
 
 [dependencies]
+<<<<<<< HEAD
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0" }
 colored.workspace = true
+||||||| 0f77760aa
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0" }
+=======
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.1" }
+>>>>>>> origin/dev-v2.1.1
 log.workspace = true
 pretty_assertions.workspace = true
 

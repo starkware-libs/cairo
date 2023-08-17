@@ -1,6 +1,20 @@
+<<<<<<< HEAD
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
 type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+||||||| 0f77760aa
+type felt252 = felt252;
+type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252>;
+type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252>;
+type Unit = Struct<ut@Tuple>;
+type examples::enum_flow::MyEnumGeneric::<(), core::felt252> = Enum<ut@examples::enum_flow::MyEnumGeneric::<(), core::felt252>, felt252, Unit, felt252>;
+=======
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type examples::enum_flow::MyEnumGeneric::<(), core::felt252> = Enum<ut@examples::enum_flow::MyEnumGeneric::<(), core::felt252>, felt252, Unit, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::enum_flow::MyEnumLong = Enum<ut@examples::enum_flow::MyEnumLong, felt252, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+type examples::enum_flow::MyEnumShort = Enum<ut@examples::enum_flow::MyEnumShort, felt252, felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+>>>>>>> origin/dev-v2.1.1
 
 libfunc felt252_const<10> = felt252_const<10>;
 libfunc enum_init<examples::enum_flow::MyEnumShort, 0> = enum_init<examples::enum_flow::MyEnumShort, 0>;
