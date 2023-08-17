@@ -282,7 +282,10 @@ fn run_e2e_test(
         res.insert("function_costs".into(), function_costs_str.to_string());
     }
 
-    let lean_soundness = generate_lean_soundness(inputs["test_name"].as_str(), &cairo_program);
+    // Cayden note: This feels like an API violation to use this here, but I don't know how lean_generator.rs and e2e_test.rs communicate
+    // with their variables. Look into this later?
+    let is_lean3_version: bool = std::env::var("CAIRO_LEAN_VERSION") == Ok("3".into());
+    let lean_soundness = generate_lean_soundness(inputs["test_name"].as_str(), &cairo_program, is_lean3_version);
     res.insert("lean_soundness".into(), lean_soundness);
 
     TestRunnerResult::success(res)

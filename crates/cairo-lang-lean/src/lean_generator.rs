@@ -404,6 +404,7 @@ struct LeanFuncInfo<'a> {
     casm_end: usize,
     ret_args: RetArgs,
     ret_branch_ap_steps: Vec<bool>,
+    is_lean3: bool,
 }
 
 impl<'a> LeanFuncInfo<'a> {
@@ -414,10 +415,11 @@ impl<'a> LeanFuncInfo<'a> {
             aux_info: &'a CasmBuilderAuxiliaryInfo,
             casm_start: usize,
             casm_end: usize,
-            cairo_program: &'a CairoProgram
+            cairo_program: &'a CairoProgram,
+            is_lean3: bool,
         ) -> Self {
             let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program, casm_start, casm_end);
-            Self { main_func_name, func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps }
+            Self { main_func_name, func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps, is_lean3 }
         }
 
         pub fn is_range_check_var(&self, name: &str) -> bool {
@@ -648,6 +650,22 @@ fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
     prelude
 }
 
+fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
+    let mut prelude: Vec<String> = Vec::new();
+    prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
+    prelude.push(String::from("import Verification.Semantics.Soundness.Hoare"));
+    prelude.push(String::from("import Verification.Semantics.Assembly"));
+    prelude.push(String::from("import Verification.Libfuncs.Basic"));
+    prelude.push(format!("import Verification.Libfuncs.uXX.{}", lean_code_file_name(main_func_name, false)));
+    prelude.push(String::from(""));
+    prelude.push(String::from("open Casm Tactic Nat"));
+    prelude.push(String::from(""));
+    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)"));
+    prelude.push(String::from(""));
+
+    prelude
+}
+
 fn generate_consts(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut consts: Vec<String> = Vec::new();
 
@@ -829,12 +847,14 @@ trait LeanGenerator {
 
 struct AutoSpecs {
     specs: Vec<String>,
+    is_lean3: bool,
 }
 
 impl AutoSpecs {
     pub fn new() -> AutoSpecs {
         AutoSpecs {
             specs: Vec::new(),
+            is_lean3: false,
         }
     }
 
@@ -854,7 +874,20 @@ impl AutoSpecs {
         if !str.starts_with(')') {
             self.continue_specs();
         }
+
         self.specs.push(" ".repeat(indent) + str);
+    }
+
+    fn push_spec4(&mut self, indent: usize, str: &str, lean4str: &str) {
+        if !str.starts_with(')') {
+            self.continue_specs();
+        }
+
+        if self.is_lean3 {
+            self.specs.push(" ".repeat(indent) + str);
+        } else {
+            self.specs.push(" ".repeat(indent) + lean4str);
+        }
     }
 
     fn append_spec(&mut self, more_specs: &Vec<String>) {
@@ -870,14 +903,10 @@ impl AutoSpecs {
         indent: usize,
     ) {
         let (var_name, expr) = rebind_var_assignment(var, rebind);
-        self.push_spec(
-            indent,
-            &format!(
-                "∃ {var_name} : F,{expr}",
+        self.push_spec(indent, &format!("∃ {var_name} : F,{expr}",
                 expr=if let Some(expr_str) = &expr {
                     format!(" {var_name} = {expr_str}")
-                } else { String::new() }
-            ));
+                } else { String::new() }));
     }
 }
 
@@ -885,7 +914,9 @@ impl LeanGenerator for AutoSpecs {
 
     /// Return a generator for a branch.
     fn branch(&self) -> Box<dyn LeanGenerator> {
-        Box::new(AutoSpecs::new())
+        let mut auto_spec = AutoSpecs::new();
+        auto_spec.is_lean3 = self.is_lean3;
+        Box::new(auto_spec)
     }
 
     fn append_branch(&mut self, branch: &Box<dyn LeanGenerator>) {
@@ -995,14 +1026,14 @@ impl LeanGenerator for AutoSpecs {
         indent: usize,
     ) {
         if lean_info.is_range_check(&assert.expr) {
-            self.push_spec(
+            self.push_spec4(
                 indent,
                 &format!("is_range_checked (rc_bound F) {var_name}",
+                    var_name = rebind.get_var_name(&assert.lhs.name)),
+                &format!("IsRangeChecked (rcBound F) {var_name}",
                     var_name = rebind.get_var_name(&assert.lhs.name)));
         } else {
-            self.push_spec(
-                indent,
-                &format!("{var_name} = {expr}",
+            self.push_spec( indent, &format!("{var_name} = {expr}",
                     var_name = rebind.get_var_name(&assert.lhs.name),
                     expr = rebind.replace_var_names_in_expr(&assert.expr.expr)));
         }
@@ -1048,9 +1079,7 @@ impl LeanGenerator for AutoSpecs {
         };
 
         let var_name = rebind.get_var_name(&cond_var.0);
-        self.push_spec(
-            indent,
-            &format!("({var_name} {op} 0", op = if is_eq { "=" } else { "≠" }));
+        self.push_spec(indent, &format!("({var_name} {op} 0", op = if is_eq { "=" } else { "≠" }));
 
         indent + 2
     }
@@ -1091,9 +1120,7 @@ impl LeanGenerator for AutoSpecs {
 
         if lean_info.ret_args.branch_id_pos.is_some() {
             // The first return argument is the branch ID
-            self.push_spec(
-                indent,
-                &format!("{ret_arg} = {branch_id}", ret_arg = &ret_arg_names[0]));
+            self.push_spec(indent, &format!("{ret_arg} = {branch_id}", ret_arg = &ret_arg_names[0]));
             ret_arg_start = 1;
         }
 
@@ -1150,7 +1177,11 @@ impl AutoProof {
         full_proof
     }
 
-    fn push_statement(&mut self, indent: usize, str: &str, lean4str: &str) {
+    fn push_statement(&mut self, indent: usize, str: &str) {
+        self.statement.push(" ".repeat(indent) + str);
+    }
+
+    fn push_statement4(&mut self, indent: usize, str: &str, lean4str: &str) {
         if self.is_lean3 {
             self.statement.push(" ".repeat(indent) + str);
         } else {
@@ -1158,7 +1189,11 @@ impl AutoProof {
         }
     }
 
-    fn push_main(&mut self, indent: usize, str: &str, lean4str: &str) {
+    fn push_main(&mut self, indent: usize, str: &str) {
+        self.main_proof.push(" ".repeat(indent) + str);
+    }
+
+    fn push_main4(&mut self, indent: usize, str: &str, lean4str: &str) {
         if self.is_lean3 {
             self.main_proof.push(" ".repeat(indent) + str);
         } else {
@@ -1166,11 +1201,31 @@ impl AutoProof {
         }
     }
 
-    fn push_final(&mut self, indent: usize, str: &str, lean4str: &str) {
+    fn push_main4_with_comma(&mut self, indent: usize, str: &str) {
+       if self.is_lean3 {
+            self.main_proof.push(" ".repeat(indent) + str + ",");
+        } else {
+            self.main_proof.push(" ".repeat(indent) + str);
+        }
+    }
+
+    fn push_final(&mut self, indent: usize, str: &str) {
+        self.final_proof.push(" ".repeat(indent) + str);
+    }
+
+    fn push_final4(&mut self, indent: usize, str: &str, lean4str: &str) {
         if self.is_lean3 {
             self.final_proof.push(" ".repeat(indent) + str);
         } else {
             self.final_proof.push(" ".repeat(indent) + lean4str);
+        }
+    }
+
+    fn push_final4_with_comma(&mut self, indent: usize, str: &str) {
+        if self.is_lean3 {
+            self.final_proof.push(" ".repeat(indent) + str + ",");
+        } else {
+            self.final_proof.push(" ".repeat(indent) + str);
         }
     }
 
@@ -1193,36 +1248,34 @@ impl AutoProof {
     ) {
         let (var_name, expr) = rebind_var_assignment(var, rebind);
         let has_expr = expr.is_some();
-        let comment_str: String = format!("-- {var_type} {var_name}", var_type = if is_local { "localvar" } else { "tempvar" });
-        self.push_main(indent, &comment_str, &comment_str);
+        self.push_main(indent, &format!("-- {var_type} {var_name}", var_type = if is_local { "localvar" } else { "tempvar" }));
         if has_expr {
             // Cayden TODO: How to do mostly similar strings but with different endings...
             let step_str4: String = format!("step_assert_eq {codes} with tv_{var_name}",
                 codes = self.make_codes(pc, op_size));
             let str_copy = step_str4.clone();
-            self.push_main(indent, &(step_str4 + ","), &str_copy);
+            self.push_main4(indent, &(step_str4 + ","), &str_copy);
         }
 
         let mkdef_str4: String = format!("mkdef hl_{var_name} : {var_name} = {expr_str}",
         expr_str = if let Some(expr) = expr { expr } else { cell_expr_to_lean(&var.var_expr, false) });
         let mkdef_copy: String = mkdef_str4.clone();
-        self.push_main(indent, &(mkdef_str4 + ","), &mkdef_copy);
+        self.push_main4(indent, &(mkdef_str4 + ","), &mkdef_copy);
 
         let have_htv_str4: String = format!(
                 "have htv_{var_name} : {var_name} = {cell_expr}",
                 cell_expr = cell_expr_to_lean(&var.var_expr, false));
         let have_htv_copy: String = have_htv_str4.clone();
-        self.push_main(indent, &(have_htv_str4 + ","), &(have_htv_copy + " := by"));
+        self.push_main4(indent, &(have_htv_str4 + ","), &(have_htv_copy + " := by"));
 
         if has_expr {
-            self.push_main(indent, "{ sorry },", "  sorry");
-            self.push_final(0, &format!("use_only [{var_name}, hl_{var_name}],"),
+            self.push_main4(indent, "{ sorry },", "  sorry");
+            self.push_final4(0, &format!("use_only [{var_name}, hl_{var_name}],"),
                 &format!("use_only {var_name}, hl_{var_name}"));
         } else {
-            self.push_main(indent, &format!("{{ exact hl_{var_name} }},"),
+            self.push_main4(indent, &format!("{{ exact hl_{var_name} }},"),
                 &format!("  exact hl_{var_name}"));
-            self.push_final(0, &format!("use_only {var_name},"),
-                &format!("use_only {var_name}"));
+            self.push_final(0, &format!("use_only {var_name},"));
         }
     }
 }
@@ -1232,6 +1285,7 @@ impl LeanGenerator for AutoProof {
     /// Return a generator for a branch.
     fn branch(&self) -> Box<dyn LeanGenerator> {
         let mut branch = Box::new(AutoProof::new());
+        branch.is_lean3 = self.is_lean3;
         branch.final_proof = self.final_proof.clone();
         branch
     }
@@ -1251,8 +1305,7 @@ impl LeanGenerator for AutoProof {
         lean_info: &LeanFuncInfo,
         indent: usize,
     ) {
-        let theorem_str: String = format!("theorem auto_sound_{func_name}");
-        self.push_statement(indent, &theorem_str, &theorem_str);
+        self.push_statement(indent, &format!("theorem auto_sound_{func_name}"));
 
         let mut indent = indent + 2;
 
@@ -1261,43 +1314,37 @@ impl LeanGenerator for AutoProof {
         // Arguments and hypotheses.
 
         if lean_info.has_args() {
-            let comment_str: String = "-- arguments".to_string();
-            let arguments_str: String = format!("({args_str} : F)");
-            self.push_statement(indent, &comment_str, &comment_str);
-            self.push_statement(indent, &arguments_str, &arguments_str);
+            self.push_statement(indent, "-- arguments");
+            self.push_statement(indent, &format!("({args_str} : F)"));
         }
 
-        let code_memory_str: String = "-- code is in memory at σ.pc + start offset".to_string();
-        self.push_statement(indent, &code_memory_str, &code_memory_str);
+        self.push_statement(indent, "-- code is in memory at σ.pc + start offset");
         let pc_start = lean_info.get_pc_at(lean_info.casm_start);
         let pc_str = if pc_start == 0 { "σ.pc".into() } else { format!("(σ.pc + {pc_start})") };
-        self.push_statement(indent, &format!("(h_mem : mem_at mem {main_func_name}_code {pc_str})"),
+        self.push_statement4(indent, &format!("(h_mem : mem_at mem {main_func_name}_code {pc_str})"),
             &format!("(h_mem : MemAt mem {main_func_name}_code {pc_str})"));
 
         if lean_info.has_args() {
-            let input_args_str: String = "-- input arguments on the stack".to_string();
-            self.push_statement(indent, &input_args_str, &input_args_str);
+            self.push_statement(indent, "-- input arguments on the stack");
             for (arg_name, arg_expr) in lean_info.get_arg_names_and_expr() {
                 if arg_name.len() == 0 {
                     continue;
                 }
-                let hin_str: String = format!("(hin_{arg_name} : {arg_name} = {arg_expr})");
-                self.push_statement(indent, &hin_str, &hin_str);
+                self.push_statement(indent, &format!("(hin_{arg_name} : {arg_name} = {arg_expr})"));
             }
         }
 
         // Conclusion
-        let conclusion_comment_str: String = "-- conclusion".to_string();
-        self.push_statement(indent, &conclusion_comment_str, &conclusion_comment_str);
-        self.push_statement(indent, ": ensures_ret mem σ (λ κ τ,",
-            ": EnsuresRet mem σ fun κ τ =>");
+        self.push_statement(indent, "-- conclusion");
+        self.push_statement4(indent, ": ensures_ret mem σ (λ κ τ,",
+            ": EnsuresRet mem σ (fun κ τ =>");
 
         let range_check_arg_name = lean_info.get_range_check_arg_name();
         let has_rc = range_check_arg_name.is_some();
 
         if let Some(rc_name) = range_check_arg_name {
             indent += 2;
-            self.push_statement(
+            self.push_statement4(
                 indent,
                 &format!(
                     "∃ μ ≤ κ, rc_ensures mem (rc_bound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
@@ -1306,8 +1353,7 @@ impl LeanGenerator for AutoProof {
                 &format!(
                     "∃ μ ≤ κ, RcEnsures mem (rcBound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
-                    rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()),
-            );
+                    rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()));
         }
 
         indent += 2;
@@ -1323,7 +1369,7 @@ impl LeanGenerator for AutoProof {
                 .   join(""),
                 close_par = if has_rc { ")" } else { "" },);
 
-        self.push_statement(indent, &spec_str, &spec_str);
+        self.push_statement(indent, &spec_str);
     }
 
     fn generate_intro(
@@ -1333,7 +1379,7 @@ impl LeanGenerator for AutoProof {
         lean_info: &LeanFuncInfo,
         indent: usize,
     ) {
-        self.push_main(indent, "apply ensures_of_ensuresb, intro νbound,",
+        self.push_main4(indent, "apply ensures_of_ensuresb, intro νbound,",
             "apply ensures_of_ensuresb; intro νbound");
         // unpack the memory
         let mut line = format!("unpack_memory {main_func_name}_code at h_mem with ⟨");
@@ -1344,7 +1390,7 @@ impl LeanGenerator for AutoProof {
                 if code_i != pc_start {
                     line.push(',');
                 }
-                self.push_main(indent, &line, &line);
+                self.push_main(indent, &line);
                 line = "".into();
             } else if code_i != pc_start {
                 line.push_str(", ");
@@ -1354,7 +1400,7 @@ impl LeanGenerator for AutoProof {
         line.push_str("⟩");
         let lean4_line = line.clone();
         line.push_str(",");
-        self.push_main(indent, &line, &lean4_line);
+        self.push_main4(indent, &line, &lean4_line);
     }
 
     fn generate_temp_var(
@@ -1412,15 +1458,13 @@ impl LeanGenerator for AutoProof {
         rebind: &mut VarRebind,
         indent: usize,
     ) {
-        let let_comment_str: String = "-- let".to_string();
-        let let_comment_copy: String = let_comment_str.clone();
-        self.push_main(indent, &let_comment_str, &let_comment_copy);
+        self.push_main(indent, "-- let");
         let (lhs, rhs) = rebind_assignment(assign, rebind);
 
         let mkdef_str4: String = format!("mkdef hl_{lhs} : {lhs} = {rhs}");
         let mkdef_str_copy: String = mkdef_str4.clone();
-        self.push_main(indent, &(mkdef_str4 + ","), &mkdef_str_copy);
-        self.push_final(0, &format!("use_only [{lhs}, hl_{lhs}],"),
+        self.push_main4(indent, &(mkdef_str4 + ","), &mkdef_str_copy);
+        self.push_final4(0, &format!("use_only [{lhs}, hl_{lhs}],"),
             &format!("use_only {lhs}, hl_{lhs}"));
     }
 
@@ -1436,40 +1480,30 @@ impl LeanGenerator for AutoProof {
     ) {
         let lhs =  rebind.get_var_name(&assert.lhs.name);
         if lean_info.is_range_check(&assert.expr) {
-            let rc_comment_str: String = format!("-- range check for {lhs}");
-            let rc_comment_copy: String = rc_comment_str.clone();
-            self.push_main(indent, &rc_comment_str, &rc_comment_copy);
-
-            let step_assert_eq_str4: String = format!("step_assert_eq {codes} with rc_{lhs}",
-                    codes = self.make_codes(pc, op_size));
-            let sa_copy: String = step_assert_eq_str4.clone();
-            self.push_main(indent, &(step_assert_eq_str4 + ","), &sa_copy);
+            self.push_main(indent, &format!("-- range check for {lhs}"));
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with rc_{lhs}",
+                    codes = self.make_codes(pc, op_size)));
 
             let rc_ptr = rebind.get_var_name(lean_info.get_range_check_ptr_name(&assert.expr).unwrap());
 
             //     rc_app rc_h_range_check' 0 hl_sqrt0 rc_sqrt0
-            self.push_final(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"),
+            self.push_final4(0, &format!("cases rc_h_{rc_ptr}' ({rc_checks}) (by norm_num1) with n hn, arith_simps at hn,"),
                 &format!("rc_app rc_h_{rc_ptr}' {rc_checks} hl_{lhs} rc_{lhs}"));
-            self.push_final(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"), "");
+            self.push_final4(0, &format!("use_only [n], {{ simp only [htv_{lhs}, rc_{lhs}], arith_simps, exact hn }},"), "");
 
             *rc_checks += 1;
         } else {
-            let assert_comment_str: String = "-- assert".to_string();
-            let assert_comment_copy: String = assert_comment_str.clone();
-            self.push_main(indent, &assert_comment_str, &assert_comment_copy);
-
-            let step_assert_eq_str4: String = format!("step_assert_eq {codes} with ha{pc}",
-                    codes = self.make_codes(pc, op_size));
-            let step_assert_copy_str: String = step_assert_eq_str4.clone();
-            self.push_main(indent, &(step_assert_eq_str4 + ","), &step_assert_copy_str);
+            self.push_main(indent, "-- assert");
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with ha{pc}",
+                    codes = self.make_codes(pc, op_size)));
             let rhs = rebind.replace_var_names_in_expr(&assert.expr.expr);
 
             let a_str4: String = format!("have a{pc} : {lhs} = {rhs}");
             let a_copy_str: String = a_str4.clone();
-            self.push_main(indent, &(a_str4 + ","), &(a_copy_str + " := by"));
-            self.push_main(indent, "{ sorry },", "  sorry");
+            self.push_main4(indent, &(a_str4 + ","), &(a_copy_str + " := by"));
+            self.push_main4(indent, "{ sorry },", "  sorry");
 
-            self.push_final(0, &format!("use_only [a{pc}],"),
+            self.push_final4(0, &format!("use_only [a{pc}],"),
                 &format!("use_only a{pc}"));
         }
     }
@@ -1480,10 +1514,8 @@ impl LeanGenerator for AutoProof {
         op_size: usize,
         indent: usize,
     ) {
-        let jump_imm_str4: String = format!("step_jump_imm {codes}",
-            codes = self.make_codes(pc, op_size));
-        let ji_copy = jump_imm_str4.clone();
-        self.push_main(indent, &(jump_imm_str4 + ","), &ji_copy);
+        self.push_main4_with_comma(indent, &format!("step_jump_imm {codes}",
+            codes = self.make_codes(pc, op_size)));
     }
 
     fn generate_jnz(
@@ -1496,14 +1528,9 @@ impl LeanGenerator for AutoProof {
         indent: usize,
     ) {
         let cond_var = rebind.get_var_name(cond_var);
-
-        let jump_comment_str: String = format!("-- jump to {label} if {cond_var} != 0");
-        self.push_main(indent, &jump_comment_str, &jump_comment_str);
-
-        let jnz_str4: String = format!("step_jnz {codes} with hcond{pc} hcond{pc}",
-            codes = self.make_codes(pc, op_size));
-        let jnz_copy: String = jnz_str4.clone();
-        self.push_main(indent, &(jnz_str4 + ","), &jnz_copy);
+        self.push_main(indent, &format!("-- jump to {label} if {cond_var} != 0"));
+        self.push_main4_with_comma(indent, &format!("step_jnz {codes} with hcond{pc} hcond{pc}",
+            codes = self.make_codes(pc, op_size)));
     }
 
     fn generate_branch_intro(
@@ -1518,21 +1545,16 @@ impl LeanGenerator for AutoProof {
         let mut indent = indent;
         let var_name = rebind.get_var_name(&cond_var.0);
         if is_eq {
-            self.push_main(indent, "{", "·");
+            self.push_main4(indent, "{", "·");
             indent += 2;
         }
 
         let op = if is_eq { "=" } else { "≠" };
-
-        let var_op_comment_str: String = format!("-- {var_name} {op} 0");
-        self.push_main(indent,&var_op_comment_str, &var_op_comment_str);
-        self.push_main(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}], exact hcond{pc} }},"),
+        self.push_main(indent, &format!("-- {var_name} {op} 0"));
+        self.push_main4(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}], exact hcond{pc} }},"),
             &format!("have a{pc} : {var_name} {op} 0 := by simp only [hl_{var_name}]; exact hcond{pc}"));
-
-        let lr_str: String = (if is_eq { "left" } else { "right" }).to_string();
-        let lr_copy: String = lr_str.clone();
-        self.push_final(0, &(lr_str + ","), &lr_copy);
-        self.push_final(0, &format!("use_only [a{pc}],"),
+        self.push_final4_with_comma(0, (if is_eq { "left" } else { "right" }));;
+        self.push_final4(0, &format!("use_only [a{pc}],"),
             &format!("use_only a{pc}"));
 
         indent
@@ -1547,7 +1569,7 @@ impl LeanGenerator for AutoProof {
     ) -> usize {
         if is_eq {
             let indent = indent - 2;
-            self.push_main(indent, "},", "  done");
+            self.push_main4(indent, "},", "  done");
             indent
         } else {
             indent
@@ -1577,8 +1599,7 @@ impl LeanGenerator for AutoProof {
             - num_later_ap_step;
         let mut pc = lean_info.get_pc_at(casm_pos);
 
-        let ret_val_comment_str: String = "-- return values".to_string();
-        self.push_main(indent, &ret_val_comment_str, &ret_val_comment_str);
+        self.push_main(indent, "-- return values");
 
         if let Some(has_step) = lean_info.ret_branch_ap_steps.get(branch_id) {
             if *has_step {
@@ -1586,9 +1607,7 @@ impl LeanGenerator for AutoProof {
                 let casm_pos = casm_pos - 1;
                 let pc = lean_info.get_pc_at(casm_pos);
                 let op_size = lean_info.casm_instructions[casm_pos].body.op_size();
-                let step_advance_str4: String = format!("step_advance_ap {codes}", codes = self.make_codes(pc, op_size));
-                let sa_copy: String = step_advance_str4.clone();
-                self.push_main(indent, &(step_advance_str4 + ","), &sa_copy);
+                self.push_main4_with_comma(indent, &format!("step_advance_ap {codes}", codes = self.make_codes(pc, op_size)));
             }
         }
 
@@ -1598,31 +1617,25 @@ impl LeanGenerator for AutoProof {
             let is_rc = 0 < rc_checks && rc_arg_name == ret_name;
             if is_rc {
                 ret_name = rebind.get_next_name(&ret_name);
-
-                let rc_comment_str: String = "--   range check return value".to_string();
-                self.push_main(indent, &rc_comment_str, &rc_comment_str);
+                self.push_main(indent, "--   range check return value");
             }
 
-            let step_assert_eq_str4: String = format!("step_assert_eq {codes} with ret_{ret_name}",
-                    codes = self.make_codes(pc, op_size));
-            let sa_copy: String = step_assert_eq_str4.clone();
-            self.push_main(indent, &(step_assert_eq_str4 + ","), &sa_copy);
+            self.push_main4_with_comma(indent, &format!("step_assert_eq {codes} with ret_{ret_name}",
+                    codes = self.make_codes(pc, op_size)));
             if is_rc {
-                let mkdef_hl_str4: String = format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {rc_checks}");
-                let mkdef_copy: String = mkdef_hl_str4.clone();
-                self.push_main(indent, &(mkdef_hl_str4 + ","), &mkdef_copy);
+                self.push_main4_with_comma(indent, &format!("mkdef hl_{ret_name} : {ret_name} = {rc_arg_name} + {rc_checks}"));
 
                 let htv_str4: String = format!("have htv_{ret_name} : {ret_name} = _");
                 let htv_copy: String = htv_str4.clone();
-                self.push_main(indent, &(htv_str4 + ","), &(htv_copy + " := by"));
-                self.push_main(indent, &format!("{{ apply eq.symm, apply eq.trans ret_{ret_name},"),
+                self.push_main4(indent, &(htv_str4 + ","), &(htv_copy + " := by"));
+                self.push_main4(indent, &format!("{{ apply eq.symm, apply eq.trans ret_{ret_name},"),
                     &format!("  apply Eq.symm; apply Eq.trans ret_{ret_name}"));
-                self.push_main(indent, &format!("simp only [hl_{ret_name}, hin_{rc_arg_name}] }},"),
+                self.push_main4(indent, &format!("simp only [hl_{ret_name}, hin_{rc_arg_name}] }},"),
                     &format!("  simp only [hl_{ret_name}, hin_{rc_arg_name}]"));
 
                 rc_ret_name = ret_name;
             } else {
-                self.push_final(0, &format!("use_only [ret_{ret_name}],"),
+                self.push_final4(0, &format!("use_only [ret_{ret_name}],"),
                     &format!("use_only ret_{ret_name}"));
             }
 
@@ -1636,35 +1649,26 @@ impl LeanGenerator for AutoProof {
             let jump_imm_str4: String = format!("step_jump_imm {codes}",
                     codes = self.make_codes(pc, op_size));
             let ji_copy: String = jump_imm_str4.clone();
-            self.push_main(indent, &(jump_imm_str4 + ","), &ji_copy);
+            self.push_main4(indent, &(jump_imm_str4 + ","), &ji_copy);
         }
 
         // Add the final return
         pc = lean_info.get_code_len() - 1;
-        let step_ret_str4: String = format!("step_ret {codes}",
-                codes = self.make_codes(pc, 1));
-        let sr_copy: String = step_ret_str4.clone();
-        self.push_main(indent, &(step_ret_str4 + ","), &sr_copy);
+        self.push_main4_with_comma(indent, &format!("step_ret {codes}",
+                codes = self.make_codes(pc, 1)));
 
-        let step_done_str4: String = "step_done".to_string();
-        let sd_copy: String = step_done_str4.clone();
-        self.push_main(indent, &(step_done_str4 + ","), &sd_copy);
-        self.push_main(indent, "use_only [rfl, rfl],", "use_only rfl, rfl");
+        self.push_main(indent, "step_done");
+        self.push_main4(indent, "use_only [rfl, rfl],", "use_only rfl, rfl");
 
         if 0 < rc_checks {
-            let rc_cond_comment_str: String = "-- range check condition".to_string();
-            let rc_comment_copy: String = rc_cond_comment_str.clone();
-            self.push_main(indent, &rc_cond_comment_str, &rc_comment_copy);
-            self.push_main(indent, &format!("use_only ({rc_checks} + 0), split, norm_num1,"),
+            self.push_main(indent, "-- range check condition");
+            self.push_main4(indent, &format!("use_only ({rc_checks} + 0), split, norm_num1,"),
                 &format!("use_only ({rc_checks} + 0); constructor; norm_num1"));
-            self.push_main(indent, "split,", "constructor");
-            self.push_main(indent, &format!("arith_simps, use_only ret_{rc_ret_name},"),
+            self.push_main4(indent, "split,", "constructor");
+            self.push_main4(indent, &format!("arith_simps, use_only ret_{rc_ret_name},"),
                 &format!("· arith_simps; exact ret_{rc_ret_name}"));
-
-            let intro_str4: String = format!("intro rc_h_{rc_arg_name}");
-            let intro_copy: String = intro_str4.clone();
-            self.push_main(indent, &(intro_str4 + ","), &intro_copy);
-            self.push_main(indent, &format!("have rc_h_{rc_arg_name}' := range_checked_add_right rc_h_{rc_arg_name},"),
+            self.push_main4_with_comma(indent, &format!("intro rc_h_{rc_arg_name}"));
+            self.push_main4(indent, &format!("have rc_h_{rc_arg_name}' := range_checked_add_right rc_h_{rc_arg_name},"),
             &format!("have rc_h_{rc_arg_name}' := rangeChecked_add_right rc_h_{rc_arg_name}"));
         }
 
@@ -1676,8 +1680,8 @@ impl LeanGenerator for AutoProof {
         );
         let suffices_copy: String = suffices_str4.clone();
 
-        self.push_main(indent, &(suffices_str4 + ","), &(suffices_copy + " by"));
-        self.push_main(indent, &format!(
+        self.push_main4(indent, &(suffices_str4 + ","), &(suffices_copy + " by"));
+        self.push_main4(indent, &format!(
             "{{ apply sound_{func_name}, apply auto_spec }},",
             func_name = lean_info.func_name),
         &format!(
@@ -1686,27 +1690,20 @@ impl LeanGenerator for AutoProof {
 
         // As a last step, add the final proof to the main proof (with indentation).
         for line in self.final_proof.clone() {
-            self.push_main(indent, &line, &line);
+            self.push_main(indent, &line);
         }
     }
 
     fn generate_advance_ap(&mut self, pc: usize, op_size: usize, indent: usize) {
-        let advance_ap_str4: String = format!("step_advance_ap {codes}",
-                codes = self.make_codes(pc, op_size));
-        let advance_copy: String = advance_ap_str4.clone();
-        self.push_main(indent, &(advance_ap_str4 + ","), &advance_copy);
+        self.push_main4_with_comma(indent, &format!("step_advance_ap {codes}",
+                codes = self.make_codes(pc, op_size)));
     }
 
     fn generate_fail(&mut self, pc: usize, op_size: usize, indent: usize) {
-        let fail_comment_str: String = "-- fail".to_string();
-        let fail_copy: String = fail_comment_str.clone();
-        self.push_main(indent, &fail_comment_str, &fail_copy);
-
-        let step_assert_eq_str4: String = format!("step_assert_eq {codes} with ha_fail",
-                codes = self.make_codes(pc, op_size));
-        let sa_copy: String = step_assert_eq_str4.clone();
-        self.push_main(indent, &(step_assert_eq_str4 + ","), &sa_copy);
-        self.push_main(indent, "exfalso, apply zero_ne_one (add_left_cancel (eq.trans _ ha_fail)), rw add_zero,",
+        self.push_main(indent, "-- fail");
+        self.push_main(indent, &format!("step_assert_eq {codes} with ha_fail",
+                codes = self.make_codes(pc, op_size)));
+        self.push_main4(indent, "exfalso, apply zero_ne_one (add_left_cancel (eq.trans _ ha_fail)), rw add_zero,",
             "exfalso; apply zero_ne_one (add_left_cancel (Eq.trans ha_fail)); rw [add_zero]");
     }
 
@@ -1726,6 +1723,7 @@ fn generate_soundness_user_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
 
 fn generate_soundness_auto_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut auto_specs = AutoSpecs::new();
+    auto_specs.is_lean3 = lean_info.is_lean3;
     generate_auto(&mut auto_specs, lean_info);
 
     auto_specs.specs
@@ -1746,15 +1744,21 @@ fn generate_user_soundness_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
     let sep = if 0 < args_str.len() { " " } else { "" };
     user_theorem.push(format!("    (h_auto : auto_spec_{func_name} mem κ{sep}{args_str}) :"));
     user_theorem.push(format!("  spec_{func_name} mem κ{sep}{args_str} :="));
-    user_theorem.push("begin".into());
-    user_theorem.push("  trivial".into());
-    user_theorem.push("end".into());
+    
+    if lean_info.is_lean3 {
+        user_theorem.push("begin".into());
+        user_theorem.push("  trivial".into());
+        user_theorem.push("end".into());
+    } else {
+        user_theorem.push("by sorry".into());
+    }
 
     user_theorem
 }
 
 fn generate_soundness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut auto_theorem = AutoProof::new();
+    auto_theorem.is_lean3 = lean_info.is_lean3;
     generate_auto(&mut auto_theorem, lean_info);
 
     auto_theorem.get_full_proof()
@@ -1989,7 +1993,7 @@ fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
     offsets
 }
 
-pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) -> String {
+pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is_lean3: bool) -> String {
 
     //let aux_info = match cairo_program.aux_info.as_ref() {
     //    Some(info) => info,
@@ -2008,7 +2012,11 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
     let mut soundness: Vec<String> = Vec::new();
 
     // Generate the prelude
-    soundness.append(generate_soundness_prelude(&main_func_name).as_mut());
+    if is_lean3 {
+        soundness.append(generate_soundness_prelude(&main_func_name).as_mut());
+    } else {
+        soundness.append(generate_soundness_prelude4(&main_func_name).as_mut());
+    }
 
     for (aux_info, func_offsets) in cairo_program.aux_infos.iter().zip(offsets.iter()) {
         let casm_start = (*func_offsets).0;
@@ -2022,6 +2030,7 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
                 &aux_info,
                 casm_start,
                 casm_end,
+                is_lean3,
             ).as_mut()
         );
         soundness.push("".into());
@@ -2031,7 +2040,7 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram) ->
 }
 
 fn generate_func_lean_soundness(
-    main_func_name: &str, func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, casm_start: usize, casm_end: usize,
+    main_func_name: &str, func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, casm_start: usize, casm_end: usize, is_lean3: bool
 ) -> Vec<String> {
 
     let lean_info = LeanFuncInfo::new(
@@ -2040,7 +2049,8 @@ fn generate_func_lean_soundness(
         aux_info,
         casm_start,
         casm_end,
-        cairo_program
+        cairo_program,
+        is_lean3,
     );
 
     let mut soundness: Vec<String> = Vec::new();
@@ -2066,7 +2076,7 @@ fn generate_func_lean_soundness(
     soundness
 }
 
-pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>, is_lean3: bool) -> Result<(), std::io::Error> {
+pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
     let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
     let func_name = test_name.split_whitespace().next().unwrap();
     let lean_path = lean_verification_path(test_path);
@@ -2106,9 +2116,11 @@ pub fn write_lean_code_file(
     fs::create_dir_all(lean_path)?;
 
     let mut lean_casm = String::new();
-    lean_casm.push_str("import Verification.Semantics.Assembly\n\n");
+    lean_casm.push_str("import Verification.Semantics.Assembly\n");
+    lean_casm.push_str("import Verification.Soundness.Hoare\n");
+    lean_casm.push_str("import Verification.Libfuncs.Basic\n\n");
     lean_casm.push_str("open Casm\n\n");
-    lean_casm.push_str("variable {F : Type} [Field F] [DecidableEq F]\n\n");
+    lean_casm.push_str("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)\n\n");
     lean_casm.push_str(&format!("def {func_name}_code : List F := casm_code!{{\n"));
     lean_casm.push_str(&casm_lines.join("\n"));
     lean_casm.push_str("\n");
