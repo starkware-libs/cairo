@@ -13,15 +13,15 @@ Item
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an item after attributes.
+ --> dummy_file.cairo:1:7
+#[aaa]
+      ^
+
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias or an attribute.
  --> dummy_file.cairo:2:1
 3
 ^
-
-error: Missing tokens. Expected an item after attributes.
- --> dummy_file.cairo:2:2
-3
- ^
 
 //! > expected_tree
 
@@ -44,15 +44,15 @@ Item
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected a trait item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
 error: Skipped tokens. Expected: trait item or an attribute.
  --> dummy_file.cairo:3:5
     3
     ^
-
-error: Missing tokens. Expected a trait item after attributes.
- --> dummy_file.cairo:3:6
-    3
-     ^
 
 //! > expected_tree
 
@@ -75,14 +75,14 @@ Item
 //! > ignored_kinds
 
 //! > expected_diagnostics
+error: Missing tokens. Expected an impl item after attributes.
+ --> dummy_file.cairo:2:11
+    #[aaa]
+          ^
+
 error: Skipped tokens. Expected: impl item or an attribute.
  --> dummy_file.cairo:3:5
     3
     ^
-
-error: Missing tokens. Expected an impl item after attributes.
- --> dummy_file.cairo:3:6
-    3
-     ^
 
 //! > expected_tree
