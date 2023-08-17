@@ -44,6 +44,22 @@ mod component {
 component:
 
 use starknet::event::EventEmitter;
+
+    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
     struct ComponentState<TCS> {
         data: data::ComponentMemberState,
         map: map::ComponentMemberState,
@@ -61,24 +77,7 @@ use starknet::event::EventEmitter;
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
         unsafe_new_component_state<TCS>()
     }
-
-
     
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
-
     use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         use super::Event;
