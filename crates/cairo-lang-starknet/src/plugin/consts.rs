@@ -21,6 +21,7 @@ pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
+pub const INCLUDABLE_AS_ATTR: &str = "includable_as";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";

@@ -3,6 +3,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -15,7 +16,7 @@ impl TestFileRunner for ExpandContractTestRunner {
     fn run(
         &mut self,
         inputs: &OrderedHashMap<String, String>,
-        _args: &OrderedHashMap<String, String>,
+        args: &OrderedHashMap<String, String>,
     ) -> Result<OrderedHashMap<String, String>, String> {
         let db = SHARED_DB.lock().unwrap().snapshot();
         let (test_module, _semantic_diagnostics) =
@@ -45,12 +46,12 @@ impl TestFileRunner for ExpandContractTestRunner {
             file_contents.push(db.file_content(file).unwrap().as_ref().clone());
         }
 
+        let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
+        has_disallowed_diagnostics(args, &diagnostics)?;
+
         Ok(OrderedHashMap::from([
             ("generated_cairo_code".into(), file_contents.join("\n\n")),
-            (
-                "expected_diagnostics".into(),
-                get_diagnostics_as_string(&db, &[test_module.crate_id]),
-            ),
+            ("expected_diagnostics".into(), diagnostics),
         ]))
     }
 }
@@ -80,6 +81,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     "src/plugin/plugin_test_data/components",
     {
         component: "component",
+        diagnostics: "diagnostics",
         no_body: "no_body",
         no_storage: "no_storage",
     },
