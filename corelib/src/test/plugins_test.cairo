@@ -7,6 +7,21 @@ enum EnumForSerde {
     C: u64,
 }
 
+#[derive(Drop, Default, PartialEq)]
+struct StructForDefault {
+    a: felt252,
+    b: u256,
+    c: bool
+}
+
+#[derive(Drop, Default, PartialEq)]
+enum EnumForDefault {
+    A: felt252,
+    B: u256,
+    #[default]
+    C: StructForDefault,
+}
+
 #[test]
 fn test_derive_serde_enum() {
     let a = EnumForSerde::A(());
@@ -45,4 +60,18 @@ fn test_derive_serde_enum() {
         'expected a'
     );
     assert(serialized.is_empty(), 'expected empty');
+}
+
+#[test]
+fn test_derive_default_struct() {
+    let actual: StructForDefault = Default::default();
+    let expected = StructForDefault { a: 0, b: 0, c: bool::False };
+    assert_eq(@actual, @expected, 'unexpected default value');
+}
+
+#[test]
+fn test_derive_default_enum() {
+    let actual: EnumForDefault = Default::default();
+    let expected = EnumForDefault::C(StructForDefault { a: 0, b: 0, c: bool::False });
+    assert_eq(@actual, @expected, 'unexpected default value');
 }
