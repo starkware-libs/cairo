@@ -1,7 +1,7 @@
 //! > Test a syntax tree with literals
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn f() {
@@ -36,7 +36,7 @@ ExprPath
 //! > Test a syntax tree with literals with suffixes
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn f() {
@@ -71,7 +71,7 @@ ExprPath
 //! > Test a syntax tree with literals with unary minuses
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn f() {
@@ -112,7 +112,7 @@ ExprPath
 //! > Invalid literals.
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 fn foo() {
@@ -268,7 +268,7 @@ error: Literal is not a valid number.
 //! > Test short string suffix missing underscore
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 fn foo() {

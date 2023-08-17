@@ -1,7 +1,7 @@
 //! > Test index operator simple
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn test() {
@@ -28,7 +28,7 @@ ExprPath
 //! > Test index operator complex
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn test() {
@@ -56,7 +56,7 @@ ExprBinary
 //! > Test index operator block
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn test() {
@@ -85,7 +85,7 @@ ExprBlock
 //! > Test index operator of index
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: false)
 
 //! > cairo_code
 fn test() {

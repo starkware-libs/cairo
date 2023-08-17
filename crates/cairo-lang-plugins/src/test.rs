@@ -7,6 +7,7 @@ use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_parser::test_utils::create_virtual_file;
 use cairo_lang_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
 use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::get_default_plugins;
@@ -25,7 +26,7 @@ cairo_lang_test_utils::test_file_test!(
 
 pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
 ) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut SimpleParserDatabase::default();
 
@@ -78,8 +79,11 @@ pub fn test_expand_plugin(
         generated_items.extend(local_generated_items);
     }
 
+    let joined_diagnostics = diagnostic_items.join("\n");
+    has_disallowed_diagnostics(args, &joined_diagnostics)?;
+
     Ok(OrderedHashMap::from([
         ("generated_cairo_code".into(), generated_items.join("\n")),
-        ("expected_diagnostics".into(), diagnostic_items.join("\n")),
+        ("expected_diagnostics".into(), joined_diagnostics),
     ]))
 }

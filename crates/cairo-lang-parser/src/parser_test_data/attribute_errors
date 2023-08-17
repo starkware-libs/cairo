@@ -1,7 +1,7 @@
 //! > Test attributes without an item.
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 #[aaa]
@@ -30,7 +30,7 @@ error: Missing tokens. Expected an item after attributes.
 //! > Test attributes without a trait item.
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 trait Abc {
@@ -61,7 +61,7 @@ error: Missing tokens. Expected a trait item after attributes.
 //! > Test attributes without an impl item.
 
 //! > test_runner_name
-test_partial_parser_tree
+test_partial_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
 impl Abc of Def {

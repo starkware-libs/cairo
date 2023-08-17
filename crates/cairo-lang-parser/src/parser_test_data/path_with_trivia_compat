@@ -1,7 +1,7 @@
 //! > Test typed path with ::
 
 //! > test_runner_name
-test_partial_parser_tree_with_trivia
+test_partial_parser_tree_with_trivia(allow_diagnostics: false)
 
 //! > cairo_code
 fn foo(a: Option::<felt252>) {}
