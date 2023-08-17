@@ -78,7 +78,7 @@ pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     if !is_valid_params {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: generic_params.stable_ptr().untyped(),
-            message: "First generic argument of an includable impl should be `TContractState`."
+            message: "First generic parameter of an includable impl should be `TContractState`."
                 .to_string(),
         });
     };
