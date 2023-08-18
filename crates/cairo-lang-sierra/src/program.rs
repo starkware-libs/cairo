@@ -1,5 +1,9 @@
 use num_bigint::BigInt;
 
+use crate::extensions::gas::{
+    BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
+};
+use crate::extensions::NamedLibfunc;
 use crate::ids::{
     ConcreteLibfuncId, ConcreteTypeId, FunctionId, GenericLibfuncId, GenericTypeId, UserTypeId,
     VarId,
@@ -209,3 +213,19 @@ pub type Statement = GenStatement<StatementIdx>;
 pub type Invocation = GenInvocation<StatementIdx>;
 pub type BranchInfo = GenBranchInfo<StatementIdx>;
 pub type BranchTarget = GenBranchTarget<StatementIdx>;
+
+impl Program {
+    /// Checks if this Sierra program needs a gas counter set up in order to be executed.
+    ///
+    /// This is determined by checking if the program uses any of gas-related libfuncs.
+    pub fn requires_gas_counter(&self) -> bool {
+        self.libfunc_declarations.iter().any(|decl| {
+            matches!(
+                decl.long_id.generic_id.0.as_str(),
+                WithdrawGasLibfunc::STR_ID
+                    | BuiltinCostWithdrawGasLibfunc::STR_ID
+                    | RedepositGasLibfunc::STR_ID
+            )
+        })
+    }
+}
