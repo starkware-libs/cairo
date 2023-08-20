@@ -6,21 +6,20 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
-use super::contract::StarknetModuleKind;
+use super::contract::{StarknetModuleCommonGenerationData, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 
 /// Generate getters and setters for the variables in the storage struct.
 pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
     struct_ast: ast::ItemStruct,
-    extra_uses_node: &RewriteNode,
-    has_event: bool,
     starknet_module_kind: StarknetModuleKind,
-) -> (RewriteNode, Vec<PluginDiagnostic>) {
+    data: &mut StarknetModuleCommonGenerationData,
+) {
     let mut members_code = Vec::new();
     let mut members_init_code = Vec::new();
     let mut vars_code = Vec::new();
-    let mut diagnostics = vec![];
 
     let state_struct_name = format!("{}State", starknet_module_kind.to_str_capital());
     let member_state_name = format!("{}MemberState", starknet_module_kind.to_str_capital());
@@ -63,7 +62,7 @@ pub fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
-                        ("extra_uses".to_string(), extra_uses_node.clone()),
+                        ("extra_uses".to_string(), data.extra_uses_node.clone()),
                         (
                             "key_type".to_string(),
                             RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
@@ -90,7 +89,7 @@ pub fn handle_storage_struct(
                             "storage_var_name".to_string(),
                             RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                         ),
-                        ("extra_uses".to_string(), extra_uses_node.clone()),
+                        ("extra_uses".to_string(), data.extra_uses_node.clone()),
                         (
                             "type_name".to_string(),
                             RewriteNode::new_trimmed(type_ast.as_syntax_node()),
@@ -106,9 +105,12 @@ pub fn handle_storage_struct(
         format!("unsafe_new_{}_state{generic_arg_str}", starknet_module_kind.to_str_lower());
     let for_testing_function_name =
         format!("{}_state_for_testing{generic_arg_str}", starknet_module_kind.to_str_lower());
-    let empty_event_code =
-        if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
-    let storage_code = RewriteNode::interpolate_patched(
+    let empty_event_code = if data.has_event {
+        ""
+    } else {
+        "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n"
+    };
+    data.state_struct_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
             use starknet::event::EventEmitter;
@@ -145,8 +147,7 @@ pub fn handle_storage_struct(
                         )
                     }}
                 }}
-            $vars_code$
-        ",
+            $vars_code$",
         )
         .as_str(),
         UnorderedHashMap::from([
@@ -156,7 +157,6 @@ pub fn handle_storage_struct(
             ("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string())),
         ]),
     );
-    (storage_code, diagnostics)
 }
 
 /// The type of the mapping storage variable.

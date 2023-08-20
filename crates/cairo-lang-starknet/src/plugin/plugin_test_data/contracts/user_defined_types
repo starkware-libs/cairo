@@ -99,8 +99,6 @@ mod test_contract {
 
 contract:
 
-#[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30a0e891f1a5b526d305;
 use starknet::event::EventEmitter;
     struct ContractState {
         var: var::ContractMemberState,
@@ -225,6 +223,8 @@ use starknet::event::EventEmitter;
             }
         }
     }
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30a0e891f1a5b526d305;
 
 
     mod __external {

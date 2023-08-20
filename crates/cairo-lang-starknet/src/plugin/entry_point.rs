@@ -7,12 +7,13 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, CONSTRUCTOR_NAME, EXTERNAL_ATTR, IMPLICIT_PRECEDENCE, INCLUDE_ATTR,
-    L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
+    IMPLICIT_PRECEDENCE, INCLUDE_ATTR, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    L1_HANDLER_MODULE, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{
     is_felt252, is_felt252_span, is_mut_param, is_ref_param, maybe_strip_underscore,
@@ -65,6 +66,52 @@ pub struct EntryPointsGenerationData {
     pub external_functions: Vec<RewriteNode>,
     pub constructor_functions: Vec<RewriteNode>,
     pub l1_handler_functions: Vec<RewriteNode>,
+}
+impl EntryPointsGenerationData {
+    pub fn into_rewrite_node(self) -> RewriteNode {
+        let generated_external_module =
+            generate_submodule(EXTERNAL_MODULE, RewriteNode::new_modified(self.external_functions));
+        let generated_l1_handler_module = generate_submodule(
+            L1_HANDLER_MODULE,
+            RewriteNode::new_modified(self.l1_handler_functions),
+        );
+        let generated_constructor_module = generate_submodule(
+            CONSTRUCTOR_MODULE,
+            RewriteNode::new_modified(self.constructor_functions),
+        );
+        RewriteNode::interpolate_patched(
+            indoc! {"
+                $generated_wrapper_functions$
+                    $generated_external_module$
+                    $generated_l1_handler_module$
+                    $generated_constructor_module$"},
+            [
+                (
+                    "generated_wrapper_functions".to_string(),
+                    RewriteNode::new_modified(self.generated_wrapper_functions),
+                ),
+                ("generated_external_module".to_string(), generated_external_module),
+                ("generated_l1_handler_module".to_string(), generated_l1_handler_module),
+                ("generated_constructor_module".to_string(), generated_constructor_module),
+            ]
+            .into(),
+        )
+    }
+}
+
+/// Generates a submodule with the given name, uses and functions.
+fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
+    let generated_external_module = RewriteNode::interpolate_patched(
+        formatdoc!(
+            "
+            mod {module_name} {{$generated_functions_node$
+                }}
+        "
+        )
+        .as_str(),
+        [("generated_functions_node".to_string(), generated_functions_node)].into(),
+    );
+    generated_external_module
 }
 
 /// Parameters for generating an entry point, used when calling `handle_entry_point`.
