@@ -238,7 +238,7 @@ fn handle_simple_storage_var(address: &str, member_state_name: &str) -> String {
     )
 }
 
-/// Generate getters and setters skeleton for a non-mapping member in the storage struct.
+/// Generate getters and setters skeleton for a mapping member in the storage struct.
 fn handle_legacy_mapping_storage_var(address: &str, member_state_name: &str) -> String {
     format!(
         "
