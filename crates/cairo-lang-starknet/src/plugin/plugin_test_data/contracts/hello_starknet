@@ -46,24 +46,7 @@ mod hello_starknet {
 contract:
 
 use starknet::event::EventEmitter;
-    struct ContractState {
-        balance: balance::ContractMemberState,
-    }
-    impl ContractStateDrop of Drop<ContractState> {}
-    #[inline(always)]
-    fn unsafe_new_contract_state() -> ContractState {
-        ContractState {
-            balance: balance::ContractMemberState{},
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
-    }
-
-
-    #[event] #[derive(Drop, starknet::Event)] enum Event {}
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
 
     impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
         fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
@@ -80,6 +63,22 @@ use starknet::event::EventEmitter;
         }
     }
 
+    struct ContractState {
+        balance: balance::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            balance: balance::ContractMemberState{},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
     use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
     mod balance {
         #[derive(Copy, Drop)]
