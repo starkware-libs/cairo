@@ -301,9 +301,9 @@
     │   │       │   │   │   │           │   └── child #0 (kind: TokenWhitespace).
     │   │       │   │   │   │           ├── token (kind: TokenIdentifier): 'some_macro'
     │   │       │   │   │   │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   ├── bang (kind: TerminalNot)
+    │   │       │   │   │   ├── bang (kind: TerminalBang)
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │   │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │   │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TerminalLParen)

@@ -46,7 +46,7 @@ StatementLet
     │   │   ├── lhs (kind: ExprPath)
     │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'x'
-    │   │   ├── op (kind: TokenMulEq): '*='
+    │   │   ├── op (kind: TokenStarEq): '*='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #4 (kind: StatementExpr)
@@ -54,7 +54,7 @@ StatementLet
     │   │   ├── lhs (kind: ExprPath)
     │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'x'
-    │   │   ├── op (kind: TokenDivEq): '/='
+    │   │   ├── op (kind: TokenSlashEq): '/='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #5 (kind: StatementExpr)
@@ -62,7 +62,7 @@ StatementLet
     │   │   ├── lhs (kind: ExprPath)
     │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │   │       └── ident (kind: TokenIdentifier): 'x'
-    │   │   ├── op (kind: TokenModEq): '%='
+    │   │   ├── op (kind: TokenPercentEq): '%='
     │   │   └── rhs (kind: TokenLiteralNumber): '5'
     │   └── semicolon (kind: TokenSemicolon): ';'
     └── child #6 (kind: StatementExpr)

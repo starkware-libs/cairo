@@ -80,11 +80,11 @@
     │   │       │   │   ├── rhs (kind: ExprUnary)
     │   │       │   │   │   ├── op (kind: TokenMinus): '-'
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TokenNot): '!'
+    │   │       │   │   │       ├── op (kind: TokenBang): '!'
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TokenMinus): '-'
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TokenNot): '!'
+    │   │       │   │   │               ├── op (kind: TokenBang): '!'
     │   │       │   │   │               └── expr (kind: TokenLiteralNumber): '8'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)

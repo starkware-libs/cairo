@@ -58,12 +58,12 @@
     │   │       │   │   │   │   ├── lhs (kind: ExprPath)
     │   │       │   │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │   │       └── ident (kind: TokenIdentifier): 'x'
-    │   │       │   │   │   │   ├── op (kind: TokenMul): '*'
+    │   │       │   │   │   │   ├── op (kind: TokenStar): '*'
     │   │       │   │   │   │   └── rhs (kind: TokenLiteralNumber): '2'
     │   │       │   │   │   ├── op (kind: TokenPlus): '+'
     │   │       │   │   │   └── rhs (kind: ExprBinary)
     │   │       │   │   │       ├── lhs (kind: TokenLiteralNumber): '3'
-    │   │       │   │   │       ├── op (kind: TokenMul): '*'
+    │   │       │   │   │       ├── op (kind: TokenStar): '*'
     │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '5'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   ├── child #2 (kind: StatementLet)
@@ -252,7 +252,7 @@
     │           │   │       │       │   │   │   └── rhs (kind: ExprPath)
     │           │   │       │       │   │   │       └── item #0 (kind: PathSegmentSimple)
     │           │   │       │       │   │   │           └── ident (kind: TokenIdentifier): 'a'
-    │           │   │       │       │   │   ├── op (kind: TokenMul): '*'
+    │           │   │       │       │   │   ├── op (kind: TokenStar): '*'
     │           │   │       │       │   │   └── rhs: Missing []
     │           │   │       │       │   ├── op (kind: TokenPlus): '+'
     │           │   │       │       │   └── rhs (kind: ExprBinary)
@@ -269,7 +269,7 @@
     │           │   │       │       │       │   └── rhs (kind: ExprPath)
     │           │   │       │       │       │       └── item #0 (kind: PathSegmentSimple)
     │           │   │       │       │       │           └── ident (kind: TokenIdentifier): 's'
-    │           │   │       │       │       ├── op (kind: TokenMul): '*'
+    │           │   │       │       │       ├── op (kind: TokenStar): '*'
     │           │   │       │       │       └── rhs (kind: ExprFunctionCall)
     │           │   │       │       │           ├── path (kind: ExprPath)
     │           │   │       │       │           │   └── item #0 (kind: PathSegmentSimple)

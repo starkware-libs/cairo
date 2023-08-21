@@ -470,12 +470,12 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalComma => {
             vec![]
         }
-        SyntaxKind::TokenDiv => vec![],
-        SyntaxKind::TerminalDiv => {
+        SyntaxKind::TokenSlash => vec![],
+        SyntaxKind::TerminalSlash => {
             vec![]
         }
-        SyntaxKind::TokenDivEq => vec![],
-        SyntaxKind::TerminalDivEq => {
+        SyntaxKind::TokenSlashEq => vec![],
+        SyntaxKind::TerminalSlashEq => {
             vec![]
         }
         SyntaxKind::TokenDot => vec![],
@@ -542,28 +542,28 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::TerminalMinusEq => {
             vec![]
         }
-        SyntaxKind::TokenMod => vec![],
-        SyntaxKind::TerminalMod => {
+        SyntaxKind::TokenPercent => vec![],
+        SyntaxKind::TerminalPercent => {
             vec![]
         }
-        SyntaxKind::TokenModEq => vec![],
-        SyntaxKind::TerminalModEq => {
+        SyntaxKind::TokenPercentEq => vec![],
+        SyntaxKind::TerminalPercentEq => {
             vec![]
         }
-        SyntaxKind::TokenMul => vec![],
-        SyntaxKind::TerminalMul => {
+        SyntaxKind::TokenStar => vec![],
+        SyntaxKind::TerminalStar => {
             vec![]
         }
-        SyntaxKind::TokenMulEq => vec![],
-        SyntaxKind::TerminalMulEq => {
+        SyntaxKind::TokenStarEq => vec![],
+        SyntaxKind::TerminalStarEq => {
             vec![]
         }
         SyntaxKind::TokenNeq => vec![],
         SyntaxKind::TerminalNeq => {
             vec![]
         }
-        SyntaxKind::TokenNot => vec![],
-        SyntaxKind::TerminalNot => {
+        SyntaxKind::TokenBang => vec![],
+        SyntaxKind::TerminalBang => {
             vec![]
         }
         SyntaxKind::TokenBitNot => vec![],

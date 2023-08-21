@@ -131,7 +131,7 @@
     │   │       │   │   │   ├── path (kind: ExprPath)
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'some_macro'
-    │   │       │   │   │   ├── bang (kind: TokenNot): '!'
+    │   │       │   │   │   ├── bang (kind: TokenBang): '!'
     │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
     │   │       │   │   │       ├── expressions (kind: ExprList) []

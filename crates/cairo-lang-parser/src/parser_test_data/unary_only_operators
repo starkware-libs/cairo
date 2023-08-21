@@ -28,7 +28,7 @@ StatementList
     │   └── semicolon (kind: OptionTerminalSemicolonEmpty) []
     ├── child #1 (kind: StatementExpr)
     │   ├── expr (kind: ExprUnary)
-    │   │   ├── op (kind: TokenNot): '!'
+    │   │   ├── op (kind: TokenBang): '!'
     │   │   └── expr (kind: TokenLiteralNumber): '2'
     │   └── semicolon (kind: TokenSemicolon): ';'
     ├── child #2 (kind: StatementExpr)

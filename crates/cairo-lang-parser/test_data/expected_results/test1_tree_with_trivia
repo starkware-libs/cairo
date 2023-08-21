@@ -222,9 +222,9 @@
     │   │       │   │   │   │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │   └── expr (kind: ExprUnary)
-    │   │       │   │   │       ├── op (kind: TerminalNot)
+    │   │       │   │   │       ├── op (kind: TerminalBang)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │       │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │       └── expr (kind: ExprUnary)
     │   │       │   │   │           ├── op (kind: TerminalMinus)
@@ -232,9 +232,9 @@
     │   │       │   │   │           │   ├── token (kind: TokenMinus): '-'
     │   │       │   │   │           │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │           └── expr (kind: ExprUnary)
-    │   │       │   │   │               ├── op (kind: TerminalNot)
+    │   │       │   │   │               ├── op (kind: TerminalBang)
     │   │       │   │   │               │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │               │   ├── token (kind: TokenNot): '!'
+    │   │       │   │   │               │   ├── token (kind: TokenBang): '!'
     │   │       │   │   │               │   └── trailing_trivia (kind: Trivia) []
     │   │       │   │   │               └── expr (kind: TerminalLiteralNumber)
     │   │       │   │   │                   ├── leading_trivia (kind: Trivia) []
