@@ -159,7 +159,6 @@ use starknet::event::EventEmitter;
     }
 
 
-
 impls:
 
 impl EventDrop of Drop::<Event>;

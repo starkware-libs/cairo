@@ -1,3 +1,4 @@
+use cairo_lang_defs::db::get_all_path_leafs;
 use cairo_lang_defs::patcher::{ModifiedNode, PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{
     DynGeneratedFileAuxData, PluginDiagnostic, PluginGeneratedFile, PluginResult,
@@ -7,7 +8,7 @@ use cairo_lang_syntax::attribute::structured::{
 };
 use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::{formatdoc, indoc};
@@ -15,8 +16,9 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
-use super::contract::StarknetModuleKind;
-use super::generation_data::StarknetModuleCommonGenerationData;
+use super::consts::{EVENT_ATTR, EVENT_TYPE_NAME};
+use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
+use super::starknet_module::StarknetModuleKind;
 use crate::contract::starknet_keccak;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
@@ -432,4 +434,69 @@ pub fn generate_event_code(
             RewriteNode::Text(empty_event_code.to_string()),
         )]),
     );
+}
+
+/// Checks whether the given item is an event, and if so - makes sure it's valid.
+pub fn is_starknet_event(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    item: &ast::Item,
+    module_kind: StarknetModuleKind,
+) -> bool {
+    let (has_event_name, stable_ptr) = match item {
+        ast::Item::Struct(strct) => {
+            (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr().untyped())
+        }
+        ast::Item::Enum(enm) => {
+            (enm.name(db).text(db) == EVENT_TYPE_NAME, enm.name(db).stable_ptr().untyped())
+        }
+        ast::Item::Use(item) => {
+            for leaf in get_all_path_leafs(db, item.use_path(db)) {
+                let stable_ptr = &leaf.stable_ptr();
+                if stable_ptr.identifier(db) == EVENT_TYPE_NAME {
+                    if !item.has_attr(db, EVENT_ATTR) {
+                        diagnostics.push(PluginDiagnostic {
+                            message: format!(
+                                "{} type that is named `Event` must be marked with \
+                                 #[{EVENT_ATTR}].",
+                                module_kind.to_str_capital()
+                            ),
+                            stable_ptr: stable_ptr.untyped(),
+                        });
+                    }
+                    return true;
+                }
+            }
+            return false;
+        }
+        _ => return false,
+    };
+    let has_event_attr = item.has_attr(db, EVENT_ATTR);
+
+    match (has_event_attr, has_event_name) {
+        (true, false) => {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "{} type that is marked with #[{EVENT_ATTR}] must be named `Event`.",
+                    module_kind.to_str_capital()
+                ),
+                stable_ptr,
+            });
+            false
+        }
+        (false, true) => {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "{} type that is named `Event` must be marked with #[{EVENT_ATTR}].",
+                    module_kind.to_str_capital()
+                ),
+                stable_ptr,
+            });
+            // The attribute is missing, but this counts as a event - we can't create another
+            // (empty) event.
+            true
+        }
+        (true, true) => true,
+        (false, false) => false,
+    }
 }

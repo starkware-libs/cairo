@@ -236,7 +236,6 @@ const TEST_CLASS_HASH: felt252 = 0x1bc1b82226a1dda228bbfa2ed150282feb99bf35fae30
     }
 
 
-
 impls:
 
 impl WrappedFelt252Drop of Drop::<WrappedFelt252>;

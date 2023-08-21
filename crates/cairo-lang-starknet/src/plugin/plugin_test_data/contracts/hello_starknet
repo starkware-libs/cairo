@@ -172,7 +172,6 @@ fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
-
 impls:
 
 impl EventDrop of Drop::<Event>;

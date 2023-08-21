@@ -218,7 +218,6 @@ impl ContractStateOutsideImpl of
     }
 
 
-
 impls:
 
 impl EventDrop of Drop::<Event>;
