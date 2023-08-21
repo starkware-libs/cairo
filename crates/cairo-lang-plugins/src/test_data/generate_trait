@@ -131,7 +131,7 @@ trait SomeTrait {
 
 //! > ==========================================================================
 
-//! > Test diagnostics of generate_trait. TODO(yg): this should fail, then change to true and should pass.
+//! > Test diagnostics of generate_trait.
 
 //! > test_runner_name
 test_expand_plugin(allow_diagnostics: true)
