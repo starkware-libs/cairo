@@ -157,3 +157,23 @@ error: Inline macro `foo` not found.
  --> lib.cairo:2:12
    let x = foo!(0);
            ^*****^
+
+//! > ==========================================================================
+
+//! > Test comment affects macro name
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   // This comment should not appear in the macro name
+   array![0_felt252];
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > expected_diagnostics
