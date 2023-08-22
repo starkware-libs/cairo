@@ -158,7 +158,7 @@ pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         code: Some(PluginGeneratedFile {
             name: "includable".into(),
             content: builder.code,
-            patches: builder.patches,
+            diagnostics_mappings: builder.diagnostics_mappings,
             aux_data: None,
         }),
         diagnostics,

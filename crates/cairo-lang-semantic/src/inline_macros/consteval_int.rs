@@ -1,4 +1,6 @@
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic};
+use cairo_lang_defs::plugin::{
+    InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
+};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
@@ -24,7 +26,15 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
             return InlinePluginResult { code: None, diagnostics };
         }
         let code = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
-        InlinePluginResult { code: code.map(|x| x.to_string()), diagnostics }
+        InlinePluginResult {
+            code: code.map(|x| PluginGeneratedFile {
+                name: "consteval_int_inline_macro".into(),
+                content: x.to_string(),
+                diagnostics_mappings: vec![],
+                aux_data: None,
+            }),
+            diagnostics,
+        }
     }
 }
 

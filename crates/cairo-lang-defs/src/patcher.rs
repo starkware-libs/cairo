@@ -1,45 +1,9 @@
+use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnoticOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
-
-/// A patch applied during a code rewrite.
-#[derive(Debug, PartialEq, Eq)]
-pub struct Patch {
-    pub span: TextSpan,
-    pub origin: PatchOrigin,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum PatchOrigin {
-    /// The origin is a copied node staring at the given offset.
-    Start(TextOffset),
-    /// The origin was generated from this span, but there's no direct mapping.
-    Span(TextSpan),
-}
-
-/// A set of patches applied during a code rewrite.
-#[derive(Debug, Default, PartialEq, Eq)]
-pub struct Patches {
-    pub patches: Vec<Patch>,
-}
-impl Patches {
-    pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
-        for Patch { span: patch_span, origin } in &self.patches {
-            if patch_span.contains(span) {
-                return Some(match origin {
-                    PatchOrigin::Start(origin_start) => {
-                        let start = origin_start.add_width(span.start - patch_span.start);
-                        TextSpan { start, end: start.add_width(span.width()) }
-                    }
-                    PatchOrigin::Span(span) => *span,
-                });
-            }
-        }
-        None
-    }
-}
 
 /// Interface for modifying syntax nodes.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -235,11 +199,11 @@ pub struct ModifiedNode {
 pub struct PatchBuilder<'a> {
     pub db: &'a dyn SyntaxGroup,
     pub code: String,
-    pub patches: Patches,
+    pub diagnostics_mappings: Vec<DiagnosticMapping>,
 }
 impl<'a> PatchBuilder<'a> {
     pub fn new(db: &'a dyn SyntaxGroup) -> Self {
-        Self { db, code: String::default(), patches: Patches::default() }
+        Self { db, code: String::default(), diagnostics_mappings: vec![] }
     }
 
     pub fn add_char(&mut self, c: char) {
@@ -270,9 +234,9 @@ impl<'a> PatchBuilder<'a> {
     pub fn add_node(&mut self, node: SyntaxNode) {
         let orig_span = node.span(self.db);
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
-        self.patches.patches.push(Patch {
+        self.diagnostics_mappings.push(DiagnosticMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
-            origin: PatchOrigin::Start(orig_span.start),
+            origin: DiagnoticOrigin::Start(orig_span.start),
         });
         self.code += node.get_text(self.db).as_str();
     }
@@ -288,9 +252,9 @@ impl<'a> PatchBuilder<'a> {
 
         self.code += &text;
 
-        self.patches.patches.push(Patch {
+        self.diagnostics_mappings.push(DiagnosticMapping {
             span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
-            origin: PatchOrigin::Start(orig_start),
+            origin: DiagnoticOrigin::Start(orig_start),
         });
     }
 }

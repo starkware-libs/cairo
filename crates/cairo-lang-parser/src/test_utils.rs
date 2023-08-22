@@ -36,6 +36,7 @@ pub fn create_virtual_file(
         parent: None,
         name: file_name.into(),
         content: Arc::new(content.into()),
+        diagnostics_mappings: Default::default(),
         kind: FileKind::Module,
     }))
 }

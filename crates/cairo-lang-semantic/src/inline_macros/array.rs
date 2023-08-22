@@ -1,4 +1,4 @@
-use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult};
+use cairo_lang_defs::plugin::{InlineMacroExprPlugin, InlinePluginResult, PluginGeneratedFile};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 
@@ -29,6 +29,14 @@ impl InlineMacroExprPlugin for ArrayMacro {
             "\n            __array_builder_macro_result__
         }",
         );
-        InlinePluginResult { code: Some(code), diagnostics: vec![] }
+        InlinePluginResult {
+            code: Some(PluginGeneratedFile {
+                name: "array_inline_macro".into(),
+                content: code,
+                diagnostics_mappings: vec![],
+                aux_data: None,
+            }),
+            diagnostics: vec![],
+        }
     }
 }

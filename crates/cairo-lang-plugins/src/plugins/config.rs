@@ -39,7 +39,7 @@ impl MacroPlugin for ConfigPlugin {
                 code: Some(PluginGeneratedFile {
                     name: "config".into(),
                     content: data.result_code.clone(),
-                    patches: Default::default(),
+                    diagnostics_mappings: vec![],
                     aux_data: None,
                 }),
                 diagnostics: data.diagnostics,
