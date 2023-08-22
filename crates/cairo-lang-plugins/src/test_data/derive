@@ -70,14 +70,16 @@ impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
 }
 impl TwoMemberStructDestruct of Destruct::<TwoMemberStruct> {
     fn destruct(self: TwoMemberStruct) nopanic {
-        traits::Destruct::destruct(self.a);
-        traits::Destruct::destruct(self.b);
+        let TwoMemberStruct { a, b } = self;
+        traits::Destruct::destruct(a);
+        traits::Destruct::destruct(b);
     }
 }
 impl TwoMemberStructPanicDestruct of PanicDestruct::<TwoMemberStruct> {
     fn panic_destruct(self: TwoMemberStruct, ref panic: Panic) nopanic {
-        traits::PanicDestruct::panic_destruct(self.a, ref panic);
-        traits::PanicDestruct::panic_destruct(self.b, ref panic);
+        let TwoMemberStruct { a, b } = self;
+        traits::PanicDestruct::panic_destruct(a, ref panic);
+        traits::PanicDestruct::panic_destruct(b, ref panic);
     }
 }
 impl TwoMemberStructPartialEq of PartialEq::<TwoMemberStruct> {
@@ -111,12 +113,14 @@ struct GenericStruct<T> {
 impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T>>;
 impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T>> {
     fn destruct(self: GenericStruct<T>) nopanic {
-        traits::Destruct::destruct(self.a);
+        let GenericStruct { a } = self;
+        traits::Destruct::destruct(a);
     }
 }
 impl GenericStructPanicDestruct<T, impl TPanicDestruct: PanicDestruct<T>> of PanicDestruct::<GenericStruct<T>> {
     fn panic_destruct(self: GenericStruct<T>, ref panic: Panic) nopanic {
-        traits::PanicDestruct::panic_destruct(self.a, ref panic);
+        let GenericStruct { a } = self;
+        traits::PanicDestruct::panic_destruct(a, ref panic);
     }
 }
 
