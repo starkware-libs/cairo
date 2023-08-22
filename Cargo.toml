@@ -37,6 +37,7 @@ members = [
     "crates/bin/cairo-test",
     "crates/bin/cairo-run",
     "crates/bin/sierra-compile",
+    "crates/bin/starknet-sierra-extract-code",
     "crates/bin/starknet-compile",
     "crates/bin/starknet-sierra-compile",
     "crates/bin/generate-syntax",
