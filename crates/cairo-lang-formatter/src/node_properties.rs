@@ -205,8 +205,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
                 | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ExprListBraced
-                | SyntaxKind::ExprListBracketed
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(2),
                 SyntaxKind::ElseClause => Some(3),
                 _ => None,
@@ -226,8 +226,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
                 | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ExprListBraced
-                | SyntaxKind::ExprListBracketed
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(10),
                 _ => None,
             },
@@ -245,8 +245,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprPath
                 | SyntaxKind::ExprStructCtorCall
                 | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ExprListBraced
-                | SyntaxKind::ExprListBracketed
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::ArgListBracketed
                 | SyntaxKind::ExprUnary => Some(1),
                 SyntaxKind::TerminalEq => Some(10),
                 SyntaxKind::PatternEnum | SyntaxKind::PatternTuple | SyntaxKind::PatternStruct => {
@@ -260,8 +260,8 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::ExprList
                 | SyntaxKind::ExprBlock
                 | SyntaxKind::ExprListParenthesized
-                | SyntaxKind::ExprListBraced
-                | SyntaxKind::ExprListBracketed
+                | SyntaxKind::ArgListBraced
+                | SyntaxKind::ArgListBracketed
                 | SyntaxKind::PatternTuple
                 | SyntaxKind::ModuleBody
                 | SyntaxKind::MatchArms
@@ -279,7 +279,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 | SyntaxKind::GenericArgList
                 | SyntaxKind::GenericParamList
                 | SyntaxKind::ArgListParenthesized
-                | SyntaxKind::ArgListBraced
+                | SyntaxKind::StructArgListBraced
                 | SyntaxKind::StatementList
                 | SyntaxKind::ItemList
                 | SyntaxKind::TraitItemList

@@ -19,20 +19,22 @@ impl InlineMacroExprPlugin for SelectorMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        let ast::WrappedExprList::ParenthesizedExprList(args) = syntax.arguments(db) else {
+        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
 
-        let arguments = &args.expressions(db).elements(db);
-        if arguments.len() != 1 {
+        let Some(arg) = extract_single_unnamed_arg(db, args.args(db)) else {
             let diagnostics = vec![PluginDiagnostic {
                 stable_ptr: syntax.stable_ptr().untyped(),
-                message: format!("`{}` macro must have a single argument.", SelectorMacro::NAME),
+                message: format!(
+                    "`{}` macro must have exactly one unnamed argument",
+                    SelectorMacro::NAME
+                ),
             }];
             return InlinePluginResult { code: None, diagnostics };
-        }
+        };
 
-        let ast::Expr::String(input_string) = &arguments[0] else {
+        let ast::Expr::String(input_string) = arg else {
             let diagnostics = vec![PluginDiagnostic {
                 stable_ptr: syntax.stable_ptr().untyped(),
                 message: format!("`{}` macro argument must be a string", SelectorMacro::NAME),
@@ -52,4 +54,17 @@ impl InlineMacroExprPlugin for SelectorMacro {
             diagnostics: vec![],
         }
     }
+}
+
+/// Extract single unnamed argument.
+fn extract_single_unnamed_arg(
+    db: &dyn SyntaxGroup,
+    macro_arguments: ast::ArgList,
+) -> Option<ast::Expr> {
+    if let Ok([arg]) = <[_; 1]>::try_from(macro_arguments.elements(db)) {
+        if let ast::ArgClause::Unnamed(arg_clause) = arg.arg_clause(db) {
+            return Some(arg_clause.value(db));
+        }
+    }
+    None
 }

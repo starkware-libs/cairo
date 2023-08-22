@@ -13,16 +13,15 @@ impl InlineMacroExprPlugin for ArrayMacro {
         db: &dyn SyntaxGroup,
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
-        let ast::WrappedExprList::BracketedExprList(args) = syntax.arguments(db) else {
+        let ast::WrappedArgList::BracketedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
         let mut builder = PatchBuilder::new(db);
-        let args = args.expressions(db).elements(db);
         builder.add_str(
             "{
             let mut __array_builder_macro_result__ = ArrayTrait::new();",
         );
-        for arg in args {
+        for arg in args.arguments(db).elements(db) {
             builder.add_str(
                 "\n            array::ArrayTrait::append(ref __array_builder_macro_result__, ",
             );

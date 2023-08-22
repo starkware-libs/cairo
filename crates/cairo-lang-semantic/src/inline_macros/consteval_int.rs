@@ -19,11 +19,11 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
         let mut diagnostics = vec![];
-        let ast::WrappedExprList::ParenthesizedExprList(args) = syntax.arguments(db) else {
+        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
         let constant_expression =
-            extract_consteval_macro_expression(db, &args.expressions(db), &mut diagnostics);
+            extract_consteval_macro_expression(db, &args.args(db), &mut diagnostics);
         if constant_expression.is_none() {
             return InlinePluginResult { code: None, diagnostics };
         }
@@ -53,18 +53,19 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
 /// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
 pub fn extract_consteval_macro_expression(
     db: &dyn SyntaxGroup,
-    macro_arguments: &ast::ExprList,
+    macro_arguments: &ast::ArgList,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> Option<ast::Expr> {
-    let arguments = macro_arguments.elements(db);
-    if arguments.len() != 1 {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: macro_arguments.stable_ptr().untyped(),
-            message: "consteval_int macro must have a single unnamed argument.".to_string(),
-        });
-        return None;
+    if let Ok([arg]) = <[_; 1]>::try_from(macro_arguments.elements(db)) {
+        if let ast::ArgClause::Unnamed(arg_clause) = arg.arg_clause(db) {
+            return Some(arg_clause.value(db));
+        }
     }
-    Some(arguments[0].clone())
+    diagnostics.push(PluginDiagnostic {
+        stable_ptr: macro_arguments.stable_ptr().untyped(),
+        message: "consteval_int macro must have a single unnamed argument.".to_string(),
+    });
+    None
 }
 
 /// Compute the actual value of an integer expression, or fail with diagnostics.

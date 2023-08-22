@@ -938,7 +938,7 @@ impl<'a> Parser<'a> {
 
     /// Assumes the current token is LBrace.
     /// Expected pattern: `\{<StructArgList>\}`
-    fn expect_struct_ctor_argument_list_braced(&mut self) -> ArgListBracedGreen {
+    fn expect_struct_ctor_argument_list_braced(&mut self) -> StructArgListBracedGreen {
         let lbrace = self.take::<TerminalLBrace>();
         let arg_list = StructArgList::new_green(
             self.db,
@@ -950,7 +950,7 @@ impl<'a> Parser<'a> {
         );
         let rbrace = self.parse_token::<TerminalRBrace>();
 
-        ArgListBraced::new_green(self.db, lbrace, arg_list, rbrace)
+        StructArgListBraced::new_green(self.db, lbrace, arg_list, rbrace)
     }
 
     /// Assumes the current token is LParen.
@@ -966,31 +966,31 @@ impl<'a> Parser<'a> {
     fn expect_macro_call(&mut self, path: ExprPathGreen) -> ExprInlineMacroGreen {
         let bang = self.take::<TerminalNot>();
         let macro_name = path;
-        let wrapped_expr_list = self.parse_wrapped_expr_list();
+        let wrapped_expr_list = self.parse_wrapped_arg_list();
         ExprInlineMacro::new_green(self.db, macro_name, bang, wrapped_expr_list)
     }
 
-    /// Returns a GreenId of a node with an ExprTuple|ExprListBracketed kind or None if such an
-    /// argument list can't be parsed.
-    fn parse_wrapped_expr_list(&mut self) -> WrappedExprListGreen {
+    /// Returns a GreenId of a node with an ArgListParenthesized|ArgListBracketed|ArgListBraced kind
+    /// or None if such an argument list can't be parsed.
+    fn parse_wrapped_arg_list(&mut self) -> WrappedArgListGreen {
         let current_token = self.peek().kind;
         match current_token {
             SyntaxKind::TerminalLParen => self
-                .expect_wrapped_expr_list::<TerminalLParen, TerminalRParen, _, _>(
-                    ExprListParenthesized::new_green,
+                .expect_wrapped_arg_list::<TerminalLParen, TerminalRParen, _, _>(
+                    ArgListParenthesized::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrack => self
-                .expect_wrapped_expr_list::<TerminalLBrack, TerminalRBrack, _, _>(
-                    ExprListBracketed::new_green,
+                .expect_wrapped_arg_list::<TerminalLBrack, TerminalRBrack, _, _>(
+                    ArgListBracketed::new_green,
                 )
                 .into(),
             SyntaxKind::TerminalLBrace => self
-                .expect_wrapped_expr_list::<TerminalLBrace, TerminalRBrace, _, _>(
-                    ExprListBraced::new_green,
+                .expect_wrapped_arg_list::<TerminalLBrace, TerminalRBrace, _, _>(
+                    ArgListBraced::new_green,
                 )
                 .into(),
-            _ => self.create_and_report_missing::<WrappedExprList>(
+            _ => self.create_and_report_missing::<WrappedArgList>(
                 ParserDiagnosticKind::MissingExpression,
             ),
         }
@@ -1000,58 +1000,42 @@ impl<'a> Parser<'a> {
     /// Expected pattern: `[LTerminal](<expr>,)*<expr>?[RTerminal]`
     /// Gets `new_green` a green id node builder for the list of the requested type, applies it to
     /// the parsed list and returns the result.
-    fn expect_wrapped_expr_list<
+    fn expect_wrapped_arg_list<
         LTerminal: syntax::node::Terminal,
         RTerminal: syntax::node::Terminal,
         ListGreen,
-        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, ExprListGreen, RTerminal::Green) -> ListGreen,
+        NewGreen: Fn(&dyn SyntaxGroup, LTerminal::Green, ArgListGreen, RTerminal::Green) -> ListGreen,
     >(
         &mut self,
         new_green: NewGreen,
     ) -> ListGreen {
         let l_term = self.take::<LTerminal>();
-        let exprs: Vec<ExprListElementOrSeparatorGreen> = self
-            .parse_separated_list::<Expr, TerminalComma, ExprListElementOrSeparatorGreen>(
-                Self::try_parse_expr,
+        let exprs: Vec<ArgListElementOrSeparatorGreen> = self
+            .parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
+                Self::try_parse_function_argument,
                 is_of_kind!(rparen, rbrace, rbrack, block, top_level),
-                "expression",
+                "argument",
             );
         let r_term: <RTerminal as TypedSyntaxNode>::Green = self.parse_token::<RTerminal>();
-        new_green(self.db, l_term, ExprList::new_green(self.db, exprs), r_term)
+        new_green(self.db, l_term, ArgList::new_green(self.db, exprs), r_term)
     }
 
     /// Assumes the current token is LParen.
     /// Expected pattern: `\(<ArgList>\)`
     fn expect_parenthesized_argument_list(&mut self) -> ArgListParenthesizedGreen {
-        let lparen = self.take::<TerminalLParen>();
-        let arg_list = ArgList::new_green(
-            self.db,
-            self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
-                Self::try_parse_function_argument,
-                is_of_kind!(rparen, block, rbrace, top_level),
-                "argument",
-            ),
-        );
-        let rparen = self.parse_token::<TerminalRParen>();
-        ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen)
+        self.expect_wrapped_arg_list::<TerminalLParen, TerminalRParen, _, _>(
+            ArgListParenthesized::new_green,
+        )
     }
 
     /// Tries to parse parenthesized function call arguments.
     /// Expected pattern: `\(<ArgList>\)`
     fn try_parse_parenthesized_argument_list(&mut self) -> OptionArgListParenthesizedGreen {
-        let Some(lparen) = self.try_parse_token::<TerminalLParen>() else {
-            return OptionArgListParenthesizedEmpty::new_green(self.db).into();
-        };
-        let arg_list = ArgList::new_green(
-            self.db,
-            self.parse_separated_list::<Arg, TerminalComma, ArgListElementOrSeparatorGreen>(
-                Self::try_parse_function_argument,
-                is_of_kind!(rparen, block, rbrace, top_level),
-                "argument",
-            ),
-        );
-        let rparen = self.parse_token::<TerminalRParen>();
-        ArgListParenthesized::new_green(self.db, lparen, arg_list, rparen).into()
+        if self.peek().kind == SyntaxKind::TerminalLParen {
+            self.expect_parenthesized_argument_list().into()
+        } else {
+            OptionArgListParenthesizedEmpty::new_green(self.db).into()
+        }
     }
 
     /// Parses a function call's argument, which contains possibly modifiers, and a argument clause.
@@ -1146,7 +1130,7 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is LBrace.
-    /// Expected pattern: `<ExprListBraced>`
+    /// Expected pattern: `<StructArgListBraced>`
     fn expect_constructor_call(&mut self, path: ExprPathGreen) -> ExprStructCtorCallGreen {
         let ctor_name = path;
         let args = self.expect_struct_ctor_argument_list_braced();
