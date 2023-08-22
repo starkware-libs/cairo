@@ -305,12 +305,12 @@
     │   │       │   │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │   │   ├── token (kind: TokenNot): '!'
     │   │       │   │   │   │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TerminalLParen)
     │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │   ├── token (kind: TokenLParen): '('
     │   │       │   │   │       │   └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       ├── expressions (kind: ExprList) []
+    │   │       │   │   │       ├── args (kind: ArgList) []
     │   │       │   │   │       └── rparen (kind: TerminalRParen)
     │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           ├── token (kind: TokenRParen): ')'

@@ -100,7 +100,7 @@
     │   │       │   │   │       ├── path (kind: ExprPath)
     │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'Struct'
-    │   │       │   │   │       └── arguments (kind: ArgListBraced)
+    │   │       │   │   │       └── arguments (kind: StructArgListBraced)
     │   │       │   │   │           ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           ├── arguments (kind: StructArgList)
     │   │       │   │   │           │   ├── item #0 (kind: StructArgSingle)
@@ -117,7 +117,7 @@
     │   │       │   │   │           │               ├── path (kind: ExprPath)
     │   │       │   │   │           │               │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │           │               │       └── ident (kind: TokenIdentifier): 'Struct2'
-    │   │       │   │   │           │               └── arguments (kind: ArgListBraced)
+    │   │       │   │   │           │               └── arguments (kind: StructArgListBraced)
     │   │       │   │   │           │                   ├── lbrace (kind: TokenLBrace): '{'
     │   │       │   │   │           │                   ├── arguments (kind: StructArgList)
     │   │       │   │   │           │                   │   └── item #0 (kind: StructArgSingle)

@@ -280,7 +280,7 @@
     │   │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │       │           ├── token (kind: TokenIdentifier): 'Struct'
     │   │       │   │   │       │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │       └── arguments (kind: ArgListBraced)
+    │   │       │   │   │       └── arguments (kind: StructArgListBraced)
     │   │       │   │   │           ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │   ├── token (kind: TokenLBrace): '{'
@@ -324,7 +324,7 @@
     │   │       │   │   │           │               │           ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │               │           ├── token (kind: TokenIdentifier): 'Struct2'
     │   │       │   │   │           │               │           └── trailing_trivia (kind: Trivia) []
-    │   │       │   │   │           │               └── arguments (kind: ArgListBraced)
+    │   │       │   │   │           │               └── arguments (kind: StructArgListBraced)
     │   │       │   │   │           │                   ├── lbrace (kind: TerminalLBrace)
     │   │       │   │   │           │                   │   ├── leading_trivia (kind: Trivia) []
     │   │       │   │   │           │                   │   ├── token (kind: TokenLBrace): '{'

@@ -7,7 +7,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use num_bigint::BigInt;
 
-use super::unsupported_bracket_diagnostic;
+use super::{extract_single_unnamed_arg, unsupported_bracket_diagnostic};
 
 #[derive(Debug)]
 pub struct ConstevalIntMacro;
@@ -19,15 +19,20 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
         syntax: &ast::ExprInlineMacro,
     ) -> InlinePluginResult {
         let mut diagnostics = vec![];
-        let ast::WrappedExprList::ParenthesizedExprList(args) = syntax.arguments(db) else {
+        let ast::WrappedArgList::ParenthesizedArgList(args) = syntax.arguments(db) else {
             return unsupported_bracket_diagnostic(db, syntax);
         };
-        let constant_expression =
-            extract_consteval_macro_expression(db, &args.expressions(db), &mut diagnostics);
-        if constant_expression.is_none() {
-            return InlinePluginResult { code: None, diagnostics };
-        }
-        let code = compute_constant_expr(db, &constant_expression.unwrap(), &mut diagnostics);
+        let Some(constant_expression) = extract_single_unnamed_arg(db, args.args(db)) else {
+            return InlinePluginResult {
+                code: None,
+                diagnostics: vec![PluginDiagnostic {
+                    stable_ptr: args.stable_ptr().untyped(),
+                    message: "consteval_int macro must have exactly one unnamed argument."
+                        .to_string(),
+                }],
+            };
+        };
+        let code = compute_constant_expr(db, &constant_expression, &mut diagnostics);
         InlinePluginResult {
             code: code.map(|x| {
                 let content = x.to_string();
@@ -48,23 +53,6 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
             diagnostics,
         }
     }
-}
-
-/// Extract the actual expression from the consteval_int macro, or fail with diagnostics.
-pub fn extract_consteval_macro_expression(
-    db: &dyn SyntaxGroup,
-    macro_arguments: &ast::ExprList,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-) -> Option<ast::Expr> {
-    let arguments = macro_arguments.elements(db);
-    if arguments.len() != 1 {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: macro_arguments.stable_ptr().untyped(),
-            message: "consteval_int macro must have a single unnamed argument.".to_string(),
-        });
-        return None;
-    }
-    Some(arguments[0].clone())
 }
 
 /// Compute the actual value of an integer expression, or fail with diagnostics.
