@@ -4,22 +4,37 @@ use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 
+/// A patch applied during a code rewrite.
 #[derive(Debug, PartialEq, Eq)]
 pub struct Patch {
     pub span: TextSpan,
-    pub origin_span: TextSpan,
+    pub origin: PatchOrigin,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum PatchOrigin {
+    /// The origin is a copied node staring at the given offset.
+    Start(TextOffset),
+    /// The origin was generated from this span, but there's no direct mapping.
+    Span(TextSpan),
+}
+
+/// A set of patches applied during a code rewrite.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Patches {
     pub patches: Vec<Patch>,
 }
 impl Patches {
     pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
-        for Patch { span: patch_span, origin_span } in &self.patches {
+        for Patch { span: patch_span, origin } in &self.patches {
             if patch_span.contains(span) {
-                let start = origin_span.start.add_width(span.start - patch_span.start);
-                return Some(TextSpan { start, end: start.add_width(span.end - span.start) });
+                return Some(match origin {
+                    PatchOrigin::Start(origin_start) => {
+                        let start = origin_start.add_width(span.start - patch_span.start);
+                        TextSpan { start, end: start.add_width(span.width()) }
+                    }
+                    PatchOrigin::Span(span) => *span,
+                });
             }
         }
         None
@@ -256,8 +271,8 @@ impl<'a> PatchBuilder<'a> {
         let orig_span = node.span(self.db);
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
         self.patches.patches.push(Patch {
-            span: TextSpan { start, end: start.add_width(orig_span.end - orig_span.start) },
-            origin_span: node.span(self.db),
+            span: TextSpan { start, end: start.add_width(orig_span.width()) },
+            origin: PatchOrigin::Start(orig_span.start),
         });
         self.code += node.get_text(self.db).as_str();
     }
@@ -275,7 +290,7 @@ impl<'a> PatchBuilder<'a> {
 
         self.patches.patches.push(Patch {
             span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
-            origin_span,
+            origin: PatchOrigin::Start(orig_start),
         });
     }
 }
