@@ -240,7 +240,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) {
         match self {
             Event::Log(val) => {
-                array::ArrayTrait::append(ref keys, 0x100572688f36e5f96cee69badc6dcd8712fa19d323be018601b92e967c60678);
+                array::ArrayTrait::append(ref keys, selector!("Log"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -252,7 +252,7 @@ impl EventIsEvent of starknet::Event<Event> {
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
         
-            if selector == 0x100572688f36e5f96cee69badc6dcd8712fa19d323be018601b92e967c60678 {
+            if selector == selector!("Log") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
