@@ -282,7 +282,7 @@ fn compute_expr_inline_macro_semantic(
 ) -> Maybe<Expr> {
     let syntax_db = ctx.db.upcast();
 
-    let macro_name = syntax.path(syntax_db).as_syntax_node().get_text(syntax_db).trim().to_string();
+    let macro_name = syntax.path(syntax_db).as_syntax_node().get_text_without_trivia(syntax_db);
     let Some(macro_plugin) = ctx.db.inline_macro_plugins().get(&macro_name).cloned() else {
         return Err(ctx
             .diagnostics
