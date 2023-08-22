@@ -8,10 +8,14 @@ use cairo_lang_syntax::node::ast::{
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use indent::indent_by;
-use indoc::formatdoc;
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
+
+mod clone;
+mod destruct;
+mod panic_destruct;
+mod partial_eq;
+mod serde;
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
@@ -136,7 +140,7 @@ impl GenericParamsInfo {
 }
 
 /// Information for the type being derived.
-struct DeriveInfo {
+pub struct DeriveInfo {
     name: SmolStr,
     attributes: AttributeList,
     generics: GenericParamsInfo,
@@ -248,19 +252,19 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             match derived.as_str() {
                 "Copy" | "Drop" => impls.push(get_empty_impl(&derived, &info)),
                 "Clone" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_clone_impl(&info))
+                    impls.push(clone::get_clone_impl(&info))
                 }
                 "Destruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_destruct_impl(&info))
+                    impls.push(destruct::get_destruct_impl(&info))
                 }
                 "PanicDestruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_panic_destruct_impl(&info))
+                    impls.push(panic_destruct::get_panic_destruct_impl(&info))
                 }
                 "PartialEq" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_partial_eq_impl(&info))
+                    impls.push(partial_eq::get_partial_eq_impl(&info))
                 }
                 "Serde" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(get_serde_impl(&info))
+                    impls.push(serde::get_serde_impl(&info))
                 }
                 "Clone" | "Destruct" | "PartialEq" | "Serde" => {
                     diagnostics.push(PluginDiagnostic {
@@ -288,230 +292,6 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
         },
         diagnostics,
         remove_original_item: false,
-    }
-}
-
-fn get_clone_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-            {header} {{
-                fn clone(self: @{full_typename}) -> {full_typename} {{
-                    {body}
-                }}
-            }}
-        ",
-        header = info.format_impl_header("Clone", &["Clone", "Destruct"]),
-        body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    match self {{
-                        {}
-                    }}",
-                    variants.iter().map(|variant|
-                        format!(
-                            "{name}::{variant}(x) => {name}::{variant}(Clone::clone(x)),",
-                            variant=variant.name,
-                        )).join("\n    ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                formatdoc! {"
-                    {name} {{
-                        {}
-                    }}",
-                    indent_by(4, members.iter().map(|member| {
-                        format!(
-                            "{member}: Clone::clone(self.{member}),",
-                            member=member.name,
-                        )
-                    }).join("\n"))
-                }
-            }
-            TypeVariantInfo::Extern => unreachable!(),
-        })
-    }
-}
-
-fn get_destruct_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn destruct(self: {full_typename}) nopanic {{
-            {body}
-        }}
-    }}
-",
-    header = info.format_impl_header("Destruct", &["Destruct"]),
-    body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                match self {{
-                    {}
-                }}",
-                variants.iter().map(|variant| {
-                format!(
-                    "{name}::{variant}(x) => traits::Destruct::destruct(x),",
-                    variant=variant.name,
-                )
-            }).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            members.iter().map(|member| {
-                    format!(
-                        "traits::Destruct::destruct(self.{member});",
-                        member=member.name,
-                    )
-                }).join("\n")
-        }
-        TypeVariantInfo::Extern => unreachable!(),
-    })
-    }
-}
-
-fn get_panic_destruct_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn panic_destruct(self: {full_typename}, ref panic: Panic) nopanic {{
-            {body}
-        }}
-    }}
-",
-    header = info.format_impl_header("PanicDestruct", &["PanicDestruct"]),
-    body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                        match self {{
-                            {}
-                        }}", variants.iter().map(|variant| {
-                format!(
-                    "{name}::{variant}(x) => traits::PanicDestruct::panic_destruct(x, ref panic),",
-                    variant=variant.name,
-                )
-            }).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            members.iter().map(|member| {
-                    format!(
-                        "traits::PanicDestruct::panic_destruct(self.{member}, ref panic);",
-                        member=member.name,
-                    )
-                }).join("\n")
-        }
-        TypeVariantInfo::Extern => unreachable!(),
-    })
-    }
-}
-
-fn get_partial_eq_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-    {header} {{
-        fn eq(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
-            {body}
-        }}
-        #[inline(always)]
-        fn ne(lhs: @{full_typename}, rhs: @{full_typename}) -> bool {{
-            !(lhs == rhs)
-        }}
-    }}
-",
-    header = info.format_impl_header("PartialEq", &["PartialEq"]),
-    body = indent_by(8, match &info.specific_info {
-        TypeVariantInfo::Enum(variants) => {
-            formatdoc! {"
-                        match lhs {{
-                            {}
-                        }}",
-                variants.iter().map(|lhs_variant| {
-                    indent_by(4, formatdoc! {"
-                        {name}::{lhs_variant}(x) => match rhs {{
-                            {}
-                        }},",
-                        variants.iter().map(|rhs_variant|{
-                            if lhs_variant.name == rhs_variant.name {
-                                format!("{name}::{}(y) => x == y,", rhs_variant.name)
-                            } else {
-                                format!("{name}::{}(y) => false,", rhs_variant.name)
-                            }
-                        }).join("\n    "),
-                    lhs_variant=lhs_variant.name,
-                    })
-                }).join("\n    ")}
-        }
-        TypeVariantInfo::Struct(members) => {
-            if members.is_empty() {
-                "true".to_string()
-            } else {
-                members.iter().map(|member|format!("lhs.{member} == rhs.{member}", member=member.name)).join(" && ")
-            }
-        }
-        TypeVariantInfo::Extern => unreachable!(),
-    })
-    }
-}
-
-fn get_serde_impl(info: &DeriveInfo) -> String {
-    let name = &info.name;
-    let full_typename = info.full_typename();
-    formatdoc! {"
-            {header} {{
-                fn serialize(self: @{full_typename}, ref output: array::Array<felt252>) {{
-                    {serialize_body}
-                }}
-                fn deserialize(ref serialized: array::Span<felt252>) -> Option<{full_typename}> {{
-                    {deserialize_body}
-                }}
-            }}
-        ",
-        header = info.format_impl_header("Serde", &["Serde", "Destruct"]),
-        serialize_body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    match self {{
-                        {}
-                    }}",
-                    variants.iter().enumerate().map(|(idx, variant)| {
-                    format!(
-                        "{name}::{variant}(x) => {{ serde::Serde::serialize(@{idx}, ref output); \
-                        serde::Serde::serialize(x, ref output); }},",
-                        variant=variant.name,
-                    )
-                }).join("\n    ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                members.iter().map(|member| format!("serde::Serde::serialize(self.{member}, ref output)", member=member.name)).join(";\n")
-            }
-            TypeVariantInfo::Extern => unreachable!(),
-        }),
-        deserialize_body = indent_by(8, match &info.specific_info {
-            TypeVariantInfo::Enum(variants) => {
-                formatdoc! {"
-                    let idx: felt252 = serde::Serde::deserialize(ref serialized)?;
-                    Option::Some(
-                        {}
-                        else {{ return Option::None; }}
-                    )",
-                    variants.iter().enumerate().map(|(idx, variant)| {
-                        format!(
-                            "if idx == {idx} {{ {name}::{variant}(serde::Serde::deserialize(ref serialized)?) }}",
-                            variant=variant.name,
-                        )
-                }).join("\n    else ")}
-            }
-            TypeVariantInfo::Struct(members) => {
-                formatdoc! {"
-                    Option::Some({name} {{
-                        {}
-                    }})",
-                    members.iter().map(|member| format!("{member}: serde::Serde::deserialize(ref serialized)?,", member=member.name)).join("\n    "),
-                }
-            }
-            TypeVariantInfo::Extern => unreachable!(),
-        })
     }
 }
 
