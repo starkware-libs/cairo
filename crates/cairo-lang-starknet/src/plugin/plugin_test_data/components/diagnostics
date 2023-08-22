@@ -1032,6 +1032,7 @@ use starknet::event::EventEmitter;
 trait MyInnerImplTrait<TContractState> {
 }
 
+#[starknet::includable]
 impl MyImpl<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>> of MyInnerImplTrait<TContractState> {
 }
 
@@ -1056,6 +1057,25 @@ impl EventIsEvent of starknet::Event<Event> {
         
         Option::None
     }
+}
+
+
+
+includable:
+
+trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+
+
+mod __external_MyImpl {
+}
+
+mod __l1_handler_MyImpl {
+}
+
+mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics

@@ -227,6 +227,7 @@ fn handle_component_impl(
         trait $generated_trait_name$<TContractState> {$trait_functions$
         }
 
+        #[starknet::includable]
         impl $generated_impl_name$<$generic_params$$maybe_comma$ impl TContractStatePanicDestruct: \
          PanicDestruct<TContractState>> of $generated_trait_name$<TContractState> {$impl_functions$
         }"},
@@ -260,6 +261,7 @@ fn handle_component_includable_as_impl_item(
         return None;
     };
 
+    let attributes = item_function.attributes(db);
     let declaration = item_function.declaration(db);
     let signature = declaration.signature(db);
     let parameters = signature.parameters(db);
@@ -323,8 +325,10 @@ fn handle_component_includable_as_impl_item(
     };
 
     let generated_function_sig = RewriteNode::interpolate_patched(
-        format!("fn $function_name$({self_param}$rest_params_node$)$ret_ty$").as_str(),
+        format!("$attributes$\n    fn $function_name$({self_param}$rest_params_node$)$ret_ty$")
+            .as_str(),
         [
+            ("attributes".to_string(), RewriteNode::new_trimmed(attributes.as_syntax_node())),
             ("function_name".to_string(), function_name.clone()),
             ("rest_params_node".to_string(), rest_params_node),
             ("ret_ty".to_string(), ret_ty),

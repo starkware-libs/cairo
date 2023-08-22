@@ -33,46 +33,48 @@ pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         }
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) => {
             let generic_params_node = params.generic_params(db);
-            let elements = generic_params_node.elements(db);
-            (
-                elements
-                    .first()
-                    .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
-                    .map_or(false, |param| param.name(db).text(db) == "TContractState"),
-                RewriteNode::new_modified(
-                    chain!(
-                        [RewriteNode::Text("::<".to_string())],
-                        elements.into_iter().map(|param| RewriteNode::new_trimmed(match param {
+            let mut elements = generic_params_node.elements(db).into_iter();
+            let first_generic_param = elements.next();
+            let is_valid_params = first_generic_param
+                .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
+                .map_or(false, |param| param.name(db).text(db) == "TContractState");
+            let generic_args = RewriteNode::new_modified(
+                chain!(
+                    [RewriteNode::Text("::<TContractState".to_string())],
+                    elements.flat_map(|param| [
+                        RewriteNode::Text(", ".to_string()),
+                        RewriteNode::new_trimmed(match param {
                             ast::GenericParam::Type(t) => t.as_syntax_node(),
                             ast::GenericParam::Const(c) => c.name(db).as_syntax_node(),
                             ast::GenericParam::Impl(i) => i.name(db).as_syntax_node(),
-                        })),
-                        [RewriteNode::Text(">".to_string())],
-                    )
-                    .collect(),
-                ),
-                RewriteNode::interpolate_patched(
-                    "<$generic_params$$maybe_comma$ impl UnsafeNewContractState: \
-                     UnsafeNewContractStateTraitFor$impl_name$<TContractState>, impl \
-                     TContractStateDrop: Drop<TContractState>>",
-                    [
-                        (
-                            "generic_params".to_string(),
-                            RewriteNode::new_trimmed(generic_params_node.as_syntax_node()),
-                        ),
-                        (
-                            "maybe_comma".to_string(),
-                            if generic_params_node.has_tail(db) {
-                                RewriteNode::Text(",".to_string())
-                            } else {
-                                RewriteNode::empty()
-                            },
-                        ),
-                        ("impl_name".to_string(), impl_name.clone()),
-                    ]
-                    .into(),
-                ),
-            )
+                        }),
+                    ]),
+                    [RewriteNode::Text(">".to_string())],
+                )
+                .collect(),
+            );
+            let generic_params_node = RewriteNode::interpolate_patched(
+                "<$generic_params$$maybe_comma$ impl UnsafeNewContractState: \
+                 UnsafeNewContractStateTraitFor$impl_name$<TContractState>, impl \
+                 TContractStateDrop: Drop<TContractState>>",
+                [
+                    (
+                        "generic_params".to_string(),
+                        RewriteNode::new_trimmed(generic_params_node.as_syntax_node()),
+                    ),
+                    (
+                        "maybe_comma".to_string(),
+                        if generic_params_node.has_tail(db) {
+                            RewriteNode::Text(",".to_string())
+                        } else {
+                            RewriteNode::empty()
+                        },
+                    ),
+                    ("impl_name".to_string(), impl_name.clone()),
+                ]
+                .into(),
+            );
+            (is_valid_params, generic_args, generic_params_node)
         }
     };
     if !is_valid_params {
