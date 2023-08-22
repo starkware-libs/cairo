@@ -2780,7 +2780,7 @@ impl ExprStructCtorCall {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
-        arguments: ArgListBracedGreen,
+        arguments: StructArgListBracedGreen,
     ) -> ExprStructCtorCallGreen {
         let children: Vec<GreenId> = vec![path.0, arguments.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -2794,8 +2794,8 @@ impl ExprStructCtorCall {
     pub fn path(&self, db: &dyn SyntaxGroup) -> ExprPath {
         ExprPath::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgListBraced {
-        ArgListBraced::from_syntax_node(db, self.children[1].clone())
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgListBraced {
+        StructArgListBraced::from_syntax_node(db, self.children[1].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -2818,7 +2818,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
         ExprStructCtorCallGreen(db.intern_green(GreenNode {
             kind: SyntaxKind::ExprStructCtorCall,
             details: GreenNodeDetails::Node {
-                children: vec![ExprPath::missing(db).0, ArgListBraced::missing(db).0],
+                children: vec![ExprPath::missing(db).0, StructArgListBraced::missing(db).0],
                 width: TextWidth::default(),
             },
         }))
@@ -2840,6 +2840,88 @@ impl TypedSyntaxNode for ExprStructCtorCall {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ExprStructCtorCallPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct StructArgListBraced {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl StructArgListBraced {
+    pub const INDEX_LBRACE: usize = 0;
+    pub const INDEX_ARGUMENTS: usize = 1;
+    pub const INDEX_RBRACE: usize = 2;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        lbrace: TerminalLBraceGreen,
+        arguments: StructArgListGreen,
+        rbrace: TerminalRBraceGreen,
+    ) -> StructArgListBracedGreen {
+        let children: Vec<GreenId> = vec![lbrace.0, arguments.0, rbrace.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        StructArgListBracedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::StructArgListBraced,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl StructArgListBraced {
+    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
+        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
+        StructArgList::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
+        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StructArgListBracedPtr(pub SyntaxStablePtrId);
+impl StructArgListBracedPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> StructArgListBraced {
+        StructArgListBraced::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct StructArgListBracedGreen(pub GreenId);
+impl TypedSyntaxNode for StructArgListBraced {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::StructArgListBraced);
+    type StablePtr = StructArgListBracedPtr;
+    type Green = StructArgListBracedGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        StructArgListBracedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::StructArgListBraced,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    TerminalLBrace::missing(db).0,
+                    StructArgList::missing(db).0,
+                    TerminalRBrace::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::StructArgListBraced,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::StructArgListBraced
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        StructArgListBracedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -3794,7 +3876,7 @@ impl ExprInlineMacro {
         db: &dyn SyntaxGroup,
         path: ExprPathGreen,
         bang: TerminalNotGreen,
-        arguments: WrappedExprListGreen,
+        arguments: WrappedArgListGreen,
     ) -> ExprInlineMacroGreen {
         let children: Vec<GreenId> = vec![path.0, bang.0, arguments.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
@@ -3811,8 +3893,8 @@ impl ExprInlineMacro {
     pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
         TerminalNot::from_syntax_node(db, self.children[1].clone())
     }
-    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedExprList {
-        WrappedExprList::from_syntax_node(db, self.children[2].clone())
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -3838,7 +3920,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
                 children: vec![
                     ExprPath::missing(db).0,
                     TerminalNot::missing(db).0,
-                    WrappedExprList::missing(db).0,
+                    WrappedArgList::missing(db).0,
                 ],
                 width: TextWidth::default(),
             },
@@ -4395,7 +4477,7 @@ impl ArgListBraced {
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrace: TerminalLBraceGreen,
-        arguments: StructArgListGreen,
+        arguments: ArgListGreen,
         rbrace: TerminalRBraceGreen,
     ) -> ArgListBracedGreen {
         let children: Vec<GreenId> = vec![lbrace.0, arguments.0, rbrace.0];
@@ -4410,8 +4492,8 @@ impl ArgListBraced {
     pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
         TerminalLBrace::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn arguments(&self, db: &dyn SyntaxGroup) -> StructArgList {
-        StructArgList::from_syntax_node(db, self.children[1].clone())
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
+        ArgList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
         TerminalRBrace::from_syntax_node(db, self.children[2].clone())
@@ -4439,7 +4521,7 @@ impl TypedSyntaxNode for ArgListBraced {
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalLBrace::missing(db).0,
-                    StructArgList::missing(db).0,
+                    ArgList::missing(db).0,
                     TerminalRBrace::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -4466,62 +4548,62 @@ impl TypedSyntaxNode for ArgListBraced {
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ExprListBracketed {
+pub struct ArgListBracketed {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl ExprListBracketed {
+impl ArgListBracketed {
     pub const INDEX_LBRACK: usize = 0;
-    pub const INDEX_EXPRESSIONS: usize = 1;
+    pub const INDEX_ARGUMENTS: usize = 1;
     pub const INDEX_RBRACK: usize = 2;
     pub fn new_green(
         db: &dyn SyntaxGroup,
         lbrack: TerminalLBrackGreen,
-        expressions: ExprListGreen,
+        arguments: ArgListGreen,
         rbrack: TerminalRBrackGreen,
-    ) -> ExprListBracketedGreen {
-        let children: Vec<GreenId> = vec![lbrack.0, expressions.0, rbrack.0];
+    ) -> ArgListBracketedGreen {
+        let children: Vec<GreenId> = vec![lbrack.0, arguments.0, rbrack.0];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ExprListBracketedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ExprListBracketed,
+        ArgListBracketedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgListBracketed,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl ExprListBracketed {
+impl ArgListBracketed {
     pub fn lbrack(&self, db: &dyn SyntaxGroup) -> TerminalLBrack {
         TerminalLBrack::from_syntax_node(db, self.children[0].clone())
     }
-    pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1].clone())
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> ArgList {
+        ArgList::from_syntax_node(db, self.children[1].clone())
     }
     pub fn rbrack(&self, db: &dyn SyntaxGroup) -> TerminalRBrack {
         TerminalRBrack::from_syntax_node(db, self.children[2].clone())
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListBracketedPtr(pub SyntaxStablePtrId);
-impl ExprListBracketedPtr {
+pub struct ArgListBracketedPtr(pub SyntaxStablePtrId);
+impl ArgListBracketedPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
-    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ExprListBracketed {
-        ExprListBracketed::from_syntax_node(db, self.0.lookup(db))
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ArgListBracketed {
+        ArgListBracketed::from_syntax_node(db, self.0.lookup(db))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListBracketedGreen(pub GreenId);
-impl TypedSyntaxNode for ExprListBracketed {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprListBracketed);
-    type StablePtr = ExprListBracketedPtr;
-    type Green = ExprListBracketedGreen;
+pub struct ArgListBracketedGreen(pub GreenId);
+impl TypedSyntaxNode for ArgListBracketed {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ArgListBracketed);
+    type StablePtr = ArgListBracketedPtr;
+    type Green = ArgListBracketedGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ExprListBracketedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ExprListBracketed,
+        ArgListBracketedGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ArgListBracketed,
             details: GreenNodeDetails::Node {
                 children: vec![
                     TerminalLBrack::missing(db).0,
-                    ExprList::missing(db).0,
+                    ArgList::missing(db).0,
                     TerminalRBrack::missing(db).0,
                 ],
                 width: TextWidth::default(),
@@ -4532,10 +4614,10 @@ impl TypedSyntaxNode for ExprListBracketed {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::ExprListBracketed,
+            SyntaxKind::ArgListBracketed,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::ExprListBracketed
+            SyntaxKind::ArgListBracketed
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -4544,236 +4626,154 @@ impl TypedSyntaxNode for ExprListBracketed {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListBracketedPtr(self.node.0.stable_ptr)
+        ArgListBracketedPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct ExprListBraced {
-    node: SyntaxNode,
-    children: Vec<SyntaxNode>,
-}
-impl ExprListBraced {
-    pub const INDEX_LBRACE: usize = 0;
-    pub const INDEX_EXPRESSIONS: usize = 1;
-    pub const INDEX_RBRACE: usize = 2;
-    pub fn new_green(
-        db: &dyn SyntaxGroup,
-        lbrace: TerminalLBraceGreen,
-        expressions: ExprListGreen,
-        rbrace: TerminalRBraceGreen,
-    ) -> ExprListBracedGreen {
-        let children: Vec<GreenId> = vec![lbrace.0, expressions.0, rbrace.0];
-        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        ExprListBracedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ExprListBraced,
-            details: GreenNodeDetails::Node { children, width },
-        }))
-    }
-}
-impl ExprListBraced {
-    pub fn lbrace(&self, db: &dyn SyntaxGroup) -> TerminalLBrace {
-        TerminalLBrace::from_syntax_node(db, self.children[0].clone())
-    }
-    pub fn expressions(&self, db: &dyn SyntaxGroup) -> ExprList {
-        ExprList::from_syntax_node(db, self.children[1].clone())
-    }
-    pub fn rbrace(&self, db: &dyn SyntaxGroup) -> TerminalRBrace {
-        TerminalRBrace::from_syntax_node(db, self.children[2].clone())
-    }
+pub enum WrappedArgList {
+    BracketedArgList(ArgListBracketed),
+    ParenthesizedArgList(ArgListParenthesized),
+    BracedArgList(ArgListBraced),
+    Missing(WrappedArgListMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListBracedPtr(pub SyntaxStablePtrId);
-impl ExprListBracedPtr {
+pub struct WrappedArgListPtr(pub SyntaxStablePtrId);
+impl WrappedArgListPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
-    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ExprListBraced {
-        ExprListBraced::from_syntax_node(db, self.0.lookup(db))
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.0.lookup(db))
     }
 }
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct ExprListBracedGreen(pub GreenId);
-impl TypedSyntaxNode for ExprListBraced {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ExprListBraced);
-    type StablePtr = ExprListBracedPtr;
-    type Green = ExprListBracedGreen;
-    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        ExprListBracedGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::ExprListBraced,
-            details: GreenNodeDetails::Node {
-                children: vec![
-                    TerminalLBrace::missing(db).0,
-                    ExprList::missing(db).0,
-                    TerminalRBrace::missing(db).0,
-                ],
-                width: TextWidth::default(),
-            },
-        }))
-    }
-    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
-        let kind = node.kind(db);
-        assert_eq!(
-            kind,
-            SyntaxKind::ExprListBraced,
-            "Unexpected SyntaxKind {:?}. Expected {:?}.",
-            kind,
-            SyntaxKind::ExprListBraced
-        );
-        let children = node.children(db).collect();
-        Self { node, children }
-    }
-    fn as_syntax_node(&self) -> SyntaxNode {
-        self.node.clone()
-    }
-    fn stable_ptr(&self) -> Self::StablePtr {
-        ExprListBracedPtr(self.node.0.stable_ptr)
-    }
-}
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum WrappedExprList {
-    BracketedExprList(ExprListBracketed),
-    ParenthesizedExprList(ExprListParenthesized),
-    BracedExprList(ExprListBraced),
-    Missing(WrappedExprListMissing),
-}
-#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WrappedExprListPtr(pub SyntaxStablePtrId);
-impl WrappedExprListPtr {
-    pub fn untyped(&self) -> SyntaxStablePtrId {
-        self.0
-    }
-    pub fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedExprList {
-        WrappedExprList::from_syntax_node(db, self.0.lookup(db))
-    }
-}
-impl From<ExprListBracketedPtr> for WrappedExprListPtr {
-    fn from(value: ExprListBracketedPtr) -> Self {
+impl From<ArgListBracketedPtr> for WrappedArgListPtr {
+    fn from(value: ArgListBracketedPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ExprListParenthesizedPtr> for WrappedExprListPtr {
-    fn from(value: ExprListParenthesizedPtr) -> Self {
+impl From<ArgListParenthesizedPtr> for WrappedArgListPtr {
+    fn from(value: ArgListParenthesizedPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ExprListBracedPtr> for WrappedExprListPtr {
-    fn from(value: ExprListBracedPtr) -> Self {
+impl From<ArgListBracedPtr> for WrappedArgListPtr {
+    fn from(value: ArgListBracedPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<WrappedExprListMissingPtr> for WrappedExprListPtr {
-    fn from(value: WrappedExprListMissingPtr) -> Self {
+impl From<WrappedArgListMissingPtr> for WrappedArgListPtr {
+    fn from(value: WrappedArgListMissingPtr) -> Self {
         Self(value.0)
     }
 }
-impl From<ExprListBracketedGreen> for WrappedExprListGreen {
-    fn from(value: ExprListBracketedGreen) -> Self {
+impl From<ArgListBracketedGreen> for WrappedArgListGreen {
+    fn from(value: ArgListBracketedGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<ExprListParenthesizedGreen> for WrappedExprListGreen {
-    fn from(value: ExprListParenthesizedGreen) -> Self {
+impl From<ArgListParenthesizedGreen> for WrappedArgListGreen {
+    fn from(value: ArgListParenthesizedGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<ExprListBracedGreen> for WrappedExprListGreen {
-    fn from(value: ExprListBracedGreen) -> Self {
+impl From<ArgListBracedGreen> for WrappedArgListGreen {
+    fn from(value: ArgListBracedGreen) -> Self {
         Self(value.0)
     }
 }
-impl From<WrappedExprListMissingGreen> for WrappedExprListGreen {
-    fn from(value: WrappedExprListMissingGreen) -> Self {
+impl From<WrappedArgListMissingGreen> for WrappedArgListGreen {
+    fn from(value: WrappedArgListMissingGreen) -> Self {
         Self(value.0)
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WrappedExprListGreen(pub GreenId);
-impl TypedSyntaxNode for WrappedExprList {
+pub struct WrappedArgListGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedArgList {
     const OPTIONAL_KIND: Option<SyntaxKind> = None;
-    type StablePtr = WrappedExprListPtr;
-    type Green = WrappedExprListGreen;
+    type StablePtr = WrappedArgListPtr;
+    type Green = WrappedArgListGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        WrappedExprListGreen(WrappedExprListMissing::missing(db).0)
+        WrappedArgListGreen(WrappedArgListMissing::missing(db).0)
     }
     fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
         let kind = node.kind(db);
         match kind {
-            SyntaxKind::ExprListBracketed => {
-                WrappedExprList::BracketedExprList(ExprListBracketed::from_syntax_node(db, node))
+            SyntaxKind::ArgListBracketed => {
+                WrappedArgList::BracketedArgList(ArgListBracketed::from_syntax_node(db, node))
             }
-            SyntaxKind::ExprListParenthesized => WrappedExprList::ParenthesizedExprList(
-                ExprListParenthesized::from_syntax_node(db, node),
+            SyntaxKind::ArgListParenthesized => WrappedArgList::ParenthesizedArgList(
+                ArgListParenthesized::from_syntax_node(db, node),
             ),
-            SyntaxKind::ExprListBraced => {
-                WrappedExprList::BracedExprList(ExprListBraced::from_syntax_node(db, node))
+            SyntaxKind::ArgListBraced => {
+                WrappedArgList::BracedArgList(ArgListBraced::from_syntax_node(db, node))
             }
-            SyntaxKind::WrappedExprListMissing => {
-                WrappedExprList::Missing(WrappedExprListMissing::from_syntax_node(db, node))
+            SyntaxKind::WrappedArgListMissing => {
+                WrappedArgList::Missing(WrappedArgListMissing::from_syntax_node(db, node))
             }
             _ => {
-                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "WrappedExprList")
+                panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "WrappedArgList")
             }
         }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
         match self {
-            WrappedExprList::BracketedExprList(x) => x.as_syntax_node(),
-            WrappedExprList::ParenthesizedExprList(x) => x.as_syntax_node(),
-            WrappedExprList::BracedExprList(x) => x.as_syntax_node(),
-            WrappedExprList::Missing(x) => x.as_syntax_node(),
+            WrappedArgList::BracketedArgList(x) => x.as_syntax_node(),
+            WrappedArgList::ParenthesizedArgList(x) => x.as_syntax_node(),
+            WrappedArgList::BracedArgList(x) => x.as_syntax_node(),
+            WrappedArgList::Missing(x) => x.as_syntax_node(),
         }
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        WrappedExprListPtr(self.as_syntax_node().0.stable_ptr)
+        WrappedArgListPtr(self.as_syntax_node().0.stable_ptr)
     }
 }
-impl WrappedExprList {
+impl WrappedArgList {
     #[allow(clippy::match_like_matches_macro)]
     pub fn is_variant(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::ExprListBracketed => true,
-            SyntaxKind::ExprListParenthesized => true,
-            SyntaxKind::ExprListBraced => true,
-            SyntaxKind::WrappedExprListMissing => true,
+            SyntaxKind::ArgListBracketed => true,
+            SyntaxKind::ArgListParenthesized => true,
+            SyntaxKind::ArgListBraced => true,
+            SyntaxKind::WrappedArgListMissing => true,
             _ => false,
         }
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct WrappedExprListMissing {
+pub struct WrappedArgListMissing {
     node: SyntaxNode,
     children: Vec<SyntaxNode>,
 }
-impl WrappedExprListMissing {
-    pub fn new_green(db: &dyn SyntaxGroup) -> WrappedExprListMissingGreen {
+impl WrappedArgListMissing {
+    pub fn new_green(db: &dyn SyntaxGroup) -> WrappedArgListMissingGreen {
         let children: Vec<GreenId> = vec![];
         let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
-        WrappedExprListMissingGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::WrappedExprListMissing,
+        WrappedArgListMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedArgListMissing,
             details: GreenNodeDetails::Node { children, width },
         }))
     }
 }
-impl WrappedExprListMissing {}
+impl WrappedArgListMissing {}
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WrappedExprListMissingPtr(pub SyntaxStablePtrId);
-impl WrappedExprListMissingPtr {
+pub struct WrappedArgListMissingPtr(pub SyntaxStablePtrId);
+impl WrappedArgListMissingPtr {
     pub fn untyped(&self) -> SyntaxStablePtrId {
         self.0
     }
-    pub fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedExprListMissing {
-        WrappedExprListMissing::from_syntax_node(db, self.0.lookup(db))
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> WrappedArgListMissing {
+        WrappedArgListMissing::from_syntax_node(db, self.0.lookup(db))
     }
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
-pub struct WrappedExprListMissingGreen(pub GreenId);
-impl TypedSyntaxNode for WrappedExprListMissing {
-    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedExprListMissing);
-    type StablePtr = WrappedExprListMissingPtr;
-    type Green = WrappedExprListMissingGreen;
+pub struct WrappedArgListMissingGreen(pub GreenId);
+impl TypedSyntaxNode for WrappedArgListMissing {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::WrappedArgListMissing);
+    type StablePtr = WrappedArgListMissingPtr;
+    type Green = WrappedArgListMissingGreen;
     fn missing(db: &dyn SyntaxGroup) -> Self::Green {
-        WrappedExprListMissingGreen(db.intern_green(GreenNode {
-            kind: SyntaxKind::WrappedExprListMissing,
+        WrappedArgListMissingGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::WrappedArgListMissing,
             details: GreenNodeDetails::Node { children: vec![], width: TextWidth::default() },
         }))
     }
@@ -4781,10 +4781,10 @@ impl TypedSyntaxNode for WrappedExprListMissing {
         let kind = node.kind(db);
         assert_eq!(
             kind,
-            SyntaxKind::WrappedExprListMissing,
+            SyntaxKind::WrappedArgListMissing,
             "Unexpected SyntaxKind {:?}. Expected {:?}.",
             kind,
-            SyntaxKind::WrappedExprListMissing
+            SyntaxKind::WrappedArgListMissing
         );
         let children = node.children(db).collect();
         Self { node, children }
@@ -4793,7 +4793,7 @@ impl TypedSyntaxNode for WrappedExprListMissing {
         self.node.clone()
     }
     fn stable_ptr(&self) -> Self::StablePtr {
-        WrappedExprListMissingPtr(self.node.0.stable_ptr)
+        WrappedArgListMissingPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
