@@ -14,6 +14,7 @@ pub fn handle_panic_destruct(
 ) {
     let header = info.format_impl_header("PanicDestruct", &["PanicDestruct"]);
     let full_typename = info.full_typename();
+    let ty = &info.name;
     let body = indent_by(
         8,
         match &info.specific_info {
@@ -24,22 +25,25 @@ pub fn handle_panic_destruct(
                     }}",
                 variants.iter().map(|variant| {
                     format!(
-                        "{ty}::{variant}(x) => \
+                        "{ty}::{}(x) => \
                         traits::PanicDestruct::panic_destruct(x, ref panic),",
-                        ty=info.name,
-                        variant=variant.name,
+                        variant.name,
                     )
                 }).join("\n    ")}
             }
-            TypeVariantInfo::Struct(members) => members
-                .iter()
-                .map(|member| {
-                    format!(
-                        "traits::PanicDestruct::panic_destruct(self.{member}, ref panic);",
-                        member = member.name,
-                    )
-                })
-                .join("\n"),
+            TypeVariantInfo::Struct(members) => {
+                format!(
+                    "let {ty} {{ {} }} = self;{}",
+                    members.iter().map(|member| &member.name).join(", "),
+                    members
+                        .iter()
+                        .map(|member| format!(
+                            "\ntraits::PanicDestruct::panic_destruct({}, ref panic);",
+                            member.name
+                        ))
+                        .join(""),
+                )
+            }
             TypeVariantInfo::Extern => {
                 result.diagnostics.push(unsupported_for_extern_diagnostic(stable_ptr));
                 return;
