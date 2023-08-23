@@ -22,8 +22,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
-    INCLUDE_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
+    INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -129,8 +129,8 @@ impl AbiBuilder {
                 continue;
             }
 
-            if impl_id.has_attr(db.upcast(), INCLUDE_ATTR)? {
-                builder.add_included_impl(db, impl_id, storage_type)?;
+            if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
+                builder.add_embedded_impl(db, impl_id, storage_type)?;
                 continue;
             }
 
@@ -272,7 +272,7 @@ impl AbiBuilder {
     }
 
     /// Adds an impl to the ABI.
-    fn add_included_impl(
+    fn add_embedded_impl(
         &mut self,
         db: &dyn SemanticGroup,
         impl_def_id: ImplDefId,
@@ -280,7 +280,7 @@ impl AbiBuilder {
     ) -> Result<(), ABIError> {
         // Make sure trait is not marked as starknet::interface.
         if db.impl_def_concrete_trait(impl_def_id)?.trait_id(db).has_attr(db, INTERFACE_ATTR)? {
-            return Err(ABIError::ContractInterfaceImplCannotBeIncluded);
+            return Err(ABIError::ContractInterfaceImplCannotBeEmbedded);
         }
         for impl_function_id in db.impl_functions(impl_def_id).unwrap_or_default().values() {
             self.maybe_add_function_with_body(
@@ -659,8 +659,8 @@ pub enum ABIError {
     EntrypointMustHaveSelf,
     #[error("Entrypoint attribute must match the mutability of the self parameter")]
     AttributeMismatch,
-    #[error("Contract interfaces impls cannot be included.")]
-    ContractInterfaceImplCannotBeIncluded,
+    #[error("Contract interfaces impls cannot be embedded.")]
+    ContractInterfaceImplCannotBeEmbedded,
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {

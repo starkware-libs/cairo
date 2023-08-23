@@ -32,7 +32,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 use crate::aliased::Aliased;
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
-use crate::plugin::consts::INCLUDE_ATTR;
+use crate::plugin::consts::EMBED_ATTR;
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -167,7 +167,7 @@ fn get_module_aliased_functions(
         .collect::<Result<Vec<_>, _>>()
 }
 
-/// Returns the abi functions of the impl aliases included in the given contract.
+/// Returns the abi functions of the impl aliases embedded in the given contract.
 /// `module_prefix` is the prefix of the generated module name outside of the contract, the rest of
 /// the name is defined by the name of the aliased impl.
 fn get_impl_aliases_abi_functions(
@@ -186,7 +186,7 @@ fn get_impl_aliases_abi_functions(
         .with_context(|| "Failed to get external module impl aliases.")?
         .iter()
     {
-        if !impl_alias.has_attr(syntax_db, INCLUDE_ATTR) {
+        if !impl_alias.has_attr(syntax_db, EMBED_ATTR) {
             continue;
         }
         let resolver_data = db

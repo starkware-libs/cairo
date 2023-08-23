@@ -9,11 +9,11 @@ use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerat
 use super::StarknetModuleKind;
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EXTERNAL_ATTR, INCLUDE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR,
     STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
-    handle_entry_point, has_external_attribute, has_include_attribute, EntryPointGenerationParams,
+    handle_entry_point, has_embed_attribute, has_external_attribute, EntryPointGenerationParams,
     EntryPointKind, EntryPointsGenerationData,
 };
 use crate::plugin::storage::handle_storage_struct;
@@ -73,8 +73,8 @@ fn handle_contract_item(
                 &mut data.common,
             );
         }
-        ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, INCLUDE_ATTR) => {
-            handle_include_impl_alias(
+        ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, EMBED_ATTR) => {
+            handle_embed_impl_alias(
                 db,
                 diagnostics,
                 alias_ast,
@@ -185,7 +185,7 @@ fn handle_contract_impl(
     data: &mut EntryPointsGenerationData,
 ) {
     let is_external = has_external_attribute(db, diagnostics, item);
-    if !(is_external || has_include_attribute(db, diagnostics, item)) {
+    if !(is_external || has_embed_attribute(db, diagnostics, item)) {
         return;
     }
     let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
@@ -230,8 +230,8 @@ fn handle_contract_impl(
     }
 }
 
-/// Handles an include by impl alias.
-fn handle_include_impl_alias(
+/// Handles an ebmedded impl by impl alias.
+fn handle_embed_impl_alias(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     alias_ast: &ast::ItemImplAlias,
@@ -246,7 +246,7 @@ fn handle_include_impl_alias(
     if has_generic_params {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: "Generic parameters are not supported in impl aliases with `#[include]`."
+            message: "Generic parameters are not supported in impl aliases with `#[embed]`."
                 .to_string(),
         });
         return;
@@ -259,7 +259,7 @@ fn handle_include_impl_alias(
     if !is_first_generic_arg_contract_state(db, impl_final_part) {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: "First generic argument of impl alias with `#[include]` must be \
+            message: "First generic argument of impl alias with `#[embed]` must be \
                       `ContractState`."
                 .to_string(),
         });

@@ -11,9 +11,9 @@ use consts::*;
 
 pub mod aux_data;
 mod dispatcher;
+mod embeddable;
 mod entry_point;
 pub mod events;
-mod includable;
 mod starknet_module;
 mod storage;
 mod storage_access;
@@ -23,7 +23,7 @@ use dispatcher::handle_trait;
 use events::derive_event_needed;
 use storage_access::derive_storage_access_needed;
 
-use self::includable::handle_includable;
+use self::embeddable::handle_embeddable;
 use self::starknet_module::{handle_module, handle_module_by_storage};
 
 #[derive(Debug, Default)]
@@ -35,8 +35,8 @@ impl MacroPlugin for StarkNetPlugin {
         match item_ast {
             ast::Item::Module(module_ast) => handle_module(db, module_ast),
             ast::Item::Trait(trait_ast) => handle_trait(db, trait_ast),
-            ast::Item::Impl(impl_ast) if impl_ast.has_attr(db, INCLUDABLE_ATTR) => {
-                handle_includable(db, impl_ast)
+            ast::Item::Impl(impl_ast) if impl_ast.has_attr(db, EMBEDDABLE_ATTR) => {
+                handle_embeddable(db, impl_ast)
             }
             ast::Item::Struct(struct_ast) if derive_event_needed(&struct_ast, db) => {
                 events::handle_struct(db, struct_ast)

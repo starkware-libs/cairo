@@ -11,8 +11,8 @@ use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
-    IMPLICIT_PRECEDENCE, INCLUDE_ATTR, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EMBED_ATTR, EXTERNAL_ATTR,
+    EXTERNAL_MODULE, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
     L1_HANDLER_MODULE, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{
@@ -370,16 +370,16 @@ pub fn has_external_attribute(
     true
 }
 
-/// Checks if the item is marked with an include attribute. Also validates the attribute.
-pub fn has_include_attribute(
+/// Checks if the item is marked with an embed attribute. Also validates the attribute.
+pub fn has_embed_attribute(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::Item,
 ) -> bool {
-    let Some(attr) = item.find_attr(db, INCLUDE_ATTR) else {
+    let Some(attr) = item.find_attr(db, EMBED_ATTR) else {
         return false;
     };
-    validate_v0(db, diagnostics, &attr, INCLUDE_ATTR);
+    validate_v0(db, diagnostics, &attr, EMBED_ATTR);
     true
 }
 

@@ -11,14 +11,14 @@ use super::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
 
-/// Handles an includable impl, generating entry point wrappers and modules pointing to them.
-pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
+/// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
+pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
     let ast::MaybeImplBody::Some(body) = item_impl.body(db) else {
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
                 stable_ptr: item_impl.stable_ptr().untyped(),
-                message: "Making empty impls includable is disallowed.".to_string(),
+                message: "Making empty impls embeddable is disallowed.".to_string(),
             }],
             remove_original_item: false,
         };
@@ -80,7 +80,7 @@ pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     if !is_valid_params {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: generic_params.stable_ptr().untyped(),
-            message: "First generic parameter of an includable impl should be `TContractState`."
+            message: "First generic parameter of an embeddable impl should be `TContractState`."
                 .to_string(),
         });
     };
@@ -158,7 +158,7 @@ pub fn handle_includable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     builder.add_modified(code);
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: "includable".into(),
+            name: "embeddable".into(),
             content: builder.code,
             diagnostics_mappings: builder.diagnostics_mappings,
             aux_data: None,
