@@ -20,6 +20,8 @@ pub enum ParserDiagnosticKind {
     MissingPathSegment,
     MissingTypeClause,
     MissingTypeExpression,
+    MissingWrappedArgList,
+    ItemInlineMacroWithoutBang { identifier: SmolStr, paren_type: SyntaxKind },
     ReservedIdentifier { identifier: SmolStr },
     UnderscoreNotAllowedAsIdentifier,
     MissingLiteralSuffix,
@@ -55,6 +57,29 @@ impl DiagnosticEntry for ParserDiagnostic {
             }
             ParserDiagnosticKind::MissingTypeExpression => {
                 "Missing tokens. Expected a type expression.".to_string()
+            }
+            ParserDiagnosticKind::MissingWrappedArgList => "Missing tokens. Expected an argument \
+                                                            list wrapped in either parentheses, \
+                                                            brackets, or braces."
+                .to_string(),
+            ParserDiagnosticKind::ItemInlineMacroWithoutBang { identifier, paren_type } => {
+                format!(
+                    "Expected a bang ('!') after the identifier '{identifier}' to start an inline \
+                     macro.\n
+                    Did you mean to write `{identifier}!{}...{}'?",
+                    match paren_type {
+                        SyntaxKind::TerminalLParen => "(",
+                        SyntaxKind::TerminalLBrack => "[",
+                        SyntaxKind::TerminalLBrace => "{",
+                        _ => "",
+                    },
+                    match paren_type {
+                        SyntaxKind::TerminalLParen => ")",
+                        SyntaxKind::TerminalLBrack => "]",
+                        SyntaxKind::TerminalLBrace => "}",
+                        _ => "",
+                    }
+                )
             }
             ParserDiagnosticKind::ReservedIdentifier { identifier } => {
                 format!("'{identifier}' is a reserved identifier.")

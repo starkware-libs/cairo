@@ -3,9 +3,9 @@ use smol_str::SmolStr;
 use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
-    ItemExternType, ItemImpl, ItemImplAlias, ItemModule, ItemStruct, ItemTrait, ItemTypeAlias,
-    ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen, TraitItem,
-    TraitItemFunction, TraitItemFunctionPtr, Variant,
+    ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
+    ItemTypeAlias, ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen,
+    TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
@@ -248,6 +248,12 @@ impl QueryAttrs for TraitItem {
     }
 }
 
+impl QueryAttrs for ItemInlineMacro {
+    fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
+        self.attributes(db).elements(db)
+    }
+}
+
 impl QueryAttrs for Item {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         match self {
@@ -263,6 +269,7 @@ impl QueryAttrs for Item {
             Item::Struct(item) => item.attributes_elements(db),
             Item::Enum(item) => item.attributes_elements(db),
             Item::TypeAlias(item) => item.attributes_elements(db),
+            Item::InlineMacro(item) => item.attributes_elements(db),
             Item::Missing(_) => vec![],
         }
     }
