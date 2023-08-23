@@ -57,4 +57,6 @@ fn match_e_enum(e: E) -> felt252 {
 type Renamed = submod::inner::Other;
 type Generic<T> = super::other::OtherGeneric::<T>;
 
+inline_item_macro!(x, y, z);
+
 #[attribute_without_item]
