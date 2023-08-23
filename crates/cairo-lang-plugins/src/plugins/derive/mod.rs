@@ -7,6 +7,7 @@ use cairo_lang_syntax::node::ast::{
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use itertools::{chain, Itertools};
 use smol_str::SmolStr;
@@ -213,15 +214,20 @@ fn extract_variants(db: &dyn SyntaxGroup, variants: VariantList) -> Vec<MemberIn
         .collect()
 }
 
+#[derive(Default)]
+pub struct DeriveResult {
+    impls: Vec<String>,
+    diagnostics: Vec<PluginDiagnostic>,
+}
+
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> PluginResult {
-    let mut diagnostics = vec![];
-    let mut impls = vec![];
+    let mut result = DeriveResult::default();
     for attr in info.attributes.query_attr(db, "derive") {
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {
-            diagnostics.push(PluginDiagnostic {
+            result.diagnostics.push(PluginDiagnostic {
                 stable_ptr: attr.args_stable_ptr.untyped(),
                 message: "Expected args.".into(),
             });
@@ -237,7 +243,7 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
                 ..
             } = arg
             else {
-                diagnostics.push(PluginDiagnostic {
+                result.diagnostics.push(PluginDiagnostic {
                     stable_ptr: arg.arg_stable_ptr.untyped(),
                     message: "Expected path.".into(),
                 });
@@ -249,29 +255,16 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
             };
 
             let derived = segment.ident(db).text(db);
+            let stable_ptr = value_stable_ptr.untyped();
             match derived.as_str() {
-                "Copy" | "Drop" => impls.push(get_empty_impl(&derived, &info)),
-                "Clone" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(clone::get_clone_impl(&info))
+                "Copy" | "Drop" => result.impls.push(get_empty_impl(&derived, &info)),
+                "Clone" => clone::handle_clone(&info, stable_ptr, &mut result),
+                "Destruct" => destruct::handle_destruct(&info, stable_ptr, &mut result),
+                "PanicDestruct" => {
+                    panic_destruct::handle_panic_destruct(&info, stable_ptr, &mut result)
                 }
-                "Destruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(destruct::get_destruct_impl(&info))
-                }
-                "PanicDestruct" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(panic_destruct::get_panic_destruct_impl(&info))
-                }
-                "PartialEq" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(partial_eq::get_partial_eq_impl(&info))
-                }
-                "Serde" if !matches!(&info.specific_info, TypeVariantInfo::Extern) => {
-                    impls.push(serde::get_serde_impl(&info))
-                }
-                "Clone" | "Destruct" | "PartialEq" | "Serde" => {
-                    diagnostics.push(PluginDiagnostic {
-                        stable_ptr: value_stable_ptr.untyped(),
-                        message: "Unsupported trait for derive for extern types.".into(),
-                    })
-                }
+                "PartialEq" => partial_eq::handle_partial_eq(&info, stable_ptr, &mut result),
+                "Serde" => serde::handle_serde(&info, stable_ptr, &mut result),
                 _ => {
                     // TODO(spapini): How to allow downstream derives while also
                     //  alerting the user when the derive doesn't exist?
@@ -280,21 +273,29 @@ fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> Plug
         }
     }
     PluginResult {
-        code: if impls.is_empty() {
+        code: if result.impls.is_empty() {
             None
         } else {
             Some(PluginGeneratedFile {
                 name: "impls".into(),
-                content: impls.join(""),
+                content: result.impls.join(""),
                 diagnostics_mappings: Default::default(),
                 aux_data: None,
             })
         },
-        diagnostics,
+        diagnostics: result.diagnostics,
         remove_original_item: false,
     }
 }
 
 fn get_empty_impl(derived_trait: &str, info: &DeriveInfo) -> String {
     format!("{};\n", info.format_impl_header(derived_trait, &[derived_trait]))
+}
+
+/// Returns a diagnostic for when a derive is not supported for extern types.
+fn unsupported_for_extern_diagnostic(stable_ptr: SyntaxStablePtrId) -> PluginDiagnostic {
+    PluginDiagnostic {
+        stable_ptr,
+        message: "Unsupported trait for derive for extern types.".into(),
+    }
 }
