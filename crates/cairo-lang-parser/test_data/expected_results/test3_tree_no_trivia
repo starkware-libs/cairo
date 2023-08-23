@@ -132,9 +132,9 @@
     │   │       │   │   │   │   └── item #0 (kind: PathSegmentSimple)
     │   │       │   │   │   │       └── ident (kind: TokenIdentifier): 'some_macro'
     │   │       │   │   │   ├── bang (kind: TokenNot): '!'
-    │   │       │   │   │   └── arguments (kind: ExprListParenthesized)
+    │   │       │   │   │   └── arguments (kind: ArgListParenthesized)
     │   │       │   │   │       ├── lparen (kind: TokenLParen): '('
-    │   │       │   │   │       ├── expressions (kind: ExprList) []
+    │   │       │   │   │       ├── args (kind: ArgList) []
     │   │       │   │   │       └── rparen (kind: TokenRParen): ')'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #2 (kind: StatementExpr)
