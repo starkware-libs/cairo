@@ -4,19 +4,19 @@
 test_expand_plugin(allow_diagnostics: false)
 
 //! > cairo_code
-#[derive(Copy, Drop)]
+#[derive(Copy, Default, Drop)]
 struct A{}
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Default, Drop)]
 struct B{}
 
-#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
 }
 
-#[derive(Copy, Destruct, PanicDestruct)]
+#[derive(Copy, Destruct, PanicDestruct, Default)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -30,9 +30,10 @@ struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
     b: U,
 }
 
-#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
+    #[default]
     Second: B,
 }
 
@@ -40,21 +41,35 @@ enum TwoVariantEnum {
 extern type ExternType;
 
 //! > generated_cairo_code
-#[derive(Copy, Drop)]
+#[derive(Copy, Default, Drop)]
 struct A{}
 
 impl ACopy of Copy::<A>;
+impl ADefault of Default::<A> {
+    fn default() -> A {
+        A {
+            
+        }
+    }
+}
 impl ADrop of Drop::<A>;
 
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Default, Drop)]
 struct B{}
 
 impl BCopy of Copy::<B>;
+impl BDefault of Default::<B> {
+    fn default() -> B {
+        B {
+            
+        }
+    }
+}
 impl BDrop of Drop::<B>;
 
 
-#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
 struct TwoMemberStruct {
     a: A,
     b: B,
@@ -65,6 +80,14 @@ impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
         TwoMemberStruct {
             a: Clone::clone(self.a),
             b: Clone::clone(self.b),
+        }
+    }
+}
+impl TwoMemberStructDefault of Default::<TwoMemberStruct> {
+    fn default() -> TwoMemberStruct {
+        TwoMemberStruct {
+            a: traits::Default::default(),
+            b: traits::Default::default(),
         }
     }
 }
@@ -105,7 +128,7 @@ impl TwoMemberStructSerde of Serde::<TwoMemberStruct> {
 }
 
 
-#[derive(Copy, Destruct, PanicDestruct)]
+#[derive(Copy, Destruct, PanicDestruct, Default)]
 struct GenericStruct<T> {
     a: T,
 }
@@ -121,6 +144,13 @@ impl GenericStructPanicDestruct<T, impl TPanicDestruct: PanicDestruct<T>> of Pan
     fn panic_destruct(self: GenericStruct<T>, ref panic: Panic) nopanic {
         let GenericStruct { a } = self;
         traits::PanicDestruct::panic_destruct(a, ref panic);
+    }
+}
+impl GenericStructDefault<T, impl TDefault: Default<T>, impl TDestruct: Destruct<T>> of Default::<GenericStruct<T>> {
+    fn default() -> GenericStruct<T> {
+        GenericStruct {
+            a: traits::Default::default(),
+        }
     }
 }
 
@@ -167,9 +197,10 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TS
 }
 
 
-#[derive(Clone, Destruct, PanicDestruct, PartialEq, Serde)]
+#[derive(Clone, Default, Destruct, PanicDestruct, PartialEq, Serde)]
 enum TwoVariantEnum {
     First: A,
+    #[default]
     Second: B,
 }
 
@@ -179,6 +210,11 @@ impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
             TwoVariantEnum::First(x) => TwoVariantEnum::First(Clone::clone(x)),
             TwoVariantEnum::Second(x) => TwoVariantEnum::Second(Clone::clone(x)),
         }
+    }
+}
+impl TwoVariantEnumDefault of Default::<TwoVariantEnum> {
+    fn default() -> TwoVariantEnum {
+        TwoVariantEnum::Second(traits::Default::default())
     }
 }
 impl TwoVariantEnumDestruct of Destruct::<TwoVariantEnum> {
@@ -263,6 +299,20 @@ struct NonSimplePath{}
 #[derive(Clone)]
 extern type NotClonable;
 
+#[derive(Default)]
+enum NoDefaultValue {
+    First,
+    Second,
+}
+
+#[derive(Default)]
+enum TooManyDefaultValues {
+    #[default]
+    First,
+    #[default]
+    Second,
+}
+
 //! > generated_cairo_code
 #[derive()]
 struct EmptyArgs{}
@@ -283,6 +333,27 @@ struct NonSimplePath{}
 #[derive(Clone)]
 extern type NotClonable;
 
+
+#[derive(Default)]
+enum NoDefaultValue {
+    First,
+    Second,
+}
+
+
+#[derive(Default)]
+enum TooManyDefaultValues {
+    #[default]
+    First,
+    #[default]
+    Second,
+}
+impl TooManyDefaultValuesDefault of Default::<TooManyDefaultValues> {
+    fn default() -> TooManyDefaultValues {
+        TooManyDefaultValues::First(traits::Default::default())
+    }
+}
+
 //! > expected_diagnostics
 error: Expected args.
  --> dummy_file.cairo:1:9
@@ -298,3 +369,13 @@ error: Unsupported trait for derive for extern types.
  --> dummy_file.cairo:13:10
 #[derive(Clone)]
          ^***^
+
+error: derive `Default` for enum only supported with a default variant.
+ --> dummy_file.cairo:16:10
+#[derive(Default)]
+         ^*****^
+
+error: Multiple variants annotated with `#[default]`
+ --> dummy_file.cairo:26:5
+    #[default]
+    ^********^

@@ -59,8 +59,3 @@ error: Expected type "core::bool", found: "T".
  --> lib.cairo:2:32
     a && Default::default() || c
                                ^
-
-error: Trait has no implementation in context: core::traits::Default::<core::bool>
- --> lib.cairo:2:19
-    a && Default::default() || c
-                  ^*****^

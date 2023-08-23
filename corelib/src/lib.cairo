@@ -8,8 +8,9 @@ use serde::Serde;
 
 type usize = u32;
 
-#[derive(Copy, Drop)]
+#[derive(Copy, Drop, Default)]
 enum bool {
+    #[default]
     False,
     True,
 }
