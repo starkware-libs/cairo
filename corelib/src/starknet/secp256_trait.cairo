@@ -27,6 +27,7 @@ fn signature_from_vrs(v: u32, r: u256, s: u256) -> Signature {
     Signature { r, s, y_parity: v % 2 == 0 }
 }
 
+[starknet::interface]
 trait Secp256Trait<Secp256Point> {
     fn get_curve_size() -> u256;
     fn get_generator_point() -> Secp256Point;
@@ -37,6 +38,7 @@ trait Secp256Trait<Secp256Point> {
     ) -> SyscallResult<Option<Secp256Point>>;
 }
 
+[starknet::interface]
 trait Secp256PointTrait<Secp256Point> {
     fn get_coordinates(self: Secp256Point) -> SyscallResult<(u256, u256)>;
     fn add(self: Secp256Point, other: Secp256Point) -> SyscallResult<Secp256Point>;
