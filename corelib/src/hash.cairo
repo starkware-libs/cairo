@@ -104,15 +104,6 @@ impl HashU128<
     }
 }
 
-impl HashU256<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<u256, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u256) -> S {
-        state.update_with(value.low).update_with(value.high)
-    }
-}
-
 impl HashContractAddress<
     S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
 > of Hash<starknet::ContractAddress, S, SHashState> {
