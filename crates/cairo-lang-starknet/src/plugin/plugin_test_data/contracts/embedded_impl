@@ -4,7 +4,7 @@
 ExpandContractTestRunner
 
 //! > cairo_code
-#[starknet::includable(v0)]
+#[starknet::embeddable(v0)]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
     #[external]
@@ -22,14 +22,14 @@ mod empty_contract {
     #[storage]
     struct Storage { value: felt252, }
 
-    #[include(v0)]
+    #[embed(v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 }
 
 //! > generated_cairo_code
 lib.cairo:
 
-#[starknet::includable(v0)]
+#[starknet::embeddable(v0)]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
     #[external]
@@ -47,7 +47,7 @@ mod empty_contract {
     #[storage]
     struct Storage { value: felt252, }
 
-    #[include(v0)]
+    #[embed(v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 }
 
@@ -60,7 +60,7 @@ trait OutsideTrait<TContractState>  {
 }
 
 
-includable:
+embeddable:
 
 trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
@@ -199,7 +199,7 @@ use starknet::event::EventEmitter;
         }
     }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xd52d03758d22d90ef3afcf64c42abe4353ae6b3bd7d4f8910761d4d678383a;
+const TEST_CLASS_HASH: felt252 = 0x2b2b877971b3c60903960025f6194f886248a19e63417ddf2399bf77038e11;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {

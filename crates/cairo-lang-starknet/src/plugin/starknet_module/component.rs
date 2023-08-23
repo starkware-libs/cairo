@@ -9,7 +9,7 @@ use indoc::indoc;
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
-use crate::plugin::consts::{INCLUDABLE_AS_ATTR, STORAGE_STRUCT_NAME};
+use crate::plugin::consts::{EMBEDDABLE_AS_ATTR, STORAGE_STRUCT_NAME};
 use crate::plugin::storage::handle_storage_struct;
 
 /// Accumulated data specific for component generation.
@@ -61,8 +61,8 @@ fn handle_component_item(
     }
 }
 
-/// Validates the `includable_as` attribute and returns the value of its unnamed argument.
-fn get_includable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> Option<ast::Expr> {
+/// Validates the `embeddable_as` attribute and returns the value of its unnamed argument.
+fn get_embeddable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> Option<ast::Expr> {
     let ast::OptionArgListParenthesized::ArgListParenthesized(attribute_args) = attr.arguments(db)
     else {
         return None;
@@ -80,16 +80,16 @@ fn get_includable_as_attr_value(db: &dyn SyntaxGroup, attr: &ast::Attribute) -> 
     Some(attr_arg_value)
 }
 
-/// Validates the generic parameters of the impl marked with `includable_as` attribute and returns
+/// Validates the generic parameters of the impl marked with `embeddable_as` attribute and returns
 /// them if valid.
-fn get_includable_as_impl_generic_params(
+fn get_embeddable_as_impl_generic_params(
     db: &dyn SyntaxGroup,
     item_impl: &ast::ItemImpl,
 ) -> Result<ast::GenericParamList, PluginDiagnostic> {
     let generic_params = item_impl.generic_params(db);
     let generic_params_ptr = generic_params.stable_ptr().untyped();
     let first_generic_param_diagnostic = |stable_ptr| PluginDiagnostic {
-        message: "The first generic parameter of an impl with #[includable_as] should be \
+        message: "The first generic parameter of an impl with #[embeddable_as] should be \
                   `TContractState`."
             .to_string(),
         stable_ptr,
@@ -121,7 +121,7 @@ fn get_includable_as_impl_generic_params(
     });
     if !has_has_component_impl {
         return Err(PluginDiagnostic {
-            message: "An impl with #[includable_as] should have a generic parameter which is an \
+            message: "An impl with #[embeddable_as] should have a generic parameter which is an \
                       impl of `HasComponent<TContractState>`."
                 .to_string(),
             stable_ptr: generic_params_ptr,
@@ -131,34 +131,34 @@ fn get_includable_as_impl_generic_params(
     Ok(generic_params_node)
 }
 
-/// The parameters relevant for handling an `#[includable_as]` impl.
-struct IncludableAsImplParams {
-    /// The value of the unnamed argument of the `includable_as` attribute.
+/// The parameters relevant for handling an `#[embeddable_as]` impl.
+struct EmbeddableAsImplParams {
+    /// The value of the unnamed argument of the `embeddable_as` attribute.
     attr_arg_value: ast::Expr,
     /// The generic parameters of the impl.
     generic_params_node: ast::GenericParamList,
     /// The body of the impl.
     impl_body: ast::ImplBody,
 }
-impl IncludableAsImplParams {
-    /// Extracts the parameters for an `#[includable_as]` impl, and validates them.
+impl EmbeddableAsImplParams {
+    /// Extracts the parameters for an `#[embeddable_as]` impl, and validates them.
     fn from_impl(
         db: &dyn SyntaxGroup,
         diagnostics: &mut Vec<PluginDiagnostic>,
         item_impl: &ast::ItemImpl,
         attr: ast::Attribute,
-    ) -> Option<IncludableAsImplParams> {
-        let Some(attr_arg_value) = get_includable_as_attr_value(db, &attr) else {
+    ) -> Option<EmbeddableAsImplParams> {
+        let Some(attr_arg_value) = get_embeddable_as_attr_value(db, &attr) else {
             diagnostics.push(PluginDiagnostic {
-                message: "`includable_as` attribute must have a single unnamed argument for the \
-                          generated impl name, e.g.: #[includable_as(MyImpl)]."
+                message: "`embeddable_as` attribute must have a single unnamed argument for the \
+                          generated impl name, e.g.: #[embeddable_as(MyImpl)]."
                     .into(),
                 stable_ptr: attr.stable_ptr().untyped(),
             });
             return None;
         };
 
-        let generic_params_node = match get_includable_as_impl_generic_params(db, item_impl) {
+        let generic_params_node = match get_embeddable_as_impl_generic_params(db, item_impl) {
             Ok(generic_params_node) => generic_params_node,
             Err(diagnostic) => {
                 diagnostics.push(diagnostic);
@@ -170,14 +170,14 @@ impl IncludableAsImplParams {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
                 diagnostics.push(PluginDiagnostic {
-                    message: "`includable_as` attribute is not supported for empty impls.".into(),
+                    message: "`embeddable_as` attribute is not supported for empty impls.".into(),
                     stable_ptr: semicolon.stable_ptr().untyped(),
                 });
                 return None;
             }
         };
 
-        Some(IncludableAsImplParams { attr_arg_value, generic_params_node, impl_body })
+        Some(EmbeddableAsImplParams { attr_arg_value, generic_params_node, impl_body })
     }
 }
 
@@ -188,11 +188,11 @@ fn handle_component_impl(
     item_impl: &ast::ItemImpl,
     data: &mut ComponentGenerationData,
 ) {
-    let Some(attr) = item_impl.find_attr(db, INCLUDABLE_AS_ATTR) else {
+    let Some(attr) = item_impl.find_attr(db, EMBEDDABLE_AS_ATTR) else {
         return;
     };
 
-    let Some(params) = IncludableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
+    let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
         return;
     };
 
@@ -212,7 +212,7 @@ fn handle_component_impl(
     let mut impl_functions = vec![];
     for item in params.impl_body.items(db).elements(db) {
         let Some((trait_function, impl_function)) =
-            handle_component_includable_as_impl_item(db, diagnostics, item)
+            handle_component_embeddable_as_impl_item(db, diagnostics, item)
         else {
             continue;
         };
@@ -227,7 +227,7 @@ fn handle_component_impl(
         trait $generated_trait_name$<TContractState> {$trait_functions$
         }
 
-        #[starknet::includable]
+        #[starknet::embeddable]
         impl $generated_impl_name$<$generic_params$$maybe_comma$ impl TContractStatePanicDestruct: \
          PanicDestruct<TContractState>> of $generated_trait_name$<TContractState> {$impl_functions$
         }"},
@@ -251,8 +251,8 @@ fn handle_component_impl(
     data.specific.generated_impls.push(generated_impl_node);
 }
 
-/// Handles an item of an `#[includable_as]` impl inside a component module.
-fn handle_component_includable_as_impl_item(
+/// Handles an item of an `#[embeddable_as]` impl inside a component module.
+fn handle_component_embeddable_as_impl_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: ast::ImplItem,
@@ -270,7 +270,7 @@ fn handle_component_includable_as_impl_item(
     let parameters_elements = parameters.elements(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic {
-            message: "A function in an #[includable_as] impl in a component must have a first \
+            message: "A function in an #[embeddable_as] impl in a component must have a first \
                       `self` parameter."
                 .to_string(),
             stable_ptr: parameters.stable_ptr().untyped(),
@@ -288,7 +288,7 @@ fn handle_component_includable_as_impl_item(
         }
         _ => {
             diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of a function in an #[includable_as] impl in a \
+                message: "The first parameter of a function in an #[embeddable_as] impl in a \
                           component must be either `self: @TContractState` (for view functions) \
                           or `ref self: TContractState` (for external functions)."
                     .to_string(),

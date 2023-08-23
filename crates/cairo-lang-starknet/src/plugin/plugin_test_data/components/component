@@ -29,7 +29,7 @@ mod component {
     #[derive(Drop, starknet::Event)]
     struct Log {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         #[external]
         fn get_data(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
@@ -75,7 +75,7 @@ mod component {
     #[derive(Drop, starknet::Event)]
     struct Log {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         #[external]
         fn get_data(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
@@ -222,7 +222,7 @@ trait MyInnerImplTrait<TContractState> {
     fn set_data(ref self: TContractState, addr: ContractAddress, value: u32);
 }
 
-#[starknet::includable]
+#[starknet::embeddable]
 impl MyImpl<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>> of MyInnerImplTrait<TContractState> {
     #[external]
     fn get_data(self: @TContractState, addr: ContractAddress) -> u32 {
@@ -297,7 +297,7 @@ impl LogIsEvent of starknet::Event<Log> {
     }
 }
 
-includable:
+embeddable:
 
 trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;

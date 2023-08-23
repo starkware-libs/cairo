@@ -3,7 +3,7 @@ trait IAnotherContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 
-#[starknet::includable(v0)]
+#[starknet::embeddable(v0)]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
     #[external]
@@ -28,10 +28,10 @@ mod test_contract {
         -1
     }
 
-    #[include(v0)]
+    #[embed(v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 
-    #[include(v0)]
+    #[embed(v0)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]

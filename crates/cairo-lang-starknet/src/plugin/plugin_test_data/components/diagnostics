@@ -1,4 +1,4 @@
-//! > Test `includable_as` attribute with no arguments.
+//! > Test `embeddable_as` attribute with no arguments.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -16,7 +16,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as]
+    #[embeddable_as]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -41,7 +41,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as]
+    #[embeddable_as]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -111,14 +111,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `includable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[includable_as(MyImpl)].
+error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:13:5
-    #[includable_as]
+    #[embeddable_as]
     ^**************^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` attribute with too many arguments.
+//! > Test `embeddable_as` attribute with too many arguments.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -136,7 +136,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(X, Y)]
+    #[embeddable_as(X, Y)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -161,7 +161,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(X, Y)]
+    #[embeddable_as(X, Y)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -231,14 +231,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `includable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[includable_as(MyImpl)].
+error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:13:5
-    #[includable_as(X, Y)]
+    #[embeddable_as(X, Y)]
     ^********************^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` attribute with named argument.
+//! > Test `embeddable_as` attribute with named argument.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -256,7 +256,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(name: MyImpl)]
+    #[embeddable_as(name: MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -281,7 +281,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(name: MyImpl)]
+    #[embeddable_as(name: MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing(self: @ComponentState<TContractState>) {
         }
@@ -351,14 +351,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `includable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[includable_as(MyImpl)].
+error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed argument for the generated impl name, e.g.: #[embeddable_as(MyImpl)].
  --> lib.cairo:13:5
-    #[includable_as(name: MyImpl)]
+    #[embeddable_as(name: MyImpl)]
     ^****************************^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` with no generic parameters.
+//! > Test `embeddable_as` with no generic parameters.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -376,7 +376,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl of MyTrait<ComponentState<usize>> {
         fn do_nothing() {}
     }
@@ -400,7 +400,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl of MyTrait<ComponentState<usize>> {
         fn do_nothing() {}
     }
@@ -469,14 +469,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[includable_as] should be `TContractState`.
+error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:14:10
     impl MyInnerImpl of MyTrait<ComponentState<usize>> {
          ^*********^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` with empty generic parameters list.
+//! > Test `embeddable_as` with empty generic parameters list.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -494,7 +494,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<> of MyTrait<ComponentState<usize>> {
         fn do_nothing() {}
     }
@@ -518,7 +518,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<> of MyTrait<ComponentState<usize>> {
         fn do_nothing() {}
     }
@@ -587,14 +587,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[includable_as] should be `TContractState`.
+error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:14:21
     impl MyInnerImpl<> of MyTrait<ComponentState<usize>> {
                     ^^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` with wrong first generic parameter.
+//! > Test `embeddable_as` with wrong first generic parameter.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -612,7 +612,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<impl X: HasComponent<TContractState>, TContractState> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -636,7 +636,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<impl X: HasComponent<TContractState>, TContractState> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -705,14 +705,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: The first generic parameter of an impl with #[includable_as] should be `TContractState`.
+error: Plugin diagnostic: The first generic parameter of an impl with #[embeddable_as] should be `TContractState`.
  --> lib.cairo:14:21
     impl MyInnerImpl<impl X: HasComponent<TContractState>, TContractState> of MyTrait<ComponentState<TContractState>> {
                     ^****************************************************^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` with no generic parameter that is an impl of HasComponent<TContractState>.
+//! > Test `embeddable_as` with no generic parameter that is an impl of HasComponent<TContractState>.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -730,7 +730,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -754,7 +754,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState> of MyTrait<ComponentState<TContractState>> {
         fn do_nothing() {}
     }
@@ -823,14 +823,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: An impl with #[includable_as] should have a generic parameter which is an impl of `HasComponent<TContractState>`.
+error: Plugin diagnostic: An impl with #[embeddable_as] should have a generic parameter which is an impl of `HasComponent<TContractState>`.
  --> lib.cairo:14:21
     impl MyInnerImpl<TContractState> of MyTrait<ComponentState<TContractState>> {
                     ^**************^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` impl with empty body.
+//! > Test `embeddable_as` impl with empty body.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -848,7 +848,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>>;
 }
 trait MyTrait<T>;
@@ -868,7 +868,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>>;
 }
 trait MyTrait<T>;
@@ -933,14 +933,14 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `includable_as` attribute is not supported for empty impls.
+error: Plugin diagnostic: `embeddable_as` attribute is not supported for empty impls.
  --> lib.cairo:14:118
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>>;
                                                                                                                      ^
 
 //! > ==========================================================================
 
-//! > Test `includable_as` with function with no/wrong `self` parameter.
+//! > Test `embeddable_as` with function with no/wrong `self` parameter.
 
 //! > test_runner_name
 ExpandContractTestRunner(allow_diagnostics: true)
@@ -958,7 +958,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn no_self() {}
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
@@ -984,7 +984,7 @@ mod component {
     #[storage]
     struct Storage {}
 
-    #[includable_as(MyImpl)]
+    #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         fn no_self() {}
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
@@ -1032,7 +1032,7 @@ use starknet::event::EventEmitter;
 trait MyInnerImplTrait<TContractState> {
 }
 
-#[starknet::includable]
+#[starknet::embeddable]
 impl MyImpl<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>> of MyInnerImplTrait<TContractState> {
 }
 
@@ -1061,7 +1061,7 @@ impl EventIsEvent of starknet::Event<Event> {
 
 
 
-includable:
+embeddable:
 
 trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
@@ -1079,12 +1079,12 @@ mod __constructor_MyImpl {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: A function in an #[includable_as] impl in a component must have a first `self` parameter.
+error: Plugin diagnostic: A function in an #[embeddable_as] impl in a component must have a first `self` parameter.
  --> lib.cairo:15:20
         fn no_self() {}
                    ^
 
-error: Plugin diagnostic: The first parameter of a function in an #[includable_as] impl in a component must be either `self: @TContractState` (for view functions) or `ref self: TContractState` (for external functions).
+error: Plugin diagnostic: The first parameter of a function in an #[embeddable_as] impl in a component must be either `self: @TContractState` (for view functions) or `ref self: TContractState` (for external functions).
  --> lib.cairo:16:31
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
                               ^**********************************^
