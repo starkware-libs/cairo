@@ -4,9 +4,9 @@ mod test;
 pub mod consts;
 
 use cairo_lang_defs::plugin::{MacroPlugin, PluginResult};
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{ast, Terminal};
 use consts::*;
 
 pub mod aux_data;
@@ -52,6 +52,13 @@ impl MacroPlugin for StarkNetPlugin {
             }
             ast::Item::Enum(enum_ast) if derive_event_needed(&enum_ast, db) => {
                 events::handle_enum(db, enum_ast)
+            }
+            ast::Item::InlineMacro(inline_macro_ast)
+                if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+            {
+                // The macro is expanded in handle_module_by_storage, but we also need to remove the
+                // original code.
+                starknet_module::contract::remove_component_inline_macro(db, &inline_macro_ast)
             }
             // Nothing to do for other items.
             _ => PluginResult::default(),

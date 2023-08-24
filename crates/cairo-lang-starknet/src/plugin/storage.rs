@@ -1,11 +1,13 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
+use super::consts::NESTED_ATTR;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use crate::contract::starknet_keccak;
@@ -29,6 +31,16 @@ pub fn handle_storage_struct(
     let member_state_name = starknet_module_kind.get_member_state_name();
 
     for member in struct_ast.members(db).elements(db) {
+        // TODO(yuval): support nested structs.
+        // Nested members are not supported yet, skip them.
+        if member.attributes(db).has_attr(db, NESTED_ATTR) {
+            diagnostics.push(PluginDiagnostic {
+                message: "Nested storage members are not not yet supported.".to_string(),
+                stable_ptr: member.stable_ptr().untyped(),
+            });
+            continue;
+        }
+
         let name_node = member.name(db).as_syntax_node();
         let name = member.name(db).text(db);
         members_code.push(RewriteNode::interpolate_patched(
