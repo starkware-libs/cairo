@@ -53,7 +53,7 @@ ItemConstant
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Unexpected token, expected ':' followed by a type.
+error: Missing tokens. Expected a type clause (':' followed by a type) while parsing a const item.
  --> dummy_file.cairo:1:8
 const X = 0x1234;
        ^

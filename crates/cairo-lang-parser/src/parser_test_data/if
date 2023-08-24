@@ -35,7 +35,7 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a binary expression.
  --> dummy_file.cairo:2:12
     if 0 == if x {1} else {2} {
            ^
