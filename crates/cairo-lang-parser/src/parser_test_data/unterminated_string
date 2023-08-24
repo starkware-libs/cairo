@@ -9,12 +9,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token TerminalRBrace while parsing a block.
  --> dummy_file.cairo:3:2
 }
  ^
@@ -37,12 +37,12 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:3:2
 }
  ^
 
-error: Missing token TerminalRBrace.
+error: Missing token TerminalRBrace while parsing a block.
  --> dummy_file.cairo:3:2
 }
  ^

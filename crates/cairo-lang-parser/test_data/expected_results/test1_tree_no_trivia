@@ -728,12 +728,12 @@ error: Skipped tokens. Expected: parameter.
 fn foo(,var1: int,, mut ref var2: felt252,) -> int {
                   ^
 
-error: Missing token TerminalRBrace.
+error: Missing token TerminalRBrace while parsing a block.
  --> test1.cairo:30:14
     return x;
              ^
 
-error: Missing tokens. Expected an item after attributes.
+error: Missing tokens. Expected an item after attributes while parsing a module.
  --> test1.cairo:60:26
 #[attribute_without_item]
                          ^
