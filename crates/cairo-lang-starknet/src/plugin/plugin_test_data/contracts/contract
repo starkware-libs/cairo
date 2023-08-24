@@ -106,22 +106,7 @@ mod test_contract {
 contract:
 
 use starknet::event::EventEmitter;
-
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
-
+#[derive(Drop)]
     struct ContractState {
     }
     impl ContractStateDrop of Drop<ContractState> {}
@@ -135,7 +120,7 @@ use starknet::event::EventEmitter;
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 
@@ -295,7 +280,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

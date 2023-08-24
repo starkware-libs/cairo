@@ -1,16 +1,16 @@
 use cairo_lang_defs::patcher::RewriteNode;
-use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
-use super::StarknetModuleKind;
+use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR,
-    STORAGE_STRUCT_NAME,
+    COMPONENT_INLINE_MACRO, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EXTERNAL_ATTR,
+    L1_HANDLER_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, has_embed_attribute, has_external_attribute, EntryPointGenerationParams,
@@ -23,16 +23,22 @@ use crate::plugin::storage::handle_storage_struct;
 pub struct ContractSpecificGenerationData {
     test_config: RewriteNode,
     entry_points_code: EntryPointsGenerationData,
+    has_component_impls: Vec<RewriteNode>,
 }
 impl ContractSpecificGenerationData {
     pub fn into_rewrite_node(self) -> RewriteNode {
         RewriteNode::interpolate_patched(
             indoc! {"
                 $test_config$
-                $entry_points_code$"},
+                $entry_points_code$
+                $has_component_impls$"},
             [
                 ("test_config".to_string(), self.test_config),
                 ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
+                (
+                    "has_component_impls".to_string(),
+                    RewriteNode::new_modified(self.has_component_impls),
+                ),
             ]
             .into(),
         )
@@ -80,6 +86,11 @@ fn handle_contract_item(
                 alias_ast,
                 &mut data.specific.entry_points_code,
             );
+        }
+        ast::Item::InlineMacro(inline_macro_ast)
+            if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
+        {
+            handle_component_inline_macro(db, diagnostics, inline_macro_ast, &mut data.specific)
         }
         _ => {}
     }
@@ -230,7 +241,7 @@ fn handle_contract_impl(
     }
 }
 
-/// Handles an ebmedded impl by impl alias.
+/// Handles an embedded impl by an impl alias.
 fn handle_embed_impl_alias(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -295,6 +306,116 @@ fn handle_embed_impl_alias(
     ));
 }
 
+/// Handles a `component!` inline macro. Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
+/// Verifies that the macro pattern is:
+/// component!(name: <component_name>, storage: <storage_name>, event: <event_name>);
+/// If the macro pattern is as expected, generates the code for impl of HasComponent in the
+/// contract.
+pub fn handle_component_inline_macro(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    component_macro_ast: &ast::ItemInlineMacro,
+    data: &mut ContractSpecificGenerationData,
+) {
+    let macro_args = match component_macro_ast.arguments(db) {
+        ast::WrappedArgList::ParenthesizedArgList(args) => args.args(db),
+        _ => {
+            diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
+            return;
+        }
+    };
+    let arguments = macro_args.elements(db);
+    let [path_arg, storage_arg, event_arg] = arguments.as_slice() else {
+        diagnostics.push(invalid_macro_diagnostic(component_macro_ast));
+        return;
+    };
+
+    let (Some(component_path), Some(_storage_name), Some(event_name)) = (
+        try_extract_named_macro_argument(db, diagnostics, path_arg, "path", false),
+        // TODO(yuval): use storage_name. Currently we only verify it is set correctly.
+        try_extract_named_macro_argument(db, diagnostics, storage_arg, "storage", true),
+        try_extract_named_macro_argument(db, diagnostics, event_arg, "event", true),
+    ) else {
+        return;
+    };
+
+    // TODO(yuval): consider supporting 2 components with the same name and different paths.
+    // Currently it doesn't work as the name of the impl is the same.
+    let component_name = match component_path.elements(db).last().unwrap() {
+        ast::PathSegment::WithGenericArgs(x) => x.ident(db),
+        ast::PathSegment::Simple(x) => x.ident(db),
+    };
+
+    let has_component_impl = RewriteNode::interpolate_patched(
+        indoc!(
+            "impl HasComponentImpl_$component_name$ of \
+             $component_path$::HasComponent<ContractState> {
+           fn get_component(self: @ContractState) -> \
+             @$component_path$::ComponentState<ContractState> {
+               @$component_path$::unsafe_new_component_state::<ContractState>()
+           }
+           fn get_component_mut(ref self: ContractState) -> \
+             $component_path$::ComponentState<ContractState> {
+               $component_path$::unsafe_new_component_state::<ContractState>()
+           }
+           fn get_contract(self: @$component_path$::ComponentState<ContractState>) -> \
+             @ContractState {
+               @unsafe_new_contract_state()
+           }
+           fn get_contract_mut(ref self: $component_path$::ComponentState<ContractState>) -> \
+             ContractState {
+               unsafe_new_contract_state()
+           }
+           fn emit(ref self: $component_path$::ComponentState<ContractState>, event: \
+             $component_path$::Event) {
+               let mut contract = $component_path$::HasComponent::get_contract_mut(ref self);
+               contract.emit(Event::$event_name$(event));
+           }
+       }"
+        ),
+        [
+            (
+                "component_name".to_string(),
+                RewriteNode::new_trimmed(component_name.as_syntax_node()),
+            ),
+            (
+                "component_path".to_string(),
+                RewriteNode::new_trimmed(component_path.as_syntax_node()),
+            ),
+            ("event_name".to_string(), RewriteNode::new_trimmed(event_name.as_syntax_node())),
+        ]
+        .into(),
+    );
+
+    data.has_component_impls.push(has_component_impl);
+}
+
+/// Returns an invalid `component` macro diagnostic.
+fn invalid_macro_diagnostic(component_macro_ast: &ast::ItemInlineMacro) -> PluginDiagnostic {
+    PluginDiagnostic {
+        message: "Invalid component macro, expected `component!(name: \"<component_name>\", \
+                  storage: \"<storage_name>\", event: \"<event_name>\");`"
+            .to_string(),
+        stable_ptr: component_macro_ast.stable_ptr().untyped(),
+    }
+}
+
+/// Remove a `component!` inline macro from the original code if it's inside a starknet::contract.
+/// Assumes that the macro name is `COMPONENT_INLINE_MACRO`.
+pub fn remove_component_inline_macro(
+    db: &dyn SyntaxGroup,
+    component_macro_ast: &ast::ItemInlineMacro,
+) -> PluginResult {
+    if let Some((_module_ast, module_kind)) =
+        grand_grand_parent_starknet_module(component_macro_ast.as_syntax_node(), db)
+    {
+        if module_kind == StarknetModuleKind::Contract {
+            return PluginResult { code: None, diagnostics: vec![], remove_original_item: true };
+        }
+    }
+    return PluginResult { code: None, diagnostics: vec![], remove_original_item: false };
+}
+
 /// Checks whether the first generic argument in the path segment is `CONTRACT_STATE_NAME`.
 fn is_first_generic_arg_contract_state(
     db: &dyn SyntaxGroup,
@@ -313,4 +434,60 @@ fn is_first_generic_arg_contract_state(
         return false;
     };
     first_generic_arg.identifier(db) == CONTRACT_STATE_NAME
+}
+
+/// Verifies that a given Arg is named with given name and that the value is a path (simple if
+/// `only_simple_identifier` is true). Returns the value path if the verification succeeds,
+/// otherwise returns None.
+fn try_extract_named_macro_argument(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    arg_ast: &ast::Arg,
+    arg_name: &str,
+    only_simple_identifier: bool,
+) -> Option<ast::ExprPath> {
+    match arg_ast.arg_clause(db) {
+        ast::ArgClause::Named(clause) if clause.name(db).text(db) == arg_name => {
+            match clause.value(db) {
+                ast::Expr::Path(path) => {
+                    if !only_simple_identifier {
+                        return Some(path);
+                    }
+                    let elements = path.elements(db);
+                    if elements.len() != 1
+                        || !matches!(elements.last().unwrap(), ast::PathSegment::Simple(_))
+                    {
+                        diagnostics.push(PluginDiagnostic {
+                            message: format!(
+                                "Component macro argument `{arg_name}` must be a simple \
+                                 identifier.",
+                            ),
+                            stable_ptr: path.stable_ptr().untyped(),
+                        });
+                        return None;
+                    }
+                    Some(path)
+                }
+                value => {
+                    diagnostics.push(PluginDiagnostic {
+                        message: format!(
+                            "Component macro argument `{arg_name}` must be a path expression.",
+                        ),
+                        stable_ptr: value.stable_ptr().untyped(),
+                    });
+                    None
+                }
+            }
+        }
+        _ => {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "Invalid component macro argument. Expected `{0}: <value>`",
+                    arg_name
+                ),
+                stable_ptr: arg_ast.stable_ptr().untyped(),
+            });
+            None
+        }
+    }
 }
