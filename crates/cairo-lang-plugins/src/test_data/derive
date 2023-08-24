@@ -291,11 +291,11 @@ impl TwoVariantEnumHash<
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
-                let state = hash::Hash::update_state(state, @0);
+                let state = hash::Hash::update_state(state, 0);
                 hash::Hash::update_state(state, x)
             },
             TwoVariantEnum::Second(x) => {
-                let state = hash::Hash::update_state(state, @1);
+                let state = hash::Hash::update_state(state, 1);
                 hash::Hash::update_state(state, x)
             },
         }

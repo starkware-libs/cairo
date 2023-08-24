@@ -21,7 +21,7 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                     indent_by(4,
                     variants.iter().enumerate().map(|(idx, variant)| formatdoc!{"
                             {ty}::{variant}(x) => {{
-                                let state = hash::Hash::update_state(state, @{idx});
+                                let state = hash::Hash::update_state(state, {idx});
                                 hash::Hash::update_state(state, x)
                             }},",
                             variant=variant.name,
