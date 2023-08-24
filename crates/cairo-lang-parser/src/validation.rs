@@ -11,7 +11,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use unescaper::unescape;
 
-use crate::diagnostic::ParserDiagnosticKind;
+use crate::diagnostic::{ParserDiagnosticKind, ParserDiagnosticKindMissing};
 use crate::ParserDiagnostic;
 
 /// Validate syntax nodes for aspects that are not handled by the parser.
@@ -99,7 +99,10 @@ fn validate_literal_number(
             result = Err(diagnostics.add(ParserDiagnostic {
                 file_id,
                 span: node.as_syntax_node().span(db).after(),
-                kind: ParserDiagnosticKind::MissingLiteralSuffix,
+                kind: ParserDiagnosticKind::Missing {
+                    kind: ParserDiagnosticKindMissing::MissingLiteralSuffix,
+                    parsing_context: "literal number".into(),
+                },
             }));
         }
     }

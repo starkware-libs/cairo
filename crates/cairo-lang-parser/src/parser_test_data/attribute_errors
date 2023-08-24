@@ -13,7 +13,7 @@ ItemList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an item after attributes.
+error: Missing tokens. Expected an item after attributes while parsing a module.
  --> dummy_file.cairo:1:7
 #[aaa]
       ^
@@ -46,7 +46,7 @@ TraitItemList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected a trait item after attributes.
+error: Missing tokens. Expected a trait item after attributes while parsing a trait body.
  --> dummy_file.cairo:2:11
     #[aaa]
           ^
@@ -79,7 +79,7 @@ ImplItemList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an impl item after attributes.
+error: Missing tokens. Expected an impl item after attributes while parsing an impl body.
  --> dummy_file.cairo:2:11
     #[aaa]
           ^
@@ -111,7 +111,7 @@ ItemList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an item after attributes.
+error: Missing tokens. Expected an item after attributes while parsing a module.
  --> dummy_file.cairo:2:7
 #[bbb]
       ^
@@ -144,7 +144,7 @@ ItemList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing tokens. Expected an item after attributes.
+error: Missing tokens. Expected an item after attributes while parsing a module.
  --> dummy_file.cairo:1:7
 #[aaa]
       ^
