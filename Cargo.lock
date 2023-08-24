@@ -787,8 +787,10 @@ dependencies = [
 name = "cairo-lang-sierra"
 version = "2.2.0"
 dependencies = [
+ "anyhow",
  "assert_matches",
  "bimap",
+ "cairo-lang-test-utils",
  "cairo-lang-utils",
  "const-fnv1a-hash",
  "convert_case",
@@ -804,6 +806,7 @@ dependencies = [
  "regex",
  "salsa",
  "serde",
+ "serde_json",
  "sha3",
  "smol_str",
  "test-case",
