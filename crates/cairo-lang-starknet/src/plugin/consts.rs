@@ -22,6 +22,8 @@ pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
 pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
+pub const COMPONENT_INLINE_MACRO: &str = "component";
+pub const NESTED_ATTR: &str = "nested";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
