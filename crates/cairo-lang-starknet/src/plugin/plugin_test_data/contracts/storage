@@ -484,6 +484,7 @@ const TEST_CLASS_HASH: felt252 = 0xdf00ddc8940a9ebc2f8665e989d2652203dabc0967e7b
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
