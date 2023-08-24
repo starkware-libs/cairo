@@ -190,7 +190,8 @@ impl GenericStructDefault<T, impl TDefault: Default<T>, impl TDestruct: Destruct
 impl GenericStructHash<
     __State,
     impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>T, impl THash: Hash<T>, impl TDrop: Drop<T>
+    impl SDrop: Drop<__State>,
+    T, impl THash: Hash<T>, impl TDrop: Drop<T>
 > of hash::Hash<GenericStruct<T>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: GenericStruct<T>) -> __State {
@@ -243,7 +244,8 @@ impl TwoMemberGenericStructSerde<T, U, impl USomeTrait: SomeTrait<U, T>, impl TS
 impl TwoMemberGenericStructHash<
     __State,
     impl __SHashState: hash::HashStateTrait<__State>,
-    impl SDrop: Drop<__State>T, U, impl USomeTrait: SomeTrait<U, T>, impl THash: Hash<T>, impl TDrop: Drop<T>, impl UHash: Hash<U>, impl UDrop: Drop<U>
+    impl SDrop: Drop<__State>,
+    T, U, impl USomeTrait: SomeTrait<U, T>, impl THash: Hash<T>, impl TDrop: Drop<T>, impl UHash: Hash<U>, impl UDrop: Drop<U>
 > of hash::Hash<TwoMemberGenericStruct<T, U, USomeTrait>, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: TwoMemberGenericStruct<T, U, USomeTrait>) -> __State {
@@ -291,11 +293,11 @@ impl TwoVariantEnumHash<
     fn update_state(state: __State, value: TwoVariantEnum) -> __State {
         match value {
             TwoVariantEnum::First(x) => {
-                let state = hash::Hash::update_state(state, @0);
+                let state = hash::Hash::update_state(state, 0);
                 hash::Hash::update_state(state, x)
             },
             TwoVariantEnum::Second(x) => {
-                let state = hash::Hash::update_state(state, @1);
+                let state = hash::Hash::update_state(state, 1);
                 hash::Hash::update_state(state, x)
             },
         }
