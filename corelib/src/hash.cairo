@@ -113,6 +113,16 @@ impl HashContractAddress<
     }
 }
 
+impl HashClassHash<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<starknet::ClassHash, S, SHashState> {
+    #[inline(always)]
+    fn update_state(state: S, value: ClassHash) -> S {
+        state.update(value.into())
+    }
+}
+
+
 impl TupleSize0Hash<S, impl SHashState: HashStateTrait<S>> of Hash<(), S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: ()) -> S {
