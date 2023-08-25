@@ -122,7 +122,6 @@ impl HashClassHash<
     }
 }
 
-
 impl TupleSize0Hash<S, impl SHashState: HashStateTrait<S>> of Hash<(), S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: ()) -> S {
