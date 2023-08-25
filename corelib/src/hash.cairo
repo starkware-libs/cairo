@@ -1,5 +1,5 @@
 use traits::Into;
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 
 /// A trait for hash state accumulators.
 trait HashStateTrait<S> {
