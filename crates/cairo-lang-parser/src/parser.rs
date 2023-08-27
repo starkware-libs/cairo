@@ -1272,7 +1272,8 @@ impl<'a> Parser<'a> {
             });
         }
 
-        if is_of_kind!(rbrace, top_level)(self.peek().kind) {
+        let is_rbrace_or_top_level = is_of_kind!(rbrace, top_level);
+        if is_rbrace_or_top_level(self.peek().kind) {
             return ExprBlock::new_green(
                 self.db,
                 self.create_and_report_missing_terminal::<TerminalLBrace>(),

@@ -180,17 +180,14 @@ impl Felt252Serde for StatementIdx {
 const SHORT_STRING_BOUND: usize = 31;
 /// A set of all the supported long generic ids.
 static SERDE_SUPPORTED_LONG_IDS: Lazy<OrderedHashSet<&'static str>> = Lazy::new(|| {
-    OrderedHashSet::from_iter(
-        [
-            StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
-            ContractAddressTryFromFelt252Libfunc::STR_ID,
-            StorageBaseAddressFromFelt252Libfunc::STR_ID,
-            StorageAddressTryFromFelt252Trait::STR_ID,
-            Secp256GetPointFromXLibfunc::<Secp256k1>::STR_ID,
-            Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
-        ]
-        .into_iter(),
-    )
+    OrderedHashSet::from_iter([
+        StorageAddressFromBaseAndOffsetLibfunc::STR_ID,
+        ContractAddressTryFromFelt252Libfunc::STR_ID,
+        StorageBaseAddressFromFelt252Libfunc::STR_ID,
+        StorageAddressTryFromFelt252Trait::STR_ID,
+        Secp256GetPointFromXLibfunc::<Secp256k1>::STR_ID,
+        Secp256GetPointFromXLibfunc::<Secp256r1>::STR_ID,
+    ])
 });
 /// A mapping of all the long names when fixing them from the hashed keccak representation.
 static LONG_NAME_FIX: Lazy<UnorderedHashMap<BigUint, &'static str>> = Lazy::new(|| {

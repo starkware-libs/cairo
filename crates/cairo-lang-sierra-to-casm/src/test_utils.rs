@@ -32,7 +32,7 @@ pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
 pub fn read_sierra_example_file(name: &str) -> String {
     // Pop the "/sierra_to_casm" suffix.
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).parent().unwrap().to_owned();
-    path.extend(["cairo-lang-sierra", "examples", &format!("{name}.sierra")].into_iter());
+    path.extend(["cairo-lang-sierra", "examples", &format!("{name}.sierra")]);
     fs::read_to_string(path).unwrap()
 }
 
