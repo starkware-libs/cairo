@@ -13,7 +13,7 @@ use syntax::node::green::{GreenNode, GreenNodeDetails};
 use crate::diagnostic::ParserDiagnosticKind;
 use crate::lexer::{Lexer, LexerTerminal};
 use crate::operators::{get_post_operator_precedence, get_unary_operator_precedence};
-use crate::recovery::is_of_kind;
+use crate::recovery::{is_of_kind, rbrace, top_level};
 use crate::ParserDiagnostic;
 
 #[cfg(test)]
@@ -1272,7 +1272,7 @@ impl<'a> Parser<'a> {
             });
         }
 
-        if is_of_kind!(rbrace, top_level)(self.peek().kind) {
+        if matches!(self.peek().kind, rbrace!() | top_level!() | SyntaxKind::TerminalEndOfFile) {
             return ExprBlock::new_green(
                 self.db,
                 self.create_and_report_missing_terminal::<TerminalLBrace>(),

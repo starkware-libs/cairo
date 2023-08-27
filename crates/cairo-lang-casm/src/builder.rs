@@ -458,7 +458,7 @@ impl CasmBuilder {
         self.main_state.ap_change = 0;
         self.main_state.allocated = 0;
         self.main_state.vars.clear();
-        self.main_state.vars.extend(values.into_iter());
+        self.main_state.vars.extend(values);
     }
 
     /// Adds a call command to 'label'. All AP based variables are passed to the called function

@@ -1094,7 +1094,7 @@ fn lower_expr_match(
     let match_info = MatchInfo::Enum(MatchEnumInfo {
         concrete_enum_id,
         input: match_input,
-        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
         location,
@@ -1182,7 +1182,7 @@ fn lower_optimized_extern_match(
     let match_info = MatchInfo::Extern(MatchExternInfo {
         function: extern_enum.function.lowered(ctx.db),
         inputs: extern_enum.inputs,
-        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids.into_iter())
+        arms: zip_eq(zip_eq(concrete_variants, block_ids), arm_var_ids)
             .map(|((variant_id, block_id), var_ids)| MatchArm { variant_id, block_id, var_ids })
             .collect(),
         location,

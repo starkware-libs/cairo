@@ -291,19 +291,16 @@ impl CasmContractClass {
             }))
         }
 
-        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter(
-            [
-                RangeCheckType::id(),
-                BitwiseType::id(),
-                PedersenType::id(),
-                EcOpType::id(),
-                PoseidonType::id(),
-                SegmentArenaType::id(),
-                GasBuiltinType::id(),
-                SystemType::id(),
-            ]
-            .into_iter(),
-        );
+        let builtin_types = UnorderedHashSet::<GenericTypeId>::from_iter([
+            RangeCheckType::id(),
+            BitwiseType::id(),
+            PedersenType::id(),
+            EcOpType::id(),
+            PoseidonType::id(),
+            SegmentArenaType::id(),
+            GasBuiltinType::id(),
+            SystemType::id(),
+        ]);
 
         let as_casm_entry_point = |contract_entry_point: ContractEntryPoint| {
             let Some(function) = program.funcs.get(contract_entry_point.function_idx) else {
