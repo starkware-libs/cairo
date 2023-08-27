@@ -14,7 +14,7 @@ libfunc call_lib = function_call<user@Fibonacci>;
 libfunc disable_ap_tracking = disable_ap_tracking;
 
 // Statement #  0 - tests if n == 0.
-felt252_is_zero(n) { fallthrough() 6(n) };
+felt252_is_zero(n) { fallthrough() PrepArgs(n) };
 // Statement #1
 branch_align() -> ();
 // Statement #  1 - n == 0, so we return a.
@@ -22,6 +22,7 @@ felt252_drop(b) -> ();
 store_temp_felt252(a)  -> (a);
 disable_ap_tracking() -> ();
 return(a);
+PrepArgs:
 // Statement #  6 - calculates arguments for recursion call.
 branch_align() -> ();
 felt252_unwrap_non_zero(n) -> (n);
