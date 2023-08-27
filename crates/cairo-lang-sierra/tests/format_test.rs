@@ -1,5 +1,6 @@
 use cairo_lang_sierra::program::VersionedProgram;
 use indoc::indoc;
+use pretty_assertions::assert_eq;
 use test_log::test;
 
 // Testing by parsing code and printing its display, making sure we get back the formatted code.
@@ -107,5 +108,46 @@ fn versioned_program_display_test() {
     assert_eq!(
         parser.parse(sierra_code).map(|p| p.to_string()),
         Ok(VersionedProgram::from(parser.parse(sierra_code).unwrap()).to_string())
+    );
+}
+
+// Testing by of parsing code with labels.
+#[test]
+fn labeled_program_display_test() {
+    let parser = cairo_lang_sierra::ProgramParser::new();
+    assert_eq!(
+        parser
+            .parse(indoc! {"
+                callee() -> (); // 0
+                callee(arg1) -> (res1); // 1
+                Lebel2:
+                callee(arg1, arg2) -> (res1, res2); // 2
+                callee() { Lebel5() }; // 3
+                callee(arg1, arg2) { fallthrough() Lebel7(res1) Lebel5(res1, res2) }; // 4
+                Lebel5:
+                [12345]([12]) { Lebel2([37]) fallthrough() }; // 5
+                return(); // 6
+                Lebel7:
+                return(r); // 7
+                return(r1, r2); // 8
+                return([1], [45], [0]); // 9
+            "},)
+            .map(|p| p.to_string()),
+        Ok(indoc! {"
+
+
+            callee() -> (); // 0
+            callee(arg1) -> (res1); // 1
+            callee(arg1, arg2) -> (res1, res2); // 2
+            callee() { 5() }; // 3
+            callee(arg1, arg2) { fallthrough() 7(res1) 5(res1, res2) }; // 4
+            [12345]([12]) { 2([37]) fallthrough() }; // 5
+            return(); // 6
+            return(r); // 7
+            return(r1, r2); // 8
+            return([1], [45], [0]); // 9
+
+        "}
+        .to_string())
     );
 }
