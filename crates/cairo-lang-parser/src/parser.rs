@@ -72,8 +72,8 @@ pub type TryParseResult<GreenElement> = Result<GreenElement, TryParseFailure>;
 // Should only be called after checking the current token.
 
 const MAX_PRECEDENCE: usize = 1000;
-const TOP_LEVEL_ITEM_DESCRIPTION: &str =
-    "Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias";
+const TOP_LEVEL_ITEM_DESCRIPTION: &str = "Const/Module/Use/FreeFunction/ExternFunction/ExternType/\
+                                          Trait/Impl/Struct/Enum/TypeAlias/InlineMacro";
 const TRAIT_ITEM_DESCRIPTION: &str = "trait item";
 const IMPL_ITEM_DESCRIPTION: &str = "impl item";
 
@@ -182,6 +182,8 @@ impl<'a> Parser<'a> {
 
     /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]), or
     /// TryParseFauilre if a top-level item can't be parsed.
+    /// In case of an identifier not followed by a `!`, it is skipped inside the function and thus a
+    /// TryParseFailure::DoNothing is returned.
     pub fn try_parse_top_level_item(&mut self) -> TryParseResult<ItemGreen> {
         let maybe_attributes = self.try_parse_attribute_list(TOP_LEVEL_ITEM_DESCRIPTION);
 
@@ -189,7 +191,6 @@ impl<'a> Parser<'a> {
             Ok(attributes) => (true, attributes),
             Err(_) => (false, AttributeList::new_green(self.db, vec![])),
         };
-
         match self.peek().kind {
             SyntaxKind::TerminalConst => Ok(self.expect_const(attributes).into()),
             SyntaxKind::TerminalModule => Ok(self.expect_module(attributes).into()),
@@ -201,6 +202,58 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes).into()),
             SyntaxKind::TerminalImpl => Ok(self.expect_item_impl(attributes)),
+            SyntaxKind::TerminalIdentifier => {
+                // We take the identifier to check if the next token is a `!`. If it is, we assume
+                // that a macro is following and handle it similarly to any other
+                // top-level item. If not we skip the identifier. 'take_raw' is used here
+                // since it is not yet known if the identifier would be taken as a part of a macro,
+                // or skipped.
+                //
+                // TODO(Gil): Consider adding a lookahead capability to the lexer to avoid this.
+                let ident = self.take_raw();
+                match self.peek().kind {
+                    SyntaxKind::TerminalNot => {
+                        // Complete the `take`ing of the identifier.
+                        let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
+                        Ok(self.expect_item_inline_macro(attributes, macro_name).into())
+                    }
+                    SyntaxKind::TerminalLParen
+                    | SyntaxKind::TerminalLBrace
+                    | SyntaxKind::TerminalLBrack => {
+                        // This case is treated as a item inline macro with a missing bang ('!').
+                        self.diagnostics.add(ParserDiagnostic {
+                            file_id: self.file_id,
+                            kind: ParserDiagnosticKind::ItemInlineMacroWithoutBang {
+                                identifier: ident.clone().text,
+                                bracket_type: self.peek().kind,
+                            },
+                            span: TextSpan {
+                                start: self.offset,
+                                end: self.offset.add_width(self.current_width),
+                            },
+                        });
+                        let macro_name = self.add_trivia_to_terminal::<TerminalIdentifier>(ident);
+                        Ok(self
+                            .parse_item_inline_macro_given_bang(
+                                attributes,
+                                macro_name,
+                                TerminalNot::missing(self.db),
+                            )
+                            .into())
+                    }
+                    _ => {
+                        // Complete the `skip`ping of the identifier.
+                        self.append_skipped_token_to_pending_trivia(
+                            ident,
+                            ParserDiagnosticKind::SkippedElement {
+                                element_name: TOP_LEVEL_ITEM_DESCRIPTION.into(),
+                            },
+                        );
+                        // The token is already skipped, so it should not be skipped in the caller.
+                        Err(TryParseFailure::DoNothing)
+                    }
+                }
+            }
             _ => {
                 if has_attrs {
                     Ok(self.create_and_report_missing::<Item>(
@@ -739,6 +792,28 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Assumes the current token is TerminalNot.
+    fn expect_item_inline_macro(
+        &mut self,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+    ) -> ItemInlineMacroGreen {
+        let bang = self.parse_token::<TerminalNot>();
+        self.parse_item_inline_macro_given_bang(attributes, name, bang)
+    }
+
+    /// Returns a GreenId of a node with an ItemInlineMacro kind, given the bang ('!') token.
+    fn parse_item_inline_macro_given_bang(
+        &mut self,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        bang: TerminalNotGreen,
+    ) -> ItemInlineMacroGreen {
+        let arguments = self.parse_wrapped_arg_list();
+        let semicolon = self.parse_token::<TerminalSemicolon>();
+        ItemInlineMacro::new_green(self.db, attributes, name, bang, arguments, semicolon)
+    }
+
     // ------------------------------- Expressions -------------------------------
 
     /// Returns a GreenId of a node with an Expr.* kind (see [syntax::node::ast::Expr])
@@ -1006,7 +1081,7 @@ impl<'a> Parser<'a> {
                 )
                 .into(),
             _ => self.create_and_report_missing::<WrappedArgList>(
-                ParserDiagnosticKind::MissingExpression,
+                ParserDiagnosticKind::MissingWrappedArgList,
             ),
         }
     }
@@ -2065,7 +2140,16 @@ impl<'a> Parser<'a> {
             return;
         }
         let terminal = self.take_raw();
+        self.append_skipped_token_to_pending_trivia(terminal, diagnostic_kind);
+    }
 
+    /// Appends the given terminal to the pending trivia and reports a diagnostic. Used for skipping
+    /// a taken ('take_raw') token.
+    fn append_skipped_token_to_pending_trivia(
+        &mut self,
+        terminal: LexerTerminal,
+        diagnostic_kind: ParserDiagnosticKind,
+    ) {
         let diag_start = self.offset.add_width(
             terminal
                 .leading_trivia
