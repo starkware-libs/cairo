@@ -262,7 +262,7 @@ pub fn compile_libfunc(libfunc: &str, refs: Vec<ReferenceExpression>) -> Reduced
         type_sizes: &type_sizes,
     };
 
-    let args: Vec<ReferenceValue> = zip_eq(refs.into_iter(), libfunc.param_signatures())
+    let args: Vec<ReferenceValue> = zip_eq(refs, libfunc.param_signatures())
         .map(|(expression, param)| ReferenceValue {
             expression,
             ty: param.ty.clone(),

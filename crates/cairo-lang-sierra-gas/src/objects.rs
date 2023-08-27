@@ -51,7 +51,7 @@ impl std::ops::Add for ConstCost {
 pub struct PreCost(pub OrderedHashMap<CostTokenType, i32>);
 impl PreCost {
     pub fn builtin(token_type: CostTokenType) -> Self {
-        Self(OrderedHashMap::from_iter(([(token_type, 1)]).into_iter()))
+        Self(OrderedHashMap::from_iter([(token_type, 1)]))
     }
 }
 

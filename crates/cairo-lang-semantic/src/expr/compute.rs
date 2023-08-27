@@ -1322,7 +1322,7 @@ fn maybe_compute_pattern_semantic(
                 ));
             }
             // Iterator of Option<Pattern?, for each field.
-            let pattern_options = zip_eq(patterns_ast.into_iter(), tys).map(|(pattern_ast, ty)| {
+            let pattern_options = zip_eq(patterns_ast, tys).map(|(pattern_ast, ty)| {
                 let ty = wrap_in_snapshots(ctx.db, ty, n_snapshots);
                 let pattern = compute_pattern_semantic(ctx, &pattern_ast, ty);
                 Ok(pattern.id)

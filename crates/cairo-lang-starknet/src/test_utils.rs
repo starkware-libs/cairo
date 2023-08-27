@@ -17,7 +17,7 @@ use crate::plugin::StarkNetPlugin;
 /// Returns a path to example contract that matches `name`.
 pub fn get_example_file_path(file_name: &str) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.extend(["test_data", file_name].into_iter());
+    path.extend(["test_data", file_name]);
     path
 }
 

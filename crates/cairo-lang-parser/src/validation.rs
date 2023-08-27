@@ -28,8 +28,9 @@ pub fn validate(
     diagnostics: &mut DiagnosticsBuilder<ParserDiagnostic>,
     file_id: FileId,
 ) -> Maybe<()> {
-    root.descendants(db).fold(Ok(()), |result, node| {
-        result.and(match node.kind(db) {
+    let mut result = Ok(());
+    for node in root.descendants(db) {
+        result = result.and(match node.kind(db) {
             SyntaxKind::TerminalLiteralNumber => {
                 let node = ast::TerminalLiteralNumber::from_syntax_node(db, node);
                 validate_literal_number(db, diagnostics, node, file_id)
@@ -46,8 +47,9 @@ pub fn validate(
             }
 
             _ => Ok(()),
-        })
-    })
+        });
+    }
+    result
 }
 
 /// Validate that the numeric literal is valid, after it is consumed by the parser.
