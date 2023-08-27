@@ -92,17 +92,17 @@ StatementList
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Missing token TerminalEq.
+error: Missing token TerminalEq while parsing a let statement.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a let statement.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:2:10
     let x += 5;
          ^

@@ -19,17 +19,17 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalMatchArrow.
+error: Missing token TerminalMatchArrow while parsing a match arm.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a match arm.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
 
-error: Missing token TerminalComma.
+error: Missing token TerminalComma while parsing a match expression.
  --> dummy_file.cairo:2:21
     match MyStruct{a: 1} {
                     ^
@@ -39,17 +39,17 @@ error: Skipped tokens. Expected: match arm.
     match MyStruct{a: 1} {
                     ^
 
-error: Missing token TerminalMatchArrow.
+error: Missing token TerminalMatchArrow while parsing a match arm.
  --> dummy_file.cairo:2:24
     match MyStruct{a: 1} {
                        ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a match arm.
  --> dummy_file.cairo:2:24
     match MyStruct{a: 1} {
                        ^
 
-error: Missing token TerminalUnderscore.
+error: Missing token TerminalUnderscore while parsing an enum pattern.
  --> dummy_file.cairo:8:19
       bool::False() => {}
                   ^

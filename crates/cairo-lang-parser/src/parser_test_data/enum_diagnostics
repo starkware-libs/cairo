@@ -9,7 +9,7 @@ enum MyEnum {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalComma.
+error: Missing token TerminalComma while parsing a variant list.
  --> dummy_file.cairo:2:6
     A(felt252),
      ^
@@ -19,7 +19,7 @@ error: Skipped tokens. Expected: variant.
     A(felt252),
      ^
 
-error: Missing token TerminalRBrace.
+error: Missing token TerminalRBrace while parsing an enum.
  --> dummy_file.cairo:2:14
     A(felt252),
              ^

@@ -11,17 +11,17 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalEq.
+error: Missing token TerminalEq while parsing a let statement.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a let statement.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:2:16
     let ref abc::def = 5;
                ^
@@ -31,22 +31,22 @@ error: Skipped tokens. Expected: statement.
     let ref abc::def = 5;
                ^^
 
-error: Missing token TerminalRBrace.
+error: Missing token TerminalRBrace while parsing a struct pattern.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing token TerminalEq.
+error: Missing token TerminalEq while parsing a let statement.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a let statement.
  --> dummy_file.cairo:3:14
     let A { x
              ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:3:14
     let A { x
              ^

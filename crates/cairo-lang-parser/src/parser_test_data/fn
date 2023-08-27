@@ -14,7 +14,7 @@ error: 'extern' is a reserved identifier.
 #[extern]
   ^****^
 
-error: Missing token TerminalIdentifier.
+error: Missing token TerminalIdentifier while parsing a parameter.
  --> dummy_file.cairo:3:22
 fn missing_id<T> (ref: Ref::<T>) { }
                      ^

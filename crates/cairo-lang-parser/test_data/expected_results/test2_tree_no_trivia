@@ -317,27 +317,27 @@
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
 --------------------
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a let statement.
  --> test2.cairo:5:12
     let z = ;
            ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a binary expression.
  --> test2.cairo:14:16
         if bla. 
                ^
 
-error: Missing token TerminalLBrace.
+error: Missing token TerminalLBrace while parsing an if expression.
  --> test2.cairo:14:16
         if bla. 
                ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a binary expression.
  --> test2.cairo:21:14
         x.a *+-. s.s * foo(1,3)
              ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing an unary expression.
  --> test2.cairo:21:16
         x.a *+-. s.s * foo(1,3)
                ^

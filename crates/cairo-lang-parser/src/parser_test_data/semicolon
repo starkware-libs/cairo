@@ -12,32 +12,32 @@ fn f() {
 }
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:2:16
     let x = 123
                ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:3:14
     let y = 4   let z = 5
              ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:3:26
     let y = 4   let z = 5
                          ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:4:14
     let y = 6 // comment
              ^
 
-error: Missing tokens. Expected an expression.
+error: Missing tokens. Expected an expression while parsing a binary expression.
  --> dummy_file.cairo:5:16
     let w = 7 +
                ^
 
-error: Missing token TerminalSemicolon.
+error: Missing token TerminalSemicolon while parsing a let statement.
  --> dummy_file.cairo:5:16
     let w = 7 +
                ^
