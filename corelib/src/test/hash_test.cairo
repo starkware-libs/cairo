@@ -1,4 +1,6 @@
 use test::test_utils::{assert_eq, assert_ne};
+use hash::{HashStateTrait, HashStateExTrait};
+use poseidon::PoseidonTrait;
 
 #[test]
 fn test_pedersen_hash() {
@@ -44,5 +46,45 @@ fn test_poseidon_hash_span() {
         @poseidon::poseidon_hash_span(array![1, 2, 3, 4].span()),
         @0x26e3ad8b876e02bc8a4fc43dad40a8f81a6384083cabffa190bcf40d512ae1d,
         'wrong result'
+    );
+}
+
+#[derive(Hash)]
+enum EnumForHash {
+    First,
+    Second: felt252,
+    Third: (felt252, felt252),
+}
+
+#[derive(Hash)]
+struct StructForHash {
+    first: (),
+    second: felt252,
+    third: (felt252, felt252),
+}
+
+#[test]
+fn test_user_defined_hash() {
+    assert_eq(
+        @PoseidonTrait::new().update_with(EnumForHash::First).finalize(),
+        @PoseidonTrait::new().update(0).finalize(),
+        'Bad hash of EnumForHash::First',
+    );
+    assert_eq(
+        @PoseidonTrait::new().update_with(EnumForHash::Second(5)).finalize(),
+        @PoseidonTrait::new().update(1).update(5).finalize(),
+        'Bad hash of EnumForHash::Second',
+    );
+    assert_eq(
+        @PoseidonTrait::new().update_with(EnumForHash::Third((6, 8))).finalize(),
+        @PoseidonTrait::new().update(2).update(6).update(8).finalize(),
+        'Bad hash of EnumForHash::Third',
+    );
+    assert_eq(
+        @PoseidonTrait::new()
+            .update_with(StructForHash { first: (), second: 10, third: (6, 17) })
+            .finalize(),
+        @PoseidonTrait::new().update(10).update(6).update(17).finalize(),
+        'Bad hash of StructForHash',
     );
 }
