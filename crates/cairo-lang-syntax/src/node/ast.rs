@@ -8468,6 +8468,7 @@ pub enum Item {
     Struct(ItemStruct),
     Enum(ItemEnum),
     TypeAlias(ItemTypeAlias),
+    InlineMacro(ItemInlineMacro),
     Missing(ItemMissing),
 }
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
@@ -8540,6 +8541,11 @@ impl From<ItemTypeAliasPtr> for ItemPtr {
         Self(value.0)
     }
 }
+impl From<ItemInlineMacroPtr> for ItemPtr {
+    fn from(value: ItemInlineMacroPtr) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemMissingPtr> for ItemPtr {
     fn from(value: ItemMissingPtr) -> Self {
         Self(value.0)
@@ -8605,6 +8611,11 @@ impl From<ItemTypeAliasGreen> for ItemGreen {
         Self(value.0)
     }
 }
+impl From<ItemInlineMacroGreen> for ItemGreen {
+    fn from(value: ItemInlineMacroGreen) -> Self {
+        Self(value.0)
+    }
+}
 impl From<ItemMissingGreen> for ItemGreen {
     fn from(value: ItemMissingGreen) -> Self {
         Self(value.0)
@@ -8640,6 +8651,9 @@ impl TypedSyntaxNode for Item {
             SyntaxKind::ItemStruct => Item::Struct(ItemStruct::from_syntax_node(db, node)),
             SyntaxKind::ItemEnum => Item::Enum(ItemEnum::from_syntax_node(db, node)),
             SyntaxKind::ItemTypeAlias => Item::TypeAlias(ItemTypeAlias::from_syntax_node(db, node)),
+            SyntaxKind::ItemInlineMacro => {
+                Item::InlineMacro(ItemInlineMacro::from_syntax_node(db, node))
+            }
             SyntaxKind::ItemMissing => Item::Missing(ItemMissing::from_syntax_node(db, node)),
             _ => panic!("Unexpected syntax kind {:?} when constructing {}.", kind, "Item"),
         }
@@ -8658,6 +8672,7 @@ impl TypedSyntaxNode for Item {
             Item::Struct(x) => x.as_syntax_node(),
             Item::Enum(x) => x.as_syntax_node(),
             Item::TypeAlias(x) => x.as_syntax_node(),
+            Item::InlineMacro(x) => x.as_syntax_node(),
             Item::Missing(x) => x.as_syntax_node(),
         }
     }
@@ -8681,6 +8696,7 @@ impl Item {
             SyntaxKind::ItemStruct => true,
             SyntaxKind::ItemEnum => true,
             SyntaxKind::ItemTypeAlias => true,
+            SyntaxKind::ItemInlineMacro => true,
             SyntaxKind::ItemMissing => true,
             _ => false,
         }
@@ -10429,6 +10445,100 @@ impl TypedSyntaxNode for ItemImpl {
     }
     fn stable_ptr(&self) -> Self::StablePtr {
         ItemImplPtr(self.node.0.stable_ptr)
+    }
+}
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ItemInlineMacro {
+    node: SyntaxNode,
+    children: Vec<SyntaxNode>,
+}
+impl ItemInlineMacro {
+    pub const INDEX_ATTRIBUTES: usize = 0;
+    pub const INDEX_NAME: usize = 1;
+    pub const INDEX_BANG: usize = 2;
+    pub const INDEX_ARGUMENTS: usize = 3;
+    pub const INDEX_SEMICOLON: usize = 4;
+    pub fn new_green(
+        db: &dyn SyntaxGroup,
+        attributes: AttributeListGreen,
+        name: TerminalIdentifierGreen,
+        bang: TerminalNotGreen,
+        arguments: WrappedArgListGreen,
+        semicolon: TerminalSemicolonGreen,
+    ) -> ItemInlineMacroGreen {
+        let children: Vec<GreenId> = vec![attributes.0, name.0, bang.0, arguments.0, semicolon.0];
+        let width = children.iter().copied().map(|id| db.lookup_intern_green(id).width()).sum();
+        ItemInlineMacroGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemInlineMacro,
+            details: GreenNodeDetails::Node { children, width },
+        }))
+    }
+}
+impl ItemInlineMacro {
+    pub fn attributes(&self, db: &dyn SyntaxGroup) -> AttributeList {
+        AttributeList::from_syntax_node(db, self.children[0].clone())
+    }
+    pub fn name(&self, db: &dyn SyntaxGroup) -> TerminalIdentifier {
+        TerminalIdentifier::from_syntax_node(db, self.children[1].clone())
+    }
+    pub fn bang(&self, db: &dyn SyntaxGroup) -> TerminalNot {
+        TerminalNot::from_syntax_node(db, self.children[2].clone())
+    }
+    pub fn arguments(&self, db: &dyn SyntaxGroup) -> WrappedArgList {
+        WrappedArgList::from_syntax_node(db, self.children[3].clone())
+    }
+    pub fn semicolon(&self, db: &dyn SyntaxGroup) -> TerminalSemicolon {
+        TerminalSemicolon::from_syntax_node(db, self.children[4].clone())
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroPtr(pub SyntaxStablePtrId);
+impl ItemInlineMacroPtr {
+    pub fn untyped(&self) -> SyntaxStablePtrId {
+        self.0
+    }
+    pub fn lookup(&self, db: &dyn SyntaxGroup) -> ItemInlineMacro {
+        ItemInlineMacro::from_syntax_node(db, self.0.lookup(db))
+    }
+}
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ItemInlineMacroGreen(pub GreenId);
+impl TypedSyntaxNode for ItemInlineMacro {
+    const OPTIONAL_KIND: Option<SyntaxKind> = Some(SyntaxKind::ItemInlineMacro);
+    type StablePtr = ItemInlineMacroPtr;
+    type Green = ItemInlineMacroGreen;
+    fn missing(db: &dyn SyntaxGroup) -> Self::Green {
+        ItemInlineMacroGreen(db.intern_green(GreenNode {
+            kind: SyntaxKind::ItemInlineMacro,
+            details: GreenNodeDetails::Node {
+                children: vec![
+                    AttributeList::missing(db).0,
+                    TerminalIdentifier::missing(db).0,
+                    TerminalNot::missing(db).0,
+                    WrappedArgList::missing(db).0,
+                    TerminalSemicolon::missing(db).0,
+                ],
+                width: TextWidth::default(),
+            },
+        }))
+    }
+    fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
+        let kind = node.kind(db);
+        assert_eq!(
+            kind,
+            SyntaxKind::ItemInlineMacro,
+            "Unexpected SyntaxKind {:?}. Expected {:?}.",
+            kind,
+            SyntaxKind::ItemInlineMacro
+        );
+        let children = node.children(db).collect();
+        Self { node, children }
+    }
+    fn as_syntax_node(&self) -> SyntaxNode {
+        self.node.clone()
+    }
+    fn stable_ptr(&self) -> Self::StablePtr {
+        ItemInlineMacroPtr(self.node.0.stable_ptr)
     }
 }
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

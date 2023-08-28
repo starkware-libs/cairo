@@ -21,7 +21,7 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
                     indent_by(4,
                     variants.iter().enumerate().map(|(idx, variant)| formatdoc!{"
                             {ty}::{variant}(x) => {{
-                                let state = hash::Hash::update_state(state, @{idx});
+                                let state = hash::Hash::update_state(state, {idx});
                                 hash::Hash::update_state(state, x)
                             }},",
                             variant=variant.name,
@@ -49,11 +49,12 @@ pub fn handle_hash(info: &DeriveInfo, stable_ptr: SyntaxStablePtrId, result: &mu
     let impl_additional_generics = info.generics.format_generics_with_trait_params_only(|t| {
         vec![format!("impl {t}Hash: Hash<{t}>"), format!("impl {t}Drop: Drop<{t}>")]
     });
+    let extra_comma = if impl_additional_generics.is_empty() { "" } else { ",\n    " };
     result.impls.push(formatdoc! {"
         impl {ty}Hash<
             __State,
             impl __SHashState: hash::HashStateTrait<__State>,
-            impl SDrop: Drop<__State>{impl_additional_generics}
+            impl SDrop: Drop<__State>{extra_comma}{impl_additional_generics}
         > of hash::Hash<{full_typename}, __State, __SHashState> {{
             #[inline(always)]
             fn update_state(state: __State, value: {full_typename}) -> __State {{

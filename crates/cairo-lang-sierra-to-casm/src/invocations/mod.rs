@@ -503,13 +503,12 @@ impl CompiledInvocationBuilder<'_> {
             },
         );
         let relocations = chain!(pre_instructions.relocations, branch_relocations).collect();
-        let output_expressions = branches.into_iter().zip_eq(branch_extractions.into_iter()).map(
-            |((state, _), (_, vars, _))| {
+        let output_expressions =
+            branches.into_iter().zip_eq(branch_extractions).map(|((state, _), (_, vars, _))| {
                 vars.iter().map(move |var_cells| ReferenceExpression {
                     cells: var_cells.iter().map(|cell| state.get_adjusted(*cell)).collect(),
                 })
-            },
-        );
+            });
         self.build(
             chain!(pre_instructions.instructions, instructions).collect(),
             relocations,

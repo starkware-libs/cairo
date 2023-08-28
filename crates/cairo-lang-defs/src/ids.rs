@@ -103,7 +103,7 @@ macro_rules! define_language_element_id_partial {
                         "{}({}::{})",
                         stringify!($short_id),
                         module_file_id.0.full_path(db),
-                        self.name(db)
+                        self.$name(db)
                     )
                 }
             }
@@ -115,7 +115,7 @@ macro_rules! define_language_element_id_partial {
             }
             $(
                 pub fn $name(&self, db: &dyn DefsGroup) -> SmolStr {
-                    db.$lookup(*self).name(db)
+                    db.$lookup(*self).$name(db)
                 }
             )?
         }

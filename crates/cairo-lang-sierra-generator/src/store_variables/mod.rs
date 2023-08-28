@@ -481,17 +481,11 @@ impl<'a> AddStoreVariableStatements<'a> {
     /// Returns the current state, assuming the current statement is reachable.
     /// Fails otherwise.
     fn state(&mut self) -> &mut State {
-        if matches!(self.state_opt.as_mut(), None) {
-            return self.state_opt.as_mut().unwrap();
-        }
         self.state_opt.as_mut().unwrap()
     }
 
     /// Same as [Self::state], except that the result is not `mut`.
     fn state_ref(&self) -> &State {
-        if matches!(self.state_opt.as_ref(), None) {
-            return self.state_opt.as_ref().unwrap();
-        }
         self.state_opt.as_ref().unwrap()
     }
 

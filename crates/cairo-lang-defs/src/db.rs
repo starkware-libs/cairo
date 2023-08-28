@@ -8,7 +8,7 @@ use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
-use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
@@ -454,6 +454,16 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
+                ast::Item::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
+                    module_file_id,
+                    PluginDiagnostic {
+                        stable_ptr: inline_macro_ast.stable_ptr().untyped(),
+                        message: format!(
+                            "Unknown inline item macro: '{}'.",
+                            inline_macro_ast.name(db.upcast()).text(db.upcast())
+                        ),
+                    },
+                )),
                 ast::Item::Missing(_) => {}
             }
         }

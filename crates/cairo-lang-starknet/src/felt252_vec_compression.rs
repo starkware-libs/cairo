@@ -16,11 +16,10 @@ pub fn compress<Result: Extend<BigUintAsHex>>(values: &[BigUintAsHex], result: &
     // Limiting the number of possible encodings by working only on powers of 2, as well as only
     // starting at 256 (or 8 bits per code word).
     let padded_code_size = std::cmp::max(256, code.len()).next_power_of_two();
-    result.extend([BigUintAsHex { value: BigUint::from(code.len()) }].into_iter());
-    result
-        .extend([BigUintAsHex { value: BigUint::from(padded_code_size - code.len()) }].into_iter());
+    result.extend([BigUintAsHex { value: BigUint::from(code.len()) }]);
+    result.extend([BigUintAsHex { value: BigUint::from(padded_code_size - code.len()) }]);
     result.extend(code.keys().map(|value| BigUintAsHex { value: (*value).clone() }));
-    result.extend([BigUintAsHex { value: BigUint::from(values.len()) }].into_iter());
+    result.extend([BigUintAsHex { value: BigUint::from(values.len()) }]);
     let words_per_felt = words_per_felt(padded_code_size);
     for values in values.chunks(words_per_felt) {
         let mut packed_value = BigUint::from(0u64);

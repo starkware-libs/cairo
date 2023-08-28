@@ -158,7 +158,7 @@ fn get_function_signature(
         let panic_info = PanicSignatureInfo::new(db.upcast(), &signature);
         ret_types.push(db.get_concrete_type_id(panic_info.panic_ty)?);
     } else {
-        ret_types.extend(extra_rets.into_iter());
+        ret_types.extend(extra_rets);
         ret_types.push(db.get_concrete_type_id(signature.return_type)?);
     }
 
