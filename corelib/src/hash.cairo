@@ -1,5 +1,4 @@
 use traits::Into;
-use starknet::ContractAddress;
 
 /// A trait for hash state accumulators.
 trait HashStateTrait<S> {
@@ -100,15 +99,6 @@ impl HashU128<
 > of Hash<u128, S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: u128) -> S {
-        state.update(value.into())
-    }
-}
-
-impl HashContractAddress<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<starknet::ContractAddress, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: ContractAddress) -> S {
         state.update(value.into())
     }
 }
