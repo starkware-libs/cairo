@@ -35,7 +35,7 @@ fn main() {
 Note: the snapshot operator `@` (See the docs about snapshot) is not considered moving a value.
 
 == Clone
-Sometime a value cannot not be trivially copied, but we can still use code to build a of copy it.
+Sometime a value can't be trivially copied, but we can still use code to build a of copy it.
 For example, a value containing an `Array` cannot be copied, but we can still clone it by cloning
 the array it contains with `.clone()`.
 This can be done by implementing or deriving the `Clone` trait. The derived implementation requires
