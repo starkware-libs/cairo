@@ -358,6 +358,11 @@ impl BUint of BTrait<u32> {}
 fn bar<T, S, impl X: ATrait<T>, impl Y: BTrait<S>>(){}
 
 //! > expected_diagnostics
+error: Missing tokens. Expected a type expression.
+ --> lib.cairo:15:13
+    bar::<S:>();
+            ^
+
 error: Unknown generic parameter `G`.
  --> lib.cairo:9:20
     bar::<felt252, G: felt252>();
@@ -387,3 +392,13 @@ error: Generic argument `T` is out of order.
  --> lib.cairo:14:23
     bar::<S: felt252, T: u32>();
                       ^****^
+
+error: Unknown type.
+ --> lib.cairo:15:13
+    bar::<S:>();
+            ^
+
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo:15:5
+    bar::<S:>();
+    ^*^
