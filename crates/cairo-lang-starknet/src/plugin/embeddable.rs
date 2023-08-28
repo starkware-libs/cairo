@@ -23,8 +23,6 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             remove_original_item: false,
         };
     };
-    let mut data = EntryPointsGenerationData::default();
-    let mut diagnostics = vec![];
     let generic_params = item_impl.generic_params(db);
     let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
     let (is_valid_params, generic_args, generic_params_node) = match &generic_params {
@@ -78,12 +76,19 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         }
     };
     if !is_valid_params {
-        diagnostics.push(PluginDiagnostic {
-            stable_ptr: generic_params.stable_ptr().untyped(),
-            message: "First generic parameter of an embeddable impl should be `TContractState`."
-                .to_string(),
-        });
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                stable_ptr: generic_params.stable_ptr().untyped(),
+                message: "First generic parameter of an embeddable impl should be \
+                          `TContractState`."
+                    .to_string(),
+            }],
+            remove_original_item: false,
+        };
     };
+    let mut data = EntryPointsGenerationData::default();
+    let mut diagnostics = vec![];
     for item in body.items(db).elements(db) {
         let ast::ImplItem::Function(item_function) = item else {
             continue;
