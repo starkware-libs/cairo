@@ -40,10 +40,42 @@ enum TwoVariantEnum {
 #[derive(Copy, Drop)]
 extern type ExternType;
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[derive(Copy, Default, Drop, Hash)]
 struct A{}
 
+#[derive(Copy, Default, Drop, Hash)]
+struct B{}
+
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+struct TwoMemberStruct {
+    a: A,
+    b: B,
+}
+
+#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
+struct GenericStruct<T> {
+    a: T,
+}
+
+
+trait SomeTrait<T, U> {}
+
+#[derive(Drop, Clone, PartialEq, Serde, Hash)]
+struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
+    a: T,
+    b: U,
+}
+
+#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
+enum TwoVariantEnum {
+    First: A,
+    #[default]
+    Second: B,
+}
+
+#[derive(Copy, Drop)]
+extern type ExternType;
 impl ACopy of Copy::<A>;
 impl ADefault of Default::<A> {
     fn default() -> A {
@@ -64,11 +96,6 @@ impl AHash<
         state
     }
 }
-
-
-#[derive(Copy, Default, Drop, Hash)]
-struct B{}
-
 impl BCopy of Copy::<B>;
 impl BDefault of Default::<B> {
     fn default() -> B {
@@ -89,14 +116,6 @@ impl BHash<
         state
     }
 }
-
-
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
-struct TwoMemberStruct {
-    a: A,
-    b: B,
-}
-
 impl TwoMemberStructClone of Clone::<TwoMemberStruct> {
     fn clone(self: @TwoMemberStruct) -> TwoMemberStruct {
         TwoMemberStruct {
@@ -160,13 +179,6 @@ impl TwoMemberStructSerde of Serde::<TwoMemberStruct> {
         })
     }
 }
-
-
-#[derive(Copy, Destruct, PanicDestruct, Default, Hash)]
-struct GenericStruct<T> {
-    a: T,
-}
-
 impl GenericStructCopy<T, impl TCopy: Copy<T>> of Copy::<GenericStruct<T>>;
 impl GenericStructDestruct<T, impl TDestruct: Destruct<T>> of Destruct::<GenericStruct<T>> {
     fn destruct(self: GenericStruct<T>) nopanic {
@@ -199,18 +211,6 @@ impl GenericStructHash<
         state
     }
 }
-
-
-
-trait SomeTrait<T, U> {}
-
-
-#[derive(Drop, Clone, PartialEq, Serde, Hash)]
-struct TwoMemberGenericStruct<T, U, impl USomeTrait: SomeTrait<U, T>> {
-    a: T,
-    b: U,
-}
-
 impl TwoMemberGenericStructDrop<T, U, impl USomeTrait: SomeTrait<U, T>, impl TDrop: Drop<T>, impl UDrop: Drop<U>> of Drop::<TwoMemberGenericStruct<T, U, USomeTrait>>;
 impl TwoMemberGenericStructClone<T, U, impl USomeTrait: SomeTrait<U, T>, impl TClone: Clone<T>, impl TDestruct: Destruct<T>, impl UClone: Clone<U>, impl UDestruct: Destruct<U>> of Clone::<TwoMemberGenericStruct<T, U, USomeTrait>> {
     fn clone(self: @TwoMemberGenericStruct<T, U, USomeTrait>) -> TwoMemberGenericStruct<T, U, USomeTrait> {
@@ -254,15 +254,6 @@ impl TwoMemberGenericStructHash<
         state
     }
 }
-
-
-#[derive(Clone, Default, Destruct, Hash, PanicDestruct, PartialEq, Serde)]
-enum TwoVariantEnum {
-    First: A,
-    #[default]
-    Second: B,
-}
-
 impl TwoVariantEnumClone of Clone::<TwoVariantEnum> {
     fn clone(self: @TwoVariantEnum) -> TwoVariantEnum {
         match self {
@@ -345,10 +336,6 @@ impl TwoVariantEnumSerde of Serde::<TwoVariantEnum> {
         )
     }
 }
-
-
-#[derive(Copy, Drop)]
-extern type ExternType;
 impl ExternTypeCopy of Copy::<ExternType>;
 impl ExternTypeDrop of Drop::<ExternType>;
 
@@ -391,33 +378,27 @@ enum TooManyDefaultValues {
     Second,
 }
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[derive()]
 struct EmptyArgs{}
-
 
 #[derive(1)]
 struct NotPath{}
 
-
 #[derive(Unsupported)]
 struct UnsupportedTrait{}
-
 
 #[derive(long::path)]
 struct NonSimplePath{}
 
-
 #[derive(Clone)]
 extern type NotClonable;
-
 
 #[derive(Default)]
 enum NoDefaultValue {
     First,
     Second,
 }
-
 
 #[derive(Default)]
 enum TooManyDefaultValues {
@@ -434,26 +415,26 @@ impl TooManyDefaultValuesDefault of Default::<TooManyDefaultValues> {
 
 //! > expected_diagnostics
 error: Expected args.
- --> dummy_file.cairo:1:9
+ --> lib.cairo:1:9
 #[derive()]
         ^^
 
 error: Expected path.
- --> dummy_file.cairo:4:10
+ --> lib.cairo:4:10
 #[derive(1)]
          ^
 
 error: Unsupported trait for derive for extern types.
- --> dummy_file.cairo:13:10
+ --> lib.cairo:13:10
 #[derive(Clone)]
          ^***^
 
 error: derive `Default` for enum only supported with a default variant.
- --> dummy_file.cairo:16:10
+ --> lib.cairo:16:10
 #[derive(Default)]
          ^*****^
 
 error: Multiple variants annotated with `#[default]`
- --> dummy_file.cairo:26:5
+ --> lib.cairo:26:5
     #[default]
     ^********^

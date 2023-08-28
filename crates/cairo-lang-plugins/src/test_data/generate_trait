@@ -30,7 +30,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     }
 }
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
@@ -87,7 +87,7 @@ test_expand_plugin(allow_diagnostics: false)
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
 #[some(attr)]
@@ -113,7 +113,7 @@ impl SomeImpl of SomeTrait {
     }
 }
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[generate_trait]
 impl SomeImpl of SomeTrait {
     fn foo() {}
@@ -142,7 +142,7 @@ impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
 }
 
 #[generate_trait]
-impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+impl ImplNotMAtchingGenerics<T> of TraitNotMatchingGenerics<S> {
 }
 
 #[generate_trait]
@@ -151,31 +151,28 @@ impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 
 //! > expected_diagnostics
 error: Generated trait must have a single element path.
- --> dummy_file.cairo:2:29
+ --> lib.cairo:2:29
 impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
                             ^**********************^
 
 error: Generated trait must have generic args matching the impl's generic params.
- --> dummy_file.cairo:6:36
-impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+ --> lib.cairo:6:36
+impl ImplNotMAtchingGenerics<T> of TraitNotMatchingGenerics<S> {
                                    ^*************************^
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 #[generate_trait]
 impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
 }
 
-
 #[generate_trait]
-impl ImplNotMAtchingGenerics<T> of TraitNotMAtchingGenerics<S> {
+impl ImplNotMAtchingGenerics<T> of TraitNotMatchingGenerics<S> {
 }
-
-trait TraitNotMAtchingGenerics<T>  {
-}
-
 
 #[generate_trait]
 impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
+}
+trait TraitNotMatchingGenerics<T>  {
 }
 trait OtherTrait<T>  {
 }
@@ -193,9 +190,8 @@ trait T {}
 #[generate_trait]
 impl MyImpl<impl I: T> of MyTrait<I>;
 
-//! > generated_cairo_code
+//! > expanded_cairo_code
 trait T {}
-
 
 #[generate_trait]
 impl MyImpl<impl I: T> of MyTrait<I>;
