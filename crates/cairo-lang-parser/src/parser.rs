@@ -1919,7 +1919,7 @@ impl<'a> Parser<'a> {
                 let expr = if self.peek().kind == SyntaxKind::TerminalUnderscore {
                     self.take::<TerminalUnderscore>().into()
                 } else {
-                    let expr = self.try_parse_type_expr()?;
+                    let expr = self.parse_type_expr();
                     GenericArgValueExpr::new_green(self.db, expr).into()
                 };
                 return Ok(GenericArgNamed::new_green(self.db, argname, colon, expr).into());

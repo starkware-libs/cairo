@@ -359,6 +359,7 @@ cairo_lang_test_utils::test_file_test!(
         array: "array",
         attrs: "attrs",
         inline_macro: "inline_macro",
+        generics: "generics",
     },
     test_partial_parser_tree
 );
