@@ -17,7 +17,9 @@ use crate::ids::{
 ///
 /// Always prefer using this struct as saved artifacts instead of inner ones.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "version")]
 pub enum VersionedProgram {
+    #[serde(rename = "1")]
     V1(Program),
 }
 
