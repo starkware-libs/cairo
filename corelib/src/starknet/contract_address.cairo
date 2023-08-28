@@ -1,5 +1,6 @@
 use zeroable::Zeroable;
 use serde::Serde;
+use hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
 extern type ContractAddress;
@@ -58,5 +59,14 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     #[inline(always)]
     fn ne(lhs: @ContractAddress, rhs: @ContractAddress) -> bool {
         !(lhs == rhs)
+    }
+}
+
+impl HashContractAddress<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<starknet::ContractAddress, S, SHashState> {
+    #[inline(always)]
+    fn update_state(state: S, value: ContractAddress) -> S {
+        state.update(value.into())
     }
 }

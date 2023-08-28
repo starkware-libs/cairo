@@ -1,5 +1,6 @@
 use zeroable::Zeroable;
 use serde::Serde;
+use hash::{Hash, HashStateTrait};
 
 #[derive(Copy, Drop)]
 extern type ClassHash;
@@ -56,5 +57,13 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
     #[inline(always)]
     fn ne(lhs: @ClassHash, rhs: @ClassHash) -> bool {
         !(lhs == rhs)
+    }
+}
+impl HashClassHash<
+    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+> of Hash<starknet::ClassHash, S, SHashState> {
+    #[inline(always)]
+    fn update_state(state: S, value: ClassHash) -> S {
+        state.update(value.into())
     }
 }
