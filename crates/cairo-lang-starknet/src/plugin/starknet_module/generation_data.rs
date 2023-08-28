@@ -35,7 +35,7 @@ pub struct ComponentGenerationData {
 impl ComponentGenerationData {
     pub fn into_rewrite_node(self) -> RewriteNode {
         RewriteNode::interpolate_patched(
-            "$common$\n$specific$",
+            "$common$\n\n$specific$",
             [
                 ("common".to_string(), self.common.into_rewrite_node()),
                 ("specific".to_string(), self.specific.into_rewrite_node()),

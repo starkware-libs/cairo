@@ -15,11 +15,19 @@ use crate::plugin::storage::handle_storage_struct;
 /// Accumulated data specific for component generation.
 #[derive(Default)]
 pub struct ComponentSpecificGenerationData {
+    has_component_trait: RewriteNode,
     generated_impls: Vec<RewriteNode>,
 }
 impl ComponentSpecificGenerationData {
     pub fn into_rewrite_node(self) -> RewriteNode {
-        RewriteNode::new_modified(self.generated_impls)
+        RewriteNode::interpolate_patched(
+            "$has_component_trait$\n\n$generated_impls$",
+            [
+                ("has_component_trait".to_string(), self.has_component_trait),
+                ("generated_impls".to_string(), RewriteNode::new_modified(self.generated_impls)),
+            ]
+            .into(),
+        )
     }
 }
 
@@ -31,6 +39,7 @@ pub(super) fn generate_component_specific_code(
     body: &ast::ModuleBody,
 ) -> RewriteNode {
     let mut generation_data = ComponentGenerationData { common: common_data, ..Default::default() };
+    generate_has_component_trait_code(&mut generation_data.specific);
     for item in body.items(db).elements(db) {
         handle_component_item(db, diagnostics, &item, &mut generation_data);
     }
@@ -358,4 +367,21 @@ fn handle_component_embeddable_as_impl_item(
     );
 
     Some((trait_function, impl_function))
+}
+
+/// Generates the code of the `HasComponent` trait inside a Starknet component.
+fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData) {
+    data.has_component_trait = RewriteNode::Text(
+        indoc!(
+            "
+            trait HasComponent<TContractState> {
+                fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+                fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+                fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+                fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+                fn emit(ref self: ComponentState<TContractState>, event: Event);
+            }"
+        )
+        .to_string(),
+    );
 }
