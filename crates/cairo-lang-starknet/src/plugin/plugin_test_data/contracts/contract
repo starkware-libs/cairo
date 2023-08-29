@@ -265,6 +265,7 @@ fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;

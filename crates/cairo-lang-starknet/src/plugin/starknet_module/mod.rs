@@ -9,12 +9,13 @@ use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
+use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
+use super::consts::COMPONENT_INLINE_MACRO;
 use super::events::is_starknet_event;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
@@ -152,12 +153,8 @@ pub(super) fn handle_module_by_storage(
     db: &dyn SyntaxGroup,
     struct_ast: ast::ItemStruct,
 ) -> Option<PluginResult> {
-    let module_node = struct_ast.as_syntax_node().parent()?.parent()?.parent()?;
-    if module_node.kind(db) != SyntaxKind::ItemModule {
-        return None;
-    }
-    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
-    let module_kind = StarknetModuleKind::from_module(db, &module_ast)?;
+    let (module_ast, module_kind) =
+        grand_grand_parent_starknet_module(struct_ast.as_syntax_node(), db)?;
 
     let body = extract_matches!(module_ast.body(db), MaybeModuleBody::Some);
     let mut diagnostics = vec![];
@@ -170,6 +167,7 @@ pub(super) fn handle_module_by_storage(
     for item in body.items(db).elements(db) {
         // Skip elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
+            || matches!(&item, ast::Item::InlineMacro(item) if item.name(db).text(db) == COMPONENT_INLINE_MACRO)
         {
             continue;
         }
@@ -256,4 +254,21 @@ fn maybe_add_extra_use(
     } {
         extra_uses.entry(ident.text(db)).or_insert_with_key(|ident| format!("super::{}", ident));
     }
+}
+
+/// If the grand grand parent of the given item is a starknet module, returns its kind
+/// (contract/component) and its ast.
+fn grand_grand_parent_starknet_module(
+    item_node: SyntaxNode,
+    db: &dyn SyntaxGroup,
+) -> Option<(ast::ItemModule, StarknetModuleKind)> {
+    // Get the containing module node. The parent is the item list, the grand parent is the module
+    // body, and the grand grand parent is the module.
+    let module_node = item_node.parent()?.parent()?.parent()?;
+    if module_node.kind(db) != SyntaxKind::ItemModule {
+        return None;
+    }
+    let module_ast = ast::ItemModule::from_syntax_node(db, module_node);
+    let module_kind = StarknetModuleKind::from_module(db, &module_ast)?;
+    Some((module_ast, module_kind))
 }

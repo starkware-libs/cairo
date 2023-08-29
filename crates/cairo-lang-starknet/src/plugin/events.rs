@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
-use super::consts::{EVENT_ATTR, EVENT_TYPE_NAME};
+use super::consts::{EVENT_ATTR, EVENT_TYPE_NAME, NESTED_ATTR};
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 
@@ -134,7 +134,7 @@ fn get_field_kind_for_member(
     member: &ast::Member,
     default: EventFieldKind,
 ) -> EventFieldKind {
-    let is_nested = member.has_attr(db, "nested");
+    let is_nested = member.has_attr(db, NESTED_ATTR);
     let is_key = member.has_attr(db, "key");
     let is_serde = member.has_attr(db, "serde");
 
@@ -168,7 +168,7 @@ fn get_field_kind_for_variant(
     variant: &ast::Variant,
     default: EventFieldKind,
 ) -> EventFieldKind {
-    let is_nested = variant.has_attr(db, "nested");
+    let is_nested = variant.has_attr(db, NESTED_ATTR);
     let is_key = variant.has_attr(db, "key");
     let is_serde = variant.has_attr(db, "serde");
 

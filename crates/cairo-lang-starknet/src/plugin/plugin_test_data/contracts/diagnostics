@@ -79,6 +79,7 @@ const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -209,6 +210,7 @@ fn __wrapper_invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt2
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -313,6 +315,7 @@ const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -514,6 +517,7 @@ fn __wrapper_foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -647,6 +651,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -767,6 +772,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -895,6 +901,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -1045,6 +1052,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -1239,6 +1247,7 @@ fn __wrapper___execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -1387,6 +1396,7 @@ const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -1566,6 +1576,7 @@ const TEST_CLASS_HASH: felt252 = 0x271c051b9d25373bc88ddfddfb1c29cc601d7014c5343
 
     mod __constructor {
     }
+
 
 
 impls:
@@ -1750,6 +1761,7 @@ const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18c
 
     mod __constructor {
     }
+
 
 
 generate_trait:
@@ -1987,6 +1999,7 @@ fn __wrapper_foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     }
 
 
+
 generate_trait:
 
 trait ATrait {
@@ -2117,6 +2130,7 @@ const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71d
     }
 
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -2227,6 +2241,7 @@ const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b08175
 
     mod __constructor {
     }
+
 
 
 impls:
