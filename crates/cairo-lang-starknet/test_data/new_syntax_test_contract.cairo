@@ -10,11 +10,16 @@ trait ICounterContract<TContractState> {
     fn get_counter(self: @TContractState) -> u128;
 }
 
+
+#[derive(Drop, starknet::Event)]
+struct OutOfScopeEvent {}
+
 #[starknet::contract]
 mod counter_contract {
     use starknet::ContractAddress;
     use super::{
-        IOtherContractDispatcher, IOtherContractDispatcherTrait, IOtherContractLibraryDispatcher
+        IOtherContractDispatcher, IOtherContractDispatcherTrait, IOtherContractLibraryDispatcher,
+        OutOfScopeEvent,
     };
 
     #[storage]
@@ -27,7 +32,8 @@ mod counter_contract {
     #[derive(Drop, starknet::Event)]
     enum Event {
         CounterIncreased: CounterIncreased,
-        CounterDecreased: CounterDecreased
+        CounterDecreased: CounterDecreased,
+        OutOfScopeEvent: OutOfScopeEvent
     }
 
     #[derive(Drop, starknet::Event)]
