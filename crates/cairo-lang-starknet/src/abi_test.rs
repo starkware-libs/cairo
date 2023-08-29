@@ -208,7 +208,7 @@ fn test_abi_failure() {
     let module_id = setup_test_module(
         db,
         indoc! {"
-          #[derive(Drop, starknet::Event)]
+          #[derive(Drop)]
           struct A {
           }
 
