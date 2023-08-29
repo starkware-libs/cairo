@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Ok;
 use cairo_lang_compiler::project::check_compiler_path;
-use cairo_lang_test_runner::TestRunner;
+use cairo_lang_test_runner::{TestRunConfig, TestRunner};
 use clap::Parser;
 
 /// Command line args parser.
@@ -37,13 +37,13 @@ fn main() -> anyhow::Result<()> {
     // Check if args.path is a file or a directory.
     check_compiler_path(args.single_file, &args.path)?;
 
-    let runner = TestRunner::new(
-        &args.path,
-        &args.filter,
-        args.include_ignored,
-        args.ignored,
-        args.starknet,
-    )?;
+    let config = TestRunConfig {
+        filter: args.filter,
+        ignored: args.ignored,
+        include_ignored: args.include_ignored,
+    };
+
+    let runner = TestRunner::new(&args.path, args.starknet, config)?;
     runner.run()?;
 
     Ok(())

@@ -37,6 +37,7 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -46,9 +47,7 @@ mod test_config;
 
 pub struct TestRunner {
     compiler: TestCompiler,
-    filter: String,
-    include_ignored: bool,
-    ignored: bool,
+    config: TestRunConfig,
 }
 
 impl TestRunner {
@@ -61,58 +60,42 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
-    pub fn new(
-        path: &Path,
-        filter: &str,
-        include_ignored: bool,
-        ignored: bool,
-        starknet: bool,
-    ) -> Result<Self> {
+    pub fn new(path: &Path, starknet: bool, config: TestRunConfig) -> Result<Self> {
         let compiler = TestCompiler::try_new(path, starknet)?;
-        Ok(Self { compiler, filter: filter.into(), include_ignored, ignored })
+        Ok(Self { compiler, config })
     }
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
-        let runner = TestCompilationRunner::new(
-            self.compiler.build()?,
-            self.filter.as_str(),
-            self.include_ignored,
-            self.ignored,
-        );
+        let runner = PrecompiledTestRunner::new(self.compiler.build()?, self.config.clone());
         runner.run()
     }
 }
 
-pub struct TestCompilationRunner {
+pub struct PrecompiledTestRunner {
     pub compiled: TestCompilation,
-    pub filter: String,
-    pub include_ignored: bool,
-    pub ignored: bool,
+    pub config: TestRunConfig,
 }
 
-impl TestCompilationRunner {
+impl PrecompiledTestRunner {
     /// Configure a new compiled test runner
     ///
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
-    pub fn new(
-        compiled: TestCompilation,
-        filter: &str,
-        include_ignored: bool,
-        ignored: bool,
-    ) -> Self {
-        Self { filter: filter.into(), include_ignored, ignored, compiled }
+    /// * `config` - Test run configuration
+    pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
+        Self { compiled, config }
     }
 
     /// Execute preconfigured test execution.
     pub fn run(self) -> Result<Option<TestsSummary>> {
-        let (compiled, filtered_out) =
-            filter_test_cases(self.compiled, self.include_ignored, self.ignored, self.filter);
+        let (compiled, filtered_out) = filter_test_cases(
+            self.compiled,
+            self.config.include_ignored,
+            self.config.ignored,
+            self.config.filter,
+        );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             compiled.named_tests,
@@ -160,6 +143,14 @@ impl TestCompilationRunner {
             );
         }
     }
+}
+
+/// Tests run configuration.
+#[derive(Clone, Debug)]
+pub struct TestRunConfig {
+    pub filter: String,
+    pub include_ignored: bool,
+    pub ignored: bool,
 }
 
 /// The test cases compiler.
@@ -287,11 +278,12 @@ pub fn compile_test_prepared_db(
     Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TestCompilation {
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    pub named_tests: Vec<(String, TestConfig)>,
+    pub sierra_program: Program,
+    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 }
 
 pub fn filter_test_cases(

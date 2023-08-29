@@ -1,5 +1,6 @@
 use convert_case::Casing;
 use itertools::chain;
+use serde::{Deserialize, Serialize};
 
 use super::int::unsigned128::Uint128Type;
 // Module providing the gas related extensions.
@@ -135,7 +136,7 @@ impl NoGenericArgsGenericLibfunc for GetAvailableGasLibfunc {
 
 /// Represents different type of costs.
 /// Note that if you add a type here you should update 'iter_precost'
-#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostTokenType {
     /// A compile time known cost unit.
     Const,
