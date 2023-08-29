@@ -37,6 +37,7 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -44,6 +45,10 @@ use crate::test_config::{PanicExpectation, TestExpectation};
 pub mod plugin;
 mod test_config;
 
+#[cfg(test)]
+mod test;
+
+/// Compile and run tests.
 pub struct TestRunner {
     compiler: TestCompiler,
     config: TestRunConfig,
@@ -82,9 +87,7 @@ impl CompiledTestRunner {
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
+    /// * `config` - Test run configuration
     pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
         Self { compiled, config }
     }
@@ -209,6 +212,17 @@ impl TestCompiler {
     }
 }
 
+/// Runs Cairo compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `starknet` - Add the starknet contracts to the compiled tests.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
+///   order to obtain [`CrateId`] from its name.
+/// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
+/// # Returns
+/// * `Ok(TestCompilation)` - The compiled test cases with metadata.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
     starknet: bool,
@@ -279,13 +293,78 @@ pub fn compile_test_prepared_db(
     Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
 }
 
+/// Compiled test cases.
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TestCompilation {
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    #[serde(
+        serialize_with = "serialize_contracts_info",
+        deserialize_with = "deserialize_contracts_info"
+    )]
+    pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    #[serde(
+        serialize_with = "serialize_function_costs",
+        deserialize_with = "deserialize_function_costs"
+    )]
+    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub named_tests: Vec<(String, TestConfig)>,
+    pub sierra_program: Program,
 }
 
+fn serialize_contracts_info<S>(
+    v: &OrderedHashMap<Felt252, ContractInfo>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    v.iter()
+        .map(|(felt, contract)| (felt.clone(), contract.clone()))
+        .collect_vec()
+        .serialize(serializer)
+}
+
+fn deserialize_contracts_info<'a, D>(
+    deserializer: D,
+) -> Result<OrderedHashMap<Felt252, ContractInfo>, D::Error>
+where
+    D: Deserializer<'a>,
+{
+    Ok(Vec::<(Felt252, ContractInfo)>::deserialize(deserializer)?.into_iter().collect())
+}
+
+fn serialize_function_costs<S>(
+    v: &OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    v.iter()
+        .map(|(func_id, costs)| (func_id.clone(), costs.clone()))
+        .collect_vec()
+        .serialize(serializer)
+}
+
+fn deserialize_function_costs<'a, D>(
+    deserializer: D,
+) -> Result<OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>, D::Error>
+where
+    D: Deserializer<'a>,
+{
+    Ok(Vec::<(FunctionId, OrderedHashMap<CostTokenType, i32>)>::deserialize(deserializer)?
+        .into_iter()
+        .collect())
+}
+
+/// Filter compiled test cases with user provided arguments.
+///
+/// # Arguments
+/// * `compiled` - Compiled test cases with metadata.
+/// * `include_ignored` - Include ignored tests as well.
+/// * `ignored` - Run ignored tests only.l
+/// * `filter` - Include only tests containing the filter string.
+/// # Returns
+/// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
 pub fn filter_test_cases(
     compiled: TestCompilation,
     include_ignored: bool,

@@ -24,8 +24,9 @@ use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs}
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::chain;
+use itertools::{chain, Itertools};
 use num_bigint::BigUint;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use sha3::{Digest, Keccak256};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -289,13 +290,44 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
     /// Sierra functions of the external functions.
+    #[serde(
+        serialize_with = "serialize_entry_points",
+        deserialize_with = "deserialize_entry_points"
+    )]
     pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
+    #[serde(
+        serialize_with = "serialize_entry_points",
+        deserialize_with = "deserialize_entry_points"
+    )]
     pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
+}
+
+fn serialize_entry_points<S>(
+    v: &OrderedHashMap<Felt252, FunctionId>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    v.iter()
+        .map(|(ext_id, sierra_id)| (ext_id.clone(), sierra_id.clone()))
+        .collect_vec()
+        .serialize(serializer)
+}
+
+fn deserialize_entry_points<'a, D>(
+    deserializer: D,
+) -> Result<OrderedHashMap<Felt252, FunctionId>, D::Error>
+where
+    D: Deserializer<'a>,
+{
+    Ok(Vec::<(Felt252, FunctionId)>::deserialize(deserializer)?.into_iter().collect())
 }
 
 /// Returns the list of functions in a given module.
