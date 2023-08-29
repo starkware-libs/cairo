@@ -18,6 +18,13 @@ pub enum DeserializationError {
     #[error("PathError")]
     PathError,
 }
+
+#[derive(thiserror::Error, Debug)]
+pub enum CrateRootError {
+    #[error("Couldn't handle {path}: Not a legal path.")]
+    BadPath { path: String },
+}
+
 const PROJECT_FILE_NAME: &str = "cairo_project.toml";
 
 /// Cairo project config, including its file content and metadata about the file.
@@ -32,7 +39,71 @@ pub struct ProjectConfig {
 /// Contents of a Cairo project config file.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectConfigContent {
-    pub crate_roots: OrderedHashMap<SmolStr, PathBuf>,
+    pub crate_roots: OrderedHashMap<SmolStr, CrateRootPath>,
+}
+
+/// A crate root specification.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CrateRootPath {
+    /// Crate root specified as path, eg. `<crate_name> = "<crate_root>"`.
+    Simple(PathBuf),
+    /// Detailed crate root specification as a table, eg. `<crate_name> = { path = "<crate_path>"
+    /// }`. Crate root must be a directory that contains a `lib.cairo` file.
+    Detailed(DetailedCrateRootPath),
+    /// Crate entrypoint specification as a table, eg. `<crate_name> = { entrypoint =
+    /// "<entrypoint_path>" }`. Entrypoint must be a file.
+    Entrypoint(DetailedEntrypointPath),
+}
+
+/// A detailed crate root specification.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DetailedCrateRootPath {
+    /// Crate root path.
+    pub path: PathBuf,
+}
+
+/// A detailed crate entrypoint specification.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DetailedEntrypointPath {
+    /// Crate entrypoint file path.
+    pub entrypoint: PathBuf,
+}
+
+impl CrateRootPath {
+    pub fn inject_lib(&self) -> bool {
+        matches!(self, CrateRootPath::Entrypoint(_))
+    }
+
+    pub fn file_stem(&self) -> Option<String> {
+        match self {
+            CrateRootPath::Entrypoint(detailed) => {
+                detailed.entrypoint.file_stem().map(|s| s.to_string_lossy().to_string())
+            }
+            _ => None,
+        }
+    }
+
+    pub fn root(&self) -> Result<PathBuf, CrateRootError> {
+        match self {
+            CrateRootPath::Simple(path) => Ok(path.clone()),
+            CrateRootPath::Detailed(detailed) => Ok(detailed.path.clone()),
+            CrateRootPath::Entrypoint(detailed) => detailed
+                .entrypoint
+                .clone()
+                .parent()
+                .ok_or_else(|| CrateRootError::BadPath {
+                    path: detailed.entrypoint.to_string_lossy().to_string(),
+                })
+                .map(|p| p.to_path_buf()),
+        }
+    }
+}
+
+impl From<&str> for CrateRootPath {
+    fn from(path: &str) -> Self {
+        CrateRootPath::Simple(path.into())
+    }
 }
 
 impl ProjectConfig {
