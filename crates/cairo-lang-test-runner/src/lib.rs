@@ -19,6 +19,7 @@ use cairo_lang_semantic::items::functions::GenericFunctionId;
 use cairo_lang_semantic::{ConcreteFunction, FunctionLongId};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
+use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::{DebugReplacer, SierraIdReplacer};
 use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
@@ -44,13 +45,10 @@ pub mod plugin;
 mod test_config;
 
 pub struct TestRunner {
-    pub db: RootDatabase,
-    pub main_crate_ids: Vec<CrateId>,
-    pub test_crate_ids: Vec<CrateId>,
-    pub filter: String,
-    pub include_ignored: bool,
-    pub ignored: bool,
-    pub starknet: bool,
+    compiler: TestCompiler,
+    filter: String,
+    include_ignored: bool,
+    ignored: bool,
 }
 
 impl TestRunner {
@@ -70,116 +68,59 @@ impl TestRunner {
         ignored: bool,
         starknet: bool,
     ) -> Result<Self> {
-        let db = &mut {
-            let mut b = RootDatabase::builder();
-            b.detect_corelib();
-            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
-            b.with_macro_plugin(Arc::new(TestPlugin::default()));
-
-            if starknet {
-                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
-                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro));
-            }
-
-            b.build()?
-        };
-
-        let main_crate_ids = setup_project(db, Path::new(&path))?;
-
-        if DiagnosticsReporter::stderr().with_extra_crates(&main_crate_ids).check(db) {
-            bail!("failed to compile: {}", path.display());
-        }
-
-        Ok(Self {
-            db: db.snapshot(),
-            test_crate_ids: main_crate_ids.clone(),
-            main_crate_ids,
-            filter: filter.into(),
-            include_ignored,
-            ignored,
-            starknet,
-        })
+        let compiler = TestCompiler::try_new(path, starknet)?;
+        Ok(Self { compiler, filter: filter.into(), include_ignored, ignored })
     }
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
-        if !self.test_crate_ids.iter().all(|id| self.main_crate_ids.contains(id)) {
-            bail!("The test runner can only run tests from the main crates.");
-        }
+        let runner = TestCompilationRunner::new(
+            self.compiler.build()?,
+            self.filter.as_str(),
+            self.include_ignored,
+            self.ignored,
+        );
+        runner.run()
+    }
+}
 
-        let db = &self.db;
+pub struct TestCompilationRunner {
+    pub compiled: TestCompilation,
+    pub filter: String,
+    pub include_ignored: bool,
+    pub ignored: bool,
+}
 
-        let all_entry_points = if self.starknet {
-            find_contracts(db, &self.main_crate_ids)
-                .iter()
-                .flat_map(|contract| {
-                    chain!(
-                        get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
-                        get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
-                        get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
-                    )
-                })
-                .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
-                .collect()
-        } else {
-            vec![]
-        };
-        let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
-            all_entry_points
-                .iter()
-                .map(|func_id| {
-                    (
-                        db.function_with_body_sierra(*func_id).unwrap().id.clone(),
-                        [(CostTokenType::Const, ENTRY_POINT_COST)].into(),
-                    )
-                })
-                .collect();
-        let all_tests = find_all_tests(db, self.test_crate_ids.clone());
-        let sierra_program = self
-            .db
-            .get_sierra_program_for_functions(
-                chain!(
-                    all_entry_points.into_iter(),
-                    all_tests.iter().flat_map(|(func_id, _cfg)| {
-                        ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
-                    })
-                )
-                .collect(),
-            )
-            .to_option()
-            .with_context(|| "Compilation failed without any diagnostics.")?;
-        let replacer = DebugReplacer { db };
-        let sierra_program = replacer.apply(&sierra_program);
-        let total_tests_count = all_tests.len();
-        let named_tests = all_tests
-          .into_iter()
-          .map(|(func_id, mut test)| {
-              // Un-ignoring all the tests in `include-ignored` mode.
-              if self.include_ignored {
-                  test.ignored = false;
-              }
-              (
-                  format!(
-                      "{:?}",
-                      FunctionLongId {
-                          function: ConcreteFunction {
-                              generic_function: GenericFunctionId::Free(func_id),
-                              generic_args: vec![]
-                          }
-                      }
-                      .debug(db)
-                  ),
-                  test,
-              )
-          })
-          .filter(|(name, _)| name.contains(&self.filter))
-          // Filtering unignored tests in `ignored` mode.
-          .filter(|(_, test)| !self.ignored || test.ignored)
-          .collect_vec();
-        let filtered_out = total_tests_count - named_tests.len();
-        let contracts_info = get_contracts_info(db, self.main_crate_ids.clone(), &replacer)?;
-        let TestsSummary { passed, failed, ignored, failed_run_results } =
-            run_tests(named_tests, sierra_program, function_set_costs, contracts_info)?;
+impl TestCompilationRunner {
+    /// Configure a new compiled test runner
+    ///
+    /// # Arguments
+    ///
+    /// * `compiled` - The compiled tests to run
+    /// * `filter` - Run only tests containing the filter string
+    /// * `include_ignored` - Include ignored tests as well
+    /// * `ignored` - Run ignored tests only
+    pub fn new(
+        compiled: TestCompilation,
+        filter: &str,
+        include_ignored: bool,
+        ignored: bool,
+    ) -> Self {
+        Self { filter: filter.into(), include_ignored, ignored, compiled }
+    }
+
+    /// Execute preconfigured test execution.
+    pub fn run(self) -> Result<Option<TestsSummary>> {
+        let (compiled, filtered_out) =
+            filter_test_cases(self.compiled, self.include_ignored, self.ignored, self.filter);
+
+        let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
+            compiled.named_tests,
+            compiled.sierra_program,
+            compiled.function_set_costs,
+            compiled.contracts_info,
+        )?;
+
         if failed.is_empty() {
             println!(
                 "test result: {}. {} passed; {} failed; {} ignored; {filtered_out} filtered out;",
@@ -221,6 +162,163 @@ impl TestRunner {
     }
 }
 
+/// The test cases compiler.
+pub struct TestCompiler {
+    pub db: RootDatabase,
+    pub main_crate_ids: Vec<CrateId>,
+    pub test_crate_ids: Vec<CrateId>,
+    pub starknet: bool,
+}
+
+impl TestCompiler {
+    /// Configure a new test compiler
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The path to compile and run its tests
+    /// * `starknet` - Add the starknet plugin to run the tests
+    pub fn try_new(path: &Path, starknet: bool) -> Result<Self> {
+        let db = &mut {
+            let mut b = RootDatabase::builder();
+            b.detect_corelib();
+            b.with_cfg(CfgSet::from_iter([Cfg::name("test")]));
+            b.with_macro_plugin(Arc::new(TestPlugin::default()));
+
+            if starknet {
+                b.with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+                    .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro));
+            }
+
+            b.build()?
+        };
+
+        let main_crate_ids = setup_project(db, Path::new(&path))?;
+
+        if DiagnosticsReporter::stderr().with_extra_crates(&main_crate_ids).check(db) {
+            bail!("failed to compile: {}", path.display());
+        }
+
+        Ok(Self {
+            db: db.snapshot(),
+            test_crate_ids: main_crate_ids.clone(),
+            main_crate_ids,
+            starknet,
+        })
+    }
+
+    /// Build the tests and collect metadata.
+    pub fn build(&self) -> Result<TestCompilation> {
+        compile_test_prepared_db(
+            &self.db,
+            self.starknet,
+            self.main_crate_ids.clone(),
+            self.test_crate_ids.clone(),
+        )
+    }
+}
+
+pub fn compile_test_prepared_db(
+    db: &RootDatabase,
+    starknet: bool,
+    main_crate_ids: Vec<CrateId>,
+    test_crate_ids: Vec<CrateId>,
+) -> Result<TestCompilation> {
+    let all_entry_points = if starknet {
+        find_contracts(db, &main_crate_ids)
+            .iter()
+            .flat_map(|contract| {
+                chain!(
+                    get_contract_abi_functions(db, contract, EXTERNAL_MODULE).unwrap(),
+                    get_contract_abi_functions(db, contract, CONSTRUCTOR_MODULE).unwrap(),
+                    get_contract_abi_functions(db, contract, L1_HANDLER_MODULE).unwrap(),
+                )
+            })
+            .map(|func| ConcreteFunctionWithBodyId::from_semantic(db, func.value))
+            .collect()
+    } else {
+        vec![]
+    };
+    let function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
+        all_entry_points
+            .iter()
+            .map(|func_id| {
+                (
+                    db.function_with_body_sierra(*func_id).unwrap().id.clone(),
+                    [(CostTokenType::Const, ENTRY_POINT_COST)].into(),
+                )
+            })
+            .collect();
+    let all_tests = find_all_tests(db, test_crate_ids.clone());
+    let sierra_program = db
+        .get_sierra_program_for_functions(
+            chain!(
+                all_entry_points.into_iter(),
+                all_tests.iter().flat_map(|(func_id, _cfg)| {
+                    ConcreteFunctionWithBodyId::from_no_generics_free(db, *func_id)
+                })
+            )
+            .collect(),
+        )
+        .to_option()
+        .with_context(|| "Compilation failed without any diagnostics.")?;
+    let replacer = DebugReplacer { db };
+    let sierra_program = replacer.apply(&sierra_program);
+
+    let named_tests = all_tests
+        .into_iter()
+        .map(|(func_id, test)| {
+            (
+                format!(
+                    "{:?}",
+                    FunctionLongId {
+                        function: ConcreteFunction {
+                            generic_function: GenericFunctionId::Free(func_id),
+                            generic_args: vec![]
+                        }
+                    }
+                    .debug(db)
+                ),
+                test,
+            )
+        })
+        .collect_vec();
+    let contracts_info = get_contracts_info(db, main_crate_ids.clone(), &replacer)?;
+
+    Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
+}
+
+pub struct TestCompilation {
+    named_tests: Vec<(String, TestConfig)>,
+    sierra_program: Program,
+    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+}
+
+pub fn filter_test_cases(
+    compiled: TestCompilation,
+    include_ignored: bool,
+    ignored: bool,
+    filter: String,
+) -> (TestCompilation, usize) {
+    let total_tests_count = compiled.named_tests.len();
+    let named_tests = compiled.named_tests
+        .into_iter()
+        .map(|(func, mut test)| {
+            // Un-ignoring all the tests in `include-ignored` mode.
+            if include_ignored {
+                test.ignored = false;
+            }
+            (func, test)
+        })
+        .filter(|(name, _)| name.contains(&filter))
+        // Filtering unignored tests in `ignored` mode
+        .filter(|(_, test)| !ignored || test.ignored)
+        .collect_vec();
+    let filtered_out = total_tests_count - named_tests.len();
+    let tests = TestCompilation { named_tests, ..compiled };
+    (tests, filtered_out)
+}
+
 /// The status of a ran test.
 enum TestStatus {
     Success,
@@ -246,10 +344,10 @@ pub struct TestsSummary {
 /// Runs the tests and process the results for a summary.
 pub fn run_tests(
     named_tests: Vec<(String, TestConfig)>,
-    sierra_program: cairo_lang_sierra::program::Program,
+    sierra_program: Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
     contracts_info: OrderedHashMap<Felt252, ContractInfo>,
-) -> anyhow::Result<TestsSummary> {
+) -> Result<TestsSummary> {
     let runner = SierraCasmRunner::new(
         sierra_program,
         Some(MetadataComputationConfig { function_set_costs }),
