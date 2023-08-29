@@ -111,8 +111,8 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var: var::ContractMemberState{},
-            mapping: mapping::ContractMemberState{},
+            var: var::ContractMemberState {},
+            mapping: mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]

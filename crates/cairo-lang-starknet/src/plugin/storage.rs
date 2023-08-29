@@ -31,22 +31,17 @@ pub fn handle_storage_struct(
     for member in struct_ast.members(db).elements(db) {
         let name_node = member.name(db).as_syntax_node();
         let name = member.name(db).text(db);
+        let member_node = RewriteNode::interpolate_patched(
+            &format!("$name$: $name$::{member_state_name}"),
+            [("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
+        );
         members_code.push(RewriteNode::interpolate_patched(
-            &format!(
-                "
-        $name$: $name$::{member_state_name},"
-            ),
-            UnorderedHashMap::from([(
-                "name".to_string(),
-                RewriteNode::new_trimmed(name_node.clone()),
-            )]),
+            "\n        $member$,",
+            [("member".to_string(), member_node.clone())].into(),
         ));
         members_init_code.push(RewriteNode::interpolate_patched(
-            &format!(
-                "
-            $name$: $name$::{member_state_name}{{}},"
-            ),
-            UnorderedHashMap::from([("name".to_string(), RewriteNode::new_trimmed(name_node))]),
+            "\n            $member$ {},",
+            [("member".to_string(), member_node)].into(),
         ));
         let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
         let type_ast = member.type_clause(db).ty(db);
@@ -121,11 +116,12 @@ pub fn handle_storage_struct(
                  $vars_code$",
         )
         .as_str(),
-        UnorderedHashMap::from([
+        [
             ("members_code".to_string(), RewriteNode::new_modified(members_code)),
             ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
             ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
-        ]),
+        ]
+        .into(),
     );
 }
 

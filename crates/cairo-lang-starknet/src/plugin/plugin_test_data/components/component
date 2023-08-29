@@ -108,8 +108,8 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
-            map: map::ComponentMemberState{},
+            data: data::ComponentMemberState {},
+            map: map::ComponentMemberState {},
         }
     }
     #[cfg(test)]

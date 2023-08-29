@@ -79,16 +79,16 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            var_felt252: var_felt252::ContractMemberState{},
-            var_u8: var_u8::ContractMemberState{},
-            var_u16: var_u16::ContractMemberState{},
-            var_u32: var_u32::ContractMemberState{},
-            var_u64: var_u64::ContractMemberState{},
-            var_u128: var_u128::ContractMemberState{},
-            var_bool: var_bool::ContractMemberState{},
-            felt252_to_u128: felt252_to_u128::ContractMemberState{},
-            u128_to_bool: u128_to_bool::ContractMemberState{},
-            bool_to_felt252: bool_to_felt252::ContractMemberState{},
+            var_felt252: var_felt252::ContractMemberState {},
+            var_u8: var_u8::ContractMemberState {},
+            var_u16: var_u16::ContractMemberState {},
+            var_u32: var_u32::ContractMemberState {},
+            var_u64: var_u64::ContractMemberState {},
+            var_u128: var_u128::ContractMemberState {},
+            var_bool: var_bool::ContractMemberState {},
+            felt252_to_u128: felt252_to_u128::ContractMemberState {},
+            u128_to_bool: u128_to_bool::ContractMemberState {},
+            bool_to_felt252: bool_to_felt252::ContractMemberState {},
         }
     }
     #[cfg(test)]

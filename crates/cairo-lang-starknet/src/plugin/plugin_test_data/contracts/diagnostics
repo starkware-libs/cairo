@@ -292,7 +292,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            mapping: mapping::ContractMemberState{},
+            mapping: mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -1508,7 +1508,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            same_name: same_name::ContractMemberState{},
+            same_name: same_name::ContractMemberState {},
         }
     }
     #[cfg(test)]
