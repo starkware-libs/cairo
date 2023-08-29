@@ -26,6 +26,7 @@ use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
+    IntermediateContractInfo,
 };
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
@@ -37,6 +38,7 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -44,6 +46,7 @@ use crate::test_config::{PanicExpectation, TestExpectation};
 pub mod plugin;
 mod test_config;
 
+/// Compile and run tests.
 pub struct TestRunner {
     compiler: TestCompiler,
     config: TestRunConfig,
@@ -82,9 +85,7 @@ impl CompiledTestRunner {
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
+    /// * `config` - Test run configuration
     pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
         Self { compiled, config }
     }
@@ -209,6 +210,17 @@ impl TestCompiler {
     }
 }
 
+/// Runs Cairo compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `starknet` - Add the starknet contracts to the compiled tests.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
+///   order to obtain [`CrateId`] from its name.
+/// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
+/// # Returns
+/// * `Ok(TestCompilation)` - The compiled test cases with metadata.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
     starknet: bool,
@@ -279,13 +291,63 @@ pub fn compile_test_prepared_db(
     Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
 }
 
+/// Compiled test cases.
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(from = "IntermediateTestCompilation", into = "IntermediateTestCompilation")]
 pub struct TestCompilation {
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub named_tests: Vec<(String, TestConfig)>,
+    pub sierra_program: Program,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct IntermediateTestCompilation {
+    pub contracts_info: Vec<(Felt252, IntermediateContractInfo)>,
+    pub function_set_costs: Vec<(FunctionId, OrderedHashMap<CostTokenType, i32>)>,
+    pub named_tests: Vec<(String, TestConfig)>,
+    pub sierra_program: Program,
+}
+
+impl From<TestCompilation> for IntermediateTestCompilation {
+    fn from(compiled: TestCompilation) -> Self {
+        Self {
+            contracts_info: compiled
+                .contracts_info
+                .into_iter()
+                .map(|(id, info)| (id, info.into()))
+                .collect(),
+            function_set_costs: compiled.function_set_costs.into_iter().collect(),
+            named_tests: compiled.named_tests,
+            sierra_program: compiled.sierra_program,
+        }
+    }
+}
+
+impl From<IntermediateTestCompilation> for TestCompilation {
+    fn from(intermediate: IntermediateTestCompilation) -> Self {
+        Self {
+            contracts_info: intermediate
+                .contracts_info
+                .into_iter()
+                .map(|(id, info)| (id, info.into()))
+                .collect(),
+            function_set_costs: intermediate.function_set_costs.into_iter().collect(),
+            named_tests: intermediate.named_tests,
+            sierra_program: intermediate.sierra_program,
+        }
+    }
+}
+
+/// Filter compiled test cases with user provided arguments.
+///
+/// # Arguments
+/// * `compiled` - Compiled test cases with metadata.
+/// * `include_ignored` - Include ignored tests as well.
+/// * `ignored` - Run ignored tests only.l
+/// * `filter` - Include only tests containing the filter string.
+/// # Returns
+/// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
 pub fn filter_test_cases(
     compiled: TestCompilation,
     include_ignored: bool,
