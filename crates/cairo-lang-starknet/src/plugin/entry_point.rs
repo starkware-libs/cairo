@@ -13,7 +13,7 @@ use itertools::Itertools;
 use super::consts::{
     CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EMBED_ATTR, EXTERNAL_ATTR,
     EXTERNAL_MODULE, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
-    L1_HANDLER_MODULE, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
+    L1_HANDLER_MODULE, NESTED_ATTR, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{
     is_felt252, is_felt252_span, is_mut_param, is_ref_param, maybe_strip_underscore,
@@ -380,6 +380,20 @@ pub fn has_embed_attribute(
         return false;
     };
     validate_v0(db, diagnostics, &attr, EMBED_ATTR);
+    true
+}
+
+// TODO(yuval): move to an attributes/utils module.
+/// Checks if the item is marked with an external attribute. Also validates the attribute.
+pub fn has_nested_attribute(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    member: &ast::Member,
+) -> bool {
+    let Some(attr) = member.find_attr(db, NESTED_ATTR) else {
+        return false;
+    };
+    validate_v0(db, diagnostics, &attr, NESTED_ATTR);
     true
 }
 
