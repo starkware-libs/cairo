@@ -48,7 +48,7 @@ use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
-use log::warn;
+use log::{error, warn};
 use lsp::notification::Notification;
 use salsa::InternKey;
 use semantic_highlighting::token_kind::SemanticTokenKind;
@@ -347,14 +347,16 @@ impl Backend {
             path.pop();
             // Check for a cairo project file.
             if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-                update_crate_roots_from_project_config(db, config);
+                if let Err(err) = update_crate_roots_from_project_config(db, config) {
+                    error!("Error loading project config from {} directory: {err}", path.display());
+                }
                 return;
             };
         }
 
         // Fallback to a single file.
         if let Err(err) = setup_project(&mut *db, PathBuf::from(file_path).as_path()) {
-            eprintln!("Error loading file {file_path} as a single crate: {err}");
+            error!("Error loading file {file_path} as a single crate: {err}");
         }
     }
 
