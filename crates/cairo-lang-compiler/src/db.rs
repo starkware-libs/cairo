@@ -145,7 +145,7 @@ impl RootDatabaseBuilder {
         }
 
         if let Some(config) = self.project_config.clone() {
-            update_crate_roots_from_project_config(&mut db, *config.clone());
+            update_crate_roots_from_project_config(&mut db, *config.clone())?;
 
             if let Some(corelib) = config.corelib {
                 let core_crate = db.intern_crate(CrateLongId::Real(CORELIB_CRATE_NAME.into()));
