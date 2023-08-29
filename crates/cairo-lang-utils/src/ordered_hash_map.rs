@@ -2,8 +2,8 @@ use std::hash::Hash;
 use std::ops::{Index, IndexMut};
 
 use indexmap::{Equivalent, IndexMap};
-use itertools::zip_eq;
-use serde::{Deserialize, Serialize};
+use itertools::{zip_eq, Itertools};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OrderedHashMap<Key: Hash + Eq, Value>(IndexMap<Key, Value>);
@@ -176,4 +176,27 @@ impl<Key: Hash + Eq, Value, const N: usize> From<[(Key, Value); N]> for OrderedH
     fn from(init_map: [(Key, Value); N]) -> Self {
         Self(init_map.into())
     }
+}
+
+pub fn serialize_ordered_hashmap_vec<'de, K, V, S>(
+    v: &OrderedHashMap<K, V>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    K: Serialize + Deserialize<'de> + Hash + Eq,
+    V: Serialize + Deserialize<'de>,
+{
+    v.iter().map(|(k, v)| (k.clone(), v.clone())).collect_vec().serialize(serializer)
+}
+
+pub fn deserialize_ordered_hashmap_vec<'de, K, V, D>(
+    deserializer: D,
+) -> Result<OrderedHashMap<K, V>, D::Error>
+where
+    D: Deserializer<'de>,
+    K: Serialize + Deserialize<'de> + Hash + Eq,
+    V: Serialize + Deserialize<'de>,
+{
+    Ok(Vec::<(K, V)>::deserialize(deserializer)?.into_iter().collect())
 }
