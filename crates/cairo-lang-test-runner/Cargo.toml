@@ -33,4 +33,8 @@ num-bigint.workspace = true
 num-traits.workspace = true
 rayon.workspace = true
 salsa.workspace = true
+serde.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
