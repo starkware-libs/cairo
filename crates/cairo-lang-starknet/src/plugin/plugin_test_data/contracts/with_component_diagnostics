@@ -82,7 +82,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -365,7 +365,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -636,7 +636,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -916,7 +916,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -1203,7 +1203,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]

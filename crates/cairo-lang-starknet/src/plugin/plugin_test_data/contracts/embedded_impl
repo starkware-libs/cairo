@@ -152,7 +152,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            value: value::ContractMemberState{},
+            value: value::ContractMemberState {},
         }
     }
     #[cfg(test)]
