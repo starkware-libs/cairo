@@ -1,9 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: treu)
-
-//! > TODO(yuval): change allow_diagnostics to false once nested members are supported.
+ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -16,10 +14,14 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
+    // TODO(yuval): try to spare the need for this use.
+    use super::test_component::data::InternalComponentMemberStateTrait;
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
         #[nested(v0)]
-        test_component_storage: super::test_component::ComponentState::<ContractState>,
+        test_component_storage: super::test_component::Storage,
+        normal_member: usize,
     }
 
     #[event]
@@ -27,7 +29,11 @@ mod test_contract {
     enum Event {
         ABC: super::test_component::Event,
     }
-    component!(path: super::test_component, storage: test_component_storage, event: ABC);
+
+    #[external(v0)]
+    fn get_data(self: @ContractState) -> u32 {
+        self.test_component_storage.data.read()
+    }
 }
 
 //! > generated_cairo_code
@@ -43,10 +49,14 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
+    // TODO(yuval): try to spare the need for this use.
+    use super::test_component::data::InternalComponentMemberStateTrait;
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
         #[nested(v0)]
-        test_component_storage: super::test_component::ComponentState::<ContractState>,
+        test_component_storage: super::test_component::Storage,
+        normal_member: usize,
     }
 
     #[event]
@@ -54,7 +64,11 @@ mod test_contract {
     enum Event {
         ABC: super::test_component::Event,
     }
-    component!(path: super::test_component, storage: test_component_storage, event: ABC);
+
+    #[external(v0)]
+    fn get_data(self: @ContractState) -> u32 {
+        self.test_component_storage.data.read()
+    }
 }
 
 component:
@@ -186,11 +200,15 @@ use starknet::event::EventEmitter;
     }
 
     struct ContractState {
+        test_component_storage: super::test_component::ComponentState::<ContractState>,
+        normal_member: normal_member::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
+            test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
+            normal_member: normal_member::ContractMemberState{},
         }
     }
     #[cfg(test)]
@@ -199,11 +217,70 @@ use starknet::event::EventEmitter;
         unsafe_new_contract_state()
     }
     
+    use normal_member::InternalContractMemberStateTrait as normal_memberContractMemberStateTrait;
+    mod normal_member {
+        use super::InternalComponentMemberStateTrait;
+        use super::Event;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> usize;
+            fn write(ref self: ContractMemberState, value: usize);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x3266bea4d07d000107ce343778c6b1340d28097c585762467aaf5abbf16cc4e>()
+            }
+            fn read(self: @ContractMemberState) -> usize {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<usize>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: usize) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<usize>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x8e0689023f4c10cb6a26bb54a41cd2a629a65d691a5e6bf403e728b953a57f;
+const TEST_CLASS_HASH: felt252 = 0x26b3655b7d0daa3eec7238103d791b7d27d6b149cf28fb1c4acb9a6a2960ab5;
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = get_data(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<u32>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
 
 
     mod __external {
+        use super::__wrapper_get_data as get_data;
     }
 
     mod __l1_handler {
@@ -214,7 +291,7 @@ const TEST_CLASS_HASH: felt252 = 0x8e0689023f4c10cb6a26bb54a41cd2a629a65d691a5e6
 
 impl HasComponentImpl_test_component of super::test_component::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @super::test_component::ComponentState<ContractState> {
-        @super::test_component::unsafe_new_component_state::<ContractState>()
+        self.test_component_storage
     }
     fn get_component_mut(ref self: ContractState) -> super::test_component::ComponentState<ContractState> {
         super::test_component::unsafe_new_component_state::<ContractState>()
@@ -272,7 +349,3 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Nested storage members are not yet supported.
- --> lib.cairo:13:9
-        #[nested(v0)]
-        ^***********^
