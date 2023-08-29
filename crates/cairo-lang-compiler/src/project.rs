@@ -48,26 +48,43 @@ pub fn setup_single_file_project(
         // If file_stem is not lib, create a fake lib file.
         let crate_id = db.intern_crate(CrateLongId::Real(file_stem.into()));
         db.set_crate_root(crate_id, Some(Directory::Real(path.parent().unwrap().to_path_buf())));
-
-        let module_id = ModuleId::CrateRoot(crate_id);
-        let file_id = db.module_main_file(module_id).unwrap();
-        db.as_files_group_mut()
-            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
+        fake_module_main_file(db, crate_id, file_stem.to_string());
         Ok(crate_id)
     }
 }
 
 /// Updates the crate roots from a ProjectConfig object.
-pub fn update_crate_roots_from_project_config(db: &mut dyn SemanticGroup, config: ProjectConfig) {
+pub fn update_crate_roots_from_project_config(
+    db: &mut dyn SemanticGroup,
+    config: ProjectConfig,
+) -> Result<(), ProjectError> {
     for (crate_name, directory_path) in config.content.crate_roots {
         let crate_id = db.intern_crate(CrateLongId::Real(crate_name));
         let mut path = PathBuf::from(&directory_path);
         if path.is_relative() {
             path = PathBuf::from(&config.base_path).join(path);
         }
-        let root = Directory::Real(path);
+        let root = if path.is_dir() {
+            Directory::Real(path.clone())
+        } else {
+            Directory::Real(path.clone().parent().unwrap().to_path_buf())
+        };
         db.set_crate_root(crate_id, Some(root));
+        if !path.is_dir() {
+            let bad_path_err =
+                || ProjectError::BadPath { path: path.clone().to_string_lossy().to_string() };
+            let file_stem = path.file_stem().and_then(OsStr::to_str).ok_or_else(bad_path_err)?;
+            fake_module_main_file(db, crate_id, file_stem.to_string());
+        }
     }
+    Ok(())
+}
+
+pub fn fake_module_main_file(db: &mut dyn SemanticGroup, crate_id: CrateId, file_stem: String) {
+    let module_id = ModuleId::CrateRoot(crate_id);
+    let file_id = db.module_main_file(module_id).unwrap();
+    db.as_files_group_mut()
+        .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
 }
 
 /// Setup the 'db' to compile the project in the given path.
@@ -81,7 +98,7 @@ pub fn setup_project(
         match ProjectConfig::from_directory(path) {
             Ok(config) => {
                 let main_crate_ids = get_main_crate_ids_from_project(db, &config);
-                update_crate_roots_from_project_config(db, config);
+                update_crate_roots_from_project_config(db, config)?;
                 Ok(main_crate_ids)
             }
             _ => Err(ProjectError::LoadProjectError),

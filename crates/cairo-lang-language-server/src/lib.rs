@@ -347,7 +347,12 @@ impl Backend {
             path.pop();
             // Check for a cairo project file.
             if let Ok(config) = ProjectConfig::from_directory(path.as_path()) {
-                update_crate_roots_from_project_config(db, config);
+                if let Err(err) = update_crate_roots_from_project_config(db, config) {
+                    eprintln!(
+                        "Error loading project config from {} directory: {err}",
+                        path.display()
+                    );
+                }
                 return;
             };
         }
