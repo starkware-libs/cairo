@@ -781,7 +781,7 @@ impl PartialOrd for ModuleIdById {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb)]
+#[derive(Clone, Debug, Default, Hash, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ImplLookupContext {
     pub modules: BTreeSet<ModuleIdById>,
