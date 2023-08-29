@@ -37,6 +37,7 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -287,6 +288,7 @@ pub fn compile_test_prepared_db(
     Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TestCompilation {
     named_tests: Vec<(String, TestConfig)>,
     sierra_program: Program,

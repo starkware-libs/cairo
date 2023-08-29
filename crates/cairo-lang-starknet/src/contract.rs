@@ -26,6 +26,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::chain;
 use num_bigint::BigUint;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
@@ -289,6 +290,7 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
+#[derive(Serialize, Deserialize)]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
