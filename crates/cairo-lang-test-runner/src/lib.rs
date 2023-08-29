@@ -37,6 +37,7 @@ use itertools::{chain, Itertools};
 use num_traits::ToPrimitive;
 use plugin::TestPlugin;
 use rayon::prelude::{IntoParallelIterator, ParallelIterator};
+use serde::{Deserialize, Serialize};
 use test_config::{try_extract_test_config, TestConfig};
 
 use crate::test_config::{PanicExpectation, TestExpectation};
@@ -44,11 +45,10 @@ use crate::test_config::{PanicExpectation, TestExpectation};
 pub mod plugin;
 mod test_config;
 
+/// Compile and run tests.
 pub struct TestRunner {
     compiler: TestCompiler,
-    filter: String,
-    include_ignored: bool,
-    ignored: bool,
+    config: TestRunConfig,
 }
 
 impl TestRunner {
@@ -61,58 +61,43 @@ impl TestRunner {
     /// * `include_ignored` - Include ignored tests as well
     /// * `ignored` - Run ignored tests only
     /// * `starknet` - Add the starknet plugin to run the tests
-    pub fn new(
-        path: &Path,
-        filter: &str,
-        include_ignored: bool,
-        ignored: bool,
-        starknet: bool,
-    ) -> Result<Self> {
+    pub fn new(path: &Path, starknet: bool, config: TestRunConfig) -> Result<Self> {
         let compiler = TestCompiler::try_new(path, starknet)?;
-        Ok(Self { compiler, filter: filter.into(), include_ignored, ignored })
+        Ok(Self { compiler, config })
     }
 
     /// Runs the tests and process the results for a summary.
     pub fn run(&self) -> Result<Option<TestsSummary>> {
-        let runner = TestCompilationRunner::new(
-            self.compiler.build()?,
-            self.filter.as_str(),
-            self.include_ignored,
-            self.ignored,
-        );
+        let runner = CompiledTestRunner::new(self.compiler.build()?, self.config.clone());
         runner.run()
     }
 }
 
-pub struct TestCompilationRunner {
+/// Run compiled test cases.
+pub struct CompiledTestRunner {
     pub compiled: TestCompilation,
-    pub filter: String,
-    pub include_ignored: bool,
-    pub ignored: bool,
+    pub config: TestRunConfig,
 }
 
-impl TestCompilationRunner {
+impl CompiledTestRunner {
     /// Configure a new compiled test runner
     ///
     /// # Arguments
     ///
     /// * `compiled` - The compiled tests to run
-    /// * `filter` - Run only tests containing the filter string
-    /// * `include_ignored` - Include ignored tests as well
-    /// * `ignored` - Run ignored tests only
-    pub fn new(
-        compiled: TestCompilation,
-        filter: &str,
-        include_ignored: bool,
-        ignored: bool,
-    ) -> Self {
-        Self { filter: filter.into(), include_ignored, ignored, compiled }
+    /// * `config` - Test run configuration
+    pub fn new(compiled: TestCompilation, config: TestRunConfig) -> Self {
+        Self { compiled, config }
     }
 
     /// Execute preconfigured test execution.
     pub fn run(self) -> Result<Option<TestsSummary>> {
-        let (compiled, filtered_out) =
-            filter_test_cases(self.compiled, self.include_ignored, self.ignored, self.filter);
+        let (compiled, filtered_out) = filter_test_cases(
+            self.compiled,
+            self.config.include_ignored,
+            self.config.ignored,
+            self.config.filter,
+        );
 
         let TestsSummary { passed, failed, ignored, failed_run_results } = run_tests(
             compiled.named_tests,
@@ -160,6 +145,14 @@ impl TestCompilationRunner {
             );
         }
     }
+}
+
+/// Configuration of compiled tests runner.
+#[derive(Clone, Debug)]
+pub struct TestRunConfig {
+    pub filter: String,
+    pub include_ignored: bool,
+    pub ignored: bool,
 }
 
 /// The test cases compiler.
@@ -217,6 +210,17 @@ impl TestCompiler {
     }
 }
 
+/// Runs Cairo compiler.
+///
+/// # Arguments
+/// * `db` - Preloaded compilation database.
+/// * `starknet` - Add the starknet contracts to the compiled tests.
+/// * `main_crate_ids` - [`CrateId`]s to compile. Use `db.intern_crate(CrateLongId::Real(name))` in
+///   order to obtain [`CrateId`] from its name.
+/// * `test_crate_ids` - [`CrateId`]s to find tests cases in. Must be a subset of `main_crate_ids`.
+/// # Returns
+/// * `Ok(TestCompilation)` - The compiled test cases with metadata.
+/// * `Err(anyhow::Error)` - Compilation failed.
 pub fn compile_test_prepared_db(
     db: &RootDatabase,
     starknet: bool,
@@ -287,13 +291,24 @@ pub fn compile_test_prepared_db(
     Ok(TestCompilation { named_tests, sierra_program, function_set_costs, contracts_info })
 }
 
+/// Compiled test cases.
+#[derive(Serialize, Deserialize)]
 pub struct TestCompilation {
-    named_tests: Vec<(String, TestConfig)>,
-    sierra_program: Program,
-    function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
-    contracts_info: OrderedHashMap<Felt252, ContractInfo>,
+    pub named_tests: Vec<(String, TestConfig)>,
+    pub sierra_program: Program,
+    pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
+    pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
 }
 
+/// Filter compiled test cases with user provided arguments.
+///
+/// # Arguments
+/// * `compiled` - Compiled test cases with metadata.
+/// * `include_ignored` - Include ignored tests as well.
+/// * `ignored` - Run ignored tests only.l
+/// * `filter` - Include only tests containing the filter string.
+/// # Returns
+/// * (`TestCompilation`, `usize`) - The filtered test cases and the number of filtered out cases.
 pub fn filter_test_cases(
     compiled: TestCompilation,
     include_ignored: bool,
