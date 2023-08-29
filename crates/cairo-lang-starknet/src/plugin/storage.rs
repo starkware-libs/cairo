@@ -6,9 +6,10 @@ use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
-use super::entry_point::has_nested_attribute;
+use super::consts::NESTED_ATTR;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
+use super::utils::has_v0_attribute;
 use crate::contract::starknet_keccak;
 
 /// Generate getters and setters for the variables in the storage struct.
@@ -31,7 +32,7 @@ pub fn handle_storage_struct(
 
     for member in struct_ast.members(db).elements(db) {
         if starknet_module_kind == StarknetModuleKind::Contract
-            && has_nested_attribute(db, diagnostics, &member)
+            && has_v0_attribute(db, diagnostics, &member, NESTED_ATTR)
         {
             if let Some((member_code, member_init_code)) = get_nested_member_code(db, &member) {
                 members_code.push(member_code);
