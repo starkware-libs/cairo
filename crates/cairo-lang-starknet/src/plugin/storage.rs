@@ -1,13 +1,12 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::formatdoc;
 
-use super::consts::NESTED_ATTR;
+use super::entry_point::has_nested_attribute;
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use crate::contract::starknet_keccak;
@@ -31,13 +30,21 @@ pub fn handle_storage_struct(
     let member_state_name = starknet_module_kind.get_member_state_name();
 
     for member in struct_ast.members(db).elements(db) {
-        // TODO(yuval): support nested structs.
-        // Nested members are not supported yet, skip them.
-        if member.attributes(db).has_attr(db, NESTED_ATTR) {
-            diagnostics.push(PluginDiagnostic {
-                message: "Nested storage members are not yet supported.".to_string(),
-                stable_ptr: member.stable_ptr().untyped(),
-            });
+        if starknet_module_kind == StarknetModuleKind::Contract
+            && has_nested_attribute(db, diagnostics, &member)
+        {
+            if let Some((member_code, member_init_code)) = get_nested_member_code(db, &member) {
+                members_code.push(member_code);
+                members_init_code.push(member_init_code);
+            } else {
+                diagnostics.push(PluginDiagnostic {
+                    message: "`nested` attribute is only allowed for members of type \
+                              [some_path::]Storage`"
+                        .to_string(),
+                    stable_ptr: member.stable_ptr().untyped(),
+                });
+            }
+
             continue;
         }
 
@@ -139,6 +146,64 @@ pub fn handle_storage_struct(
             ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
         ]),
     );
+}
+
+/// Returns the code of a nested storage member and its initialization: `(member_code,
+/// member_init_code)`.
+fn get_nested_member_code(
+    db: &dyn SyntaxGroup,
+    member: &ast::Member,
+) -> Option<(RewriteNode, RewriteNode)> {
+    match member.type_clause(db).ty(db) {
+        ast::Expr::Path(type_path) => {
+            let elements = &type_path.elements(db);
+            // The path has at least one element.
+            let (last, path_prefix) = elements.split_last().unwrap();
+            match last {
+                ast::PathSegment::Simple(segment) if segment.ident(db).text(db) == "Storage" => {
+                    let component_path = RewriteNode::new_modified(
+                        path_prefix
+                            .iter()
+                            .flat_map(|segment| {
+                                vec![
+                                    RewriteNode::new_trimmed(segment.as_syntax_node()),
+                                    RewriteNode::Text("::".to_string()),
+                                ]
+                            })
+                            .collect(),
+                    );
+
+                    Some((
+                        RewriteNode::interpolate_patched(
+                            "\n$name$: $component_path$ComponentState::<ContractState>,",
+                            [
+                                (
+                                    "name".to_string(),
+                                    RewriteNode::Copied(member.name(db).as_syntax_node()),
+                                ),
+                                ("component_path".to_string(), component_path.clone()),
+                            ]
+                            .into(),
+                        ),
+                        RewriteNode::interpolate_patched(
+                            "\n    $name$: \
+                             $component_path$unsafe_new_component_state::<ContractState>(),",
+                            [
+                                (
+                                    "name".to_string(),
+                                    RewriteNode::Copied(member.name(db).as_syntax_node()),
+                                ),
+                                ("component_path".to_string(), component_path),
+                            ]
+                            .into(),
+                        ),
+                    ))
+                }
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 /// The type of the mapping storage variable.
