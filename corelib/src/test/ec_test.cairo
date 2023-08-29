@@ -1,4 +1,4 @@
-use ec::{EcPointTrait, EcStateTrait};
+use ec::{EcPointTrait, EcPointTryIntoNonZero, EcStateTrait};
 use option::OptionTrait;
 use test::test_utils::{assert_eq, assert_ne};
 use traits::{Into, TryInto};
@@ -52,7 +52,8 @@ fn test_ec_operations() {
     assert_eq(@sub_y, @y, 'bad y for 2p - p');
 
     // Compute `p - p`.
-    assert((p - p).try_into().is_none(), 'p - p did not return 0.');
+    let p_diff: Option<NonZero<EcPoint>> = (p - p).try_into();
+    assert(p_diff.is_none(), 'p - p did not return 0.');
 
     // Compute `(-p) - p`.
     let (sub2_x, sub2_y) = (-p - p).try_into().unwrap().coordinates();
