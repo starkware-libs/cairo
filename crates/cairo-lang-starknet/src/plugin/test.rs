@@ -73,7 +73,8 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         no_body: "no_body",
         external_event: "external_event",
         with_component: "with_component",
-        with_component_diagnostics: "with_component_diagnostics"
+        with_component_diagnostics: "with_component_diagnostics",
+        with_ownable: "with_ownable"
     },
     ExpandContractTestRunner
 );

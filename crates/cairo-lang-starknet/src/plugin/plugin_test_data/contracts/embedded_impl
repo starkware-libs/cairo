@@ -1,7 +1,7 @@
 //! > Test expansion of the outside implementations.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
 #[starknet::embeddable(v0)]
@@ -243,3 +243,279 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test diagnostics for supplying disallowed impls.
+
+//! > test_runner_name
+ExpandContractTestRunner(allow_diagnostics: true)
+
+//! > cairo_code
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithDestruct<
+    TContractState,
+    impl DisallowedDestruct: Destruct<TContractState>,
+> of OutsideTraitWithDestruct<TContractState> {
+    #[external]
+    fn ret_3(self: @TContractState) -> felt252 {
+        3
+    }
+}
+
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithPanicDestruct<
+    TContractState,
+    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+> of OutsideTraitWithPanicDestruct<TContractState> {
+    #[external]
+    fn ret_5(self: @TContractState) -> felt252 {
+        5
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage {}
+
+    #[embed(v0)]
+    impl Usage1 = super::OutsideImplWithDestruct<ContractState>;
+
+    #[embed(v0)]
+    impl Usage2 = super::OutsideImplWithPanicDestruct<ContractState>;
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithDestruct<
+    TContractState,
+    impl DisallowedDestruct: Destruct<TContractState>,
+> of OutsideTraitWithDestruct<TContractState> {
+    #[external]
+    fn ret_3(self: @TContractState) -> felt252 {
+        3
+    }
+}
+
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithPanicDestruct<
+    TContractState,
+    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+> of OutsideTraitWithPanicDestruct<TContractState> {
+    #[external]
+    fn ret_5(self: @TContractState) -> felt252 {
+        5
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage {}
+
+    #[embed(v0)]
+    impl Usage1 = super::OutsideImplWithDestruct<ContractState>;
+
+    #[embed(v0)]
+    impl Usage2 = super::OutsideImplWithPanicDestruct<ContractState>;
+}
+
+generate_trait:
+
+trait OutsideTraitWithDestruct<
+    TContractState,
+    impl DisallowedDestruct: Destruct<TContractState>,
+>  {
+    fn ret_3(self: @TContractState) -> felt252;
+}
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_ret_3<TContractState,
+    impl DisallowedDestruct: Destruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    let res = OutsideImplWithDestruct::<TContractState, DisallowedDestruct>::ret_3(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<felt252>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_OutsideImplWithDestruct {
+        use super::__wrapper_ret_3 as ret_3;
+}
+
+mod __l1_handler_OutsideImplWithDestruct {
+}
+
+mod __constructor_OutsideImplWithDestruct {
+}
+
+
+generate_trait:
+
+trait OutsideTraitWithPanicDestruct<
+    TContractState,
+    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+>  {
+    fn ret_5(self: @TContractState) -> felt252;
+}
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_ret_5<TContractState,
+    impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    let res = OutsideImplWithPanicDestruct::<TContractState, DisallowedPanicDestruct>::ret_5(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<felt252>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_OutsideImplWithPanicDestruct {
+        use super::__wrapper_ret_5 as ret_5;
+}
+
+mod __l1_handler_OutsideImplWithPanicDestruct {
+}
+
+mod __constructor_OutsideImplWithPanicDestruct {
+}
+
+
+contract:
+
+use starknet::event::EventEmitter;
+#[event] #[derive(Drop, starknet::Event)] enum Event {}
+
+    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x1bee8e866505ef27d5ea63990112060e0e105e9294afd40e2fb08f711e11fa;
+
+impl ContractStateOutsideImplWithDestruct of
+    super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateOutsideImplWithPanicDestruct of
+    super::UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+
+    mod __external {
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+    }
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+event_impl:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        
+        Option::None
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+ --> lib.cairo:5:5
+    impl DisallowedDestruct: Destruct<TContractState>,
+    ^***********************************************^
+
+error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+ --> lib.cairo:17:5
+    impl DisallowedPanicDestruct: PanicDestruct<TContractState>
+    ^*********************************************************^
