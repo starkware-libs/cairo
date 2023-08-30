@@ -330,9 +330,8 @@ pub fn handle_component_inline_macro(
         return;
     };
 
-    let (Some(component_path), Some(_storage_name), Some(event_name)) = (
+    let (Some(component_path), Some(storage_name), Some(event_name)) = (
         try_extract_named_macro_argument(db, diagnostics, path_arg, "path", false),
-        // TODO(yuval): use storage_name. Currently we only verify it is set correctly.
         try_extract_named_macro_argument(db, diagnostics, storage_arg, "storage", true),
         try_extract_named_macro_argument(db, diagnostics, event_arg, "event", true),
     ) else {
@@ -352,7 +351,7 @@ pub fn handle_component_inline_macro(
              $component_path$::HasComponent<ContractState> {
            fn get_component(self: @ContractState) -> \
              @$component_path$::ComponentState<ContractState> {
-               @$component_path$::unsafe_new_component_state::<ContractState>()
+               self.$storage_name$
            }
            fn get_component_mut(ref self: ContractState) -> \
              $component_path$::ComponentState<ContractState> {
@@ -382,6 +381,7 @@ pub fn handle_component_inline_macro(
                 "component_path".to_string(),
                 RewriteNode::new_trimmed(component_path.as_syntax_node()),
             ),
+            ("storage_name".to_string(), RewriteNode::new_trimmed(storage_name.as_syntax_node())),
             ("event_name".to_string(), RewriteNode::new_trimmed(event_name.as_syntax_node())),
         ]
         .into(),

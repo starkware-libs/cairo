@@ -15,7 +15,6 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
-use super::consts::COMPONENT_INLINE_MACRO;
 use super::events::is_starknet_event;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
@@ -167,7 +166,6 @@ pub(super) fn handle_module_by_storage(
     for item in body.items(db).elements(db) {
         // Skip elements that only generate other code, but their code itself is ignored.
         if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
-            || matches!(&item, ast::Item::InlineMacro(item) if item.name(db).text(db) == COMPONENT_INLINE_MACRO)
         {
             continue;
         }
