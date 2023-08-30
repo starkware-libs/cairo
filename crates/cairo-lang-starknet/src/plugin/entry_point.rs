@@ -1,8 +1,7 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::ast::{
-    self, Attribute, FunctionWithBody, OptionArgListParenthesized, OptionReturnTypeClause,
-    OptionWrappedGenericParamList,
+    self, FunctionWithBody, OptionReturnTypeClause, OptionWrappedGenericParamList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
@@ -11,12 +10,13 @@ use indoc::{formatdoc, indoc};
 use itertools::Itertools;
 
 use super::consts::{
-    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EMBED_ATTR, EXTERNAL_ATTR,
-    EXTERNAL_MODULE, IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME,
-    L1_HANDLER_MODULE, NESTED_ATTR, RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
+    CONSTRUCTOR_ATTR, CONSTRUCTOR_MODULE, CONSTRUCTOR_NAME, EXTERNAL_ATTR, EXTERNAL_MODULE,
+    IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
+    RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{
-    is_felt252, is_felt252_span, is_mut_param, is_ref_param, maybe_strip_underscore,
+    has_v0_attribute, is_felt252, is_felt252_span, is_mut_param, is_ref_param,
+    maybe_strip_underscore,
 };
 
 /// Kind of an entry point. Determined by the entry point's attributes.
@@ -33,8 +33,12 @@ impl EntryPointKind {
         diagnostics: &mut Vec<PluginDiagnostic>,
         item_function: &FunctionWithBody,
     ) -> Option<Self> {
-        if has_external_attribute(db, diagnostics, &ast::Item::FreeFunction(item_function.clone()))
-        {
+        if has_v0_attribute(
+            db,
+            diagnostics,
+            &ast::Item::FreeFunction(item_function.clone()),
+            EXTERNAL_ATTR,
+        ) {
             Some(EntryPointKind::External)
         } else if item_function.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)
@@ -355,72 +359,6 @@ fn generate_entry_point_wrapper(
         ]
         .into(),
     ))
-}
-
-/// Checks if the item is marked with an external attribute. Also validates the attribute.
-pub fn has_external_attribute(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
-) -> bool {
-    let Some(attr) = item.find_attr(db, EXTERNAL_ATTR) else {
-        return false;
-    };
-    validate_v0(db, diagnostics, &attr, EXTERNAL_ATTR);
-    true
-}
-
-/// Checks if the item is marked with an embed attribute. Also validates the attribute.
-pub fn has_embed_attribute(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
-) -> bool {
-    let Some(attr) = item.find_attr(db, EMBED_ATTR) else {
-        return false;
-    };
-    validate_v0(db, diagnostics, &attr, EMBED_ATTR);
-    true
-}
-
-// TODO(yuval): move to an attributes/utils module.
-/// Checks if the item is marked with an external attribute. Also validates the attribute.
-pub fn has_nested_attribute(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    member: &ast::Member,
-) -> bool {
-    let Some(attr) = member.find_attr(db, NESTED_ATTR) else {
-        return false;
-    };
-    validate_v0(db, diagnostics, &attr, NESTED_ATTR);
-    true
-}
-
-/// Assuming the attribute is `name`, validate it's #[`name`(v0)].
-fn validate_v0(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    attr: &Attribute,
-    name: &str,
-) {
-    if !is_arg_v0(db, attr) {
-        diagnostics.push(PluginDiagnostic {
-            message: format!("Only #[{name}(v0)] is supported."),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
-    }
-}
-
-/// Checks if the only arg of the given attribute is "v0".
-fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
-    match attr.arguments(db) {
-        OptionArgListParenthesized::ArgListParenthesized(y) => {
-            matches!(&y.args(db).elements(db)[..],
-            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
-        }
-        OptionArgListParenthesized::Empty(_) => false,
-    }
 }
 
 /// Validates the first parameter of an L1 handler is `from_address: felt252` or `_from_address:

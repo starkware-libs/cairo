@@ -1,6 +1,8 @@
-use cairo_lang_syntax::node::ast::{self, Modifier};
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionArgListParenthesized};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::Terminal;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 
 /// Checks if the parameter is defined as a ref parameter.
 pub fn is_ref_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
@@ -66,5 +68,48 @@ pub fn maybe_strip_underscore(s: &str) -> &str {
     match s.strip_prefix('_') {
         Some(stripped) => stripped,
         None => s,
+    }
+}
+
+// === Attributes utilities ===
+
+/// Checks if the given (possibly-attributed-)object is attributed with the given `attr_name`. Also
+/// validates that the attribute is v0.
+pub fn has_v0_attribute(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    object: &impl QueryAttrs,
+    attr_name: &str,
+) -> bool {
+    let Some(attr) = object.find_attr(db, attr_name) else {
+        return false;
+    };
+    validate_v0(db, diagnostics, &attr, attr_name);
+    true
+}
+
+/// Assuming the attribute is `name`, validates it's #[`name`(v0)].
+fn validate_v0(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    attr: &Attribute,
+    name: &str,
+) {
+    if !is_arg_v0(db, attr) {
+        diagnostics.push(PluginDiagnostic {
+            message: format!("Only #[{name}(v0)] is supported."),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
+}
+
+/// Checks if the only arg of the given attribute is "v0".
+fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
+    match attr.arguments(db) {
+        OptionArgListParenthesized::ArgListParenthesized(y) => {
+            matches!(&y.args(db).elements(db)[..],
+            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
+        }
+        OptionArgListParenthesized::Empty(_) => false,
     }
 }

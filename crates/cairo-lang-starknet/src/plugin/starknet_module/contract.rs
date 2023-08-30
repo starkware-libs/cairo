@@ -13,10 +13,10 @@ use crate::plugin::consts::{
     L1_HANDLER_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
-    handle_entry_point, has_embed_attribute, has_external_attribute, EntryPointGenerationParams,
-    EntryPointKind, EntryPointsGenerationData,
+    handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
 use crate::plugin::storage::handle_storage_struct;
+use crate::plugin::utils::has_v0_attribute;
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
@@ -195,8 +195,8 @@ fn handle_contract_impl(
     item_impl: &ast::ItemImpl,
     data: &mut EntryPointsGenerationData,
 ) {
-    let is_external = has_external_attribute(db, diagnostics, item);
-    if !(is_external || has_embed_attribute(db, diagnostics, item)) {
+    let is_external = has_v0_attribute(db, diagnostics, item, EXTERNAL_ATTR);
+    if !(is_external || has_v0_attribute(db, diagnostics, item, EMBED_ATTR)) {
         return;
     }
     let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
