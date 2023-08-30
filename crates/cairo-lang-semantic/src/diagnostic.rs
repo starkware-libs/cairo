@@ -122,6 +122,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::NotAStruct => "Not a struct.".into(),
             SemanticDiagnosticKind::NotAType => "Not a type.".into(),
             SemanticDiagnosticKind::NotATrait => "Not a trait.".into(),
+            SemanticDiagnosticKind::NotAnImpl => "Not an impl.".into(),
             SemanticDiagnosticKind::FunctionNotMemberOfTrait {
                 impl_def_id,
                 impl_function_id,
@@ -673,6 +674,7 @@ pub enum SemanticDiagnosticKind {
     NotAStruct,
     NotAType,
     NotATrait,
+    NotAnImpl,
     FunctionNotMemberOfTrait {
         impl_def_id: ImplDefId,
         impl_function_id: ImplFunctionId,
