@@ -98,7 +98,7 @@ use starknet::event::EventEmitter;
     #[inline(always)]
     fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
         ComponentState::<TCS> {
-            data: data::ComponentMemberState{},
+            data: data::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -208,7 +208,7 @@ use starknet::event::EventEmitter;
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
-            normal_member: normal_member::ContractMemberState{},
+            normal_member: normal_member::ContractMemberState {},
         }
     }
     #[cfg(test)]
