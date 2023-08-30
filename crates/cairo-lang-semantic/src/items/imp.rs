@@ -824,8 +824,8 @@ impl UninferredImpl {
         match self {
             UninferredImpl::Def(impl_def_id) => db.impl_def_trait(*impl_def_id),
             UninferredImpl::ImplAlias(impl_alias_id) => {
-                let impl_id = db.impl_alias_resolved_impl(*impl_alias_id)?;
-                impl_id.concrete_trait(db).map(|concrete_trait| concrete_trait.trait_id(db))
+                let impl_def_id = db.impl_alias_impl_def(*impl_alias_id)?;
+                db.impl_def_trait(impl_def_id)
             }
             UninferredImpl::GenericParam(param) => {
                 let param =

@@ -65,6 +65,7 @@ pub enum InferenceId {
     LookupItemGenerics(LookupItemId),
     LookupItemDefinition(LookupItemId),
     ImplDefTrait(ImplDefId),
+    ImplAliasTrait(ImplAliasId),
     GenericParam(GenericParamId),
     GenericImplParamTrait(GenericParamId),
     Canonical,
