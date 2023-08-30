@@ -1,9 +1,9 @@
+use integer::BoundedInt;
 use starknet::{
     ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
     storage_address_to_felt252, storage_address_try_from_felt252
 };
 use super::utils::{serialized_element, single_deserialize};
-use integer::BoundedInt;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {

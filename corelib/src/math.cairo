@@ -1,7 +1,7 @@
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use traits::{Into, TryInto};
-use option::OptionTrait;
 use integer::{u256_wide_mul, u512_safe_div_rem_by_u256};
+use option::OptionTrait;
+use traits::{Into, TryInto};
+use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(yuval): use signed integers once supported.
 // TODO(yuval): use a single impl of a trait with associated impls, once associated impls are

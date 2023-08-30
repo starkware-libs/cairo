@@ -1,6 +1,7 @@
-use test::test_utils::{assert_eq, assert_ne};
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use contract_a::MyTrait;
 use starknet::SyscallResultTrait;
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use test::test_utils::{assert_eq, assert_ne};
 
 #[starknet::interface]
 trait IContract<T> {
@@ -34,8 +35,6 @@ mod contract_a {
         }
     }
 }
-
-use contract_a::MyTrait;
 #[test]
 #[available_gas(30000000)]
 fn test_internal_func() {

@@ -1,6 +1,6 @@
 use array::ArrayTrait;
-use serde::Serde;
 use array::SpanTrait;
+use serde::Serde;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum Result<T, E> {

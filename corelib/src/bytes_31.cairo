@@ -1,6 +1,6 @@
-use traits::{Into, TryInto};
-use option::OptionTrait;
 use integer::{u256_from_felt252, u128_safe_divmod, u128_to_felt252};
+use option::OptionTrait;
+use traits::{Into, TryInto};
 
 const BYTES_IN_BYTES31: usize = 31;
 const BYTES_IN_U128: usize = 16;

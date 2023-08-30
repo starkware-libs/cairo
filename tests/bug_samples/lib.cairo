@@ -1,4 +1,6 @@
 mod ecdsa_completeness;
+mod generic_cycles;
+mod inconsistent_gas;
 mod issue2114;
 mod issue2147;
 mod issue2152;
@@ -25,9 +27,7 @@ mod issue3211;
 mod issue3345;
 mod issue3658;
 mod issue3863;
-mod loop_only_change;
-mod inconsistent_gas;
-mod partial_param_local;
 mod loop_break_in_match;
-mod generic_cycles;
+mod loop_only_change;
+mod partial_param_local;
 

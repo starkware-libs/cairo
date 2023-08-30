@@ -1,6 +1,6 @@
-use zeroable::Zeroable;
-use serde::Serde;
 use hash::{Hash, HashStateTrait};
+use serde::Serde;
+use zeroable::Zeroable;
 
 #[derive(Copy, Drop)]
 extern type ContractAddress;

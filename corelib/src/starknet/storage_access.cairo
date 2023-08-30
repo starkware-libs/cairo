@@ -1,12 +1,12 @@
 use core::array::ArrayTrait;
-use traits::{Into, TryInto};
 use option::OptionTrait;
+use serde::Serde;
 use starknet::{
     SyscallResult, syscalls::{storage_read_syscall, storage_write_syscall},
     contract_address::{ContractAddress, Felt252TryIntoContractAddress, ContractAddressIntoFelt252},
     class_hash::{ClassHash, Felt252TryIntoClassHash, ClassHashIntoFelt252}
 };
-use serde::Serde;
+use traits::{Into, TryInto};
 
 #[derive(Copy, Drop)]
 extern type StorageAddress;

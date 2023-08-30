@@ -1,7 +1,7 @@
 use array::Span;
 use array::SpanTrait;
-use option::OptionTrait;
 use hash::HashStateTrait;
+use option::OptionTrait;
 
 extern type Poseidon;
 

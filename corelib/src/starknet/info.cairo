@@ -1,8 +1,8 @@
+use box::BoxTrait;
 use starknet::{
     SyscallResultTrait, SyscallResult, syscalls::get_execution_info_syscall,
     contract_address::ContractAddress
 };
-use box::BoxTrait;
 
 #[derive(Copy, Drop)]
 struct ExecutionInfo {

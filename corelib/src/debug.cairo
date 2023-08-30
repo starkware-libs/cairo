@@ -1,6 +1,6 @@
 use array::ArrayTrait;
-use traits::Into;
 use option::Option;
+use traits::Into;
 
 // Usage:
 //
