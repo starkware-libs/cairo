@@ -6,7 +6,7 @@ ExpandContractTestRunner
 //! > cairo_code
 #[starknet::embeddable(v0)]
 #[generate_trait]
-impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
+impl OutsideImpl<TContractState, impl DropTContractState: Drop<TContractState>> of OutsideTrait<TContractState, DropTContractState> {
     #[external]
     fn ret_3(self: @TContractState) -> felt252 {
         3
@@ -31,7 +31,7 @@ lib.cairo:
 
 #[starknet::embeddable(v0)]
 #[generate_trait]
-impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
+impl OutsideImpl<TContractState, impl DropTContractState: Drop<TContractState>> of OutsideTrait<TContractState, DropTContractState> {
     #[external]
     fn ret_3(self: @TContractState) -> felt252 {
         3
@@ -53,7 +53,7 @@ mod empty_contract {
 
 generate_trait:
 
-trait OutsideTrait<TContractState>  {
+trait OutsideTrait<TContractState, impl DropTContractState: Drop<TContractState>>  {
     fn ret_3(self: @TContractState) -> felt252;
 
     fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252;
@@ -67,7 +67,7 @@ trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper_ret_3<TContractState, impl DropTContractState: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -77,7 +77,7 @@ fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContrac
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    let res = OutsideImpl::<TContractState>::ret_3(@contract_state, );
+    let res = OutsideImpl::<TContractState, DropTContractState>::ret_3(@contract_state, );
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -86,7 +86,7 @@ fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContrac
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper_ret_identity<TContractState, impl DropTContractState: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -103,7 +103,7 @@ fn __wrapper_ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNew
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    let res = OutsideImpl::<TContractState>::ret_identity(ref contract_state, __arg_from_address, __arg_value);
+    let res = OutsideImpl::<TContractState, DropTContractState>::ret_identity(ref contract_state, __arg_from_address, __arg_value);
     let mut arr = array::array_new();
     // References.
     // Result.

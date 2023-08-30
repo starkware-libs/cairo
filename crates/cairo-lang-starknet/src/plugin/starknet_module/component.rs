@@ -237,8 +237,9 @@ fn handle_component_impl(
         }
 
         #[starknet::embeddable]
-        impl $generated_impl_name$<$generic_params$$maybe_comma$ impl TContractStatePanicDestruct: \
-         PanicDestruct<TContractState>> of $generated_trait_name$<TContractState> {$impl_functions$
+        impl $generated_impl_name$<
+            $generic_params$$maybe_comma$ impl TContractStateDrop: Drop<TContractState>
+        > of $generated_trait_name$<TContractState> {$impl_functions$
         }"},
         [
             ("generated_trait_name".to_string(), generated_trait_name),

@@ -2014,7 +2014,7 @@
       ],
       [
         5,
-        "test::__wrapper_ret_3::<test::test_contract::ContractState, test::test_contract::ContractStateOutsideImpl, test::test_contract::ContractStateDrop>"
+        "test::__wrapper_ret_3::<test::test_contract::ContractState, test::test_contract::ContractStateDrop, test::test_contract::ContractStateOutsideImpl>"
       ],
       [
         6,
