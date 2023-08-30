@@ -72,7 +72,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -191,7 +191,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -310,7 +310,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -427,7 +427,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -544,7 +544,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -661,7 +661,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -778,7 +778,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -887,7 +887,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
@@ -1008,7 +1008,7 @@ use starknet::event::EventEmitter;
     #[cfg(test)]
     #[inline(always)]
     fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state<TCS>()
+        unsafe_new_component_state::<TCS>()
     }
     
 
