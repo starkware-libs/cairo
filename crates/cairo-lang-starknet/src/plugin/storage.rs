@@ -11,7 +11,7 @@ use super::starknet_module::StarknetModuleKind;
 use super::utils::has_v0_attribute;
 use crate::contract::starknet_keccak;
 
-/// Generate getters and setters for the variables in the storage struct.
+/// Generate getters and setters for the members of the storage struct.
 pub fn handle_storage_struct(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -21,7 +21,7 @@ pub fn handle_storage_struct(
 ) {
     let mut members_code = Vec::new();
     let mut members_init_code = Vec::new();
-    let mut vars_code = Vec::new();
+    let mut members_module_code = Vec::new();
 
     let state_struct_name = starknet_module_kind.get_state_struct_name();
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
@@ -30,85 +30,22 @@ pub fn handle_storage_struct(
     let member_state_name = starknet_module_kind.get_member_state_name();
 
     for member in struct_ast.members(db).elements(db) {
-        if starknet_module_kind == StarknetModuleKind::Contract
-            && has_v0_attribute(db, diagnostics, &member, NESTED_ATTR)
-        {
-            if let Some((member_code, member_init_code)) = get_nested_member_code(db, &member) {
-                members_code.push(member_code);
-                members_init_code.push(member_init_code);
-            } else {
-                diagnostics.push(PluginDiagnostic {
-                    message: "`nested` attribute is only allowed for members of type \
-                              [some_path::]Storage`"
-                        .to_string(),
-                    stable_ptr: member.stable_ptr().untyped(),
-                });
-            }
-
-            continue;
-        }
-
-        let name_node = member.name(db).as_syntax_node();
-        let name = member.name(db).text(db);
-        let member_node = RewriteNode::interpolate_patched(
-            &format!("$name$: $name$::{member_state_name}"),
-            [("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
+        let member_code_pieces = get_storage_member_code(
+            db,
+            diagnostics,
+            starknet_module_kind,
+            member,
+            &member_state_name,
+            data.extra_uses_node.clone(),
         );
-        members_code.push(RewriteNode::interpolate_patched(
-            "\n        $member$,",
-            [("member".to_string(), member_node.clone())].into(),
-        ));
-        members_init_code.push(RewriteNode::interpolate_patched(
-            "\n            $member$ {},",
-            [("member".to_string(), member_node)].into(),
-        ));
-        let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
-        let type_ast = member.type_clause(db).ty(db);
-        match try_extract_mapping_types(db, &type_ast) {
-            Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
-                vars_code.push(RewriteNode::interpolate_patched(
-                    handle_legacy_mapping_storage_var(&address, &member_state_name).as_str(),
-                    [
-                        (
-                            "storage_var_name".to_string(),
-                            RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
-                        ),
-                        ("extra_uses".to_string(), data.extra_uses_node.clone()),
-                        (
-                            "key_type".to_string(),
-                            RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
-                        ),
-                        (
-                            "value_type".to_string(),
-                            RewriteNode::new_trimmed(value_type_ast.as_syntax_node()),
-                        ),
-                    ]
-                    .into(),
-                ));
-            }
-            Some((_, _, MappingType::NonLegacy)) => {
-                diagnostics.push(PluginDiagnostic {
-                    message: "Non `LegacyMap` mapping is not yet supported.".to_string(),
-                    stable_ptr: type_ast.stable_ptr().untyped(),
-                });
-            }
-            None => {
-                vars_code.push(RewriteNode::interpolate_patched(
-                    handle_simple_storage_var(&address, &member_state_name).as_str(),
-                    [
-                        (
-                            "storage_var_name".to_string(),
-                            RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
-                        ),
-                        ("extra_uses".to_string(), data.extra_uses_node.clone()),
-                        (
-                            "type_name".to_string(),
-                            RewriteNode::new_trimmed(type_ast.as_syntax_node()),
-                        ),
-                    ]
-                    .into(),
-                ));
-            }
+        if let Some(member_code) = member_code_pieces.member_code {
+            members_code.push(member_code);
+        }
+        if let Some(member_init_code) = member_code_pieces.init_code {
+            members_init_code.push(member_init_code);
+        }
+        if let Some(member_module_code) = member_code_pieces.module_code {
+            members_module_code.push(member_module_code);
         }
     }
 
@@ -132,21 +69,139 @@ pub fn handle_storage_struct(
                  fn {for_testing_function_name}() -> {full_state_struct_name} {{
                      {unsafe_new_function_name}()
                  }}
-                 $vars_code$",
+                 $members_module_code$",
         )
         .as_str(),
         [
             ("members_code".to_string(), RewriteNode::new_modified(members_code)),
             ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
-            ("vars_code".to_string(), RewriteNode::new_modified(vars_code)),
+            ("members_module_code".to_string(), RewriteNode::new_modified(members_module_code)),
         ]
         .into(),
     );
 }
 
-/// Returns the code of a nested storage member and its initialization: `(member_code,
-/// member_init_code)`.
-fn get_nested_member_code(
+/// The pieces of data required to generate the code relevant for a storage member
+#[derive(Default)]
+struct StorageMemberCodePieces {
+    /// The code to use in the State struct definition.
+    member_code: Option<RewriteNode>,
+    /// The code to use in the `unsafe_new` function for the initialization of the member of the
+    /// State struct.
+    init_code: Option<RewriteNode>,
+    /// The additional code for the storage member (mainly the related inner module).
+    module_code: Option<RewriteNode>,
+}
+
+/// Returns the relevant code for a storage member.
+fn get_storage_member_code(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    starknet_module_kind: StarknetModuleKind,
+    member: ast::Member,
+    member_state_name: &String,
+    extra_uses_node: RewriteNode,
+) -> StorageMemberCodePieces {
+    if starknet_module_kind == StarknetModuleKind::Contract
+        && has_v0_attribute(db, diagnostics, &member, NESTED_ATTR)
+    {
+        if let Some((member_code, member_init_code)) = get_nested_storage_member_code(db, &member) {
+            return StorageMemberCodePieces {
+                member_code: Some(member_code),
+                init_code: Some(member_init_code),
+                module_code: None,
+            };
+        } else {
+            diagnostics.push(PluginDiagnostic {
+                message: "`nested` attribute is only allowed for members of type \
+                          [some_path::]Storage`"
+                    .to_string(),
+                stable_ptr: member.stable_ptr().untyped(),
+            });
+            return Default::default();
+        }
+    }
+
+    get_simple_storage_member_code(db, diagnostics, member, member_state_name, extra_uses_node)
+}
+
+/// Returns the relevant code for a simple (non-nested) storage member.
+fn get_simple_storage_member_code(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    member: ast::Member,
+    member_state_name: &String,
+    extra_uses_node: RewriteNode,
+) -> StorageMemberCodePieces {
+    let name_node = member.name(db).as_syntax_node();
+    let name = member.name(db).text(db);
+    let member_node = RewriteNode::interpolate_patched(
+        &format!("$name$: $name$::{member_state_name}"),
+        [("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
+    );
+    let member_code = RewriteNode::interpolate_patched(
+        "\n        $member$,",
+        [("member".to_string(), member_node.clone())].into(),
+    );
+
+    let member_init_code = RewriteNode::interpolate_patched(
+        "\n            $member$ {},",
+        [("member".to_string(), member_node)].into(),
+    );
+    let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
+    let type_ast = member.type_clause(db).ty(db);
+
+    let storage_member_name = match try_extract_mapping_types(db, &type_ast) {
+        Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
+            Some(RewriteNode::interpolate_patched(
+                handle_legacy_mapping_storage_member(&address, member_state_name).as_str(),
+                [
+                    (
+                        "storage_member_name".to_string(),
+                        RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+                    ),
+                    ("extra_uses".to_string(), extra_uses_node),
+                    (
+                        "key_type".to_string(),
+                        RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
+                    ),
+                    (
+                        "value_type".to_string(),
+                        RewriteNode::new_trimmed(value_type_ast.as_syntax_node()),
+                    ),
+                ]
+                .into(),
+            ))
+        }
+        Some((_, _, MappingType::NonLegacy)) => {
+            diagnostics.push(PluginDiagnostic {
+                message: "Non `LegacyMap` mapping is not yet supported.".to_string(),
+                stable_ptr: type_ast.stable_ptr().untyped(),
+            });
+            None
+        }
+        None => Some(RewriteNode::interpolate_patched(
+            handle_simple_storage_member(&address, member_state_name).as_str(),
+            [
+                (
+                    "storage_member_name".to_string(),
+                    RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+                ),
+                ("extra_uses".to_string(), extra_uses_node),
+                ("type_name".to_string(), RewriteNode::new_trimmed(type_ast.as_syntax_node())),
+            ]
+            .into(),
+        )),
+    };
+    StorageMemberCodePieces {
+        member_code: Some(member_code),
+        init_code: Some(member_init_code),
+        module_code: storage_member_name,
+    }
+}
+
+/// Returns the relevant code for a nested storage member.
+fn get_nested_storage_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
 ) -> Option<(RewriteNode, RewriteNode)> {
@@ -202,7 +257,7 @@ fn get_nested_member_code(
     }
 }
 
-/// The type of the mapping storage variable.
+/// The type of the mapping storage member.
 enum MappingType {
     /// Pedersen based.
     Legacy,
@@ -237,12 +292,12 @@ fn try_extract_mapping_types(
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_simple_storage_var(address: &str, member_state_name: &str) -> String {
+fn handle_simple_storage_member(address: &str, member_state_name: &str) -> String {
     format!(
         "
-    use $storage_var_name$::Internal{member_state_name}Trait as \
-         $storage_var_name${member_state_name}Trait;
-    mod $storage_var_name$ {{$extra_uses$
+    use $storage_member_name$::Internal{member_state_name}Trait as \
+         $storage_member_name${member_state_name}Trait;
+    mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
         struct {member_state_name} {{}}
         trait Internal{member_state_name}Trait {{
@@ -282,12 +337,12 @@ fn handle_simple_storage_var(address: &str, member_state_name: &str) -> String {
 }
 
 /// Generate getters and setters skeleton for a mapping member in the storage struct.
-fn handle_legacy_mapping_storage_var(address: &str, member_state_name: &str) -> String {
+fn handle_legacy_mapping_storage_member(address: &str, member_state_name: &str) -> String {
     format!(
         "
-    use $storage_var_name$::Internal{member_state_name}Trait as \
-         $storage_var_name${member_state_name}Trait;
-    mod $storage_var_name$ {{$extra_uses$
+    use $storage_member_name$::Internal{member_state_name}Trait as \
+         $storage_member_name${member_state_name}Trait;
+    mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
         struct {member_state_name} {{}}
         trait Internal{member_state_name}Trait {{
