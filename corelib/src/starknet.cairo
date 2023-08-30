@@ -1,64 +1,66 @@
-use box::Box;
-use option::OptionTrait;
-use array::Span;
-use traits::Into;
-use traits::TryInto;
-use zeroable::Zeroable;
+mod account;
 
-// Re-imports
-// Store
-mod storage_access;
-use storage_access::{
-    Store, StorePacking, StorageAddress, StorageBaseAddress, storage_base_address_const,
-    storage_base_address_from_felt252, storage_address_from_base,
-    storage_address_from_base_and_offset, storage_address_to_felt252,
-    storage_address_try_from_felt252
-};
+// ClassHash
+mod class_hash;
 
-// Module containing all the extern declaration of the syscalls.
-mod syscalls;
-use syscalls::{
-    call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
-    get_execution_info_syscall, library_call_syscall, send_message_to_l1_syscall,
-    storage_read_syscall, storage_write_syscall, replace_class_syscall, keccak_syscall
-};
+// ContractAddress
+mod contract_address;
+
+// EthAddress
+mod eth_address;
+
+mod event;
+
+mod info;
 
 // secp256
 mod secp256_trait;
 mod secp256k1;
 mod secp256r1;
 
-// ContractAddress
-mod contract_address;
-use contract_address::{
-    ContractAddress, ContractAddressIntoFelt252, Felt252TryIntoContractAddress,
-    contract_address_const, contract_address_to_felt252, contract_address_try_from_felt252
-};
+// Re-imports
+// Store
+mod storage_access;
 
-// EthAddress
-mod eth_address;
-use eth_address::{
-    EthAddress, EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
-};
+// Module containing all the extern declaration of the syscalls.
+mod syscalls;
 
-// ClassHash
-mod class_hash;
+// Module for starknet testing only.
+mod testing;
+use account::AccountContract;
+use array::Span;
+use box::Box;
 use class_hash::{
     ClassHash, ClassHashIntoFelt252, Felt252TryIntoClassHash, class_hash_const,
     class_hash_to_felt252, class_hash_try_from_felt252
 };
-
-mod info;
+use contract_address::{
+    ContractAddress, ContractAddressIntoFelt252, Felt252TryIntoContractAddress,
+    contract_address_const, contract_address_to_felt252, contract_address_try_from_felt252
+};
+use eth_address::{
+    EthAddress, EthAddressIntoFelt252, EthAddressSerde, EthAddressZeroable, Felt252TryIntoEthAddress
+};
+use event::Event;
 use info::{
     ExecutionInfo, BlockInfo, TxInfo, get_execution_info, get_caller_address, get_contract_address,
     get_block_info, get_tx_info, get_block_timestamp
 };
-
-mod event;
-use event::Event;
-
-mod account;
-use account::AccountContract;
+use option::OptionTrait;
+use storage_access::{
+    Store, StorePacking, StorageAddress, StorageBaseAddress, storage_base_address_const,
+    storage_base_address_from_felt252, storage_address_from_base,
+    storage_address_from_base_and_offset, storage_address_to_felt252,
+    storage_address_try_from_felt252
+};
+use syscalls::{
+    call_contract_syscall, deploy_syscall, emit_event_syscall, get_block_hash_syscall,
+    get_execution_info_syscall, library_call_syscall, send_message_to_l1_syscall,
+    storage_read_syscall, storage_write_syscall, replace_class_syscall, keccak_syscall
+};
+use traits::Into;
+use traits::TryInto;
+use zeroable::Zeroable;
 
 extern type System;
 
@@ -83,6 +85,3 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 
 /// The expected return value of the `__validate*__` functions of an accounted contract.
 const VALIDATED: felt252 = 'VALID';
-
-// Module for starknet testing only.
-mod testing;

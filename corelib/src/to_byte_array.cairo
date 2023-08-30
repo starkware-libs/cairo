@@ -1,6 +1,6 @@
 use byte_array::ByteArrayTrait;
-use traits::{Into, TryInto};
 use option::OptionTrait;
+use traits::{Into, TryInto};
 use zeroable::Zeroable;
 
 /// Formats a type that behaves like uint to its Ascii representation and appends the formatted

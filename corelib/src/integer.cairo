@@ -1,10 +1,10 @@
-use option::OptionTrait;
-use result::ResultTrait;
-use traits::{Into, TryInto, Default, Felt252DictValue};
-use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use serde::Serde;
 use array::ArrayTrait;
 use array::SpanTrait;
+use option::OptionTrait;
+use result::ResultTrait;
+use serde::Serde;
+use traits::{Into, TryInto, Default, Felt252DictValue};
+use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;

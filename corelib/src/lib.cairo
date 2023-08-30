@@ -1,10 +1,124 @@
+// Array.
+mod array;
+
+// Boxes.
+mod box;
+
+// BytesArray.
+mod byte_array;
+
+// bytes31.
+mod bytes_31;
+
+// Clone.
+mod clone;
+
+// Cmp.
+mod cmp;
+
+// Debug.
+mod debug;
+
+// Dictionary.
+mod dict;
+
+// EC.
+mod ec;
+
+mod ecdsa;
+
+// Gas.
+mod gas;
+
+// Hash functions.
+mod hash;
+
+// Integer.
+mod integer;
+
+// Internals.
+mod internal;
+
+mod keccak;
+
+// Math.
+mod math;
+
+// Nullable
+mod nullable;
+
+// Option.
+mod option;
+
+
+// Panics.
+mod panics;
+
+// Pedersen
+mod pedersen;
+
+// Poseidon
+mod poseidon;
+
+// Result.
+mod result;
+
+// Serialization and Deserialization.
+mod serde;
+
+// Starknet
+mod starknet;
+
+#[cfg(test)]
+mod test;
+
+// Module for testing only.
+mod testing;
+
+// to_byte_array.
+mod to_byte_array;
 mod traits;
+
+// Zeroable.
+mod zeroable;
+use array::{Array, ArrayTrait};
+
+// Span.
+use array::{Span, SpanTrait};
+use box::{Box, BoxTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
+use bytes_31::{
+    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
+    Felt252TryIntoBytes31
+};
+use clone::Clone;
+use dict::{
+    Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
+};
+use ec::{EcOp, EcPoint, EcState};
+use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
+use integer::{
+    i8, i8_const, I8IntoFelt252, i16, i16_const, I16IntoFelt252, i32, i32_const, I32IntoFelt252,
+    i64, i64_const, I64IntoFelt252, i128, i128_const, I128IntoFelt252, NumericLiteral, u128,
+    u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
+    u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
+    Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
+    U128IntoFelt252, Felt252IntoU256, Bitwise
+};
+use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
+use option::{Option, OptionTrait};
+use panics::{panic, Panic, PanicResult};
+use pedersen::Pedersen;
+use poseidon::Poseidon;
+use result::{Result, ResultTrait};
+use serde::Serde;
+use starknet::System;
 use traits::{
     Add, AddEq, BitAnd, BitNot, BitOr, BitXor, Copy, Div, DivEq, DivRem, Drop, Mul, MulEq,
     PartialEq, PartialOrd, Rem, RemEq, Sub, SubEq, TupleSize0Copy, TupleSize0Drop, Not, Neg, Into,
     TryInto, Index, IndexView, Destruct, Default, Felt252DictValue, PanicDestruct
 };
-use serde::Serde;
+use zeroable::{Zeroable, NonZero};
 
 type usize = u32;
 
@@ -211,71 +325,6 @@ impl Felt252Felt252DictValue of Felt252DictValue<felt252> {
 extern fn dup<T>(obj: T) -> (T, T) nopanic;
 extern fn drop<T>(obj: T) nopanic;
 
-// Boxes.
-mod box;
-use box::{Box, BoxTrait};
-
-// Nullable
-mod nullable;
-use nullable::{Nullable, NullableTrait, match_nullable, null, nullable_from_box};
-
-// Array.
-mod array;
-use array::{Array, ArrayTrait};
-
-// Span.
-use array::{Span, SpanTrait};
-
-// Dictionary.
-mod dict;
-use dict::{
-    Felt252Dict, SquashedFelt252Dict, felt252_dict_new, felt252_dict_squash, Felt252DictTrait
-};
-
-// Result.
-mod result;
-use result::{Result, ResultTrait};
-
-// Option.
-mod option;
-use option::{Option, OptionTrait};
-
-// Clone.
-mod clone;
-use clone::Clone;
-
-// EC.
-mod ec;
-use ec::{EcOp, EcPoint, EcState};
-
-mod ecdsa;
-
-// Integer.
-mod integer;
-use integer::{
-    i8, i8_const, I8IntoFelt252, i16, i16_const, I16IntoFelt252, i32, i32_const, I32IntoFelt252,
-    i64, i64_const, I64IntoFelt252, i128, i128_const, I128IntoFelt252, NumericLiteral, u128,
-    u128_const, u128_sqrt, u128_is_zero, u8, u8_const, u16, u16_const, u32, u32_const, u64,
-    u64_const, u256, u256_sqrt, Felt252TryIntoU8, U8IntoFelt252, Felt252TryIntoU16, U16IntoFelt252,
-    Felt252TryIntoU32, U32IntoFelt252, Felt252TryIntoU64, U64IntoFelt252, Felt252TryIntoU128,
-    U128IntoFelt252, Felt252IntoU256, Bitwise
-};
-
-// Math.
-mod math;
-
-// Cmp.
-mod cmp;
-
-// Gas.
-mod gas;
-use gas::{BuiltinCosts, GasBuiltin, get_builtin_costs};
-
-
-// Panics.
-mod panics;
-use panics::{panic, Panic, PanicResult};
-
 enum never {}
 
 #[inline(always)]
@@ -289,53 +338,3 @@ fn assert(cond: bool, err_code: felt252) {
         panic_with_felt252(err_code)
     }
 }
-
-// Serialization and Deserialization.
-mod serde;
-
-// Hash functions.
-mod hash;
-
-mod keccak;
-
-// Pedersen
-mod pedersen;
-use pedersen::Pedersen;
-
-// Poseidon
-mod poseidon;
-use poseidon::Poseidon;
-
-// Debug.
-mod debug;
-
-// Starknet
-mod starknet;
-use starknet::System;
-
-// Internals.
-mod internal;
-
-// Zeroable.
-mod zeroable;
-use zeroable::{Zeroable, NonZero};
-
-// bytes31.
-mod bytes_31;
-use bytes_31::{
-    bytes31, bytes31_const, Bytes31IndexView, Bytes31IntoFelt252, Bytes31Trait,
-    Felt252TryIntoBytes31
-};
-
-// BytesArray.
-mod byte_array;
-use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
-
-// to_byte_array.
-mod to_byte_array;
-
-#[cfg(test)]
-mod test;
-
-// Module for testing only.
-mod testing;

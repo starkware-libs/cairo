@@ -1,6 +1,6 @@
-use test::test_utils::{assert_eq, assert_ne};
 use hash::{HashStateTrait, HashStateExTrait};
 use poseidon::PoseidonTrait;
+use test::test_utils::{assert_eq, assert_ne};
 
 #[test]
 fn test_pedersen_hash() {

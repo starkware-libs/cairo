@@ -1,8 +1,8 @@
 use starknet::StorageAddress;
-use test::test_utils::{assert_eq, assert_ne};
 
 use super::utils::serialized_element;
 use super::utils::single_deserialize;
+use test::test_utils::{assert_eq, assert_ne};
 
 #[starknet::interface]
 trait ITestContract {}

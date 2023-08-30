@@ -1,7 +1,8 @@
+use contract_with_event::{Event, IncrementalEvent, StaticEvent};
 use core::debug::PrintTrait;
-use test::test_utils::{assert_eq, assert_ne};
-use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
 use starknet::SyscallResultTrait;
+use starknet::syscalls::{deploy_syscall, get_block_hash_syscall};
+use test::test_utils::{assert_eq, assert_ne};
 
 #[starknet::interface]
 trait IContractWithEvent<T> {
@@ -46,8 +47,6 @@ mod contract_with_event {
         }
     }
 }
-
-use contract_with_event::{Event, IncrementalEvent, StaticEvent};
 
 #[test]
 #[available_gas(30000000)]

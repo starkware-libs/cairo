@@ -1,10 +1,10 @@
-use starknet::{
-    eth_address::U256IntoEthAddress, EthAddress, secp256r1::Secp256r1Impl, SyscallResultTrait
-};
 use starknet::secp256_trait::{
     recover_public_key, verify_eth_signature, Secp256PointTrait, Signature
 };
 use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
+use starknet::{
+    eth_address::U256IntoEthAddress, EthAddress, secp256r1::Secp256r1Impl, SyscallResultTrait
+};
 use test::test_utils::assert_eq;
 
 #[test]

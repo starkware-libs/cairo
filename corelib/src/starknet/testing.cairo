@@ -1,6 +1,6 @@
-use starknet::ContractAddress;
 use array::ArrayTrait;
 use array::SpanTrait;
+use starknet::ContractAddress;
 use traits::Into;
 
 // A general cheatcode function used to simplify implementation of Starknet testing functions.
