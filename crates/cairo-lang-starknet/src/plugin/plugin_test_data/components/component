@@ -220,7 +220,9 @@ trait MyInnerImplTrait<TContractState> {
 }
 
 #[starknet::embeddable]
-impl MyImpl<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>> of MyInnerImplTrait<TContractState> {
+impl MyImpl<
+    TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
+> of MyInnerImplTrait<TContractState> {
     #[external]
     fn get_data(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
@@ -301,7 +303,7 @@ trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -314,7 +316,7 @@ fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    let res = MyImpl::<TContractState, X, TContractStatePanicDestruct>::get_data(@contract_state, __arg_addr);
+    let res = MyImpl::<TContractState, X, TContractStateDrop>::get_data(@contract_state, __arg_addr);
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -323,7 +325,7 @@ fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -340,7 +342,7 @@ fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    MyImpl::<TContractState, X, TContractStatePanicDestruct>::set_data(ref contract_state, __arg_addr, __arg_value);
+    MyImpl::<TContractState, X, TContractStateDrop>::set_data(ref contract_state, __arg_addr, __arg_value);
     let mut arr = array::array_new();
     // References.
     // Result.

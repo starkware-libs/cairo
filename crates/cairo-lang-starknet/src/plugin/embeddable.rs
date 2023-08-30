@@ -53,8 +53,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             );
             let generic_params_node = RewriteNode::interpolate_patched(
                 "<$generic_params$$maybe_comma$ impl UnsafeNewContractState: \
-                 UnsafeNewContractStateTraitFor$impl_name$<TContractState>, impl \
-                 TContractStateDrop: Drop<TContractState>>",
+                 UnsafeNewContractStateTraitFor$impl_name$<TContractState>>",
                 [
                     (
                         "generic_params".to_string(),

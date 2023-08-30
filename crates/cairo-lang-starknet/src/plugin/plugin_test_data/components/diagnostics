@@ -1024,7 +1024,9 @@ trait MyInnerImplTrait<TContractState> {
 }
 
 #[starknet::embeddable]
-impl MyImpl<TContractState, impl X: HasComponent<TContractState>, impl TContractStatePanicDestruct: PanicDestruct<TContractState>> of MyInnerImplTrait<TContractState> {
+impl MyImpl<
+    TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
+> of MyInnerImplTrait<TContractState> {
 }
 
 impls:
