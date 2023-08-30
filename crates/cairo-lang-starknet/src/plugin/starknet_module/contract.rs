@@ -4,13 +4,14 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
+use smol_str::SmolStr;
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
 use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
     COMPONENT_INLINE_MACRO, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EXTERNAL_ATTR,
-    L1_HANDLER_ATTR, STORAGE_STRUCT_NAME,
+    L1_HANDLER_ATTR, NESTED_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -23,21 +24,159 @@ use crate::plugin::utils::has_v0_attribute;
 pub struct ContractSpecificGenerationData {
     test_config: RewriteNode,
     entry_points_code: EntryPointsGenerationData,
-    has_component_impls: Vec<RewriteNode>,
+    components_data: ComponentsGenerationData,
 }
+
+/// Data collected by the plugin for eventual validation of the contract.
+#[derive(Default)]
+struct ComponentsGenerationData {
+    /// The components defined in the contract using the `component!` inline macro.
+    pub components: Vec<NestedComponent>,
+    /// The contract's storage members that are marked with the `nested` attribute.
+    pub nested_storage_members: Vec<String>,
+    /// The contract's event variants that are defined in the main event enum of the contract.
+    pub nested_event_variants: Vec<SmolStr>,
+}
+
+/// A component defined in a contract using the `component!` inline macro.
+pub struct NestedComponent {
+    pub component_path: ast::ExprPath,
+    pub storage_name: ast::ExprPath,
+    pub event_name: ast::ExprPath,
+}
+
+impl ComponentsGenerationData {
+    pub fn into_rewrite_node(
+        self,
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
+    ) -> RewriteNode {
+        let mut has_component_impls = vec![];
+        for NestedComponent { component_path, storage_name, event_name } in self.components.iter() {
+            if !self.validate_component(db, diagnostics, &storage_name, &event_name) {
+                // Don't generate the code for the impl of HasComponent.
+                continue;
+            }
+            // TODO(yuval): consider supporting 2 components with the same name and different paths.
+            // Currently it doesn't work as the name of the impl is the same.
+            let component_name = match component_path.elements(db).last().unwrap() {
+                ast::PathSegment::WithGenericArgs(x) => x.ident(db),
+                ast::PathSegment::Simple(x) => x.ident(db),
+            };
+
+            let has_component_impl = RewriteNode::interpolate_patched(
+                indoc!(
+                    "impl HasComponentImpl_$component_name$ of \
+                     $component_path$::HasComponent<ContractState> {
+           fn get_component(self: @ContractState) -> \
+                     @$component_path$::ComponentState<ContractState> {
+               self.$storage_name$
+           }
+           fn get_component_mut(ref self: ContractState) -> \
+                     $component_path$::ComponentState<ContractState> {
+               $component_path$::unsafe_new_component_state::<ContractState>()
+           }
+           fn get_contract(self: @$component_path$::ComponentState<ContractState>) -> \
+                     @ContractState {
+               @unsafe_new_contract_state()
+           }
+           fn get_contract_mut(ref self: $component_path$::ComponentState<ContractState>) -> \
+                     ContractState {
+               unsafe_new_contract_state()
+           }
+           fn emit(ref self: $component_path$::ComponentState<ContractState>, event: \
+                     $component_path$::Event) {
+               let mut contract = $component_path$::HasComponent::get_contract_mut(ref self);
+               contract.emit(Event::$event_name$(event));
+           }
+       }"
+                ),
+                [
+                    (
+                        "component_name".to_string(),
+                        RewriteNode::new_trimmed(component_name.as_syntax_node()),
+                    ),
+                    (
+                        "component_path".to_string(),
+                        RewriteNode::new_trimmed(component_path.as_syntax_node()),
+                    ),
+                    (
+                        "storage_name".to_string(),
+                        RewriteNode::new_trimmed(storage_name.as_syntax_node()),
+                    ),
+                    (
+                        "event_name".to_string(),
+                        RewriteNode::new_trimmed(event_name.as_syntax_node()),
+                    ),
+                ]
+                .into(),
+            );
+
+            has_component_impls.push(has_component_impl);
+        }
+        RewriteNode::new_modified(has_component_impls)
+    }
+
+    /// Validate the component
+    fn validate_component(
+        &self,
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
+        storage_name: &ast::ExprPath,
+        event_name: &ast::ExprPath,
+    ) -> bool {
+        let mut is_valid = true;
+
+        let storage_name_syntax_node = storage_name.as_syntax_node();
+        if !self.nested_storage_members.contains(&storage_name_syntax_node.get_text(db)) {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: storage_name.stable_ptr().untyped(),
+                message: format!(
+                    "`{0}` is not a nested member in the contract's `Storage`.\nConsider adding \
+                     to `Storage`:\n```\n#[nested(v0)]\n{0}: path::to::component::Storage,\n````",
+                    storage_name_syntax_node.get_text_without_trivia(db)
+                )
+                .to_string(),
+            });
+            is_valid = false;
+        }
+
+        let event_name_str = event_name.as_syntax_node().get_text_without_trivia(db);
+        if !self.nested_event_variants.contains(&event_name_str.clone().into()) {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: event_name.stable_ptr().untyped(),
+                message: format!(
+                    "`{event_name_str}` is not a nested event in the contract's `Event` \
+                     enum.\nConsider adding to the `Event` enum:\n```\n{event_name_str}: \
+                     path::to::component::Event,\n```\nNote: currently with components, only an \
+                     enum Event directly in the contract is supported.",
+                )
+                .to_string(),
+            });
+            is_valid = false;
+        }
+
+        is_valid
+    }
+}
+
 impl ContractSpecificGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(
+        self,
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
+    ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             indoc! {"
                 $test_config$
                 $entry_points_code$
-                $has_component_impls$"},
+                $components_code$"},
             [
                 ("test_config".to_string(), self.test_config),
                 ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
                 (
-                    "has_component_impls".to_string(),
-                    RewriteNode::new_modified(self.has_component_impls),
+                    "components_code".to_string(),
+                    self.components_data.into_rewrite_node(db, diagnostics),
                 ),
             ]
             .into(),
@@ -78,6 +217,16 @@ fn handle_contract_item(
                 StarknetModuleKind::Contract,
                 &mut data.common,
             );
+            for member in item_struct.members(db).elements(db) {
+                // v0 is not validated here to not create multiple diagnostics. It's already
+                // verified in handle_storage_struct above.
+                if member.has_attr(db, NESTED_ATTR) {
+                    data.specific
+                        .components_data
+                        .nested_storage_members
+                        .push(member.name(db).text(db).to_string());
+                }
+            }
         }
         ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, EMBED_ATTR) => {
             handle_embed_impl_alias(
@@ -103,8 +252,10 @@ pub(super) fn generate_contract_specific_code(
     common_data: StarknetModuleCommonGenerationData,
     body: &ast::ModuleBody,
     module_ast: &ast::ItemModule,
+    event_variants: Vec<SmolStr>,
 ) -> RewriteNode {
     let mut generation_data = ContractGenerationData { common: common_data, ..Default::default() };
+    generation_data.specific.components_data.nested_event_variants = event_variants;
     for item in body.items(db).elements(db) {
         handle_contract_item(db, diagnostics, &item, &mut generation_data);
     }
@@ -122,7 +273,7 @@ pub(super) fn generate_contract_specific_code(
 "
     ));
 
-    generation_data.into_rewrite_node()
+    generation_data.into_rewrite_node(db, diagnostics)
 }
 
 /// Forbids the given attribute in the given impl, assuming it's external.
@@ -338,56 +489,17 @@ pub fn handle_component_inline_macro(
         return;
     };
 
-    // TODO(yuval): consider supporting 2 components with the same name and different paths.
-    // Currently it doesn't work as the name of the impl is the same.
-    let component_name = match component_path.elements(db).last().unwrap() {
-        ast::PathSegment::WithGenericArgs(x) => x.ident(db),
-        ast::PathSegment::Simple(x) => x.ident(db),
-    };
-
-    let has_component_impl = RewriteNode::interpolate_patched(
-        indoc!(
-            "impl HasComponentImpl_$component_name$ of \
-             $component_path$::HasComponent<ContractState> {
-           fn get_component(self: @ContractState) -> \
-             @$component_path$::ComponentState<ContractState> {
-               self.$storage_name$
-           }
-           fn get_component_mut(ref self: ContractState) -> \
-             $component_path$::ComponentState<ContractState> {
-               $component_path$::unsafe_new_component_state::<ContractState>()
-           }
-           fn get_contract(self: @$component_path$::ComponentState<ContractState>) -> \
-             @ContractState {
-               @unsafe_new_contract_state()
-           }
-           fn get_contract_mut(ref self: $component_path$::ComponentState<ContractState>) -> \
-             ContractState {
-               unsafe_new_contract_state()
-           }
-           fn emit(ref self: $component_path$::ComponentState<ContractState>, event: \
-             $component_path$::Event) {
-               let mut contract = $component_path$::HasComponent::get_contract_mut(ref self);
-               contract.emit(Event::$event_name$(event));
-           }
-       }"
-        ),
-        [
-            (
-                "component_name".to_string(),
-                RewriteNode::new_trimmed(component_name.as_syntax_node()),
-            ),
-            (
-                "component_path".to_string(),
-                RewriteNode::new_trimmed(component_path.as_syntax_node()),
-            ),
-            ("storage_name".to_string(), RewriteNode::new_trimmed(storage_name.as_syntax_node())),
-            ("event_name".to_string(), RewriteNode::new_trimmed(event_name.as_syntax_node())),
-        ]
-        .into(),
+    println!(
+        "yg adding component. path: {}, storage: {}, event: {}",
+        component_path.as_syntax_node().get_text(db),
+        storage_name.as_syntax_node().get_text(db),
+        event_name.as_syntax_node().get_text(db)
     );
-
-    data.has_component_impls.push(has_component_impl);
+    data.components_data.components.push(NestedComponent {
+        component_path: component_path.clone(),
+        storage_name: storage_name.clone(),
+        event_name: event_name.clone(),
+    });
 }
 
 /// Returns an invalid `component` macro diagnostic.
