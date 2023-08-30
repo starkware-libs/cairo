@@ -23,6 +23,12 @@ pub fn is_mut_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
 /// Returns true if type_ast is `felt252`.
 /// Does not resolve paths or type aliases.
 pub fn is_felt252(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
+    is_name(db, type_ast, "felt252")
+}
+
+/// Returns true if type_ast is `name`.
+/// Does not resolve paths or type aliases.
+pub fn is_name(db: &dyn SyntaxGroup, type_ast: &ast::Expr, name: &str) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
         return false;
     };
@@ -32,16 +38,26 @@ pub fn is_felt252(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     };
 
-    arg_segment.ident(db).text(db) == "felt252"
+    arg_segment.ident(db).text(db) == name
 }
 
-/// Returns true if type_ast is `Span::<felt252>`.
-/// Does not resolve paths or type aliases.
+/// Returns true if `type_ast` matches `Span<felt252>`.
+/// Does not resolve paths, type aliases or named generics.
 pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
         return false;
     };
+    is_name_with_arg(db, type_path, "Span", "felt252")
+}
 
+/// Returns true if `type_path` matches `$name$<$arg$>`.
+/// Does not resolve paths, type aliases or named generics.
+pub fn is_name_with_arg(
+    db: &dyn SyntaxGroup,
+    type_path: &ast::ExprPath,
+    name: &str,
+    arg: &str,
+) -> bool {
     let type_path_elements = type_path.elements(db);
     let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)] =
         type_path_elements.as_slice()
@@ -49,7 +65,7 @@ pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     };
 
-    if path_segment_with_generics.ident(db).text(db) != "Span" {
+    if path_segment_with_generics.ident(db).text(db) != name {
         return false;
     }
     let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
@@ -60,7 +76,7 @@ pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
         return false;
     };
 
-    is_felt252(db, &arg_expr.expr(db))
+    is_name(db, &arg_expr.expr(db), arg)
 }
 
 /// Strips one preceding underscore from the given string slice, if any.

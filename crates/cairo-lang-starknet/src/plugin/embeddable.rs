@@ -6,10 +6,13 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 use itertools::chain;
 
-use super::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
+use super::consts::{
+    CONSTRUCTOR_MODULE, EXTERNAL_MODULE, GENERIC_CONTRACT_STATE_NAME, L1_HANDLER_MODULE,
+};
 use super::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
+use super::utils::is_name_with_arg;
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
 pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
@@ -31,11 +34,19 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         }
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) => {
             let generic_params_node = params.generic_params(db);
-            let mut elements = generic_params_node.elements(db).into_iter();
+            let elements = generic_params_node.elements(db);
+            let has_drop_impl = elements.iter().any(|param| {
+                if let ast::GenericParam::Impl(i) = param {
+                    is_name_with_arg(db, &i.trait_path(db), "Drop", GENERIC_CONTRACT_STATE_NAME)
+                } else {
+                    false
+                }
+            });
+            let mut elements = elements.into_iter();
             let first_generic_param = elements.next();
             let is_valid_params = first_generic_param
                 .and_then(|param| try_extract_matches!(param, ast::GenericParam::Type))
-                .map_or(false, |param| param.name(db).text(db) == "TContractState");
+                .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
             let generic_args = RewriteNode::new_modified(
                 chain!(
                     [RewriteNode::Text("::<TContractState".to_string())],
@@ -51,22 +62,18 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 )
                 .collect(),
             );
+            let maybe_comma = if generic_params_node.has_tail(db) { ", " } else { "" };
+            let maybe_drop_impl =
+                if has_drop_impl { "" } else { ", impl TContractStateDrop: Drop<TContractState>" };
             let generic_params_node = RewriteNode::interpolate_patched(
-                "<$generic_params$$maybe_comma$ impl UnsafeNewContractState: \
-                 UnsafeNewContractStateTraitFor$impl_name$<TContractState>, impl \
-                 TContractStateDrop: Drop<TContractState>>",
+                &format!(
+                    "<$generic_params${maybe_comma}impl UnsafeNewContractState: \
+                     UnsafeNewContractStateTraitFor$impl_name$<TContractState>{maybe_drop_impl}>"
+                ),
                 [
                     (
                         "generic_params".to_string(),
                         RewriteNode::new_trimmed(generic_params_node.as_syntax_node()),
-                    ),
-                    (
-                        "maybe_comma".to_string(),
-                        if generic_params_node.has_tail(db) {
-                            RewriteNode::Text(",".to_string())
-                        } else {
-                            RewriteNode::empty()
-                        },
                     ),
                     ("impl_name".to_string(), impl_name.clone()),
                 ]
