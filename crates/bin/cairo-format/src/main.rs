@@ -36,6 +36,8 @@ struct FormatterArgs {
     /// Print parsing errors.
     #[arg(short, long, default_value_t = false)]
     print_parsing_errors: bool,
+    #[arg(short, long, default_value_t = true)]
+    sort_module_level_items: bool,
     /// A list of files and directories to format. Use "-" for stdin.
     files: Vec<String>,
 }
@@ -180,7 +182,7 @@ fn main() -> ExitCode {
     log::info!("Starting formatting.");
 
     let args = FormatterArgs::parse();
-    let config = FormatterConfig::default();
+    let config = FormatterConfig::default().sort_module_level_items(args.sort_module_level_items);
     let fmt = CairoFormatter::new(config);
 
     eprintln_if_verbose(
