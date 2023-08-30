@@ -432,19 +432,28 @@ pub fn generate_event_code(
     );
 }
 
-/// Checks whether the given item is an event, and if so - makes sure it's valid.
-pub fn is_starknet_event(
+/// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
+/// its variants. Returns None if it's not a starknet event.
+pub fn get_starknet_event_variants(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: &ast::Item,
     module_kind: StarknetModuleKind,
-) -> bool {
-    let (has_event_name, stable_ptr) = match item {
-        ast::Item::Struct(strct) => {
-            (strct.name(db).text(db) == EVENT_TYPE_NAME, strct.name(db).stable_ptr().untyped())
-        }
+) -> Option<Vec<SmolStr>> {
+    let (has_event_name, stable_ptr, variants) = match item {
+        ast::Item::Struct(strct) => (
+            strct.name(db).text(db) == EVENT_TYPE_NAME,
+            strct.name(db).stable_ptr().untyped(),
+            vec![],
+        ),
         ast::Item::Enum(enm) => {
-            (enm.name(db).text(db) == EVENT_TYPE_NAME, enm.name(db).stable_ptr().untyped())
+            let has_event_name = enm.name(db).text(db) == EVENT_TYPE_NAME;
+            let variants = if has_event_name {
+                enm.variants(db).elements(db).into_iter().map(|v| v.name(db).text(db)).collect()
+            } else {
+                vec![]
+            };
+            (has_event_name, enm.name(db).stable_ptr().untyped(), variants)
         }
         ast::Item::Use(item) => {
             for leaf in get_all_path_leafs(db, item.use_path(db)) {
@@ -460,12 +469,12 @@ pub fn is_starknet_event(
                             stable_ptr: stable_ptr.untyped(),
                         });
                     }
-                    return true;
+                    return Some(vec![]);
                 }
             }
-            return false;
+            return None;
         }
-        _ => return false,
+        _ => return None,
     };
     let has_event_attr = item.has_attr(db, EVENT_ATTR);
 
@@ -478,7 +487,7 @@ pub fn is_starknet_event(
                 ),
                 stable_ptr,
             });
-            false
+            None
         }
         (false, true) => {
             diagnostics.push(PluginDiagnostic {
@@ -490,9 +499,9 @@ pub fn is_starknet_event(
             });
             // The attribute is missing, but this counts as a event - we can't create another
             // (empty) event.
-            true
+            Some(variants)
         }
-        (true, true) => true,
-        (false, false) => false,
+        (true, true) => Some(variants),
+        (false, false) => None,
     }
 }

@@ -1,4 +1,6 @@
 use cairo_lang_defs::patcher::RewriteNode;
+use cairo_lang_defs::plugin::PluginDiagnostic;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 
 use super::component::ComponentSpecificGenerationData;
 use super::contract::ContractSpecificGenerationData;
@@ -12,12 +14,16 @@ pub struct ContractGenerationData {
     pub specific: ContractSpecificGenerationData,
 }
 impl ContractGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(
+        self,
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
+    ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$common$\n$specific$",
             [
-                ("common".to_string(), self.common.into_rewrite_node()),
-                ("specific".to_string(), self.specific.into_rewrite_node()),
+                ("common".to_string(), self.common.into_rewrite_node(db, diagnostics)),
+                ("specific".to_string(), self.specific.into_rewrite_node(db, diagnostics)),
             ]
             .into(),
         )
@@ -33,12 +39,16 @@ pub struct ComponentGenerationData {
     pub specific: ComponentSpecificGenerationData,
 }
 impl ComponentGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(
+        self,
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut [PluginDiagnostic],
+    ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$common$\n\n$specific$",
             [
-                ("common".to_string(), self.common.into_rewrite_node()),
-                ("specific".to_string(), self.specific.into_rewrite_node()),
+                ("common".to_string(), self.common.into_rewrite_node(db, diagnostics)),
+                ("specific".to_string(), self.specific.into_rewrite_node(db, diagnostics)),
             ]
             .into(),
         )
@@ -56,7 +66,11 @@ pub struct StarknetModuleCommonGenerationData {
     pub extra_uses_node: RewriteNode,
 }
 impl StarknetModuleCommonGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(
+        self,
+        _db: &dyn SyntaxGroup,
+        _diagnostics: &mut [PluginDiagnostic],
+    ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$event_code$
 
