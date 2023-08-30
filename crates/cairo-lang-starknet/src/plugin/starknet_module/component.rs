@@ -19,7 +19,11 @@ pub struct ComponentSpecificGenerationData {
     generated_impls: Vec<RewriteNode>,
 }
 impl ComponentSpecificGenerationData {
-    pub fn into_rewrite_node(self) -> RewriteNode {
+    pub fn into_rewrite_node(
+        self,
+        _db: &dyn SyntaxGroup,
+        _diagnostics: &mut Vec<PluginDiagnostic>,
+    ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$has_component_trait$\n\n$generated_impls$",
             [
@@ -43,7 +47,7 @@ pub(super) fn generate_component_specific_code(
     for item in body.items(db).elements(db) {
         handle_component_item(db, diagnostics, &item, &mut generation_data);
     }
-    generation_data.into_rewrite_node()
+    generation_data.into_rewrite_node(db, diagnostics)
 }
 
 /// Handles a single item inside a component module.
