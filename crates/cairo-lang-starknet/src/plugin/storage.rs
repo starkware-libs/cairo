@@ -112,10 +112,9 @@ pub fn handle_storage_struct(
         }
     }
 
-    let unsafe_new_function_name =
-        format!("unsafe_new_{}_state{generic_arg_str}", starknet_module_kind.to_str_lower());
-    let for_testing_function_name =
-        format!("{}_state_for_testing{generic_arg_str}", starknet_module_kind.to_str_lower());
+    let module_kind = starknet_module_kind.to_str_lower();
+    let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
+    let for_testing_function_name = format!("{module_kind}_state_for_testing");
     data.state_struct_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "    struct {full_state_struct_name} {{$members_code$
@@ -123,14 +122,14 @@ pub fn handle_storage_struct(
                  impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
              {{}}
                  #[inline(always)]
-                 fn {unsafe_new_function_name}() -> {full_state_struct_name} {{
+                 fn {unsafe_new_function_name}{generic_arg_str}() -> {full_state_struct_name} {{
                      {state_struct_name}{full_generic_arg_str} {{$member_init_code$
                      }}
                  }}
                  #[cfg(test)]
                  #[inline(always)]
-                 fn {for_testing_function_name}() -> {full_state_struct_name} {{
-                     {unsafe_new_function_name}()
+                 fn {for_testing_function_name}{generic_arg_str}() -> {full_state_struct_name} {{
+                     {unsafe_new_function_name}{full_generic_arg_str}()
                  }}
                  $vars_code$",
         )
