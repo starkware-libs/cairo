@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
@@ -9,12 +9,14 @@ use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
 use cairo_lang_semantic::items::enm::SemanticEnumEx;
+use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
 use cairo_lang_semantic::items::structure::SemanticStructEx;
-use cairo_lang_semantic::types::{ConcreteEnumLongId, ConcreteStructLongId};
+use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
-    ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId, TypeLongId,
+    ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId,
+    TypeLongId,
 };
-use cairo_lang_utils::{extract_matches, try_extract_matches};
+use cairo_lang_utils::try_extract_matches;
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -56,9 +58,6 @@ pub struct AbiBuilder {
     /// List of events that were included in the abi.
     /// Used to avoid redundancy.
     events: HashSet<TypeId>,
-
-    /// Mapping from an event type to its derive plugin emitted data.
-    event_derive_data: HashMap<TypeId, EventData>,
 
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
@@ -111,48 +110,13 @@ impl AbiBuilder {
             return Err(ABIError::NoStorage);
         };
 
-        // Find the Event core trait.
-        let starknet_module = core_submodule(db, "starknet");
-        let event_module = extract_matches!(
-            db.module_item_by_name(starknet_module, "event".into())?.unwrap(),
-            ModuleItemId::Submodule
-        );
-        let event_trait = extract_matches!(
-            db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into())?.unwrap(),
-            ModuleItemId::Trait
-        );
-
-        // Find the Event type and add impls to ABI.
+        // Add impls to ABI.
         for impl_id in impls {
             if impl_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
                 builder.add_impl(db, impl_id, storage_type)?;
-                continue;
-            }
-
-            if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
+            } else if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
                 builder.add_embedded_impl(db, impl_id, storage_type)?;
-                continue;
             }
-
-            // Only handle impls of starknet::Event.
-            if db.impl_def_trait(impl_id)? != event_trait {
-                continue;
-            }
-
-            // Check if we have an Event derive plugin data on the impl.
-            let module_file = impl_id.module_file_id(db.upcast());
-            let generate_info =
-                db.module_generated_file_infos(module_file.0)?[module_file.1.0].clone();
-            let Some(generate_info) = generate_info else { continue };
-            let Some(aux_data) = &generate_info.aux_data else { continue };
-            let Some(StarkNetEventAuxData { event_data }) = aux_data.0.as_any().downcast_ref()
-            else {
-                continue;
-            };
-            let concrete_trait_id = db.impl_def_concrete_trait(impl_id)?;
-            let event_type =
-                extract_matches!(concrete_trait_id.generic_args(db)[0], GenericArgumentId::Type);
-            builder.event_derive_data.insert(event_type, event_data.clone());
         }
 
         // Add external functions, constructor and L1 handlers to ABI.
@@ -477,14 +441,9 @@ impl AbiBuilder {
             return Ok(());
         }
 
-        let TypeLongId::Concrete(concrete) = db.lookup_intern_type(type_id) else {
-            return Err(ABIError::UnexpectedType);
-        };
-        let Some(event_data) = self.event_derive_data.get(&type_id) else {
-            return Err(ABIError::EventNotDerived);
-        };
-
-        let event_kind = match event_data.clone() {
+        let concrete = try_extract_matches!(db.lookup_intern_type(type_id), TypeLongId::Concrete)
+            .ok_or(ABIError::UnexpectedType)?;
+        let event_kind = match fetch_event_data(db, type_id).ok_or(ABIError::EventNotDerived)? {
             EventData::Struct { members } => {
                 let ConcreteTypeId::Struct(concrete_struct_id) = concrete else {
                     unreachable!();
@@ -624,6 +583,39 @@ impl AbiBuilder {
             })
             .collect::<Result<Vec<_>, ABIError>>()
     }
+}
+
+/// Fetch the event data for the given type. Returns None if the given event type doesn't derive
+/// `starknet::Event` by using the `derive` attribute.
+fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<EventData> {
+    let starknet_module = core_submodule(db, "starknet");
+    // `starknet::event`.
+    let event_module = try_extract_matches!(
+        db.module_item_by_name(starknet_module, "event".into()).unwrap().unwrap(),
+        ModuleItemId::Submodule
+    )?;
+    // `starknet::event::Event`.
+    let event_trait_id = try_extract_matches!(
+        db.module_item_by_name(ModuleId::Submodule(event_module), "Event".into()).unwrap().unwrap(),
+        ModuleItemId::Trait
+    )?;
+    // `starknet::event::Event<ThisEvent>`.
+    let concrete_trait_id = db.intern_concrete_trait(ConcreteTraitLongId {
+        trait_id: event_trait_id,
+        generic_args: vec![GenericArgumentId::Type(event_type_id)],
+    });
+    // The impl of `starknet::event::Event<ThisEvent>`.
+    let event_impl =
+        get_impl_at_context(db.upcast(), ImplLookupContext::default(), concrete_trait_id, None)
+            .ok()?;
+    let concrete_event_impl = try_extract_matches!(event_impl, ImplId::Concrete)?;
+    let impl_def_id = concrete_event_impl.impl_def_id(db);
+
+    // Attempt to extract the event data from the aux data from the impl generation.
+    let module_file = impl_def_id.module_file_id(db.upcast());
+    let file_infos = db.module_generated_file_infos(module_file.0).ok()?;
+    let aux_data = file_infos.get(module_file.1.0)?.as_ref()?.aux_data.as_ref()?;
+    Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 
 fn get_type_name(db: &dyn SemanticGroup, ty: TypeId) -> Option<SmolStr> {

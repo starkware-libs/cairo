@@ -36,9 +36,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x71e",
+    "0x738",
     "0x482480017fff8000",
-    "0x71d",
+    "0x737",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -116,12 +116,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xffffffffffffffffffffffffffff3e18",
+    "0xffffffffffffffffffffffffffff3db4",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x6b",
     "0x4825800180007ffa",
-    "0xc1e8",
+    "0xc24c",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -153,9 +153,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x6a9",
+    "0x6c3",
     "0x482480017fff8000",
-    "0x6a8",
+    "0x6c2",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -243,12 +243,12 @@
     "0xa0680017fff8000",
     "0x7",
     "0x482680017ffa8000",
-    "0xfffffffffffffffffffffffffffeb420",
+    "0xfffffffffffffffffffffffffffeb3bc",
     "0x400280007ff97fff",
     "0x10780017fff7fff",
     "0x6b",
     "0x4825800180007ffa",
-    "0x14be0",
+    "0x14c44",
     "0x400280007ff97fff",
     "0x482680017ff98000",
     "0x1",
@@ -280,9 +280,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x62a",
+    "0x644",
     "0x482480017fff8000",
-    "0x629",
+    "0x643",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -414,9 +414,9 @@
     "0x1",
     "0x208b7fff7fff7ffe",
     "0x1104800180018000",
-    "0x5a4",
+    "0x5be",
     "0x482480017fff8000",
-    "0x5a3",
+    "0x5bd",
     "0x480080007fff8000",
     "0xa0680017fff8000",
     "0x9",
@@ -1157,14 +1157,14 @@
     "0x480680017fff8000",
     "0xd4fc67cf1bad53c0cfac2ede44e5cc5433490a776a15091367dc85e255f2ab",
     "0x1104800180018000",
-    "0x1b1",
+    "0x1c6",
     "0x20680017fff7ffc",
     "0x1a",
     "0x48127ffd7fff8000",
     "0x48127ffd7fff8000",
     "0x48127ffd7fff8000",
     "0x1104800180018000",
-    "0x1d4",
+    "0x1e9",
     "0x20680017fff7ffd",
     "0xb",
     "0x48127ff17fff8000",
@@ -1228,13 +1228,13 @@
     "0x480280087ffc8000",
     "0x480280097ffc8000",
     "0x1104800180018000",
-    "0x1a1",
+    "0x1b6",
     "0x20680017fff7ffd",
     "0x1f",
     "0x48127ffe7fff8000",
     "0x48127ffe7fff8000",
     "0x1104800180018000",
-    "0x1a7",
+    "0x1bc",
     "0x20680017fff7ffe",
     "0xc",
     "0x40780017fff7fff",
@@ -1313,7 +1313,7 @@
     "0x208b7fff7fff7ffe",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x18b",
+    "0x1a0",
     "0x40780017fff7fff",
     "0x1",
     "0x40780017fff7fff",
@@ -1423,7 +1423,7 @@
     "0xd4fc67cf1bad53c0cfac2ede44e5cc5433490a776a15091367dc85e255f2ab",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x121",
+    "0x136",
     "0x1104800180018000",
     "0x70",
     "0x20680017fff7ffd",
@@ -1551,10 +1551,13 @@
     "0x480a7ffd7fff8000",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
-    "0x0",
+    "0x5",
     "0x480a7ffd7fff8000",
     "0x208b7fff7fff7ffe",
-    "0x20780017fff7ff8",
+    "0x10b7ff87fff7fff",
+    "0x10780017fff7fff",
+    "0x26",
+    "0x10780017fff7fff",
     "0x13",
     "0x480680017fff8000",
     "0xd3651022da7ddf0a226dd81c8a16106318358829bd09702eb656630219c030",
@@ -1566,13 +1569,13 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0xae",
+    "0xc0",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x10780017fff7fff",
-    "0x11",
+    "0x23",
     "0x480680017fff8000",
     "0xce45ac928a78c60422a89f5a3d772729bd0852a3ffded47f327bd7cb70373c",
     "0x400280007ffb7fff",
@@ -1583,7 +1586,25 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0xa7",
+    "0xb9",
+    "0x48127ffc7fff8000",
+    "0x48127ffc7fff8000",
+    "0x48127ffc7fff8000",
+    "0x48127ffc7fff8000",
+    "0x10780017fff7fff",
+    "0x12",
+    "0x40780017fff7fff",
+    "0xf",
+    "0x480680017fff8000",
+    "0x20855aa4239fb777614a7047cb1a66a8a7cf569f85fa489211665f97dbd4974",
+    "0x400280007ffb7fff",
+    "0x480a7ffa7fff8000",
+    "0x482680017ffb8000",
+    "0x1",
+    "0x480a7ffc7fff8000",
+    "0x480a7ffd7fff8000",
+    "0x1104800180018000",
+    "0xb1",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
@@ -1595,7 +1616,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0xa5",
+    "0xaa",
     "0x20680017fff7ffc",
     "0x19",
     "0x20680017fff7ffd",
@@ -1708,7 +1729,7 @@
     "0x0",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
-    "0x1",
+    "0x3",
     "0x480a7ffd7fff8000",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
@@ -1743,7 +1764,7 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb4f",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb3a",
     "0x480a7ffa7fff8000",
     "0x480a7ffb7fff8000",
     "0x48127ffc7fff8000",
@@ -1753,11 +1774,16 @@
     "0x480a7ffc7fff8000",
     "0x480a7ffd7fff8000",
     "0x1104800180018000",
-    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb45",
+    "0x800000000000010fffffffffffffffffffffffffffffffffffffffffffffb30",
     "0x480a7ffa7fff8000",
     "0x480a7ffb7fff8000",
     "0x48127ffc7fff8000",
     "0x48127ffc7fff8000",
+    "0x208b7fff7fff7ffe",
+    "0x480a7ffa7fff8000",
+    "0x480a7ffb7fff8000",
+    "0x480a7ffc7fff8000",
+    "0x480a7ffd7fff8000",
     "0x208b7fff7fff7ffe",
     "0x480680017fff8000",
     "0x53746f7261676552656164",
@@ -1961,7 +1987,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0xc1e8"
+              "Immediate": "0xc24c"
             },
             "rhs": {
               "Deref": {
@@ -2070,7 +2096,7 @@
         {
           "TestLessThanOrEqual": {
             "lhs": {
-              "Immediate": "0x14be0"
+              "Immediate": "0x14c44"
             },
             "rhs": {
               "Deref": {
@@ -2647,7 +2673,7 @@
       ]
     ],
     [
-      1716,
+      1737,
       [
         {
           "SystemCall": {
@@ -2662,7 +2688,7 @@
       ]
     ],
     [
-      1763,
+      1789,
       [
         {
           "SystemCall": {
@@ -2677,7 +2703,7 @@
       ]
     ],
     [
-      1788,
+      1814,
       [
         {
           "AllocSegment": {
@@ -2690,7 +2716,7 @@
       ]
     ],
     [
-      1817,
+      1843,
       [
         {
           "TestLessThan": {
@@ -2712,7 +2738,7 @@
       ]
     ],
     [
-      1821,
+      1847,
       [
         {
           "LinearSplit": {
@@ -2741,7 +2767,7 @@
       ]
     ],
     [
-      1831,
+      1857,
       [
         {
           "LinearSplit": {
@@ -2810,7 +2836,7 @@
     [
       111,
       [
-        "memory[ap + 0] = 49640 <= memory[fp + -6]"
+        "memory[ap + 0] = 49740 <= memory[fp + -6]"
       ]
     ],
     [
@@ -2852,7 +2878,7 @@
     [
       238,
       [
-        "memory[ap + 0] = 84960 <= memory[fp + -6]"
+        "memory[ap + 0] = 85060 <= memory[fp + -6]"
       ]
     ],
     [
@@ -3060,37 +3086,37 @@
       ]
     ],
     [
-      1716,
+      1737,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -6])"
       ]
     ],
     [
-      1763,
+      1789,
       [
         "syscall_handler.syscall(syscall_ptr=memory[fp + -5])"
       ]
     ],
     [
-      1788,
+      1814,
       [
         "memory[ap + 0] = segments.add()"
       ]
     ],
     [
-      1817,
+      1843,
       [
         "memory[ap + 4] = memory[fp + -3] < 3618502788666131106986593281521497120414687020801267626233049500247285301248"
       ]
     ],
     [
-      1821,
+      1847,
       [
         "\n(value, scalar) = (memory[ap + 3], 313594649253062377472)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -2] = x\nmemory[ap + -1] = y\n"
       ]
     ],
     [
-      1831,
+      1857,
       [
         "\n(value, scalar) = (memory[fp + -3], 10633823966279326983230456482242756608)\nx = min(value // scalar, 340282366920938463463374607431768211455)\ny = value - x * scalar\nmemory[ap + -1] = x\nmemory[ap + 0] = y\n"
       ]
