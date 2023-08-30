@@ -20,47 +20,88 @@ pub fn is_mut_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
     matches!(param_modifiers[..], [Modifier::Mut(_)])
 }
 
-/// Returns true if type_ast is `felt252`.
-/// Does not resolve paths or type aliases.
-pub fn is_felt252(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
-    let ast::Expr::Path(type_path) = type_ast else {
-        return false;
-    };
-
-    let type_path_elements = type_path.elements(db);
-    let [ast::PathSegment::Simple(arg_segment)] = type_path_elements.as_slice() else {
-        return false;
-    };
-
-    arg_segment.ident(db).text(db) == "felt252"
-}
-
-/// Returns true if type_ast is `Span::<felt252>`.
-/// Does not resolve paths or type aliases.
-pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
-    let ast::Expr::Path(type_path) = type_ast else {
-        return false;
-    };
-
-    let type_path_elements = type_path.elements(db);
-    let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)] =
-        type_path_elements.as_slice()
-    else {
-        return false;
-    };
-
-    if path_segment_with_generics.ident(db).text(db) != "Span" {
-        return false;
+/// Helper trait for syntax queries on `ast::Expr`.
+pub trait AstPathExtract {
+    /// Returns true if `self` matches `identifier`.
+    /// Does not resolve paths or type aliases.
+    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool;
+    /// Returns true if `type_path` matches `$path_name$<$generic_arg$>`.
+    /// Does not resolve paths, type aliases or named generics.
+    fn is_path_name_with_arg(
+        &self,
+        db: &dyn SyntaxGroup,
+        path_name: &str,
+        generic_arg: &str,
+    ) -> bool;
+    /// Returns true if `self` is `felt252`.
+    /// Does not resolve paths or type aliases.
+    fn is_felt252(&self, db: &dyn SyntaxGroup) -> bool {
+        self.is_identifier(db, "felt252")
     }
-    let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
-    let [ast::GenericArg::Unnamed(arg_expr)] = args.as_slice() else {
-        return false;
-    };
-    let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {
-        return false;
-    };
+    /// Returns true if `type_ast` matches `Span<felt252>`.
+    /// Does not resolve paths, type aliases or named generics.
+    fn is_felt252_span(&self, db: &dyn SyntaxGroup) -> bool {
+        self.is_path_name_with_arg(db, "Span", "felt252")
+    }
+}
+impl AstPathExtract for ast::ExprPath {
+    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+        let type_path_elements = self.elements(db);
+        let [ast::PathSegment::Simple(arg_segment)] = type_path_elements.as_slice() else {
+            return false;
+        };
 
-    is_felt252(db, &arg_expr.expr(db))
+        arg_segment.ident(db).text(db) == identifier
+    }
+
+    fn is_path_name_with_arg(
+        &self,
+        db: &dyn SyntaxGroup,
+        path_name: &str,
+        generic_arg: &str,
+    ) -> bool {
+        let type_path_elements = self.elements(db);
+        let [ast::PathSegment::WithGenericArgs(path_segment_with_generics)] =
+            type_path_elements.as_slice()
+        else {
+            return false;
+        };
+
+        if path_segment_with_generics.ident(db).text(db) != path_name {
+            return false;
+        }
+        let args = path_segment_with_generics.generic_args(db).generic_args(db).elements(db);
+        let [ast::GenericArg::Unnamed(arg_expr)] = args.as_slice() else {
+            return false;
+        };
+        let ast::GenericArgValue::Expr(arg_expr) = arg_expr.value(db) else {
+            return false;
+        };
+
+        arg_expr.expr(db).is_identifier(db, generic_arg)
+    }
+}
+impl AstPathExtract for ast::Expr {
+    fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+        if let ast::Expr::Path(type_path) = self {
+            type_path.is_identifier(db, identifier)
+        } else {
+            false
+        }
+    }
+
+    fn is_path_name_with_arg(
+        &self,
+        db: &dyn SyntaxGroup,
+        path_name: &str,
+        generic_arg: &str,
+    ) -> bool {
+        if let ast::Expr::Path(type_path) = self {
+            type_path.is_path_name_with_arg(db, path_name, generic_arg)
+        } else {
+            false
+        }
+    }
 }
 
 /// Strips one preceding underscore from the given string slice, if any.
