@@ -44,10 +44,21 @@ pub fn is_name(db: &dyn SyntaxGroup, type_ast: &ast::Expr, name: &str) -> bool {
 /// Returns true if `type_ast` matches `Span<felt252>`.
 /// Does not resolve paths, type aliases or named generics.
 pub fn is_felt252_span(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> bool {
+    is_name_with_arg_type_expr(db, type_ast, "Span", "felt252")
+}
+
+/// Returns true if `type_ast` matches `$name$<$arg$>`.
+/// Does not resolve paths, type aliases or named generics.
+pub fn is_name_with_arg_type_expr(
+    db: &dyn SyntaxGroup,
+    type_ast: &ast::Expr,
+    name: &str,
+    arg: &str,
+) -> bool {
     let ast::Expr::Path(type_path) = type_ast else {
         return false;
     };
-    is_name_with_arg(db, type_path, "Span", "felt252")
+    is_name_with_arg(db, type_path, name, arg)
 }
 
 /// Returns true if `type_path` matches `$name$<$arg$>`.
