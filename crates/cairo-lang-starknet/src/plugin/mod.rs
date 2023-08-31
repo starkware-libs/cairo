@@ -16,12 +16,12 @@ mod entry_point;
 pub mod events;
 mod starknet_module;
 mod storage;
-mod storage_access;
+mod store;
 mod utils;
 
 use dispatcher::handle_trait;
 use events::derive_event_needed;
-use storage_access::derive_storage_access_needed;
+use store::derive_store_needed;
 
 use self::embeddable::handle_embeddable;
 use self::starknet_module::{handle_module, handle_module_by_storage};
@@ -41,14 +41,14 @@ impl MacroPlugin for StarkNetPlugin {
             ast::Item::Struct(struct_ast) if derive_event_needed(&struct_ast, db) => {
                 events::handle_struct(db, struct_ast)
             }
-            ast::Item::Struct(struct_ast) if derive_storage_access_needed(&struct_ast, db) => {
-                storage_access::handle_struct(db, struct_ast)
+            ast::Item::Struct(struct_ast) if derive_store_needed(&struct_ast, db) => {
+                store::handle_struct(db, struct_ast)
             }
             ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_module_by_storage(db, struct_ast).unwrap_or_default()
             }
-            ast::Item::Enum(enum_ast) if derive_storage_access_needed(&enum_ast, db) => {
-                storage_access::handle_enum(db, enum_ast)
+            ast::Item::Enum(enum_ast) if derive_store_needed(&enum_ast, db) => {
+                store::handle_enum(db, enum_ast)
             }
             ast::Item::Enum(enum_ast) if derive_event_needed(&enum_ast, db) => {
                 events::handle_enum(db, enum_ast)

@@ -98,7 +98,7 @@ impls:
 impl MyTypeDrop of Drop::<MyType>;
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreMyType of starknet::Store::<MyType> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {

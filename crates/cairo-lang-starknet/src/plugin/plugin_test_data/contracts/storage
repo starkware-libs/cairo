@@ -91,7 +91,7 @@ impl OuterTypeHash<
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
