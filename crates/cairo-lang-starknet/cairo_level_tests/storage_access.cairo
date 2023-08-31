@@ -2,7 +2,8 @@ use starknet::{
     ClassHash, ContractAddress, EthAddress, StorageAddress, SyscallResult,
     storage_address_to_felt252, storage_address_try_from_felt252
 };
-use super::utils::{serialized_element, single_deserialize};
+use test::test_utils::assert_eq;
+use super::utils::serialized;
 use integer::BoundedInt;
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
@@ -104,9 +105,6 @@ fn write_read_struct() {
         efg2: Efg::G(123_u256)
     };
 
-    assert(test_contract::__external::set_data(serialized_element(*@x)).is_empty(), 'Not empty');
-
-    let mut retdata = test_contract::__external::get_data(Default::default().span());
-    assert(single_deserialize(ref retdata) == x, 'Wrong result');
-    assert(retdata.is_empty(), 'Array not empty');
+    assert(test_contract::__external::set_data(serialized(*@x)).is_empty(), 'Not empty');
+    assert_eq(@test_contract::__external::get_data(serialized(())), @serialized(x), 'Wrong result');
 }

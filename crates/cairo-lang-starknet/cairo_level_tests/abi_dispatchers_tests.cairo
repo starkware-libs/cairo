@@ -1,8 +1,7 @@
 use starknet::ContractAddress;
 use test::test_utils::{assert_eq, assert_ne};
 
-use super::utils::serialized_element;
-use super::utils::single_deserialize;
+use super::utils::serialized;
 
 #[starknet::interface]
 trait IAnotherContract<T> {}
@@ -44,21 +43,25 @@ mod test_contract {
 }
 
 #[test]
-#[available_gas(70000)]
+#[available_gas(100000)]
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
-    test_contract::__external::set_another_address(serialized_element(a));
-    let mut retdata = test_contract::__external::get_another_address(ArrayTrait::new().span());
-    assert_eq(@single_deserialize(ref retdata), @a, 'Wrong result');
-    assert(retdata.is_empty(), 'Array not empty');
+    test_contract::__external::set_another_address(serialized(a));
+    assert_eq(
+        @test_contract::__external::get_another_address(serialized(())),
+        @serialized(a),
+        'Wrong result'
+    );
 }
 
 #[test]
-#[available_gas(70000)]
+#[available_gas(100000)]
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
-    test_contract::__external::set_another_class_hash(serialized_element(a));
-    let mut retdata = test_contract::__external::get_another_class_hash(ArrayTrait::new().span());
-    assert_eq(@single_deserialize(ref retdata), @a, 'Wrong result');
-    assert(retdata.is_empty(), 'Array not empty');
+    test_contract::__external::set_another_class_hash(serialized(a));
+    assert_eq(
+        @test_contract::__external::get_another_class_hash(serialized(())),
+        @serialized(a),
+        'Wrong result'
+    );
 }
