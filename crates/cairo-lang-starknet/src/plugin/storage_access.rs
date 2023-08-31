@@ -135,7 +135,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         reads_fields = reads_fields.join("\n                "),
         writes = writes.join("\n        "),
         writes_at_offset = writes_at_offset.join("\n        "),
-        sizes = sizes.join(" +\n        ")
+        sizes = if sizes.is_empty() { "0".to_string() } else { sizes.join(" +\n        ") }
     );
 
     let diagnostics = vec![];
