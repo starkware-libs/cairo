@@ -142,7 +142,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: "storage_access_impl".into(),
+            name: "starknet_store_impl".into(),
             content: sa_impl,
             diagnostics_mappings: Default::default(),
             aux_data: None,
@@ -152,7 +152,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     }
 }
 
-/// Derive the `StorageAccess` trait for structs annotated with `derive(starknet::Store)`.
+/// Derive the `starknet::Store` trait for structs annotated with `derive(starknet::Store)`.
 pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
     let enum_name = enum_ast.name(db).as_syntax_node().get_text_without_trivia(db);
     let mut match_idx = Vec::new();
@@ -228,7 +228,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         }
     }
 
-    let sa_impl = formatdoc!(
+    let store_impl = formatdoc!(
         "
         impl Store{enum_name} of starknet::Store::<{enum_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
@@ -278,8 +278,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     PluginResult {
         code: Some(PluginGeneratedFile {
-            name: "storage_access_impl".into(),
-            content: sa_impl,
+            name: "starknet_store_impl".into(),
+            content: store_impl,
             diagnostics_mappings: Default::default(),
             aux_data: None,
         }),
@@ -288,8 +288,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     }
 }
 
-/// Returns true if the type should be derived as a storage_access.
-pub fn derive_storage_access_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
+/// Returns true if the type should be derived as a starknet::Store.
+pub fn derive_store_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
     with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
         let attr = attr.structurize(db);
         for arg in &attr.args {

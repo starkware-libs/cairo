@@ -24,8 +24,8 @@ mod my_contract {
 
 A contract is written as an inline module, with designated attributes.
 
-The main attribute is the `#[starknet::contract]` attribute that makes the starknet plugin treat the module as
-a contract.
+The main attribute is the `#[starknet::contract]` attribute that makes the starknet plugin treat the
+module as a contract.
 
 == Storage
 
@@ -36,8 +36,8 @@ Transactions invoked on such contracts may modify this state.
 
 In a contract, you can define a struct named `Storage`. The members of this struct are the storage
 variables.
-The storage variables may be of any Cairo type that implements the `StorageAccess` trait, and legacy
-mappings that store key-value pairs.
+The storage variables may be of any Cairo type that implements the `starknet::Store` trait, and
+legacy mappings that store key-value pairs.
 
 Accessing a storage member is done using the `::read()` and `::write(value)` functions which are
 automatically created by the Starknet plugin.
@@ -46,7 +46,7 @@ For example, for the storage member `x` above, access is done using `x::read()` 
 
 Defining a mapping storage member is done using the `LegacyMap` "type" that is expanded by
 the Starknet plugin. The keys must implement the `Hash` trait and the values must implement the
-`StorageAccess` trait.
+`starknet::Store` trait.
 Accessing such storage members is done using the `::read(key)` and
 `::write(key, value)` functions which are also automatically created by the Starknet plugin.
 For example, for the storage member `m` above, access is done using `m::read(key)` and
