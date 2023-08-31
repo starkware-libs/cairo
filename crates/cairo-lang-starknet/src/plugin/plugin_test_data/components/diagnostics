@@ -1077,7 +1077,7 @@ error: Plugin diagnostic: A function in an #[embeddable_as] impl in a component 
         fn no_self() {}
                    ^
 
-error: Plugin diagnostic: The first parameter of a function in an #[embeddable_as] impl in a component must be either `self: @TContractState` (for view functions) or `ref self: TContractState` (for external functions).
+error: Plugin diagnostic: The first parameter of a function in an #[embeddable_as] impl in a component must be either `self: @ComponentState<TContractState>` (for view functions) or `ref self: ComponentState<TContractState>` (for external functions).
  --> lib.cairo:11:31
         fn self_of_wrong_type(self: ComponentState<TContractState>) {}
                               ^**********************************^
