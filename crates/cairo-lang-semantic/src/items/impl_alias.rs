@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::ids::{ImplAliasId, LanguageElementId, LookupItemId, ModuleItemId};
+use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
 use cairo_lang_syntax::node::TypedSyntaxNode;
@@ -13,7 +13,7 @@ use crate::diagnostic::SemanticDiagnosticKind::*;
 use crate::diagnostic::{NotFoundItemType, SemanticDiagnostics};
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::InferenceId;
-use crate::resolve::{ResolvedConcreteItem, Resolver, ResolverData};
+use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::{GenericParam, SemanticDiagnostic};
 
@@ -173,4 +173,25 @@ pub fn impl_alias_resolver_data(
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolver_data)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
+pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
+    let module_file_id = impl_alias_id.module_file_id(db.upcast());
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+
+    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
+    let syntax_db = db.upcast();
+    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
+
+    let mut resolver = Resolver::new(db, module_file_id, inference_id);
+
+    let impl_path_syntax = impl_alias_ast.impl_path(syntax_db);
+
+    resolver
+        .resolve_generic_path_with_args(&mut diagnostics, &impl_path_syntax, NotFoundItemType::Impl)
+        .ok()
+        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Impl))
+        .ok_or_else(|| diagnostics.report(&impl_path_syntax, NotAnImpl))
 }
