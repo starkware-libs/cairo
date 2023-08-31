@@ -1,4 +1,4 @@
-fn serialized_element<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>>(
+fn serialized<T, impl TSerde: serde::Serde<T>, impl TDestruct: Destruct<T>>(
     value: T
 ) -> Span<felt252> {
     let mut arr = Default::default();

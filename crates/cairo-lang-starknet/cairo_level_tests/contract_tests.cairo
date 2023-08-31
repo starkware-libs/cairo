@@ -1,7 +1,7 @@
 use starknet::StorageAddress;
 use test::test_utils::{assert_eq, assert_ne};
 
-use super::utils::serialized_element;
+use super::utils::serialized;
 use super::utils::single_deserialize;
 
 #[starknet::interface]
@@ -93,7 +93,7 @@ fn test_wrapper_too_many_enough_args() {
 #[test]
 #[available_gas(30000)]
 fn test_wrapper_valid_args() {
-    let mut retdata = test_contract::__external::get_plus_2(serialized_element(1));
+    let mut retdata = test_contract::__external::get_plus_2(serialized(1));
     assert_eq(@single_deserialize(ref retdata), @3, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -108,7 +108,7 @@ fn test_wrapper_valid_args_out_of_gas() {
 #[test]
 #[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
-    let mut retdata = test_contract::__external::get_appended_array(array![1, 2].span());
+    let mut retdata = test_contract::__external::get_appended_array(serialized(array![2]));
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong length');
     assert_eq(@single_deserialize(ref retdata), @2, 'Wrong original value');
     assert_eq(@single_deserialize(ref retdata), @1, 'Wrong added value');
@@ -126,7 +126,7 @@ fn read_first_value() {
 #[test]
 #[available_gas(300000)]
 fn write_read_value() {
-    assert(test_contract::__external::set_value(serialized_element(4)).is_empty(), 'Not empty');
+    assert(test_contract::__external::set_value(serialized(4)).is_empty(), 'Not empty');
     let mut retdata = test_contract::__external::get_value(ArrayTrait::new().span());
     assert_eq(@single_deserialize(ref retdata), @4, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
@@ -135,7 +135,7 @@ fn write_read_value() {
 #[test]
 #[available_gas(200000)]
 fn empty_start() {
-    let mut retdata = test_contract::__external::contains(serialized_element(4));
+    let mut retdata = test_contract::__external::contains(serialized(4));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -143,11 +143,11 @@ fn empty_start() {
 #[test]
 #[available_gas(300000)]
 fn contains_added() {
-    assert(test_contract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = test_contract::__external::contains(serialized_element(4));
+    assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
+    let mut retdata = test_contract::__external::contains(serialized(4));
     assert_eq(@single_deserialize(ref retdata), @1, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
-    let mut retdata = test_contract::__external::contains(serialized_element(5));
+    let mut retdata = test_contract::__external::contains(serialized(5));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -155,9 +155,9 @@ fn contains_added() {
 #[test]
 #[available_gas(300000)]
 fn not_contains_removed() {
-    assert(test_contract::__external::insert(serialized_element(4)).is_empty(), 'Not empty');
-    assert(test_contract::__external::remove(serialized_element(4)).is_empty(), 'Not empty');
-    let mut retdata = test_contract::__external::contains(serialized_element(4));
+    assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
+    assert(test_contract::__external::remove(serialized(4)).is_empty(), 'Not empty');
+    let mut retdata = test_contract::__external::contains(serialized(4));
     assert_eq(@single_deserialize(ref retdata), @0, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
@@ -166,27 +166,26 @@ fn not_contains_removed() {
 #[available_gas(300000)]
 fn read_large_first_value() {
     let mut retdata = test_contract::__external::get_large(
-        serialized_element(u256 { low: 1_u128, high: 2_u128 })
+        serialized(0x200000000000000000000000000000001_u256)
     );
-    assert_eq(
-        @single_deserialize(ref retdata), @u256 { low: 0_u128, high: 0_u128 }, 'Wrong result'
-    );
+    assert_eq(@single_deserialize(ref retdata), @0_u256, 'Wrong result');
     assert(retdata.is_empty(), 'Array not empty');
 }
 
 #[test]
 #[available_gas(300000)]
 fn write_read_large_value() {
-    let mut args = Default::default();
-    serde::Serde::serialize(@u256 { low: 1_u128, high: 2_u128 }, ref args);
-    serde::Serde::serialize(@u256 { low: 3_u128, high: 4_u128 }, ref args);
-    let mut retdata = test_contract::__external::set_large(args.span());
+    let mut retdata = test_contract::__external::set_large(
+        serialized(
+            (0x200000000000000000000000000000001_u256, 0x400000000000000000000000000000003_u256)
+        )
+    );
     assert(retdata.is_empty(), 'Array not empty');
     let mut retdata = test_contract::__external::get_large(
-        serialized_element(u256 { low: 1_u128, high: 2_u128 })
+        serialized(0x200000000000000000000000000000001_u256)
     );
     assert_eq(
-        @single_deserialize(ref retdata), @u256 { low: 3_u128, high: 4_u128 }, 'Wrong result'
+        @single_deserialize(ref retdata), @0x400000000000000000000000000000003_u256, 'Wrong result'
     );
     assert(retdata.is_empty(), 'Array not empty');
 }
