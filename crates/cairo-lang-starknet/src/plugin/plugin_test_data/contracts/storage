@@ -4,6 +4,11 @@
 ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
+#[derive(Drop, starknet::Store, Hash)]
+struct OuterType {
+    x: u32,
+}
+
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
@@ -19,12 +24,28 @@ mod test_contract {
         felt252_to_u128: LegacyMap::<felt252, u128>,
         u128_to_bool: LegacyMap::<u128, bool>,
         bool_to_felt252: LegacyMap::<bool, felt252>,
+        outer_type_var: super::OuterType,
+        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        inner_type_var: inner::InnerType,
+        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+    }
+
+    mod inner {
+        #[derive(Drop, starknet::Store, Hash)]
+        struct InnerType {
+            x: u32,
+        }
     }
 }
 
 //! > generated_cairo_code
 lib.cairo:
 
+#[derive(Drop, starknet::Store, Hash)]
+struct OuterType {
+    x: u32,
+}
+
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
@@ -40,6 +61,67 @@ mod test_contract {
         felt252_to_u128: LegacyMap::<felt252, u128>,
         u128_to_bool: LegacyMap::<u128, bool>,
         bool_to_felt252: LegacyMap::<bool, felt252>,
+        outer_type_var: super::OuterType,
+        outer_type_to_outer_type: LegacyMap::<super::OuterType, super::OuterType>,
+        inner_type_var: inner::InnerType,
+        inner_type_to_inner_type: LegacyMap::<inner::InnerType, inner::InnerType>,
+    }
+
+    mod inner {
+        #[derive(Drop, starknet::Store, Hash)]
+        struct InnerType {
+            x: u32,
+        }
+    }
+}
+
+impls:
+
+impl OuterTypeDrop of Drop::<OuterType>;
+impl OuterTypeHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<OuterType, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: OuterType) -> __State {
+        let state = hash::Hash::update_state(state, value.x);
+        state
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreOuterType of starknet::Store::<OuterType> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
+        let x = starknet::Store::<u32>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            OuterType {
+                x,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: OuterType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write(address_domain, base, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<OuterType> {
+        let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            OuterType {
+                x,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: OuterType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<u32>::size()
     }
 }
 
@@ -74,6 +156,10 @@ use starknet::event::EventEmitter;
         felt252_to_u128: felt252_to_u128::ContractMemberState,
         u128_to_bool: u128_to_bool::ContractMemberState,
         bool_to_felt252: bool_to_felt252::ContractMemberState,
+        outer_type_var: outer_type_var::ContractMemberState,
+        outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState,
+        inner_type_var: inner_type_var::ContractMemberState,
+        inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -89,6 +175,10 @@ use starknet::event::EventEmitter;
             felt252_to_u128: felt252_to_u128::ContractMemberState {},
             u128_to_bool: u128_to_bool::ContractMemberState {},
             bool_to_felt252: bool_to_felt252::ContractMemberState {},
+            outer_type_var: outer_type_var::ContractMemberState {},
+            outer_type_to_outer_type: outer_type_to_outer_type::ContractMemberState {},
+            inner_type_var: inner_type_var::ContractMemberState {},
+            inner_type_to_inner_type: inner_type_to_inner_type::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -99,6 +189,7 @@ use starknet::event::EventEmitter;
     
     use var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
     mod var_felt252 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -136,6 +227,7 @@ use starknet::event::EventEmitter;
     }
     use var_u8::InternalContractMemberStateTrait as var_u8ContractMemberStateTrait;
     mod var_u8 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -173,6 +265,7 @@ use starknet::event::EventEmitter;
     }
     use var_u16::InternalContractMemberStateTrait as var_u16ContractMemberStateTrait;
     mod var_u16 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -210,6 +303,7 @@ use starknet::event::EventEmitter;
     }
     use var_u32::InternalContractMemberStateTrait as var_u32ContractMemberStateTrait;
     mod var_u32 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -247,6 +341,7 @@ use starknet::event::EventEmitter;
     }
     use var_u64::InternalContractMemberStateTrait as var_u64ContractMemberStateTrait;
     mod var_u64 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -284,6 +379,7 @@ use starknet::event::EventEmitter;
     }
     use var_u128::InternalContractMemberStateTrait as var_u128ContractMemberStateTrait;
     mod var_u128 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -321,6 +417,7 @@ use starknet::event::EventEmitter;
     }
     use var_bool::InternalContractMemberStateTrait as var_boolContractMemberStateTrait;
     mod var_bool {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -358,6 +455,7 @@ use starknet::event::EventEmitter;
     }
     use felt252_to_u128::InternalContractMemberStateTrait as felt252_to_u128ContractMemberStateTrait;
     mod felt252_to_u128 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -396,6 +494,7 @@ use starknet::event::EventEmitter;
     }
     use u128_to_bool::InternalContractMemberStateTrait as u128_to_boolContractMemberStateTrait;
     mod u128_to_bool {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -434,6 +533,7 @@ use starknet::event::EventEmitter;
     }
     use bool_to_felt252::InternalContractMemberStateTrait as bool_to_felt252ContractMemberStateTrait;
     mod bool_to_felt252 {
+        use super::inner;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
@@ -470,8 +570,162 @@ use starknet::event::EventEmitter;
             }
         }
     }
+    use outer_type_var::InternalContractMemberStateTrait as outer_type_varContractMemberStateTrait;
+    mod outer_type_var {
+        use super::inner;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> super::super::OuterType;
+            fn write(ref self: ContractMemberState, value: super::super::OuterType);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x3106af1c2d86e8b1cb851a79386ce0a8769e17e9d35faaac2d358e2ab15b47e>()
+            }
+            fn read(self: @ContractMemberState) -> super::super::OuterType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::OuterType>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: super::super::OuterType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::OuterType>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+    use outer_type_to_outer_type::InternalContractMemberStateTrait as outer_type_to_outer_typeContractMemberStateTrait;
+    mod outer_type_to_outer_type {
+        use super::inner;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType;
+            fn write(ref self: ContractMemberState, key: super::super::OuterType, value: super::super::OuterType);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: super::super::OuterType) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<super::super::OuterType>::hash(0x35c41176ed396a1aefee30c295c954b0e7fd2f58e270016196d6751c199ad54, key))
+            }
+            fn read(self: @ContractMemberState, key: super::super::OuterType) -> super::super::OuterType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::OuterType>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, key: super::super::OuterType, value: super::super::OuterType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::OuterType>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+    use inner_type_var::InternalContractMemberStateTrait as inner_type_varContractMemberStateTrait;
+    mod inner_type_var {
+        use super::inner;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> inner::InnerType;
+            fn write(ref self: ContractMemberState, value: inner::InnerType);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x13116abdf53a8bc21fa319084c612c78d3d632bf1a48cf7f221c343f1a7b51e>()
+            }
+            fn read(self: @ContractMemberState) -> inner::InnerType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<inner::InnerType>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: inner::InnerType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<inner::InnerType>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+    use inner_type_to_inner_type::InternalContractMemberStateTrait as inner_type_to_inner_typeContractMemberStateTrait;
+    mod inner_type_to_inner_type {
+        use super::inner;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType;
+            fn write(ref self: ContractMemberState, key: inner::InnerType, value: inner::InnerType);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: inner::InnerType) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<inner::InnerType>::hash(0x3ab3286e5324e5e72225cf3acbcb086eb63bceab39847ca070c7aa92140de4b, key))
+            }
+            fn read(self: @ContractMemberState, key: inner::InnerType) -> inner::InnerType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<inner::InnerType>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, key: inner::InnerType, value: inner::InnerType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<inner::InnerType>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
+            }
+        }
+    }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xdf00ddc8940a9ebc2f8665e989d2652203dabc0967e7b9cbce7d6a201564d3;
+const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
 
 
     mod __external {

@@ -150,8 +150,17 @@ fn get_simple_storage_member_code(
     let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
     let type_ast = member.type_clause(db).ty(db);
 
-    let storage_member_name = match try_extract_mapping_types(db, &type_ast) {
+    let member_module_code = match try_extract_mapping_types(db, &type_ast) {
         Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
+            let Some(key_type_path) = get_mapping_full_path_type(db, diagnostics, &key_type_ast)
+            else {
+                return Default::default();
+            };
+            let Some(value_type_path) =
+                get_mapping_full_path_type(db, diagnostics, &value_type_ast)
+            else {
+                return Default::default();
+            };
             Some(RewriteNode::interpolate_patched(
                 handle_legacy_mapping_storage_member(&address, member_state_name).as_str(),
                 [
@@ -160,14 +169,8 @@ fn get_simple_storage_member_code(
                         RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
                     ),
                     ("extra_uses".to_string(), extra_uses_node),
-                    (
-                        "key_type".to_string(),
-                        RewriteNode::new_trimmed(key_type_ast.as_syntax_node()),
-                    ),
-                    (
-                        "value_type".to_string(),
-                        RewriteNode::new_trimmed(value_type_ast.as_syntax_node()),
-                    ),
+                    ("key_type".to_string(), key_type_path),
+                    ("value_type".to_string(), value_type_path),
                 ]
                 .into(),
             ))
@@ -179,23 +182,78 @@ fn get_simple_storage_member_code(
             });
             None
         }
-        None => Some(RewriteNode::interpolate_patched(
-            handle_simple_storage_member(&address, member_state_name).as_str(),
-            [
-                (
-                    "storage_member_name".to_string(),
-                    RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
-                ),
-                ("extra_uses".to_string(), extra_uses_node),
-                ("type_name".to_string(), RewriteNode::new_trimmed(type_ast.as_syntax_node())),
-            ]
-            .into(),
-        )),
+        None => {
+            let type_path = get_full_path_type(db, &type_ast);
+            Some(RewriteNode::interpolate_patched(
+                handle_simple_storage_member(&address, member_state_name).as_str(),
+                [
+                    (
+                        "storage_member_name".to_string(),
+                        RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+                    ),
+                    ("extra_uses".to_string(), extra_uses_node),
+                    ("type_path".to_string(), type_path),
+                ]
+                .into(),
+            ))
+        }
     };
     StorageMemberCodePieces {
         member_code: Some(member_code),
         init_code: Some(member_init_code),
-        module_code: storage_member_name,
+        module_code: member_module_code,
+    }
+}
+
+/// Returns a RewriteNode of the full path of a type for an inner module for a type specified by a
+/// mapping generic argument - adds "super::" if needed.
+fn get_mapping_full_path_type(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    type_ast: &ast::GenericArg,
+) -> Option<RewriteNode> {
+    let key_type_path = match type_ast {
+        ast::GenericArg::Unnamed(x) => match x.value(db) {
+            ast::GenericArgValue::Expr(x) => x.expr(db),
+            ast::GenericArgValue::Underscore(_) => {
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: type_ast.stable_ptr().untyped(),
+                    message: "LegacyMap generic arguments must be specified".to_string(),
+                });
+                return None;
+            }
+        },
+        ast::GenericArg::Named(_) => {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: type_ast.stable_ptr().untyped(),
+                message: "LegacyMap generic arguments are unnamed".to_string(),
+            });
+            return None;
+        }
+    };
+    Some(get_full_path_type(db, &key_type_path))
+}
+
+/// Returns a RewriteNode of the full path of a type for an inner module - adds "super::" if needed.
+fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode {
+    let type_node = RewriteNode::new_trimmed(type_ast.as_syntax_node());
+    let ast::Expr::Path(type_path) = type_ast else {
+        return type_node;
+    };
+    let first_segment_super = match type_path.elements(db).first().unwrap() {
+        ast::PathSegment::Simple(simple) => simple.ident(db).text(db) == "super",
+        _ => false,
+    };
+
+    if first_segment_super {
+        RewriteNode::interpolate_patched(
+            "super::$type_path$",
+            [("type_path".to_string(), type_node)].into(),
+        )
+    } else {
+        // No need to add `super::` as this is an absolute type or a locally defined type (which is
+        // brought to the inner module by an extra `use`).
+        type_node
     }
 }
 
@@ -301,29 +359,29 @@ fn handle_simple_storage_member(address: &str, member_state_name: &str) -> Strin
         struct {member_state_name} {{}}
         trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
-            fn read(self: @{member_state_name}) -> $type_name$;
-            fn write(ref self: {member_state_name}, value: $type_name$);
+            fn read(self: @{member_state_name}) -> $type_path$;
+            fn write(ref self: {member_state_name}, value: $type_path$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress {{
                 starknet::storage_base_address_const::<{address}>()
             }}
-            fn read(self: @{member_state_name}) -> $type_name$ {{
+            fn read(self: @{member_state_name}) -> $type_path$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::read(
+                    starknet::Store::<$type_path$>::read(
                         address_domain,
                         self.address(),
                     )
                 )
             }}
-            fn write(ref self: {member_state_name}, value: $type_name$) {{
+            fn write(ref self: {member_state_name}, value: $type_path$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::write(
+                    starknet::Store::<$type_path$>::write(
                         address_domain,
                         self.address(),
                         value,
