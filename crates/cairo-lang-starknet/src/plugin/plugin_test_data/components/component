@@ -4,6 +4,11 @@
 ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
+#[derive(Drop, starknet::Store)]
+struct MyType {
+    x: u32,
+}
+
 #[starknet::component]
 mod component {
     use starknet::ContractAddress;
@@ -12,7 +17,8 @@ mod component {
     #[storage]
     struct Storage {
         data: u32,
-        map: LegacyMap<u32, u32>
+        map: LegacyMap<u32, u32>,
+        my_type_var: super::MyType,
     }
 
     #[event]
@@ -44,6 +50,11 @@ trait MyTrait<T> {
 //! > generated_cairo_code
 lib.cairo:
 
+#[derive(Drop, starknet::Store)]
+struct MyType {
+    x: u32,
+}
+
 #[starknet::component]
 mod component {
     use starknet::ContractAddress;
@@ -52,7 +63,8 @@ mod component {
     #[storage]
     struct Storage {
         data: u32,
-        map: LegacyMap<u32, u32>
+        map: LegacyMap<u32, u32>,
+        my_type_var: super::MyType,
     }
 
     #[event]
@@ -81,6 +93,45 @@ trait MyTrait<T> {
     fn set_data(ref self: T, addr: ContractAddress, value: u32);
 }
 
+impls:
+
+impl MyTypeDrop of Drop::<MyType>;
+
+
+storage_access_impl:
+
+impl StoreMyType of starknet::Store::<MyType> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
+        let x = starknet::Store::<u32>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyType {
+                x,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write(address_domain, base, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyType> {
+        let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyType {
+                x,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<u32>::size()
+    }
+}
+
 component:
 
 use starknet::event::EventEmitter;
@@ -103,6 +154,7 @@ use starknet::event::EventEmitter;
     struct ComponentState<TCS> {
         data: data::ComponentMemberState,
         map: map::ComponentMemberState,
+        my_type_var: my_type_var::ComponentMemberState,
     }
     impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
     #[inline(always)]
@@ -110,6 +162,7 @@ use starknet::event::EventEmitter;
         ComponentState::<TCS> {
             data: data::ComponentMemberState {},
             map: map::ComponentMemberState {},
+            my_type_var: my_type_var::ComponentMemberState {},
         }
     }
     #[cfg(test)]
@@ -197,6 +250,48 @@ use starknet::event::EventEmitter;
                     starknet::Store::<u32>::write(
                         address_domain,
                         self.address(key),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+    use my_type_var::InternalComponentMemberStateTrait as my_type_varComponentMemberStateTrait;
+    mod my_type_var {
+        use super::ContractAddress;
+        use super::MyTrait;
+        use super::Event;
+        use super::Log;
+        use super::MyInnerImpl;
+        #[derive(Copy, Drop)]
+        struct ComponentMemberState {}
+        trait InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ComponentMemberState) -> super::super::MyType;
+            fn write(ref self: ComponentMemberState, value: super::super::MyType);
+        }
+
+        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
+            }
+            fn read(self: @ComponentMemberState) -> super::super::MyType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::MyType>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ComponentMemberState, value: super::super::MyType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::MyType>::write(
+                        address_domain,
+                        self.address(),
                         value,
                     )
                 )

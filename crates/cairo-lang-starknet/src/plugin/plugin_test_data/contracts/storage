@@ -4,6 +4,11 @@
 ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
+#[derive(Drop, starknet::Store)]
+struct MyType {
+    x: u32,
+}
+
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
@@ -19,12 +24,18 @@ mod test_contract {
         felt252_to_u128: LegacyMap::<felt252, u128>,
         u128_to_bool: LegacyMap::<u128, bool>,
         bool_to_felt252: LegacyMap::<bool, felt252>,
+        my_type_var: super::MyType,
     }
 }
 
 //! > generated_cairo_code
 lib.cairo:
 
+#[derive(Copy, Drop, Hash, PartialEq, Serde, starknet::Store)]
+struct MyType {
+    x: u32,
+}
+
 // TODO(ilya): update format.
 #[starknet::contract]
 mod test_contract {
@@ -40,6 +51,77 @@ mod test_contract {
         felt252_to_u128: LegacyMap::<felt252, u128>,
         u128_to_bool: LegacyMap::<u128, bool>,
         bool_to_felt252: LegacyMap::<bool, felt252>,
+        my_type_var: super::MyType,
+    }
+}
+
+impls:
+
+impl MyTypeCopy of Copy::<MyType>;
+impl MyTypeDrop of Drop::<MyType>;
+impl MyTypeHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<MyType, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: MyType) -> __State {
+        let state = hash::Hash::update_state(state, value.x);
+        state
+    }
+}
+impl MyTypePartialEq of PartialEq::<MyType> {
+    fn eq(lhs: @MyType, rhs: @MyType) -> bool {
+        lhs.x == rhs.x
+    }
+    #[inline(always)]
+    fn ne(lhs: @MyType, rhs: @MyType) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl MyTypeSerde of Serde::<MyType> {
+    fn serialize(self: @MyType, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.x, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyType> {
+        Option::Some(MyType {
+            x: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreMyType of starknet::Store::<MyType> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
+        let x = starknet::Store::<u32>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyType {
+                x,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write(address_domain, base, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyType> {
+        let x = starknet::Store::<u32>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyType {
+                x,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyType) -> starknet::SyscallResult<()> {
+        starknet::Store::<u32>::write_at_offset(address_domain, base, offset, value.x)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<u32>::size()
     }
 }
 
@@ -74,6 +156,7 @@ use starknet::event::EventEmitter;
         felt252_to_u128: felt252_to_u128::ContractMemberState,
         u128_to_bool: u128_to_bool::ContractMemberState,
         bool_to_felt252: bool_to_felt252::ContractMemberState,
+        my_type_var: my_type_var::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
@@ -89,6 +172,7 @@ use starknet::event::EventEmitter;
             felt252_to_u128: felt252_to_u128::ContractMemberState {},
             u128_to_bool: u128_to_bool::ContractMemberState {},
             bool_to_felt252: bool_to_felt252::ContractMemberState {},
+            my_type_var: my_type_var::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -96,7 +180,7 @@ use starknet::event::EventEmitter;
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
     mod var_felt252 {
         #[derive(Copy, Drop)]
@@ -470,8 +554,45 @@ use starknet::event::EventEmitter;
             }
         }
     }
+    use my_type_var::InternalContractMemberStateTrait as my_type_varContractMemberStateTrait;
+    mod my_type_var {
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> super::super::MyType;
+            fn write(ref self: ContractMemberState, value: super::super::MyType);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
+            }
+            fn read(self: @ContractMemberState) -> super::super::MyType {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::MyType>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: super::super::MyType) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<super::super::MyType>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xdf00ddc8940a9ebc2f8665e989d2652203dabc0967e7b9cbce7d6a201564d3;
+const TEST_CLASS_HASH: felt252 = 0x236cc98c7096d7b54fbad8591642b00fc5a93f797f2b69b082fedc57004176b;
 
 
     mod __external {
@@ -503,7 +624,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }

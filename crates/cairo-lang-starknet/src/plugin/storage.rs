@@ -150,7 +150,7 @@ fn get_simple_storage_member_code(
     let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
     let type_ast = member.type_clause(db).ty(db);
 
-    let storage_member_name = match try_extract_mapping_types(db, &type_ast) {
+    let member_module_code = match try_extract_mapping_types(db, &type_ast) {
         Some((key_type_ast, value_type_ast, MappingType::Legacy)) => {
             Some(RewriteNode::interpolate_patched(
                 handle_legacy_mapping_storage_member(&address, member_state_name).as_str(),
@@ -179,24 +179,46 @@ fn get_simple_storage_member_code(
             });
             None
         }
-        None => Some(RewriteNode::interpolate_patched(
-            handle_simple_storage_member(&address, member_state_name).as_str(),
-            [
-                (
-                    "storage_member_name".to_string(),
-                    RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
-                ),
-                ("extra_uses".to_string(), extra_uses_node),
-                ("type_name".to_string(), RewriteNode::new_trimmed(type_ast.as_syntax_node())),
-            ]
-            .into(),
-        )),
+        None => {
+            // TODO(yg): same for key_type and value_type in the legacy case.
+            let type_path = get_full_path_type(db, type_ast);
+            Some(RewriteNode::interpolate_patched(
+                handle_simple_storage_member(&address, member_state_name).as_str(),
+                [
+                    (
+                        "storage_member_name".to_string(),
+                        RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
+                    ),
+                    ("extra_uses".to_string(), extra_uses_node),
+                    ("type_path".to_string(), type_path),
+                ]
+                .into(),
+            ))
+        }
     };
     StorageMemberCodePieces {
         member_code: Some(member_code),
         init_code: Some(member_init_code),
-        module_code: storage_member_name,
+        module_code: member_module_code,
     }
+}
+
+/// Returns a RewriteNode of the full path of a type for an inner module - adds "super::" if needed.
+fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: ast::Expr) -> RewriteNode {
+    let type_node = RewriteNode::new_trimmed(type_ast.as_syntax_node());
+    let ast::Expr::Path(type_path) = type_ast else {
+        return type_node;
+    };
+    if type_path.elements(db).len() == 1 {
+        // No need to add `super::` as this is a corelib type or a locally defined type (which is
+        // brought to the inner module by a extra `use`).
+        return type_node;
+    }
+
+    RewriteNode::interpolate_patched(
+        "super::$type_path$",
+        [("type_path".to_string(), type_node)].into(),
+    )
 }
 
 /// Returns the relevant code for a nested storage member.
@@ -301,29 +323,29 @@ fn handle_simple_storage_member(address: &str, member_state_name: &str) -> Strin
         struct {member_state_name} {{}}
         trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress;
-            fn read(self: @{member_state_name}) -> $type_name$;
-            fn write(ref self: {member_state_name}, value: $type_name$);
+            fn read(self: @{member_state_name}) -> $type_path$;
+            fn write(ref self: {member_state_name}, value: $type_path$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress {{
                 starknet::storage_base_address_const::<{address}>()
             }}
-            fn read(self: @{member_state_name}) -> $type_name$ {{
+            fn read(self: @{member_state_name}) -> $type_path$ {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::read(
+                    starknet::Store::<$type_path$>::read(
                         address_domain,
                         self.address(),
                     )
                 )
             }}
-            fn write(ref self: {member_state_name}, value: $type_name$) {{
+            fn write(ref self: {member_state_name}, value: $type_path$) {{
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_name$>::write(
+                    starknet::Store::<$type_path$>::write(
                         address_domain,
                         self.address(),
                         value,
