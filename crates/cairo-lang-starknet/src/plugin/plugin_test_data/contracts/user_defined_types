@@ -338,7 +338,7 @@ impl WrappedFelt252Hash<
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
@@ -453,7 +453,7 @@ impl SimpleEnumSerde of Serde::<SimpleEnum> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
@@ -552,7 +552,7 @@ impl EnumWithDefaultSerde of Serde::<EnumWithDefault> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
