@@ -1,7 +1,7 @@
 //! > Test expansion of Starknet for user types.
 
 //! > test_runner_name
-ExpandContractTestRunner
+ExpandContractTestRunner(allow_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -11,12 +11,16 @@ mod test_contract {
     #[storage]
     struct Storage {
         var: WrappedFelt252,
+        zero_size: ZeroSize,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+        zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
     }
     #[derive(Drop, Hash, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+    struct ZeroSize {}
 
     #[derive(Drop, Serde, starknet::Store)]
     enum SimpleEnum {
@@ -52,12 +56,16 @@ mod test_contract {
     #[storage]
     struct Storage {
         var: WrappedFelt252,
+        zero_size: ZeroSize,
         mapping: LegacyMap::<WrappedFelt252, WrappedFelt252>,
+        zero_size_mapping: LegacyMap::<ZeroSize, ZeroSize>,
     }
     #[derive(Drop, Hash, Serde, starknet::Store)]
     struct WrappedFelt252 {
         value: felt252,
     }
+    #[derive(Drop, Hash, Serde, starknet::Store)]
+    struct ZeroSize {}
 
     #[derive(Drop, Serde, starknet::Store)]
     enum SimpleEnum {
@@ -105,14 +113,18 @@ use starknet::event::EventEmitter;
 
     struct ContractState {
         var: var::ContractMemberState,
+        zero_size: zero_size::ContractMemberState,
         mapping: mapping::ContractMemberState,
+        zero_size_mapping: zero_size_mapping::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             var: var::ContractMemberState {},
+            zero_size: zero_size::ContractMemberState {},
             mapping: mapping::ContractMemberState {},
+            zero_size_mapping: zero_size_mapping::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -120,11 +132,12 @@ use starknet::event::EventEmitter;
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use var::InternalContractMemberStateTrait as varContractMemberStateTrait;
     mod var {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
+        use super::ZeroSize;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
@@ -163,10 +176,54 @@ use starknet::event::EventEmitter;
             }
         }
     }
+    use zero_size::InternalContractMemberStateTrait as zero_sizeContractMemberStateTrait;
+    mod zero_size {
+        use super::HashStateExTrait;
+        use super::WrappedFelt252;
+        use super::ZeroSize;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> ZeroSize;
+            fn write(ref self: ContractMemberState, value: ZeroSize);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
+            }
+            fn read(self: @ContractMemberState) -> ZeroSize {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<ZeroSize>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: ZeroSize) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<ZeroSize>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
     use mapping::InternalContractMemberStateTrait as mappingContractMemberStateTrait;
     mod mapping {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
+        use super::ZeroSize;
         use super::SimpleEnum;
         use super::EnumWithDefault;
         use super::BadEnumWithDefault;
@@ -206,8 +263,52 @@ use starknet::event::EventEmitter;
             }
         }
     }
+    use zero_size_mapping::InternalContractMemberStateTrait as zero_size_mappingContractMemberStateTrait;
+    mod zero_size_mapping {
+        use super::HashStateExTrait;
+        use super::WrappedFelt252;
+        use super::ZeroSize;
+        use super::SimpleEnum;
+        use super::EnumWithDefault;
+        use super::BadEnumWithDefault;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize;
+            fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState, key: ZeroSize) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<ZeroSize>::hash(0x18a905aad30d0632877f9b37c338ceaaa98ea40758006e286f2104428beedab, key))
+            }
+            fn read(self: @ContractMemberState, key: ZeroSize) -> ZeroSize {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<ZeroSize>::read(
+                        address_domain,
+                        self.address(key),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, key: ZeroSize, value: ZeroSize) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<ZeroSize>::write(
+                        address_domain,
+                        self.address(key),
+                        value,
+                    )
+                )
+            }
+        }
+    }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x27d4af9f9b89330922d8f7b120ed011df3d289c49f94b1eee714c8ace7f4741;
+const TEST_CLASS_HASH: felt252 = 0x8e64a6078572ac53a372328fbdcd43a363f5fca5021fed3df7177070b741fa;
 
 
     mod __external {
@@ -278,6 +379,66 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<felt252>::size()
+    }
+}
+
+impls:
+
+impl ZeroSizeDrop of Drop::<ZeroSize>;
+impl ZeroSizeHash<
+    __State,
+    impl __SHashState: hash::HashStateTrait<__State>,
+    impl SDrop: Drop<__State>
+> of hash::Hash<ZeroSize, __State, __SHashState> {
+    #[inline(always)]
+    fn update_state(state: __State, value: ZeroSize) -> __State {
+
+        state
+    }
+}
+impl ZeroSizeSerde of Serde::<ZeroSize> {
+    fn serialize(self: @ZeroSize, ref output: array::Array<felt252>) {
+
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ZeroSize> {
+        Option::Some(ZeroSize {
+
+        })
+    }
+}
+
+
+storage_access_impl:
+
+impl StoreZeroSize of starknet::Store::<ZeroSize> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
+
+        starknet::SyscallResult::Ok(
+            ZeroSize {
+
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ZeroSize) -> starknet::SyscallResult<()> {
+
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ZeroSize> {
+
+        starknet::SyscallResult::Ok(
+            ZeroSize {
+
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ZeroSize) -> starknet::SyscallResult<()> {
+
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        0
     }
 }
 
@@ -540,13 +701,13 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
 
 //! > expected_diagnostics
 error: Plugin diagnostic: Multiple variants annotated with `#[default]`
- --> lib.cairo:34:9
+ --> lib.cairo:38:9
         #[default]
         ^********^
