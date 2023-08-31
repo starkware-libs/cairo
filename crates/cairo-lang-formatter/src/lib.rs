@@ -73,6 +73,11 @@ impl FormatterConfig {
     pub fn new(tab_size: usize, max_line_length: usize, sort_module_level_items: bool) -> Self {
         Self { tab_size, max_line_length, sort_module_level_items }
     }
+
+    pub fn sort_module_level_items(mut self, sort_module_level_items: bool) -> Self {
+        self.sort_module_level_items = sort_module_level_items;
+        self
+    }
 }
 impl Default for FormatterConfig {
     fn default() -> Self {
