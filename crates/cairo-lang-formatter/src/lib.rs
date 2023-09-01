@@ -12,6 +12,7 @@ use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_parser::parser::Parser;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
+use serde::{Deserialize, Serialize};
 
 pub use crate::cairo_formatter::{CairoFormatter, FormatOutcome, StdinFmt};
 use crate::formatter_impl::FormatterImpl;
@@ -57,7 +58,8 @@ pub fn format_string(db: &dyn SyntaxGroup, content: String) -> String {
     get_formatted_file(db, &syntax_root, FormatterConfig::default())
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct FormatterConfig {
     tab_size: usize,
     max_line_length: usize,
