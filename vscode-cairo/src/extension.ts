@@ -39,7 +39,7 @@ function rootPath(context: vscode.ExtensionContext): string {
 
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (workspaceFolders) {
-    rootPath = workspaceFolders[0].uri.path || rootPath;
+    rootPath = workspaceFolders[0]?.uri.path || rootPath;
   }
   return rootPath;
 }
@@ -159,12 +159,16 @@ function notifyScarbMissing(outputChannel: vscode.OutputChannel) {
   outputChannel.appendLine(errorMessage);
 }
 
-async function listScarbCommandsOutput(scarbPath: undefined | string) {
+async function listScarbCommandsOutput(
+  scarbPath: undefined | string,
+  context: vscode.ExtensionContext
+) {
   if (!scarbPath) {
     return undefined;
   }
   const child = child_process.spawn(scarbPath, ["--json", "commands"], {
     stdio: "pipe",
+    cwd: rootPath(context),
   });
   let stdout = "";
   for await (const chunk of child.stdout) {
@@ -174,12 +178,13 @@ async function listScarbCommandsOutput(scarbPath: undefined | string) {
 }
 
 async function isScarbLsPresent(
-  scarbPath: undefined | string
+  scarbPath: undefined | string,
+  context: vscode.ExtensionContext
 ): Promise<boolean> {
   if (!scarbPath) {
     return false;
   }
-  const scarbOutput = await listScarbCommandsOutput(scarbPath);
+  const scarbOutput = await listScarbCommandsOutput(scarbPath, context);
   if (!scarbOutput) return false;
   return scarbOutput
     .split("\n")
@@ -214,7 +219,8 @@ async function runStandaloneLs(
 
 async function runScarbLs(
   scarbPath: undefined | string,
-  outputChannel: vscode.OutputChannel
+  outputChannel: vscode.OutputChannel,
+  context: vscode.ExtensionContext
 ): Promise<undefined | ChildProcessWithoutNullStreams> {
   if (!scarbPath) {
     return;
@@ -222,7 +228,9 @@ async function runScarbLs(
   outputChannel.appendLine(
     "Cairo language server running from Scarb at: " + scarbPath
   );
-  return child_process.spawn(scarbPath, ["cairo-language-server"], {});
+  return child_process.spawn(scarbPath, ["cairo-language-server"], {
+    cwd: rootPath(context),
+  });
 }
 
 enum ServerType {
@@ -233,14 +241,15 @@ enum ServerType {
 async function getServerType(
   isScarbEnabled: boolean,
   scarbPath: string | undefined,
-  configLanguageServerPath: string | undefined
+  configLanguageServerPath: string | undefined,
+  context: vscode.ExtensionContext
 ) {
   if (!isScarbEnabled) return ServerType.Standalone;
   if (!(await isScarbProject()) && !!configLanguageServerPath) {
     // If Scarb manifest is missing, and Cairo-LS path is explicit.
     return ServerType.Standalone;
   }
-  if (await isScarbLsPresent(scarbPath)) return ServerType.Scarb;
+  if (await isScarbLsPresent(scarbPath, context)) return ServerType.Scarb;
   return ServerType.Standalone;
 }
 
@@ -258,7 +267,7 @@ async function isScarbProject(): Promise<boolean> {
   const depth = 20;
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (
-    !!workspaceFolders &&
+    !!workspaceFolders?.[0] &&
     (await isScarbProjectAt(path.dirname(workspaceFolders[0].uri.path), depth))
   )
     return true;
@@ -292,11 +301,12 @@ async function setupLanguageServer(
       const serverType = await getServerType(
         isScarbEnabled,
         scarbPath,
-        configLanguageServerPath
+        configLanguageServerPath,
+        context
       );
       let child;
       if (serverType === ServerType.Scarb) {
-        child = await runScarbLs(scarbPath, outputChannel);
+        child = await runScarbLs(scarbPath, outputChannel, context);
       } else {
         child = await runStandaloneLs(
           scarbPath,
