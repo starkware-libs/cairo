@@ -25,4 +25,3 @@ serde.workspace = true
 [dev-dependencies]
 pretty_assertions.workspace = true
 test-case.workspace = true
-test-log.workspace = true

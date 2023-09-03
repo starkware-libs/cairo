@@ -10,6 +10,7 @@ description = "Sierra gas computation."
 cairo-lang-eq-solver = { path = "../cairo-lang-eq-solver", version = "2.2.0" }
 cairo-lang-sierra = { path = "../cairo-lang-sierra", version = "2.2.0" }
 cairo-lang-sierra-type-size = { path = "../cairo-lang-sierra-type-size", version = "2.2.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.2.0" }
 itertools.workspace = true
 thiserror.workspace = true
