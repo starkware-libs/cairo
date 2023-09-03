@@ -1300,7 +1300,7 @@ impl U256BitNot of BitNot<u256> {
     }
 }
 
-#[derive(Copy, Drop, PartialEq, Serde)]
+#[derive(Copy, Drop, Hash, PartialEq, Serde, starknet::Store)]
 struct u512 {
     limb0: u128,
     limb1: u128,
