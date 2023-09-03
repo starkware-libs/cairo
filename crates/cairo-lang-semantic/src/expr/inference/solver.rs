@@ -140,10 +140,12 @@ impl Solver {
                 SolutionSet::Ambiguous(ambiguity) => return Ok(SolutionSet::Ambiguous(ambiguity)),
             };
             if let Some(unique_solution) = unique_solution {
-                return Ok(SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
-                    concrete_trait_id: self.canonical_trait.0,
-                    impls: vec![unique_solution.0, candidate_solution.0],
-                }));
+                if unique_solution.0 != candidate_solution.0 {
+                    return Ok(SolutionSet::Ambiguous(Ambiguity::MultipleImplsFound {
+                        concrete_trait_id: self.canonical_trait.0,
+                        impls: vec![unique_solution.0, candidate_solution.0],
+                    }));
+                }
             }
             unique_solution = Some(candidate_solution);
         }
