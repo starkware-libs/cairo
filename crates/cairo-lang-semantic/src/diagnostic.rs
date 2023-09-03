@@ -92,17 +92,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::Unsupported => "Unsupported feature.".into(),
             SemanticDiagnosticKind::UnknownLiteral => "Unknown literal.".into(),
-            SemanticDiagnosticKind::UnsupportedUnaryOperator { op, ty } => {
-                format!("Unary operator '{op}' is not supported for type '{}'.", ty.format(db),)
-            }
             SemanticDiagnosticKind::UnknownBinaryOperator => "Unknown binary operator.".into(),
-            SemanticDiagnosticKind::UnsupportedBinaryOperator { op, type1, type2 } => {
-                format!(
-                    "Binary operator '{op}' is not supported for types '{}' and '{}'.",
-                    type1.format(db),
-                    type2.format(db)
-                )
-            }
             SemanticDiagnosticKind::UnknownTrait => "Unknown trait.".into(),
             SemanticDiagnosticKind::UnknownImpl => "Unknown impl.".into(),
             SemanticDiagnosticKind::UnexpectedElement { expected, actual } => {
@@ -110,12 +100,8 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 format!("Expected {expected_str}, found {actual}.")
             }
             SemanticDiagnosticKind::UnknownType => "Unknown type.".into(),
-            SemanticDiagnosticKind::UnknownStruct => "Unknown struct.".into(),
             SemanticDiagnosticKind::UnknownEnum => "Unknown enum.".into(),
             SemanticDiagnosticKind::LiteralError(literal_error) => literal_error.format(db),
-            SemanticDiagnosticKind::LogicalOperatorsNotSupported => {
-                "Logical operators are not supported yet.".into()
-            }
             SemanticDiagnosticKind::NotAVariant => {
                 "Not a variant. Use the full name Enum::Variant.".into()
             }
@@ -152,9 +138,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             }
             SemanticDiagnosticKind::ImplRequirementCycle => {
                 "Cycle detected while resolving generic param.".into()
-            }
-            SemanticDiagnosticKind::ExpectedConcreteVariant => {
-                "Expected a concrete variant. Use `::<>` syntax.".to_string()
             }
             SemanticDiagnosticKind::MissingMember { member_name } => {
                 format!(r#"Missing member "{member_name}"."#)
@@ -320,14 +303,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     actual_ty.format(db)
                 )
             }
-            SemanticDiagnosticKind::NoImplementationOfTrait { concrete_trait_id, generic_args } => {
-                let long_concrete_trait = db.lookup_intern_concrete_trait(*concrete_trait_id);
-                let trait_path = long_concrete_trait.trait_id.full_path(db.upcast());
-                format!(
-                    "Trait `{trait_path}::<{}>` has no implementation in the context.",
-                    generic_args.iter().map(|arg| arg.format(db)).join(", ")
-                )
-            }
             SemanticDiagnosticKind::AmbiguousTrait { trait_function_id0, trait_function_id1 } => {
                 format!(
                     "Ambiguous method call. More than one applicable trait function with a \
@@ -336,14 +311,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
                     trait_function_id0.full_path(db.upcast()),
                     trait_function_id1.full_path(db.upcast())
                 )
-            }
-            SemanticDiagnosticKind::MultipleImplementationOfTrait { trait_id, all_impl_ids } => {
-                let trait_path = trait_id.full_path(db.upcast());
-                let impls_str = all_impl_ids
-                    .iter()
-                    .map(|imp| format!("{:?}", imp.debug(db.upcast())))
-                    .join(", ");
-                format!("Trait `{trait_path}` has multiple implementations, in: {impls_str}",)
             }
             SemanticDiagnosticKind::VariableNotFound { name } => {
                 format!(r#"Variable "{name}" not found."#)
@@ -563,9 +530,6 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::RedundantInlineAttribute => {
                 "Redundant `inline` attribute.".into()
             }
-            SemanticDiagnosticKind::InlineWithoutArgumentNotSupported => {
-                "`inline` without arguments is not supported.".into()
-            }
             SemanticDiagnosticKind::InlineAttrForExternFunctionNotAllowed => {
                 "`inline` attribute is not allowed for extern functions.".into()
             }
@@ -650,16 +614,7 @@ pub enum SemanticDiagnosticKind {
     },
     Unsupported,
     UnknownLiteral,
-    UnsupportedUnaryOperator {
-        op: SmolStr,
-        ty: semantic::TypeId,
-    },
     UnknownBinaryOperator,
-    UnsupportedBinaryOperator {
-        op: SmolStr,
-        type1: semantic::TypeId,
-        type2: semantic::TypeId,
-    },
     UnknownTrait,
     UnknownImpl,
     UnexpectedElement {
@@ -667,7 +622,6 @@ pub enum SemanticDiagnosticKind {
         actual: ElementKind,
     },
     UnknownType,
-    UnknownStruct,
     UnknownEnum,
     LiteralError(LiteralError),
     NotAVariant,
@@ -687,7 +641,6 @@ pub enum SemanticDiagnosticKind {
     TypeAliasCycle,
     ImplAliasCycle,
     ImplRequirementCycle,
-    ExpectedConcreteVariant,
     MissingMember {
         member_name: SmolStr,
     },
@@ -757,17 +710,9 @@ pub enum SemanticDiagnosticKind {
         expected_ty: semantic::TypeId,
         actual_ty: semantic::TypeId,
     },
-    NoImplementationOfTrait {
-        concrete_trait_id: ConcreteTraitId,
-        generic_args: Vec<GenericArgumentId>,
-    },
     AmbiguousTrait {
         trait_function_id0: TraitFunctionId,
         trait_function_id1: TraitFunctionId,
-    },
-    MultipleImplementationOfTrait {
-        trait_id: TraitId,
-        all_impl_ids: Vec<UninferredImpl>,
     },
     VariableNotFound {
         name: SmolStr,
@@ -899,10 +844,8 @@ pub enum SemanticDiagnosticKind {
     InternalInferenceError(InferenceError),
     NoImplementationOfIndexOperator(semantic::TypeId),
     MultipleImplementationOfIndexOperator(semantic::TypeId),
-    LogicalOperatorsNotSupported,
     UnsupportedInlineArguments,
     RedundantInlineAttribute,
-    InlineWithoutArgumentNotSupported,
     InlineAttrForExternFunctionNotAllowed,
     InlineAlwaysWithImplGenericArgNotAllowed,
     TailExpressionNotAllowedInLoop,
