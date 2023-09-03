@@ -9,7 +9,7 @@ use indoc::indoc;
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
-use crate::plugin::consts::{EMBEDDABLE_AS_ATTR, STORAGE_STRUCT_NAME};
+use crate::plugin::consts::{EMBEDDABLE_AS_ATTR, GENERIC_CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
 use crate::plugin::storage::handle_storage_struct;
 
 /// Accumulated data specific for component generation.
@@ -119,7 +119,7 @@ fn get_embeddable_as_impl_generic_params(
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     };
     if !try_extract_matches!(first_generic_param, ast::GenericParam::Type)
-        .map_or(false, |param| param.name(db).text(db) == "TContractState")
+        .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME)
     {
         return Err(first_generic_param_diagnostic(generic_params_ptr));
     }
@@ -241,8 +241,9 @@ fn handle_component_impl(
         }
 
         #[starknet::embeddable]
-        impl $generated_impl_name$<$generic_params$$maybe_comma$ impl TContractStatePanicDestruct: \
-         PanicDestruct<TContractState>> of $generated_trait_name$<TContractState> {$impl_functions$
+        impl $generated_impl_name$<
+            $generic_params$$maybe_comma$ impl TContractStateDrop: Drop<TContractState>
+        > of $generated_trait_name$<TContractState> {$impl_functions$
         }"},
         [
             ("generated_trait_name".to_string(), generated_trait_name),

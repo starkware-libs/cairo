@@ -15,8 +15,7 @@ use super::consts::{
     RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
 use super::utils::{
-    has_v0_attribute, is_felt252, is_felt252_span, is_mut_param, is_ref_param,
-    maybe_strip_underscore,
+    has_v0_attribute, is_mut_param, is_ref_param, maybe_strip_underscore, AstPathExtract,
 };
 
 /// Kind of an entry point. Determined by the entry point's attributes.
@@ -284,7 +283,7 @@ fn generate_entry_point_wrapper(
         OptionReturnTypeClause::ReturnTypeClause(ty) => {
             let ret_type_ast = ty.ty(db);
 
-            let return_ty_is_felt252_span = is_felt252_span(db, &ret_type_ast);
+            let return_ty_is_felt252_span = ret_type_ast.is_felt252_span(db);
             let ret_type_name = ret_type_ast.as_syntax_node().get_text_without_trivia(db);
             (
                 "let res = ",
@@ -370,7 +369,7 @@ fn validate_l1_handler_first_parameter(
 ) {
     if let Some(first_param) = params.elements(db).get(1) {
         // Validate type
-        if !is_felt252(db, &first_param.type_clause(db).ty(db)) {
+        if !first_param.type_clause(db).ty(db).is_felt252(db) {
             diagnostics.push(PluginDiagnostic {
                 message: "The second parameter of an L1 handler must be of type `felt252`."
                     .to_string(),

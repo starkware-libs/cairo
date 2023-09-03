@@ -5,6 +5,7 @@ pub const WRAPPER_PREFIX: &str = "__wrapper_";
 pub const STORAGE_STRUCT_NAME: &str = "Storage";
 pub const EVENT_TYPE_NAME: &str = "Event";
 pub const CONTRACT_STATE_NAME: &str = "ContractState";
+pub const GENERIC_CONTRACT_STATE_NAME: &str = "TContractState";
 
 // TODO(spapini): Remove this attribute. It's for the old contract syntax.
 pub const DEPRECATED_ABI_ATTR: &str = "abi";
