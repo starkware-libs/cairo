@@ -13,6 +13,7 @@ regex = "1"
 
 [dependencies]
 anyhow.workspace = true
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.2.0" }
 const-fnv1a-hash.workspace = true
 convert_case.workspace = true
@@ -29,7 +30,6 @@ thiserror.workspace = true
 
 [dev-dependencies]
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
-assert_matches.workspace = true
 bimap.workspace = true
 env_logger.workspace = true
 indoc.workspace = true
