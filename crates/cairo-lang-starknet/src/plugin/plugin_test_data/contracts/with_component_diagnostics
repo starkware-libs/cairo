@@ -1721,45 +1721,45 @@ error: Unexpected return type. Expected: "@test::test_component::ComponentState:
     fn get_component(self: @ContractState) -> @super::test_component::ComponentState<ContractState> {
                                                                                                     ^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:54:72
-                    starknet::Store::<super::test_component::Storage>::read(
-                                                                       ^**^
+ --> contract:54:79
+                    starknet::Store::<super::super::test_component::Storage>::read(
+                                                                              ^**^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
-error: Plugin diagnostic: Identifier not found.
- --> lib.cairo:15:40
+error: Plugin diagnostic: Type not found.
+ --> lib.cairo:15:56
         test_component_storage: super::test_component::Storage,
-                                       ^************^
+                                                       ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:64:72
-                    starknet::Store::<super::test_component::Storage>::write(
-                                                                       ^***^
+ --> contract:64:79
+                    starknet::Store::<super::super::test_component::Storage>::write(
+                                                                              ^***^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -1940,29 +1940,29 @@ use starknet::event::EventEmitter;
         struct ContractMemberState {}
         trait InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> super::test_component::Storage;
-            fn write(ref self: ContractMemberState, value: super::test_component::Storage);
+            fn read(self: @ContractMemberState) -> super::super::test_component::Storage;
+            fn write(ref self: ContractMemberState, value: super::super::test_component::Storage);
         }
 
         impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
             }
-            fn read(self: @ContractMemberState) -> super::test_component::Storage {
+            fn read(self: @ContractMemberState) -> super::super::test_component::Storage {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::test_component::Storage>::read(
+                    starknet::Store::<super::super::test_component::Storage>::read(
                         address_domain,
                         self.address(),
                     )
                 )
             }
-            fn write(ref self: ContractMemberState, value: super::test_component::Storage) {
+            fn write(ref self: ContractMemberState, value: super::super::test_component::Storage) {
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::test_component::Storage>::write(
+                    starknet::Store::<super::super::test_component::Storage>::write(
                         address_domain,
                         self.address(),
                         value,
