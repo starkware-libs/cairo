@@ -578,6 +578,7 @@ dependencies = [
  "log",
  "pretty_assertions",
  "salsa",
+ "serde",
  "smol_str",
  "test-case",
  "test-log",
