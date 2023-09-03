@@ -21,7 +21,7 @@ cairo-lang-runner = { path = "../crates/cairo-lang-runner" }
 cairo-lang-semantic = { path = "../crates/cairo-lang-semantic", features = ["testing"] }
 cairo-lang-sierra = { path = "../crates/cairo-lang-sierra" }
 cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas" }
-cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator", features = ["testing"] }
+cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator" }
 cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", features = ["testing"] }
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
 cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils" }

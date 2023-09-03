@@ -28,7 +28,7 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 assert_matches.workspace = true
 bimap.workspace = true
 env_logger.workspace = true
