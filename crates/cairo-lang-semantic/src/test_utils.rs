@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
-use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId};
+use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleId, SubmoduleId, SubmoduleLongId};
 use cairo_lang_diagnostics::{Diagnostics, DiagnosticsBuilder};
 use cairo_lang_filesystem::db::{
     init_dev_corelib, init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup,
@@ -13,6 +13,7 @@ use cairo_lang_filesystem::ids::{
 };
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
+use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
@@ -138,7 +139,7 @@ pub fn setup_test_module(
     let file_id = db.module_main_file(module_id).unwrap();
 
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
-    let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
+    let semantic_diagnostics = get_recursive_module_semantic_diagnostics(db, module_id).format(db);
 
     WithStringDiagnostics {
         value: TestModule { crate_id, module_id },
@@ -299,4 +300,31 @@ pub fn get_crate_semantic_diagnostics(
         diagnostics.extend(db.module_semantic_diagnostics(*submodule_id).unwrap());
     }
     diagnostics.build()
+}
+
+/// Gets the diagnostics for all the modules (including nested) in the given module.
+fn get_recursive_module_semantic_diagnostics(
+    db: &dyn SemanticGroup,
+    module_id: ModuleId,
+) -> Diagnostics<SemanticDiagnostic> {
+    let mut diagnostics = DiagnosticsBuilder::default();
+    diagnostics.extend(db.module_semantic_diagnostics(module_id).unwrap());
+    for submodule_id in db.module_submodules_ids(module_id).unwrap().iter() {
+        if is_submodule_inline(db, *submodule_id) {
+            diagnostics.extend(get_recursive_module_semantic_diagnostics(
+                db,
+                ModuleId::Submodule(*submodule_id),
+            ));
+        }
+    }
+    diagnostics.build()
+}
+
+/// Returns true if the given submodule is inline (i.e. has a body), false otherwise.
+fn is_submodule_inline(db: &dyn SemanticGroup, submodule: SubmoduleId) -> bool {
+    let SubmoduleLongId(_, ptr) = db.lookup_intern_submodule(submodule);
+    match ptr.lookup(db.upcast()).body(db.upcast()) {
+        ast::MaybeModuleBody::Some(_) => true,
+        ast::MaybeModuleBody::None(_) => false,
+    }
 }
