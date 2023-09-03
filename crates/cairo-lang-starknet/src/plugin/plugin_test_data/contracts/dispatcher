@@ -203,7 +203,7 @@ impl IContractDispatcherSerde of Serde::<IContractDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
@@ -253,7 +253,7 @@ impl IContractLibraryDispatcherSerde of Serde::<IContractLibraryDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
@@ -303,7 +303,7 @@ impl IContractSafeLibraryDispatcherSerde of Serde::<IContractSafeLibraryDispatch
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
@@ -353,7 +353,7 @@ impl IContractSafeDispatcherSerde of Serde::<IContractSafeDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
@@ -478,7 +478,7 @@ impl IContractDispatcherSerde of Serde::<IContractDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractDispatcher> {
@@ -528,7 +528,7 @@ impl IContractLibraryDispatcherSerde of Serde::<IContractLibraryDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractLibraryDispatcher> {
@@ -578,7 +578,7 @@ impl IContractSafeLibraryDispatcherSerde of Serde::<IContractSafeLibraryDispatch
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibraryDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeLibraryDispatcher> {
@@ -628,7 +628,7 @@ impl IContractSafeDispatcherSerde of Serde::<IContractSafeDispatcher> {
 }
 
 
-storage_access_impl:
+starknet_store_impl:
 
 impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IContractSafeDispatcher> {
