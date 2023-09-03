@@ -1,7 +1,7 @@
 //! > Test method
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(allow_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -30,7 +30,7 @@ impl OtherImpl of AnotherTrait {
 //! > Test method failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(allow_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -104,7 +104,7 @@ error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic param
 //! > Test calling a method of a trait from the generic arguments.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(allow_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -124,6 +124,137 @@ mod callable {
     }
     impl U8Callable of CallableTrait<u8> {
         fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl in the module.
+
+//! > test_runner_name
+test_function_diagnostics(allow_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+}
+impl U8Callable of callable::CallableTrait<u8> {
+    fn call(self: u8) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl in the module that is not the relevant impl.
+
+//! > test_runner_name
+test_function_diagnostics(allow_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+// TODO(yg): check if needed.
+use callable::U8Callable;
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+impl U16Callable of callable::CallableTrait<u16> {
+    fn call(self: u16) {}
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl alias in the module.
+
+//! > test_runner_name
+test_function_diagnostics(allow_diagnostics: false)
+
+//! > function
+fn foo() {
+    // TODO(yg): change back to u8.
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl X = callable::U8Callable;
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+}
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test calling a method of a trait from an impl alias in the module that is not the relevant impl.
+
+//! > test_runner_name
+test_function_diagnostics(allow_diagnostics: false)
+
+//! > function
+fn foo() {
+    bar(3_u8);
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl X = callable::U16Callable;
+fn bar(x: u8) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: u8) {}
+    }
+    impl U16Callable of CallableTrait<u16> {
+        fn call(self: u16) {}
     }
 }
 

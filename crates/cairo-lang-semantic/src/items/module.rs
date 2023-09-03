@@ -113,6 +113,12 @@ pub fn module_usable_trait_ids(
         let trait_id = db.impl_def_trait(imp)?;
         module_traits.insert(trait_id);
     }
+    // Add traits from impl aliases in the module.
+    for alias in db.module_impl_aliases_ids(module_id)?.iter().copied() {
+        let impl_id = db.impl_alias_impl_def(alias)?;
+        let trait_id = db.impl_def_trait(impl_id)?;
+        module_traits.insert(trait_id);
+    }
     // Add traits from uses in the module.
     for use_id in db.module_uses_ids(module_id)?.iter().copied() {
         match db.use_resolved_item(use_id)? {

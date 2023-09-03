@@ -1,3 +1,5 @@
+#![cfg(any(feature = "testing", test))]
+
 pub mod parse_test_file;
 use std::fs;
 use std::path::Path;

@@ -2,7 +2,7 @@
 overflow-checks = true     # Enable integer overflow checks.
 
 [workspace]
-
+resolver = "1"
 members = [
     "crates/cairo-lang-casm",
     "crates/cairo-lang-compiler",
