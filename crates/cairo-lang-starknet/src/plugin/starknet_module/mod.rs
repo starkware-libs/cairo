@@ -15,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
-use super::events::is_starknet_event;
+use super::events::get_starknet_event_variants;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
     COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, STORAGE_ATTR, STORAGE_STRUCT_NAME,
@@ -161,6 +161,7 @@ pub(super) fn handle_module_by_storage(
 
     // Whether an event exists in the given module. If it doesn't, we need to generate an empty one.
     let mut has_event = false;
+    let mut event_variants = vec![];
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
@@ -170,8 +171,11 @@ pub(super) fn handle_module_by_storage(
             continue;
         }
 
-        if is_starknet_event(db, &mut diagnostics, &item, module_kind) {
+        if let Some(variants) =
+            get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
+        {
             has_event = true;
+            event_variants = variants;
         }
 
         maybe_add_extra_use(db, item, &mut extra_uses);
@@ -188,9 +192,14 @@ pub(super) fn handle_module_by_storage(
 
     // Generate the specific code for contract/component according to the module kind.
     let module_kind_specific_code = match module_kind {
-        StarknetModuleKind::Contract => {
-            generate_contract_specific_code(db, &mut diagnostics, common_data, &body, &module_ast)
-        }
+        StarknetModuleKind::Contract => generate_contract_specific_code(
+            db,
+            &mut diagnostics,
+            common_data,
+            &body,
+            &module_ast,
+            event_variants,
+        ),
         StarknetModuleKind::Component => {
             generate_component_specific_code(db, &mut diagnostics, common_data, &body)
         }
