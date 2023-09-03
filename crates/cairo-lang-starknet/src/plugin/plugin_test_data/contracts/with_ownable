@@ -56,14 +56,13 @@ mod my_contract {
 
     #[embed(v0)]
     impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
-    use super::ownable::TransferTrait;
 
     #[embed(v0)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128) {
-            self.ownable.init_ownable(owner);
+            self.init_ownable(owner);
             self.balance.write(initial);
         }
         #[external(v0)]
@@ -72,7 +71,7 @@ mod my_contract {
         }
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128) {
-            self.ownable.validate_ownership();
+            self.validate_ownership();
             self.balance.write(new_balance);
         }
     }
@@ -133,14 +132,13 @@ mod my_contract {
 
     #[embed(v0)]
     impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
-    use super::ownable::TransferTrait;
 
     #[embed(v0)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128) {
-            self.ownable.init_ownable(owner);
+            self.init_ownable(owner);
             self.balance.write(initial);
         }
         #[external(v0)]
@@ -149,7 +147,7 @@ mod my_contract {
         }
         #[external(v0)]
         fn set_balance(ref self: ContractState, new_balance: u128) {
-            self.ownable.validate_ownership();
+            self.validate_ownership();
             self.balance.write(new_balance);
         }
     }
@@ -385,7 +383,6 @@ contract:
     mod balance {
         use super::ContractAddress;
         use super::Event;
-        use super::TransferTrait;
         use super::Impl;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
@@ -423,7 +420,7 @@ contract:
         }
     }
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xb660f9d7232a652f156bdad5ae5094889d83ec521206a1aa95635bfa2c4bb6;
+const TEST_CLASS_HASH: felt252 = 0xe0444b0e3e2ebc94534b4e9603fe33e5720f7f9ded7694df89ed3113eab701;
 
 impl ContractStateTransfer of
     super::ownable::UnsafeNewContractStateTraitForTransfer<ContractState> {
