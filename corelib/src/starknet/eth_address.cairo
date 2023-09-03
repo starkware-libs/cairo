@@ -6,7 +6,7 @@ use traits::{Into, TryInto};
 use zeroable::Zeroable;
 
 // An Ethereum address (160 bits).
-#[derive(Copy, Drop, starknet::Store, PartialEq)]
+#[derive(Copy, Drop, Hash, PartialEq, starknet::Store, Serde)]
 struct EthAddress {
     address: felt252,
 }
@@ -34,14 +34,6 @@ impl U256IntoEthAddress of Into<u256, EthAddress> {
             address: high_32_bits.into() * 0x100000000000000000000000000000000_felt252
                 + self.low.into()
         }
-    }
-}
-impl EthAddressSerde of Serde<EthAddress> {
-    fn serialize(self: @EthAddress, ref output: Array<felt252>) {
-        self.address.serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<EthAddress> {
-        Serde::<felt252>::deserialize(ref serialized)?.try_into()
     }
 }
 impl EthAddressZeroable of Zeroable<EthAddress> {
