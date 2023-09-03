@@ -138,7 +138,7 @@ pub fn setup_test_module(
     let file_id = db.module_main_file(module_id).unwrap();
 
     let syntax_diagnostics = db.file_syntax_diagnostics(file_id).format(Upcast::upcast(db));
-    let semantic_diagnostics = db.module_semantic_diagnostics(module_id).unwrap().format(db);
+    let semantic_diagnostics = get_crate_semantic_diagnostics(db, crate_id).format(db);
 
     WithStringDiagnostics {
         value: TestModule { crate_id, module_id },

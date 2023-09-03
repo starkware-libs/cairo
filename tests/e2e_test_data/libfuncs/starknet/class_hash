@@ -6,8 +6,19 @@
 SmallE2ETestRunner
 
 //! > cairo
-fn foo(address: felt252) -> Option::<starknet::ClassHash> {
-    starknet::class_hash::class_hash_try_from_felt252(address)
+fn foo() {
+    bar(3_u8);
+}
+fn bar<T, impl CallableImpl: callable::CallableTrait<T>>(x: T) {
+    x.call();
+}
+mod callable {
+    trait CallableTrait<T>{
+        fn call(self: T);
+    }
+    impl U8Callable of CallableTrait<u8> {
+        fn call(self: T) {}
+    }
 }
 
 //! > casm
