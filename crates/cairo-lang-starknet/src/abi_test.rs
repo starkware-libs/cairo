@@ -205,7 +205,7 @@ fn test_abi_failure() {
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()
         .unwrap();
-    let module_id = setup_test_module(
+    let (module, diagnostics) = setup_test_module(
         db,
         indoc! {"
           #[derive(Drop)]
@@ -228,11 +228,26 @@ fn test_abi_failure() {
           }
         "},
     )
-    .unwrap()
-    .module_id;
+    .split();
+
+    assert_eq!(
+        diagnostics,
+        indoc! {"
+        error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
+         --> event_impl:8:34
+                        starknet::Event::append_keys_and_data(
+                                         ^******************^
+
+        error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
+         --> event_impl:20:44
+                        let val = starknet::Event::deserialize(
+                                                   ^*********^
+
+        "}
+    );
 
     let submodule_id = extract_matches!(
-        db.module_item_by_name(module_id, "test_contract".into()).unwrap().unwrap(),
+        db.module_item_by_name(module.module_id, "test_contract".into()).unwrap().unwrap(),
         ModuleItemId::Submodule
     );
     let err = AbiBuilder::submodule_as_contract_abi(db, submodule_id).unwrap_err();

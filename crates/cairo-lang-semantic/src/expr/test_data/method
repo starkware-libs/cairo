@@ -123,7 +123,7 @@ mod callable {
         fn call(self: T);
     }
     impl U8Callable of CallableTrait<u8> {
-        fn call(self: T) {}
+        fn call(self: u8) {}
     }
 }
 
