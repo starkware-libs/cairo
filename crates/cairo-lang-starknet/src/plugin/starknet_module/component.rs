@@ -11,6 +11,7 @@ use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenera
 use super::StarknetModuleKind;
 use crate::plugin::consts::{EMBEDDABLE_AS_ATTR, GENERIC_CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
 use crate::plugin::storage::handle_storage_struct;
+use crate::plugin::utils::{is_ref_param, AstPathExtract};
 
 /// Accumulated data specific for component generation.
 #[derive(Default)]
@@ -125,12 +126,12 @@ fn get_embeddable_as_impl_generic_params(
     }
 
     // Verify there is another generic param which is an impl of HasComponent<TContractState>.
-    // TODO(yuval): consider doing this better (allow whitespaces and '::')
     let has_has_component_impl = generic_param_elements.any(|param| {
-        let Some(imp) = try_extract_matches!(param, ast::GenericParam::Impl) else {
-            return false;
-        };
-        imp.trait_path(db).as_syntax_node().get_text(db) == "HasComponent<TContractState>"
+        if let ast::GenericParam::Impl(imp) = param {
+            imp.trait_path(db).is_name_with_arg(db, "HasComponent", GENERIC_CONTRACT_STATE_NAME)
+        } else {
+            false
+        }
     });
     if !has_has_component_impl {
         return Err(PluginDiagnostic {
@@ -291,25 +292,18 @@ fn handle_component_embeddable_as_impl_item(
         });
         return None;
     };
-    // TODO(yuval): consider doing this better (allow whitespaces and '::')
-    let (self_param, get_component_call) = match first_param.as_syntax_node().get_text(db).as_str()
-    {
-        "self: @ComponentState<TContractState>" => {
-            ("self: @TContractState", "let component = self.get_component();")
-        }
-        "ref self: ComponentState<TContractState>" => {
-            ("ref self: TContractState", "let mut component = self.get_component_mut();")
-        }
-        _ => {
-            diagnostics.push(PluginDiagnostic {
-                message: "The first parameter of a function in an #[embeddable_as] impl in a \
-                          component must be either `self: @TContractState` (for view functions) \
-                          or `ref self: TContractState` (for external functions)."
-                    .to_string(),
-                stable_ptr: parameters.stable_ptr().untyped(),
-            });
-            return None;
-        }
+    let Some((self_param, get_component_call)) =
+        handle_first_param_for_embeddable_as(db, first_param)
+    else {
+        diagnostics.push(PluginDiagnostic {
+            message: "The first parameter of a function in an #[embeddable_as] impl in a \
+                      component must be either `self: @ComponentState<TContractState>` (for view \
+                      functions) or `ref self: ComponentState<TContractState>` (for external \
+                      functions)."
+                .to_string(),
+            stable_ptr: parameters.stable_ptr().untyped(),
+        });
+        return None;
     };
     let rest_params_node = RewriteNode::new_modified(
         rest_params
@@ -372,6 +366,38 @@ fn handle_component_embeddable_as_impl_item(
     );
 
     Some((trait_function, impl_function))
+}
+
+/// Checks if the first parameter of a function in an impl is a valid value of an impl marked with
+/// `#[embeddable_as]`, and returns the matching wrapping function contract state param, and the
+/// code for fetching the matching component state from it.
+fn handle_first_param_for_embeddable_as(
+    db: &dyn SyntaxGroup,
+    param: &ast::Param,
+) -> Option<(&'static str, &'static str)> {
+    if param.name(db).text(db) != "self" {
+        return None;
+    }
+    if is_ref_param(db, param) {
+        return if param.type_clause(db).ty(db).is_name_with_arg(
+            db,
+            "ComponentState",
+            GENERIC_CONTRACT_STATE_NAME,
+        ) {
+            Some(("ref self: TContractState", "let mut component = self.get_component_mut();"))
+        } else {
+            None
+        };
+    }
+    let unary = try_extract_matches!(param.type_clause(db).ty(db), ast::Expr::Unary)?;
+    if !matches!(unary.op(db), ast::UnaryOperator::At(_)) {
+        return None;
+    }
+    if unary.expr(db).is_name_with_arg(db, "ComponentState", GENERIC_CONTRACT_STATE_NAME) {
+        Some(("self: @TContractState", "let component = self.get_component();"))
+    } else {
+        None
+    }
 }
 
 /// Generates the code of the `HasComponent` trait inside a Starknet component.
