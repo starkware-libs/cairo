@@ -35,6 +35,8 @@ pub struct Parser<'a> {
     /// The length of the trailing trivia following the last read token.
     last_trivia_length: TextWidth,
     diagnostics: &'a mut DiagnosticsBuilder<ParserDiagnostic>,
+    /// An accumulating vector of pending skipped tokens diagnostics.
+    pending_skipped_token_diagnostics: Vec<PendingParserDiagnostic>,
 }
 
 /// The possible results of a try_parse_* function failing to parse.
@@ -97,6 +99,7 @@ impl<'a> Parser<'a> {
             current_width: Default::default(),
             last_trivia_length: Default::default(),
             diagnostics,
+            pending_skipped_token_diagnostics: Default::default(),
         };
         let green = parser.parse_syntax_file();
         SyntaxFile::from_syntax_node(db, SyntaxNode::new_root(db, file_id, green.0))
@@ -121,6 +124,7 @@ impl<'a> Parser<'a> {
             current_width: Default::default(),
             last_trivia_length: Default::default(),
             diagnostics,
+            pending_skipped_token_diagnostics: Default::default(),
         };
         let green = parser.parse_expr();
         if let Err(SkippedError(span)) = parser.skip_until(is_of_kind!()) {
@@ -246,7 +250,10 @@ impl<'a> Parser<'a> {
                         self.append_skipped_token_to_pending_trivia(
                             ident,
                             ParserDiagnosticKind::SkippedElement {
-                                element_name: TOP_LEVEL_ITEM_DESCRIPTION.into(),
+                                element_name: format!(
+                                    "{TOP_LEVEL_ITEM_DESCRIPTION} or an attribute"
+                                )
+                                .into(),
                             },
                         );
                         // The token is already skipped, so it should not be skipped in the caller.
@@ -2121,8 +2128,8 @@ impl<'a> Parser<'a> {
     fn take_raw(&mut self) -> LexerTerminal {
         self.offset = self.offset.add_width(self.current_width);
         self.current_width = self.next_terminal.width(self.db);
-        self.last_trivia_length =
-            self.next_terminal.trailing_trivia.iter().map(|y| y.0.width(self.db)).sum();
+        self.last_trivia_length = trivia_total_width(self.db, &self.next_terminal.trailing_trivia);
+
         let next_terminal = self.lexer.next().unwrap();
         std::mem::replace(&mut self.next_terminal, next_terminal)
     }
@@ -2150,23 +2157,23 @@ impl<'a> Parser<'a> {
         terminal: LexerTerminal,
         diagnostic_kind: ParserDiagnosticKind,
     ) {
-        let diag_start = self.offset.add_width(
-            terminal
-                .leading_trivia
-                .iter()
-                .map(|trivium| trivium.0.width(self.db))
-                .sum::<TextWidth>(),
-        );
+        let orig_offset = self.offset;
+        let diag_start =
+            self.offset.add_width(trivia_total_width(self.db, &terminal.leading_trivia));
         let diag_end = diag_start.add_width(TextWidth::from_str(&terminal.text));
 
         // Add to pending trivia.
-        self.pending_trivia.extend(terminal.leading_trivia);
+        self.pending_trivia.extend(terminal.leading_trivia.clone());
         self.pending_trivia.push(TokenSkipped::new_green(self.db, terminal.text).into());
-        self.pending_trivia.extend(terminal.trailing_trivia);
-        self.diagnostics.add(ParserDiagnostic {
-            file_id: self.file_id,
+        self.pending_trivia.extend(terminal.trailing_trivia.clone());
+        self.pending_skipped_token_diagnostics.push(PendingParserDiagnostic {
             kind: diagnostic_kind,
             span: TextSpan { start: diag_start, end: diag_end },
+            leading_trivia_start: orig_offset,
+            // leading_trivia: terminal.leading_trivia,
+            // trailing_trivia: terminal.trailing_trivia,
+            trailing_trivia_end: diag_end
+                .add_width(trivia_total_width(self.db, &terminal.trailing_trivia)),
         });
     }
 
@@ -2211,6 +2218,9 @@ impl<'a> Parser<'a> {
         let LexerTerminal { text, kind: _, leading_trivia, trailing_trivia } = lexer_terminal;
         let token = Terminal::TokenType::new_green(self.db, text);
         let mut new_leading_trivia = mem::take(&mut self.pending_trivia);
+
+        self.add_skipped_diagnostics();
+
         new_leading_trivia.extend(leading_trivia);
         Terminal::new_green(
             self.db,
@@ -2218,6 +2228,47 @@ impl<'a> Parser<'a> {
             token,
             Trivia::new_green(self.db, trailing_trivia),
         )
+    }
+
+    fn add_skipped_diagnostics(&mut self) {
+        let mut pending_skipped = self.pending_skipped_token_diagnostics.drain(..);
+        let Some(first) = pending_skipped.next() else {
+            return;
+        };
+
+        let mut current_diag = first;
+
+        for diag in pending_skipped {
+            println!("yg span: {:?}, current_span: {:?}", diag.span, current_diag.span);
+            println!("yg current_diag.span.end: {:?}", current_diag.span.end);
+            println!("yg diag.span.start: {:?}", diag.span.start);
+            if diag.kind == current_diag.kind
+                && current_diag.trailing_trivia_end == diag.leading_trivia_start
+            {
+                // Aggregate this diagnostic with the previous ones.
+                current_diag = PendingParserDiagnostic {
+                    span: TextSpan { start: current_diag.span.start, end: diag.span.end },
+                    kind: diag.kind,
+                    leading_trivia_start: current_diag.leading_trivia_start,
+                    trailing_trivia_end: diag.trailing_trivia_end,
+                };
+            } else {
+                // Produce a diagnostic from the aggregated ones, and start aggregating a new
+                // diagnostic.
+                self.diagnostics.add(ParserDiagnostic {
+                    file_id: self.file_id,
+                    span: current_diag.span,
+                    kind: current_diag.kind,
+                });
+                current_diag = diag;
+            }
+        }
+        // Produce a diagnostic from the aggregated ones at the end.
+        self.diagnostics.add(ParserDiagnostic {
+            file_id: self.file_id,
+            span: current_diag.span,
+            kind: current_diag.kind,
+        });
     }
 
     /// Takes a token from the Lexer and place it in self.current. If tokens were skipped, glue them
@@ -2301,4 +2352,18 @@ enum ExternItem {
 enum ImplItemOrAlias {
     Item(ItemImplGreen),
     Alias(ItemImplAliasGreen),
+}
+
+/// A parser diagnostic that is not yet reported as it is accumulated with similar consecutive
+/// diagnostics.
+pub struct PendingParserDiagnostic {
+    pub span: TextSpan,
+    pub kind: ParserDiagnosticKind,
+    pub leading_trivia_start: TextOffset,
+    pub trailing_trivia_end: TextOffset,
+}
+
+/// Returns the total width of the given trivia list.
+fn trivia_total_width(db: &dyn SyntaxGroup, trivia: &[TriviumGreen]) -> TextWidth {
+    trivia.iter().map(|trivium| trivium.0.width(db)).sum::<TextWidth>()
 }

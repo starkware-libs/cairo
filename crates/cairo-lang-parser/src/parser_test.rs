@@ -329,6 +329,7 @@ cairo_lang_test_utils::test_file_test!(
         semicolon: "semicolon",
         underscore_not_supported: "underscore_not_supported",
         unterminated_string: "unterminated_string",
+        skipped_tokens: "skipped_tokens",
     },
     get_diagnostics
 );

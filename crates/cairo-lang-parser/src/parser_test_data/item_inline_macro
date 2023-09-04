@@ -295,7 +295,7 @@ fn foo() {}
 //! > ignored_kinds
 
 //! > expected_diagnostics
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro.
+error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:1:1
 identifier
 ^********^
