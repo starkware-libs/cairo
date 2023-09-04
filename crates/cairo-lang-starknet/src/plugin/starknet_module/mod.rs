@@ -18,7 +18,8 @@ use self::contract::generate_contract_specific_code;
 use super::events::get_starknet_event_variants;
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME,
+    STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::events::generate_event_code;
 use crate::plugin::starknet_module::generation_data::StarknetModuleCommonGenerationData;
@@ -64,12 +65,20 @@ impl StarknetModuleKind {
         format!("{}State", self.to_str_capital())
     }
     /// Gets the generic argument text, according to the module kind.
-    pub fn get_generic_arg_str(self) -> &'static str {
-        if matches!(self, StarknetModuleKind::Component) { "<TCS>" } else { "" }
+    pub fn get_generic_arg_str(self) -> String {
+        if matches!(self, StarknetModuleKind::Component) {
+            format!("<{GENERIC_CONTRACT_STATE_NAME}>")
+        } else {
+            "".to_string()
+        }
     }
     /// Gets the generic argument text, with preceding `::`, according to the module kind.
-    pub fn get_full_generic_arg_str(self) -> &'static str {
-        if matches!(self, StarknetModuleKind::Component) { "::<TCS>" } else { "" }
+    pub fn get_full_generic_arg_str(self) -> String {
+        if matches!(self, StarknetModuleKind::Component) {
+            format!("::<{GENERIC_CONTRACT_STATE_NAME}>")
+        } else {
+            "".to_string()
+        }
     }
     /// Gets the full State struct name (with the generic argument), according to the module kind.
     pub fn get_full_state_struct_name(self) -> String {
@@ -125,7 +134,7 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
-                message: format!("{module_kind_str}s must define a 'Storage' struct."),
+                message: format!("{module_kind_str}s must define a '{STORAGE_STRUCT_NAME}' struct."),
                 stable_ptr: module_ast.stable_ptr().untyped(),
             }],
             remove_original_item: false,
@@ -136,7 +145,9 @@ fn validate_module(
         return PluginResult {
             code: None,
             diagnostics: vec![PluginDiagnostic {
-                message: "'Storage' struct must be annotated with #[storage].".to_string(),
+                message: format!(
+                    "'{STORAGE_STRUCT_NAME}' struct must be annotated with #[{STORAGE_ATTR}]."
+                ),
                 stable_ptr: module_ast.stable_ptr().untyped(),
             }],
             remove_original_item: false,

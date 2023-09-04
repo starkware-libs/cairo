@@ -5,11 +5,14 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
-use indoc::indoc;
+use indoc::formatdoc;
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
-use crate::plugin::consts::{EMBEDDABLE_AS_ATTR, GENERIC_CONTRACT_STATE_NAME, STORAGE_STRUCT_NAME};
+use crate::plugin::consts::{
+    COMPONENT_STATE_NAME, EMBEDDABLE_AS_ATTR, EVENT_TYPE_NAME, GENERIC_COMPONENT_STATE_NAME,
+    GENERIC_CONTRACT_STATE_NAME, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME,
+};
 use crate::plugin::storage::handle_storage_struct;
 use crate::plugin::utils::{is_ref_param, AstPathExtract};
 
@@ -103,9 +106,10 @@ fn get_embeddable_as_impl_generic_params(
     let generic_params = item_impl.generic_params(db);
     let generic_params_ptr = generic_params.stable_ptr().untyped();
     let first_generic_param_diagnostic = |stable_ptr| PluginDiagnostic {
-        message: "The first generic parameter of an impl with #[embeddable_as] should be \
-                  `TContractState`."
-            .to_string(),
+        message: format!(
+            "The first generic parameter of an impl with #[{EMBEDDABLE_AS_ATTR}] should be \
+             `TContractState`."
+        ),
         stable_ptr,
     };
 
@@ -128,16 +132,21 @@ fn get_embeddable_as_impl_generic_params(
     // Verify there is another generic param which is an impl of HasComponent<TContractState>.
     let has_has_component_impl = generic_param_elements.any(|param| {
         if let ast::GenericParam::Impl(imp) = param {
-            imp.trait_path(db).is_name_with_arg(db, "HasComponent", GENERIC_CONTRACT_STATE_NAME)
+            imp.trait_path(db).is_name_with_arg(
+                db,
+                HAS_COMPONENT_TRAIT,
+                GENERIC_CONTRACT_STATE_NAME,
+            )
         } else {
             false
         }
     });
     if !has_has_component_impl {
         return Err(PluginDiagnostic {
-            message: "An impl with #[embeddable_as] should have a generic parameter which is an \
-                      impl of `HasComponent<TContractState>`."
-                .to_string(),
+            message: format!(
+                "An impl with #[{EMBEDDABLE_AS_ATTR}] should have a generic parameter which is an \
+                 impl of `{HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}>`."
+            ),
             stable_ptr: generic_params_ptr,
         });
     }
@@ -164,9 +173,10 @@ impl EmbeddableAsImplParams {
     ) -> Option<EmbeddableAsImplParams> {
         let Some(attr_arg_value) = get_embeddable_as_attr_value(db, &attr) else {
             diagnostics.push(PluginDiagnostic {
-                message: "`embeddable_as` attribute must have a single unnamed argument for the \
-                          generated impl name, e.g.: #[embeddable_as(MyImpl)]."
-                    .into(),
+                message: format!(
+                    "`{EMBEDDABLE_AS_ATTR}` attribute must have a single unnamed argument for the \
+                     generated impl name, e.g.: #[{EMBEDDABLE_AS_ATTR}(MyImpl)]."
+                ),
                 stable_ptr: attr.stable_ptr().untyped(),
             });
             return None;
@@ -184,7 +194,9 @@ impl EmbeddableAsImplParams {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
                 diagnostics.push(PluginDiagnostic {
-                    message: "`embeddable_as` attribute is not supported for empty impls.".into(),
+                    message: format!(
+                        "`{EMBEDDABLE_AS_ATTR}` attribute is not supported for empty impls."
+                    ),
                     stable_ptr: semicolon.stable_ptr().untyped(),
                 });
                 return None;
@@ -237,15 +249,19 @@ fn handle_component_impl(
     }
 
     let generated_impl_node = RewriteNode::interpolate_patched(
-        indoc! {"
-        trait $generated_trait_name$<TContractState> {$trait_functions$
-        }
+        formatdoc!(
+            "
+        trait $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$trait_functions$
+        }}
 
         #[starknet::embeddable]
         impl $generated_impl_name$<
-            $generic_params$$maybe_comma$ impl TContractStateDrop: Drop<TContractState>
-        > of $generated_trait_name$<TContractState> {$impl_functions$
-        }"},
+            $generic_params$$maybe_comma$ impl {GENERIC_CONTRACT_STATE_NAME}Drop: \
+             Drop<{GENERIC_CONTRACT_STATE_NAME}>
+        > of $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
+        }}"
+        )
+        .as_str(),
         [
             ("generated_trait_name".to_string(), generated_trait_name),
             ("trait_functions".to_string(), RewriteNode::new_modified(trait_functions)),
@@ -285,9 +301,10 @@ fn handle_component_embeddable_as_impl_item(
     let parameters_elements = parameters.elements(db);
     let Some((first_param, rest_params)) = parameters_elements.split_first() else {
         diagnostics.push(PluginDiagnostic {
-            message: "A function in an #[embeddable_as] impl in a component must have a first \
-                      `self` parameter."
-                .to_string(),
+            message: format!(
+                "A function in an #[{EMBEDDABLE_AS_ATTR}] impl in a component must have a first \
+                 `self` parameter."
+            ),
             stable_ptr: parameters.stable_ptr().untyped(),
         });
         return None;
@@ -296,11 +313,12 @@ fn handle_component_embeddable_as_impl_item(
         handle_first_param_for_embeddable_as(db, first_param)
     else {
         diagnostics.push(PluginDiagnostic {
-            message: "The first parameter of a function in an #[embeddable_as] impl in a \
-                      component must be either `self: @ComponentState<TContractState>` (for view \
-                      functions) or `ref self: ComponentState<TContractState>` (for external \
-                      functions)."
-                .to_string(),
+            message: format!(
+                "The first parameter of a function in an #[{EMBEDDABLE_AS_ATTR}] impl in a \
+                 component must be either `self: @{GENERIC_COMPONENT_STATE_NAME}` (for view \
+                 functions) or `ref self: {GENERIC_COMPONENT_STATE_NAME}` (for external \
+                 functions)."
+            ),
             stable_ptr: parameters.stable_ptr().untyped(),
         });
         return None;
@@ -374,17 +392,20 @@ fn handle_component_embeddable_as_impl_item(
 fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
-) -> Option<(&'static str, &'static str)> {
+) -> Option<(String, String)> {
     if param.name(db).text(db) != "self" {
         return None;
     }
     if is_ref_param(db, param) {
         return if param.type_clause(db).ty(db).is_name_with_arg(
             db,
-            "ComponentState",
+            COMPONENT_STATE_NAME,
             GENERIC_CONTRACT_STATE_NAME,
         ) {
-            Some(("ref self: TContractState", "let mut component = self.get_component_mut();"))
+            Some((
+                format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
+                "let mut component = self.get_component_mut();".to_string(),
+            ))
         } else {
             None
         };
@@ -394,7 +415,10 @@ fn handle_first_param_for_embeddable_as(
         return None;
     }
     if unary.expr(db).is_name_with_arg(db, "ComponentState", GENERIC_CONTRACT_STATE_NAME) {
-        Some(("self: @TContractState", "let component = self.get_component();"))
+        Some((
+            format!("self: @{GENERIC_CONTRACT_STATE_NAME}"),
+            "let component = self.get_component();".to_string(),
+        ))
     } else {
         None
     }
@@ -402,17 +426,18 @@ fn handle_first_param_for_embeddable_as(
 
 /// Generates the code of the `HasComponent` trait inside a Starknet component.
 fn generate_has_component_trait_code(data: &mut ComponentSpecificGenerationData) {
-    data.has_component_trait = RewriteNode::Text(
-        indoc!(
-            "
-            trait HasComponent<TContractState> {
-                fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
-                fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
-                fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
-                fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-                fn emit(ref self: ComponentState<TContractState>, event: Event);
-            }"
-        )
-        .to_string(),
-    );
+    data.has_component_trait = RewriteNode::Text(formatdoc!(
+        "
+        trait {HAS_COMPONENT_TRAIT}<{GENERIC_CONTRACT_STATE_NAME}> {{
+            fn get_component(self: @{GENERIC_CONTRACT_STATE_NAME}) -> \
+         @{GENERIC_COMPONENT_STATE_NAME};
+            fn get_component_mut(ref self: {GENERIC_CONTRACT_STATE_NAME}) -> \
+         {GENERIC_COMPONENT_STATE_NAME};
+            fn get_contract(self: @{GENERIC_COMPONENT_STATE_NAME}) -> \
+         @{GENERIC_CONTRACT_STATE_NAME};
+            fn get_contract_mut(ref self: {GENERIC_COMPONENT_STATE_NAME}) -> \
+         {GENERIC_CONTRACT_STATE_NAME};
+            fn emit(ref self: {GENERIC_COMPONENT_STATE_NAME}, event: {EVENT_TYPE_NAME});
+        }}"
+    ));
 }

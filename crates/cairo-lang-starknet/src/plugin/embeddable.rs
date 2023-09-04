@@ -48,9 +48,11 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: param.stable_ptr().untyped(),
-                        message: "Embeddable impl can't have impl generic params of \
-                                  `Destruct<TContractState>` or `PanicDestruct<TContractState>`."
-                            .to_string(),
+                        message: format!(
+                            "Embeddable impl can't have impl generic params of \
+                             `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
+                             `PanicDestruct<{GENERIC_CONTRACT_STATE_NAME}>`."
+                        ),
                     });
                 }
             }
@@ -61,7 +63,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 .map_or(false, |param| param.name(db).text(db) == GENERIC_CONTRACT_STATE_NAME);
             let generic_args = RewriteNode::new_modified(
                 chain!(
-                    [RewriteNode::Text("::<TContractState".to_string())],
+                    [RewriteNode::Text(format!("::<{GENERIC_CONTRACT_STATE_NAME}"))],
                     elements.flat_map(|param| [
                         RewriteNode::Text(", ".to_string()),
                         RewriteNode::new_trimmed(match param {
@@ -75,12 +77,15 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 .collect(),
             );
             let maybe_comma = if generic_params_node.has_tail(db) { ", " } else { "" };
-            let maybe_drop_impl =
-                if has_drop_impl { "" } else { ", impl TContractStateDrop: Drop<TContractState>" };
+            let maybe_drop_impl = if has_drop_impl {
+                "".to_string()
+            } else {
+                format!(", impl TContractStateDrop: Drop<{GENERIC_CONTRACT_STATE_NAME}>")
+            };
             let generic_params_node = RewriteNode::interpolate_patched(
                 &format!(
                     "<$generic_params${maybe_comma}impl UnsafeNewContractState: \
-                     UnsafeNewContractStateTraitFor$impl_name$<TContractState>{maybe_drop_impl}>"
+                     UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}>{maybe_drop_impl}>"
                 ),
                 [
                     (
@@ -97,8 +102,10 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     if !is_valid_params {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: generic_params.stable_ptr().untyped(),
-            message: "First generic parameter of an embeddable impl should be `TContractState`."
-                .to_string(),
+            message: format!(
+                "First generic parameter of an embeddable impl should be \
+                 `{GENERIC_CONTRACT_STATE_NAME}`."
+            ),
         });
         return PluginResult { code: None, diagnostics, remove_original_item: false };
     };
@@ -137,8 +144,8 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     let code = RewriteNode::interpolate_patched(
         formatdoc!(
             "
-            trait UnsafeNewContractStateTraitFor$impl_name$<TContractState> {{
-                fn unsafe_new_contract_state() -> TContractState;
+            trait UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}> {{
+                fn unsafe_new_contract_state() -> {GENERIC_CONTRACT_STATE_NAME};
             }}
 
             $generated_wrapper_functions$

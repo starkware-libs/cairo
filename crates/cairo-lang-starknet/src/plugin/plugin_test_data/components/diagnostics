@@ -46,8 +46,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -61,18 +61,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -165,8 +165,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -180,18 +180,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -284,8 +284,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -299,18 +299,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -401,8 +401,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -416,18 +416,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -518,8 +518,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -533,18 +533,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -635,8 +635,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -650,18 +650,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -752,8 +752,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -767,18 +767,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -861,8 +861,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -876,18 +876,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 
@@ -982,8 +982,8 @@ component:
 use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TCS> of EventEmitter<ComponentState<TCS>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TCS>, event: S) {
+    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
             let event: Event = traits::Into::into(event);
             let mut keys = Default::<array::Array>::default();
             let mut data = Default::<array::Array>::default();
@@ -997,18 +997,18 @@ use starknet::event::EventEmitter;
         }
     }
 
-    struct ComponentState<TCS> {
+    struct ComponentState<TContractState> {
     }
-    impl ComponentStateDrop<TCS> of Drop<ComponentState<TCS>> {}
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
     #[inline(always)]
-    fn unsafe_new_component_state<TCS>() -> ComponentState<TCS> {
-        ComponentState::<TCS> {
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
         }
     }
     #[cfg(test)]
     #[inline(always)]
-    fn component_state_for_testing<TCS>() -> ComponentState<TCS> {
-        unsafe_new_component_state::<TCS>()
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
     }
     
 

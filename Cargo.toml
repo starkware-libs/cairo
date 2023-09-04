@@ -64,6 +64,7 @@ cairo-vm = "0.8.2"
 clap = { version = "4.0", features = ["derive"] }
 colored = "2"
 const-fnv1a-hash = "1.1.0"
+const_format = "0.2.31"
 convert_case = "0.6.0"
 derivative = "2.2.0"
 diffy = "0.3.0"

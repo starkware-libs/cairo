@@ -9,7 +9,7 @@ use itertools::Itertools;
 
 use super::consts::CALLDATA_PARAM_NAME;
 use super::utils::is_ref_param;
-use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR};
+use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
@@ -198,7 +198,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop, starknet::Store, Serde)]
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             struct {contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
@@ -207,7 +207,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $contract_caller_method_impls$
             }}
 
-            #[derive(Copy, Drop, starknet::Store, Serde)]
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             struct {library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
@@ -220,7 +220,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             $safe_dispatcher_signatures$
             }}
 
-            #[derive(Copy, Drop, starknet::Store, Serde)]
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             struct {safe_library_caller_name} {{
                 class_hash: starknet::ClassHash,
             }}
@@ -231,7 +231,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
 
 
-            #[derive(Copy, Drop, starknet::Store, Serde)]
+            #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
             struct {safe_contract_caller_name} {{
                 contract_address: starknet::ContractAddress,
             }}
