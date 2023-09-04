@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
-use super::consts::{EVENT_ATTR, EVENT_TYPE_NAME, NESTED_ATTR};
+use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, NESTED_ATTR};
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 
@@ -51,7 +51,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     let generic_params = struct_ast.generic_params(db);
     let OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic {
-            message: "Event structs with generic arguments are unsupported".to_string(),
+            message: format!("{EVENT_TYPE_NAME} structs with generic arguments are unsupported"),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -90,18 +90,21 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     // Add an implementation for `Event<StructName>`.
     let struct_name = RewriteNode::new_trimmed(struct_ast.name(db).as_syntax_node());
     let event_impl = RewriteNode::interpolate_patched(
-        indoc! {"
-            impl $struct_name$IsEvent of starknet::Event<$struct_name$> {
+        formatdoc!(
+            "
+            impl $struct_name$IsEvent of {EVENT_TRAIT}<$struct_name$> {{
                 fn append_keys_and_data(
                     self: @$struct_name$, ref keys: Array<felt252>, ref data: Array<felt252>
-                ) {$append_members$
-                }
+                ) {{$append_members$
+                }}
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
-                ) -> Option<$struct_name$> {$deserialize_members$
-                    Option::Some($struct_name$ {$ctor$})
-                }
-            }"},
+                ) -> Option<$struct_name$> {{$deserialize_members$
+                    Option::Some($struct_name$ {{$ctor$}})
+                }}
+            }}"
+        )
+        .as_str(),
         [
             (String::from("struct_name"), struct_name),
             (String::from("append_members"), append_members),
@@ -203,7 +206,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     let generic_params = enum_ast.generic_params(db);
     let OptionWrappedGenericParamList::Empty(_) = generic_params else {
         diagnostics.push(PluginDiagnostic {
-            message: "Event enums with generic arguments are unsupported".to_string(),
+            message: format!("{EVENT_TYPE_NAME} enums with generic arguments are unsupported"),
             stable_ptr: generic_params.stable_ptr().untyped(),
         });
         return PluginResult { code: None, diagnostics, remove_original_item: false };
@@ -277,24 +280,27 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     // Add an implementation for `Event<StructName>`.
     let event_impl = RewriteNode::interpolate_patched(
-        indoc! {"
-            impl $enum_name$IsEvent of starknet::Event<$enum_name$> {
+        formatdoc!(
+            "
+            impl $enum_name$IsEvent of {EVENT_TRAIT}<$enum_name$> {{
                 fn append_keys_and_data(
                     self: @$enum_name$, ref keys: Array<felt252>, ref data: Array<felt252>
-                ) {
-                    match self {$append_variants$
-                    }
-                }
+                ) {{
+                    match self {{$append_variants$
+                    }}
+                }}
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
-                ) -> Option<$enum_name$> {
+                ) -> Option<$enum_name$> {{
                     let selector = *array::SpanTrait::pop_front(ref keys)?;
                     $deserialize_variants$
                     Option::None
-                }
-            }
+                }}
+            }}
             $event_into_impls$
-        "},
+        "
+        )
+        .as_str(),
         [
             (String::from("enum_name"), enum_name),
             (String::from("append_variants"), append_variants),
@@ -333,7 +339,7 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == "starknet::Event" {
+            if path.as_syntax_node().get_text_without_trivia(db) == format!("{EVENT_TRAIT}") {
                 return true;
             }
         }
@@ -345,10 +351,13 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode {
     match member_kind {
         EventFieldKind::Nested => RewriteNode::interpolate_patched(
-            "
-                starknet::Event::append_keys_and_data(
+            format!(
+                "
+                {EVENT_TRAIT}::append_keys_and_data(
                     $field$, ref keys, ref data
-                );",
+                );"
+            )
+            .as_str(),
             [(String::from("field"), field)].into(),
         ),
         EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
@@ -400,21 +409,24 @@ pub fn generate_event_code(
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
 
-    let empty_event_code =
-        if has_event { "" } else { "#[event] #[derive(Drop, starknet::Event)] enum Event {}\n" };
+    let empty_event_code = if has_event {
+        "".to_string()
+    } else {
+        format!("#[{EVENT_ATTR}] #[derive(Drop, {EVENT_TRAIT})] enum {EVENT_TYPE_NAME} {{}}\n")
+    };
 
     data.event_code = RewriteNode::interpolate_patched(
         formatdoc!(
             "use starknet::event::EventEmitter;
             $empty_event_code$
                 impl {state_struct_name}EventEmitter{generic_arg_str} of \
-             EventEmitter<{full_state_struct_name}, Event> {{
-                    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: \
+             EventEmitter<{full_state_struct_name}, {EVENT_TYPE_NAME}> {{
+                    fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
              {full_state_struct_name}, event: S) {{
-                        let event: Event = traits::Into::into(event);
+                        let event: {EVENT_TYPE_NAME} = traits::Into::into(event);
                         let mut keys = Default::<array::Array>::default();
                         let mut data = Default::<array::Array>::default();
-                        starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+                        {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
                         starknet::SyscallResultTraitImpl::unwrap_syscall(
                             starknet::syscalls::emit_event_syscall(
                                 array::ArrayTrait::span(@keys),
@@ -462,7 +474,7 @@ pub fn get_starknet_event_variants(
                     if !item.has_attr(db, EVENT_ATTR) {
                         diagnostics.push(PluginDiagnostic {
                             message: format!(
-                                "{} type that is named `Event` must be marked with \
+                                "{} type that is named `{EVENT_TYPE_NAME}` must be marked with \
                                  #[{EVENT_ATTR}].",
                                 module_kind.to_str_capital()
                             ),
@@ -482,7 +494,8 @@ pub fn get_starknet_event_variants(
         (true, false) => {
             diagnostics.push(PluginDiagnostic {
                 message: format!(
-                    "{} type that is marked with #[{EVENT_ATTR}] must be named `Event`.",
+                    "{} type that is marked with #[{EVENT_ATTR}] must be named \
+                     `{EVENT_TYPE_NAME}`.",
                     module_kind.to_str_capital()
                 ),
                 stable_ptr,
@@ -492,7 +505,8 @@ pub fn get_starknet_event_variants(
         (false, true) => {
             diagnostics.push(PluginDiagnostic {
                 message: format!(
-                    "{} type that is named `Event` must be marked with #[{EVENT_ATTR}].",
+                    "{} type that is named `{EVENT_TYPE_NAME}` must be marked with \
+                     #[{EVENT_ATTR}].",
                     module_kind.to_str_capital()
                 ),
                 stable_ptr,
