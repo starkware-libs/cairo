@@ -10,8 +10,9 @@ use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerat
 use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
-    COMPONENT_INLINE_MACRO, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EXTERNAL_ATTR,
-    L1_HANDLER_ATTR, NESTED_ATTR, STORAGE_STRUCT_NAME,
+    COMPONENT_INLINE_MACRO, CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
+    EMBED_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, NESTED_ATTR,
+    STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -65,32 +66,34 @@ impl ComponentsGenerationData {
             };
 
             let has_component_impl = RewriteNode::interpolate_patched(
-                indoc!(
+                formatdoc!(
                     "impl HasComponentImpl_$component_name$ of \
-                     $component_path$::HasComponent<ContractState> {
-           fn get_component(self: @ContractState) -> \
-                     @$component_path$::ComponentState<ContractState> {
+                     $component_path$::{HAS_COMPONENT_TRAIT}<{CONTRACT_STATE_NAME}> {{
+           fn get_component(self: @{CONTRACT_STATE_NAME}) -> \
+                     @$component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
                self.$storage_name$
-           }
-           fn get_component_mut(ref self: ContractState) -> \
-                     $component_path$::ComponentState<ContractState> {
-               $component_path$::unsafe_new_component_state::<ContractState>()
-           }
-           fn get_contract(self: @$component_path$::ComponentState<ContractState>) -> \
-                     @ContractState {
+           }}
+           fn get_component_mut(ref self: {CONTRACT_STATE_NAME}) -> \
+                     $component_path$::{CONCRETE_COMPONENT_STATE_NAME} {{
+               $component_path$::unsafe_new_component_state::<{CONTRACT_STATE_NAME}>()
+           }}
+           fn get_contract(self: @$component_path$::{CONCRETE_COMPONENT_STATE_NAME}) -> \
+                     @{CONTRACT_STATE_NAME} {{
                @unsafe_new_contract_state()
-           }
-           fn get_contract_mut(ref self: $component_path$::ComponentState<ContractState>) -> \
-                     ContractState {
+           }}
+           fn get_contract_mut(ref self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}) -> \
+                     {CONTRACT_STATE_NAME} {{
                unsafe_new_contract_state()
-           }
-           fn emit(ref self: $component_path$::ComponentState<ContractState>, event: \
-                     $component_path$::Event) {
-               let mut contract = $component_path$::HasComponent::get_contract_mut(ref self);
+           }}
+           fn emit(ref self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: \
+                     $component_path$::{EVENT_TYPE_NAME}) {{
+               let mut contract = $component_path$::{HAS_COMPONENT_TRAIT}::get_contract_mut(ref \
+                     self);
                contract.emit(Event::$event_name$(event));
-           }
-       }"
-                ),
+           }}
+       }}"
+                )
+                .as_str(),
                 [
                     (
                         "component_name".to_string(),
@@ -132,8 +135,10 @@ impl ComponentsGenerationData {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: storage_name.stable_ptr().untyped(),
                 message: format!(
-                    "`{0}` is not a nested member in the contract's `Storage`.\nConsider adding \
-                     to `Storage`:\n```\n#[nested(v0)]\n{0}: path::to::component::Storage,\n````",
+                    "`{0}` is not a nested member in the contract's \
+                     `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{NESTED_ATTR}(v0)]\n{0}: \
+                     path::to::component::{STORAGE_STRUCT_NAME},\n````",
                     storage_name_syntax_node.get_text_without_trivia(db)
                 )
                 .to_string(),
@@ -146,10 +151,12 @@ impl ComponentsGenerationData {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: event_name.stable_ptr().untyped(),
                 message: format!(
-                    "`{event_name_str}` is not a nested event in the contract's `Event` \
-                     enum.\nConsider adding to the `Event` enum:\n```\n{event_name_str}: \
-                     path::to::component::Event,\n```\nNote: currently with components, only an \
-                     enum Event directly in the contract is supported.",
+                    "`{event_name_str}` is not a nested event in the contract's \
+                     `{EVENT_TYPE_NAME}` enum.\nConsider adding to the `{EVENT_TYPE_NAME}` \
+                     enum:\n```\n{event_name_str}: \
+                     path::to::component::{EVENT_TYPE_NAME},\n```\nNote: currently with \
+                     components, only an enum {EVENT_TYPE_NAME} directly in the contract is \
+                     supported.",
                 )
                 .to_string(),
             });
@@ -408,8 +415,9 @@ fn handle_embed_impl_alias(
     if has_generic_params {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: "Generic parameters are not supported in impl aliases with `#[embed]`."
-                .to_string(),
+            message: format!(
+                "Generic parameters are not supported in impl aliases with `#[{EMBED_ATTR}]`."
+            ),
         });
         return;
     }
@@ -421,9 +429,10 @@ fn handle_embed_impl_alias(
     if !is_first_generic_arg_contract_state(db, impl_final_part) {
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
-            message: "First generic argument of impl alias with `#[embed]` must be \
-                      `ContractState`."
-                .to_string(),
+            message: format!(
+                "First generic argument of impl alias with `#[{EMBED_ATTR}]` must be \
+                 `{CONTRACT_STATE_NAME}`."
+            ),
         });
         return;
     }
@@ -499,9 +508,10 @@ pub fn handle_component_inline_macro(
 /// Returns an invalid `component` macro diagnostic.
 fn invalid_macro_diagnostic(component_macro_ast: &ast::ItemInlineMacro) -> PluginDiagnostic {
     PluginDiagnostic {
-        message: "Invalid component macro, expected `component!(name: \"<component_name>\", \
-                  storage: \"<storage_name>\", event: \"<event_name>\");`"
-            .to_string(),
+        message: format!(
+            "Invalid component macro, expected `{COMPONENT_INLINE_MACRO}!(name: \
+             \"<component_name>\", storage: \"<storage_name>\", event: \"<event_name>\");`"
+        ),
         stable_ptr: component_macro_ast.stable_ptr().untyped(),
     }
 }

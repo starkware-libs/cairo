@@ -8,6 +8,8 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indent::indent_by;
 use indoc::formatdoc;
 
+use super::consts::STORE_TRAIT;
+
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
 pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
     let mut reads_values = Vec::new();
@@ -23,17 +25,16 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
         if i == 0 {
             reads_values.push(format!(
-                "let {field_name} = starknet::Store::<{field_type}>::read(address_domain, base)?;"
+                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read(address_domain, base)?;"
             ));
             reads_values_at_offset.push(format!(
-                "let {field_name} = \
-                 starknet::Store::<{field_type}>::read_at_offset(address_domain, base, offset)?;"
+                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read_at_offset(address_domain, \
+                 base, offset)?;"
             ));
         } else {
             let subsequent_read = format!(
-                "let {field_name} = \
-                 starknet::Store::<{field_type}>::read_at_offset(address_domain, base, \
-                 current_offset)?;"
+                "let {field_name} = {STORE_TRAIT}::<{field_type}>::read_at_offset(address_domain, \
+                 base, current_offset)?;"
             );
             reads_values.push(subsequent_read.clone());
             reads_values_at_offset.push(subsequent_read);
@@ -41,14 +42,14 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 reads_values.push(format!(
-                    "let mut current_offset = starknet::Store::<{field_type}>::size();"
+                    "let mut current_offset = {STORE_TRAIT}::<{field_type}>::size();"
                 ));
                 reads_values_at_offset.push(format!(
-                    "let mut current_offset = offset + starknet::Store::<{field_type}>::size();"
+                    "let mut current_offset = offset + {STORE_TRAIT}::<{field_type}>::size();"
                 ));
             } else {
                 let subsequent_read =
-                    format!("current_offset += starknet::Store::<{field_type}>::size();");
+                    format!("current_offset += {STORE_TRAIT}::<{field_type}>::size();");
                 reads_values.push(subsequent_read.clone());
                 reads_values_at_offset.push(subsequent_read);
             }
@@ -58,16 +59,15 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
         if i == 0 {
             writes.push(format!(
-                "starknet::Store::<{field_type}>::write(address_domain, base, \
-                 value.{field_name})?;"
+                "{STORE_TRAIT}::<{field_type}>::write(address_domain, base, value.{field_name})?;"
             ));
             writes_at_offset.push(format!(
-                "starknet::Store::<{field_type}>::write_at_offset(address_domain, base, offset, \
+                "{STORE_TRAIT}::<{field_type}>::write_at_offset(address_domain, base, offset, \
                  value.{field_name})?;"
             ));
         } else {
             let subsequent_write = format!(
-                "starknet::Store::<{field_type}>::write_at_offset(address_domain, base, \
+                "{STORE_TRAIT}::<{field_type}>::write_at_offset(address_domain, base, \
                  current_offset, value.{field_name})?;"
             );
             writes.push(subsequent_write.clone());
@@ -77,24 +77,24 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         if i < struct_ast.members(db).elements(db).len() - 1 {
             if i == 0 {
                 writes.push(format!(
-                    "let mut current_offset = starknet::Store::<{field_type}>::size();"
+                    "let mut current_offset = {STORE_TRAIT}::<{field_type}>::size();"
                 ));
                 writes_at_offset.push(format!(
-                    "let mut current_offset = offset + starknet::Store::<{field_type}>::size();"
+                    "let mut current_offset = offset + {STORE_TRAIT}::<{field_type}>::size();"
                 ));
             } else {
                 let subsequent_write =
-                    format!("current_offset += starknet::Store::<{field_type}>::size();");
+                    format!("current_offset += {STORE_TRAIT}::<{field_type}>::size();");
                 writes.push(subsequent_write.clone());
                 writes_at_offset.push(subsequent_write);
             }
         }
-        sizes.push(format!("starknet::Store::<{field_type}>::size()"));
+        sizes.push(format!("{STORE_TRAIT}::<{field_type}>::size()"));
     }
 
     let sa_impl = formatdoc!(
         "
-        impl Store{struct_name} of starknet::Store::<{struct_name}> {{
+        impl Store{struct_name} of {STORE_TRAIT}::<{struct_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{struct_name}> {{
                 {reads_values}
@@ -193,7 +193,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             "if idx == {indicator} {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
-                        starknet::Store::read_at_offset(address_domain, base, 1_u8)?
+                        {STORE_TRAIT}::read_at_offset(address_domain, base, 1_u8)?
                     )
                 )
             }}",
@@ -202,38 +202,37 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             "if idx == {indicator} {{
                 starknet::SyscallResult::Ok(
                     {enum_name}::{variant_name}(
-                        starknet::Store::read_at_offset(address_domain, base, offset + 1_u8)?
+                        {STORE_TRAIT}::read_at_offset(address_domain, base, offset + 1_u8)?
                     )
                 )
             }}",
         ));
         match_value.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
-                starknet::Store::write(address_domain, base, {indicator})?;
-                starknet::Store::write_at_offset(address_domain, base, 1_u8, x)?;
+                {STORE_TRAIT}::write(address_domain, base, {indicator})?;
+                {STORE_TRAIT}::write_at_offset(address_domain, base, 1_u8, x)?;
             }}"
         ));
         match_value_at_offset.push(formatdoc!(
             "{enum_name}::{variant_name}(x) => {{
-                starknet::Store::write_at_offset(address_domain, base, offset, {indicator})?;
-                starknet::Store::write_at_offset(address_domain, base, offset + 1_u8, x)?;
+                {STORE_TRAIT}::write_at_offset(address_domain, base, offset, {indicator})?;
+                {STORE_TRAIT}::write_at_offset(address_domain, base, offset + 1_u8, x)?;
             }}"
         ));
 
         if match_size.is_empty() {
-            match_size = format!("starknet::Store::<{variant_type}>::size()");
+            match_size = format!("{STORE_TRAIT}::<{variant_type}>::size()");
         } else {
-            match_size =
-                format!("cmp::max(starknet::Store::<{variant_type}>::size(), {match_size})");
+            match_size = format!("cmp::max({STORE_TRAIT}::<{variant_type}>::size(), {match_size})");
         }
     }
 
     let store_impl = formatdoc!(
         "
-        impl Store{enum_name} of starknet::Store::<{enum_name}> {{
+        impl Store{enum_name} of {STORE_TRAIT}::<{enum_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
          starknet::SyscallResult<{enum_name}> {{
-                let idx = starknet::Store::<felt252>::read(address_domain, base)?;
+                let idx = {STORE_TRAIT}::<felt252>::read(address_domain, base)?;
                 {match_idx}
                 else {{
                     starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
@@ -248,8 +247,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }}
             fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) \
          -> starknet::SyscallResult<{enum_name}> {{
-                let idx = starknet::Store::<felt252>::read_at_offset(address_domain, base, \
-         offset)?;
+                let idx = {STORE_TRAIT}::<felt252>::read_at_offset(address_domain, base, offset)?;
                 {match_idx_at_offset}
                 else {{
                     starknet::SyscallResult::Err(array!['Unknown enum indicator:', idx])
@@ -300,7 +298,7 @@ pub fn derive_store_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
             else {
                 continue;
             };
-            if path.as_syntax_node().get_text_without_trivia(db) == "starknet::Store" {
+            if path.as_syntax_node().get_text_without_trivia(db) == STORE_TRAIT {
                 return true;
             }
         }

@@ -5,7 +5,10 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
-use super::consts::NESTED_ATTR;
+use super::consts::{
+    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, NESTED_ATTR,
+    STORAGE_MAPPING, STORAGE_STRUCT_NAME, STORE_TRAIT,
+};
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 use super::utils::has_v0_attribute;
@@ -112,9 +115,10 @@ fn get_storage_member_code(
             };
         } else {
             diagnostics.push(PluginDiagnostic {
-                message: "`nested` attribute is only allowed for members of type \
-                          [some_path::]Storage`"
-                    .to_string(),
+                message: format!(
+                    "`{NESTED_ATTR}` attribute is only allowed for members of type \
+                     [some_path::]{STORAGE_STRUCT_NAME}`"
+                ),
                 stable_ptr: member.stable_ptr().untyped(),
             });
             return Default::default();
@@ -177,7 +181,7 @@ fn get_simple_storage_member_code(
         }
         Some((_, _, MappingType::NonLegacy)) => {
             diagnostics.push(PluginDiagnostic {
-                message: "Non `LegacyMap` mapping is not yet supported.".to_string(),
+                message: format!("Non `{LEGACY_STORAGE_MAPPING}` mapping is not yet supported."),
                 stable_ptr: type_ast.stable_ptr().untyped(),
             });
             None
@@ -218,7 +222,9 @@ fn get_mapping_full_path_type(
             ast::GenericArgValue::Underscore(_) => {
                 diagnostics.push(PluginDiagnostic {
                     stable_ptr: type_ast.stable_ptr().untyped(),
-                    message: "LegacyMap generic arguments must be specified".to_string(),
+                    message: format!(
+                        "{LEGACY_STORAGE_MAPPING} generic arguments must be specified"
+                    ),
                 });
                 return None;
             }
@@ -226,7 +232,7 @@ fn get_mapping_full_path_type(
         ast::GenericArg::Named(_) => {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: type_ast.stable_ptr().untyped(),
-                message: "LegacyMap generic arguments are unnamed".to_string(),
+                message: format!("{LEGACY_STORAGE_MAPPING} generic arguments are unnamed"),
             });
             return None;
         }
@@ -268,7 +274,9 @@ fn get_nested_storage_member_code(
             // The path has at least one element.
             let (last, path_prefix) = elements.split_last().unwrap();
             match last {
-                ast::PathSegment::Simple(segment) if segment.ident(db).text(db) == "Storage" => {
+                ast::PathSegment::Simple(segment)
+                    if segment.ident(db).text(db) == STORAGE_STRUCT_NAME =>
+                {
                     let component_path = RewriteNode::new_modified(
                         path_prefix
                             .iter()
@@ -283,7 +291,8 @@ fn get_nested_storage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            "\n$name$: $component_path$ComponentState::<ContractState>,",
+                            format!("\n$name$: $component_path${CONCRETE_COMPONENT_STATE_NAME},")
+                                .as_str(),
                             [
                                 (
                                     "name".to_string(),
@@ -294,8 +303,10 @@ fn get_nested_storage_member_code(
                             .into(),
                         ),
                         RewriteNode::interpolate_patched(
-                            "\n    $name$: \
-                             $component_path$unsafe_new_component_state::<ContractState>(),",
+                            format!("\n    $name$: \
+                             $component_path$unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
+                             ")
+                            .as_str(),
                             [
                                 (
                                     "name".to_string(),
@@ -322,7 +333,7 @@ enum MappingType {
     NonLegacy,
 }
 
-/// Given a type, if it is of form `Map{Legacy,}::<K, V>`, returns `K` and `V` and the mapping type.
+/// Given a type, if it is of form `{Legacy,}Map::<K, V>`, returns `K` and `V` and the mapping type.
 /// Otherwise, returns None.
 fn try_extract_mapping_types(
     db: &dyn SyntaxGroup,
@@ -333,7 +344,7 @@ fn try_extract_mapping_types(
         return None;
     };
     let ty = segment.ident(db).text(db);
-    if ty == "LegacyMap" || ty == "Map" {
+    if ty == LEGACY_STORAGE_MAPPING || ty == STORAGE_MAPPING {
         let [key_ty, value_ty] = <[ast::GenericArg; 2]>::try_from(
             segment.generic_args(db).generic_args(db).elements(db),
         )
@@ -341,7 +352,7 @@ fn try_extract_mapping_types(
         Some((
             key_ty,
             value_ty,
-            if ty == "LegacyMap" { MappingType::Legacy } else { MappingType::NonLegacy },
+            if ty == LEGACY_STORAGE_MAPPING { MappingType::Legacy } else { MappingType::NonLegacy },
         ))
     } else {
         None
@@ -371,7 +382,7 @@ fn handle_simple_storage_member(address: &str, member_state_name: &str) -> Strin
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_path$>::read(
+                    {STORE_TRAIT}::<$type_path$>::read(
                         address_domain,
                         self.address(),
                     )
@@ -381,7 +392,7 @@ fn handle_simple_storage_member(address: &str, member_state_name: &str) -> Strin
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$type_path$>::write(
+                    {STORE_TRAIT}::<$type_path$>::write(
                         address_domain,
                         self.address(),
                         value,
@@ -419,7 +430,7 @@ fn handle_legacy_mapping_storage_member(address: &str, member_state_name: &str) 
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$value_type$>::read(
+                    {STORE_TRAIT}::<$value_type$>::read(
                         address_domain,
                         self.address(key),
                     )
@@ -429,7 +440,7 @@ fn handle_legacy_mapping_storage_member(address: &str, member_state_name: &str) 
                 // Only address_domain 0 is currently supported.
                 let address_domain = 0_u32;
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<$value_type$>::write(
+                    {STORE_TRAIT}::<$value_type$>::write(
                         address_domain,
                         self.address(key),
                         value,
