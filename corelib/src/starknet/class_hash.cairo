@@ -59,11 +59,7 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
         !(lhs == rhs)
     }
 }
-impl HashClassHash<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<starknet::ClassHash, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: ClassHash) -> S {
-        state.update(value.into())
-    }
-}
+
+impl HashClassHash<S, impl H: HashStateTrait<S>, impl D: Drop<S>> =
+    core::hash::into_felt252_based::Impl<ClassHash, S>;
+
