@@ -1,7 +1,5 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use traits::Into;
-use traits::TryInto;
 
 trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
@@ -96,5 +94,27 @@ impl TupleSize4Serde<
                 E3Serde::deserialize(ref serialized)?
             )
         )
+    }
+}
+
+/// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from `felt252` using the `TryInto` trait.
+/// Usage example:
+/// ```ignore
+/// impl MyTypeSerde = core::serde::into_felt252_based::Impl<MyType>;`
+/// ```
+mod into_felt252_based {
+    use traits::{Into, TryInto};
+    use core::array::ArrayTrait;
+    impl Impl<
+        T, +Copy<T>, impl TIntoFelt252: Into<T, felt252>, impl Felt252TryIntoT: TryInto<felt252, T>
+    > of super::Serde<T> {
+        #[inline(always)]
+        fn serialize(self: @T, ref output: Array<felt252>) {
+            output.append(TIntoFelt252::into(*self));
+        }
+        #[inline(always)]
+        fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
+            Option::Some((Felt252TryIntoT::try_into(*serialized.pop_front()?))?)
+        }
     }
 }

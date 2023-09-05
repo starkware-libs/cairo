@@ -62,11 +62,5 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     }
 }
 
-impl HashContractAddress<
-    S, impl SHashState: HashStateTrait<S>, +Drop<S>
-> of Hash<starknet::ContractAddress, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: ContractAddress) -> S {
-        state.update(value.into())
-    }
-}
+impl HashContractAddress<S, impl H: HashStateTrait<S>, +Drop<S>> =
+    core::hash::into_felt252_based::Impl<ContractAddress, S>;
