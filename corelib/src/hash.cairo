@@ -51,57 +51,38 @@ impl HashFelt252<S, impl SHashState: HashStateTrait<S>> of Hash<felt252, S, SHas
     }
 }
 
-impl HashBool<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<bool, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: bool) -> S {
-        state.update(value.into())
+/// Impl for `Hash` for types that can be converted into `felt252` using the `Into` trait.
+/// Usage example:
+/// ```ignore
+/// impl MyTypeHash<S, impl H: HashStateTrait<S>, +Drop<S>> =
+///     core::hash::into_felt252_based::HashImpl<MyType, S>;`
+/// ```
+mod into_felt252_based {
+    impl HashImpl<
+        T,
+        S,
+        impl TIntoFelt252: Into<T, felt252>,
+        impl SHashState: super::HashStateTrait<S>,
+        +Drop<S>
+    > of super::Hash<T, S, SHashState> {
+        #[inline(always)]
+        fn update_state(state: S, value: T) -> S {
+            SHashState::update(state, TIntoFelt252::into(value))
+        }
     }
 }
 
-impl HashU8<S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>> of Hash<u8, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u8) -> S {
-        state.update(value.into())
-    }
-}
-
-impl HashU16<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<u16, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u16) -> S {
-        state.update(value.into())
-    }
-}
-
-impl HashU32<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<u32, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u32) -> S {
-        state.update(value.into())
-    }
-}
-
-impl HashU64<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<u64, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u64) -> S {
-        state.update(value.into())
-    }
-}
-
-impl HashU128<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
-> of Hash<u128, S, SHashState> {
-    #[inline(always)]
-    fn update_state(state: S, value: u128) -> S {
-        state.update(value.into())
-    }
-}
+impl HashBool<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<bool, S>;
+impl HashU8<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<u8, S>;
+impl HashU16<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<u16, S>;
+impl HashU32<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<u32, S>;
+impl HashU64<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<u64, S>;
+impl HashU128<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<u128, S>;
+impl HashI8<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i8, S>;
+impl HashI16<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i16, S>;
+impl HashI32<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i32, S>;
+impl HashI64<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i64, S>;
+impl HashI128<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::HashImpl<i128, S>;
 
 impl TupleSize0Hash<S, impl SHashState: HashStateTrait<S>> of Hash<(), S, SHashState> {
     #[inline(always)]
