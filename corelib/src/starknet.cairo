@@ -84,5 +84,18 @@ impl SyscallResultTraitImpl<T> of SyscallResultTrait<T> {
 /// The expected return value of the `__validate*__` functions of an accounted contract.
 const VALIDATED: felt252 = 'VALID';
 
+/// Trait for any contract storage member.
+trait InternalContractMemberStateTrait<TContractMemberState, TValue> {
+    fn address(self: @TContractMemberState) -> starknet::StorageBaseAddress;
+    fn read(self: @TContractMemberState) -> TValue;
+    fn write(ref self: TContractMemberState, value: TValue);
+}
+/// Trait for any component storage member.
+trait InternalComponentMemberStateTrait<TComponentMemberState, TValue> {
+    fn address(self: @TComponentMemberState) -> starknet::StorageBaseAddress;
+    fn read(self: @TComponentMemberState) -> TValue;
+    fn write(ref self: TComponentMemberState, value: TValue);
+}
+
 // Module for starknet testing only.
 mod testing;

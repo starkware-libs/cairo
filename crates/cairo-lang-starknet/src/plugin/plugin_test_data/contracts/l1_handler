@@ -52,6 +52,7 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::InternalComponentMemberStateTrait;
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 

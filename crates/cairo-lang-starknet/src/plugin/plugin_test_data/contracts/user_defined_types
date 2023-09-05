@@ -120,7 +120,7 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
-    use var::InternalContractMemberStateTrait as varContractMemberStateTrait;
+    impl var_ContractMemberStateImpl = var::InternalContractMemberStateImpl;
     mod var {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
@@ -130,13 +130,7 @@ enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> WrappedFelt252;
-            fn write(ref self: ContractMemberState, value: WrappedFelt252);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+        impl InternalContractMemberStateImpl of starknet::InternalContractMemberStateTrait<ContractMemberState, WrappedFelt252> {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x1c1c14d56e959d57ab94facd0d6c86740ac46c453bf9107bba1c735d7783c71>()
             }
@@ -163,7 +157,7 @@ enum Event {}
             }
         }
     }
-    use zero_size::InternalContractMemberStateTrait as zero_sizeContractMemberStateTrait;
+    impl zero_size_ContractMemberStateImpl = zero_size::InternalContractMemberStateImpl;
     mod zero_size {
         use super::HashStateExTrait;
         use super::WrappedFelt252;
@@ -173,13 +167,7 @@ enum Event {}
         use super::BadEnumWithDefault;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> ZeroSize;
-            fn write(ref self: ContractMemberState, value: ZeroSize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+        impl InternalContractMemberStateImpl of starknet::InternalContractMemberStateTrait<ContractMemberState, ZeroSize> {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x219cc4423c8eab3d10a1f42659ee7172b916579fccdaadceb6efdf1782911b6>()
             }
@@ -294,6 +282,7 @@ enum Event {}
             }
         }
     }
+use starknet::InternalComponentMemberStateTrait;
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
 
