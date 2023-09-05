@@ -4,7 +4,7 @@
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test1.cairo
+>>> file: src/parser_test_data/cairo_test_files/test1.cairo
 
 //! > print_trivia
 false
@@ -791,7 +791,7 @@ error: Missing tokens. Expected an item after attributes.
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test1.cairo
+>>> file: src/parser_test_data/cairo_test_files/test1.cairo
 
 //! > print_trivia
 true

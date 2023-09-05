@@ -3,9 +3,17 @@ fn foo (x:T) -> S
     let x = -5 + 3;
     let y : T = x*2 + 3*5; // Comment.
     let z = ;
+    let v = bool::True == false;
     5 + Struct{a: 5, b: Struct2{_gg: ()}};
     return df == 6;
     x + y
+}
+
+impl A of B {
+    fn foo() {
+        if bla.
+        // The module below should parse correctly, not inside this impl.
+    }
 }
 
 mod my_mod{
