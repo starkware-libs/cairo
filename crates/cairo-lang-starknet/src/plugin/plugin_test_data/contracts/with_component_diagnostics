@@ -57,23 +57,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -166,22 +165,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
     }
@@ -340,23 +338,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -449,22 +446,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
     }
@@ -611,23 +607,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -720,22 +715,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
     }
@@ -891,23 +885,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -1000,22 +993,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
     }
@@ -1178,23 +1170,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -1287,22 +1278,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
         test_component_storage: super::test_component::ComponentState<ContractState>,
@@ -1476,23 +1466,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -1585,22 +1574,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
     }
@@ -1734,7 +1722,7 @@ error: Plugin diagnostic: Type not found.
                                                        ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:53:79
+ --> contract:52:79
                     starknet::Store::<super::super::test_component::Storage>::read(
                                                                               ^**^
 
@@ -1749,7 +1737,7 @@ error: Plugin diagnostic: Type not found.
                                                        ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:63:79
+ --> contract:62:79
                     starknet::Store::<super::super::test_component::Storage>::write(
                                                                               ^***^
 
@@ -1781,23 +1769,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -1890,22 +1877,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
         test_component_storage: test_component_storage::ContractMemberState,
@@ -2088,23 +2074,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -2197,23 +2182,22 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
         test_component_storage: super::test_component::ComponentState<ContractState>,
@@ -2419,23 +2403,22 @@ impl EventABCIntoEvent of Into<test_component::Event, Event> {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -2528,22 +2511,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
         test_component_storage: super::test_component::ComponentState<ContractState>,
@@ -2706,23 +2688,22 @@ mod test_contract {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -2815,23 +2796,22 @@ impl EventIsEvent of starknet::Event<Event> {
 
 component:
 
-use starknet::event::EventEmitter;
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-    impl ComponentStateEventEmitter<TContractState> of EventEmitter<ComponentState<TContractState>, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ComponentState<TContractState> {
         data: data::ComponentMemberState,
@@ -2924,22 +2904,21 @@ impl EventIsEvent of starknet::Event<Event> {
 
 contract:
 
-use starknet::event::EventEmitter;
 
-    impl ContractStateEventEmitter of EventEmitter<ContractState, Event> {
-        fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-            let event: Event = traits::Into::into(event);
-            let mut keys = Default::<array::Array>::default();
-            let mut data = Default::<array::Array>::default();
-            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-            starknet::SyscallResultTraitImpl::unwrap_syscall(
-                starknet::syscalls::emit_event_syscall(
-                    array::ArrayTrait::span(@keys),
-                    array::ArrayTrait::span(@data),
-                )
-            )
-        }
-    }
+   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
+       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
+           let event: Event = traits::Into::into(event);
+           let mut keys = Default::<array::Array>::default();
+           let mut data = Default::<array::Array>::default();
+           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+           starknet::SyscallResultTraitImpl::unwrap_syscall(
+               starknet::syscalls::emit_event_syscall(
+                   array::ArrayTrait::span(@keys),
+                   array::ArrayTrait::span(@data),
+               )
+           )
+       }
+   }
 
     struct ContractState {
         component1_storage: super::component1::ComponentState<ContractState>,
