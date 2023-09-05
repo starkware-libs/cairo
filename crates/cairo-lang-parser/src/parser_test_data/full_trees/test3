@@ -4,7 +4,7 @@
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test3.cairo
+>>> file: src/parser_test_data/cairo_test_files/test3.cairo
 
 //! > print_trivia
 false
@@ -419,7 +419,7 @@ false
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test3.cairo
+>>> file: src/parser_test_data/cairo_test_files/test3.cairo
 
 //! > print_trivia
 true

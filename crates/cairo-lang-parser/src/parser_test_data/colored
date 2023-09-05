@@ -4,7 +4,7 @@
 test_colored_parsed_code(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/colored.cairo
+>>> file: src/parser_test_data/cairo_test_files/colored.cairo
 
 //! > is_verbose
 false
@@ -27,7 +27,7 @@ false
 test_colored_parsed_code(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/colored.cairo
+>>> file: src/parser_test_data/cairo_test_files/colored.cairo
 
 //! > is_verbose
 true
