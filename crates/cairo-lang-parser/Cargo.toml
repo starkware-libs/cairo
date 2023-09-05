@@ -6,9 +6,6 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo parser."
 
-[features]
-fix_parser_tests = ["cairo-lang-utils/testing"]
-
 [dependencies]
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.2.0" }
 cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.2.0" }
