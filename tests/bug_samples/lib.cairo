@@ -25,6 +25,7 @@ mod issue3211;
 mod issue3345;
 mod issue3658;
 mod issue3863;
+mod issue4007;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;
