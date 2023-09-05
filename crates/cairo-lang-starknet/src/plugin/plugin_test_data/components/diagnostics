@@ -63,6 +63,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -169,6 +170,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -275,6 +277,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -379,6 +382,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -483,6 +487,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -587,6 +592,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -691,6 +697,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -787,6 +794,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -895,6 +903,7 @@ enum Event {}
     }
     
 
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;

@@ -187,7 +187,7 @@ libfunc drop<test::erc_20::total_supply::ContractMemberState> = drop<test::erc_2
 libfunc drop<test::erc_20::balances::ContractMemberState> = drop<test::erc_20::balances::ContractMemberState>;
 libfunc drop<test::erc_20::allowances::ContractMemberState> = drop<test::erc_20::allowances::ContractMemberState>;
 libfunc store_temp<test::erc_20::name::ContractMemberState> = store_temp<test::erc_20::name::ContractMemberState>;
-libfunc function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::name::StorageContractMemberStateImpl::read> = function_call<user@test::erc_20::name::StorageContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<felt252>> = struct_construct<Tuple<felt252>>;
 libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 0> = enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>> = store_temp<core::panics::PanicResult::<(core::felt252,)>>;
@@ -197,9 +197,9 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc drop<test::erc_20::name::ContractMemberState> = drop<test::erc_20::name::ContractMemberState>;
 libfunc store_temp<test::erc_20::symbol::ContractMemberState> = store_temp<test::erc_20::symbol::ContractMemberState>;
-libfunc function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::read> = function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::read>;
 libfunc store_temp<test::erc_20::decimals::ContractMemberState> = store_temp<test::erc_20::decimals::ContractMemberState>;
-libfunc function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::read> = function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<u8>> = struct_construct<Tuple<u8>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u8,)>> = store_temp<core::panics::PanicResult::<(core::integer::u8,)>>;
@@ -207,7 +207,7 @@ libfunc enum_init<core::panics::PanicResult::<(core::integer::u8,)>, 1> = enum_i
 libfunc rename<u8> = rename<u8>;
 libfunc u8_to_felt252 = u8_to_felt252;
 libfunc store_temp<test::erc_20::total_supply::ContractMemberState> = store_temp<test::erc_20::total_supply::ContractMemberState>;
-libfunc function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::read> = function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<core::integer::u256>> = struct_construct<Tuple<core::integer::u256>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u256,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u256,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u256,)>> = store_temp<core::panics::PanicResult::<(core::integer::u256,)>>;
@@ -224,11 +224,11 @@ libfunc enum_init<core::option::Option::<core::starknet::contract_address::Contr
 libfunc store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>> = store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>;
 libfunc store_temp<test::erc_20::balances::ContractMemberState> = store_temp<test::erc_20::balances::ContractMemberState>;
-libfunc function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read> = function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read>;
 libfunc struct_construct<Tuple<ContractAddress, ContractAddress>> = struct_construct<Tuple<ContractAddress, ContractAddress>>;
 libfunc store_temp<test::erc_20::allowances::ContractMemberState> = store_temp<test::erc_20::allowances::ContractMemberState>;
 libfunc store_temp<Tuple<ContractAddress, ContractAddress>> = store_temp<Tuple<ContractAddress, ContractAddress>>;
-libfunc function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read> = function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read> = function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>;
 libfunc function_call<user@core::integer::U128Serde::deserialize> = function_call<user@core::integer::U128Serde::deserialize>;
 libfunc enum_match<core::option::Option::<core::integer::u128>> = enum_match<core::option::Option::<core::integer::u128>>;
 libfunc struct_construct<core::integer::u256> = struct_construct<core::integer::u256>;
@@ -265,11 +265,11 @@ libfunc function_call<user@core::integer::Felt252TryIntoU8::try_into> = function
 libfunc enum_init<core::option::Option::<core::integer::u8>, 0> = enum_init<core::option::Option::<core::integer::u8>, 0>;
 libfunc store_temp<core::option::Option::<core::integer::u8>> = store_temp<core::option::Option::<core::integer::u8>>;
 libfunc enum_init<core::option::Option::<core::integer::u8>, 1> = enum_init<core::option::Option::<core::integer::u8>, 1>;
-libfunc function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::name::StorageContractMemberStateImpl::write> = function_call<user@test::erc_20::name::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>>;
-libfunc function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::write> = function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>>;
-libfunc function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::write> = function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>>;
 libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc felt252_const<0> = felt252_const<0>;
@@ -285,9 +285,9 @@ libfunc enum_init<core::bool, 0> = enum_init<core::bool, 0>;
 libfunc bool_not_impl = bool_not_impl;
 libfunc enum_match<core::bool> = enum_match<core::bool>;
 libfunc felt252_const<7300388948442106731950660484798539862217172507820428101544021685107> = felt252_const<7300388948442106731950660484798539862217172507820428101544021685107>;
-libfunc function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::write> = function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>>;
-libfunc function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write> = function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>;
 libfunc contract_address_const<0> = contract_address_const<0>;
 libfunc struct_deconstruct<Tuple<test::erc_20::total_supply::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::erc_20::total_supply::ContractMemberState, Unit>>;
@@ -324,8 +324,8 @@ libfunc store_temp<core::result::Result::<core::integer::u256, core::array::Arra
 libfunc function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall> = function_call<user@core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall>;
 libfunc rename<u128> = rename<u128>;
 libfunc u128_to_felt252 = u128_to_felt252;
-libfunc function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address> = function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>;
-libfunc function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address> = function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>;
+libfunc function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address> = function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address>;
+libfunc function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address> = function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address>;
 libfunc function_call<user@core::integer::u128_try_from_felt252> = function_call<user@core::integer::u128_try_from_felt252>;
 libfunc enum_init<core::option::Option::<core::integer::u128>, 0> = enum_init<core::option::Option::<core::integer::u128>, 0>;
 libfunc store_temp<core::option::Option::<core::integer::u128>> = store_temp<core::option::Option::<core::integer::u128>>;
@@ -350,7 +350,7 @@ libfunc u128_const<340282366920938463463374607431768211455> = u128_const<3402823
 libfunc snapshot_take<u128> = snapshot_take<u128>;
 libfunc u128_eq = u128_eq;
 libfunc felt252_const<101313248740993271302566317381896466254801065025584> = felt252_const<101313248740993271302566317381896466254801065025584>;
-libfunc function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::write> = function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<test::erc_20::allowances::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::erc_20::allowances::ContractMemberState, Unit>>;
 libfunc struct_construct<test::erc_20::Approval> = struct_construct<test::erc_20::Approval>;
@@ -2176,7 +2176,7 @@ drop<test::erc_20::allowances::ContractMemberState>([8]) -> (); // 1682
 store_temp<GasBuiltin>([0]) -> ([12]); // 1683
 store_temp<System>([1]) -> ([13]); // 1684
 store_temp<test::erc_20::name::ContractMemberState>([3]) -> ([14]); // 1685
-function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 1686
+function_call<user@test::erc_20::name::StorageContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 1686
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([11]) { fallthrough([15]) 1696([16]) }; // 1687
 branch_align() -> (); // 1688
 struct_deconstruct<Tuple<felt252>>([15]) -> ([17]); // 1689
@@ -2207,7 +2207,7 @@ drop<test::erc_20::allowances::ContractMemberState>([8]) -> (); // 1713
 store_temp<GasBuiltin>([0]) -> ([12]); // 1714
 store_temp<System>([1]) -> ([13]); // 1715
 store_temp<test::erc_20::symbol::ContractMemberState>([4]) -> ([14]); // 1716
-function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 1717
+function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 1717
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([11]) { fallthrough([15]) 1727([16]) }; // 1718
 branch_align() -> (); // 1719
 struct_deconstruct<Tuple<felt252>>([15]) -> ([17]); // 1720
@@ -2233,7 +2233,7 @@ store_temp<RangeCheck>([0]) -> ([14]); // 1739
 store_temp<GasBuiltin>([1]) -> ([15]); // 1740
 store_temp<System>([2]) -> ([16]); // 1741
 store_temp<test::erc_20::decimals::ContractMemberState>([6]) -> ([17]); // 1742
-function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 1743
+function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 1743
 enum_match<core::panics::PanicResult::<(core::integer::u8,)>>([13]) { fallthrough([18]) 1754([19]) }; // 1744
 branch_align() -> (); // 1745
 struct_deconstruct<Tuple<u8>>([18]) -> ([20]); // 1746
@@ -2273,7 +2273,7 @@ store_temp<RangeCheck>([0]) -> ([14]); // 1779
 store_temp<GasBuiltin>([1]) -> ([15]); // 1780
 store_temp<System>([2]) -> ([16]); // 1781
 store_temp<test::erc_20::total_supply::ContractMemberState>([7]) -> ([17]); // 1782
-function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 1783
+function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 1783
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([13]) { fallthrough([18]) 1794([19]) }; // 1784
 branch_align() -> (); // 1785
 struct_deconstruct<Tuple<core::integer::u256>>([18]) -> ([20]); // 1786
@@ -2342,7 +2342,7 @@ store_temp<Pedersen>([2]) -> ([19]); // 1848
 store_temp<System>([3]) -> ([20]); // 1849
 store_temp<test::erc_20::balances::ContractMemberState>([10]) -> ([21]); // 1850
 store_temp<ContractAddress>([5]) -> ([22]); // 1851
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>([17], [18], [19], [20], [21], [22]) -> ([12], [13], [14], [15], [16]); // 1852
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read>([17], [18], [19], [20], [21], [22]) -> ([12], [13], [14], [15], [16]); // 1852
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([16]) { fallthrough([23]) 1864([24]) }; // 1853
 branch_align() -> (); // 1854
 struct_deconstruct<Tuple<core::integer::u256>>([23]) -> ([25]); // 1855
@@ -2375,7 +2375,7 @@ store_temp<Pedersen>([2]) -> ([21]); // 1881
 store_temp<System>([3]) -> ([22]); // 1882
 store_temp<test::erc_20::allowances::ContractMemberState>([12]) -> ([23]); // 1883
 store_temp<Tuple<ContractAddress, ContractAddress>>([13]) -> ([24]); // 1884
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>([19], [20], [21], [22], [23], [24]) -> ([14], [15], [16], [17], [18]); // 1885
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>([19], [20], [21], [22], [23], [24]) -> ([14], [15], [16], [17], [18]); // 1885
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([18]) { fallthrough([25]) 1897([26]) }; // 1886
 branch_align() -> (); // 1887
 struct_deconstruct<Tuple<core::integer::u256>>([25]) -> ([27]); // 1888
@@ -2609,7 +2609,7 @@ store_temp<Pedersen>([2]) -> ([33]); // 2115
 store_temp<System>([8]) -> ([34]); // 2116
 store_temp<test::erc_20::allowances::ContractMemberState>([21]) -> ([35]); // 2117
 store_temp<Tuple<ContractAddress, ContractAddress>>([25]) -> ([36]); // 2118
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>([31], [32], [33], [34], [35], [36]) -> ([26], [27], [28], [29], [30]); // 2119
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>([31], [32], [33], [34], [35], [36]) -> ([26], [27], [28], [29], [30]); // 2119
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([30]) { fallthrough([37]) 2177([38]) }; // 2120
 branch_align() -> (); // 2121
 struct_deconstruct<Tuple<core::integer::u256>>([37]) -> ([39]); // 2122
@@ -2712,7 +2712,7 @@ store_temp<Pedersen>([2]) -> ([33]); // 2218
 store_temp<System>([8]) -> ([34]); // 2219
 store_temp<test::erc_20::allowances::ContractMemberState>([21]) -> ([35]); // 2220
 store_temp<Tuple<ContractAddress, ContractAddress>>([25]) -> ([36]); // 2221
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>([31], [32], [33], [34], [35], [36]) -> ([26], [27], [28], [29], [30]); // 2222
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>([31], [32], [33], [34], [35], [36]) -> ([26], [27], [28], [29], [30]); // 2222
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([30]) { fallthrough([37]) 2280([38]) }; // 2223
 branch_align() -> (); // 2224
 struct_deconstruct<Tuple<core::integer::u256>>([37]) -> ([39]); // 2225
@@ -2874,21 +2874,21 @@ store_temp<GasBuiltin>([1]) -> ([19]); // 2380
 store_temp<System>([3]) -> ([20]); // 2381
 store_temp<test::erc_20::name::ContractMemberState>([10]) -> ([21]); // 2382
 store_temp<felt252>([5]) -> ([22]); // 2383
-function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write>([19], [20], [21], [22]) -> ([16], [17], [18]); // 2384
+function_call<user@test::erc_20::name::StorageContractMemberStateImpl::write>([19], [20], [21], [22]) -> ([16], [17], [18]); // 2384
 enum_match<core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>>([18]) { fallthrough([23]) 2572([24]) }; // 2385
 branch_align() -> (); // 2386
 store_temp<GasBuiltin>([16]) -> ([28]); // 2387
 store_temp<System>([17]) -> ([29]); // 2388
 store_temp<test::erc_20::symbol::ContractMemberState>([11]) -> ([30]); // 2389
 store_temp<felt252>([6]) -> ([31]); // 2390
-function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write>([28], [29], [30], [31]) -> ([25], [26], [27]); // 2391
+function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::write>([28], [29], [30], [31]) -> ([25], [26], [27]); // 2391
 enum_match<core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>>([27]) { fallthrough([32]) 2556([33]) }; // 2392
 branch_align() -> (); // 2393
 store_temp<GasBuiltin>([25]) -> ([37]); // 2394
 store_temp<System>([26]) -> ([38]); // 2395
 store_temp<test::erc_20::decimals::ContractMemberState>([12]) -> ([39]); // 2396
 store_temp<u8>([7]) -> ([40]); // 2397
-function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write>([37], [38], [39], [40]) -> ([34], [35], [36]); // 2398
+function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::write>([37], [38], [39], [40]) -> ([34], [35], [36]); // 2398
 enum_match<core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>>([36]) { fallthrough([41]) 2541([42]) }; // 2399
 branch_align() -> (); // 2400
 dup<ContractAddress>([9]) -> ([9], [44]); // 2401
@@ -2952,7 +2952,7 @@ store_temp<System>([35]) -> ([83]); // 2458
 store_temp<test::erc_20::total_supply::ContractMemberState>([13]) -> ([84]); // 2459
 dup<core::integer::u256>([8]) -> ([8], [85]); // 2460
 store_temp<core::integer::u256>([85]) -> ([85]); // 2461
-function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write>([82], [83], [84], [85]) -> ([79], [80], [81]); // 2462
+function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::write>([82], [83], [84], [85]) -> ([79], [80], [81]); // 2462
 enum_match<core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>>([81]) { fallthrough([86]) 2526([87]) }; // 2463
 branch_align() -> (); // 2464
 store_temp<RangeCheck>([0]) -> ([93]); // 2465
@@ -2964,7 +2964,7 @@ dup<ContractAddress>([9]) -> ([9], [98]); // 2470
 store_temp<ContractAddress>([98]) -> ([98]); // 2471
 dup<core::integer::u256>([8]) -> ([8], [99]); // 2472
 store_temp<core::integer::u256>([99]) -> ([99]); // 2473
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>([93], [94], [95], [96], [97], [98], [99]) -> ([88], [89], [90], [91], [92]); // 2474
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write>([93], [94], [95], [96], [97], [98], [99]) -> ([88], [89], [90], [91], [92]); // 2474
 enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>([92]) { fallthrough([100]) 2511([101]) }; // 2475
 branch_align() -> (); // 2476
 contract_address_const<0>() -> ([102]); // 2477
@@ -3241,7 +3241,7 @@ store_temp<RangeCheck>([0]) -> ([9]); // 2747
 store_temp<Pedersen>([2]) -> ([10]); // 2748
 store_temp<test::erc_20::balances::ContractMemberState>([4]) -> ([11]); // 2749
 store_temp<ContractAddress>([5]) -> ([12]); // 2750
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>([9], [10], [11], [12]) -> ([6], [7], [8]); // 2751
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address>([9], [10], [11], [12]) -> ([6], [7], [8]); // 2751
 u32_const<0>() -> ([13]); // 2752
 store_temp<RangeCheck>([6]) -> ([18]); // 2753
 store_temp<GasBuiltin>([1]) -> ([19]); // 2754
@@ -3285,7 +3285,7 @@ store_temp<RangeCheck>([0]) -> ([9]); // 2791
 store_temp<Pedersen>([2]) -> ([10]); // 2792
 store_temp<test::erc_20::allowances::ContractMemberState>([4]) -> ([11]); // 2793
 store_temp<Tuple<ContractAddress, ContractAddress>>([5]) -> ([12]); // 2794
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>([9], [10], [11], [12]) -> ([6], [7], [8]); // 2795
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address>([9], [10], [11], [12]) -> ([6], [7], [8]); // 2795
 u32_const<0>() -> ([13]); // 2796
 store_temp<RangeCheck>([6]) -> ([18]); // 2797
 store_temp<GasBuiltin>([1]) -> ([19]); // 2798
@@ -3492,7 +3492,7 @@ store_temp<System>([3]) -> ([84]); // 2998
 store_temp<test::erc_20::balances::ContractMemberState>([75]) -> ([85]); // 2999
 dup<ContractAddress>([5]) -> ([5], [86]); // 3000
 store_temp<ContractAddress>([86]) -> ([86]); // 3001
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>([81], [82], [83], [84], [85], [86]) -> ([76], [77], [78], [79], [80]); // 3002
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read>([81], [82], [83], [84], [85], [86]) -> ([76], [77], [78], [79], [80]); // 3002
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([80]) { fallthrough([87]) 3171([88]) }; // 3003
 branch_align() -> (); // 3004
 struct_deconstruct<Tuple<core::integer::u256>>([87]) -> ([89]); // 3005
@@ -3512,7 +3512,7 @@ store_temp<test::erc_20::balances::ContractMemberState>([74]) -> ([107]); // 301
 dup<ContractAddress>([5]) -> ([5], [108]); // 3019
 store_temp<ContractAddress>([108]) -> ([108]); // 3020
 store_temp<core::integer::u256>([97]) -> ([109]); // 3021
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>([103], [104], [105], [106], [107], [108], [109]) -> ([98], [99], [100], [101], [102]); // 3022
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write>([103], [104], [105], [106], [107], [108], [109]) -> ([98], [99], [100], [101], [102]); // 3022
 enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>([102]) { fallthrough([110]) 3138([111]) }; // 3023
 branch_align() -> (); // 3024
 struct_deconstruct<Tuple<test::erc_20::balances::ContractMemberState, Unit>>([110]) -> ([112], [113]); // 3025
@@ -3525,7 +3525,7 @@ store_temp<System>([101]) -> ([124]); // 3031
 store_temp<test::erc_20::balances::ContractMemberState>([115]) -> ([125]); // 3032
 dup<ContractAddress>([6]) -> ([6], [126]); // 3033
 store_temp<ContractAddress>([126]) -> ([126]); // 3034
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>([121], [122], [123], [124], [125], [126]) -> ([116], [117], [118], [119], [120]); // 3035
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read>([121], [122], [123], [124], [125], [126]) -> ([116], [117], [118], [119], [120]); // 3035
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([120]) { fallthrough([127]) 3121([128]) }; // 3036
 branch_align() -> (); // 3037
 struct_deconstruct<Tuple<core::integer::u256>>([127]) -> ([129]); // 3038
@@ -3545,7 +3545,7 @@ store_temp<test::erc_20::balances::ContractMemberState>([114]) -> ([147]); // 30
 dup<ContractAddress>([6]) -> ([6], [148]); // 3052
 store_temp<ContractAddress>([148]) -> ([148]); // 3053
 store_temp<core::integer::u256>([137]) -> ([149]); // 3054
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>([143], [144], [145], [146], [147], [148], [149]) -> ([138], [139], [140], [141], [142]); // 3055
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write>([143], [144], [145], [146], [147], [148], [149]) -> ([138], [139], [140], [141], [142]); // 3055
 enum_match<core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>>([142]) { fallthrough([150]) 3088([151]) }; // 3056
 branch_align() -> (); // 3057
 struct_deconstruct<Tuple<test::erc_20::balances::ContractMemberState, Unit>>([150]) -> ([152], [153]); // 3058
@@ -3689,7 +3689,7 @@ store_temp<Pedersen>([2]) -> ([26]); // 3195
 store_temp<System>([3]) -> ([27]); // 3196
 store_temp<test::erc_20::allowances::ContractMemberState>([15]) -> ([28]); // 3197
 store_temp<Tuple<ContractAddress, ContractAddress>>([18]) -> ([29]); // 3198
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>([24], [25], [26], [27], [28], [29]) -> ([19], [20], [21], [22], [23]); // 3199
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>([24], [25], [26], [27], [28], [29]) -> ([19], [20], [21], [22], [23]); // 3199
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([23]) { fallthrough([30]) 3312([31]) }; // 3200
 branch_align() -> (); // 3201
 u128_const<340282366920938463463374607431768211455>() -> ([32]); // 3202
@@ -3877,7 +3877,7 @@ store_temp<test::erc_20::allowances::ContractMemberState>([43]) -> ([56]); // 33
 store_temp<Tuple<ContractAddress, ContractAddress>>([46]) -> ([57]); // 3384
 dup<core::integer::u256>([7]) -> ([7], [58]); // 3385
 store_temp<core::integer::u256>([58]) -> ([58]); // 3386
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>([52], [53], [54], [55], [56], [57], [58]) -> ([47], [48], [49], [50], [51]); // 3387
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::write>([52], [53], [54], [55], [56], [57], [58]) -> ([47], [48], [49], [50], [51]); // 3387
 enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>>([51]) { fallthrough([59]) 3420([60]) }; // 3388
 branch_align() -> (); // 3389
 struct_deconstruct<Tuple<test::erc_20::allowances::ContractMemberState, Unit>>([59]) -> ([61], [62]); // 3390
@@ -4134,7 +4134,7 @@ store_temp<RangeCheck>([0]) -> ([12]); // 3640
 store_temp<Pedersen>([2]) -> ([13]); // 3641
 store_temp<test::erc_20::balances::ContractMemberState>([8]) -> ([14]); // 3642
 store_temp<ContractAddress>([5]) -> ([15]); // 3643
-function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>([12], [13], [14], [15]) -> ([9], [10], [11]); // 3644
+function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address>([12], [13], [14], [15]) -> ([9], [10], [11]); // 3644
 u32_const<0>() -> ([16]); // 3645
 store_temp<GasBuiltin>([1]) -> ([20]); // 3646
 store_temp<System>([3]) -> ([21]); // 3647
@@ -4506,7 +4506,7 @@ store_temp<RangeCheck>([0]) -> ([12]); // 4012
 store_temp<Pedersen>([2]) -> ([13]); // 4013
 store_temp<test::erc_20::allowances::ContractMemberState>([8]) -> ([14]); // 4014
 store_temp<Tuple<ContractAddress, ContractAddress>>([5]) -> ([15]); // 4015
-function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>([12], [13], [14], [15]) -> ([9], [10], [11]); // 4016
+function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address>([12], [13], [14], [15]) -> ([9], [10], [11]); // 4016
 u32_const<0>() -> ([16]); // 4017
 store_temp<GasBuiltin>([1]) -> ([20]); // 4018
 store_temp<System>([3]) -> ([21]); // 4019
@@ -4957,13 +4957,13 @@ test::erc_20::IERC20Impl::decrease_allowance@2205([0]: RangeCheck, [1]: GasBuilt
 core::Felt252Serde::deserialize@2308([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::felt252>);
 core::integer::U8Serde::deserialize@2337([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::integer::u8>);
 test::erc_20::constructor@2379([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::ContractState, [5]: felt252, [6]: felt252, [7]: u8, [8]: core::integer::u256, [9]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::ContractState, ())>);
-test::erc_20::name::InternalContractMemberStateImpl::read@2589([0]: GasBuiltin, [1]: System, [2]: test::erc_20::name::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
-test::erc_20::symbol::InternalContractMemberStateImpl::read@2624([0]: GasBuiltin, [1]: System, [2]: test::erc_20::symbol::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
-test::erc_20::decimals::InternalContractMemberStateImpl::read@2659([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::erc_20::decimals::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u8,)>);
-test::erc_20::total_supply::InternalContractMemberStateImpl::read@2697([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::erc_20::total_supply::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u256,)>);
+test::erc_20::name::StorageContractMemberStateImpl::read@2589([0]: GasBuiltin, [1]: System, [2]: test::erc_20::name::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
+test::erc_20::symbol::StorageContractMemberStateImpl::read@2624([0]: GasBuiltin, [1]: System, [2]: test::erc_20::symbol::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
+test::erc_20::decimals::StorageContractMemberStateImpl::read@2659([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::erc_20::decimals::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u8,)>);
+test::erc_20::total_supply::StorageContractMemberStateImpl::read@2697([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::erc_20::total_supply::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u256,)>);
 core::integer::U128Serde::serialize@2735([0]: u128, [1]: Array<felt252>) -> (Array<felt252>, Unit);
-test::erc_20::balances::InternalContractMemberStateImpl::read@2747([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::balances::ContractMemberState, [5]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
-test::erc_20::allowances::InternalContractMemberStateImpl::read@2791([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::allowances::ContractMemberState, [5]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
+test::erc_20::balances::StorageMapContractMemberStateImpl::read@2747([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::balances::ContractMemberState, [5]: ContractAddress) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
+test::erc_20::allowances::StorageMapContractMemberStateImpl::read@2791([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::allowances::ContractMemberState, [5]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(core::integer::u256,)>);
 core::integer::U128Serde::deserialize@2835([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::integer::u128>);
 core::starknet::info::get_caller_address@2877([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::starknet::contract_address::ContractAddress,)>);
 test::erc_20::StorageImpl::transfer_helper@2901([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::ContractState, [5]: ContractAddress, [6]: ContractAddress, [7]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::ContractState, ())>);
@@ -4972,23 +4972,23 @@ test::erc_20::StorageImpl::approve_helper@3329([0]: RangeCheck, [1]: GasBuiltin,
 core::integer::U256Add::add@3436([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u256,)>);
 core::integer::U256Sub::sub@3459([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u256,)>);
 core::integer::Felt252TryIntoU8::try_into@3482([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u8>);
-test::erc_20::name::InternalContractMemberStateImpl::write@3496([0]: GasBuiltin, [1]: System, [2]: test::erc_20::name::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>);
-test::erc_20::symbol::InternalContractMemberStateImpl::write@3534([0]: GasBuiltin, [1]: System, [2]: test::erc_20::symbol::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>);
-test::erc_20::decimals::InternalContractMemberStateImpl::write@3572([0]: GasBuiltin, [1]: System, [2]: test::erc_20::decimals::ContractMemberState, [3]: u8) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>);
-test::erc_20::total_supply::InternalContractMemberStateImpl::write@3611([0]: GasBuiltin, [1]: System, [2]: test::erc_20::total_supply::ContractMemberState, [3]: core::integer::u256) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>);
-test::erc_20::balances::InternalContractMemberStateImpl::write@3639([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::balances::ContractMemberState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>);
+test::erc_20::name::StorageContractMemberStateImpl::write@3496([0]: GasBuiltin, [1]: System, [2]: test::erc_20::name::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::name::ContractMemberState, ())>);
+test::erc_20::symbol::StorageContractMemberStateImpl::write@3534([0]: GasBuiltin, [1]: System, [2]: test::erc_20::symbol::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::symbol::ContractMemberState, ())>);
+test::erc_20::decimals::StorageContractMemberStateImpl::write@3572([0]: GasBuiltin, [1]: System, [2]: test::erc_20::decimals::ContractMemberState, [3]: u8) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::decimals::ContractMemberState, ())>);
+test::erc_20::total_supply::StorageContractMemberStateImpl::write@3611([0]: GasBuiltin, [1]: System, [2]: test::erc_20::total_supply::ContractMemberState, [3]: core::integer::u256) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::total_supply::ContractMemberState, ())>);
+test::erc_20::balances::StorageMapContractMemberStateImpl::write@3639([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::balances::ContractMemberState, [5]: ContractAddress, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::balances::ContractMemberState, ())>);
 test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Event, core::traits::TIntoT::<test::erc_20::Event>>@3674([0]: GasBuiltin, [1]: System, [2]: test::erc_20::ContractState, [3]: test::erc_20::Event) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::ContractState, ())>);
 core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@3724([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::felt252,)>);
 core::starknet::storage_access::StoreU8::read@3736([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>,)>);
 core::starknet::SyscallResultTraitImpl::<core::integer::u8>::unwrap_syscall@3777([0]: core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u8,)>);
 core::integer::Storeu256::read@3789([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>,)>);
 core::starknet::SyscallResultTraitImpl::<core::integer::u256>::unwrap_syscall@3868([0]: core::result::Result::<core::integer::u256, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u256,)>);
-test::erc_20::balances::InternalContractMemberStateImpl::address@3880([0]: RangeCheck, [1]: Pedersen, [2]: test::erc_20::balances::ContractMemberState, [3]: ContractAddress) -> (RangeCheck, Pedersen, StorageBaseAddress);
-test::erc_20::allowances::InternalContractMemberStateImpl::address@3895([0]: RangeCheck, [1]: Pedersen, [2]: test::erc_20::allowances::ContractMemberState, [3]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, Pedersen, StorageBaseAddress);
+test::erc_20::balances::StorageMapContractMemberStateImpl::address@3880([0]: RangeCheck, [1]: Pedersen, [2]: test::erc_20::balances::ContractMemberState, [3]: ContractAddress) -> (RangeCheck, Pedersen, StorageBaseAddress);
+test::erc_20::allowances::StorageMapContractMemberStateImpl::address@3895([0]: RangeCheck, [1]: Pedersen, [2]: test::erc_20::allowances::ContractMemberState, [3]: Tuple<ContractAddress, ContractAddress>) -> (RangeCheck, Pedersen, StorageBaseAddress);
 core::integer::u128_try_from_felt252@3916([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 core::starknet::info::get_execution_info@3932([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
 test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Transfer, test::erc_20::EventTransferIntoEvent>@3961([0]: GasBuiltin, [1]: System, [2]: test::erc_20::ContractState, [3]: test::erc_20::Transfer) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::ContractState, ())>);
-test::erc_20::allowances::InternalContractMemberStateImpl::write@4011([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::allowances::ContractMemberState, [5]: Tuple<ContractAddress, ContractAddress>, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>);
+test::erc_20::allowances::StorageMapContractMemberStateImpl::write@4011([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: System, [4]: test::erc_20::allowances::ContractMemberState, [5]: Tuple<ContractAddress, ContractAddress>, [6]: core::integer::u256) -> (RangeCheck, GasBuiltin, Pedersen, System, core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>);
 test::erc_20::ContractStateEventEmitter::emit::<test::erc_20::Approval, test::erc_20::EventApprovalIntoEvent>@4046([0]: GasBuiltin, [1]: System, [2]: test::erc_20::ContractState, [3]: test::erc_20::Approval) -> (GasBuiltin, System, core::panics::PanicResult::<(test::erc_20::ContractState, ())>);
 core::integer::u256_checked_add@4096([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::option::Option::<core::integer::u256>);
 core::integer::u256_checked_sub@4116([0]: RangeCheck, [1]: core::integer::u256, [2]: core::integer::u256) -> (RangeCheck, core::option::Option::<core::integer::u256>);

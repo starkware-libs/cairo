@@ -189,7 +189,7 @@ libfunc enum_init<core::panics::PanicResult::<(core::felt252,)>, 1> = enum_init<
 libfunc store_temp<core::panics::PanicResult::<(core::felt252,)>> = store_temp<core::panics::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<test::account::ContractState> = struct_deconstruct<test::account::ContractState>;
 libfunc store_temp<test::account::public_key::ContractMemberState> = store_temp<test::account::public_key::ContractMemberState>;
-libfunc function_call<user@test::account::public_key::InternalContractMemberStateImpl::read> = function_call<user@test::account::public_key::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::account::public_key::StorageContractMemberStateImpl::read> = function_call<user@test::account::public_key::StorageContractMemberStateImpl::read>;
 libfunc snapshot_take<core::array::Span::<core::felt252>> = snapshot_take<core::array::Span::<core::felt252>>;
 libfunc rename<Snapshot<Array<felt252>>> = rename<Snapshot<Array<felt252>>>;
 libfunc function_call<user@core::array::array_at::<core::felt252>> = function_call<user@core::array::array_at::<core::felt252>>;
@@ -250,7 +250,7 @@ libfunc struct_construct<Tuple<Array<felt252>, Unit>> = struct_construct<Tuple<A
 libfunc enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0> = enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>> = store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>;
 libfunc enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1> = enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>;
-libfunc function_call<user@test::account::public_key::InternalContractMemberStateImpl::write> = function_call<user@test::account::public_key::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::account::public_key::StorageContractMemberStateImpl::write> = function_call<user@test::account::public_key::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<test::account::public_key::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::account::public_key::ContractMemberState, Unit>>;
 libfunc struct_construct<Tuple<test::account::ContractState, Unit>> = struct_construct<Tuple<test::account::ContractState, Unit>>;
@@ -1177,7 +1177,7 @@ struct_deconstruct<test::account::ContractState>([4]) -> ([42]); // 756
 store_temp<GasBuiltin>([5]) -> ([46]); // 757
 store_temp<System>([6]) -> ([47]); // 758
 store_temp<test::account::public_key::ContractMemberState>([42]) -> ([48]); // 759
-function_call<user@test::account::public_key::InternalContractMemberStateImpl::read>([46], [47], [48]) -> ([43], [44], [45]); // 760
+function_call<user@test::account::public_key::StorageContractMemberStateImpl::read>([46], [47], [48]) -> ([43], [44], [45]); // 760
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([45]) { fallthrough([49]) 848([50]) }; // 761
 branch_align() -> (); // 762
 snapshot_take<core::array::Span::<core::felt252>>([17]) -> ([51], [52]); // 763
@@ -1552,7 +1552,7 @@ store_temp<GasBuiltin>([0]) -> ([8]); // 1131
 store_temp<System>([1]) -> ([9]); // 1132
 store_temp<test::account::public_key::ContractMemberState>([4]) -> ([10]); // 1133
 store_temp<felt252>([3]) -> ([11]); // 1134
-function_call<user@test::account::public_key::InternalContractMemberStateImpl::write>([8], [9], [10], [11]) -> ([5], [6], [7]); // 1135
+function_call<user@test::account::public_key::StorageContractMemberStateImpl::write>([8], [9], [10], [11]) -> ([5], [6], [7]); // 1135
 enum_match<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>([7]) { fallthrough([12]) 1148([13]) }; // 1136
 branch_align() -> (); // 1137
 struct_deconstruct<Tuple<test::account::public_key::ContractMemberState, Unit>>([12]) -> ([14], [15]); // 1138
@@ -2668,7 +2668,7 @@ test::account::AccountContractImpl::__execute__@952([0]: RangeCheck, [1]: GasBui
 core::array::ArraySerde::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>::serialize@1098([0]: RangeCheck, [1]: GasBuiltin, [2]: Snapshot<Array<core::array::Span::<core::felt252>>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
 test::account::constructor@1130([0]: GasBuiltin, [1]: System, [2]: test::account::ContractState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::account::ContractState, ())>);
 core::starknet::info::get_tx_info@1154([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::TxInfo>,)>);
-test::account::public_key::InternalContractMemberStateImpl::read@1178([0]: GasBuiltin, [1]: System, [2]: test::account::public_key::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
+test::account::public_key::StorageContractMemberStateImpl::read@1178([0]: GasBuiltin, [1]: System, [2]: test::account::public_key::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
 core::array::array_at::<core::felt252>@1213([0]: RangeCheck, [1]: Snapshot<Array<felt252>>, [2]: u32) -> (RangeCheck, core::panics::PanicResult::<(core::box::Box::<@core::felt252>,)>);
 core::ecdsa::check_ecdsa_signature@1231([0]: RangeCheck, [1]: EcOp, [2]: felt252, [3]: felt252, [4]: felt252, [5]: felt252) -> (RangeCheck, EcOp, core::bool);
 core::array::deserialize_array_helper::<core::starknet::account::Call, core::starknet::account::CallSerde, core::starknet::account::CallDrop>@1415([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::felt252>, [3]: Array<core::starknet::account::Call>, [4]: felt252) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Span::<core::felt252>, core::option::Option::<core::array::Array::<core::starknet::account::Call>>)>);
@@ -2676,7 +2676,7 @@ core::starknet::info::get_caller_address@1500([0]: GasBuiltin, [1]: System) -> (
 test::account::AccountContractImpl::__execute__[expr33]@1524([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: Array<core::starknet::account::Call>, [4]: Array<core::array::Span::<core::felt252>>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Array::<core::starknet::account::Call>, core::array::Array::<core::array::Span::<core::felt252>>, ())>);
 core::integer::U32Serde::serialize@1627([0]: u32, [1]: Array<felt252>) -> (Array<felt252>, Unit);
 core::array::serialize_array_helper::<core::array::Span::<core::felt252>, core::array::SpanSerde::<core::felt252, core::Felt252Serde, core::felt252Drop>, core::array::SpanDrop::<core::felt252>>@1639([0]: RangeCheck, [1]: GasBuiltin, [2]: core::array::Span::<core::array::Span::<core::felt252>>, [3]: Array<felt252>) -> (RangeCheck, GasBuiltin, core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>);
-test::account::public_key::InternalContractMemberStateImpl::write@1729([0]: GasBuiltin, [1]: System, [2]: test::account::public_key::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>);
+test::account::public_key::StorageContractMemberStateImpl::write@1729([0]: GasBuiltin, [1]: System, [2]: test::account::public_key::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>);
 core::starknet::info::get_execution_info@1767([0]: GasBuiltin, [1]: System) -> (GasBuiltin, System, core::panics::PanicResult::<(core::box::Box::<core::starknet::info::ExecutionInfo>,)>);
 core::starknet::SyscallResultTraitImpl::<core::felt252>::unwrap_syscall@1796([0]: core::result::Result::<core::felt252, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::felt252,)>);
 core::ec::EcPointImpl::mul@1808([0]: EcOp, [1]: EcPoint, [2]: felt252) -> (EcOp, EcPoint);

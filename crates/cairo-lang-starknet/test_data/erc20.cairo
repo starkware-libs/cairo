@@ -167,7 +167,7 @@ mod erc_20 {
         fn spend_allowance(
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
         ) {
-            let current_allowance = self.allowances.read((owner, spender));
+            let current_allowance: u256 = self.allowances.read((owner, spender));
             let ONES_MASK = 0xffffffffffffffffffffffffffffffff_u128;
             let is_unlimited_allowance = current_allowance.low == ONES_MASK
                 && current_allowance.high == ONES_MASK;

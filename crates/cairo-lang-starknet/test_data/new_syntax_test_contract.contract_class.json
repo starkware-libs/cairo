@@ -1541,7 +1541,7 @@
       ],
       [
         64,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::counter_contract::counter::StorageContractMemberStateImpl::read>"
       ],
       [
         65,
@@ -1653,7 +1653,7 @@
       ],
       [
         92,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::counter_contract::counter::StorageContractMemberStateImpl::write>"
       ],
       [
         93,
@@ -1709,7 +1709,7 @@
       ],
       [
         106,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::counter_contract::other_contract::StorageContractMemberStateImpl::read>"
       ],
       [
         107,
@@ -1785,7 +1785,7 @@
       ],
       [
         125,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::counter_contract::other_contract::StorageContractMemberStateImpl::write>"
       ],
       [
         126,
@@ -2395,7 +2395,7 @@
       ],
       [
         11,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "test::counter_contract::counter::StorageContractMemberStateImpl::read"
       ],
       [
         12,
@@ -2411,7 +2411,7 @@
       ],
       [
         15,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "test::counter_contract::counter::StorageContractMemberStateImpl::write"
       ],
       [
         16,
@@ -2419,7 +2419,7 @@
       ],
       [
         17,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::read"
+        "test::counter_contract::other_contract::StorageContractMemberStateImpl::read"
       ],
       [
         18,
@@ -2439,7 +2439,7 @@
       ],
       [
         22,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::write"
+        "test::counter_contract::other_contract::StorageContractMemberStateImpl::write"
       ],
       [
         23,

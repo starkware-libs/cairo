@@ -2259,7 +2259,7 @@
       ],
       [
         80,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::token_bridge::governor::StorageContractMemberStateImpl::read>"
       ],
       [
         81,
@@ -2295,7 +2295,7 @@
       ],
       [
         89,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::token_bridge::l1_bridge::StorageContractMemberStateImpl::read>"
       ],
       [
         90,
@@ -2375,7 +2375,7 @@
       ],
       [
         109,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::token_bridge::l1_bridge::StorageContractMemberStateImpl::write>"
       ],
       [
         110,
@@ -2451,7 +2451,7 @@
       ],
       [
         128,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::token_bridge::l2_token::StorageContractMemberStateImpl::read>"
       ],
       [
         129,
@@ -2463,7 +2463,7 @@
       ],
       [
         131,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::token_bridge::l2_token::StorageContractMemberStateImpl::write>"
       ],
       [
         132,
@@ -2659,7 +2659,7 @@
       ],
       [
         180,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::token_bridge::governor::StorageContractMemberStateImpl::write>"
       ],
       [
         181,
@@ -3337,11 +3337,11 @@
       ],
       [
         19,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::read"
+        "test::token_bridge::governor::StorageContractMemberStateImpl::read"
       ],
       [
         20,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read"
+        "test::token_bridge::l1_bridge::StorageContractMemberStateImpl::read"
       ],
       [
         21,
@@ -3349,7 +3349,7 @@
       ],
       [
         22,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write"
+        "test::token_bridge::l1_bridge::StorageContractMemberStateImpl::write"
       ],
       [
         23,
@@ -3357,11 +3357,11 @@
       ],
       [
         24,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::read"
+        "test::token_bridge::l2_token::StorageContractMemberStateImpl::read"
       ],
       [
         25,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::write"
+        "test::token_bridge::l2_token::StorageContractMemberStateImpl::write"
       ],
       [
         26,
@@ -3397,7 +3397,7 @@
       ],
       [
         34,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::write"
+        "test::token_bridge::governor::StorageContractMemberStateImpl::write"
       ],
       [
         35,

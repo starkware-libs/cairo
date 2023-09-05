@@ -3142,7 +3142,7 @@
       ],
       [
         99,
-        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::name::StorageContractMemberStateImpl::read>"
       ],
       [
         100,
@@ -3182,7 +3182,7 @@
       ],
       [
         109,
-        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::read>"
       ],
       [
         110,
@@ -3190,7 +3190,7 @@
       ],
       [
         111,
-        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::read>"
       ],
       [
         112,
@@ -3222,7 +3222,7 @@
       ],
       [
         119,
-        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::read>"
       ],
       [
         120,
@@ -3290,7 +3290,7 @@
       ],
       [
         136,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::read>"
       ],
       [
         137,
@@ -3306,7 +3306,7 @@
       ],
       [
         140,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>"
+        "function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::read>"
       ],
       [
         141,
@@ -3454,7 +3454,7 @@
       ],
       [
         177,
-        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::name::StorageContractMemberStateImpl::write>"
       ],
       [
         178,
@@ -3462,7 +3462,7 @@
       ],
       [
         179,
-        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::symbol::StorageContractMemberStateImpl::write>"
       ],
       [
         180,
@@ -3470,7 +3470,7 @@
       ],
       [
         181,
-        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::decimals::StorageContractMemberStateImpl::write>"
       ],
       [
         182,
@@ -3534,7 +3534,7 @@
       ],
       [
         197,
-        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::total_supply::StorageContractMemberStateImpl::write>"
       ],
       [
         198,
@@ -3542,7 +3542,7 @@
       ],
       [
         199,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::write>"
       ],
       [
         200,
@@ -3690,11 +3690,11 @@
       ],
       [
         236,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>"
+        "function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address>"
       ],
       [
         237,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>"
+        "function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address>"
       ],
       [
         238,
@@ -3794,7 +3794,7 @@
       ],
       [
         262,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>"
+        "function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::write>"
       ],
       [
         263,
@@ -4476,19 +4476,19 @@
       ],
       [
         31,
-        "test::erc_20::name::InternalContractMemberStateImpl::read"
+        "test::erc_20::name::StorageContractMemberStateImpl::read"
       ],
       [
         32,
-        "test::erc_20::symbol::InternalContractMemberStateImpl::read"
+        "test::erc_20::symbol::StorageContractMemberStateImpl::read"
       ],
       [
         33,
-        "test::erc_20::decimals::InternalContractMemberStateImpl::read"
+        "test::erc_20::decimals::StorageContractMemberStateImpl::read"
       ],
       [
         34,
-        "test::erc_20::total_supply::InternalContractMemberStateImpl::read"
+        "test::erc_20::total_supply::StorageContractMemberStateImpl::read"
       ],
       [
         35,
@@ -4496,11 +4496,11 @@
       ],
       [
         36,
-        "test::erc_20::balances::InternalContractMemberStateImpl::read"
+        "test::erc_20::balances::StorageMapContractMemberStateImpl::read"
       ],
       [
         37,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::read"
+        "test::erc_20::allowances::StorageMapContractMemberStateImpl::read"
       ],
       [
         38,
@@ -4536,23 +4536,23 @@
       ],
       [
         46,
-        "test::erc_20::name::InternalContractMemberStateImpl::write"
+        "test::erc_20::name::StorageContractMemberStateImpl::write"
       ],
       [
         47,
-        "test::erc_20::symbol::InternalContractMemberStateImpl::write"
+        "test::erc_20::symbol::StorageContractMemberStateImpl::write"
       ],
       [
         48,
-        "test::erc_20::decimals::InternalContractMemberStateImpl::write"
+        "test::erc_20::decimals::StorageContractMemberStateImpl::write"
       ],
       [
         49,
-        "test::erc_20::total_supply::InternalContractMemberStateImpl::write"
+        "test::erc_20::total_supply::StorageContractMemberStateImpl::write"
       ],
       [
         50,
-        "test::erc_20::balances::InternalContractMemberStateImpl::write"
+        "test::erc_20::balances::StorageMapContractMemberStateImpl::write"
       ],
       [
         51,
@@ -4580,11 +4580,11 @@
       ],
       [
         57,
-        "test::erc_20::balances::InternalContractMemberStateImpl::address"
+        "test::erc_20::balances::StorageMapContractMemberStateImpl::address"
       ],
       [
         58,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::address"
+        "test::erc_20::allowances::StorageMapContractMemberStateImpl::address"
       ],
       [
         59,
@@ -4600,7 +4600,7 @@
       ],
       [
         62,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::write"
+        "test::erc_20::allowances::StorageMapContractMemberStateImpl::write"
       ],
       [
         63,

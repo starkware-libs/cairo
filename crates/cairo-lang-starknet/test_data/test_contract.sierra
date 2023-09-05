@@ -144,13 +144,13 @@ libfunc enum_init<core::option::Option::<core::felt252>, 1> = enum_init<core::op
 libfunc struct_deconstruct<test::test_contract::ContractState> = struct_deconstruct<test::test_contract::ContractState>;
 libfunc snapshot_take<test::test_contract::my_storage_var::ContractMemberState> = snapshot_take<test::test_contract::my_storage_var::ContractMemberState>;
 libfunc store_temp<test::test_contract::my_storage_var::ContractMemberState> = store_temp<test::test_contract::my_storage_var::ContractMemberState>;
-libfunc function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::read> = function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::read> = function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::felt252,)>> = enum_match<core::panics::PanicResult::<(core::felt252,)>>;
 libfunc struct_deconstruct<Tuple<felt252>> = struct_deconstruct<Tuple<felt252>>;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_add = felt252_add;
 libfunc dup<felt252> = dup<felt252>;
-libfunc function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write> = function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::write> = function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>>;
 libfunc felt252_const<-1> = felt252_const<-1>;
 libfunc struct_deconstruct<Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>>;
@@ -1226,7 +1226,7 @@ snapshot_take<test::test_contract::my_storage_var::ContractMemberState>([6]) -> 
 store_temp<GasBuiltin>([0]) -> ([12]); // 959
 store_temp<System>([1]) -> ([13]); // 960
 store_temp<test::test_contract::my_storage_var::ContractMemberState>([8]) -> ([14]); // 961
-function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 962
+function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::read>([12], [13], [14]) -> ([9], [10], [11]); // 962
 enum_match<core::panics::PanicResult::<(core::felt252,)>>([11]) { fallthrough([15]) 995([16]) }; // 963
 branch_align() -> (); // 964
 struct_deconstruct<Tuple<felt252>>([15]) -> ([17]); // 965
@@ -1237,7 +1237,7 @@ store_temp<System>([10]) -> ([24]); // 969
 store_temp<test::test_contract::my_storage_var::ContractMemberState>([7]) -> ([25]); // 970
 store_temp<felt252>([19]) -> ([26]); // 971
 dup<felt252>([26]) -> ([26], [19]); // 972
-function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write>([23], [24], [25], [26]) -> ([20], [21], [22]); // 973
+function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::write>([23], [24], [25], [26]) -> ([20], [21], [22]); // 973
 enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>>([22]) { fallthrough([27]) 987([28]) }; // 974
 branch_align() -> (); // 975
 felt252_const<-1>() -> ([29]); // 976
@@ -1455,7 +1455,7 @@ store_temp<GasBuiltin>([0]) -> ([8]); // 1187
 store_temp<System>([1]) -> ([9]); // 1188
 store_temp<test::test_contract::my_storage_var::ContractMemberState>([4]) -> ([10]); // 1189
 store_temp<felt252>([3]) -> ([11]); // 1190
-function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write>([8], [9], [10], [11]) -> ([5], [6], [7]); // 1191
+function_call<user@test::test_contract::my_storage_var::StorageContractMemberStateImpl::write>([8], [9], [10], [11]) -> ([5], [6], [7]); // 1191
 enum_match<core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>>([7]) { fallthrough([12]) 1204([13]) }; // 1192
 branch_align() -> (); // 1193
 struct_deconstruct<Tuple<test::test_contract::my_storage_var::ContractMemberState, Unit>>([12]) -> ([14], [15]); // 1194
@@ -1815,8 +1815,8 @@ test::test_contract::Impl::libcall_foo@1141([0]: RangeCheck, [1]: GasBuiltin, [2
 test::test_contract::Impl::segment_arena_builtin@1167([0]: RangeCheck, [1]: SegmentArena, [2]: GasBuiltin, [3]: test::test_contract::ContractState) -> (RangeCheck, SegmentArena, GasBuiltin, test::test_contract::ContractState, Unit);
 test::test_contract::Impl::l1_handle@1182([0]: test::test_contract::ContractState, [1]: felt252, [2]: felt252) -> (test::test_contract::ContractState, felt252);
 test::test_contract::Impl::constructor@1186([0]: GasBuiltin, [1]: System, [2]: test::test_contract::ContractState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::test_contract::ContractState, ())>);
-test::test_contract::my_storage_var::InternalContractMemberStateImpl::read@1210([0]: GasBuiltin, [1]: System, [2]: test::test_contract::my_storage_var::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
-test::test_contract::my_storage_var::InternalContractMemberStateImpl::write@1245([0]: GasBuiltin, [1]: System, [2]: test::test_contract::my_storage_var::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>);
+test::test_contract::my_storage_var::StorageContractMemberStateImpl::read@1210([0]: GasBuiltin, [1]: System, [2]: test::test_contract::my_storage_var::ContractMemberState) -> (GasBuiltin, System, core::panics::PanicResult::<(core::felt252,)>);
+test::test_contract::my_storage_var::StorageContractMemberStateImpl::write@1245([0]: GasBuiltin, [1]: System, [2]: test::test_contract::my_storage_var::ContractMemberState, [3]: felt252) -> (GasBuiltin, System, core::panics::PanicResult::<(test::test_contract::my_storage_var::ContractMemberState, ())>);
 core::BoolSerde::deserialize@1283([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::bool>);
 core::integer::u128_try_from_felt252@1340([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::integer::u128>);
 test::IAnotherContractDispatcherImpl::foo@1356([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::IAnotherContractDispatcher, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
