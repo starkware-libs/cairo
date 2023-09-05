@@ -27,14 +27,4 @@ error: Missing token TerminalRBrace.
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:14
     A(felt252),
-             ^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
- --> dummy_file.cairo:2:15
-    A(felt252),
-              ^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
- --> dummy_file.cairo:3:1
-}
-^
+             ^^

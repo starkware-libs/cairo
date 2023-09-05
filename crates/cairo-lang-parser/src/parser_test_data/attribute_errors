@@ -152,17 +152,7 @@ error: Missing tokens. Expected an item after attributes.
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
  --> dummy_file.cairo:2:1
 [bbb]
-^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro.
- --> dummy_file.cairo:2:2
-[bbb]
- ^*^
-
-error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
- --> dummy_file.cairo:2:5
-[bbb]
-    ^
+^***^
 
 //! > expected_tree
 └── Top level kind: ItemList
