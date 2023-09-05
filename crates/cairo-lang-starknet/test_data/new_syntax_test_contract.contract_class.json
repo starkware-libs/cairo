@@ -1694,7 +1694,7 @@
       ],
       [
         80,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read>"
       ],
       [
         81,
@@ -1750,7 +1750,7 @@
       ],
       [
         94,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write>"
       ],
       [
         95,
@@ -1806,7 +1806,7 @@
       ],
       [
         108,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read>"
       ],
       [
         109,
@@ -1882,7 +1882,7 @@
       ],
       [
         127,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write>"
       ],
       [
         128,
@@ -2508,7 +2508,7 @@
       ],
       [
         10,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read"
       ],
       [
         11,
@@ -2516,7 +2516,7 @@
       ],
       [
         12,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write"
       ],
       [
         13,
@@ -2524,7 +2524,7 @@
       ],
       [
         14,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read"
       ],
       [
         15,
@@ -2544,7 +2544,7 @@
       ],
       [
         19,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write"
       ],
       [
         20,

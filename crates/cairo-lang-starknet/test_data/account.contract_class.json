@@ -2192,7 +2192,7 @@
       ],
       [
         104,
-        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::account::public_key::ContractMemberState, core::felt252, test::account::public_key::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::account::public_key::ContractMemberStateDrop>::read>"
       ],
       [
         105,
@@ -2436,7 +2436,7 @@
       ],
       [
         165,
-        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::account::public_key::ContractMemberState, core::felt252, test::account::public_key::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::account::public_key::ContractMemberStateDrop>::write>"
       ],
       [
         166,
@@ -3154,7 +3154,7 @@
       ],
       [
         14,
-        "test::account::public_key::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::account::public_key::ContractMemberState, core::felt252, test::account::public_key::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::account::public_key::ContractMemberStateDrop>::read"
       ],
       [
         15,
@@ -3182,7 +3182,7 @@
       ],
       [
         21,
-        "test::account::public_key::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::account::public_key::ContractMemberState, core::felt252, test::account::public_key::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::account::public_key::ContractMemberStateDrop>::write"
       ],
       [
         22,

@@ -142,7 +142,7 @@ libfunc struct_deconstruct<test::counter_contract::ContractState> = struct_decon
 libfunc drop<test::test_component::ComponentState::<test::counter_contract::ContractState>> = drop<test::test_component::ComponentState::<test::counter_contract::ContractState>>;
 libfunc drop<test::counter_contract::other_contract::ContractMemberState> = drop<test::counter_contract::other_contract::ContractMemberState>;
 libfunc store_temp<test::counter_contract::counter::ContractMemberState> = store_temp<test::counter_contract::counter::ContractMemberState>;
-libfunc function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read> = function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read>;
 libfunc struct_construct<Tuple<u128>> = struct_construct<Tuple<u128>>;
 libfunc enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0> = enum_init<core::panics::PanicResult::<(core::integer::u128,)>, 0>;
 libfunc store_temp<core::panics::PanicResult::<(core::integer::u128,)>> = store_temp<core::panics::PanicResult::<(core::integer::u128,)>>;
@@ -156,7 +156,7 @@ libfunc rename<core::option::Option::<core::integer::u128>> = rename<core::optio
 libfunc snapshot_take<test::counter_contract::counter::ContractMemberState> = snapshot_take<test::counter_contract::counter::ContractMemberState>;
 libfunc dup<u128> = dup<u128>;
 libfunc function_call<user@core::integer::U128Add::add> = function_call<user@core::integer::U128Add::add>;
-libfunc function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write> = function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>;
 libfunc struct_construct<test::counter_contract::CounterIncreased> = struct_construct<test::counter_contract::CounterIncreased>;
@@ -170,7 +170,7 @@ libfunc enum_init<core::panics::PanicResult::<(test::counter_contract::ContractS
 libfunc drop<test::counter_contract::counter::ContractMemberState> = drop<test::counter_contract::counter::ContractMemberState>;
 libfunc snapshot_take<test::counter_contract::other_contract::ContractMemberState> = snapshot_take<test::counter_contract::other_contract::ContractMemberState>;
 libfunc store_temp<test::counter_contract::other_contract::ContractMemberState> = store_temp<test::counter_contract::other_contract::ContractMemberState>;
-libfunc function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read> = function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read>;
 libfunc enum_match<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>> = enum_match<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>>;
 libfunc struct_deconstruct<Tuple<test::IOtherContractDispatcher>> = struct_deconstruct<Tuple<test::IOtherContractDispatcher>>;
 libfunc store_temp<test::IOtherContractDispatcher> = store_temp<test::IOtherContractDispatcher>;
@@ -189,7 +189,7 @@ libfunc enum_init<core::option::Option::<core::starknet::contract_address::Contr
 libfunc store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>> = store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>;
 libfunc struct_construct<test::IOtherContractDispatcher> = struct_construct<test::IOtherContractDispatcher>;
-libfunc function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write> = function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>;
+libfunc function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write> = function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>>;
 libfunc struct_deconstruct<Tuple<test::counter_contract::other_contract::ContractMemberState, Unit>> = struct_deconstruct<Tuple<test::counter_contract::other_contract::ContractMemberState, Unit>>;
 libfunc drop<Tuple<test::counter_contract::counter::ContractMemberState, Unit>> = drop<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>;
@@ -894,7 +894,7 @@ store_temp<RangeCheck>([0]) -> ([11]); // 554
 store_temp<GasBuiltin>([1]) -> ([12]); // 555
 store_temp<System>([2]) -> ([13]); // 556
 store_temp<test::counter_contract::counter::ContractMemberState>([5]) -> ([14]); // 557
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>([11], [12], [13], [14]) -> ([7], [8], [9], [10]); // 558
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read>([11], [12], [13], [14]) -> ([7], [8], [9], [10]); // 558
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([10]) { fallthrough([15]) 569([16]) }; // 559
 branch_align() -> (); // 560
 struct_deconstruct<Tuple<u128>>([15]) -> ([17]); // 561
@@ -934,7 +934,7 @@ store_temp<RangeCheck>([0]) -> ([14]); // 594
 store_temp<GasBuiltin>([1]) -> ([15]); // 595
 store_temp<System>([2]) -> ([16]); // 596
 store_temp<test::counter_contract::counter::ContractMemberState>([9]) -> ([17]); // 597
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 598
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 598
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([13]) { fallthrough([18]) 666([19]) }; // 599
 branch_align() -> (); // 600
 struct_deconstruct<Tuple<u128>>([18]) -> ([20]); // 601
@@ -950,7 +950,7 @@ store_temp<GasBuiltin>([11]) -> ([32]); // 610
 store_temp<System>([12]) -> ([33]); // 611
 store_temp<test::counter_contract::counter::ContractMemberState>([8]) -> ([34]); // 612
 store_temp<u128>([28]) -> ([35]); // 613
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>([32], [33], [34], [35]) -> ([29], [30], [31]); // 614
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write>([32], [33], [34], [35]) -> ([29], [30], [31]); // 614
 enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>([31]) { fallthrough([36]) 645([37]) }; // 615
 branch_align() -> (); // 616
 struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>([36]) -> ([38], [39]); // 617
@@ -1019,7 +1019,7 @@ store_temp<RangeCheck>([0]) -> ([14]); // 679
 store_temp<GasBuiltin>([1]) -> ([15]); // 680
 store_temp<System>([2]) -> ([16]); // 681
 store_temp<test::counter_contract::other_contract::ContractMemberState>([9]) -> ([17]); // 682
-function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 683
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read>([14], [15], [16], [17]) -> ([10], [11], [12], [13]); // 683
 enum_match<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>>([13]) { fallthrough([18]) 805([19]) }; // 684
 branch_align() -> (); // 685
 struct_deconstruct<Tuple<test::IOtherContractDispatcher>>([18]) -> ([20]); // 686
@@ -1047,7 +1047,7 @@ store_temp<RangeCheck>([10]) -> ([43]); // 707
 store_temp<GasBuiltin>([21]) -> ([44]); // 708
 store_temp<System>([22]) -> ([45]); // 709
 store_temp<test::counter_contract::counter::ContractMemberState>([38]) -> ([46]); // 710
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>([43], [44], [45], [46]) -> ([39], [40], [41], [42]); // 711
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read>([43], [44], [45], [46]) -> ([39], [40], [41], [42]); // 711
 enum_match<core::panics::PanicResult::<(core::integer::u128,)>>([42]) { fallthrough([47]) 783([48]) }; // 712
 branch_align() -> (); // 713
 struct_deconstruct<Tuple<u128>>([47]) -> ([49]); // 714
@@ -1063,7 +1063,7 @@ store_temp<GasBuiltin>([40]) -> ([61]); // 723
 store_temp<System>([41]) -> ([62]); // 724
 store_temp<test::counter_contract::counter::ContractMemberState>([37]) -> ([63]); // 725
 store_temp<u128>([57]) -> ([64]); // 726
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>([61], [62], [63], [64]) -> ([58], [59], [60]); // 727
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write>([61], [62], [63], [64]) -> ([58], [59], [60]); // 727
 enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>([60]) { fallthrough([65]) 762([66]) }; // 728
 branch_align() -> (); // 729
 struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>([65]) -> ([67], [68]); // 730
@@ -1181,7 +1181,7 @@ store_temp<GasBuiltin>([0]) -> ([11]); // 841
 store_temp<System>([1]) -> ([12]); // 842
 store_temp<test::counter_contract::counter::ContractMemberState>([6]) -> ([13]); // 843
 store_temp<u128>([3]) -> ([14]); // 844
-function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>([11], [12], [13], [14]) -> ([8], [9], [10]); // 845
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write>([11], [12], [13], [14]) -> ([8], [9], [10]); // 845
 enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>([10]) { fallthrough([15]) 876([16]) }; // 846
 branch_align() -> (); // 847
 struct_construct<test::IOtherContractDispatcher>([4]) -> ([17]); // 848
@@ -1189,7 +1189,7 @@ store_temp<GasBuiltin>([8]) -> ([21]); // 849
 store_temp<System>([9]) -> ([22]); // 850
 store_temp<test::counter_contract::other_contract::ContractMemberState>([7]) -> ([23]); // 851
 store_temp<test::IOtherContractDispatcher>([17]) -> ([24]); // 852
-function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>([21], [22], [23], [24]) -> ([18], [19], [20]); // 853
+function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write>([21], [22], [23], [24]) -> ([18], [19], [20]); // 853
 enum_match<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>>([20]) { fallthrough([25]) 868([26]) }; // 854
 branch_align() -> (); // 855
 struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>([15]) -> ([27], [28]); // 856
@@ -1969,16 +1969,16 @@ test::counter_contract::CounterContract::increase_counter@592([0]: RangeCheck, [
 test::counter_contract::CounterContract::decrease_counter@677([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::counter_contract::ContractState, [4]: u128) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::ContractState, ())>);
 core::starknet::contract_address::ContractAddressSerde::deserialize@816([0]: RangeCheck, [1]: core::array::Span::<core::felt252>) -> (RangeCheck, core::array::Span::<core::felt252>, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 test::counter_contract::constructor@840([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::ContractState, [3]: u128, [4]: ContractAddress) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::ContractState, ())>);
-test::counter_contract::counter::InternalContractMemberStateImpl::read@885([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::counter_contract::counter::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
+core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::read@885([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::counter_contract::counter::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::integer::u128,)>);
 core::integer::U128Add::add@923([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u128,)>);
-test::counter_contract::counter::InternalContractMemberStateImpl::write@950([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::counter::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>);
+core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::counter::ContractMemberState, core::integer::u128, test::counter_contract::counter::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU128, test::counter_contract::counter::ContractMemberStateDrop>::write@950([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::counter::ContractMemberState, [3]: u128) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>);
 test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterIncreased, test::counter_contract::EventCounterIncreasedIntoEvent>@989([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::ContractState, [3]: test::counter_contract::CounterIncreased) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::ContractState, ())>);
-test::counter_contract::other_contract::InternalContractMemberStateImpl::read@1039([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::counter_contract::other_contract::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(test::IOtherContractDispatcher,)>);
+core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::read@1039([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: test::counter_contract::other_contract::ContractMemberState) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(test::IOtherContractDispatcher,)>);
 test::IOtherContractDispatcherImpl::decrease_allowed@1077([0]: GasBuiltin, [1]: System, [2]: test::IOtherContractDispatcher) -> (GasBuiltin, System, core::panics::PanicResult::<(core::bool,)>);
 core::integer::U128Sub::sub@1132([0]: RangeCheck, [1]: u128, [2]: u128) -> (RangeCheck, core::panics::PanicResult::<(core::integer::u128,)>);
 test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterDecreased, test::counter_contract::EventCounterDecreasedIntoEvent>@1159([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::ContractState, [3]: test::counter_contract::CounterDecreased) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::ContractState, ())>);
 core::Felt252Serde::deserialize@1209([0]: core::array::Span::<core::felt252>) -> (core::array::Span::<core::felt252>, core::option::Option::<core::felt252>);
-test::counter_contract::other_contract::InternalContractMemberStateImpl::write@1238([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::other_contract::ContractMemberState, [3]: test::IOtherContractDispatcher) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>);
+core::starknet::storage::StorageMemberAccessImpl::<test::counter_contract::other_contract::ContractMemberState, test::IOtherContractDispatcher, test::counter_contract::other_contract::StorageContractMemberStateImpl, test::StoreIOtherContractDispatcher, test::counter_contract::other_contract::ContractMemberStateDrop>::write@1238([0]: GasBuiltin, [1]: System, [2]: test::counter_contract::other_contract::ContractMemberState, [3]: test::IOtherContractDispatcher) -> (GasBuiltin, System, core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>);
 core::starknet::storage_access::StoreU128::read@1266([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: u32, [4]: StorageBaseAddress) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>,)>);
 core::starknet::SyscallResultTraitImpl::<core::integer::u128>::unwrap_syscall@1307([0]: core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>) -> (core::panics::PanicResult::<(core::integer::u128,)>);
 core::result::ResultTraitImpl::<core::integer::u128, core::integer::u128>::expect::<core::integer::u128Drop>@1319([0]: core::result::Result::<core::integer::u128, core::integer::u128>, [1]: felt252) -> (core::panics::PanicResult::<(core::integer::u128,)>);

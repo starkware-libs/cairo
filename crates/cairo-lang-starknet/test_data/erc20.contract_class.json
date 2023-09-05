@@ -3189,7 +3189,7 @@
       ],
       [
         113,
-        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::name::ContractMemberState, core::felt252, test::erc_20::name::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::name::ContractMemberStateDrop>::read>"
       ],
       [
         114,
@@ -3221,7 +3221,7 @@
       ],
       [
         121,
-        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::symbol::ContractMemberState, core::felt252, test::erc_20::symbol::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::symbol::ContractMemberStateDrop>::read>"
       ],
       [
         122,
@@ -3229,7 +3229,7 @@
       ],
       [
         123,
-        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::decimals::ContractMemberState, core::integer::u8, test::erc_20::decimals::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU8, test::erc_20::decimals::ContractMemberStateDrop>::read>"
       ],
       [
         124,
@@ -3253,7 +3253,7 @@
       ],
       [
         129,
-        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::total_supply::ContractMemberState, core::integer::u256, test::erc_20::total_supply::StorageContractMemberStateImpl, core::integer::Storeu256, test::erc_20::total_supply::ContractMemberStateDrop>::read>"
       ],
       [
         130,
@@ -3313,7 +3313,7 @@
       ],
       [
         144,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::balances::ContractMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc_20::balances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::balances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<core::starknet::contract_address::ContractAddress, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         145,
@@ -3329,7 +3329,7 @@
       ],
       [
         148,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::allowances::ContractMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc_20::allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::allowances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::hash::TupleSize2Hash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::pedersen::HashStateImpl, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         149,
@@ -3453,7 +3453,7 @@
       ],
       [
         179,
-        "function_call<user@test::erc_20::name::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::name::ContractMemberState, core::felt252, test::erc_20::name::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::name::ContractMemberStateDrop>::write>"
       ],
       [
         180,
@@ -3461,7 +3461,7 @@
       ],
       [
         181,
-        "function_call<user@test::erc_20::symbol::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::symbol::ContractMemberState, core::felt252, test::erc_20::symbol::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::symbol::ContractMemberStateDrop>::write>"
       ],
       [
         182,
@@ -3469,7 +3469,7 @@
       ],
       [
         183,
-        "function_call<user@test::erc_20::decimals::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::decimals::ContractMemberState, core::integer::u8, test::erc_20::decimals::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU8, test::erc_20::decimals::ContractMemberStateDrop>::write>"
       ],
       [
         184,
@@ -3533,7 +3533,7 @@
       ],
       [
         199,
-        "function_call<user@test::erc_20::total_supply::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::total_supply::ContractMemberState, core::integer::u256, test::erc_20::total_supply::StorageContractMemberStateImpl, core::integer::Storeu256, test::erc_20::total_supply::ContractMemberStateDrop>::write>"
       ],
       [
         200,
@@ -3541,7 +3541,7 @@
       ],
       [
         201,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::balances::ContractMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc_20::balances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::balances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<core::starknet::contract_address::ContractAddress, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         202,
@@ -3681,11 +3681,11 @@
       ],
       [
         236,
-        "function_call<user@test::erc_20::balances::InternalContractMemberStateImpl::address>"
+        "function_call<user@test::erc_20::balances::StorageMapContractMemberStateImpl::address>"
       ],
       [
         237,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::address>"
+        "function_call<user@test::erc_20::allowances::StorageMapContractMemberStateImpl::address>"
       ],
       [
         238,
@@ -3789,7 +3789,7 @@
       ],
       [
         263,
-        "function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::allowances::ContractMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc_20::allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::allowances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::hash::TupleSize2Hash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::pedersen::HashStateImpl, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         264,
@@ -4455,27 +4455,27 @@
       ],
       [
         30,
-        "test::erc_20::name::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::name::ContractMemberState, core::felt252, test::erc_20::name::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::name::ContractMemberStateDrop>::read"
       ],
       [
         31,
-        "test::erc_20::symbol::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::symbol::ContractMemberState, core::felt252, test::erc_20::symbol::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::symbol::ContractMemberStateDrop>::read"
       ],
       [
         32,
-        "test::erc_20::decimals::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::decimals::ContractMemberState, core::integer::u8, test::erc_20::decimals::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU8, test::erc_20::decimals::ContractMemberStateDrop>::read"
       ],
       [
         33,
-        "test::erc_20::total_supply::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::total_supply::ContractMemberState, core::integer::u256, test::erc_20::total_supply::StorageContractMemberStateImpl, core::integer::Storeu256, test::erc_20::total_supply::ContractMemberStateDrop>::read"
       ],
       [
         34,
-        "test::erc_20::balances::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::balances::ContractMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc_20::balances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::balances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<core::starknet::contract_address::ContractAddress, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         35,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::allowances::ContractMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc_20::allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::allowances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::hash::TupleSize2Hash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::pedersen::HashStateImpl, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         36,
@@ -4507,23 +4507,23 @@
       ],
       [
         43,
-        "test::erc_20::name::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::name::ContractMemberState, core::felt252, test::erc_20::name::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::name::ContractMemberStateDrop>::write"
       ],
       [
         44,
-        "test::erc_20::symbol::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::symbol::ContractMemberState, core::felt252, test::erc_20::symbol::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::erc_20::symbol::ContractMemberStateDrop>::write"
       ],
       [
         45,
-        "test::erc_20::decimals::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::decimals::ContractMemberState, core::integer::u8, test::erc_20::decimals::StorageContractMemberStateImpl, core::starknet::storage_access::StoreU8, test::erc_20::decimals::ContractMemberStateDrop>::write"
       ],
       [
         46,
-        "test::erc_20::total_supply::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::erc_20::total_supply::ContractMemberState, core::integer::u256, test::erc_20::total_supply::StorageContractMemberStateImpl, core::integer::Storeu256, test::erc_20::total_supply::ContractMemberStateDrop>::write"
       ],
       [
         47,
-        "test::erc_20::balances::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::balances::ContractMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, test::erc_20::balances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::balances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<core::starknet::contract_address::ContractAddress, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         48,
@@ -4551,11 +4551,11 @@
       ],
       [
         54,
-        "test::erc_20::balances::InternalContractMemberStateImpl::address"
+        "test::erc_20::balances::StorageMapContractMemberStateImpl::address"
       ],
       [
         55,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::address"
+        "test::erc_20::allowances::StorageMapContractMemberStateImpl::address"
       ],
       [
         56,
@@ -4567,7 +4567,7 @@
       ],
       [
         58,
-        "test::erc_20::allowances::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<test::erc_20::allowances::ContractMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, test::erc_20::allowances::StorageMapContractMemberStateImpl, core::integer::Storeu256, test::erc_20::allowances::ContractMemberStateDrop, core::hash::LegacyHashForHash::<(core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::hash::TupleSize2Hash::<core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::pedersen::HashStateImpl, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::hash::into_felt252_based::HashImpl::<core::starknet::contract_address::ContractAddress, core::pedersen::HashState, core::starknet::contract_address::ContractAddressIntoFelt252, core::pedersen::HashStateImpl, core::pedersen::HashStateDrop>, core::starknet::contract_address::ContractAddressDrop, core::starknet::contract_address::ContractAddressDrop>>, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         59,

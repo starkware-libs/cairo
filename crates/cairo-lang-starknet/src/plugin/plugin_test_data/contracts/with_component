@@ -14,14 +14,13 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    // TODO(yuval): try to spare the need for this use.
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
         #[nested(v0)]
         test_component_storage: super::test_component::Storage,
-        normal_member: usize,
+        normal_member1: usize,
+        normal_member2: usize,
     }
 
     #[event]
@@ -49,14 +48,13 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    // TODO(yuval): try to spare the need for this use.
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
         #[nested(v0)]
         test_component_storage: super::test_component::Storage,
-        normal_member: usize,
+        normal_member1: usize,
+        normal_member2: usize,
     }
 
     #[event]
@@ -94,44 +92,20 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -173,14 +147,16 @@ contract:
 
     struct ContractState {
         test_component_storage: super::test_component::ComponentState<ContractState>,
-        normal_member: normal_member::ContractMemberState,
+        normal_member1: normal_member1::ContractMemberState,
+        normal_member2: normal_member2::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             test_component_storage: super::test_component::unsafe_new_component_state::<ContractState>(),
-            normal_member: normal_member::ContractMemberState {},
+            normal_member1: normal_member1::ContractMemberState {},
+            normal_member2: normal_member2::ContractMemberState {},
         }
     }
     #[cfg(test)]
@@ -189,47 +165,34 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use normal_member::InternalContractMemberStateTrait as normal_memberContractMemberStateTrait;
-    mod normal_member {
-        use super::dataComponentMemberStateTrait;
+    use starknet::storage::old::StorageMemberStateTrait as normal_member1ContractMemberStateTrait;
+    mod normal_member1 {
         use super::Event;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> usize;
-            fn write(ref self: ContractMemberState, value: usize);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x3266bea4d07d000107ce343778c6b1340d28097c585762467aaf5abbf16cc4e>()
-            }
-            fn read(self: @ContractMemberState) -> usize {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<usize>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: usize) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<usize>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
+        impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState, usize> {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress nopanic {
+                starknet::storage_base_address_const::<0x321b8b6c46d61f377b5487aafeb261d3f4db1eb5e3e1fa6a8fc43dc2cee1160>()
             }
         }
     }
+    use starknet::storage::old::StorageMemberStateTrait as normal_member2ContractMemberStateTrait;
+    mod normal_member2 {
+        use super::Event;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        impl StorageContractMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ContractMemberState, usize> {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress nopanic {
+                starknet::storage_base_address_const::<0x9285aae608615f0823cb202c5e4edd4e399dad89e9459bcdace1a2b91e0997>()
+            }
+        }
+    }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xa48270a507e19d65132c8ddb5decc1e6f81e37b7846a7f0530855b0ae84d1e;
+const TEST_CLASS_HASH: felt252 = 0x249c5f29e706f89a44a94a5f82ef3954a3f7e9c1c751b31b18850ec806b8ec5;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -367,8 +330,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
 
@@ -413,8 +374,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
 
@@ -462,44 +421,20 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -558,44 +493,20 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -653,8 +564,12 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1facbb4282bac370637ef1620087607274c9fbcb2cc7659123174e716faf289;
+const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -827,8 +742,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
 
@@ -875,8 +788,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
 
@@ -924,44 +835,20 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -1020,44 +907,20 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -1115,8 +978,12 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1facbb4282bac370637ef1620087607274c9fbcb2cc7659123174e716faf289;
+const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {

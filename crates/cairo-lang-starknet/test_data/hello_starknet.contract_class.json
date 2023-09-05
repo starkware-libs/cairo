@@ -744,7 +744,7 @@
       ],
       [
         68,
-        "function_call<user@test::hello_starknet::balance::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::hello_starknet::balance::ContractMemberState, core::felt252, test::hello_starknet::balance::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::hello_starknet::balance::ContractMemberStateDrop>::read>"
       ],
       [
         69,
@@ -752,7 +752,7 @@
       ],
       [
         70,
-        "function_call<user@test::hello_starknet::balance::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::hello_starknet::balance::ContractMemberState, core::felt252, test::hello_starknet::balance::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::hello_starknet::balance::ContractMemberStateDrop>::write>"
       ],
       [
         71,
@@ -938,11 +938,11 @@
       ],
       [
         6,
-        "test::hello_starknet::balance::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::hello_starknet::balance::ContractMemberState, core::felt252, test::hello_starknet::balance::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::hello_starknet::balance::ContractMemberStateDrop>::read"
       ],
       [
         7,
-        "test::hello_starknet::balance::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::hello_starknet::balance::ContractMemberState, core::felt252, test::hello_starknet::balance::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::hello_starknet::balance::ContractMemberStateDrop>::write"
       ],
       [
         8,
