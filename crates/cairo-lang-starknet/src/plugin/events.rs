@@ -417,10 +417,9 @@ pub fn generate_event_code(
 
     data.event_code = RewriteNode::interpolate_patched(
         formatdoc!(
-            "use starknet::event::EventEmitter;
-            $empty_event_code$
+            "$empty_event_code$
                 impl {state_struct_name}EventEmitter{generic_arg_str} of \
-             EventEmitter<{full_state_struct_name}, {EVENT_TYPE_NAME}> {{
+             starknet::event::EventEmitter<{full_state_struct_name}, {EVENT_TYPE_NAME}> {{
                     fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
              {full_state_struct_name}, event: S) {{
                         let event: {EVENT_TYPE_NAME} = traits::Into::into(event);
