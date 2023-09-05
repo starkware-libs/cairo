@@ -1,14 +1,19 @@
 use std::sync::Arc;
 
-use cairo_lang_defs::plugin::PluginGeneratedFile;
+use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
+use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
 use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
 use cairo_lang_filesystem::cfg::CfgSet;
-use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_parser::test_utils::create_virtual_file;
-use cairo_lang_parser::utils::{get_syntax_file_and_diagnostics, SimpleParserDatabase};
-use cairo_lang_syntax::node::TypedSyntaxNode;
+use cairo_lang_filesystem::db::{
+    init_files_group, AsFilesGroupMut, FilesDatabase, FilesGroup, FilesGroupEx,
+};
+use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_lang_parser::db::ParserDatabase;
+use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::Upcast;
 
 use crate::get_default_plugins;
 
@@ -24,11 +29,86 @@ cairo_lang_test_utils::test_file_test!(
     test_expand_plugin
 );
 
+#[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
+pub struct DatabaseForTesting {
+    storage: salsa::Storage<DatabaseForTesting>,
+}
+impl salsa::Database for DatabaseForTesting {}
+impl Default for DatabaseForTesting {
+    fn default() -> Self {
+        let mut res = Self { storage: Default::default() };
+        init_files_group(&mut res);
+        res.set_macro_plugins(get_default_plugins());
+        res
+    }
+}
+impl AsFilesGroupMut for DatabaseForTesting {
+    fn as_files_group_mut(&mut self) -> &mut (dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn DefsGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn DefsGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn FilesGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn FilesGroup + 'static) {
+        self
+    }
+}
+impl Upcast<dyn SyntaxGroup> for DatabaseForTesting {
+    fn upcast(&self) -> &(dyn SyntaxGroup + 'static) {
+        self
+    }
+}
+
+/// Returns the expanded code for `module_id` after running all plugins and extends `diagnostics`
+/// with all the plugins diagnostics.
+fn expand_module_text(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+    diagnostics: &mut Vec<String>,
+) -> String {
+    let mut output = String::new();
+    let syntax_db = db.upcast();
+    // Collect the module diagnostics.
+    for (file_id, diag) in db.module_plugin_diagnostics(module_id).unwrap().iter() {
+        let syntax_node = diag.stable_ptr.lookup(syntax_db);
+        let location = DiagnosticLocation {
+            file_id: file_id.file_id(db.upcast()).unwrap(),
+            span: syntax_node.span_without_trivia(syntax_db),
+        };
+        diagnostics.push(format_diagnostics(db.upcast(), &diag.message, location));
+    }
+    for item_id in db.module_items(module_id).unwrap().iter() {
+        if let ModuleItemId::Submodule(item) = item_id {
+            let submodule_item = item.stable_ptr(db).lookup(syntax_db);
+            if let ast::MaybeModuleBody::Some(body) = submodule_item.body(syntax_db) {
+                // Recursively expand inline submodules.
+                output.extend([
+                    submodule_item.attributes(syntax_db).node.get_text(syntax_db),
+                    submodule_item.module_kw(syntax_db).as_syntax_node().get_text(syntax_db),
+                    submodule_item.name(syntax_db).as_syntax_node().get_text(syntax_db),
+                    body.lbrace(syntax_db).as_syntax_node().get_text(syntax_db),
+                    expand_module_text(db, ModuleId::Submodule(*item), diagnostics),
+                    body.rbrace(syntax_db).as_syntax_node().get_text(syntax_db),
+                ]);
+                continue;
+            }
+        }
+        let syntax_item = item_id.untyped_stable_ptr(db);
+        // Output other items as is.
+        output.push_str(&syntax_item.lookup(syntax_db).get_text(syntax_db));
+    }
+    output
+}
+
 pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> Result<OrderedHashMap<String, String>, String> {
-    let db = &mut SimpleParserDatabase::default();
+    let db = &mut DatabaseForTesting::default();
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
@@ -37,53 +117,24 @@ pub fn test_expand_plugin(
     }
 
     let cairo_code = &inputs["cairo_code"];
-    let file_id = create_virtual_file(db, "dummy_file.cairo", cairo_code);
 
-    let (syntax_file, diagnostics) = get_syntax_file_and_diagnostics(db, file_id, cairo_code);
-    assert!(diagnostics.is_empty(), "Unexpected diagnostics:\n{}", diagnostics.format(db));
-    let plugins = get_default_plugins();
-    let mut generated_items: Vec<String> = Vec::new();
-    let mut diagnostic_items: Vec<String> = Vec::new();
-    for item in syntax_file.items(db).elements(db).into_iter() {
-        let mut remove_original_item = false;
-        let mut local_generated_items = Vec::<String>::new();
-        for plugin in &plugins {
-            let result = plugin.generate_code(db, item.clone());
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("test_src".into());
+    db.set_crate_root(crate_id, Some(root));
 
-            diagnostic_items.extend(result.diagnostics.iter().map(|diag| {
-                let syntax_node = diag.stable_ptr.lookup(db);
+    // Main module file.
+    let file_id = db.intern_file(FileLongId::OnDisk("test_src/lib.cairo".into()));
+    db.as_files_group_mut()
+        .override_file_content(file_id, Some(Arc::new(format!("{cairo_code}\n"))));
 
-                let location =
-                    DiagnosticLocation { file_id, span: syntax_node.span_without_trivia(db) };
-                format_diagnostics(db, &diag.message, location)
-            }));
-
-            if result.remove_original_item {
-                remove_original_item = true;
-            }
-
-            if let Some(PluginGeneratedFile { content, .. }) = result.code {
-                local_generated_items.push(content);
-                break;
-            }
-
-            if remove_original_item {
-                break;
-            }
-        }
-
-        if !remove_original_item {
-            generated_items.push(item.as_syntax_node().get_text(db));
-        }
-
-        generated_items.extend(local_generated_items);
-    }
-
+    let mut diagnostic_items = vec![];
+    let expanded_module =
+        expand_module_text(db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
     let joined_diagnostics = diagnostic_items.join("\n");
     has_disallowed_diagnostics(args, &joined_diagnostics)?;
 
     Ok(OrderedHashMap::from([
-        ("generated_cairo_code".into(), generated_items.join("\n")),
+        ("expanded_cairo_code".into(), expanded_module),
         ("expected_diagnostics".into(), joined_diagnostics),
     ]))
 }
