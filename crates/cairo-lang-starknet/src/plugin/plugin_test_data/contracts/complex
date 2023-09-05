@@ -939,7 +939,6 @@ component:
         unsafe_new_component_state::<TContractState>()
     }
     
-    use current_implementation::InternalComponentMemberStateTrait as current_implementationComponentMemberStateTrait;
     mod current_implementation {
         use super::ClassHash;
         use super::replace_class_syscall;
@@ -948,40 +947,17 @@ component:
         use super::Upgradable;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> ClassHash;
-            fn write(ref self: ComponentMemberState, value: ClassHash);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ClassHash> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x454ac3c855f3ea5ac58d9742da466de68252f6efa5081486a78dc60b2a3379>()
-            }
-            fn read(self: @ComponentMemberState) -> ClassHash {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<ClassHash>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: ClassHash) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<ClassHash>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
@@ -1157,6 +1133,10 @@ contract:
             }
         }
     }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1ca3cca5f50b21c2ada01141c946b7a4c6182d593e2d51039eef86c3a1156ee;
 

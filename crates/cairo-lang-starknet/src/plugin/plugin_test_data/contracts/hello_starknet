@@ -103,6 +103,10 @@ enum Event {}
             }
         }
     }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
 

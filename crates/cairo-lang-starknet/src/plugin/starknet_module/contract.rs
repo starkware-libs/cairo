@@ -199,6 +199,10 @@ impl ContractSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
+                use starknet::storage::{{
+                    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+                    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+                }};
                 $test_config$
                 $entry_points_code$
                 {EVENT_EMITTER_CODE}
