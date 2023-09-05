@@ -64,6 +64,7 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 

@@ -176,19 +176,13 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use owner::InternalComponentMemberStateTrait as ownerComponentMemberStateTrait;
+    impl owner_ComponentMemberStateImpl = owner::StorageComponentMemberStateImpl;
     mod owner {
         use super::ContractAddress;
         use super::TransferImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> starknet::ContractAddress;
-            fn write(ref self: ComponentMemberState, value: starknet::ContractAddress);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, starknet::ContractAddress> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x2016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0>()
             }
@@ -379,20 +373,15 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    use starknet::storage::StorageMemberStateTrait as balanceContractMemberStateTrait;
+    impl balance_ContractMemberStateImpl = balance::StorageContractMemberStateImpl;
     mod balance {
         use super::ContractAddress;
         use super::Event;
         use super::Impl;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> u128;
-            fn write(ref self: ContractMemberState, value: u128);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+        impl StorageContractMemberStateImpl of starknet::storage::StorageMemberStateTrait<ContractMemberState, u128> {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
@@ -419,6 +408,7 @@ contract:
             }
         }
     }
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xe0444b0e3e2ebc94534b4e9603fe33e5720f7f9ded7694df89ed3113eab701;
 

@@ -197,7 +197,10 @@ impl ContractSpecificGenerationData {
         diagnostics: &mut Vec<PluginDiagnostic>,
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
+            // TODO(yuval): these uses may be spared if we see in the context all the traits from
+            // all the impls, which is not the case currently.
             &formatdoc! {"
+                use starknet::storage::{{StorageMapMemberStateTrait, StorageMemberStateTrait}};
                 $test_config$
                 $entry_points_code$
                 {EVENT_EMITTER_CODE}

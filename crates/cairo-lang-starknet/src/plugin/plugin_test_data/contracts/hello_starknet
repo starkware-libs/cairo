@@ -66,17 +66,12 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
-    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    use starknet::storage::StorageMemberStateTrait as balanceContractMemberStateTrait;
+    impl balance_ContractMemberStateImpl = balance::StorageContractMemberStateImpl;
     mod balance {
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> felt252;
-            fn write(ref self: ContractMemberState, value: felt252);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+        impl StorageContractMemberStateImpl of starknet::storage::StorageMemberStateTrait<ContractMemberState, felt252> {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
             }
@@ -103,6 +98,7 @@ enum Event {}
             }
         }
     }
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
 

@@ -156,7 +156,7 @@ component:
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         use super::ContractAddress;
         use super::MyTrait;
@@ -165,13 +165,7 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -198,7 +192,7 @@ component:
             }
         }
     }
-    use map::InternalComponentMemberStateTrait as mapComponentMemberStateTrait;
+    impl map_ComponentMemberStateImpl = map::StorageMapComponentMemberStateImpl;
     mod map {
         use super::ContractAddress;
         use super::MyTrait;
@@ -207,13 +201,8 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState, key: u32) -> u32;
-            fn write(ref self: ComponentMemberState, key: u32, value: u32);
-        }
 
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberStateTrait<ComponentMemberState, u32, u32> {
             fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
@@ -241,7 +230,7 @@ component:
             }
         }
     }
-    use my_type_var::InternalComponentMemberStateTrait as my_type_varComponentMemberStateTrait;
+    impl my_type_var_ComponentMemberStateImpl = my_type_var::StorageComponentMemberStateImpl;
     mod my_type_var {
         use super::ContractAddress;
         use super::MyTrait;
@@ -250,13 +239,7 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> super::super::MyType;
-            fn write(ref self: ComponentMemberState, value: super::super::MyType);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, super::super::MyType> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
             }

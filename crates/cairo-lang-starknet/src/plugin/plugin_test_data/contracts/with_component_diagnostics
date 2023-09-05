@@ -78,17 +78,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -169,6 +163,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2943e6b272892c78655f823e0abb3da425a1ac0c3f9bdd70869a3f37bc54797;
 
@@ -352,17 +347,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -443,6 +432,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xe61d99740f46b06b2ccd91d014bc9f9acc438fec59d79dd30fd0d852e5210;
 
@@ -614,17 +604,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -705,6 +689,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x14aaf6de6aff44d64b4c3609768860615e979fdd851d125bbdfc10597a50a1d;
 
@@ -885,17 +870,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -976,6 +955,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2cffa3f882c4d652a366356180352e5af2bb4ea9b0e50532f2a0f11f077643a;
 
@@ -1163,17 +1143,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -1256,6 +1230,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1f94e0473876f4a847f49fbb8b6322c40bbca56818da7f3936ec6653a7bdab6;
 
@@ -1381,7 +1356,6 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: non_existing, event: ABC);
     #[storage]
     struct Storage {}
@@ -1400,7 +1374,7 @@ Consider adding to `Storage`:
 #[nested(v0)]
 non_existing: path::to::component::Storage,
 ````
- --> lib.cairo:12:54
+ --> lib.cairo:11:54
     component!(path: super::test_component, storage: non_existing, event: ABC);
                                                      ^**********^
 
@@ -1417,7 +1391,6 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: non_existing, event: ABC);
     #[storage]
     struct Storage {}
@@ -1452,17 +1425,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -1543,8 +1510,9 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x3397a2fd1f59e41f55ee20b9185fc22f43f1a062bd4d1eac185a1a7ff8595d5;
+const TEST_CLASS_HASH: felt252 = 0x1092f63083af07b77ee426fd76d9695c3747a2e42571a914cee1dd17960254f;
 
 
     mod __external {
@@ -1674,15 +1642,10 @@ error: Plugin diagnostic: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:14:56
-        test_component_storage: super::test_component::Storage,
-                                                       ^*****^
-
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:38:79
-                    starknet::Store::<super::super::test_component::Storage>::read(
-                                                                              ^**^
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo[contract]:35:30
+                        self.address(),
+                             ^*****^
 
 error: Plugin diagnostic: Type not found.
  --> lib.cairo:14:56
@@ -1694,10 +1657,10 @@ error: Plugin diagnostic: Type not found.
         test_component_storage: super::test_component::Storage,
                                                        ^*****^
 
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:48:79
-                    starknet::Store::<super::super::test_component::Storage>::write(
-                                                                              ^***^
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo[contract]:45:30
+                        self.address(),
+                             ^*****^
 
 //! > generated_cairo_code
 lib.cairo:
@@ -1748,17 +1711,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -1841,18 +1798,13 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use test_component_storage::InternalContractMemberStateTrait as test_component_storageContractMemberStateTrait;
+    use starknet::storage::StorageMemberStateTrait as test_component_storageContractMemberStateTrait;
+    impl test_component_storage_ContractMemberStateImpl = test_component_storage::StorageContractMemberStateImpl;
     mod test_component_storage {
         use super::Event;
         #[derive(Copy, Drop)]
         struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> super::super::test_component::Storage;
-            fn write(ref self: ContractMemberState, value: super::super::test_component::Storage);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+        impl StorageContractMemberStateImpl of starknet::storage::StorageMemberStateTrait<ContractMemberState, super::super::test_component::Storage> {
             fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x19021f3e2d5378318bca36a3cf603805c3cb1938bd7e1be1ce4ab2c7158890>()
             }
@@ -1879,6 +1831,7 @@ contract:
             }
         }
     }
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x8618264598f52601eed9355f5b7c0fc7c8912d966e620eb0a2914ed8cb5c10;
 
@@ -1971,7 +1924,6 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
     #[storage]
     struct Storage {
@@ -1992,7 +1944,7 @@ Consider adding to the `Event` enum:
 NonExisting: path::to::component::Event,
 ```
 Note: currently with components, only an enum Event directly in the contract is supported.
- --> lib.cairo:12:85
+ --> lib.cairo:11:85
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
                                                                                     ^*********^
 
@@ -2009,7 +1961,6 @@ mod test_component {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
     #[storage]
     struct Storage {
@@ -2046,17 +1997,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -2142,8 +2087,9 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x8a646f18089accd4e967c9acb96f4117fddb0c9f2b15b78a5d2b3bf64546f7;
+const TEST_CLASS_HASH: felt252 = 0x1dc154c949240eed8f9415230990ac2d33c0b26a829589ba95f9cd597b9bc93;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2242,7 +2188,6 @@ enum Event {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
@@ -2266,7 +2211,7 @@ Consider adding to the `Event` enum:
 ABC: path::to::component::Event,
 ```
 Note: currently with components, only an enum Event directly in the contract is supported.
- --> lib.cairo:17:85
+ --> lib.cairo:16:85
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
                                                                                     ^*^
 
@@ -2288,7 +2233,6 @@ enum Event {
 
 #[starknet::contract]
 mod test_contract {
-    use super::test_component::dataComponentMemberStateTrait;
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
@@ -2370,17 +2314,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -2463,8 +2401,9 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x18c25052a3b116d9e363391e60603e30efb89254fb7dab2d402280ef43e145d;
+const TEST_CLASS_HASH: felt252 = 0x3b49abc37cfbb34d8eb6415c4d79a7b4dcf658273c791a0e6d1ad6df58a60c8;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2540,8 +2479,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     // component2 is invalid because `Comp2Event` is not a variant of the contract's `Event` enum.
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
@@ -2574,7 +2511,7 @@ Consider adding to the `Event` enum:
 Comp2Event: path::to::component::Event,
 ```
 Note: currently with components, only an enum Event directly in the contract is supported.
- --> lib.cairo:22:77
+ --> lib.cairo:20:77
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
                                                                             ^********^
 
@@ -2598,8 +2535,6 @@ mod component2 {
 
 #[starknet::contract]
 mod test_contract {
-    use super::component1::dataComponentMemberStateTrait as data1ComponentMemberStateTrait;
-    use super::component2::dataComponentMemberStateTrait as data2ComponentMemberStateTrait;
     component!(path: super::component1, storage: component1_storage, event: Comp1Event);
     // component2 is invalid because `Comp2Event` is not a variant of the contract's `Event` enum.
     component!(path: super::component2, storage: component2_storage, event: Comp2Event);
@@ -2648,17 +2583,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -2744,17 +2673,11 @@ enum Event {}
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
+    impl data_ComponentMemberStateImpl = data::StorageComponentMemberStateImpl;
     mod data {
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberStateTrait<ComponentMemberState, u32> {
             fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
             }
@@ -2839,8 +2762,9 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1f76841988d657ed9978a29f5522be3ca97826c3c8114472572853e775595d4;
+const TEST_CLASS_HASH: felt252 = 0x2de0db684947018f4a2ab085e0b63764becb76dc394968a66352642aa4bf359;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {

@@ -168,6 +168,7 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{StorageMapMemberStateTrait, StorageMemberStateTrait};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x32ff02b6abf104297a08971d16f6970b6530be8e49a83bde923ea117b47a37e;
 
