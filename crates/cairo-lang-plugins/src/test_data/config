@@ -142,6 +142,21 @@ fn f7() -> felt252 { 0 }
 #[cfg(b)]
 fn f9() -> felt252 { 0 }
 
+mod remove_module_item {
+    fn f0() -> felt252 { 0 }
+    #[cfg(a)]
+    fn f1() -> felt252 { 0 }
+    #[cfg(k: 'a')]
+    fn f3() -> felt252 { 0 }
+    #[cfg(a, b)]
+    fn f5() -> felt252 { 0 }
+    #[cfg(k: 'a', k: 'b')]
+    fn f7() -> felt252 { 0 }
+    #[cfg(a)]
+    #[cfg(b)]
+    fn f9() -> felt252 { 0 }
+}
+
 trait RemoveTraitItem {
     fn f0();
     #[cfg(a)]
@@ -170,21 +185,6 @@ impl RemoveTraitItem of SomeTrait {
     #[cfg(a)]
     #[cfg(b)]
     fn f9() {}
-}
-
-mod remove_module_item {
-    fn f0() -> felt252 { 0 }
-    #[cfg(a)]
-    fn f1() -> felt252 { 0 }
-    #[cfg(k: 'a')]
-    fn f3() -> felt252 { 0 }
-    #[cfg(a, b)]
-    fn f5() -> felt252 { 0 }
-    #[cfg(k: 'a', k: 'b')]
-    fn f7() -> felt252 { 0 }
-    #[cfg(a)]
-    #[cfg(b)]
-    fn f9() -> felt252 { 0 }
 }
 
 //! > expected_diagnostics
