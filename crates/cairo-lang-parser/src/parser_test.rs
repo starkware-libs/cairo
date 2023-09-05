@@ -130,8 +130,8 @@ cairo_lang_test_utils::test_file_test!(
     test_colored_parsed_code
 );
 cairo_lang_test_utils::test_file_test!(
-    diagnostic,
-    "src/parser_test_data",
+    diagnostics,
+    "src/parser_test_data/diagnostics",
     {
         expr_diagnostics: "expr_diagnostics",
         enum_diagnostics: "enum_diagnostics",
@@ -152,7 +152,7 @@ cairo_lang_test_utils::test_file_test!(
 );
 cairo_lang_test_utils::test_file_test!(
     partial_parser_tree,
-    "src/parser_test_data",
+    "src/parser_test_data/partial_trees",
     {
         constant: "constant",
         enum_: "enum",
@@ -182,10 +182,10 @@ cairo_lang_test_utils::test_file_test!(
 );
 cairo_lang_test_utils::test_file_test!(
     partial_parser_tree_with_trivia,
-    "src/parser_test_data",
+    "src/parser_test_data/partial_trees_with_trivia",
     {
-        path: "path_with_trivia",
-        path_compat: "path_with_trivia_compat",
+        path: "path",
+        path_compat: "path_compat",
     },
     test_partial_parser_tree_with_trivia
 );

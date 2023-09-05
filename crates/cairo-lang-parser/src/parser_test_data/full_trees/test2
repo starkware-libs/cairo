@@ -4,7 +4,7 @@
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test2.cairo
+>>> file: src/parser_test_data/cairo_test_files/test2.cairo
 
 //! > print_trivia
 false
@@ -20,13 +20,13 @@ error: Missing tokens. Expected an expression.
 
 error: Missing tokens. Expected an expression.
  --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
-               ^
+        if bla.
+              ^
 
 error: Missing token TerminalLBrace.
  --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
-               ^
+        if bla.
+              ^
 
 error: Missing tokens. Expected an expression.
  --> test_data/cairo_files/test2.cairo:21:14
@@ -371,7 +371,7 @@ skipped tokens
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test2.cairo
+>>> file: src/parser_test_data/cairo_test_files/test2.cairo
 
 //! > print_trivia
 true
@@ -387,13 +387,13 @@ error: Missing tokens. Expected an expression.
 
 error: Missing tokens. Expected an expression.
  --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
-               ^
+        if bla.
+              ^
 
 error: Missing token TerminalLBrace.
  --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
-               ^
+        if bla.
+              ^
 
 error: Missing tokens. Expected an expression.
  --> test_data/cairo_files/test2.cairo:21:14
@@ -922,8 +922,7 @@ skipped tokens
     │   │       │           │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │           │       │   │   │   ├── token (kind: TokenDot): '.'
     │   │       │           │       │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │           │       │   │   │       ├── child #0 (kind: TokenWhitespace).
-    │   │       │           │       │   │   │       └── child #1 (kind: TokenNewline).
+    │   │       │           │       │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │           │       │   │   └── rhs: Missing []
     │   │       │           │       │   ├── if_block (kind: ExprBlock)
     │   │       │           │       │   │   ├── lbrace (kind: TerminalLBrace)
