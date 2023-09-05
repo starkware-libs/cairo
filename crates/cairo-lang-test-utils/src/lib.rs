@@ -1,6 +1,7 @@
 pub mod parse_test_file;
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::{Mutex, MutexGuard};
 
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -42,16 +43,20 @@ pub fn has_disallowed_diagnostics(
     diagnostics: &str,
 ) -> Result<(), String> {
     if let Some(allow_diagnostics) = args.get("allow_diagnostics") {
-        let trimmed_allow_diagnostics = allow_diagnostics.trim();
-        if (trimmed_allow_diagnostics == "false" || trimmed_allow_diagnostics == "False")
-            && !diagnostics.is_empty()
-        {
+        if !bool_input(allow_diagnostics) && !diagnostics.is_empty() {
             return Err(format!(
-                "allow_diagnostics == false, but diagnostics were generated:\n{}",
+                "allow_diagnostics is false, but diagnostics were generated:\n{}",
                 diagnostics
             ));
         }
     }
 
     Ok(())
+}
+
+/// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
+/// Ignores case and whitespaces in the edges.
+pub fn bool_input(input: &str) -> bool {
+    let input = input.trim().to_lowercase();
+    bool::from_str(&input).unwrap_or_else(|_| panic!("Expected 'true' or 'false', actual: {input}"))
 }
