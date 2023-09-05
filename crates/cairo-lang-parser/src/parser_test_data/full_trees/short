@@ -1,3 +1,91 @@
+//! > Test parsing of a short code.
+
+//! > test_runner_name
+test_full_parser_tree(allow_diagnostics: true)
+
+//! > cairo_code
+>>> file: test_data/cairo_files/short.cairo
+
+//! > print_trivia
+false
+
+//! > print_colors
+false
+
+//! > expected_diagnostics
+
+//! > expected_tree
+└── root (kind: SyntaxFile)
+    ├── items (kind: ItemList)
+    │   ├── child #0 (kind: ItemUse)
+    │   │   ├── attributes (kind: AttributeList) []
+    │   │   ├── use_kw (kind: TokenUse): 'use'
+    │   │   ├── use_path (kind: UsePathSingle)
+    │   │   │   ├── ident (kind: PathSegmentSimple)
+    │   │   │   │   └── ident (kind: TokenIdentifier): 'std'
+    │   │   │   ├── colon_colon (kind: TokenColonColon): '::'
+    │   │   │   └── use_path (kind: UsePathLeaf)
+    │   │   │       ├── ident (kind: PathSegmentSimple)
+    │   │   │       │   └── ident (kind: TokenIdentifier): 'format'
+    │   │   │       └── alias_clause (kind: OptionAliasClauseEmpty) []
+    │   │   └── semicolon (kind: TokenSemicolon): ';'
+    │   └── child #1 (kind: FunctionWithBody)
+    │       ├── attributes (kind: AttributeList) []
+    │       ├── declaration (kind: FunctionDeclaration)
+    │       │   ├── function_kw (kind: TokenFunction): 'fn'
+    │       │   ├── name (kind: TokenIdentifier): 'foo'
+    │       │   ├── generic_params (kind: OptionWrappedGenericParamListEmpty) []
+    │       │   └── signature (kind: FunctionSignature)
+    │       │       ├── lparen (kind: TokenLParen): '('
+    │       │       ├── parameters (kind: ParamList)
+    │       │       │   └── item #0 (kind: Param)
+    │       │       │       ├── modifiers (kind: ModifierList) []
+    │       │       │       ├── name (kind: TokenIdentifier): 'a'
+    │       │       │       └── type_clause (kind: TypeClause)
+    │       │       │           ├── colon (kind: TokenColon): ':'
+    │       │       │           └── ty (kind: ExprPath)
+    │       │       │               └── item #0 (kind: PathSegmentSimple)
+    │       │       │                   └── ident (kind: TokenIdentifier): 'int'
+    │       │       ├── rparen (kind: TokenRParen): ')'
+    │       │       ├── ret_ty (kind: ReturnTypeClause)
+    │       │       │   ├── arrow (kind: TokenArrow): '->'
+    │       │       │   └── ty (kind: ExprPath)
+    │       │       │       └── item #0 (kind: PathSegmentSimple)
+    │       │       │           └── ident (kind: TokenIdentifier): 'felt252'
+    │       │       ├── implicits_clause (kind: OptionImplicitsClauseEmpty) []
+    │       │       └── optional_no_panic (kind: OptionTerminalNoPanicEmpty) []
+    │       └── body (kind: ExprBlock)
+    │           ├── lbrace (kind: TokenLBrace): '{'
+    │           ├── statements (kind: StatementList)
+    │           │   └── child #0 (kind: StatementReturn)
+    │           │       ├── return_kw (kind: TokenReturn): 'return'
+    │           │       ├── expr_clause (kind: ExprClause)
+    │           │       │   └── expr (kind: ExprPath)
+    │           │       │       └── item #0 (kind: PathSegmentSimple)
+    │           │       │           └── ident (kind: TokenIdentifier): 'a'
+    │           │       └── semicolon (kind: TokenSemicolon): ';'
+    │           └── rbrace (kind: TokenRBrace): '}'
+    └── eof (kind: TokenEndOfFile).
+
+//! > ==========================================================================
+
+//! > Test parsing of a short code, colored.
+
+//! > test_runner_name
+test_full_parser_tree(allow_diagnostics: true)
+
+//! > cairo_code
+>>> file: test_data/cairo_files/short.cairo
+
+//! > print_trivia
+false
+
+//! > print_colors
+true
+
+//! > expected_diagnostics
+
+//! > expected_tree
 └── [36mroot[0m (kind: SyntaxFile)
     ├── [36mitems[0m (kind: ItemList)
     │   ├── [36mchild #0[0m (kind: ItemUse)
