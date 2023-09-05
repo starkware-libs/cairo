@@ -220,6 +220,11 @@ error: Cycle detected while resolving 'use' items.
 use a::B;
        ^
 
+error: Cycle detected while resolving 'use' items.
+ --> lib.cairo:2:14
+  use super::B;
+             ^
+
 //! > ==========================================================================
 
 //! > Test bad use
