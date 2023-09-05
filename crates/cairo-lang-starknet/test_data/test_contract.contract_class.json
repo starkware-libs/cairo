@@ -1554,7 +1554,7 @@
       ],
       [
         96,
-        "function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::test_contract::my_storage_var::ContractMemberState, core::felt252, test::test_contract::my_storage_var::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::test_contract::my_storage_var::ContractMemberStateDrop>::read>"
       ],
       [
         97,
@@ -1578,7 +1578,7 @@
       ],
       [
         102,
-        "function_call<user@test::test_contract::my_storage_var::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::test_contract::my_storage_var::ContractMemberState, core::felt252, test::test_contract::my_storage_var::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::test_contract::my_storage_var::ContractMemberStateDrop>::write>"
       ],
       [
         103,
@@ -2096,11 +2096,11 @@
       ],
       [
         20,
-        "test::test_contract::my_storage_var::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::test_contract::my_storage_var::ContractMemberState, core::felt252, test::test_contract::my_storage_var::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::test_contract::my_storage_var::ContractMemberStateDrop>::read"
       ],
       [
         21,
-        "test::test_contract::my_storage_var::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::test_contract::my_storage_var::ContractMemberState, core::felt252, test::test_contract::my_storage_var::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::test_contract::my_storage_var::ContractMemberStateDrop>::write"
       ],
       [
         22,

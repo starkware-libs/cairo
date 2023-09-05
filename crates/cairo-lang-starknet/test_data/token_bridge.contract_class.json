@@ -2257,7 +2257,7 @@
       ],
       [
         80,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::governor::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::governor::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::governor::ContractMemberStateDrop>::read>"
       ],
       [
         81,
@@ -2293,7 +2293,7 @@
       ],
       [
         89,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l1_bridge::ContractMemberState, core::felt252, test::token_bridge::l1_bridge::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::token_bridge::l1_bridge::ContractMemberStateDrop>::read>"
       ],
       [
         90,
@@ -2373,7 +2373,7 @@
       ],
       [
         109,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l1_bridge::ContractMemberState, core::felt252, test::token_bridge::l1_bridge::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::token_bridge::l1_bridge::ContractMemberStateDrop>::write>"
       ],
       [
         110,
@@ -2449,7 +2449,7 @@
       ],
       [
         128,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l2_token::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::l2_token::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::l2_token::ContractMemberStateDrop>::read>"
       ],
       [
         129,
@@ -2461,7 +2461,7 @@
       ],
       [
         131,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l2_token::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::l2_token::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::l2_token::ContractMemberStateDrop>::write>"
       ],
       [
         132,
@@ -2657,7 +2657,7 @@
       ],
       [
         180,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::governor::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::governor::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::governor::ContractMemberStateDrop>::write>"
       ],
       [
         181,
@@ -3319,11 +3319,11 @@
       ],
       [
         19,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::governor::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::governor::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::governor::ContractMemberStateDrop>::read"
       ],
       [
         20,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l1_bridge::ContractMemberState, core::felt252, test::token_bridge::l1_bridge::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::token_bridge::l1_bridge::ContractMemberStateDrop>::read"
       ],
       [
         21,
@@ -3331,7 +3331,7 @@
       ],
       [
         22,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l1_bridge::ContractMemberState, core::felt252, test::token_bridge::l1_bridge::StorageContractMemberStateImpl, core::starknet::storage_access::StoreFelt252, test::token_bridge::l1_bridge::ContractMemberStateDrop>::write"
       ],
       [
         23,
@@ -3339,11 +3339,11 @@
       ],
       [
         24,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l2_token::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::l2_token::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::l2_token::ContractMemberStateDrop>::read"
       ],
       [
         25,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::l2_token::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::l2_token::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::l2_token::ContractMemberStateDrop>::write"
       ],
       [
         26,
@@ -3379,7 +3379,7 @@
       ],
       [
         34,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<test::token_bridge::governor::ContractMemberState, core::starknet::contract_address::ContractAddress, test::token_bridge::governor::StorageContractMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::token_bridge::governor::ContractMemberStateDrop>::write"
       ],
       [
         35,
