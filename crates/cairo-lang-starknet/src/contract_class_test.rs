@@ -66,7 +66,7 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 }
 
 /// Tests that the sierra compiled from <test_case>.cairo is the same as in <test_case>.sierra, and
-/// that the resulted json is the same as in <test_case>.json.
+/// that the resulted json is the same as in <test_case>.contract_class.json.
 #[test_case("account")]
 #[test_case("test_contract")]
 #[test_case("new_syntax_test_contract")]
@@ -81,7 +81,7 @@ fn test_compile_path(example_file_name: &str) {
     validate_compatible_sierra_version(&contract, list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
-        &get_example_file_path(format!("{example_file_name}.sierra.json").as_str()),
+        &get_example_file_path(format!("{example_file_name}.contract_class.json").as_str()),
         serde_json::to_string_pretty(&contract).unwrap() + "\n",
     );
 
