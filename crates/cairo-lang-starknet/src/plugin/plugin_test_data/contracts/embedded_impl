@@ -53,9 +53,8 @@ mod empty_contract {
 
 generate_trait:
 
-trait OutsideTrait<TContractState>  {
+trait OutsideTrait<TContractState> {
     fn ret_3(self: @TContractState) -> felt252;
-
     fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252;
 }
 
@@ -336,7 +335,7 @@ generate_trait:
 trait OutsideTraitWithDestruct<
     TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,
->  {
+> {
     fn ret_3(self: @TContractState) -> felt252;
 }
 
@@ -385,7 +384,7 @@ generate_trait:
 trait OutsideTraitWithPanicDestruct<
     TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
->  {
+> {
     fn ret_5(self: @TContractState) -> felt252;
 }
 
