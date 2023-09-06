@@ -15,13 +15,12 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use self::component::generate_component_specific_code;
 use self::contract::generate_contract_specific_code;
-use super::events::get_starknet_event_variants;
+use super::events::{generate_empty_event_code, get_starknet_event_variants};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
     COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME,
     STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
-use crate::plugin::events::generate_event_code;
 use crate::plugin::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 
 pub mod component;
@@ -192,7 +191,7 @@ pub(super) fn handle_module_by_storage(
         maybe_add_extra_use(db, item, &mut extra_uses);
     }
 
-    generate_event_code(&mut common_data, module_kind, has_event);
+    generate_empty_event_code(&mut common_data, has_event);
 
     common_data.extra_uses_node = RewriteNode::new_modified(
         extra_uses

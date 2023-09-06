@@ -17,6 +17,7 @@ use crate::plugin::consts::{
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
+use crate::plugin::events::event_emitter_code;
 use crate::plugin::storage::handle_storage_struct;
 use crate::plugin::utils::has_v0_attribute;
 
@@ -176,10 +177,12 @@ impl ContractSpecificGenerationData {
             indoc! {"
                 $test_config$
                 $entry_points_code$
+                $event_emitter$
                 $components_code$"},
             &[
                 ("test_config".to_string(), self.test_config),
                 ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
+                ("event_emitter".to_string(), RewriteNode::Text(event_emitter_code())),
                 (
                     "components_code".to_string(),
                     self.components_data.into_rewrite_node(db, diagnostics),

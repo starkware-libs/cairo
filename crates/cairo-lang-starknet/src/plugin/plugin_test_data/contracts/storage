@@ -129,20 +129,6 @@ contract:
 
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
-       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-           let event: Event = traits::Into::into(event);
-           let mut keys = Default::<array::Array>::default();
-           let mut data = Default::<array::Array>::default();
-           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-           starknet::SyscallResultTraitImpl::unwrap_syscall(
-               starknet::syscalls::emit_event_syscall(
-                   array::ArrayTrait::span(@keys),
-                   array::ArrayTrait::span(@data),
-               )
-           )
-       }
-   }
 
     struct ContractState {
         var_felt252: var_felt252::ContractMemberState,
@@ -736,6 +722,25 @@ const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21
     mod __constructor {
     }
 
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState,
+        Event,
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
 
 
 impls:

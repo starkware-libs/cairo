@@ -153,20 +153,6 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
 contract:
 
 
-   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
-       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-           let event: Event = traits::Into::into(event);
-           let mut keys = Default::<array::Array>::default();
-           let mut data = Default::<array::Array>::default();
-           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-           starknet::SyscallResultTraitImpl::unwrap_syscall(
-               starknet::syscalls::emit_event_syscall(
-                   array::ArrayTrait::span(@keys),
-                   array::ArrayTrait::span(@data),
-               )
-           )
-       }
-   }
 
     struct ContractState {
     }
@@ -193,6 +179,26 @@ const TEST_CLASS_HASH: felt252 = 0x32ff02b6abf104297a08971d16f6970b6530be8e49a83
     }
 
     mod __constructor {
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState,
+        Event,
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
     }
 
 //! > expected_diagnostics
