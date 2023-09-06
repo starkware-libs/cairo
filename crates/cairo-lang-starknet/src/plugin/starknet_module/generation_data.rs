@@ -21,7 +21,7 @@ impl ContractGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$common$\n$specific$",
-            [
+            &[
                 ("common".to_string(), self.common.into_rewrite_node(db, diagnostics)),
                 ("specific".to_string(), self.specific.into_rewrite_node(db, diagnostics)),
             ]
@@ -46,7 +46,7 @@ impl ComponentGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$common$\n\n$specific$",
-            [
+            &[
                 ("common".to_string(), self.common.into_rewrite_node(db, diagnostics)),
                 ("specific".to_string(), self.specific.into_rewrite_node(db, diagnostics)),
             ]
@@ -75,7 +75,7 @@ impl StarknetModuleCommonGenerationData {
             "$event_code$
 
 $state_struct_code$",
-            [
+            &[
                 ("event_code".to_string(), self.event_code),
                 ("state_struct_code".to_string(), self.state_struct_code),
             ]
