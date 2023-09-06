@@ -109,7 +109,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                             "        serde::Serde::<{type_name}>::serialize(@$arg_name$, ref \
                              {CALLDATA_PARAM_NAME});\n"
                         ),
-                        [(
+                        &[(
                             "arg_name".to_string(),
                             RewriteNode::new_trimmed(param.name(db).as_syntax_node()),
                         )]
@@ -139,13 +139,16 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
+                    &[("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
                         .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
                     "$func_decl$;",
-                    [("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", false))]
-                        .into(),
+                    &[(
+                        "func_decl".to_string(),
+                        dispatcher_signature(db, &declaration, "T", false),
+                    )]
+                    .into(),
                 ));
                 let entry_point_selector =
                     RewriteNode::Text(format!("selector!(\"{}\")", declaration.name(db).text(db)));
@@ -242,7 +245,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             }}
             ",
         ),
-        [
+        &[
             ("dispatcher_signatures".to_string(), RewriteNode::new_modified(dispatcher_signatures)),
             (
                 "contract_caller_method_impls".to_string(),
@@ -310,7 +313,7 @@ fn declaration_method_impl(
             "let mut ret_data = ret_data?;
         Result::Ok(\n        $deserialization_code$\n        )"
         },
-        [("deserialization_code".to_string(), deserialization_code)].into(),
+        &[("deserialization_code".to_string(), deserialization_code)].into(),
     );
     RewriteNode::interpolate_patched(
         &formatdoc!(
@@ -326,7 +329,7 @@ fn declaration_method_impl(
                 }}
         "
         ),
-        [
+        &[
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
             ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
@@ -376,7 +379,7 @@ fn dispatcher_signature(
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
         let new_ret_type = RewriteNode::interpolate_patched(
             "starknet::SyscallResult<$ret_type$>",
-            [("ret_type".to_string(), previous_ret_type)].into(),
+            &[("ret_type".to_string(), previous_ret_type)].into(),
         );
         return_type.splice(1..2, [new_ret_type]);
     };

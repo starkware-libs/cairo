@@ -88,7 +88,7 @@ impl EntryPointsGenerationData {
                     $generated_external_module$
                     $generated_l1_handler_module$
                     $generated_constructor_module$"},
-            [
+            &[
                 (
                     "generated_wrapper_functions".to_string(),
                     RewriteNode::new_modified(self.generated_wrapper_functions),
@@ -104,17 +104,15 @@ impl EntryPointsGenerationData {
 
 /// Generates a submodule with the given name, uses and functions.
 fn generate_submodule(module_name: &str, generated_functions_node: RewriteNode) -> RewriteNode {
-    let generated_external_module = RewriteNode::interpolate_patched(
-        formatdoc!(
+    RewriteNode::interpolate_patched(
+        &formatdoc!(
             "
             mod {module_name} {{$generated_functions_node$
                 }}
         "
-        )
-        .as_str(),
-        [("generated_functions_node".to_string(), generated_functions_node)].into(),
-    );
-    generated_external_module
+        ),
+        &[("generated_functions_node".to_string(), generated_functions_node)].into(),
+    )
 }
 
 /// Parameters for generating an entry point, used when calling `handle_entry_point`.
@@ -173,8 +171,8 @@ pub fn handle_entry_point(
     }
     let function_name = RewriteNode::new_trimmed(name_node.as_syntax_node());
     let wrapper_function_name = RewriteNode::interpolate_patched(
-        format!("{WRAPPER_PREFIX}$function_name$").as_str(),
-        [("function_name".into(), function_name.clone())].into(),
+        &format!("{WRAPPER_PREFIX}$function_name$"),
+        &[("function_name".into(), function_name.clone())].into(),
     );
     match generate_entry_point_wrapper(
         db,
@@ -197,7 +195,7 @@ pub fn handle_entry_point(
             };
             generated.push(RewriteNode::interpolate_patched(
                 "\n        use super::$wrapper_function_name$ as $function_name$;",
-                [
+                &[
                     ("wrapper_function_name".into(), wrapper_function_name),
                     ("function_name".into(), function_name),
                 ]
@@ -320,7 +318,7 @@ fn generate_entry_point_wrapper(
 
     let output_handling = RewriteNode::interpolate_patched(
         &output_handling_string,
-        [
+        &[
             ("wrapped_function_path".to_string(), wrapped_function_path),
             ("ref_appends".to_string(), RewriteNode::new_modified(ref_appends)),
         ]
@@ -334,7 +332,7 @@ fn generate_entry_point_wrapper(
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
 
     Ok(RewriteNode::interpolate_patched(
-        formatdoc! {"
+        &formatdoc! {"
             $implicit_precedence$
             fn $wrapper_function_name$$generic_params$(mut data: Span::<felt252>) -> Span::<felt252> {{
                 internal::require_implicit::<System>();
@@ -348,8 +346,8 @@ fn generate_entry_point_wrapper(
                 let mut contract_state = {unsafe_new_contract_state_prefix}unsafe_new_contract_state();
                 $output_handling$
             }}
-        "}.as_str(),
-        [
+        "},
+        &[
             ("wrapper_function_name".to_string(), wrapper_function_name),
             ("generic_params".to_string(), generic_params),
             ("output_handling".to_string(), output_handling),

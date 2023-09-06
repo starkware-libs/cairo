@@ -30,7 +30,7 @@ impl ComponentSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             "$has_component_trait$\n\n$generated_impls$",
-            [
+            &[
                 ("has_component_trait".to_string(), self.has_component_trait),
                 ("generated_impls".to_string(), RewriteNode::new_modified(self.generated_impls)),
             ]
@@ -231,7 +231,7 @@ fn handle_component_impl(
     let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
     let generated_trait_name = RewriteNode::interpolate_patched(
         "$impl_name$Trait",
-        [("impl_name".to_string(), impl_name)].into(),
+        &[("impl_name".to_string(), impl_name)].into(),
     );
 
     let mut trait_functions = vec![];
@@ -249,7 +249,7 @@ fn handle_component_impl(
     }
 
     let generated_impl_node = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "
         trait $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$trait_functions$
         }}
@@ -260,9 +260,8 @@ fn handle_component_impl(
              Drop<{GENERIC_CONTRACT_STATE_NAME}>
         > of $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
         }}"
-        )
-        .as_str(),
-        [
+        ),
+        &[
             ("generated_trait_name".to_string(), generated_trait_name),
             ("trait_functions".to_string(), RewriteNode::new_modified(trait_functions)),
             (
@@ -346,14 +345,13 @@ fn handle_component_embeddable_as_impl_item(
         ast::OptionReturnTypeClause::Empty(_) => RewriteNode::empty(),
         ast::OptionReturnTypeClause::ReturnTypeClause(x) => RewriteNode::interpolate_patched(
             " $ret_ty$",
-            [("ret_ty".to_string(), RewriteNode::new_trimmed(x.as_syntax_node()))].into(),
+            &[("ret_ty".to_string(), RewriteNode::new_trimmed(x.as_syntax_node()))].into(),
         ),
     };
 
     let generated_function_sig = RewriteNode::interpolate_patched(
-        format!("$attributes$\n    fn $function_name$({self_param}$rest_params_node$)$ret_ty$")
-            .as_str(),
-        [
+        &format!("$attributes$\n    fn $function_name$({self_param}$rest_params_node$)$ret_ty$"),
+        &[
             ("attributes".to_string(), RewriteNode::new_trimmed(attributes.as_syntax_node())),
             ("function_name".to_string(), function_name.clone()),
             ("rest_params_node".to_string(), rest_params_node),
@@ -364,18 +362,17 @@ fn handle_component_embeddable_as_impl_item(
 
     let trait_function = RewriteNode::interpolate_patched(
         "$generated_function_sig$;",
-        [("generated_function_sig".to_string(), generated_function_sig.clone())].into(),
+        &[("generated_function_sig".to_string(), generated_function_sig.clone())].into(),
     );
 
     let impl_function = RewriteNode::interpolate_patched(
-        format!(
+        &format!(
             "$generated_function_sig$ {{
         {get_component_call}
         component.$function_name$($args_node$)
     }}"
-        )
-        .as_str(),
-        [
+        ),
+        &[
             ("generated_function_sig".to_string(), generated_function_sig),
             ("function_name".to_string(), function_name),
             ("args_node".to_string(), args_node),
