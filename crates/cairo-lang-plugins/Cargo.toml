@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = "Cairo core plugin implementations."
 
+[features]
+testing = []
+
 [dependencies]
 cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.2.0" }
 cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.2.0" }
