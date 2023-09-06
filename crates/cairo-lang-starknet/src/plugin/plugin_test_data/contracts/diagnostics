@@ -561,9 +561,11 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    fn foo(ref self: ContractState, x: super::MyType) {
     }
 }
+#[derive(Drop)]
+struct MyType{}
 
 //! > generated_cairo_code
 lib.cairo:
@@ -573,9 +575,16 @@ mod test_contract {
     #[storage]
     struct Storage {}
     #[external(v0)]
-    fn foo(ref self: ContractState, x: (felt252, felt252)) {
+    fn foo(ref self: ContractState, x: super::MyType) {
     }
 }
+#[derive(Drop)]
+struct MyType{}
+
+impls:
+
+impl MyTypeDrop of Drop::<MyType>;
+
 
 contract:
 
@@ -611,7 +620,7 @@ contract:
     }
     
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x124995404f8319289ef288de547438677d2604e15a5315c83676af341b004e8;
+const TEST_CLASS_HASH: felt252 = 0xd3b97940b766b03f59196c092939b4f964559ef1cd235415d018804dbdcfe3;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -619,7 +628,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
     let __arg_x = option::OptionTraitImpl::expect(
-        serde::Serde::<(felt252, felt252)>::deserialize(ref data),
+        serde::Serde::<super::MyType>::deserialize(ref data),
         'Failed to deserialize param #1'
     );
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
@@ -671,6 +680,10 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
+error: Trait has no implementation in context: core::serde::Serde::<test::MyType>
+ --> contract:41:40
+        serde::Serde::<super::MyType>::deserialize(ref data),
+                                       ^*********^
 
 //! > ==========================================================================
 
