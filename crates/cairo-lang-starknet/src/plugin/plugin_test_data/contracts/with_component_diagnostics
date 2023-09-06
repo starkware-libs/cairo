@@ -1722,7 +1722,7 @@ error: Plugin diagnostic: Type not found.
                                                        ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:52:79
+ --> lib.cairo[contract]:52:79
                     starknet::Store::<super::super::test_component::Storage>::read(
                                                                               ^**^
 
@@ -1737,7 +1737,7 @@ error: Plugin diagnostic: Type not found.
                                                        ^*****^
 
 error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> contract:62:79
+ --> lib.cairo[contract]:62:79
                     starknet::Store::<super::super::test_component::Storage>::write(
                                                                               ^***^
 

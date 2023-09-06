@@ -41,13 +41,13 @@ impl DiagnosticLocation {
 
 impl DebugWithDb<dyn FilesGroup> for DiagnosticLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>, db: &dyn FilesGroup) -> std::fmt::Result {
-        let file_name = self.file_id.file_name(db);
+        let file_path = self.file_id.full_path(db);
         let marks = get_location_marks(db, self);
         let pos = match self.span.start.position_in_file(db, self.file_id) {
             Some(pos) => format!("{}:{}", pos.line + 1, pos.col + 1),
             None => "?".into(),
         };
-        write!(f, "{file_name}:{pos}\n{marks}")
+        write!(f, "{file_path}:{pos}\n{marks}")
     }
 }
 
