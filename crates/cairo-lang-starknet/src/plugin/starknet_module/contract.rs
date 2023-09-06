@@ -66,7 +66,7 @@ impl ComponentsGenerationData {
             };
 
             let has_component_impl = RewriteNode::interpolate_patched(
-                formatdoc!(
+                &formatdoc!(
                     "impl HasComponentImpl_$component_name$ of \
                      $component_path$::{HAS_COMPONENT_TRAIT}<{CONTRACT_STATE_NAME}> {{
            fn get_component(self: @{CONTRACT_STATE_NAME}) -> \
@@ -92,9 +92,8 @@ impl ComponentsGenerationData {
                contract.emit(Event::$event_name$(event));
            }}
        }}"
-                )
-                .as_str(),
-                [
+                ),
+                &[
                     (
                         "component_name".to_string(),
                         RewriteNode::new_trimmed(component_name.as_syntax_node()),
@@ -178,7 +177,7 @@ impl ContractSpecificGenerationData {
                 $test_config$
                 $entry_points_code$
                 $components_code$"},
-            [
+            &[
                 ("test_config".to_string(), self.test_config),
                 ("entry_points_code".to_string(), self.entry_points_code.into_rewrite_node()),
                 (
@@ -382,7 +381,7 @@ fn handle_contract_impl(
             RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
         let function_name = RewriteNode::interpolate_patched(
             "$impl_name$::$func_name$",
-            [
+            &[
                 ("impl_name".to_string(), impl_name.clone()),
                 ("func_name".to_string(), function_name),
             ]
@@ -449,16 +448,15 @@ fn handle_embed_impl_alias(
             .collect(),
     );
     data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
-        formatdoc! {"
+        &formatdoc! {"
         impl ContractState$impl_name$ of
             $impl_module$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
             fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                 unsafe_new_contract_state()
             }}
         }}
-    "}
-        .as_str(),
-        [
+    "},
+        &[
             ("impl_name".to_string(), RewriteNode::new_trimmed(impl_name.as_syntax_node())),
             ("impl_module".to_string(), impl_module),
         ]

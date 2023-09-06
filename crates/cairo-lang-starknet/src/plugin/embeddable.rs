@@ -87,7 +87,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                     "<$generic_params${maybe_comma}impl UnsafeNewContractState: \
                      UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}>{maybe_drop_impl}>"
                 ),
-                [
+                &[
                     (
                         "generic_params".to_string(),
                         RewriteNode::new_trimmed(generic_params_node.as_syntax_node()),
@@ -121,7 +121,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$generic_args$::$func_name$",
-            [
+            &[
                 ("impl_name".to_string(), impl_name.clone()),
                 ("func_name".to_string(), function_name),
                 ("generic_args".to_string(), generic_args.clone()),
@@ -142,7 +142,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         );
     }
     let code = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "
             trait UnsafeNewContractStateTraitFor$impl_name$<{GENERIC_CONTRACT_STATE_NAME}> {{
                 fn unsafe_new_contract_state() -> {GENERIC_CONTRACT_STATE_NAME};
@@ -159,9 +159,8 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             mod {CONSTRUCTOR_MODULE}_$impl_name$ {{$constructor_functions$
             }}
         "
-        )
-        .as_str(),
-        [
+        ),
+        &[
             ("impl_name".to_string(), impl_name),
             (
                 "generated_wrapper_functions".to_string(),

@@ -99,7 +99,7 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
                             $func$
                         }}
                     "},
-                    [("func".to_string(), new_func)].into(),
+                    &[("func".to_string(), new_func)].into(),
                 ));
 
                 PluginResult {

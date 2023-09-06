@@ -55,7 +55,7 @@ pub fn handle_storage_struct(
     let module_kind = starknet_module_kind.to_str_lower();
     let unsafe_new_function_name = format!("unsafe_new_{module_kind}_state");
     data.state_struct_code = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "    struct {full_state_struct_name} {{$members_code$
                  }}
                  impl {state_struct_name}Drop{generic_arg_str} of Drop<{full_state_struct_name}> \
@@ -72,9 +72,8 @@ pub fn handle_storage_struct(
                      {unsafe_new_function_name}{full_generic_arg_str}()
                  }}
                  $members_module_code$",
-        )
-        .as_str(),
-        [
+        ),
+        &[
             ("members_code".to_string(), RewriteNode::new_modified(members_code)),
             ("member_init_code".to_string(), RewriteNode::new_modified(members_init_code)),
             ("members_module_code".to_string(), RewriteNode::new_modified(members_module_code)),
@@ -140,16 +139,16 @@ fn get_simple_storage_member_code(
     let name = member.name(db).text(db);
     let member_node = RewriteNode::interpolate_patched(
         &format!("$name$: $name$::{member_state_name}"),
-        [("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
+        &[("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
     );
     let member_code = RewriteNode::interpolate_patched(
         "\n        $member$,",
-        [("member".to_string(), member_node.clone())].into(),
+        &[("member".to_string(), member_node.clone())].into(),
     );
 
     let member_init_code = RewriteNode::interpolate_patched(
         "\n            $member$ {},",
-        [("member".to_string(), member_node)].into(),
+        &[("member".to_string(), member_node)].into(),
     );
     let address = format!("0x{:x}", starknet_keccak(name.as_bytes()));
     let type_ast = member.type_clause(db).ty(db);
@@ -166,8 +165,8 @@ fn get_simple_storage_member_code(
                 return Default::default();
             };
             Some(RewriteNode::interpolate_patched(
-                handle_legacy_mapping_storage_member(&address, member_state_name).as_str(),
-                [
+                &handle_legacy_mapping_storage_member(&address, member_state_name),
+                &[
                     (
                         "storage_member_name".to_string(),
                         RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
@@ -189,8 +188,8 @@ fn get_simple_storage_member_code(
         None => {
             let type_path = get_full_path_type(db, &type_ast);
             Some(RewriteNode::interpolate_patched(
-                handle_simple_storage_member(&address, member_state_name).as_str(),
-                [
+                &handle_simple_storage_member(&address, member_state_name),
+                &[
                     (
                         "storage_member_name".to_string(),
                         RewriteNode::new_trimmed(member.name(db).as_syntax_node()),
@@ -254,7 +253,7 @@ fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode
     if first_segment_super {
         RewriteNode::interpolate_patched(
             "super::$type_path$",
-            [("type_path".to_string(), type_node)].into(),
+            &[("type_path".to_string(), type_node)].into(),
         )
     } else {
         // No need to add `super::` as this is an absolute type or a locally defined type (which is
@@ -291,9 +290,8 @@ fn get_nested_storage_member_code(
 
                     Some((
                         RewriteNode::interpolate_patched(
-                            format!("\n$name$: $component_path${CONCRETE_COMPONENT_STATE_NAME},")
-                                .as_str(),
-                            [
+                            &format!("\n$name$: $component_path${CONCRETE_COMPONENT_STATE_NAME},"),
+                            &[
                                 (
                                     "name".to_string(),
                                     RewriteNode::Copied(member.name(db).as_syntax_node()),
@@ -303,11 +301,10 @@ fn get_nested_storage_member_code(
                             .into(),
                         ),
                         RewriteNode::interpolate_patched(
-                            format!("\n    $name$: \
+                            &format!("\n    $name$: \
                              $component_path$unsafe_new_component_state::<{CONTRACT_STATE_NAME}>(),\
-                             ")
-                            .as_str(),
-                            [
+                             "),
+                            &[
                                 (
                                     "name".to_string(),
                                     RewriteNode::Copied(member.name(db).as_syntax_node()),
