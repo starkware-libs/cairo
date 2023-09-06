@@ -10,13 +10,13 @@ use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use const_format::formatcp;
 use indoc::{formatdoc, indoc};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
 use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, NESTED_ATTR};
-use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
@@ -395,45 +395,12 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
     )
 }
 
-/// Generates the required event-related code.
-pub fn generate_event_code(
-    data: &mut StarknetModuleCommonGenerationData,
-    starknet_module_kind: StarknetModuleKind,
-    has_event: bool,
-) {
-    let state_struct_name = starknet_module_kind.get_state_struct_name();
-    let generic_arg_str = starknet_module_kind.get_generic_arg_str();
-    let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
-
-    let empty_event_code = if has_event {
-        "".to_string()
-    } else {
-        format!("#[{EVENT_ATTR}] #[derive(Drop, {EVENT_TRAIT})] enum {EVENT_TYPE_NAME} {{}}\n")
-    };
-
-    data.event_code = RewriteNode::interpolate_patched(
-        &formatdoc!(
-            "$empty_event_code$
-                impl {state_struct_name}EventEmitter{generic_arg_str} of \
-             starknet::event::EventEmitter<{full_state_struct_name}, {EVENT_TYPE_NAME}> {{
-                    fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(ref self: \
-             {full_state_struct_name}, event: S) {{
-                        let event: {EVENT_TYPE_NAME} = traits::Into::into(event);
-                        let mut keys = Default::<array::Array>::default();
-                        let mut data = Default::<array::Array>::default();
-                        {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
-                        starknet::SyscallResultTraitImpl::unwrap_syscall(
-                            starknet::syscalls::emit_event_syscall(
-                                array::ArrayTrait::span(@keys),
-                                array::ArrayTrait::span(@data),
-                            )
-                        )
-                    }}
-                }}",
-        ),
-        &[("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string()))].into(),
-    );
-}
+/// The code for an empty event.
+pub const EMPTY_EVENT_CODE: &str = formatcp! {"\
+#[{EVENT_ATTR}]
+#[derive(Drop, {EVENT_TRAIT})]
+enum {EVENT_TYPE_NAME} {{}}
+"};
 
 /// Checks whether the given item is a starknet event, and if so - makes sure it's valid and returns
 /// its variants. Returns None if it's not a starknet event.
