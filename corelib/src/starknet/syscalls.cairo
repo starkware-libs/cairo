@@ -17,6 +17,8 @@ extern fn call_contract_syscall(
 //     computation of the contract's address.
 // `calldata` - Call arguments for the constructor.
 // `deploy_from_zero` - Deploy the contract from the zero address.
+//
+// Returns the address of the deployed contract and the serialized return value of the constructor.
 extern fn deploy_syscall(
     class_hash: ClassHash,
     contract_address_salt: felt252,
