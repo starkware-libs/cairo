@@ -4,7 +4,7 @@
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test2.cairo
+>>> file: src/parser_test_data/cairo_test_files/test2.cairo
 
 //! > print_trivia
 false
@@ -14,32 +14,32 @@ false
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:5:12
+ --> src/parser_test_data/cairo_test_files/test2.cairo:5:12
     let z = ;
            ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
+ --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
+        if bla.
                ^
 
 error: Missing token TerminalLBrace.
- --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
+ --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
+        if bla.
                ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:21:14
+ --> src/parser_test_data/cairo_test_files/test2.cairo:21:14
         x.a *+-. s.s * foo(1,3)
              ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:21:16
+ --> src/parser_test_data/cairo_test_files/test2.cairo:21:16
         x.a *+-. s.s * foo(1,3)
                ^
 
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
- --> test_data/cairo_files/test2.cairo:30:1
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
 skipped tokens
 ^************^
 
@@ -371,7 +371,7 @@ skipped tokens
 test_full_parser_tree(allow_diagnostics: true)
 
 //! > cairo_code
->>> file: test_data/cairo_files/test2.cairo
+>>> file: src/parser_test_data/cairo_test_files/test2.cairo
 
 //! > print_trivia
 true
@@ -381,32 +381,32 @@ false
 
 //! > expected_diagnostics
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:5:12
+ --> src/parser_test_data/cairo_test_files/test2.cairo:5:12
     let z = ;
            ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
+ --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
+        if bla.
                ^
 
 error: Missing token TerminalLBrace.
- --> test_data/cairo_files/test2.cairo:14:16
-        if bla. 
+ --> src/parser_test_data/cairo_test_files/test2.cairo:14:16
+        if bla.
                ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:21:14
+ --> src/parser_test_data/cairo_test_files/test2.cairo:21:14
         x.a *+-. s.s * foo(1,3)
              ^
 
 error: Missing tokens. Expected an expression.
- --> test_data/cairo_files/test2.cairo:21:16
+ --> src/parser_test_data/cairo_test_files/test2.cairo:21:16
         x.a *+-. s.s * foo(1,3)
                ^
 
 error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/ExternType/Trait/Impl/Struct/Enum/TypeAlias/InlineMacro or an attribute.
- --> test_data/cairo_files/test2.cairo:30:1
+ --> src/parser_test_data/cairo_test_files/test2.cairo:30:1
 skipped tokens
 ^************^
 
@@ -922,8 +922,7 @@ skipped tokens
     │   │       │           │       │   │   │   ├── leading_trivia (kind: Trivia) []
     │   │       │           │       │   │   │   ├── token (kind: TokenDot): '.'
     │   │       │           │       │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │           │       │   │   │       ├── child #0 (kind: TokenWhitespace).
-    │   │       │           │       │   │   │       └── child #1 (kind: TokenNewline).
+    │   │       │           │       │   │   │       └── child #0 (kind: TokenNewline).
     │   │       │           │       │   │   └── rhs: Missing []
     │   │       │           │       │   ├── if_block (kind: ExprBlock)
     │   │       │           │       │   │   ├── lbrace (kind: TerminalLBrace)
