@@ -3,7 +3,8 @@ use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
-use indoc::{formatdoc, indoc};
+use const_format::formatcp;
+use indoc::formatdoc;
 use smol_str::SmolStr;
 
 use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerationData};
@@ -11,8 +12,8 @@ use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
     COMPONENT_INLINE_MACRO, CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
-    EMBED_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, NESTED_ATTR,
-    STORAGE_STRUCT_NAME,
+    EMBED_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR,
+    NESTED_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -166,6 +167,29 @@ impl ComponentsGenerationData {
     }
 }
 
+/// The event emitter code for a contract.
+const EVENT_EMITTER_CODE: &'static str = formatcp! {
+"    impl {CONTRACT_STATE_NAME}EventEmitter of starknet::event::EventEmitter<
+        {CONTRACT_STATE_NAME}, {EVENT_TYPE_NAME}
+    > {{
+        fn emit<S, impl IntoImp: traits::Into<S, {EVENT_TYPE_NAME}>>(
+            ref self: {CONTRACT_STATE_NAME}, event: S
+        ) {{
+            let event: {EVENT_TYPE_NAME} = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            {EVENT_TRAIT}::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }}
+    }}
+"
+};
+
 impl ContractSpecificGenerationData {
     pub fn into_rewrite_node(
         self,
@@ -173,9 +197,10 @@ impl ContractSpecificGenerationData {
         diagnostics: &mut Vec<PluginDiagnostic>,
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
-            indoc! {"
+            &formatdoc! {"
                 $test_config$
                 $entry_points_code$
+                {EVENT_EMITTER_CODE}
                 $components_code$"},
             &[
                 ("test_config".to_string(), self.test_config),
