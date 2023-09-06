@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
@@ -10,6 +11,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -27,6 +29,15 @@ cairo_lang_test_utils::test_file_test!(
         panicable: "panicable",
     },
     test_expand_plugin
+);
+
+cairo_lang_test_utils::test_file_test!(
+    expand_general_plugin,
+    "src/test_data",
+    {
+        general: "general",
+    },
+    test_general_plugin
 );
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -104,11 +115,32 @@ fn expand_module_text(
     output
 }
 
+/// Tests expansion of given code, with only the default plugins.
 pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
 ) -> Result<OrderedHashMap<String, String>, String> {
+    test_expand_plugin_inner(inputs, args, &[])
+}
+
+/// Tests expansion of given code, with the default plugins plus a dedicated plugin.
+fn test_general_plugin(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
+    test_expand_plugin_inner(inputs, args, &[Arc::new(DoubleIndirectionPlugin)])
+}
+
+/// Tests expansion of given code, with the default plugins plus the given extra plugins.
+pub fn test_expand_plugin_inner(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+    extra_plugins: &[Arc<dyn MacroPlugin>],
+) -> Result<OrderedHashMap<String, String>, String> {
     let db = &mut DatabaseForTesting::default();
+    let mut plugins = db.macro_plugins();
+    plugins.extend_from_slice(extra_plugins);
+    db.set_macro_plugins(plugins);
 
     let cfg_set: Option<CfgSet> =
         inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
@@ -137,4 +169,45 @@ pub fn test_expand_plugin(
         ("expanded_cairo_code".into(), expanded_module),
         ("expected_diagnostics".into(), joined_diagnostics),
     ]))
+}
+
+#[derive(Debug)]
+struct DoubleIndirectionPlugin;
+impl MacroPlugin for DoubleIndirectionPlugin {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+        match item_ast {
+            ast::Item::Struct(struct_ast) => {
+                if struct_ast.has_attr(db, "first") {
+                    PluginResult {
+                        code: Some(PluginGeneratedFile {
+                            name: "virt1".into(),
+                            content: "#[second] struct A {}\n".to_string(),
+                            diagnostics_mappings: Default::default(),
+                            aux_data: None,
+                        }),
+                        ..PluginResult::default()
+                    }
+                } else if struct_ast.has_attr(db, "second") {
+                    PluginResult {
+                        code: Some(PluginGeneratedFile {
+                            name: "virt2".into(),
+                            content: "struct B {}\n".to_string(),
+                            diagnostics_mappings: Default::default(),
+                            aux_data: None,
+                        }),
+                        ..PluginResult::default()
+                    }
+                } else {
+                    PluginResult {
+                        diagnostics: vec![PluginDiagnostic {
+                            stable_ptr: struct_ast.stable_ptr().untyped(),
+                            message: "Double indirection diagnostic".to_string(),
+                        }],
+                        ..PluginResult::default()
+                    }
+                }
+            }
+            _ => PluginResult::default(),
+        }
+    }
 }
