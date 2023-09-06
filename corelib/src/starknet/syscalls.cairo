@@ -17,6 +17,8 @@ extern fn call_contract_syscall(
 //     computation of the contract's address.
 // `calldata` - Call arguments for the constructor.
 // `deploy_from_zero` - Deploy the contract from the zero address.
+//
+// Returns the address of the deployed contract and the return value of the constructor.
 extern fn deploy_syscall(
     class_hash: ClassHash,
     contract_address_salt: felt252,
@@ -63,7 +65,7 @@ extern fn send_message_to_l1_syscall(
 //     guarantees.
 // `address` - The address of the storage key to read.
 extern fn storage_read_syscall(
-    address_domain: u32, address: StorageAddress,
+    address_domain: u32, address: StorageAddress, 
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 // Sets the value of a key in the storage of the calling contract.
