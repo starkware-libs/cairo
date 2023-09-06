@@ -350,7 +350,7 @@ error: Plugin diagnostic: Identifier not found.
         ^*****^
 
 error: Invalid drop trait implementation, Candidate impl core::traits::SnapshotDrop::<?0> has an unused generic parameter..
- --> contract:21:5
+ --> lib.cairo[contract]:21:5
     impl ContractStateDrop of Drop<ContractState> {}
     ^**********************************************^
 
@@ -927,7 +927,7 @@ error: Plugin diagnostic: Contract entry points cannot have generic arguments
           ^*^
 
 error: Type not found.
- --> contract:41:24
+ --> lib.cairo[contract]:41:24
         serde::Serde::<T>::deserialize(ref data),
                        ^
 

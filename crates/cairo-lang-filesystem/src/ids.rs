@@ -109,6 +109,16 @@ pub struct VirtualFile {
     pub diagnostics_mappings: Arc<Vec<DiagnosticMapping>>,
     pub kind: FileKind,
 }
+impl VirtualFile {
+    fn full_path(&self, db: &dyn FilesGroup) -> String {
+        if let Some(parent) = self.parent {
+            format!("{}[{}]", parent.full_path(db), self.name)
+        } else {
+            self.name.clone().into()
+        }
+    }
+}
+
 define_short_id!(FileId, FileLongId, FilesGroup, lookup_intern_file);
 impl FileId {
     pub fn new(db: &dyn FilesGroup, path: PathBuf) -> FileId {
@@ -120,6 +130,12 @@ impl FileId {
                 path.file_name().and_then(|x| x.to_str()).unwrap_or("<unknown>").to_string()
             }
             FileLongId::Virtual(vf) => vf.name.to_string(),
+        }
+    }
+    pub fn full_path(self, db: &dyn FilesGroup) -> String {
+        match db.lookup_intern_file(self) {
+            FileLongId::OnDisk(path) => path.to_str().unwrap_or("<unknown>").to_string(),
+            FileLongId::Virtual(vf) => vf.full_path(db),
         }
     }
     pub fn kind(self, db: &dyn FilesGroup) -> FileKind {
