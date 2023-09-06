@@ -401,15 +401,16 @@ pub fn generate_event_code(
     starknet_module_kind: StarknetModuleKind,
     has_event: bool,
 ) {
-    let state_struct_name = starknet_module_kind.get_state_struct_name();
-    let generic_arg_str = starknet_module_kind.get_generic_arg_str();
-    let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
-
-    let empty_event_code = if has_event {
+    let empty_event_code = RewriteNode::Text(if has_event {
         "".to_string()
     } else {
         format!("#[{EVENT_ATTR}] #[derive(Drop, {EVENT_TRAIT})] enum {EVENT_TYPE_NAME} {{}}\n")
-    };
+    });
+    if matches!(starknet_module_kind, StarknetModuleKind::Component) {
+        // Event emissions is provided by `HasComponent` for componenets.
+        data.event_code = empty_event_code;
+        return;
+    }
 
     data.event_code = RewriteNode::interpolate_patched(
         &formatdoc!(
@@ -430,8 +431,11 @@ pub fn generate_event_code(
                         )
                     }}
                 }}",
+            state_struct_name = starknet_module_kind.get_state_struct_name(),
+            generic_arg_str = starknet_module_kind.get_generic_arg_str(),
+            full_state_struct_name = starknet_module_kind.get_full_state_struct_name(),
         ),
-        &[("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string()))].into(),
+        &[("empty_event_code".to_string(), empty_event_code)].into(),
     );
 }
 
