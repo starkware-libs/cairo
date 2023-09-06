@@ -1003,10 +1003,9 @@ impl<'a> CairoHintProcessor<'a> {
         deduct_gas!(gas_counter, LIBRARY_CALL);
         // Prepare runner for running the call.
         let runner = self.runner.expect("Runner is needed for starknet.");
-        let contract_info = runner
-            .starknet_contracts_info
-            .get(&class_hash)
-            .expect("Deployed contract not found in registry.");
+        let Some(contract_info) = runner.starknet_contracts_info.get(&class_hash) else {
+            fail_syscall!(b"CLASS_HASH_NOT_DECLARED")
+        };
 
         // Call the function.
         let Some(entry_point) = contract_info.externals.get(&selector) else {
