@@ -82,6 +82,24 @@ impl BoolPartialEq of PartialEq<bool> {
     }
 }
 
+impl ComponentStateEventEmitter<
+    TContractState
+> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+        ref self: ComponentState<TContractState>, event: S
+    ) {
+        let event: Event = traits::Into::into(event);
+        let mut keys = Default::<array::Array>::default();
+        let mut data = Default::<array::Array>::default();
+        starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+        starknet::SyscallResultTraitImpl::unwrap_syscall(
+            starknet::syscalls::emit_event_syscall(
+                array::ArrayTrait::span(@keys), array::ArrayTrait::span(@data),
+            )
+        )
+    }
+}
+
 /// Default values for felt252_dict values.
 impl BoolFelt252DictValue of Felt252DictValue<bool> {
     #[inline(always)]
