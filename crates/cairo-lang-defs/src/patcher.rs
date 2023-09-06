@@ -127,7 +127,7 @@ impl RewriteNode {
     /// A `$$` substring is replaced with `$`.
     pub fn interpolate_patched(
         code: &str,
-        patches: UnorderedHashMap<String, RewriteNode>,
+        patches: &UnorderedHashMap<String, RewriteNode>,
     ) -> RewriteNode {
         let mut chars = code.chars().peekable();
         let mut pending_text = String::new();

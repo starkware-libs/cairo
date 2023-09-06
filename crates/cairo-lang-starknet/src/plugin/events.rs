@@ -10,7 +10,6 @@ use cairo_lang_syntax::node::ast::{self, OptionWrappedGenericParamList};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
-use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use indoc::{formatdoc, indoc};
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -70,7 +69,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
 
         let member_for_append = RewriteNode::interpolate_patched(
             "self.$member_name$",
-            [(String::from("member_name"), member_name.clone())].into(),
+            &[(String::from("member_name"), member_name.clone())].into(),
         );
         let append_member = append_field(member_kind, member_for_append);
         let deserialize_member = deserialize_field(member_kind, member_name.clone());
@@ -78,7 +77,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         deserialize_members.push(deserialize_member);
         ctor.push(RewriteNode::interpolate_patched(
             "$member_name$, ",
-            [(String::from("member_name"), member_name)].into(),
+            &[(String::from("member_name"), member_name)].into(),
         ));
     }
     let event_data = EventData::Struct { members };
@@ -90,7 +89,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
     // Add an implementation for `Event<StructName>`.
     let struct_name = RewriteNode::new_trimmed(struct_ast.name(db).as_syntax_node());
     let event_impl = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "
             impl $struct_name$IsEvent of {EVENT_TRAIT}<$struct_name$> {{
                 fn append_keys_and_data(
@@ -103,9 +102,8 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
                     Option::Some($struct_name$ {{$ctor$}})
                 }}
             }}"
-        )
-        .as_str(),
-        [
+        ),
+        &[
             (String::from("struct_name"), struct_name),
             (String::from("append_members"), append_members),
             (String::from("deserialize_members"), deserialize_members),
@@ -234,7 +232,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             $enum_name$::$variant_name$(val) => {
                 array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));$append_member$
             },",
-            [
+            &[
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name.clone()),
                 (String::from("append_member"), append_member),
@@ -247,7 +245,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             if selector == selector!(\"$variant_name$\") {$deserialize_member$
                 return Option::Some($enum_name$::$variant_name$(val));
             }",
-            [
+            &[
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name.clone()),
                 (String::from("deserialize_member"), deserialize_member),
@@ -264,7 +262,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                     }
                 }
                 "},
-            [
+            &[
                 (String::from("enum_name"), enum_name.clone()),
                 (String::from("variant_name"), variant_name),
                 (String::from("ty"), ty),
@@ -280,7 +278,7 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
 
     // Add an implementation for `Event<StructName>`.
     let event_impl = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "
             impl $enum_name$IsEvent of {EVENT_TRAIT}<$enum_name$> {{
                 fn append_keys_and_data(
@@ -299,9 +297,8 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
             }}
             $event_into_impls$
         "
-        )
-        .as_str(),
-        [
+        ),
+        &[
             (String::from("enum_name"), enum_name),
             (String::from("append_variants"), append_variants),
             (String::from("deserialize_variants"), deserialize_variants),
@@ -351,52 +348,51 @@ pub fn derive_event_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) 
 fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode {
     match member_kind {
         EventFieldKind::Nested => RewriteNode::interpolate_patched(
-            format!(
+            &format!(
                 "
                 {EVENT_TRAIT}::append_keys_and_data(
                     $field$, ref keys, ref data
                 );"
-            )
-            .as_str(),
-            [(String::from("field"), field)].into(),
+            ),
+            &[(String::from("field"), field)].into(),
         ),
         EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize($field$, ref keys);",
-            [(String::from("field"), field)].into(),
+            &[(String::from("field"), field)].into(),
         ),
         EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
             "
                 serde::Serde::serialize($field$, ref data);",
-            [(String::from("field"), field)].into(),
+            &[(String::from("field"), field)].into(),
         ),
     }
 }
 
 fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> RewriteNode {
-    match member_kind {
-        EventFieldKind::Nested => RewriteNode::interpolate_patched(
-            "
+    RewriteNode::interpolate_patched(
+        match member_kind {
+            EventFieldKind::Nested => {
+                "
                 let $member_name$ = starknet::Event::deserialize(
                     ref keys, ref data
-                )?;",
-            [(String::from("member_name"), member_name)].into(),
-        ),
-        EventFieldKind::KeySerde => RewriteNode::interpolate_patched(
-            "
+                )?;"
+            }
+            EventFieldKind::KeySerde => {
+                "
                 let $member_name$ = serde::Serde::deserialize(
                     ref keys
-                )?;",
-            [(String::from("member_name"), member_name)].into(),
-        ),
-        EventFieldKind::DataSerde => RewriteNode::interpolate_patched(
-            "
+                )?;"
+            }
+            EventFieldKind::DataSerde => {
+                "
                 let $member_name$ = serde::Serde::deserialize(
                     ref data
-                )?;",
-            [(String::from("member_name"), member_name)].into(),
-        ),
-    }
+                )?;"
+            }
+        },
+        &[(String::from("member_name"), member_name)].into(),
+    )
 }
 
 /// Generates the required event-related code.
@@ -416,7 +412,7 @@ pub fn generate_event_code(
     };
 
     data.event_code = RewriteNode::interpolate_patched(
-        formatdoc!(
+        &formatdoc!(
             "$empty_event_code$
                 impl {state_struct_name}EventEmitter{generic_arg_str} of \
              starknet::event::EventEmitter<{full_state_struct_name}, {EVENT_TYPE_NAME}> {{
@@ -434,12 +430,8 @@ pub fn generate_event_code(
                         )
                     }}
                 }}",
-        )
-        .as_str(),
-        UnorderedHashMap::from([(
-            "empty_event_code".to_string(),
-            RewriteNode::Text(empty_event_code.to_string()),
-        )]),
+        ),
+        &[("empty_event_code".to_string(), RewriteNode::Text(empty_event_code.to_string()))].into(),
     );
 }
 
