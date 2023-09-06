@@ -159,20 +159,6 @@ component:
 
 #[event] #[derive(Drop, starknet::Event)] enum Event {}
 
-   impl ComponentStateEventEmitter<TContractState> of starknet::event::EventEmitter<ComponentState<TContractState>, Event> {
-       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S) {
-           let event: Event = traits::Into::into(event);
-           let mut keys = Default::<array::Array>::default();
-           let mut data = Default::<array::Array>::default();
-           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-           starknet::SyscallResultTraitImpl::unwrap_syscall(
-               starknet::syscalls::emit_event_syscall(
-                   array::ArrayTrait::span(@keys),
-                   array::ArrayTrait::span(@data),
-               )
-           )
-       }
-   }
 
     struct ComponentState<TContractState> {
         owner: owner::ComponentMemberState,
@@ -376,20 +362,6 @@ mod __constructor_Transfer {
 contract:
 
 
-   impl ContractStateEventEmitter of starknet::event::EventEmitter<ContractState, Event> {
-       fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ContractState, event: S) {
-           let event: Event = traits::Into::into(event);
-           let mut keys = Default::<array::Array>::default();
-           let mut data = Default::<array::Array>::default();
-           starknet::Event::append_keys_and_data(@event, ref keys, ref data);
-           starknet::SyscallResultTraitImpl::unwrap_syscall(
-               starknet::syscalls::emit_event_syscall(
-                   array::ArrayTrait::span(@keys),
-                   array::ArrayTrait::span(@data),
-               )
-           )
-       }
-   }
 
     struct ContractState {
         ownable: super::ownable::ComponentState<ContractState>,
@@ -535,6 +507,25 @@ fn __wrapper_set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
 
     mod __constructor {
         use super::__wrapper_constructor as constructor;
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
     }
 
 impl HasComponentImpl_ownable of super::ownable::HasComponent<ContractState> {
