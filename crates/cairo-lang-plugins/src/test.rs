@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use cairo_lang_defs::db::{DefsDatabase, DefsGroup};
 use cairo_lang_defs::ids::{LanguageElementId, ModuleId, ModuleItemId};
+use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_diagnostics::{format_diagnostics, DiagnosticLocation};
 use cairo_lang_filesystem::cfg::CfgSet;
 use cairo_lang_filesystem::db::{
@@ -10,6 +11,7 @@ use cairo_lang_filesystem::db::{
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -27,6 +29,15 @@ cairo_lang_test_utils::test_file_test!(
         panicable: "panicable",
     },
     test_expand_plugin
+);
+
+cairo_lang_test_utils::test_file_test!(
+    expand_general_plugin,
+    "src/test_data",
+    {
+        general: "general",
+    },
+    test_general_plugin
 );
 
 #[salsa::database(DefsDatabase, ParserDatabase, SyntaxDatabase, FilesDatabase)]
@@ -137,4 +148,84 @@ pub fn test_expand_plugin(
         ("expanded_cairo_code".into(), expanded_module),
         ("expected_diagnostics".into(), joined_diagnostics),
     ]))
+}
+
+fn test_general_plugin(
+    inputs: &OrderedHashMap<String, String>,
+    args: &OrderedHashMap<String, String>,
+) -> Result<OrderedHashMap<String, String>, String> {
+    // TODO(yg): share code with test_expand_plugin.
+    let db = &mut DatabaseForTesting::default();
+    let mut plugins = db.macro_plugins();
+    plugins.push(Arc::new(DoubleIndirectionPlugin));
+    db.set_macro_plugins(plugins);
+
+    let cfg_set: Option<CfgSet> =
+        inputs.get("cfg").map(|s| serde_json::from_str(s.as_str()).unwrap());
+    if let Some(cfg_set) = cfg_set {
+        db.set_cfg_set(Arc::new(cfg_set));
+    }
+
+    let cairo_code = &inputs["cairo_code"];
+
+    let crate_id = db.intern_crate(CrateLongId::Real("test".into()));
+    let root = Directory::Real("test_src".into());
+    db.set_crate_root(crate_id, Some(root));
+
+    // Main module file.
+    let file_id = db.intern_file(FileLongId::OnDisk("test_src/lib.cairo".into()));
+    db.as_files_group_mut()
+        .override_file_content(file_id, Some(Arc::new(format!("{cairo_code}\n"))));
+
+    let mut diagnostic_items = vec![];
+    let expanded_module =
+        expand_module_text(db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
+    let joined_diagnostics = diagnostic_items.join("\n");
+    has_disallowed_diagnostics(args, &joined_diagnostics)?;
+
+    Ok(OrderedHashMap::from([
+        ("expanded_cairo_code".into(), expanded_module),
+        ("expected_diagnostics".into(), joined_diagnostics),
+    ]))
+}
+
+#[derive(Debug)]
+struct DoubleIndirectionPlugin;
+impl MacroPlugin for DoubleIndirectionPlugin {
+    fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
+        match item_ast {
+            ast::Item::Struct(struct_ast) => {
+                if struct_ast.has_attr(db, "first") {
+                    PluginResult {
+                        code: Some(PluginGeneratedFile {
+                            name: "virt1".into(),
+                            content: "#[second] struct A {}\n".to_string(),
+                            diagnostics_mappings: Default::default(),
+                            aux_data: None,
+                        }),
+                        ..PluginResult::default()
+                    }
+                } else if struct_ast.has_attr(db, "second") {
+                    PluginResult {
+                        code: Some(PluginGeneratedFile {
+                            name: "virt2".into(),
+                            content: "struct B {}\n".to_string(),
+                            diagnostics_mappings: Default::default(),
+                            aux_data: None,
+                        }),
+                        ..PluginResult::default()
+                    }
+                } else {
+                    PluginResult {
+                        diagnostics: vec![PluginDiagnostic {
+                            stable_ptr: struct_ast.stable_ptr().untyped(),
+                            message: "Double indirection diagnostic".to_string(),
+                        }],
+                        ..PluginResult::default()
+                    }
+                }
+            }
+            _ => PluginResult::default(),
+        }
+    }
 }
