@@ -1,7 +1,7 @@
 //! > Test const
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 const X: NonZero::<felt252> = 0x1234;
@@ -42,7 +42,7 @@ ItemConstant
 //! > Missing type
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 const X = 0x1234;

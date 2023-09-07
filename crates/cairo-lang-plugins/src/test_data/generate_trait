@@ -1,7 +1,7 @@
 //! > Test expansion of generate_trait with one generic parameter.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: false)
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[generate_trait]
@@ -81,7 +81,7 @@ trait SomeTrait<T>  {
 //! > Test expansion of generate_trait with one generic parameter and custom attributes.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: false)
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
@@ -102,7 +102,7 @@ trait TraitWithAttrs<T>  {
 //! > Test expansion of generate_trait without generic parameters.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: false)
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[generate_trait]
@@ -134,7 +134,7 @@ trait SomeTrait {
 //! > Test diagnostics of generate_trait.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: true)
+test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[generate_trait]

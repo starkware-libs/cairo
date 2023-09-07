@@ -37,21 +37,32 @@ pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
     }
 }
 
-// Disallow diagnostics if args.allow_diagnostics == false.
-pub fn has_disallowed_diagnostics(
+// Fails if there are diagnostics when args.expect_diagnostics == false.
+// Fails if there are no diagnostics when args.expect_diagnostics == true.
+// Succeeds otherwise.
+pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
     diagnostics: &str,
 ) -> Result<(), String> {
-    if let Some(allow_diagnostics) = args.get("allow_diagnostics") {
-        if !bool_input(allow_diagnostics) && !diagnostics.is_empty() {
-            return Err(format!(
-                "allow_diagnostics is false, but diagnostics were generated:\n{}",
-                diagnostics
-            ));
-        }
+    let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
+        return Ok(());
+    };
+    if expect_diagnostics.trim() == "*" {
+        return Ok(());
     }
 
-    Ok(())
+    let expect_diagnostics = bool_input(expect_diagnostics);
+    let has_diagnostics = !diagnostics.is_empty();
+    if !expect_diagnostics && has_diagnostics {
+        Err(format!(
+            "`expect_diagnostics` is false, but diagnostics were generated:\n{}",
+            diagnostics
+        ))
+    } else if expect_diagnostics && !has_diagnostics {
+        Err(format!("`expect_diagnostics` is true, but no diagnostics were generated\n",))
+    } else {
+        Ok(())
+    }
 }
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.

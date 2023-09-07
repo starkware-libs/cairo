@@ -1,7 +1,7 @@
 //! > Test expansion of a basic component.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Drop, starknet::Store)]
@@ -155,7 +155,7 @@ component:
     fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
-    
+
     use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         use super::ContractAddress;
@@ -339,7 +339,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("Log") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

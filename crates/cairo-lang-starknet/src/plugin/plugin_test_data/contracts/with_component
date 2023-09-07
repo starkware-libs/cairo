@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -93,7 +93,7 @@ enum Event {}
     fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
-    
+
     use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
@@ -160,7 +160,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -188,7 +188,7 @@ contract:
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use normal_member::InternalContractMemberStateTrait as normal_memberContractMemberStateTrait;
     mod normal_member {
         use super::dataComponentMemberStateTrait;
@@ -236,7 +236,7 @@ fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -323,7 +323,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("ABC") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
@@ -346,7 +346,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 //! > 2 components in a contract
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -460,7 +460,7 @@ enum Event {}
     fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
-    
+
     use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
@@ -527,7 +527,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -556,7 +556,7 @@ enum Event {}
     fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
-    
+
     use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         #[derive(Copy, Drop)]
@@ -623,7 +623,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -651,7 +651,7 @@ contract:
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1facbb4282bac370637ef1620087607274c9fbcb2cc7659123174e716faf289;
 
@@ -660,7 +660,7 @@ fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -770,7 +770,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("Comp1Event") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

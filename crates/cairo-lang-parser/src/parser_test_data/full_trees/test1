@@ -1,7 +1,7 @@
 //! > Test parsing code, without trivia.
 
 //! > test_runner_name
-test_full_parser_tree(allow_diagnostics: true)
+test_full_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/test1.cairo
@@ -788,7 +788,7 @@ error: Missing tokens. Expected an item after attributes.
 //! > Test parsing code, with trivia.
 
 //! > test_runner_name
-test_full_parser_tree(allow_diagnostics: true)
+test_full_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/test1.cairo
