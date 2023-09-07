@@ -11,6 +11,8 @@ pub mod operators;
 pub mod parser;
 pub mod printer;
 pub mod recovery;
-pub mod test_utils;
 pub mod utils;
 mod validation;
+
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;

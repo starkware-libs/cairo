@@ -13,6 +13,7 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -119,7 +120,7 @@ fn expand_module_text(
 pub fn test_expand_plugin(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     test_expand_plugin_inner(inputs, args, &[])
 }
 
@@ -127,7 +128,7 @@ pub fn test_expand_plugin(
 fn test_general_plugin(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     test_expand_plugin_inner(inputs, args, &[Arc::new(DoubleIndirectionPlugin)])
 }
 
@@ -136,7 +137,7 @@ pub fn test_expand_plugin_inner(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
     extra_plugins: &[Arc<dyn MacroPlugin>],
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut DatabaseForTesting::default();
     let mut plugins = db.macro_plugins();
     plugins.extend_from_slice(extra_plugins);
@@ -163,12 +164,15 @@ pub fn test_expand_plugin_inner(
     let expanded_module =
         expand_module_text(db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
     let joined_diagnostics = diagnostic_items.join("\n");
-    verify_diagnostics_expectation(args, &joined_diagnostics)?;
+    let error = verify_diagnostics_expectation(args, &joined_diagnostics);
 
-    Ok(OrderedHashMap::from([
-        ("expanded_cairo_code".into(), expanded_module),
-        ("expected_diagnostics".into(), joined_diagnostics),
-    ]))
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            ("expanded_cairo_code".into(), expanded_module),
+            ("expected_diagnostics".into(), joined_diagnostics),
+        ]),
+        error,
+    }
 }
 
 #[derive(Debug)]
