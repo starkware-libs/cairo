@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
@@ -23,7 +24,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_function_inlining(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -41,7 +42,7 @@ fn test_function_inlining(
     let mut after = before.deref().clone();
     apply_inlining(db, function_id, &mut after).unwrap();
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),

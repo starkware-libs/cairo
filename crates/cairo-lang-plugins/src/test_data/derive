@@ -80,7 +80,7 @@ impl ACopy of Copy::<A>;
 impl ADefault of Default::<A> {
     fn default() -> A {
         A {
-
+            
         }
     }
 }
@@ -92,7 +92,7 @@ impl AHash<
 > of hash::Hash<A, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: A) -> __State {
-
+        
         state
     }
 }
@@ -100,7 +100,7 @@ impl BCopy of Copy::<B>;
 impl BDefault of Default::<B> {
     fn default() -> B {
         B {
-
+            
         }
     }
 }
@@ -112,7 +112,7 @@ impl BHash<
 > of hash::Hash<B, __State, __SHashState> {
     #[inline(always)]
     fn update_state(state: __State, value: B) -> __State {
-
+        
         state
     }
 }

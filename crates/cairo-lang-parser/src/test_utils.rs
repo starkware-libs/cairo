@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
@@ -16,13 +17,16 @@ pub fn read_file(filename: &str) -> String {
 pub fn get_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SimpleParserDatabase::default();
     let code = &inputs["cairo_code"];
 
     let file_id = create_virtual_file(db, "dummy_file.cairo", code);
     let (_, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, code);
-    Ok(OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.format(db))]))
+    TestRunnerResult::success(OrderedHashMap::from([(
+        "expected_diagnostics".into(),
+        diagnostics.format(db),
+    )]))
 }
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.

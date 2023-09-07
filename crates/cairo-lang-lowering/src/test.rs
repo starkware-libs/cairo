@@ -4,6 +4,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_diagnostics::DiagnosticsBuilder;
 use cairo_lang_semantic::test_utils::{setup_test_expr, setup_test_function};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::chain;
 
@@ -67,7 +68,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_function_lowering(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -90,7 +91,7 @@ fn test_function_lowering(
     let lowering_format =
         lowered.map(|lowered| formatted_lowered(db, &lowered)).unwrap_or_default();
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), diagnostics.format(db)),
         ("lowering_flat".into(), lowering_format),
@@ -103,7 +104,7 @@ fn test_function_lowering(
 fn test_function_lowering_phases(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = LoweringDatabaseForTesting::default();
 
     let (test_function, semantic_diagnostics) = setup_test_function(
@@ -160,7 +161,7 @@ fn test_function_lowering_phases(
 
     let diagnostics = db.module_lowering_diagnostics(test_function.module_id).unwrap();
 
-    Ok(OrderedHashMap::from_iter(chain!(
+    TestRunnerResult::success(OrderedHashMap::from_iter(chain!(
         [
             ("semantic_diagnostics".into(), semantic_diagnostics),
             ("lowering_diagnostics".into(), diagnostics.format(&db)),

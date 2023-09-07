@@ -3,6 +3,7 @@ use std::fmt::Write;
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_diagnostics::get_location_marks;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::LoweringGroup;
@@ -22,7 +23,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_generated_function(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -75,7 +76,7 @@ fn test_generated_function(
     let lowering_diagnostics =
         db.module_lowering_diagnostics(test_function.module_id).unwrap_or_default();
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering".into(), writer),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
