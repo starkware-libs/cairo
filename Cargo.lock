@@ -1017,6 +1017,7 @@ dependencies = [
  "rayon",
  "salsa",
  "serde",
+ "serde_json",
  "thiserror",
 ]
 
