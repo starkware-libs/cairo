@@ -1,7 +1,7 @@
 //! > Test expansion of the outside implementations.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::embeddable(v0)]
@@ -71,7 +71,7 @@ fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContrac
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -147,7 +147,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use value::InternalContractMemberStateTrait as valueContractMemberStateTrait;
     mod value {
         #[derive(Copy, Drop)]
@@ -243,7 +243,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -255,7 +255,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test diagnostics for supplying disallowed impls.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]
@@ -355,7 +355,7 @@ fn __wrapper_ret_3<TContractState,
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -404,7 +404,7 @@ fn __wrapper_ret_5<TContractState,
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -451,7 +451,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1bee8e866505ef27d5ea63990112060e0e105e9294afd40e2fb08f711e11fa;
 
@@ -516,7 +516,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }

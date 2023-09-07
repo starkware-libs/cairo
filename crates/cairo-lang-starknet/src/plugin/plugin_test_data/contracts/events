@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(starknet::Event, PartialEq, Drop, Serde)]
@@ -181,7 +181,7 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<MyEventEnum> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("A") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data

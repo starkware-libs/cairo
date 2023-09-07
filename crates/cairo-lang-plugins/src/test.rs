@@ -11,7 +11,7 @@ use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
-use cairo_lang_test_utils::has_disallowed_diagnostics;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
 
@@ -131,7 +131,7 @@ pub fn test_expand_plugin(
     let expanded_module =
         expand_module_text(db, ModuleId::CrateRoot(crate_id), &mut diagnostic_items);
     let joined_diagnostics = diagnostic_items.join("\n");
-    has_disallowed_diagnostics(args, &joined_diagnostics)?;
+    verify_diagnostics_expectation(args, &joined_diagnostics)?;
 
     Ok(OrderedHashMap::from([
         ("expanded_cairo_code".into(), expanded_module),

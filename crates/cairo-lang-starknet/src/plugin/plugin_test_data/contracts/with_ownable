@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract with ownable component.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -177,7 +177,7 @@ enum Event {}
     fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
         unsafe_new_component_state::<TContractState>()
     }
-    
+
     use owner::InternalComponentMemberStateTrait as ownerComponentMemberStateTrait;
     mod owner {
         use super::ContractAddress;
@@ -227,13 +227,13 @@ trait HasComponent<TContractState> {
 }
 
 trait TransferImplTrait<TContractState> {
-    
+
     fn init_ownable(ref self: TContractState, owner: ContractAddress);
     #[external(v0)]
     fn owner(self: @TContractState) -> ContractAddress;
     #[external(v0)]
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress);
-    
+
     fn validate_ownership(self: @TContractState);
 }
 
@@ -241,7 +241,7 @@ trait TransferImplTrait<TContractState> {
 impl Transfer<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
 > of TransferImplTrait<TContractState> {
-    
+
     fn init_ownable(ref self: TContractState, owner: ContractAddress) {
         let mut component = self.get_component_mut();
         component.init_ownable(owner, )
@@ -256,7 +256,7 @@ impl Transfer<
         let mut component = self.get_component_mut();
         component.transfer_ownership(new_owner, )
     }
-    
+
     fn validate_ownership(self: @TContractState) {
         let component = self.get_component();
         component.validate_ownership()
@@ -294,7 +294,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -312,7 +312,7 @@ fn __wrapper_owner<TContractState, impl X: HasComponent<TContractState>, impl TC
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -382,7 +382,7 @@ contract:
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
     mod balance {
         use super::ContractAddress;
@@ -463,7 +463,7 @@ fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -573,7 +573,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
             if selector == selector!("Ownable") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
