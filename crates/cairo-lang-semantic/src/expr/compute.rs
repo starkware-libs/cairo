@@ -1879,15 +1879,14 @@ fn expr_function_call(
         ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
     // Check panicable.
     if signature.panicable
+        // Minus literals are a special case, since we know these cannot actually panic, and can occur out of functions. Checking their range is valid occurs at a later stage.
+        && try_extract_minus_literal(ctx.db, &ctx.exprs, &expr_function_call).is_none()
         && !ctx
             .get_signature(
                 stable_ptr.untyped(),
                 UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
             )?
             .panicable
-        // Minus literals are a special case, since we know these cannot panic, as they would fail
-        // on value in illegal bounds.
-        && try_extract_minus_literal(ctx.db, &ctx.exprs, &expr_function_call).is_none()
     {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.

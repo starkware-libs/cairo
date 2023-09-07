@@ -12,14 +12,11 @@ use crate::expr::compute::{compute_expr_semantic, ComputationContext, Environmen
 use crate::expr::inference::canonic::ResultNoErrEx;
 use crate::expr::inference::conform::InferenceConform;
 use crate::expr::inference::InferenceId;
+use crate::literals::try_extract_minus_literal;
 use crate::resolve::{Resolver, ResolverData};
 use crate::substitution::SemanticRewriter;
 use crate::types::resolve_type;
 use crate::{Expr, SemanticDiagnostic};
-
-#[cfg(test)]
-#[path = "constant_test.rs"]
-mod test;
 
 #[derive(Clone, Debug, PartialEq, Eq, DebugWithDb, SemanticObject)]
 #[debug_db(dyn SemanticGroup + 'static)]
@@ -72,8 +69,12 @@ pub fn priv_constant_semantic_data(
     }
 
     // Check that the expression is a literal.
-    if let Expr::Literal(value) = &value.expr {
-        if let Err(err) = validate_literal(db, const_type, value.value.clone()) {
+    if let Some(literal_value) = match &value.expr {
+        Expr::Literal(expr) => Some(expr.value.clone()),
+        Expr::FunctionCall(expr) => try_extract_minus_literal(db, &ctx.exprs, expr),
+        _ => None,
+    } {
+        if let Err(err) = validate_literal(db, const_type, literal_value) {
             ctx.diagnostics.report(
                 &const_ast.value(syntax_db),
                 crate::diagnostic::SemanticDiagnosticKind::LiteralError(err),

@@ -125,3 +125,61 @@ error: The value does not fit within the range of type core::integer::u8.
  --> lib.cairo:1:25
 const DEFAULT_VAR: u8 = 256;
                         ^*^
+
+//! > ==========================================================================
+
+//! > Const of negative values in range.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const A: i8 = -0x80;
+const B: i16 = -5;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Const of negative values out of range.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() { }
+
+//! > function_name
+foo
+
+//! > module_code
+const A: i8 = -0x81;
+const B: u8 = -1;
+const C: i16 = -0x8001;
+
+//! > expected_diagnostics
+error: The value does not fit within the range of type core::integer::i8.
+ --> lib.cairo:1:15
+const A: i8 = -0x81;
+              ^***^
+
+error: The value does not fit within the range of type core::integer::u8.
+ --> lib.cairo:2:15
+const B: u8 = -1;
+              ^^
+
+error: Trait has no implementation in context: core::traits::Neg::<core::integer::u8>
+ --> lib.cairo:2:15
+const B: u8 = -1;
+              ^^
+
+error: The value does not fit within the range of type core::integer::i16.
+ --> lib.cairo:3:16
+const C: i16 = -0x8001;
+               ^*****^
