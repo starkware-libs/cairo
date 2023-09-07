@@ -26,7 +26,6 @@ use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::casm_contract_class::ENTRY_POINT_COST;
 use cairo_lang_starknet::contract::{
     find_contracts, get_contract_abi_functions, get_contracts_info, ContractInfo,
-    IntermediateContractInfo,
 };
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::consts::{CONSTRUCTOR_MODULE, EXTERNAL_MODULE, L1_HANDLER_MODULE};
@@ -293,7 +292,7 @@ pub fn compile_test_prepared_db(
 
 /// Compiled test cases.
 #[derive(Clone, Serialize, Deserialize)]
-#[serde(from = "IntermediateTestCompilation", into = "IntermediateTestCompilation")]
+#[serde(from = "serde_ext::TestCompilation", into = "serde_ext::TestCompilation")]
 pub struct TestCompilation {
     pub contracts_info: OrderedHashMap<Felt252, ContractInfo>,
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -301,15 +300,26 @@ pub struct TestCompilation {
     pub sierra_program: Program,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct IntermediateTestCompilation {
-    pub contracts_info: Vec<(Felt252, IntermediateContractInfo)>,
-    pub function_set_costs: Vec<(FunctionId, OrderedHashMap<CostTokenType, i32>)>,
-    pub named_tests: Vec<(String, TestConfig)>,
-    pub sierra_program: Program,
-}
+mod serde_ext {
+    use cairo_felt::Felt252;
+    use cairo_lang_sierra::extensions::gas::CostTokenType;
+    use cairo_lang_sierra::ids::FunctionId;
+    use cairo_lang_sierra::program::Program;
+    use cairo_lang_starknet::contract::serde_ext::ContractInfo;
+    use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+    use serde::{Deserialize, Serialize};
 
-impl From<TestCompilation> for IntermediateTestCompilation {
+    use crate::test_config::TestConfig;
+
+    #[derive(Serialize, Deserialize)]
+    pub struct TestCompilation {
+        pub contracts_info: Vec<(Felt252, ContractInfo)>,
+        pub function_set_costs: Vec<(FunctionId, OrderedHashMap<CostTokenType, i32>)>,
+        pub named_tests: Vec<(String, TestConfig)>,
+        pub sierra_program: Program,
+    }
+}
+impl From<TestCompilation> for serde_ext::TestCompilation {
     fn from(compiled: TestCompilation) -> Self {
         Self {
             contracts_info: compiled
@@ -324,8 +334,8 @@ impl From<TestCompilation> for IntermediateTestCompilation {
     }
 }
 
-impl From<IntermediateTestCompilation> for TestCompilation {
-    fn from(intermediate: IntermediateTestCompilation) -> Self {
+impl From<serde_ext::TestCompilation> for TestCompilation {
+    fn from(intermediate: serde_ext::TestCompilation) -> Self {
         Self {
             contracts_info: intermediate
                 .contracts_info
@@ -517,4 +527,24 @@ fn find_all_tests(
         }
     }
     tests
+}
+
+#[test]
+#[cfg(test)]
+fn test_compiled_serialization() {
+    use std::path::PathBuf;
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("test_data");
+
+    let compiler = TestCompiler::try_new(&path, true).unwrap();
+    let compiled = compiler.build().unwrap();
+    let serialized = serde_json::to_string_pretty(&compiled).unwrap();
+    let deserialized: TestCompilation = serde_json::from_str(&serialized).unwrap();
+
+    assert_eq!(compiled.sierra_program, deserialized.sierra_program);
+    assert_eq!(compiled.function_set_costs, deserialized.function_set_costs);
+    assert_eq!(compiled.named_tests, deserialized.named_tests);
+    assert_eq!(
+        compiled.contracts_info.values().collect_vec(),
+        deserialized.contracts_info.values().collect_vec()
+    );
 }

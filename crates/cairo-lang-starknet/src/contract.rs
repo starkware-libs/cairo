@@ -290,8 +290,8 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
-#[derive(Clone, Serialize, Deserialize)]
-#[serde(from = "IntermediateContractInfo", into = "IntermediateContractInfo")]
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[serde(from = "serde_ext::ContractInfo", into = "serde_ext::ContractInfo")]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
@@ -301,17 +301,23 @@ pub struct ContractInfo {
     pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct IntermediateContractInfo {
-    /// Sierra function of the constructor.
-    pub constructor: Option<FunctionId>,
-    /// Sierra functions of the external functions.
-    pub externals: Vec<(Felt252, FunctionId)>,
-    /// Sierra functions of the l1 handler functions.
-    pub l1_handlers: Vec<(Felt252, FunctionId)>,
+pub mod serde_ext {
+    use cairo_felt::Felt252;
+    use cairo_lang_sierra::ids::FunctionId;
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Serialize, Deserialize)]
+    pub struct ContractInfo {
+        /// Sierra function of the constructor.
+        pub constructor: Option<FunctionId>,
+        /// Sierra functions of the external functions.
+        pub externals: Vec<(Felt252, FunctionId)>,
+        /// Sierra functions of the l1 handler functions.
+        pub l1_handlers: Vec<(Felt252, FunctionId)>,
+    }
 }
 
-impl From<ContractInfo> for IntermediateContractInfo {
+impl From<ContractInfo> for serde_ext::ContractInfo {
     fn from(contract_info: ContractInfo) -> Self {
         Self {
             constructor: contract_info.constructor,
@@ -321,8 +327,8 @@ impl From<ContractInfo> for IntermediateContractInfo {
     }
 }
 
-impl From<IntermediateContractInfo> for ContractInfo {
-    fn from(contract_info: IntermediateContractInfo) -> Self {
+impl From<serde_ext::ContractInfo> for ContractInfo {
+    fn from(contract_info: serde_ext::ContractInfo) -> Self {
         Self {
             constructor: contract_info.constructor,
             externals: contract_info.externals.into_iter().collect(),
