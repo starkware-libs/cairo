@@ -1,5 +1,6 @@
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{FunctionWithBodyId, ModuleItemId, VarId};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use indoc::indoc;
@@ -62,7 +63,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_expr_semantics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
     let (test_expr, diagnostics) = setup_test_expr(
         db,
@@ -73,7 +74,7 @@ fn test_expr_semantics(
     .split();
     let expr = db.expr_semantic(test_expr.function_id, test_expr.expr_id);
     let expr_formatter = ExprFormatter { db, function_id: test_expr.function_id };
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("expected".into(), format!("{:#?}", expr.debug(&expr_formatter))),
         ("semantic_diagnostics".into(), diagnostics),
     ]))

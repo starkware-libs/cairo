@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_test_utils::{bool_input, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
@@ -22,75 +23,84 @@ use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 pub fn test_partial_parser_tree(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     test_partial_parser_tree_inner(inputs, args, false)
 }
 pub fn test_partial_parser_tree_with_trivia(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     test_partial_parser_tree_inner(inputs, args, true)
 }
 fn test_partial_parser_tree_inner(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
     print_trivia: bool,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SimpleParserDatabase::default();
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
-    verify_diagnostics_expectation(args, &diagnostics)?;
+    let error = verify_diagnostics_expectation(args, &diagnostics);
 
     let ignored_kinds: Vec<&str> = inputs["ignored_kinds"].split('\n').collect();
-    Ok(OrderedHashMap::from([
-        (
-            "expected_tree".into(),
-            print_partial_tree(
-                db,
-                &syntax_root,
-                &inputs["top_level_kind"],
-                ignored_kinds,
-                print_trivia,
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            (
+                "expected_tree".into(),
+                print_partial_tree(
+                    db,
+                    &syntax_root,
+                    &inputs["top_level_kind"],
+                    ignored_kinds,
+                    print_trivia,
+                ),
             ),
-        ),
-        ("expected_diagnostics".into(), diagnostics),
-    ]))
+            ("expected_diagnostics".into(), diagnostics),
+        ]),
+        error,
+    }
 }
 
 /// Tests the full parser tree of a given Cairo code.
 pub fn test_full_parser_tree(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SimpleParserDatabase::default();
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
-    verify_diagnostics_expectation(args, &diagnostics)?;
+    let error = verify_diagnostics_expectation(args, &diagnostics);
 
-    Ok(OrderedHashMap::from([
-        (
-            "expected_tree".into(),
-            print_tree(
-                db,
-                &syntax_root,
-                bool_input(&inputs["print_colors"]),
-                bool_input(&inputs["print_trivia"]),
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([
+            (
+                "expected_tree".into(),
+                print_tree(
+                    db,
+                    &syntax_root,
+                    bool_input(&inputs["print_colors"]),
+                    bool_input(&inputs["print_trivia"]),
+                ),
             ),
-        ),
-        ("expected_diagnostics".into(), diagnostics),
-    ]))
+            ("expected_diagnostics".into(), diagnostics),
+        ]),
+        error,
+    }
 }
 
 /// Tests the colored printing of a given Cairo code.
 fn test_colored_parsed_code(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     colored::control::set_override(true);
     let db = &SimpleParserDatabase::default();
     let (syntax_root, _) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
-    Ok(OrderedHashMap::from([(
-        "expected_colored".into(),
-        print_colored(db, &syntax_root, bool_input(&inputs["is_verbose"])),
-    )]))
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([(
+            "expected_colored".into(),
+            print_colored(db, &syntax_root, bool_input(&inputs["is_verbose"])),
+        )]),
+        error: None,
+    }
 }
 
 /// Returns the syntax_root and diagnostics of a file in the db, according to the parser test

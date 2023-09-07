@@ -18,6 +18,7 @@ cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.2.0" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", version = "2.2.0" }
 cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.2.0" }
 cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.2.0" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.2.0" }
 id-arena.workspace = true
 itertools.workspace = true

@@ -2,6 +2,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 use lowering::ids::ConcreteFunctionWithBodyId;
@@ -30,7 +31,7 @@ cairo_lang_test_utils::test_file_test!(
 fn check_variable_lifetime(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
@@ -91,7 +92,7 @@ fn check_variable_lifetime(
         })
         .join("\n");
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("lowering_format".into(), lowered_str),
         ("last_use".into(), last_use_str),
         ("drops".into(), drop_str),

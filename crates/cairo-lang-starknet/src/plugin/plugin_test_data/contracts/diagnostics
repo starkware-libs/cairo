@@ -581,7 +581,7 @@ error: Plugin diagnostic: Only #[external(v0)] is supported.
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: *)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1137,7 +1137,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test account contract_entry point on a non-account contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: *)
 
 //! > cairo_code
 #[starknet::contract]

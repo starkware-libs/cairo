@@ -11,6 +11,7 @@ use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, try_extract_matches, Upcast};
 use indoc::indoc;
@@ -72,7 +73,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_generic_item_id(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let mut db_val = DatabaseForTesting::default();
     let module_id = setup_test_module(&mut db_val, inputs["module_code"].as_str());
 
@@ -115,7 +116,7 @@ fn test_generic_item_id(
     }
     find_generics(db, module_file_id, node, &mut output);
 
-    Ok(OrderedHashMap::from([("output".into(), output)]))
+    TestRunnerResult::success(OrderedHashMap::from([("output".into(), output)]))
 }
 
 pub fn setup_test_module<T: DefsGroup + AsFilesGroupMut + ?Sized>(
