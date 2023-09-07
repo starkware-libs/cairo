@@ -6,6 +6,7 @@ use cairo_lang_defs::ids::LanguageElementId;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::expr::fmt::ExprFormatter;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::BlockUsages;
@@ -23,7 +24,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_function_usage(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -64,7 +65,7 @@ fn test_function_usage(
         writeln!(usages_str).unwrap();
     }
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("usage".into(), usages_str),
     ]))

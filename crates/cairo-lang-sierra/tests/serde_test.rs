@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use cairo_lang_sierra::program::VersionedProgram;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use test_case::test_case;
 
@@ -18,11 +19,11 @@ cairo_lang_test_utils::test_file_test!(
 fn test_sierra_serde_json(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let prog: VersionedProgram = serde_json::from_str(&inputs["pretty_json"].clone())
         .expect("Could not deserialize VersionedProgram.");
     let json = serde_json::to_string_pretty(&prog).expect("Could not serialize VersionedProgram.");
-    Ok(OrderedHashMap::from([("pretty_json".into(), json)]))
+    TestRunnerResult::success(OrderedHashMap::from([("pretty_json".into(), json)]))
 }
 
 fn get_path(file_name: &str, ext: &str) -> PathBuf {
