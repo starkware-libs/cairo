@@ -143,7 +143,7 @@ pub trait TestFileRunner {
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         runner_args: &OrderedHashMap<String, String>,
-    ) -> Result<OrderedHashMap<String, String>, String>;
+    ) -> TestRunnerResult;
 }
 
 /// Creates a test that reads test files for a given function.
@@ -207,10 +207,22 @@ macro_rules! test_file_test_with_runner {
     };
 }
 
+/// A result returned by a test runner `run` function.
+pub struct TestRunnerResult {
+    /// The outputs of the test, keyed by the output tag.
+    pub outputs: OrderedHashMap<String, String>,
+    /// An error message, if the test failed. None on success.
+    pub error: Option<String>,
+}
+impl TestRunnerResult {
+    pub fn success(outputs: OrderedHashMap<String, String>) -> Self {
+        Self { outputs, error: None }
+    }
+}
 type TestRunnerFunction = fn(
     inputs: &OrderedHashMap<String, String>,
     args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String>;
+) -> TestRunnerResult;
 /// Simple runner wrapping a test function.
 pub struct SimpleRunner {
     pub func: TestRunnerFunction,
@@ -220,7 +232,7 @@ impl TestFileRunner for SimpleRunner {
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         runner_args: &OrderedHashMap<String, String>,
-    ) -> Result<OrderedHashMap<String, String>, String> {
+    ) -> TestRunnerResult {
         (self.func)(inputs, runner_args)
     }
 }
@@ -235,7 +247,7 @@ impl TestFileRunner for SimpleRunner {
 /// fn func(
 ///     inputs: &OrderedHashMap<String, String>,
 ///     args: &OrderedHashMap<String, String>,
-/// ) -> Result<OrderedHashMap<String, String>, String>;
+/// ) -> TestRunnerResult;
 /// ```
 /// And `func` can read the tags from the file from the `inputs` map. It should return the expected
 /// outputs with the same tags as the file.
@@ -348,31 +360,32 @@ pub fn run_test_file(
 
         // Run the test.
         log::debug!("Running test: {test_path}");
-        let outputs = match runner.run(&test.attributes, &runner_args) {
-            Ok(outputs) => outputs,
-            Err(err) => {
+        let result = runner.run(&test.attributes, &runner_args);
+
+        // Fix if in fix mode, unrelated to the result.
+        if is_fix_mode {
+            let mut new_test = test.clone();
+            for (key, value) in result.outputs.iter() {
+                new_test.attributes.insert(key.to_string(), value.trim().to_string());
+            }
+            new_tests.insert(test_name.to_string(), new_test);
+        }
+
+        match result.error {
+            None => {}
+            Some(err) => {
                 errors.push(format!(
-                    "Test \"{test_name}\" failed.\nIn \
-                     {full_filename_str}:{line_num}.\n{err}\nRerun with CAIRO_FIX_TESTS=1 to fix."
+                    "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\n{err}"
                 ));
                 failed_tests.push(test_path);
-                if is_fix_mode {
-                    new_tests.insert(test_name.to_string(), test.clone());
-                }
                 continue;
             }
         };
 
-        if is_fix_mode {
-            let mut new_test = test.clone();
-            for (key, value) in outputs {
-                new_test.attributes.insert(key.to_string(), value.trim().to_string());
-            }
-            new_tests.insert(test_name.to_string(), new_test);
-            passed_tests += 1;
-        } else {
+        // If not in fix mode, also validate expectations.
+        if !is_fix_mode {
             let mut cur_test_errors = Vec::new();
-            for (key, value) in outputs {
+            for (key, value) in result.outputs {
                 let expected_value = get_attr(&key);
                 let actual_value = value.trim();
                 if actual_value != expected_value {
@@ -382,17 +395,18 @@ pub fn run_test_file(
                     ));
                 }
             }
-            if cur_test_errors.is_empty() {
-                passed_tests += 1;
-            } else {
+            if !cur_test_errors.is_empty() {
                 errors.push(format!(
                     "Test \"{test_name}\" failed.\nIn {full_filename_str}:{line_num}.\nRerun with \
                      CAIRO_FIX_TESTS=1 to fix.\n{err}",
                     err = cur_test_errors.join("")
                 ));
                 failed_tests.push(test_path);
+                continue;
             }
         }
+
+        passed_tests += 1;
     }
     if is_fix_mode {
         dump_to_test_file(new_tests, path.to_str().unwrap())?;

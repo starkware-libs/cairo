@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use cairo_lang_debug::DebugWithDb;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::reorder_statements;
@@ -25,7 +26,7 @@ cairo_lang_test_utils::test_file_test!(
 fn test_reorder_statements(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut LoweringDatabaseForTesting::default();
     let (test_function, semantic_diagnostics) = setup_test_function(
         db,
@@ -48,7 +49,7 @@ fn test_reorder_statements(
     let mut after = before.clone();
     reorder_statements(db, &mut after);
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "before".into(),
