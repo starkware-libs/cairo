@@ -9,6 +9,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
         self
     }
+    // With some doc.
     fn by_snap(self: @T) -> T {
         self
     }
@@ -17,6 +18,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn with_mut(mut a: usize) {
         a += 1;
     }
+    // With other doc.
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -36,6 +38,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
         self
     }
+    // With some doc.
     fn by_snap(self: @T) -> T {
         self
     }
@@ -44,6 +47,7 @@ impl SomeImpl<T> of SomeTrait<T> {
     fn with_mut(mut a: usize) {
         a += 1;
     }
+    // With other doc.
     fn multi_val(ref a: T, b: T, c: @T) {
     }
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)> {
@@ -56,21 +60,16 @@ impl SomeImpl<T> of SomeTrait<T> {
         self
     }
 }
-trait SomeTrait<T>  {
+trait SomeTrait<T> {
     fn by_val(self: T) -> T;
-
+    // With some doc.
     fn by_snap(self: @T) -> T;
-
     fn by_ref(ref a: T);
-
     fn with_mut(a: usize);
-
+    // With other doc.
     fn multi_val(ref a: T, b: T, c: @T);
-
     fn with_generics<V>(ref a: V, b: Box<T>, c: Box<V>) -> Box<(T, V)>;
-
     fn with_nopanic(self: T) -> T nopanic;
-
     fn with_implicits(self: T) -> T implicits(RangeCheck);
 }
 
@@ -92,8 +91,7 @@ impl OtherImpl<T> of TraitWithAttrs<T>;
 impl OtherImpl<T> of TraitWithAttrs<T>;
 #[some(attr)]
 #[other(attr2)]
-trait TraitWithAttrs<T>  {
-}
+trait TraitWithAttrs<T>;
 
 //! > expected_diagnostics
 
@@ -123,7 +121,6 @@ impl SomeImpl of SomeTrait {
 }
 trait SomeTrait {
     fn foo();
-
     fn bar(a: usize) -> usize;
 }
 
@@ -172,9 +169,9 @@ impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {
 #[generate_trait]
 impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 }
-trait TraitNotMatchingGenerics<T>  {
+trait TraitNotMatchingGenerics<T> {
 }
-trait OtherTrait<T>  {
+trait OtherTrait<T> {
 }
 
 //! > ==========================================================================
@@ -195,7 +192,6 @@ trait T {}
 
 #[generate_trait]
 impl MyImpl<impl I: T> of MyTrait<I>;
-trait MyTrait<impl I: T>  {
-}
+trait MyTrait<impl I: T>;
 
 //! > expected_diagnostics

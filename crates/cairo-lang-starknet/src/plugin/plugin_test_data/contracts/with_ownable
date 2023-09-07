@@ -265,15 +265,13 @@ impl Transfer<
 
 generate_trait:
 
-trait TransferTrait<TContractState, impl X: HasComponent<TContractState>>  {
-    fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress);
+    trait TransferTrait<TContractState, impl X: HasComponent<TContractState>> {
+        fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress);
+        fn owner(self: @ComponentState<TContractState>) -> ContractAddress;
+        fn transfer_ownership(ref self: ComponentState<TContractState>, new_owner: ContractAddress);
 
-    fn owner(self: @ComponentState<TContractState>) -> ContractAddress;
-
-    fn transfer_ownership(ref self: ComponentState<TContractState>, new_owner: ContractAddress);
-
-    fn validate_ownership(self: @ComponentState<TContractState>);
-}
+        fn validate_ownership(self: @ComponentState<TContractState>);
+    }
 
 
 impls:
@@ -593,12 +591,10 @@ impl EventOwnableIntoEvent of Into<super::ownable::Event, Event> {
 
 generate_trait:
 
-trait Trait {
-    fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
-
-    fn get_balance(self: @ContractState) -> u128;
-
-    fn set_balance(ref self: ContractState, new_balance: u128);
-}
+    trait Trait {
+        fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        fn get_balance(self: @ContractState) -> u128;
+        fn set_balance(ref self: ContractState, new_balance: u128);
+    }
 
 //! > expected_diagnostics

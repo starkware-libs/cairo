@@ -1851,14 +1851,12 @@ const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18c
 
 generate_trait:
 
-trait ATrait {
-}
+    trait ATrait {}
 
 
 generate_trait:
 
-trait BTrait {
-}
+    trait BTrait {}
 
 
 impls:
@@ -2093,13 +2091,11 @@ fn __wrapper_foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 generate_trait:
 
-trait ATrait {
-    fn foo_external(ref self: ContractState);
-
-    fn foo_l1_handler(ref self: ContractState);
-
-    fn foo_constructor(ref self: ContractState);
-}
+    trait ATrait {
+        fn foo_external(ref self: ContractState);
+        fn foo_l1_handler(ref self: ContractState);
+        fn foo_constructor(ref self: ContractState);
+    }
 
 
 impls:
