@@ -1,7 +1,7 @@
 //! > Test `embeddable_as` attribute with no arguments.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -107,7 +107,7 @@ error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed a
 //! > Test `embeddable_as` attribute with too many arguments.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -213,7 +213,7 @@ error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed a
 //! > Test `embeddable_as` attribute with named argument.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -319,7 +319,7 @@ error: Plugin diagnostic: `embeddable_as` attribute must have a single unnamed a
 //! > Test `embeddable_as` with no generic parameters.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -423,7 +423,7 @@ error: Plugin diagnostic: The first generic parameter of an impl with #[embeddab
 //! > Test `embeddable_as` with empty generic parameters list.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -527,7 +527,7 @@ error: Plugin diagnostic: The first generic parameter of an impl with #[embeddab
 //! > Test `embeddable_as` with wrong first generic parameter.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -631,7 +631,7 @@ error: Plugin diagnostic: The first generic parameter of an impl with #[embeddab
 //! > Test `embeddable_as` with no generic parameter that is an impl of HasComponent<TContractState>.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -735,7 +735,7 @@ error: Plugin diagnostic: An impl with #[embeddable_as] should have a generic pa
 //! > Test `embeddable_as` impl with empty body.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -831,7 +831,7 @@ error: Plugin diagnostic: `embeddable_as` attribute is not supported for empty i
 //! > Test `embeddable_as` with function with no/wrong `self` parameter.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]

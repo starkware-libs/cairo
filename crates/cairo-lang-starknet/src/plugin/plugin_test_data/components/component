@@ -1,7 +1,7 @@
 //! > Test expansion of a basic component.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Drop, starknet::Store)]

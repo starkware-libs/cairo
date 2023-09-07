@@ -1,7 +1,7 @@
 //! > Test method
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -30,7 +30,7 @@ impl OtherImpl of AnotherTrait {
 //! > Test method failures
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -104,7 +104,7 @@ error: Candidate impl test::AnotherMyTraitImpl::<?0> has an unused generic param
 //! > Test calling a method of a trait from the generic arguments.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -134,7 +134,7 @@ mod callable {
 //! > Test calling a method of a trait from an impl in the module.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -164,7 +164,7 @@ impl U8Callable of callable::CallableTrait<u8> {
 //! > Test calling a method of a trait from an impl in the module that is not the relevant impl.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -197,7 +197,7 @@ impl U16Callable of callable::CallableTrait<u16> {
 //! > Test calling a method of a trait from an impl alias in the module.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -228,7 +228,7 @@ mod callable {
 //! > Test calling a a trait method from an impl alias in the module that is not the relevant impl.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {

@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -346,7 +346,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 //! > 2 components in a contract
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]
@@ -804,7 +804,7 @@ impl EventComp2EventIntoEvent of Into<super::component2::Event, Event> {
 //! > 2 components in a contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::component]

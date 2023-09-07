@@ -1,7 +1,7 @@
 //! > Test valid expansion of a dispatcher.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::interface]
@@ -394,7 +394,7 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
 //! > Test erroneous expansion of a dispatcher.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::interface]

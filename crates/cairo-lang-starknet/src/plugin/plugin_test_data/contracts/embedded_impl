@@ -1,7 +1,7 @@
 //! > Test expansion of the outside implementations.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::embeddable(v0)]
@@ -254,7 +254,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test diagnostics for supplying disallowed impls.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::embeddable]

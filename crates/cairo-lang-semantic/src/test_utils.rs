@@ -15,7 +15,7 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
-use cairo_lang_test_utils::has_disallowed_diagnostics;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
@@ -286,7 +286,7 @@ pub fn test_function_diagnostics(
         inputs["module_code"].as_str(),
     )
     .get_diagnostics();
-    has_disallowed_diagnostics(args, &diagnostics)?;
+    verify_diagnostics_expectation(args, &diagnostics)?;
 
     Ok(OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]))
 }

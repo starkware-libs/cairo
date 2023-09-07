@@ -1,7 +1,7 @@
 //! > Test expansion of double indirection plugin.
 
 //! > test_runner_name
-test_general_plugin(allow_diagnostics: true)
+test_general_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[first]

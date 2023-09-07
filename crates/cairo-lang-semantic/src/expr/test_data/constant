@@ -1,7 +1,7 @@
 //! > Const
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -25,7 +25,7 @@ mod my_module {
 //! > Const diagnostics
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() { }
@@ -82,7 +82,7 @@ const WRONG_TYPE_AND_NOT_LITERAL: bool = 1 + 2;
 //! > Const of wrong type.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() { }
@@ -109,7 +109,7 @@ const DEFAULT_VAR: bool = 1;
 //! > Const of positive values out of range.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() { }
@@ -137,7 +137,7 @@ const SIGNED_VAR: i8 = 128;
 //! > Const of negative values in range.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: false)
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> i8 nopanic { A }
@@ -156,7 +156,7 @@ const B: i16 = -5;
 //! > Const of negative values out of range.
 
 //! > test_runner_name
-test_function_diagnostics(allow_diagnostics: true)
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() { }
