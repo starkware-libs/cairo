@@ -148,12 +148,12 @@ impl ImplWithUnsupportedAttributeArg<T> of OtherTrait<T> {
 
 //! > expected_diagnostics
 error: Generated trait must have a single element path.
- --> lib.cairo:2:29
+ --> test_src/lib.cairo:2:29
 impl ImplWithBadTrait<T> of Some::Path::To::Trait<T> {
                             ^**********************^
 
 error: Generated trait must have generic args matching the impl's generic params.
- --> lib.cairo:6:36
+ --> test_src/lib.cairo:6:36
 impl ImplNotMatchingGenerics<T> of TraitNotMatchingGenerics<S> {
                                    ^*************************^
 

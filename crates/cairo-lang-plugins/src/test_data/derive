@@ -415,26 +415,26 @@ impl TooManyDefaultValuesDefault of Default::<TooManyDefaultValues> {
 
 //! > expected_diagnostics
 error: Expected args.
- --> lib.cairo:1:9
+ --> test_src/lib.cairo:1:9
 #[derive()]
         ^^
 
 error: Expected path.
- --> lib.cairo:4:10
+ --> test_src/lib.cairo:4:10
 #[derive(1)]
          ^
 
 error: Unsupported trait for derive for extern types.
- --> lib.cairo:13:10
+ --> test_src/lib.cairo:13:10
 #[derive(Clone)]
          ^***^
 
 error: derive `Default` for enum only supported with a default variant.
- --> lib.cairo:16:10
+ --> test_src/lib.cairo:16:10
 #[derive(Default)]
          ^*****^
 
 error: Multiple variants annotated with `#[default]`
- --> lib.cairo:26:5
+ --> test_src/lib.cairo:26:5
     #[default]
     ^********^
