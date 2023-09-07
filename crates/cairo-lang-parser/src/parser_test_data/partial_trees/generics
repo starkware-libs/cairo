@@ -1,7 +1,7 @@
 //! > Test named generic arguments syntax
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn foo() {
@@ -33,7 +33,7 @@ GenericArgs
 //! > Test bad named generic arguments syntax
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 fn foo() {

@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use cairo_lang_syntax::node::SyntaxNode;
-use cairo_lang_test_utils::{bool_input, has_disallowed_diagnostics};
+use cairo_lang_test_utils::{bool_input, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::colored_printer::print_colored;
@@ -38,7 +38,7 @@ fn test_partial_parser_tree_inner(
 ) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SimpleParserDatabase::default();
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
-    has_disallowed_diagnostics(args, &diagnostics)?;
+    verify_diagnostics_expectation(args, &diagnostics)?;
 
     let ignored_kinds: Vec<&str> = inputs["ignored_kinds"].split('\n').collect();
     Ok(OrderedHashMap::from([
@@ -63,7 +63,7 @@ pub fn test_full_parser_tree(
 ) -> Result<OrderedHashMap<String, String>, String> {
     let db = &SimpleParserDatabase::default();
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics_from_inputs(db, inputs);
-    has_disallowed_diagnostics(args, &diagnostics)?;
+    verify_diagnostics_expectation(args, &diagnostics)?;
 
     Ok(OrderedHashMap::from([
         (

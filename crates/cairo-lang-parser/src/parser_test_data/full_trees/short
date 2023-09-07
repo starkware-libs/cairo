@@ -1,7 +1,7 @@
 //! > Test parsing of a short code.
 
 //! > test_runner_name
-test_full_parser_tree(allow_diagnostics: true)
+test_full_parser_tree(expect_diagnostics: *)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/short.cairo
@@ -72,7 +72,7 @@ false
 //! > Test parsing of a short code, colored.
 
 //! > test_runner_name
-test_full_parser_tree(allow_diagnostics: true)
+test_full_parser_tree(expect_diagnostics: *)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/short.cairo

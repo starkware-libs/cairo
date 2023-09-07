@@ -1,7 +1,7 @@
 //! > Test an ItemInlineMacro with parentheses syntax tree
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 inline_macro!(1,2);
@@ -38,7 +38,7 @@ ItemInlineMacro
 //! > Test an ItemInlineMacro with brackets syntax tree
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 inline_macro![1,2];
@@ -75,7 +75,7 @@ ItemInlineMacro
 //! > Test an ItemInlineMacro with braces syntax tree
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 inline_macro!{1,2};
@@ -158,7 +158,7 @@ ItemInlineMacro
 //! > Test an ItemInlineMacro without a `!`, with parentheses.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 inline_macro(1,2);
@@ -200,7 +200,7 @@ inline_macro(1,2);
 //! > Test an ItemInlineMacro without a `!`, with braces.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 inline_macro{1,2};
@@ -242,7 +242,7 @@ inline_macro{1,2};
 //! > Test an ItemInlineMacro without a `!`, with brackets.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 inline_macro[1,2];
@@ -284,7 +284,7 @@ inline_macro[1,2];
 //! > Test an identifier with nothing following.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 identifier
@@ -327,7 +327,7 @@ identifier
 //! > Test a macro with no argument list.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 macro!
@@ -365,7 +365,7 @@ macro!
 //! > Test a macro without right parentheses.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 identifier!(1,2
@@ -415,7 +415,7 @@ identifier!(1,2
 //! > Test a macro without a semicolon.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 identifier!(1,2)
@@ -460,7 +460,7 @@ identifier!(1,2)
 //! > Test a macro without a bang and with an identifier argument.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 identifier(x)

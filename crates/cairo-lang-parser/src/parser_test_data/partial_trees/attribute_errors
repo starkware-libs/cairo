@@ -1,7 +1,7 @@
 //! > Test attributes without an item.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 #[aaa]
@@ -32,7 +32,7 @@ error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/Ex
 //! > Test attributes without a trait item.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 trait Abc {
@@ -65,7 +65,7 @@ error: Skipped tokens. Expected: trait item or an attribute.
 //! > Test attributes without an impl item.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 impl Abc of Def {
@@ -98,7 +98,7 @@ error: Skipped tokens. Expected: impl item or an attribute.
 //! > Test repeated attributes without an item.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 #[aaa]
@@ -130,7 +130,7 @@ error: Skipped tokens. Expected: Const/Module/Use/FreeFunction/ExternFunction/Ex
 //! > Test repeated attributed literals.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: true)
+test_partial_parser_tree(expect_diagnostics: true)
 
 //! > cairo_code
 #[aaa]

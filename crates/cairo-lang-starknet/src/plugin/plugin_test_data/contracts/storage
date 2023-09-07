@@ -1,7 +1,7 @@
 //! > Test expansion of StarkNet storage logic.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Drop, starknet::Store, Hash)]
@@ -173,7 +173,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use var_felt252::InternalContractMemberStateTrait as var_felt252ContractMemberStateTrait;
     mod var_felt252 {
         use super::inner;
@@ -763,7 +763,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }

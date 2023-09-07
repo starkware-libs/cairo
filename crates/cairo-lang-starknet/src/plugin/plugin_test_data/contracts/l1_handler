@@ -1,7 +1,7 @@
 //! > Test valid expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -51,7 +51,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 
@@ -156,7 +156,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -168,7 +168,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test erroneous expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]

@@ -1,7 +1,7 @@
 //! > Test first param must be self.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -51,7 +51,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x198f4bc6efa8417922f8041d6e73821af41c6bbf15f1c93084da188702456b;
 
@@ -104,7 +104,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -125,7 +125,7 @@ error: Plugin diagnostic: The first parameter of an entry point must be `self`.
 //! > Test invalid constructor name.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -169,7 +169,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
 
@@ -178,7 +178,7 @@ fn __wrapper_invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt2
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -241,7 +241,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -257,7 +257,7 @@ error: Plugin diagnostic: The constructor function must be called `constructor`.
 //! > Test diagnostics non legacy storage variable.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -301,7 +301,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x14b80a3dbe8461b938c026ddbb0c5d189ca6e45d333ff1ecaecfe92dce54d9d;
 
@@ -354,7 +354,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -385,7 +385,7 @@ error: Plugin diagnostic: Identifier not found.
 //! > Test non-v0 external function.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -441,7 +441,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
 
@@ -560,7 +560,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -581,7 +581,7 @@ error: Plugin diagnostic: Only #[external(v0)] is supported.
 //! > Test diagnostics of non-serializable parameter in entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -634,7 +634,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xd3b97940b766b03f59196c092939b4f964559ef1cd235415d018804dbdcfe3;
 
@@ -709,7 +709,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -725,7 +725,7 @@ error: Trait has no implementation in context: core::serde::Serde::<test::MyType
 //! > Test diagnostics of non-serializable return type in entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -769,7 +769,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
 
@@ -778,7 +778,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -842,7 +842,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -858,7 +858,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test diagnostics of generic entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -902,7 +902,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
 
@@ -977,7 +977,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1010,7 +1010,7 @@ note: Trait has no implementation in context: core::traits::Destruct::<T>
 //! > Test multiple diagnostics from entry point.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1054,7 +1054,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
 
@@ -1134,7 +1134,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1150,7 +1150,7 @@ error: Unexpected return type. Expected: "(core::felt252, core::felt252)", found
 //! > Test account contract_entry point on a non-account contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1204,7 +1204,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
 
@@ -1213,7 +1213,7 @@ fn __wrapper___validate__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -1231,7 +1231,7 @@ fn __wrapper___validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> 
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -1249,7 +1249,7 @@ fn __wrapper___validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -1267,7 +1267,7 @@ fn __wrapper___execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -1333,7 +1333,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1345,7 +1345,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test raw_outputs diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1437,7 +1437,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x36b41c3fffa5f7f882a01476ca45292d6254f8dc075e4837185259a4d5d8351;
 
@@ -1490,7 +1490,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1536,7 +1536,7 @@ error: Plugin diagnostic: `raw_output` functions must return `Span::<felt252>`.
 //! > Test reusage of storage var name diagnostics.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1586,7 +1586,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
     use same_name::InternalContractMemberStateTrait as same_nameContractMemberStateTrait;
     mod same_name {
         #[derive(Copy, Drop)]
@@ -1676,7 +1676,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1692,7 +1692,7 @@ error: Plugin diagnostic: The name `same_name` is defined multiple times.
 //! > Contract with no storage.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1723,7 +1723,7 @@ error: Plugin diagnostic: Contracts must define a 'Storage' struct.
 //! > Not annotated storage struct.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1760,7 +1760,7 @@ error: Plugin diagnostic: 'Storage' struct must be annotated with #[storage].
 //! > Non v0 impls.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1814,7 +1814,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x3d8335ac3c47c73a6e9c5c10ea897e897b215aba4c18ccab86db3595169e73c;
 
@@ -1879,7 +1879,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -1895,7 +1895,7 @@ error: Plugin diagnostic: Only #[external(v0)] is supported.
 //! > old contract attribute.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[contract]
@@ -1937,7 +1937,7 @@ error: Plugin diagnostic: The 'abi' attribute was deprecated, please use `starkn
 //! > Attributes in external impl.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -1999,7 +1999,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
 
@@ -2008,7 +2008,7 @@ fn __wrapper_foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -2026,7 +2026,7 @@ fn __wrapper_foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -2044,7 +2044,7 @@ fn __wrapper_foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
+
     assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
     option::OptionTraitImpl::expect(
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
@@ -2120,7 +2120,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -2146,7 +2146,7 @@ error: Plugin diagnostic: The 'constructor' attribute is not allowed inside an e
 //! > "Event" enum without #[event].
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -2191,7 +2191,7 @@ contract:
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x6c97de948ac6fb043d95e7e280901efdd422607b3b71dafd3abf300622647b;
 
@@ -2244,7 +2244,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -2260,7 +2260,7 @@ error: Plugin diagnostic: Contract type that is named `Event` must be marked wit
 //! > #[event] enum that isn't named "Event".
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -2310,7 +2310,7 @@ enum Event {}
     fn contract_state_for_testing() -> ContractState {
         unsafe_new_contract_state()
     }
-    
+
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2e575c45381314b9946066629db110dd30bb5e0b081753f226075310e440696;
 
@@ -2363,7 +2363,7 @@ impl MyEventIsEvent of starknet::Event<MyEvent> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<MyEvent> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
@@ -2388,7 +2388,7 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
+
         Option::None
     }
 }
