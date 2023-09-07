@@ -1878,22 +1878,32 @@ fn expr_function_call(
     let expr_function_call =
         ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
     // Check panicable.
-    if signature.panicable
-        && !ctx
-            .get_signature(
-                stable_ptr.untyped(),
-                UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
-            )?
-            .panicable
-        // Minus literals are a special case, since we know these cannot panic, as they would fail
-        // on value in illegal bounds.
-        && try_extract_minus_literal(ctx.db, &ctx.exprs, &expr_function_call).is_none()
-    {
+    if signature.panicable && has_panic_incompatiblity(ctx, &expr_function_call)? {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
     Ok(Expr::FunctionCall(expr_function_call))
+}
+
+/// Checks a panicable function is called from a disallowed context.
+fn has_panic_incompatiblity(
+    ctx: &mut ComputationContext<'_>,
+    expr_function_call: &ExprFunctionCall,
+) -> Maybe<bool> {
+    // If this is not an actual function call, but actually a minus literal (e.g. -1), then this is
+    // the same as nopanic.
+    if try_extract_minus_literal(ctx.db, &ctx.exprs, expr_function_call).is_some() {
+        return Ok(false);
+    }
+    // If this is not from within a context of a function - e.g. a const item, we will exit with an
+    // error here., as this is a call with bad context.
+    let caller_signature = ctx.get_signature(
+        expr_function_call.stable_ptr.untyped(),
+        UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
+    )?;
+    // If the caller is nopanic, then this is a panic incompatibility.
+    Ok(!caller_signature.panicable)
 }
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
