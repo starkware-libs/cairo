@@ -1,6 +1,6 @@
 use block_builder::BlockBuilder;
 use cairo_lang_debug::DebugWithDb;
-use cairo_lang_diagnostics::{Maybe, ToOption};
+use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
@@ -10,12 +10,12 @@ use num_bigint::{BigInt, Sign};
 use num_traits::Zero;
 use semantic::corelib::{
     core_felt252_is_zero, core_felt252_ty, core_nonzero_ty, core_submodule, get_core_function_id,
-    get_core_trait, get_core_ty_by_name, get_function_id, jump_nz_nonzero_variant,
-    jump_nz_zero_variant, never_ty, unit_ty, validate_literal,
+    get_core_ty_by_name, get_function_id, jump_nz_nonzero_variant, jump_nz_zero_variant, never_ty,
+    unit_ty, validate_literal,
 };
 use semantic::items::enm::SemanticEnumEx;
-use semantic::items::functions::GenericFunctionId;
 use semantic::items::structure::SemanticStructEx;
+use semantic::literals::try_extract_minus_literal;
 use semantic::types::{peel_snapshots, wrap_in_snapshots};
 use semantic::{
     ConcreteTypeId, ExprFunctionCallArg, ExprPropagateError, ExprVarMemberPath, GenericArgumentId,
@@ -772,30 +772,6 @@ fn lower_expr_desnap(
     ))
 }
 
-/// Extracts a literal from a minus expression, or returns `None` if the expression is not a minus
-/// of a literal.
-fn try_extract_minus_literal(
-    ctx: &mut LoweringContext<'_, '_>,
-    expr: &semantic::ExprFunctionCall,
-) -> Option<BigInt> {
-    let [ExprFunctionCallArg::Value(expr_id)] = &expr.args[..] else {
-        return None;
-    };
-    let literal =
-        try_extract_matches!(&ctx.function_body.exprs[*expr_id], semantic::Expr::Literal)?;
-    let db = ctx.db.upcast();
-    let imp = try_extract_matches!(
-        expr.function.get_concrete(db).generic_function,
-        GenericFunctionId::Impl
-    )?;
-    let trait_id = imp.impl_id.concrete_trait(db).to_option()?.trait_id(db);
-    if trait_id != get_core_trait(db, "Neg".into()) {
-        return None;
-    }
-    let impl_func_name = imp.impl_function(db).to_option()??.name(db.upcast());
-    if impl_func_name != "neg" { None } else { Some(-literal.value.clone()) }
-}
-
 /// Lowers an expression of type [semantic::ExprFunctionCall].
 fn lower_expr_function_call(
     ctx: &mut LoweringContext<'_, '_>,
@@ -803,7 +779,8 @@ fn lower_expr_function_call(
     builder: &mut BlockBuilder,
 ) -> LoweringResult<LoweredExpr> {
     log::trace!("Lowering a function call expression: {:?}", expr.debug(&ctx.expr_formatter));
-    if let Some(value) = try_extract_minus_literal(ctx, expr) {
+    if let Some(value) = try_extract_minus_literal(ctx.db.upcast(), &ctx.function_body.exprs, expr)
+    {
         return lower_expr_literal_helper(ctx, expr.stable_ptr.untyped(), expr.ty, &value, builder);
     }
     let location = ctx.get_location(expr.stable_ptr.untyped());

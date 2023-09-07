@@ -1396,6 +1396,61 @@ impl BoundedU256 of BoundedInt<u256> {
     }
 }
 
+impl BoundedI8 of BoundedInt<i8> {
+    #[inline(always)]
+    fn min() -> i8 nopanic {
+        -0x80
+    }
+    #[inline(always)]
+    fn max() -> i8 nopanic {
+        0x7f
+    }
+}
+
+impl BoundedI16 of BoundedInt<i16> {
+    #[inline(always)]
+    fn min() -> i16 nopanic {
+        -0x8000
+    }
+    #[inline(always)]
+    fn max() -> i16 nopanic {
+        0x7fff
+    }
+}
+
+impl BoundedI32 of BoundedInt<i32> {
+    #[inline(always)]
+    fn min() -> i32 nopanic {
+        -0x80000000
+    }
+    #[inline(always)]
+    fn max() -> i32 nopanic {
+        0x7fffffff
+    }
+}
+
+impl BoundedI64 of BoundedInt<i64> {
+    #[inline(always)]
+    fn min() -> i64 nopanic {
+        -0x8000000000000000
+    }
+    #[inline(always)]
+    fn max() -> i64 nopanic {
+        0x7fffffffffffffff
+    }
+}
+
+impl BoundedI128 of BoundedInt<i128> {
+    #[inline(always)]
+    fn min() -> i128 nopanic {
+        -0x80000000000000000000000000000000
+    }
+    #[inline(always)]
+    fn max() -> i128 nopanic {
+        0x7fffffffffffffffffffffffffffffff
+    }
+}
+
 /// Conversions.
 impl Felt252TryIntoU8 of TryInto<felt252, u8> {
     fn try_into(self: felt252) -> Option<u8> {
