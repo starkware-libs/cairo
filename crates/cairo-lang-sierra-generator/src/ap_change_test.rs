@@ -2,6 +2,7 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::Itertools;
 
@@ -18,7 +19,7 @@ cairo_lang_test_utils::test_file_test!(
 fn contains_cycles_test(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SierraGenDatabaseForTesting::default();
     // Parse code and create semantic model.
     let test_module = setup_test_module(db, inputs["module_code"].as_str()).unwrap();
@@ -43,5 +44,5 @@ fn contains_cycles_test(
         })
         .join("\n");
 
-    Ok(OrderedHashMap::from([("result".into(), result)]))
+    TestRunnerResult::success(OrderedHashMap::from([("result".into(), result)]))
 }
