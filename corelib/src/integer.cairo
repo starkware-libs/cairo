@@ -1488,61 +1488,98 @@ impl BoundedI128 of BoundedInt<i128> {
 }
 
 /// Conversions.
+
+impl Felt252TryInto of TryInto<felt252, felt252> {
+    #[inline(always)]
+    fn try_into(self: felt252) -> Option<felt252> {
+        Option::Some(self)
+    }
+}
+
+impl Felt252IntoFelt252 of Into<felt252, felt252> {
+    #[inline(always)]
+    fn into(self: felt252) -> felt252 {
+        self
+    }
+}
+
 impl Felt252TryIntoU8 of TryInto<felt252, u8> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<u8> {
         u8_try_from_felt252(self)
     }
 }
+
 impl U8IntoFelt252 of Into<u8, felt252> {
+    #[inline(always)]
     fn into(self: u8) -> felt252 {
         u8_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoU16 of TryInto<felt252, u16> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<u16> {
         u16_try_from_felt252(self)
     }
 }
+
 impl U16IntoFelt252 of Into<u16, felt252> {
+    #[inline(always)]
     fn into(self: u16) -> felt252 {
         u16_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoU32 of TryInto<felt252, u32> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<u32> {
         u32_try_from_felt252(self)
     }
 }
+
 impl U32IntoFelt252 of Into<u32, felt252> {
+    #[inline(always)]
     fn into(self: u32) -> felt252 {
         u32_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoU64 of TryInto<felt252, u64> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<u64> {
         u64_try_from_felt252(self)
     }
 }
+
 impl U64IntoFelt252 of Into<u64, felt252> {
+    #[inline(always)]
     fn into(self: u64) -> felt252 {
         u64_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoU128 of TryInto<felt252, u128> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<u128> {
         u128_try_from_felt252(self)
     }
 }
+
 impl U128IntoFelt252 of Into<u128, felt252> {
+    #[inline(always)]
     fn into(self: u128) -> felt252 {
         u128_to_felt252(self)
     }
 }
+
 impl Felt252IntoU256 of Into<felt252, u256> {
+    #[inline(always)]
     fn into(self: felt252) -> u256 {
         u256_from_felt252(self)
     }
 }
+
 impl U256TryIntoFelt252 of TryInto<u256, felt252> {
     fn try_into(self: u256) -> Option<felt252> {
         let FELT252_PRIME_HIGH = 0x8000000000000110000000000000000_u128;
@@ -1560,52 +1597,72 @@ impl U256TryIntoFelt252 of TryInto<u256, felt252> {
         )
     }
 }
+
 impl Felt252TryIntoI8 of TryInto<felt252, i8> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<i8> {
         i8_try_from_felt252(self)
     }
 }
+
 impl I8IntoFelt252 of Into<i8, felt252> {
+    #[inline(always)]
     fn into(self: i8) -> felt252 {
         i8_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoI16 of TryInto<felt252, i16> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<i16> {
         i16_try_from_felt252(self)
     }
 }
+
 impl I16IntoFelt252 of Into<i16, felt252> {
+    #[inline(always)]
     fn into(self: i16) -> felt252 {
         i16_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoI32 of TryInto<felt252, i32> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<i32> {
         i32_try_from_felt252(self)
     }
 }
+
 impl I32IntoFelt252 of Into<i32, felt252> {
+    #[inline(always)]
     fn into(self: i32) -> felt252 {
         i32_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoI64 of TryInto<felt252, i64> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<i64> {
         i64_try_from_felt252(self)
     }
 }
+
 impl I64IntoFelt252 of Into<i64, felt252> {
+    #[inline(always)]
     fn into(self: i64) -> felt252 {
         i64_to_felt252(self)
     }
 }
+
 impl Felt252TryIntoI128 of TryInto<felt252, i128> {
+    #[inline(always)]
     fn try_into(self: felt252) -> Option<i128> {
         i128_try_from_felt252(self)
     }
 }
+
 impl I128IntoFelt252 of Into<i128, felt252> {
+    #[inline(always)]
     fn into(self: i128) -> felt252 {
         i128_to_felt252(self)
     }
@@ -1744,6 +1801,7 @@ impl DowncastableTryInto<
 }
 
 impl U8IntoU256 of Into<u8, u256> {
+    #[inline(always)]
     fn into(self: u8) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
@@ -1762,6 +1820,7 @@ impl U256TryIntoU8 of TryInto<u256, u8> {
 }
 
 impl U16IntoU256 of Into<u16, u256> {
+    #[inline(always)]
     fn into(self: u16) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
@@ -1780,6 +1839,7 @@ impl U256TryIntoU16 of TryInto<u256, u16> {
 }
 
 impl U32IntoU256 of Into<u32, u256> {
+    #[inline(always)]
     fn into(self: u32) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
@@ -1798,6 +1858,7 @@ impl U256TryIntoU32 of TryInto<u256, u32> {
 }
 
 impl U64IntoU256 of Into<u64, u256> {
+    #[inline(always)]
     fn into(self: u64) -> u256 {
         u256 { low: upcast(self), high: 0_u128 }
     }
@@ -1816,6 +1877,7 @@ impl U256TryIntoU64 of TryInto<u256, u64> {
 }
 
 impl U128IntoU256 of Into<u128, u256> {
+    #[inline(always)]
     fn into(self: u128) -> u256 {
         u256 { low: self, high: 0_u128 }
     }
@@ -1836,6 +1898,7 @@ impl U256TryIntoU128 of TryInto<u256, u128> {
 // === Zeroable ===
 
 impl U8Zeroable of Zeroable<u8> {
+    #[inline(always)]
     fn zero() -> u8 {
         0
     }
@@ -1850,6 +1913,7 @@ impl U8Zeroable of Zeroable<u8> {
 }
 
 impl U16Zeroable of Zeroable<u16> {
+    #[inline(always)]
     fn zero() -> u16 {
         0
     }
@@ -1864,6 +1928,7 @@ impl U16Zeroable of Zeroable<u16> {
 }
 
 impl U32Zeroable of Zeroable<u32> {
+    #[inline(always)]
     fn zero() -> u32 {
         0
     }
@@ -1878,6 +1943,7 @@ impl U32Zeroable of Zeroable<u32> {
 }
 
 impl U64Zeroable of Zeroable<u64> {
+    #[inline(always)]
     fn zero() -> u64 {
         0
     }
@@ -1892,6 +1958,7 @@ impl U64Zeroable of Zeroable<u64> {
 }
 
 impl U128Zeroable of Zeroable<u128> {
+    #[inline(always)]
     fn zero() -> u128 {
         0
     }
@@ -1906,6 +1973,7 @@ impl U128Zeroable of Zeroable<u128> {
 }
 
 impl U256Zeroable of Zeroable<u256> {
+    #[inline(always)]
     fn zero() -> u256 {
         0
     }
