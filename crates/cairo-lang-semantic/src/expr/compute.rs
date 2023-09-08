@@ -51,6 +51,7 @@ use crate::items::enm::SemanticEnumEx;
 use crate::items::imp::{filter_candidate_traits, infer_impl_by_self};
 use crate::items::modifiers::compute_mutability;
 use crate::items::structure::SemanticStructEx;
+use crate::literals::try_extract_minus_literal;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, Resolver};
 use crate::semantic::{self, FunctionId, LocalVariable, TypeId, TypeLongId, Variable};
 use crate::substitution::SemanticRewriter;
@@ -1825,20 +1826,6 @@ fn expr_function_call(
         ));
     }
 
-    // Check panicable.
-    if signature.panicable
-        && !ctx
-            .get_signature(
-                stable_ptr.untyped(),
-                UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
-            )?
-            .panicable
-    {
-        // TODO(spapini): Delay this check until after inference, to allow resolving specific
-        //   impls first.
-        return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
-    }
-
     // Check argument names and types.
     check_named_arguments(&named_args, &signature, ctx)?;
 
@@ -1887,12 +1874,26 @@ fn expr_function_call(
             ExprFunctionCallArg::Value(arg.id)
         });
     }
-    Ok(Expr::FunctionCall(ExprFunctionCall {
-        function: function_id,
-        args,
-        ty: signature.return_type,
-        stable_ptr,
-    }))
+
+    let expr_function_call =
+        ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
+    // Check panicable.
+    if signature.panicable
+        && !ctx
+            .get_signature(
+                stable_ptr.untyped(),
+                UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
+            )?
+            .panicable
+        // Minus literals are a special case, since we know these cannot panic, as they would fail
+        // on value in illegal bounds.
+        && try_extract_minus_literal(ctx.db, &ctx.exprs, &expr_function_call).is_none()
+    {
+        // TODO(spapini): Delay this check until after inference, to allow resolving specific
+        //   impls first.
+        return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
+    }
+    Ok(Expr::FunctionCall(expr_function_call))
 }
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.
