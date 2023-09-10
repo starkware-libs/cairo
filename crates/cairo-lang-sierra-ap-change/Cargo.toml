@@ -16,6 +16,3 @@ thiserror.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
-indoc.workspace = true
-test-case.workspace = true
-test-log.workspace = true

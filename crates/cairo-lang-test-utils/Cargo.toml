@@ -6,6 +6,9 @@ repository.workspace = true
 license-file.workspace = true
 description = "Utilities for writing tests in the Cairo compiler project."
 
+[features]
+testing = []
+
 [dependencies]
 cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.1.0" }
 colored.workspace = true
