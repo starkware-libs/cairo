@@ -40,7 +40,7 @@ mod upgradable {
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
-            self.emit(Event::ContractUpgraded(ContractUpgraded { old_class_hash, new_class_hash }));
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
             self.current_implementation.write(new_class_hash);
         }
     }
@@ -149,7 +149,7 @@ mod upgradable {
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
-            self.emit(Event::ContractUpgraded(ContractUpgraded { old_class_hash, new_class_hash }));
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
             self.current_implementation.write(new_class_hash);
         }
     }
@@ -987,7 +987,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 trait UpgradableTrait<TContractState> {
@@ -1294,7 +1294,8 @@ impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractStat
     fn get_contract_mut(ref self: super::upgradable::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit(ref self: super::upgradable::ComponentState<ContractState>, event: super::upgradable::Event) {
+    fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
+        let event: super::upgradable::Event = traits::Into::into(event);
         let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::UpgradableEvent(event));
     }
