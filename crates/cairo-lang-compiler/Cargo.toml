@@ -27,4 +27,3 @@ smol_str.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-test-log.workspace = true

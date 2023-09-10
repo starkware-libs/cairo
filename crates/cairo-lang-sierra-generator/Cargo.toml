@@ -34,7 +34,7 @@ smol_str.workspace = true
 cairo-lang-semantic = { path = "../cairo-lang-semantic", features = [
     "testing",
 ] }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 log.workspace = true

@@ -23,9 +23,8 @@ smol_str.workspace = true
 [dev-dependencies]
 cairo-lang-debug = { path = "../cairo-lang-debug" }
 cairo-lang-parser = { path = "../cairo-lang-parser" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 serde_json.workspace = true
-test-case.workspace = true
 test-log.workspace = true

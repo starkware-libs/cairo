@@ -34,7 +34,6 @@ once_cell.workspace = true
 pretty_assertions.workspace = true
 rstest.workspace = true
 salsa.workspace = true
-test-case.workspace = true
 test-log.workspace = true
 
 [[test]]
