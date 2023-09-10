@@ -14,7 +14,6 @@ itertools.workspace = true
 salsa.workspace = true
 
 [dev-dependencies]
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros" }
 env_logger.workspace = true
 indoc.workspace = true
 pretty_assertions.workspace = true

@@ -29,12 +29,10 @@ salsa.workspace = true
 smol_str.workspace = true
 
 [dev-dependencies]
-assert_matches.workspace = true
 cairo-lang-plugins = { path = "../cairo-lang-plugins" }
-cairo-lang-test-utils = { path = "../cairo-lang-test-utils" }
+cairo-lang-test-utils = { path = "../cairo-lang-test-utils", features = ["testing"] }
 env_logger.workspace = true
 indoc.workspace = true
 log.workspace = true
 pretty_assertions.workspace = true
-test-case.workspace = true
 test-log.workspace = true
