@@ -137,7 +137,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 
@@ -293,7 +293,8 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
     fn get_contract_mut(ref self: super::test_component::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit(ref self: super::test_component::ComponentState<ContractState>, event: super::test_component::Event) {
+    fn emit<S, impl IntoImp: traits::Into<S, super::test_component::Event>>(ref self: super::test_component::ComponentState<ContractState>, event: S) {
+        let event: super::test_component::Event = traits::Into::into(event);
         let mut contract = super::test_component::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::ABC(event));
     }
@@ -504,7 +505,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 
@@ -600,7 +601,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 
@@ -717,7 +718,8 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
     fn get_contract_mut(ref self: super::component1::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit(ref self: super::component1::ComponentState<ContractState>, event: super::component1::Event) {
+    fn emit<S, impl IntoImp: traits::Into<S, super::component1::Event>>(ref self: super::component1::ComponentState<ContractState>, event: S) {
+        let event: super::component1::Event = traits::Into::into(event);
         let mut contract = super::component1::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::Comp1Event(event));
     }
@@ -734,7 +736,8 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
     fn get_contract_mut(ref self: super::component2::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit(ref self: super::component2::ComponentState<ContractState>, event: super::component2::Event) {
+    fn emit<S, impl IntoImp: traits::Into<S, super::component2::Event>>(ref self: super::component2::ComponentState<ContractState>, event: S) {
+        let event: super::component2::Event = traits::Into::into(event);
         let mut contract = super::component2::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::Comp2Event(event));
     }

@@ -40,7 +40,7 @@ mod upgradable {
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
-            self.emit(Event::ContractUpgraded(ContractUpgraded { old_class_hash, new_class_hash }));
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
             self.current_implementation.write(new_class_hash);
         }
     }
@@ -149,7 +149,7 @@ mod upgradable {
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
-            self.emit(Event::ContractUpgraded(ContractUpgraded { old_class_hash, new_class_hash }));
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
             self.current_implementation.write(new_class_hash);
         }
     }
