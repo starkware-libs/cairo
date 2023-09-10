@@ -86,8 +86,9 @@ impl ComponentsGenerationData {
                      {CONTRACT_STATE_NAME} {{
                unsafe_new_contract_state()
            }}
-           fn emit(ref self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: \
-                     $component_path$::{EVENT_TYPE_NAME}) {{
+           fn emit<S, impl IntoImp: traits::Into<S, $component_path$::{EVENT_TYPE_NAME}>>(ref \
+                     self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: S) {{
+               let event: $component_path$::{EVENT_TYPE_NAME} = traits::Into::into(event);
                let mut contract = $component_path$::{HAS_COMPONENT_TRAIT}::get_contract_mut(ref \
                      self);
                contract.emit(Event::$event_name$(event));
