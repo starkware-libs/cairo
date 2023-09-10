@@ -4,7 +4,7 @@
 ExpandContractTestRunner(allow_diagnostics: false)
 
 //! > cairo_code
-#[derive(starknet::Event, PartialEq, Drop, Serde)]
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
 struct A {
     x: felt252,
     #[key]
@@ -25,7 +25,7 @@ enum MyEventEnum {
 //! > generated_cairo_code
 lib.cairo:
 
-#[derive(starknet::Event, PartialEq, Drop, Serde)]
+#[derive(starknet::Event, starknet::Store, PartialEq, Drop, Serde)]
 struct A {
     x: felt252,
     #[key]
@@ -69,7 +69,7 @@ impl ASerde of Serde::<A> {
 }
 
 
-event_impl:
+starknet_derive:
 
 impl AIsEvent of starknet::Event<A> {
     fn append_keys_and_data(
@@ -88,6 +88,47 @@ impl AIsEvent of starknet::Event<A> {
                     ref keys
                 )?;
         Option::Some(A {x, data, })
+    }
+}impl StoreA of starknet::Store::<A> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<A> {
+        let x = starknet::Store::<felt252>::read(address_domain, base)?;
+        let mut current_offset = starknet::Store::<felt252>::size();
+        let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
+        starknet::SyscallResult::Ok(
+            A {
+                x,
+                data,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: A) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write(address_domain, base, value.x)?;
+        let mut current_offset = starknet::Store::<felt252>::size();
+        starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<A> {
+        let x = starknet::Store::<felt252>::read_at_offset(address_domain, base, offset)?;
+        let mut current_offset = offset + starknet::Store::<felt252>::size();
+        let data = starknet::Store::<usize>::read_at_offset(address_domain, base, current_offset)?;
+        starknet::SyscallResult::Ok(
+            A {
+                x,
+                data,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: A) -> starknet::SyscallResult<()> {
+        starknet::Store::<felt252>::write_at_offset(address_domain, base, offset, value.x)?;
+        let mut current_offset = offset + starknet::Store::<felt252>::size();
+        starknet::Store::<usize>::write_at_offset(address_domain, base, current_offset, value.data)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<felt252>::size() +
+        starknet::Store::<usize>::size()
     }
 }
 
@@ -115,7 +156,7 @@ impl BSerde of Serde::<B> {
 }
 
 
-event_impl:
+starknet_derive:
 
 impl BIsEvent of starknet::Event<B> {
     fn append_keys_and_data(
@@ -156,7 +197,7 @@ impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
 impl MyEventEnumDrop of Drop::<MyEventEnum>;
 
 
-event_impl:
+starknet_derive:
 
 impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
     fn append_keys_and_data(
