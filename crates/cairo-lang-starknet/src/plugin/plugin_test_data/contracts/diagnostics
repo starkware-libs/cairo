@@ -91,7 +91,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -228,7 +228,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -341,7 +341,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -547,7 +547,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -696,7 +696,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -829,7 +829,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -964,7 +964,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -1121,7 +1121,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -1320,7 +1320,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -1477,7 +1477,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -1663,7 +1663,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -1864,7 +1864,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -2103,7 +2103,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -2227,7 +2227,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -2346,7 +2346,7 @@ impls:
 impl MyEventDrop of Drop::<MyEvent>;
 
 
-event_impl:
+starknet_derive:
 
 impl MyEventIsEvent of starknet::Event<MyEvent> {
     fn append_keys_and_data(
@@ -2371,7 +2371,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(

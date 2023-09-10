@@ -229,7 +229,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -502,7 +502,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
