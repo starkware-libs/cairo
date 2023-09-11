@@ -22,7 +22,7 @@ mod counter_contract {
         OutOfScopeEvent,
     };
     use super::test_component::dataComponentMemberStateTrait;
-    component !(path: super::test_component, storage: test_component_storage, event: Event);
+    component!(path: super::test_component, storage: test_component_storage, event: Event);
 
     #[storage]
     struct Storage {
