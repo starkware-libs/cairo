@@ -89,6 +89,30 @@ impl AstPathExtract for ast::Expr {
     }
 }
 
+/// Helper trait for syntax queries on `ast::GenericParam`.
+pub trait GenericParamExtract {
+    /// Returns the trait_path of the generic param if
+    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath>;
+    /// Returns true if `self` matches an impl of `$trait_name$<$generic_arg$>`.
+    /// Does not resolve paths or type aliases.
+    fn is_trait_impl(&self, db: &dyn SyntaxGroup, trait_name: &str, generic_arg: &str) -> bool {
+        if let Some(path) = self.trait_path(db) {
+            path.is_name_with_arg(db, trait_name, generic_arg)
+        } else {
+            false
+        }
+    }
+}
+impl GenericParamExtract for ast::GenericParam {
+    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath> {
+        match self {
+            ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
+            ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
+            ast::GenericParam::ImplAnonymous(i) => Some(i.trait_path(db)),
+        }
+    }
+}
+
 /// Strips one preceding underscore from the given string slice, if any.
 pub fn maybe_strip_underscore(s: &str) -> &str {
     match s.strip_prefix('_') {
