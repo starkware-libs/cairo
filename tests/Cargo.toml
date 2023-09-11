@@ -24,7 +24,7 @@ cairo-lang-sierra-gas = { path = "../crates/cairo-lang-sierra-gas" }
 cairo-lang-sierra-generator = { path = "../crates/cairo-lang-sierra-generator" }
 cairo-lang-sierra-to-casm = { path = "../crates/cairo-lang-sierra-to-casm", features = ["testing"] }
 cairo-lang-syntax = { path = "../crates/cairo-lang-syntax" }
-cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils" }
+cairo-lang-test-utils = { path = "../crates/cairo-lang-test-utils", features = ["testing"] }
 cairo-lang-utils = { path = "../crates/cairo-lang-utils" }
 env_logger.workspace = true
 itertools.workspace = true
