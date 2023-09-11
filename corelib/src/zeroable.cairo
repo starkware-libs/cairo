@@ -40,7 +40,7 @@ impl NonZeroIntoImpl<T> of Into<NonZero<T>, T> {
     }
 }
 
-impl IsZeroResultIntoBool<T, impl TDrop: Drop<T>> of Into<IsZeroResult<T>, bool> {
+impl IsZeroResultIntoBool<T, +Drop<T>> of Into<IsZeroResult<T>, bool> {
     fn into(self: IsZeroResult<T>) -> bool {
         match self {
             IsZeroResult::Zero => true,

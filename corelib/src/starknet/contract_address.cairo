@@ -63,7 +63,7 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
 }
 
 impl HashContractAddress<
-    S, impl SHashState: HashStateTrait<S>, impl SDrop: Drop<S>
+    S, impl SHashState: HashStateTrait<S>, +Drop<S>
 > of Hash<starknet::ContractAddress, S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: ContractAddress) -> S {

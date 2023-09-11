@@ -300,8 +300,13 @@ pub fn generic_impl_param_trait(
         })
         .unwrap();
 
-    let syntax = extract_matches!(generic_param_syntax, ast::GenericParam::Impl);
-    let trait_path_syntax = syntax.trait_path(syntax_db);
+    let trait_path_syntax = match generic_param_syntax {
+        ast::GenericParam::ImplNamed(syntax) => syntax.trait_path(syntax_db),
+        ast::GenericParam::ImplAnonymous(syntax) => syntax.trait_path(syntax_db),
+        _ => {
+            panic!("generic_impl_param_trait() called on a non impl generic param.")
+        }
+    };
 
     let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
     let inference_id = InferenceId::GenericImplParamTrait(generic_param_id);
@@ -373,16 +378,30 @@ fn semantic_from_generic_param_ast(
             let ty = resolve_type(db, diagnostics, resolver, &syntax.ty(db.upcast()));
             GenericParam::Const(GenericParamConst { id, ty })
         }
-        ast::GenericParam::Impl(syntax) => {
+        ast::GenericParam::ImplNamed(syntax) => {
             let path_syntax = syntax.trait_path(db.upcast());
-            let concrete_trait = resolver
-                .resolve_concrete_path(diagnostics, &path_syntax, NotFoundItemType::Trait)
-                .and_then(|resolved_item| {
-                    try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait).ok_or_else(
-                        || diagnostics.report(&path_syntax, SemanticDiagnosticKind::UnknownTrait),
-                    )
-                });
-            GenericParam::Impl(GenericParamImpl { id, concrete_trait })
+            impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id)
+        }
+        ast::GenericParam::ImplAnonymous(syntax) => {
+            let path_syntax = syntax.trait_path(db.upcast());
+            impl_generic_param_semantic(resolver, diagnostics, &path_syntax, id)
         }
     }
+}
+
+/// Computes the semantic model of an impl generic parameter given its trait path.
+fn impl_generic_param_semantic(
+    resolver: &mut Resolver<'_>,
+    diagnostics: &mut SemanticDiagnostics,
+    path_syntax: &ast::ExprPath,
+    id: GenericParamId,
+) -> GenericParam {
+    let concrete_trait = resolver
+        .resolve_concrete_path(diagnostics, path_syntax, NotFoundItemType::Trait)
+        .and_then(|resolved_item| {
+            try_extract_matches!(resolved_item, ResolvedConcreteItem::Trait).ok_or_else(|| {
+                diagnostics.report(path_syntax, SemanticDiagnosticKind::UnknownTrait)
+            })
+        });
+    GenericParam::Impl(GenericParamImpl { id, concrete_trait })
 }

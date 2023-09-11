@@ -4,7 +4,7 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
@@ -80,6 +80,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 impl_generic_params,
             ) = impl_generic_params.clone()
             {
+                // TODO(orizi): Support generic args that do not directly match the generic params.
                 let trait_generic_args = segment.generic_args(db).generic_args(db).elements(db);
                 let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
                 zip(trait_generic_args, impl_generic_params).all(
@@ -101,10 +102,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                             return false;
                         };
                         let trait_generic_arg_name = trait_generic_arg.ident(db);
-                        let impl_generic_param_name = match impl_generic_param {
-                            ast::GenericParam::Type(param) => param.name(db),
-                            ast::GenericParam::Const(param) => param.name(db),
-                            ast::GenericParam::Impl(param) => param.name(db),
+                        let Some(impl_generic_param_name) = impl_generic_param.name(db) else {
+                            return false;
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },
