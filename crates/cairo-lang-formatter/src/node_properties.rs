@@ -20,7 +20,10 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenNot
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprInlineMacro)) =>
+                if matches!(
+                    grandparent_kind(db, self),
+                    Some(SyntaxKind::ExprInlineMacro) | Some(SyntaxKind::ItemInlineMacro)
+                ) =>
             {
                 true
             }
