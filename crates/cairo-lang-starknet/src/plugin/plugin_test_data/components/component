@@ -38,6 +38,7 @@ mod component {
         #[external]
         fn set_data(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.data.write(value);
+            self.emit(Log{});
         }
     }
 }
@@ -84,6 +85,7 @@ mod component {
         #[external]
         fn set_data(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.data.write(value);
+            self.emit(Log{});
         }
     }
 }
@@ -289,7 +291,7 @@ trait HasComponent<TContractState> {
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 trait MyInnerImplTrait<TContractState> {
