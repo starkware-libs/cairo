@@ -98,7 +98,7 @@ impls:
 impl MyTypeDrop of Drop::<MyType>;
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreMyType of starknet::Store::<MyType> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
@@ -320,7 +320,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -362,7 +362,7 @@ impls:
 impl LogDrop of Drop::<Log>;
 
 
-event_impl:
+starknet_derive:
 
 impl LogIsEvent of starknet::Event<Log> {
     fn append_keys_and_data(

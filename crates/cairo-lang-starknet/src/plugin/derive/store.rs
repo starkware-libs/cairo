@@ -1,24 +1,34 @@
-use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
-use cairo_lang_syntax::attribute::structured::{
-    AttributeArg, AttributeArgVariant, AttributeStructurize,
-};
+use cairo_lang_defs::patcher::RewriteNode;
+use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indent::indent_by;
 use indoc::formatdoc;
 
-use super::consts::STORE_TRAIT;
+use crate::plugin::consts::STORE_TRAIT;
+
+/// Returns the rewrite node for the `#[derive(starknet::Store)]` attribute.
+pub fn handle_store_derive(
+    db: &dyn SyntaxGroup,
+    item_ast: &ast::Item,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<RewriteNode> {
+    match item_ast {
+        ast::Item::Struct(struct_ast) => handle_struct(db, struct_ast),
+        ast::Item::Enum(enum_ast) => handle_enum(db, enum_ast, diagnostics),
+        _ => None,
+    }
+}
 
 /// Derive the `Store` trait for structs annotated with `derive(starknet::Store)`.
-pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> PluginResult {
+fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<RewriteNode> {
     let mut reads_values = Vec::new();
     let mut reads_values_at_offset = Vec::new();
     let mut reads_fields = Vec::new();
     let mut writes = Vec::new();
     let mut writes_at_offset = Vec::new();
     let mut sizes = Vec::new();
-
     for (i, field) in struct_ast.members(db).elements(db).iter().enumerate() {
         let field_name = field.name(db).as_syntax_node().get_text_without_trivia(db);
         let field_type = field.type_clause(db).ty(db).as_syntax_node().get_text_without_trivia(db);
@@ -92,7 +102,7 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         sizes.push(format!("{STORE_TRAIT}::<{field_type}>::size()"));
     }
 
-    let sa_impl = formatdoc!(
+    let store_impl = formatdoc!(
         "
         impl Store{struct_name} of {STORE_TRAIT}::<{struct_name}> {{
             fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> \
@@ -138,22 +148,15 @@ pub fn handle_struct(db: &dyn SyntaxGroup, struct_ast: ast::ItemStruct) -> Plugi
         sizes = if sizes.is_empty() { "0".to_string() } else { sizes.join(" +\n        ") }
     );
 
-    let diagnostics = vec![];
-
-    PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: "starknet_store_impl".into(),
-            content: sa_impl,
-            diagnostics_mappings: Default::default(),
-            aux_data: None,
-        }),
-        diagnostics,
-        remove_original_item: false,
-    }
+    Some(RewriteNode::Text(store_impl))
 }
 
-/// Derive the `starknet::Store` trait for structs annotated with `derive(starknet::Store)`.
-pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResult {
+/// Derive the `starknet::Store` trait for enums annotated with `derive(starknet::Store)`.
+fn handle_enum(
+    db: &dyn SyntaxGroup,
+    enum_ast: &ast::ItemEnum,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<RewriteNode> {
     let enum_name = enum_ast.name(db).as_syntax_node().get_text_without_trivia(db);
     let mut match_idx = Vec::new();
     let mut match_idx_at_offset = Vec::new();
@@ -167,14 +170,11 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
     for (i, variant) in enum_ast.variants(db).elements(db).iter().enumerate() {
         let indicator = if variant.attributes(db).has_attr(db, "default") {
             if default_index.is_some() {
-                return PluginResult {
-                    code: None,
-                    diagnostics: vec![PluginDiagnostic {
-                        stable_ptr: variant.stable_ptr().untyped(),
-                        message: "Multiple variants annotated with `#[default]`".to_string(),
-                    }],
-                    remove_original_item: false,
-                };
+                diagnostics.push(PluginDiagnostic {
+                    stable_ptr: variant.stable_ptr().untyped(),
+                    message: "Multiple variants annotated with `#[default]`".to_string(),
+                });
+                return None;
             }
             default_index = Some(i);
             0
@@ -272,36 +272,5 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         match_value_at_offset = indent_by(12, match_value_at_offset.join(",\n")),
     );
 
-    let diagnostics = vec![];
-
-    PluginResult {
-        code: Some(PluginGeneratedFile {
-            name: "starknet_store_impl".into(),
-            content: store_impl,
-            diagnostics_mappings: Default::default(),
-            aux_data: None,
-        }),
-        diagnostics,
-        remove_original_item: false,
-    }
-}
-
-/// Returns true if the type should be derived as a starknet::Store.
-pub fn derive_store_needed<T: QueryAttrs>(with_attrs: &T, db: &dyn SyntaxGroup) -> bool {
-    with_attrs.query_attr(db, "derive").into_iter().any(|attr| {
-        let attr = attr.structurize(db);
-        for arg in &attr.args {
-            let AttributeArg {
-                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
-                ..
-            } = arg
-            else {
-                continue;
-            };
-            if path.as_syntax_node().get_text_without_trivia(db) == STORE_TRAIT {
-                return true;
-            }
-        }
-        false
-    })
+    Some(RewriteNode::Text(store_impl))
 }

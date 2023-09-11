@@ -234,12 +234,12 @@ fn test_abi_failure() {
         diagnostics,
         indoc! {"
         error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
-         --> lib.cairo[event_impl]:8:34
+         --> lib.cairo[starknet_derive]:8:34
                         starknet::Event::append_keys_and_data(
                                          ^******************^
 
         error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
-         --> lib.cairo[event_impl]:20:44
+         --> lib.cairo[starknet_derive]:20:44
                         let val = starknet::Event::deserialize(
                                                    ^*********^
 

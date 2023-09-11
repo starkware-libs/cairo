@@ -344,7 +344,7 @@ impl WrappedFelt252Hash<
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
@@ -404,7 +404,7 @@ impl ZeroSizeSerde of Serde::<ZeroSize> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
@@ -459,7 +459,7 @@ impl SimpleEnumSerde of Serde::<SimpleEnum> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
@@ -558,7 +558,7 @@ impl EnumWithDefaultSerde of Serde::<EnumWithDefault> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
@@ -684,7 +684,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(

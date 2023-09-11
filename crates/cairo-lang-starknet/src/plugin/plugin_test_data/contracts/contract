@@ -275,7 +275,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -334,7 +334,7 @@ impls:
 impl AwesomeEventDrop of Drop::<AwesomeEvent>;
 
 
-event_impl:
+starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     fn append_keys_and_data(
@@ -361,7 +361,7 @@ impls:
 impl BestEventEverDrop of Drop::<BestEventEver>;
 
 
-event_impl:
+starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
     fn append_keys_and_data(
