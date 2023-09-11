@@ -3,7 +3,7 @@ use traits::{Index, Default};
 extern type Felt252Dict<T>;
 extern type SquashedFelt252Dict<T>;
 extern type Felt252DictEntry<T>;
-impl SquashedFelt252DictDrop<T, impl TDrop: Drop<T>> of Drop<SquashedFelt252Dict<T>>;
+impl SquashedFelt252DictDrop<T, +Drop<T>> of Drop<SquashedFelt252Dict<T>>;
 
 extern fn felt252_dict_new<T>() -> Felt252Dict<T> implicits(SegmentArena) nopanic;
 
@@ -32,7 +32,7 @@ trait Felt252DictTrait<T> {
     /// Returns a copy of the value at the given key.
     ///
     /// Requires the `Copy` trait.
-    fn get<impl TCopy: Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
+    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T;
     fn squash(self: Felt252Dict<T>) -> SquashedFelt252Dict<T> nopanic;
     fn entry(self: Felt252Dict<T>, key: felt252) -> (Felt252DictEntry<T>, T) nopanic;
 }
@@ -44,7 +44,7 @@ impl Felt252DictImpl<T, impl TDefault: Felt252DictValue<T>> of Felt252DictTrait<
     }
 
     #[inline]
-    fn get<impl TCopy: Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
+    fn get<+Copy<T>>(ref self: Felt252Dict<T>, key: felt252) -> T {
         let (entry, prev_value) = felt252_dict_entry_get(self, key);
         let return_value = prev_value;
         self = felt252_dict_entry_finalize(entry, prev_value);
@@ -81,7 +81,7 @@ impl Felt252DictDefault<T> of Default<Felt252Dict<T>> {
 }
 
 impl Felt252DictDestruct<
-    T, impl TDrop: Drop<T>, impl TDefault: Felt252DictValue<T>
+    T, +Drop<T>, impl TDefault: Felt252DictValue<T>
 > of Destruct<Felt252Dict<T>> {
     #[inline(always)]
     fn destruct(self: Felt252Dict<T>) nopanic {
@@ -90,7 +90,7 @@ impl Felt252DictDestruct<
 }
 
 impl Felt252DictEntryDestruct<
-    T, impl TDrop: Drop<T>, impl TDefault: Felt252DictValue<T>
+    T, +Drop<T>, impl TDefault: Felt252DictValue<T>
 > of Destruct<Felt252DictEntry<T>> {
     #[inline(always)]
     fn destruct(self: Felt252DictEntry::<T>) nopanic {
@@ -101,7 +101,7 @@ impl Felt252DictEntryDestruct<
 impl Felt252DictIndex<
     T,
     impl TDictImpl: Felt252DictTrait<T>,
-    impl TCopy: Copy<T>,
+    +Copy<T>,
     impl EntryDestruct: Destruct<Felt252DictEntry<T>>
 > of Index<Felt252Dict<T>, felt252, T> {
     #[inline(always)]
