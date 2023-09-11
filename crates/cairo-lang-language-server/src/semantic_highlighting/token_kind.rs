@@ -33,6 +33,7 @@ pub enum SemanticTokenKind {
     String,
     Field,
     Annotation,
+    InlineMacro,
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node(
@@ -99,6 +100,7 @@ impl SemanticTokenKind {
             let module_file_id = ModuleFileId(module_id, file_index);
 
             match node.kind(syntax_db) {
+                SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
                     expr_path_ptr =
                         Some(ast::ExprPath::from_syntax_node(syntax_db, node.clone()).stable_ptr());
@@ -107,6 +109,7 @@ impl SemanticTokenKind {
                 SyntaxKind::PatternIdentifier => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::Variant => return Some(SemanticTokenKind::EnumMember),
                 SyntaxKind::Attribute => return Some(SemanticTokenKind::Annotation),
+
                 _ => {}
             };
 
@@ -189,6 +192,7 @@ impl SemanticTokenKind {
             SemanticTokenKind::String => 16,
             SemanticTokenKind::Field => 17,
             SemanticTokenKind::Annotation => 18,
+            SemanticTokenKind::InlineMacro => 19,
         }
     }
     pub fn legend() -> Vec<SemanticTokenType> {
@@ -212,6 +216,7 @@ impl SemanticTokenKind {
             SemanticTokenType::STRING,
             SemanticTokenType::PROPERTY,
             SemanticTokenType::DECORATOR,
+            SemanticTokenType::MACRO,
         ]
     }
 }
