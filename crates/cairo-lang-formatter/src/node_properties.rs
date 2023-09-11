@@ -42,6 +42,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             {
                 true
             }
+            SyntaxKind::TokenPlus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+            {
+                true
+            }
             SyntaxKind::TokenLT | SyntaxKind::TokenGT
                 if matches!(
                     grandparent_kind(db, self),
@@ -95,6 +100,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
+            }
+            SyntaxKind::TokenPlus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+            {
+                true
             }
             SyntaxKind::TokenLT
                 if matches!(
@@ -415,7 +425,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     ))
                 }
-                SyntaxKind::TerminalPlus => {
+                SyntaxKind::TerminalPlus
+                    if parent_kind(db, self) != Some(SyntaxKind::GenericParamImplAnonymous) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
                         BreakLinePointIndentation::Indented,
@@ -568,9 +580,12 @@ impl SyntaxNodeFormat for SyntaxNode {
             let path_node = self.parent().unwrap().parent().unwrap();
             matches!(
                 parent_kind(db, &path_node),
-                Some(SyntaxKind::ItemImpl)
-                    | Some(SyntaxKind::GenericParamImpl)
-                    | Some(SyntaxKind::GenericArgValueExpr)
+                Some(
+                    SyntaxKind::ItemImpl
+                        | SyntaxKind::GenericParamImplNamed
+                        | SyntaxKind::GenericParamImplAnonymous
+                        | SyntaxKind::GenericArgValueExpr
+                )
             )
         } else {
             false

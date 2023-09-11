@@ -127,8 +127,8 @@ impl TupleSize2Hash<
     impl SHashState: HashStateTrait<S>,
     impl E0Hash: Hash<E0, S, SHashState>,
     impl E1Hash: Hash<E1, S, SHashState>,
-    impl E0Drop: Drop<E0>,
-    impl E1Drop: Drop<E1>,
+    +Drop<E0>,
+    +Drop<E1>,
 > of Hash<(E0, E1), S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1,)) -> S {
@@ -146,9 +146,9 @@ impl TupleSize3Hash<
     impl E0Hash: Hash<E0, S, SHashState>,
     impl E1Hash: Hash<E1, S, SHashState>,
     impl E2Hash: Hash<E2, S, SHashState>,
-    impl E0Drop: Drop<E0>,
-    impl E1Drop: Drop<E1>,
-    impl E2Drop: Drop<E2>,
+    +Drop<E0>,
+    +Drop<E1>,
+    +Drop<E2>,
 > of Hash<(E0, E1, E2), S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1, E2)) -> S {
@@ -168,10 +168,10 @@ impl TupleSize4Hash<
     impl E1Hash: Hash<E1, S, SHashState>,
     impl E2Hash: Hash<E2, S, SHashState>,
     impl E3Hash: Hash<E3, S, SHashState>,
-    impl E0Drop: Drop<E0>,
-    impl E1Drop: Drop<E1>,
-    impl E2Drop: Drop<E2>,
-    impl E3Drop: Drop<E3>,
+    +Drop<E0>,
+    +Drop<E1>,
+    +Drop<E2>,
+    +Drop<E3>,
 > of Hash<(E0, E1, E2, E3), S, SHashState> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1, E2, E3)) -> S {

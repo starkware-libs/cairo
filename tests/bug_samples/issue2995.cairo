@@ -5,4 +5,4 @@ struct B<T, G, impl GImpl: ATrait> {
     g: G,
 }
 
-impl BCopy<T, G, impl GImpl: ATrait, impl TCopy: Copy<T>, impl GCopy: Copy<G>> of Copy<B<T, G>>;
+impl BCopy<T, G, impl GImpl: ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G>>;

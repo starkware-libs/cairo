@@ -79,8 +79,8 @@ impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
 /// `base` must be in the range [2, 36]. Otherwise, this function panics.
 fn append_formatted_to_byte_array<
     T,
-    impl DropImpl: Drop<T>,
-    impl CopyImpl: Copy<T>,
+    +Drop<T>,
+    +Copy<T>,
     impl DivRemImpl: DivRem<T>,
     impl TryIntoU8: TryInto<T, u8>,
     impl ZeroableImpl: Zeroable<T>,

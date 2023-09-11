@@ -148,6 +148,21 @@ impl NameGreen for TraitItemFunctionPtr {
     }
 }
 
+pub trait GenericParamEx {
+    /// Returns the name of a generic param if one exists.
+    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier>;
+}
+impl GenericParamEx for ast::GenericParam {
+    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier> {
+        match self {
+            ast::GenericParam::Type(t) => Some(t.name(db)),
+            ast::GenericParam::Const(c) => Some(c.name(db)),
+            ast::GenericParam::ImplNamed(i) => Some(i.name(db)),
+            ast::GenericParam::ImplAnonymous(_) => None,
+        }
+    }
+}
+
 /// Trait for querying attributes of AST items.
 pub trait QueryAttrs {
     /// Generic call `self.attributes(db).elements(db)`.

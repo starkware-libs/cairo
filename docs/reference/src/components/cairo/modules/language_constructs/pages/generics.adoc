@@ -104,6 +104,14 @@ as there is no impl of `MulTrait` for `u128`.
 Note that in many cases generic arguments can be inferred and thus can be omitted from the
 use of the item.
 
+Impl generic parameters can be anonymous:
+[source,rust]
+----
+fn foo<T, +MyTrait<T>>(x: T) -> T {
+    MyTrait::mul(x)
+}
+----
+
 === Const Generic Parameters
 
 Const generic parameters are used to define generic constants. It is currently very partially

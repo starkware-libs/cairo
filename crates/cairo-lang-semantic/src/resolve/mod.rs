@@ -88,11 +88,13 @@ impl ResolvedItems {
 #[derive(Debug, PartialEq, Eq, DebugWithDb)]
 #[debug_db(dyn SemanticGroup + 'static)]
 pub struct ResolverData {
-    // Current module in which to resolve the path.
+    /// Current module in which to resolve the path.
     pub module_file_id: ModuleFileId,
-    // Generic parameters accessible to the resolver.
-    pub generic_params: OrderedHashMap<SmolStr, GenericParamId>,
-    // Lookback map for resolved identifiers in path. Used in "Go to definition".
+    /// Named generic parameters accessible to the resolver.
+    generic_param_by_name: OrderedHashMap<SmolStr, GenericParamId>,
+    /// All generic parameters accessible to the resolver.
+    pub generic_params: Vec<GenericParamId>,
+    /// Lookback map for resolved identifiers in path. Used in "Go to definition".
     pub resolved_items: ResolvedItems,
     /// Inference data for the resolver.
     pub inference_data: InferenceData,
@@ -101,6 +103,7 @@ impl ResolverData {
     pub fn new(module_file_id: ModuleFileId, inference_id: InferenceId) -> Self {
         Self {
             module_file_id,
+            generic_param_by_name: Default::default(),
             generic_params: Default::default(),
             resolved_items: Default::default(),
             inference_data: InferenceData::new(inference_id),
@@ -113,6 +116,7 @@ impl ResolverData {
     ) -> Self {
         Self {
             module_file_id: self.module_file_id,
+            generic_param_by_name: self.generic_param_by_name.clone(),
             generic_params: self.generic_params.clone(),
             resolved_items: self.resolved_items.clone(),
             inference_data: self.inference_data.clone_with_inference_id(db, inference_id),
@@ -163,6 +167,7 @@ impl<'db> Resolver<'db> {
             db,
             data: ResolverData {
                 module_file_id,
+                generic_param_by_name: Default::default(),
                 generic_params: Default::default(),
                 resolved_items: Default::default(),
                 inference_data: InferenceData::new(inference_id),
@@ -182,8 +187,11 @@ impl<'db> Resolver<'db> {
     /// This is required since a resolver needs to exist before resolving the generic params,
     /// and thus, they are added to the Resolver only after they are resolved.
     pub fn add_generic_param(&mut self, generic_param_id: GenericParamId) {
+        self.generic_params.push(generic_param_id);
         let db = self.db.upcast();
-        self.generic_params.insert(generic_param_id.name(db), generic_param_id);
+        if let Some(name) = generic_param_id.name(db) {
+            self.generic_param_by_name.insert(name, generic_param_id);
+        }
     }
 
     /// Resolves a concrete item, given a path.
@@ -646,7 +654,7 @@ impl<'db> Resolver<'db> {
         let ident = identifier.text(syntax_db);
 
         // If a generic param with this name is found, use it.
-        if let Some(generic_param_id) = self.data.generic_params.get(&ident) {
+        if let Some(generic_param_id) = self.data.generic_param_by_name.get(&ident) {
             let item = match generic_param_id.kind(self.db.upcast()) {
                 GenericKind::Type => ResolvedConcreteItem::Type(
                     self.db.intern_type(TypeLongId::GenericParameter(*generic_param_id)),
@@ -775,10 +783,7 @@ impl<'db> Resolver<'db> {
     }
 
     pub fn impl_lookup_context(&self) -> ImplLookupContext {
-        ImplLookupContext::new(
-            self.module_file_id.0,
-            self.generic_params.values().copied().collect(),
-        )
+        ImplLookupContext::new(self.module_file_id.0, self.generic_params.clone())
     }
 
     pub fn resolve_generic_args(
@@ -797,7 +802,7 @@ impl<'db> Resolver<'db> {
         let generic_param_by_name = generic_params
             .iter()
             .enumerate()
-            .map(|(i, param)| (param.id().name(self.db.upcast()), (i, param.id())))
+            .filter_map(|(i, param)| Some((param.id().name(self.db.upcast())?, (i, param.id()))))
             .collect::<UnorderedHashMap<_, _>>();
 
         for (i, generic_arg_syntax) in generic_args_syntax.iter().enumerate() {
@@ -835,15 +840,12 @@ impl<'db> Resolver<'db> {
                             },
                         )
                     })?;
-                    if arg_syntax_for_param
-                        .insert(generic_param.id(), arg_syntax.value(syntax_db))
-                        .is_some()
-                    {
-                        return Err(diagnostics.report(
-                            arg_syntax,
-                            GenericArgDuplicate { name: generic_param.id().name(self.db.upcast()) },
-                        ));
-                    }
+                    assert_eq!(
+                        arg_syntax_for_param
+                            .insert(generic_param.id(), arg_syntax.value(syntax_db)),
+                        None,
+                        "Unexpected duplication in ordered params."
+                    );
                 }
             }
         }

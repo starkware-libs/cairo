@@ -14,7 +14,7 @@ use crate::plugin::consts::{
     GENERIC_CONTRACT_STATE_NAME, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::{is_ref_param, AstPathExtract};
+use crate::plugin::utils::{is_ref_param, AstPathExtract, GenericParamExtract};
 
 /// Accumulated data specific for component generation.
 #[derive(Default)]
@@ -130,17 +130,8 @@ fn get_embeddable_as_impl_generic_params(
     }
 
     // Verify there is another generic param which is an impl of HasComponent<TContractState>.
-    let has_has_component_impl = generic_param_elements.any(|param| {
-        if let ast::GenericParam::Impl(imp) = param {
-            imp.trait_path(db).is_name_with_arg(
-                db,
-                HAS_COMPONENT_TRAIT,
-                GENERIC_CONTRACT_STATE_NAME,
-            )
-        } else {
-            false
-        }
-    });
+    let has_has_component_impl = generic_param_elements
+        .any(|param| param.is_impl_of(db, HAS_COMPONENT_TRAIT, GENERIC_CONTRACT_STATE_NAME));
     if !has_has_component_impl {
         return Err(PluginDiagnostic {
             message: format!(
