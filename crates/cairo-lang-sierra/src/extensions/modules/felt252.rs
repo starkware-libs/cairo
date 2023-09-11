@@ -67,10 +67,10 @@ impl Felt252BinaryOperationWithVarLibfunc {
     fn new(operator: Felt252BinaryOperator) -> Self {
         Self { operator }
     }
-    const ADD: &str = "felt252_add";
-    const SUB: &str = "felt252_sub";
-    const MUL: &str = "felt252_mul";
-    const DIV: &str = "felt252_div";
+    const ADD: &'static str = "felt252_add";
+    const SUB: &'static str = "felt252_sub";
+    const MUL: &'static str = "felt252_mul";
+    const DIV: &'static str = "felt252_div";
 }
 impl GenericLibfunc for Felt252BinaryOperationWithVarLibfunc {
     type Concrete = Felt252BinaryOpConcreteLibfunc;
@@ -144,10 +144,10 @@ impl Felt252BinaryOperationWithConstLibfunc {
     fn new(operator: Felt252BinaryOperator) -> Self {
         Self { operator }
     }
-    const ADD: &str = "felt252_add_const";
-    const SUB: &str = "felt252_sub_const";
-    const MUL: &str = "felt252_mul_const";
-    const DIV: &str = "felt252_div_const";
+    const ADD: &'static str = "felt252_add_const";
+    const SUB: &'static str = "felt252_sub_const";
+    const MUL: &'static str = "felt252_mul_const";
+    const DIV: &'static str = "felt252_div_const";
 }
 impl GenericLibfunc for Felt252BinaryOperationWithConstLibfunc {
     type Concrete = Felt252OperationWithConstConcreteLibfunc;
