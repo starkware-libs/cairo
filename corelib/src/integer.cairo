@@ -1924,7 +1924,7 @@ enum SignedIntegerResult<T> {
     Underflow: T,
     Overflow: T,
 }
-impl SignedIntegerResultDrop<T, impl TDrop: Drop<T>> of Drop<SignedIntegerResult<T>>;
+impl SignedIntegerResultDrop<T, +Drop<T>> of Drop<SignedIntegerResult<T>>;
 
 #[derive(Copy, Drop)]
 extern type i8;

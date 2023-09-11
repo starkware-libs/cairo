@@ -126,7 +126,9 @@ impl ImplId {
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
         match self {
             ImplId::Concrete(concrete_impl) => concrete_impl.name(db),
-            ImplId::GenericParameter(generic_param_impl) => generic_param_impl.name(db.upcast()),
+            ImplId::GenericParameter(generic_param_impl) => {
+                generic_param_impl.name(db.upcast()).unwrap_or_else(|| "_".into())
+            }
             ImplId::ImplVar(var) => format!("{var:?}").into(),
         }
     }
@@ -852,7 +854,7 @@ impl DebugWithDb<dyn SemanticGroup> for UninferredImpl {
                 write!(f, "{:?}", impl_alias.full_path(db.upcast()))
             }
             UninferredImpl::GenericParam(param) => {
-                write!(f, "generic param {}", param.name(db.upcast()))
+                write!(f, "generic param {}", param.name(db.upcast()).unwrap_or_else(|| "_".into()))
             }
         }
     }

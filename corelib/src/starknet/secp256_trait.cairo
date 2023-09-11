@@ -48,7 +48,7 @@ trait Secp256PointTrait<Secp256Point> {
 /// Returns the public key associated with the signer, represented as a point on the curve.
 fn recover_public_key<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
+    +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
@@ -79,9 +79,7 @@ fn recover_public_key<
 
 /// Computes the negation of a scalar modulo N (the size of the curve).
 fn secp256_ec_negate_scalar<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
 >(
     c: u256
 ) -> u256 {
@@ -95,7 +93,7 @@ fn secp256_ec_negate_scalar<
 /// Returns a Result with an error string if the signature is invalid.
 fn is_eth_signature_valid<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
+    +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
@@ -121,7 +119,7 @@ fn is_eth_signature_valid<
 /// where N is the size of the curve.
 fn verify_eth_signature<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
+    +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
@@ -135,9 +133,7 @@ fn verify_eth_signature<
 
 /// Checks whether `value` is in the range [1, N), where N is the size of the curve.
 fn is_signature_entry_valid<
-    Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
 >(
     value: u256
 ) -> bool {
@@ -147,7 +143,7 @@ fn is_signature_entry_valid<
 /// Converts a public key point to the corresponding Ethereum address.
 fn public_key_point_to_eth_address<
     Secp256Point,
-    impl Secp256PointDrop: Drop<Secp256Point>,
+    +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
     impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
 >(
