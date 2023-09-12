@@ -938,12 +938,12 @@ fn cast_must_pass<
     +Drop<B>,
     +Copy<B>,
     +Copy<A>,
-    impl APartialEq: PartialEq<A>,
-    impl BPartialEq: PartialEq<B>,
-    impl BIA: BoundedInt<A>,
-    impl BIB: BoundedInt<B>,
-    impl IAB: Into<A, B>,
-    impl IBA: TryInto<B, A>
+    +PartialEq<A>,
+    +PartialEq<B>,
+    +BoundedInt<A>,
+    +BoundedInt<B>,
+    +Into<A, B>,
+    +TryInto<B, A>
 >(
     ui: A, uj: B
 ) -> bool {

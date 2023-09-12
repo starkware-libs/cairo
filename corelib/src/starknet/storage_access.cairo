@@ -645,9 +645,7 @@ impl TupleSize4Store<
 }
 
 
-impl ResultStore<
-    T, E, impl TStore: Store<T>, impl EStore: Store<E>, +Drop<T>, +Drop<E>,
-> of Store<Result<T, E>> {
+impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
@@ -718,7 +716,7 @@ impl ResultStore<
     }
 }
 
-impl OptionStore<T, impl TStore: Store<T>, +Drop<T>,> of Store<Option<T>> {
+impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;

@@ -1693,15 +1693,13 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl DowncastableTryInto<
-    From, To, impl FromToDowncastable: Downcastable<From, To>
-> of TryInto<From, To> {
+impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
