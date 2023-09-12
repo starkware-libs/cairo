@@ -1,7 +1,7 @@
 //! > Test empty traits and impls.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 trait Foo<T>;
@@ -69,7 +69,7 @@ FunctionWithBody
 //! > Test nonempty traits and impls.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 trait Foo<T> {
@@ -172,7 +172,7 @@ SyntaxFile
 //! > Test trait function with "accidental" body in a module - later items should still be in the module.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 mod x {

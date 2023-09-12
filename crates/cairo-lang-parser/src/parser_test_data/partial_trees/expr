@@ -1,7 +1,7 @@
 //! > Test negative literal
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn f() -> u32 {
@@ -30,7 +30,7 @@ StatementExpr
 //! > Test precedence between unary and binary operators
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 fn f() -> u32 {

@@ -1,7 +1,7 @@
 //! > Test expansion of derive.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: false)
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Copy, Default, Drop, Hash)]
@@ -346,7 +346,7 @@ impl ExternTypeDrop of Drop::<ExternType>;
 //! > Test diagnostics of derive.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: true)
+test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[derive()]

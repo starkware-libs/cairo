@@ -3,8 +3,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
-use cairo_lang_test_utils::has_disallowed_diagnostics;
 use cairo_lang_test_utils::parse_test_file::TestFileRunner;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::test_utils::SHARED_DB;
@@ -47,7 +47,7 @@ impl TestFileRunner for ExpandContractTestRunner {
         }
 
         let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
-        has_disallowed_diagnostics(args, &diagnostics)?;
+        verify_diagnostics_expectation(args, &diagnostics)?;
 
         Ok(OrderedHashMap::from([
             ("generated_cairo_code".into(), file_contents.join("\n\n")),

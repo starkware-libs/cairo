@@ -1,7 +1,7 @@
 //! > Wrong arguments to component! macro.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -279,7 +279,7 @@ error: Plugin diagnostic: Invalid component macro argument. Expected `event: <va
 //! > Non-simple identifiers for storage/event arguments in component! macro.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -543,7 +543,7 @@ error: Plugin diagnostic: Component macro argument `event` must be a simple iden
 //! > Non-path arguments in component! macro.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -800,7 +800,7 @@ error: Plugin diagnostic: Component macro argument `event` must be a path expres
 //! > Invalid component! macro.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -1076,7 +1076,7 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 //! > Illegal nested storage members.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -1369,7 +1369,7 @@ error: Plugin diagnostic: Only #[nested(v0)] is supported.
 //! > component! macro points to a non existing storage.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -1623,7 +1623,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 //! > component! macro points to a non nested storage.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -1959,7 +1959,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 //! > component! macro points to a non existing event.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -2225,7 +2225,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > component! macro points to an event that is not defined directly in the contract (via `use`).
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
@@ -2521,7 +2521,7 @@ fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 //! > 2 components in a contract - one valid and one invalid.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::component]
