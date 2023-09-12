@@ -1992,7 +1992,13 @@ impl<'a> Parser<'a> {
                 let name = self.parse_identifier();
                 let colon = self.parse_token::<TerminalColon>();
                 let trait_path = self.parse_type_path();
-                Ok(GenericParamImpl::new_green(self.db, impl_kw, name, colon, trait_path).into())
+                Ok(GenericParamImplNamed::new_green(self.db, impl_kw, name, colon, trait_path)
+                    .into())
+            }
+            SyntaxKind::TerminalPlus => {
+                let plus = self.take::<TerminalPlus>();
+                let trait_path = self.parse_type_path();
+                Ok(GenericParamImplAnonymous::new_green(self.db, plus, trait_path).into())
             }
             _ => Ok(GenericParamType::new_green(self.db, self.try_parse_identifier()?).into()),
         }

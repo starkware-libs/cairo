@@ -99,7 +99,8 @@ fn test_generic_item_id(
             }
             SyntaxKind::GenericParamType
             | SyntaxKind::GenericParamConst
-            | SyntaxKind::GenericParamImpl => {
+            | SyntaxKind::GenericParamImplNamed
+            | SyntaxKind::GenericParamImplAnonymous => {
                 let param_id = db.intern_generic_param(GenericParamLongId(
                     module_file_id,
                     ast::GenericParamPtr(node.stable_ptr()),

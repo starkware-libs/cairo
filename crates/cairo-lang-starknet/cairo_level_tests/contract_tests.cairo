@@ -325,15 +325,7 @@ enum MyEventEnum {
     B: B,
 }
 
-fn event_serde_tester<
-    T,
-    impl TEvent: starknet::Event<T>,
-    impl TClone: Clone<T>,
-    impl TPartialEq: PartialEq<T>,
-    impl TDrop: Drop<T>
->(
-    event: T
-) {
+fn event_serde_tester<T, +starknet::Event<T>, +Clone<T>, +PartialEq<T>, +Drop<T>>(event: T) {
     let original_event = event.clone();
     let mut keys = Default::default();
     let mut data = Default::default();

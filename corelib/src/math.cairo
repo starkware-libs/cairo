@@ -14,8 +14,8 @@ use integer::{u256_wide_mul, u512_safe_div_rem_by_u256};
 /// Uses the Extended Euclidean algorithm.
 fn egcd<
     T,
-    impl TCopyImpl: Copy<T>,
-    impl TDropImpl: Drop<T>,
+    +Copy<T>,
+    +Drop<T>,
     impl TAddImpl: Add<T>,
     impl TMulImpl: Mul<T>,
     impl TDivRemImpl: DivRem<T>,
@@ -44,8 +44,8 @@ fn egcd<
 /// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
 fn inv_mod<
     T,
-    impl TCopyImpl: Copy<T>,
-    impl TDropImpl: Drop<T>,
+    +Copy<T>,
+    +Drop<T>,
     impl TAddImpl: Add<T>,
     impl TSubImpl: Sub<T>,
     impl TMulImpl: Mul<T>,
