@@ -77,7 +77,7 @@ fn pop_log_raw(address: ContractAddress) -> Option<(Span<felt252>, Span<felt252>
 }
 
 // Pop the earliest unpopped logged event for the contract as the requested type.
-fn pop_log<T, impl TEvent: starknet::Event<T>>(address: ContractAddress) -> Option<T> {
+fn pop_log<T, +starknet::Event<T>>(address: ContractAddress) -> Option<T> {
     let (mut keys, mut data) = pop_log_raw(address)?;
     starknet::Event::deserialize(ref keys, ref data)
 }

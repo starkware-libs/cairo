@@ -7,7 +7,7 @@ trait HashStateTrait<S> {
 }
 
 /// A trait for values that can be hashed.
-trait Hash<T, S, impl SHashState: HashStateTrait<S>> {
+trait Hash<T, S, +HashStateTrait<S>> {
     /// Updates the hash state with the given value.
     fn update_state(state: S, value: T) -> S;
 }
@@ -20,12 +20,10 @@ trait LegacyHash<T> {
 }
 
 /// Implementation of `LegacyHash` for types that have `Hash` for backwards compatibility.
-impl LegacyHashForHash<
-    T, impl THash: Hash<T, pedersen::HashState, pedersen::HashStateImpl>
-> of LegacyHash<T> {
+impl LegacyHashForHash<T, +Hash<T, pedersen::HashState, _>> of LegacyHash<T> {
     #[inline(always)]
     fn hash(state: felt252, value: T) -> felt252 {
-        THash::update_state(pedersen::HashState { state }, value).state
+        pedersen::HashState { state }.update_with(value).state
     }
 }
 
@@ -35,16 +33,14 @@ trait HashStateExTrait<S, T> {
     fn update_with(self: S, value: T) -> S;
 }
 
-impl HashStateEx<
-    S, impl SHashState: HashStateTrait<S>, T, impl THash: Hash<T, S, SHashState>
-> of HashStateExTrait<S, T> {
+impl HashStateEx<S, +HashStateTrait<S>, T, +Hash<T, S, _>> of HashStateExTrait<S, T> {
     #[inline(always)]
     fn update_with(self: S, value: T) -> S {
-        THash::update_state(self, value)
+        Hash::update_state(self, value)
     }
 }
 
-impl HashFelt252<S, impl SHashState: HashStateTrait<S>> of Hash<felt252, S, SHashState> {
+impl HashFelt252<S, +HashStateTrait<S>> of Hash<felt252, S, _> {
     #[inline(always)]
     fn update_state(state: S, value: felt252) -> S {
         state.update(value)
@@ -54,46 +50,38 @@ impl HashFelt252<S, impl SHashState: HashStateTrait<S>> of Hash<felt252, S, SHas
 /// Impl for `Hash` for types that can be converted into `felt252` using the `Into` trait.
 /// Usage example:
 /// ```ignore
-/// impl MyTypeHash<S, impl H: HashStateTrait<S>, +Drop<S>> =
+/// impl MyTypeHash<S, +HashStateTrait<S>, +Drop<S>> =
 ///     core::hash::into_felt252_based::Impl<MyType, S>;`
 /// ```
 mod into_felt252_based {
-    impl Impl<
-        T,
-        S,
-        impl TIntoFelt252: Into<T, felt252>,
-        impl SHashState: super::HashStateTrait<S>,
-        +Drop<S>
-    > of super::Hash<T, S, SHashState> {
+    impl Impl<T, S, +Into<T, felt252>, +super::HashStateTrait<S>, +Drop<S>> of super::Hash<T, S> {
         #[inline(always)]
         fn update_state(state: S, value: T) -> S {
-            SHashState::update(state, TIntoFelt252::into(value))
+            state.update(value.into())
         }
     }
 }
 
-impl HashBool<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<bool, S>;
-impl HashU8<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u8, S>;
-impl HashU16<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u16, S>;
-impl HashU32<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u32, S>;
-impl HashU64<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u64, S>;
-impl HashU128<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u128, S>;
-impl HashI8<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i8, S>;
-impl HashI16<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i16, S>;
-impl HashI32<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i32, S>;
-impl HashI64<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i64, S>;
-impl HashI128<S, impl H: HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i128, S>;
+impl HashBool<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<bool, S>;
+impl HashU8<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u8, S>;
+impl HashU16<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u16, S>;
+impl HashU32<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u32, S>;
+impl HashU64<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u64, S>;
+impl HashU128<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<u128, S>;
+impl HashI8<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i8, S>;
+impl HashI16<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i16, S>;
+impl HashI32<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i32, S>;
+impl HashI64<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i64, S>;
+impl HashI128<S, +HashStateTrait<S>, +Drop<S>> = into_felt252_based::Impl<i128, S>;
 
-impl TupleSize0Hash<S, impl SHashState: HashStateTrait<S>> of Hash<(), S, SHashState> {
+impl TupleSize0Hash<S, +HashStateTrait<S>> of Hash<(), S> {
     #[inline(always)]
     fn update_state(state: S, value: ()) -> S {
         state
     }
 }
 
-impl TupleSize1Hash<
-    E0, S, impl E0Hash: Hash<E0, S, SHashState>, impl SHashState: HashStateTrait<S>
-> of Hash<(E0,), S, SHashState> {
+impl TupleSize1Hash<E0, S, +Hash<E0, S>, +HashStateTrait<S>> of Hash<(E0,), S> {
     #[inline(always)]
     fn update_state(state: S, value: (E0,)) -> S {
         let (e0,) = value;
@@ -102,15 +90,8 @@ impl TupleSize1Hash<
 }
 
 impl TupleSize2Hash<
-    E0,
-    E1,
-    S,
-    impl SHashState: HashStateTrait<S>,
-    impl E0Hash: Hash<E0, S, SHashState>,
-    impl E1Hash: Hash<E1, S, SHashState>,
-    +Drop<E0>,
-    +Drop<E1>,
-> of Hash<(E0, E1), S, SHashState> {
+    E0, E1, S, +HashStateTrait<S>, +Hash<E0, S>, +Hash<E1, S>, +Drop<E0>, +Drop<E1>,
+> of Hash<(E0, E1), S> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1,)) -> S {
         let (e0, e1) = value;
@@ -123,14 +104,14 @@ impl TupleSize3Hash<
     E1,
     E2,
     S,
-    impl SHashState: HashStateTrait<S>,
-    impl E0Hash: Hash<E0, S, SHashState>,
-    impl E1Hash: Hash<E1, S, SHashState>,
-    impl E2Hash: Hash<E2, S, SHashState>,
+    +HashStateTrait<S>,
+    +Hash<E0, S>,
+    +Hash<E1, S>,
+    +Hash<E2, S>,
     +Drop<E0>,
     +Drop<E1>,
     +Drop<E2>,
-> of Hash<(E0, E1, E2), S, SHashState> {
+> of Hash<(E0, E1, E2), S> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1, E2)) -> S {
         let (e0, e1, e2) = value;
@@ -144,16 +125,16 @@ impl TupleSize4Hash<
     E2,
     E3,
     S,
-    impl SHashState: HashStateTrait<S>,
-    impl E0Hash: Hash<E0, S, SHashState>,
-    impl E1Hash: Hash<E1, S, SHashState>,
-    impl E2Hash: Hash<E2, S, SHashState>,
-    impl E3Hash: Hash<E3, S, SHashState>,
+    +HashStateTrait<S>,
+    +Hash<E0, S>,
+    +Hash<E1, S>,
+    +Hash<E2, S>,
+    +Hash<E3, S>,
     +Drop<E0>,
     +Drop<E1>,
     +Drop<E2>,
     +Drop<E3>,
-> of Hash<(E0, E1, E2, E3), S, SHashState> {
+> of Hash<(E0, E1, E2, E3), S> {
     #[inline(always)]
     fn update_state(state: S, value: (E0, E1, E2, E3)) -> S {
         let (e0, e1, e2, e3) = value;

@@ -447,57 +447,55 @@ impl TupleSize0Store of Store<()> {
     }
 }
 
-impl TupleSize1Store<E0, impl E0Store: Store<E0>, +Drop<E0>> of Store<(E0,)> {
+impl TupleSize1Store<E0, +Store<E0>, +Drop<E0>> of Store<(E0,)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0,)> {
-        Result::Ok((E0Store::read(address_domain, base)?,))
+        Result::Ok((Store::read(address_domain, base)?,))
     }
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: (E0,)) -> SyscallResult<()> {
         let (e0,) = value;
-        E0Store::write(address_domain, base, e0)
+        Store::write(address_domain, base, e0)
     }
     #[inline(always)]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8
     ) -> SyscallResult<(E0,)> {
-        Result::Ok((E0Store::read_at_offset(address_domain, base, offset)?,))
+        Result::Ok((Store::read_at_offset(address_domain, base, offset)?,))
     }
     #[inline(always)]
     fn write_at_offset(
         address_domain: u32, base: StorageBaseAddress, offset: u8, value: (E0,)
     ) -> SyscallResult<()> {
         let (e0,) = value;
-        E0Store::write_at_offset(address_domain, base, offset, e0)
+        Store::write_at_offset(address_domain, base, offset, e0)
     }
     #[inline(always)]
     fn size() -> u8 {
-        E0Store::size()
+        Store::<E0>::size()
     }
 }
 
-impl TupleSize2Store<
-    E0, E1, impl E0Store: Store<E0>, +Drop<E0>, impl E1Store: Store<E1>, +Drop<E1>
-> of Store<(E0, E1)> {
+impl TupleSize2Store<E0, E1, +Store<E0>, +Drop<E0>, +Store<E1>, +Drop<E1>> of Store<(E0, E1)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1)> {
-        let e0 = E0Store::read(address_domain, base)?;
-        let e1 = E1Store::read_at_offset(address_domain, base, E0Store::size())?;
+        let e0 = Store::read(address_domain, base)?;
+        let e1 = Store::read_at_offset(address_domain, base, Store::<E0>::size())?;
         Result::Ok((e0, e1))
     }
     #[inline(always)]
     fn write(address_domain: u32, base: StorageBaseAddress, value: (E0, E1)) -> SyscallResult<()> {
         let (e0, e1) = value;
-        E0Store::write(address_domain, base, e0)?;
-        E1Store::write_at_offset(address_domain, base, E0Store::size(), e1)
+        Store::write(address_domain, base, e0)?;
+        Store::write_at_offset(address_domain, base, Store::<E0>::size(), e1)
     }
     #[inline(always)]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, mut offset: u8
     ) -> SyscallResult<(E0, E1)> {
-        let e0 = E0Store::read_at_offset(address_domain, base, offset)?;
-        offset += E0Store::size();
-        let e1 = E1Store::read_at_offset(address_domain, base, offset)?;
+        let e0 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E0>::size();
+        let e1 = Store::read_at_offset(address_domain, base, offset)?;
         Result::Ok((e0, e1))
     }
     #[inline(always)]
@@ -505,34 +503,26 @@ impl TupleSize2Store<
         address_domain: u32, base: StorageBaseAddress, mut offset: u8, value: (E0, E1)
     ) -> SyscallResult<()> {
         let (e0, e1) = value;
-        E0Store::write_at_offset(address_domain, base, offset, e0)?;
-        offset += E0Store::size();
-        E1Store::write_at_offset(address_domain, base, offset, e1)
+        Store::write_at_offset(address_domain, base, offset, e0)?;
+        offset += Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e1)
     }
     #[inline(always)]
     fn size() -> u8 {
-        E0Store::size() + E1Store::size()
+        Store::<E0>::size() + Store::<E1>::size()
     }
 }
 
 impl TupleSize3Store<
-    E0,
-    E1,
-    E2,
-    impl E0Store: Store<E0>,
-    +Drop<E0>,
-    impl E1Store: Store<E1>,
-    +Drop<E1>,
-    impl E2Store: Store<E2>,
-    +Drop<E2>
+    E0, E1, E2, +Store<E0>, +Drop<E0>, +Store<E1>, +Drop<E1>, +Store<E2>, +Drop<E2>
 > of Store<(E0, E1, E2)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2)> {
-        let e0 = E0Store::read(address_domain, base)?;
-        let mut offset = E0Store::size();
-        let e1 = E1Store::read_at_offset(address_domain, base, offset)?;
-        offset += E1Store::size();
-        let e2 = E2Store::read_at_offset(address_domain, base, offset)?;
+        let e0 = Store::read(address_domain, base)?;
+        let mut offset = Store::<E0>::size();
+        let e1 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E1>::size();
+        let e2 = Store::read_at_offset(address_domain, base, offset)?;
         Result::Ok((e0, e1, e2))
     }
     #[inline(always)]
@@ -540,21 +530,21 @@ impl TupleSize3Store<
         address_domain: u32, base: StorageBaseAddress, value: (E0, E1, E2)
     ) -> SyscallResult<()> {
         let (e0, e1, e2) = value;
-        E0Store::write(address_domain, base, e0)?;
-        let mut offset = E0Store::size();
-        E1Store::write_at_offset(address_domain, base, offset, e1)?;
-        offset += E1Store::size();
-        E2Store::write_at_offset(address_domain, base, offset, e2)
+        Store::write(address_domain, base, e0)?;
+        let mut offset = Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e1)?;
+        offset += Store::<E1>::size();
+        Store::write_at_offset(address_domain, base, offset, e2)
     }
     #[inline(always)]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, mut offset: u8
     ) -> SyscallResult<(E0, E1, E2)> {
-        let e0 = E0Store::read_at_offset(address_domain, base, offset)?;
-        offset += E0Store::size();
-        let e1 = E1Store::read_at_offset(address_domain, base, offset)?;
-        offset += E1Store::size();
-        let e2 = E2Store::read_at_offset(address_domain, base, offset)?;
+        let e0 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E0>::size();
+        let e1 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E1>::size();
+        let e2 = Store::read_at_offset(address_domain, base, offset)?;
         Result::Ok((e0, e1, e2))
     }
     #[inline(always)]
@@ -562,15 +552,15 @@ impl TupleSize3Store<
         address_domain: u32, base: StorageBaseAddress, mut offset: u8, value: (E0, E1, E2)
     ) -> SyscallResult<()> {
         let (e0, e1, e2) = value;
-        E0Store::write_at_offset(address_domain, base, offset, e0)?;
-        offset += E0Store::size();
-        E1Store::write_at_offset(address_domain, base, offset, e1)?;
-        offset += E1Store::size();
-        E2Store::write_at_offset(address_domain, base, offset, e2)
+        Store::write_at_offset(address_domain, base, offset, e0)?;
+        offset += Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e1)?;
+        offset += Store::<E1>::size();
+        Store::write_at_offset(address_domain, base, offset, e2)
     }
     #[inline(always)]
     fn size() -> u8 {
-        E0Store::size() + E1Store::size() + E2Store::size()
+        Store::<E0>::size() + Store::<E1>::size() + Store::<E2>::size()
     }
 }
 
@@ -579,24 +569,24 @@ impl TupleSize4Store<
     E1,
     E2,
     E3,
-    impl E0Store: Store<E0>,
+    +Store<E0>,
     +Drop<E0>,
-    impl E1Store: Store<E1>,
+    +Store<E1>,
     +Drop<E1>,
-    impl E2Store: Store<E2>,
+    +Store<E2>,
     +Drop<E2>,
-    impl E3Store: Store<E3>,
+    +Store<E3>,
     +Drop<E3>
 > of Store<(E0, E1, E2, E3)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2, E3)> {
-        let e0 = E0Store::read(address_domain, base)?;
-        let mut offset = E0Store::size();
-        let e1 = E1Store::read_at_offset(address_domain, base, offset)?;
-        offset += E1Store::size();
-        let e2 = E2Store::read_at_offset(address_domain, base, offset)?;
-        offset += E2Store::size();
-        let e3 = E3Store::read_at_offset(address_domain, base, offset)?;
+        let e0 = Store::read(address_domain, base)?;
+        let mut offset = Store::<E0>::size();
+        let e1 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E1>::size();
+        let e2 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E2>::size();
+        let e3 = Store::read_at_offset(address_domain, base, offset)?;
         Result::Ok((e0, e1, e2, e3))
     }
     #[inline(always)]
@@ -604,25 +594,25 @@ impl TupleSize4Store<
         address_domain: u32, base: StorageBaseAddress, value: (E0, E1, E2, E3)
     ) -> SyscallResult<()> {
         let (e0, e1, e2, e3) = value;
-        E0Store::write(address_domain, base, e0)?;
-        let mut offset = E0Store::size();
-        E1Store::write_at_offset(address_domain, base, offset, e1)?;
-        offset += E1Store::size();
-        E2Store::write_at_offset(address_domain, base, offset, e2)?;
-        offset += E2Store::size();
-        E3Store::write_at_offset(address_domain, base, offset, e3)
+        Store::write(address_domain, base, e0)?;
+        let mut offset = Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e1)?;
+        offset += Store::<E1>::size();
+        Store::write_at_offset(address_domain, base, offset, e2)?;
+        offset += Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e3)
     }
     #[inline(always)]
     fn read_at_offset(
         address_domain: u32, base: StorageBaseAddress, mut offset: u8
     ) -> SyscallResult<(E0, E1, E2, E3)> {
-        let e0 = E0Store::read_at_offset(address_domain, base, offset)?;
-        offset += E0Store::size();
-        let e1 = E1Store::read_at_offset(address_domain, base, offset)?;
-        offset += E1Store::size();
-        let e2 = E2Store::read_at_offset(address_domain, base, offset)?;
-        offset += E2Store::size();
-        let e3 = E3Store::read_at_offset(address_domain, base, offset)?;
+        let e0 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E0>::size();
+        let e1 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E1>::size();
+        let e2 = Store::read_at_offset(address_domain, base, offset)?;
+        offset += Store::<E2>::size();
+        let e3 = Store::read_at_offset(address_domain, base, offset)?;
         Result::Ok((e0, e1, e2, e3))
     }
     #[inline(always)]
@@ -630,24 +620,22 @@ impl TupleSize4Store<
         address_domain: u32, base: StorageBaseAddress, mut offset: u8, value: (E0, E1, E2, E3)
     ) -> SyscallResult<()> {
         let (e0, e1, e2, e3) = value;
-        E0Store::write_at_offset(address_domain, base, offset, e0)?;
-        offset += E0Store::size();
-        E1Store::write_at_offset(address_domain, base, offset, e1)?;
-        offset += E1Store::size();
-        E2Store::write_at_offset(address_domain, base, offset, e2)?;
-        offset += E2Store::size();
-        E3Store::write_at_offset(address_domain, base, offset, e3)
+        Store::write_at_offset(address_domain, base, offset, e0)?;
+        offset += Store::<E0>::size();
+        Store::write_at_offset(address_domain, base, offset, e1)?;
+        offset += Store::<E1>::size();
+        Store::write_at_offset(address_domain, base, offset, e2)?;
+        offset += Store::<E2>::size();
+        Store::write_at_offset(address_domain, base, offset, e3)
     }
     #[inline(always)]
     fn size() -> u8 {
-        E0Store::size() + E1Store::size() + E2Store::size() + E3Store::size()
+        Store::<E0>::size() + Store::<E1>::size() + Store::<E2>::size() + Store::<E3>::size()
     }
 }
 
 
-impl ResultStore<
-    T, E, impl TStore: Store<T>, impl EStore: Store<E>, +Drop<T>, +Drop<E>,
-> of Store<Result<T, E>> {
+impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>,> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
@@ -718,7 +706,7 @@ impl ResultStore<
     }
 }
 
-impl OptionStore<T, impl TStore: Store<T>, +Drop<T>,> of Store<Option<T>> {
+impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;

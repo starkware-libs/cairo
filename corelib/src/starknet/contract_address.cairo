@@ -62,5 +62,5 @@ impl ContractAddressPartialEq of PartialEq<ContractAddress> {
     }
 }
 
-impl HashContractAddress<S, impl H: HashStateTrait<S>, +Drop<S>> =
+impl HashContractAddress<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::Impl<ContractAddress, S>;
