@@ -971,38 +971,50 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-lang-test-runner"
+name = "cairo-lang-test-plugin"
 version = "2.2.0"
 dependencies = [
  "anyhow",
  "cairo-felt",
- "cairo-lang-casm",
  "cairo-lang-compiler",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",
  "cairo-lang-filesystem",
  "cairo-lang-lowering",
- "cairo-lang-plugins",
- "cairo-lang-project",
- "cairo-lang-runner",
  "cairo-lang-semantic",
  "cairo-lang-sierra",
  "cairo-lang-sierra-generator",
- "cairo-lang-sierra-to-casm",
  "cairo-lang-starknet",
  "cairo-lang-syntax",
  "cairo-lang-utils",
- "cairo-vm",
+ "itertools 0.11.0",
+ "num-traits 0.2.15",
+ "serde",
+]
+
+[[package]]
+name = "cairo-lang-test-runner"
+version = "2.2.0"
+dependencies = [
+ "anyhow",
+ "cairo-felt",
+ "cairo-lang-compiler",
+ "cairo-lang-defs",
+ "cairo-lang-filesystem",
+ "cairo-lang-runner",
+ "cairo-lang-sierra",
+ "cairo-lang-sierra-to-casm",
+ "cairo-lang-starknet",
+ "cairo-lang-syntax",
+ "cairo-lang-test-plugin",
+ "cairo-lang-utils",
  "colored",
  "itertools 0.11.0",
- "num-bigint",
  "num-traits 0.2.15",
  "rayon",
- "salsa",
  "serde",
  "serde_json",
- "thiserror",
 ]
 
 [[package]]
