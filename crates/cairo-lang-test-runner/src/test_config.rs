@@ -5,8 +5,10 @@ use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_utils::OptionHelper;
 use num_traits::ToPrimitive;
+use serde::{Deserialize, Serialize};
 
 /// Expectation for a panic case.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
@@ -15,6 +17,7 @@ pub enum PanicExpectation {
 }
 
 /// Expectation for a result of a test.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum TestExpectation {
     /// Running the test should not panic.
     Success,
@@ -23,6 +26,7 @@ pub enum TestExpectation {
 }
 
 /// The configuration for running a single test.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct TestConfig {
     /// The amount of gas the test requested.
     pub available_gas: Option<usize>,
