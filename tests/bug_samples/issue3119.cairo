@@ -1,6 +1,4 @@
-fn index_of_min<
-    T, impl TPartialEq: PartialEq<T>, impl TPartialOrd: PartialOrd<T>, +Drop<T>, +Copy<T>
->(
+fn index_of_min<T, +PartialEq<T>, +PartialOrd<T>, +Drop<T>, +Copy<T>>(
     mut span: Span<T>
 ) -> Option<usize> {
     let mut current_index = 0;

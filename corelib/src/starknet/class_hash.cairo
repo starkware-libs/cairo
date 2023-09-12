@@ -60,5 +60,5 @@ impl ClassHashPartialEq of PartialEq<ClassHash> {
     }
 }
 
-impl HashClassHash<S, impl H: HashStateTrait<S>, +Drop<S>> =
+impl HashClassHash<S, +HashStateTrait<S>, +Drop<S>> =
     core::hash::into_felt252_based::HashImpl<ClassHash, S>;
