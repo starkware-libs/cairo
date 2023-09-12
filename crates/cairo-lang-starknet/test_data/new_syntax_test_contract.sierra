@@ -284,7 +284,7 @@ libfunc store_temp<core::panics::PanicResult::<((),)>> = store_temp<core::panics
 libfunc enum_init<core::panics::PanicResult::<((),)>, 1> = enum_init<core::panics::PanicResult::<((),)>, 1>;
 libfunc enum_init<test::counter_contract::Event, 1> = enum_init<test::counter_contract::Event, 1>;
 libfunc enum_match<test::counter_contract::Event> = enum_match<test::counter_contract::Event>;
-libfunc felt252_const<1280935775838011386293896278742666975252393435418989796474933897293318071546> = felt252_const<1280935775838011386293896278742666975252393435418989796474933897293318071546>;
+libfunc felt252_const<626537887287493973516965168624835168314816034681999656390211935225410548680> = felt252_const<626537887287493973516965168624835168314816034681999656390211935225410548680>;
 libfunc store_temp<test::test_component::Event> = store_temp<test::test_component::Event>;
 libfunc function_call<user@test::test_component::EventIsEvent::append_keys_and_data> = function_call<user@test::test_component::EventIsEvent::append_keys_and_data>;
 libfunc felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824> = felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>;
@@ -1688,7 +1688,7 @@ store_temp<test::counter_contract::Event>([1]) -> ([2]); // 1348
 return([2]); // 1349
 enum_match<test::counter_contract::Event>([0]) { fallthrough([3]) 1363([4]) 1375([5]) 1387([6]) }; // 1350
 branch_align() -> (); // 1351
-felt252_const<1280935775838011386293896278742666975252393435418989796474933897293318071546>() -> ([7]); // 1352
+felt252_const<626537887287493973516965168624835168314816034681999656390211935225410548680>() -> ([7]); // 1352
 store_temp<felt252>([7]) -> ([7]); // 1353
 array_append<felt252>([1], [7]) -> ([8]); // 1354
 store_temp<test::test_component::Event>([3]) -> ([12]); // 1355
