@@ -6,6 +6,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
 use lsp::SemanticTokenType;
@@ -48,6 +49,14 @@ impl SemanticTokenKind {
             SyntaxKind::TokenIdentifier => {}
             _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
+            SyntaxKind::TokenNot
+                if matches!(
+                    grandparent_kind(syntax_db, &node),
+                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
+                ) =>
+            {
+                return Some(SemanticTokenKind::InlineMacro);
+            }
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
             | SyntaxKind::TokenOr
@@ -72,11 +81,15 @@ impl SemanticTokenKind {
         };
         node = node.parent().unwrap();
         let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
+
         if identifier.text(syntax_db) == "super" {
             return Some(SemanticTokenKind::Keyword);
         }
 
         let parent_kind = node.parent().unwrap().kind(syntax_db);
+        if matches!(parent_kind, SyntaxKind::ItemInlineMacro) {
+            return Some(SemanticTokenKind::InlineMacro);
+        }
         if ast::Item::is_variant(parent_kind) | matches!(parent_kind, SyntaxKind::AliasClause) {
             return Some(SemanticTokenKind::Class);
         }

@@ -22,7 +22,7 @@ impl SyntaxNodeFormat for SyntaxNode {
             SyntaxKind::TokenNot
                 if matches!(
                     grandparent_kind(db, self),
-                    Some(SyntaxKind::ExprInlineMacro) | Some(SyntaxKind::ItemInlineMacro)
+                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
                 ) =>
             {
                 true
