@@ -22,7 +22,7 @@ mod counter_contract {
         OutOfScopeEvent,
     };
     use super::test_component::dataComponentMemberStateTrait;
-    component!(path: super::test_component, storage: test_component_storage, event: Event);
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
 
     #[storage]
     struct Storage {
@@ -35,8 +35,7 @@ mod counter_contract {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        // TODO: Rename event once the name does not have to match the type.
-        Event: super::test_component::Event,
+        ABC: super::test_component::Event,
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         OutOfScopeEvent: OutOfScopeEvent

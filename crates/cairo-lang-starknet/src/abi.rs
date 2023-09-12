@@ -467,12 +467,6 @@ impl AbiBuilder {
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
                         let ty = concrete_variant.ty;
-
-                        let ty_name = get_type_name(db, ty).unwrap_or_default();
-                        if name != ty_name {
-                            return Err(ABIError::EventEnumVariantTypeMismatch);
-                        }
-
                         self.add_event_field(db, kind, ty, name)
                     })
                     .collect::<Result<_, ABIError>>()?;
@@ -618,17 +612,10 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 
-fn get_type_name(db: &dyn SemanticGroup, ty: TypeId) -> Option<SmolStr> {
-    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
-    Some(concrete_ty.generic_type(db).name(db.upcast()))
-}
-
 #[derive(Error, Debug)]
 pub enum ABIError {
     #[error("Semantic error")]
     SemanticError,
-    #[error("Event enum variant type must be a struct with the same name as the variant.")]
-    EventEnumVariantTypeMismatch,
     #[error("Event must be an enum.")]
     EventMustBeEnum,
     #[error("Event must have no generic parameters.")]
