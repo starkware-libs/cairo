@@ -4,5 +4,5 @@ trait Event<T> {
 }
 
 trait EventEmitter<T, TEvent> {
-    fn emit<S, impl IntoImp: traits::Into<S, TEvent>>(ref self: T, event: S);
+    fn emit<S, +traits::Into<S, TEvent>>(ref self: T, event: S);
 }

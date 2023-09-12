@@ -50,7 +50,7 @@ fn recover_public_key<
     Secp256Point,
     +Drop<Secp256Point>,
     impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    +Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature
 ) -> Option<Secp256Point> {
@@ -92,10 +92,7 @@ fn secp256_ec_negate_scalar<
 /// where N is the size of the curve.
 /// Returns a Result with an error string if the signature is invalid.
 fn is_eth_signature_valid<
-    Secp256Point,
-    +Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) -> Result<(), felt252> {
@@ -118,10 +115,7 @@ fn is_eth_signature_valid<
 /// Also verifies that r and s components of the signature are in the range (0, N),
 /// where N is the size of the curve.
 fn verify_eth_signature<
-    Secp256Point,
-    +Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
 >(
     msg_hash: u256, signature: Signature, eth_address: EthAddress
 ) {
@@ -142,10 +136,7 @@ fn is_signature_entry_valid<
 
 /// Converts a public key point to the corresponding Ethereum address.
 fn public_key_point_to_eth_address<
-    Secp256Point,
-    +Drop<Secp256Point>,
-    impl Secp256Impl: Secp256Trait<Secp256Point>,
-    impl Secp256PointImpl: Secp256PointTrait<Secp256Point>
+    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
 >(
     public_key_point: Secp256Point
 ) -> EthAddress {
