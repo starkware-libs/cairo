@@ -1,6 +1,7 @@
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::ids::ConcreteFunctionWithBodyId;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::db::SierraGenGroup;
@@ -11,7 +12,7 @@ use crate::test_utils::SierraGenDatabaseForTesting;
 pub fn test_function_generator(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
     // unnecessary complication to them.
     let db = &SierraGenDatabaseForTesting::without_add_withdraw_gas();
@@ -40,7 +41,7 @@ pub fn test_function_generator(
             .join("\n")
     });
 
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         (
             "lowering_diagnostics".into(),

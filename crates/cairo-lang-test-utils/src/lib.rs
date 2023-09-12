@@ -39,31 +39,31 @@ pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
     }
 }
 
-// Fails if there are diagnostics when args.expect_diagnostics == false.
-// Fails if there are no diagnostics when args.expect_diagnostics == true.
-// Succeeds otherwise.
+/// Returns an error string if there are diagnostics when args.expect_diagnostics is false.
+/// Returns an error string if there are no diagnostics when args.expect_diagnostics is true.
+/// Returns None on success.
 pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
     diagnostics: &str,
-) -> Result<(), String> {
+) -> Option<String> {
     let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
-        return Ok(());
+        return None;
     };
     if expect_diagnostics.trim() == "*" {
-        return Ok(());
+        return None;
     }
 
     let expect_diagnostics = bool_input(expect_diagnostics);
     let has_diagnostics = !diagnostics.is_empty();
     if !expect_diagnostics && has_diagnostics {
-        Err(format!(
+        Some(format!(
             "`expect_diagnostics` is false, but diagnostics were generated:\n{}",
             diagnostics
         ))
     } else if expect_diagnostics && !has_diagnostics {
-        Err("`expect_diagnostics` is true, but no diagnostics were generated\n".to_string())
+        Some("`expect_diagnostics` is true, but no diagnostics were generated.\n".to_string())
     } else {
-        Ok(())
+        None
     }
 }
 
