@@ -1,6 +1,6 @@
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
-    SpecializationContext,
+    LibfuncSignature, OutputVarInfo, ParamSignature, SignatureBasedConcreteLibfunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{NamedLibfunc, OutputVarReferenceInfo, SpecializationError};
 use crate::program::{Function, GenericArg};
@@ -21,8 +21,18 @@ impl NamedLibfunc for FunctionCallLibfunc {
             [GenericArg::UserFunc(function_id)] => {
                 let signature = context.get_function_signature(function_id)?;
                 let ap_change = context.get_function_ap_change(function_id)?;
-                Ok(LibfuncSignature::new_non_branch(
-                    signature.param_types.clone(),
+                Ok(LibfuncSignature::new_non_branch_ex(
+                    signature
+                        .param_types
+                        .iter()
+                        .map(|ty| {
+                            let mut param_sig = ParamSignature::new(ty.clone());
+                            if context.get_type_info(ty.clone())?.zero_sized {
+                                param_sig = param_sig.with_allow_deferred()
+                            }
+                            Ok(param_sig)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?,
                     signature
                         .ret_types
                         .iter()

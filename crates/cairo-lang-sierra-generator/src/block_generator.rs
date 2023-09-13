@@ -297,53 +297,53 @@ fn generate_statement_call_code(
         context.set_ap_tracking(false)
     }
 
-    if body.is_some() {
+    let mut statements = vec![];
+    let inputs_after_dup = if body.is_some() {
         // Create [pre_sierra::PushValue] instances for the arguments.
-        let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
+        let mut args: Vec<sierra::ids::VarId> = vec![];
         let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-        for (idx, var_usage) in statement.inputs.iter().enumerate() {
-            let use_location = UseLocation { statement_location: *statement_location, idx };
-            let should_dup = should_dup(context, &use_location);
-            // Allocate a temporary Sierra variable that represents the argument placed on the
-            // stack.
-            let arg_on_stack = context.allocate_sierra_variable();
-            push_values_vec.push(pre_sierra::PushValue {
-                var: context.get_sierra_variable(var_usage.var_id),
-                var_on_stack: arg_on_stack.clone(),
-                ty: context.get_variable_sierra_type(var_usage.var_id)?,
-                dup: should_dup,
-            });
-            args_on_stack.push(arg_on_stack);
+        for (idx, (param_sig, var_usage)) in
+            zip_eq(&libfunc_signature.param_signatures, &statement.inputs).enumerate()
+        {
+            let arg = if param_sig.allow_deferred {
+                maybe_add_dup_statement(
+                    context,
+                    statement_location,
+                    idx,
+                    var_usage,
+                    &mut statements,
+                )?
+            } else {
+                // Allocate a temporary Sierra variable that represents the argument.
+                let var_on_stack = context.allocate_sierra_variable();
+
+                let use_location = UseLocation { statement_location: *statement_location, idx };
+                let should_dup = should_dup(context, &use_location);
+                push_values_vec.push(pre_sierra::PushValue {
+                    var: context.get_sierra_variable(var_usage.var_id),
+                    var_on_stack: var_on_stack.clone(),
+                    ty: param_sig.ty.clone(),
+                    dup: should_dup,
+                });
+                var_on_stack
+            };
+            args.push(arg);
         }
 
-        Ok(vec![
-            // Push the arguments.
-            pre_sierra::Statement::PushValues(push_values_vec),
-            // Call the function.
-            simple_statement(
-                libfunc_id,
-                &args_on_stack,
-                &context.get_sierra_variables(&statement.outputs),
-            ),
-        ])
+        // Push the arguments.
+        statements.push(pre_sierra::Statement::PushValues(push_values_vec));
+        args
     } else {
         // Dup variables as needed.
-        let mut statements: Vec<pre_sierra::Statement> = vec![];
-        let inputs_after_dup = maybe_add_dup_statements(
-            context,
-            statement_location,
-            &statement.inputs,
-            &mut statements,
-        )?;
-
-        statements.push(simple_statement(
-            libfunc_id,
-            &inputs_after_dup,
-            &context.get_sierra_variables(&statement.outputs),
-        ));
-        Ok(statements)
-    }
+        maybe_add_dup_statements(context, statement_location, &statement.inputs, &mut statements)?
+    };
+    statements.push(simple_statement(
+        libfunc_id,
+        &inputs_after_dup,
+        &context.get_sierra_variables(&statement.outputs),
+    ));
+    Ok(statements)
 }
 
 /// Returns if the variable at the given location should be duplicated.

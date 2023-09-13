@@ -55,7 +55,7 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
 revoke_ap_tracking() -> (); // 0
-withdraw_gas([0], [1]) { fallthrough([4], [5]) 62([6], [7]) }; // 1
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 61([6], [7]) }; // 1
 branch_align() -> (); // 2
 struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 3
 array_len<felt252>([8]) -> ([9]); // 4
