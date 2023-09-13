@@ -82,8 +82,11 @@ fn get_function_code(
 
     // Generate Sierra variables for the function parameters.
     let mut parameters: Vec<cairo_lang_sierra::program::Param> = Vec::new();
+
+    let mut params = vec![];
     for param_id in &lowered_function.parameters {
         let var = &lowered_function.variables[*param_id];
+        params.push(context.get_sierra_variable(*param_id));
 
         parameters.push(cairo_lang_sierra::program::Param {
             id: context.get_sierra_variable(*param_id),
@@ -109,6 +112,7 @@ fn get_function_code(
             LibfuncInfo { signature: get_libfunc_signature(context.get_db(), concrete_lib_func_id) }
         },
         sierra_local_variables,
+        &params,
     );
 
     // TODO(spapini): Don't intern objects for the semantic model outside the crate. These should

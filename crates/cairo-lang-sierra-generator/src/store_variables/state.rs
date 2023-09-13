@@ -5,6 +5,7 @@ use cairo_lang_sierra::extensions::lib_func::{
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 
 use super::known_stack::KnownStack;
 
@@ -38,6 +39,8 @@ pub struct State {
     pub deferred_variables: OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     /// A map from [sierra::ids::VarId] of temporary variables to their type.
     pub temporary_variables: OrderedHashMap<sierra::ids::VarId, sierra::ids::ConcreteTypeId>,
+
+    pub local_variables: OrderedHashSet<sierra::ids::VarId>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
@@ -109,11 +112,27 @@ impl State {
                     is_deferred = Some(deferred_info.kind);
                 }
                 is_temp_var = self.temporary_variables.get(arg).is_some();
+                let is_local = self.local_variables.contains(arg);
+
+                eprintln!(
+                    "register_output: res: {:?}, arg: {:?}, is_temp_var: {}, is_local: {}",
+                    res, arg, is_temp_var, is_local
+                );
+                assert!(
+                    is_temp_var || is_deferred.is_some() || self.local_variables.contains(arg),
+                    "`arg` must be temp, deferred, or local."
+                );
+                if is_local {
+                    self.local_variables.insert(res.clone());
+                }
+
                 if matches!(output_info.ref_info, OutputVarReferenceInfo::SameAsParam { .. }) {
                     add_to_known_stack = self.known_stack.get(arg);
                 }
             }
-            OutputVarReferenceInfo::NewLocalVar => {}
+            OutputVarReferenceInfo::NewLocalVar => {
+                self.local_variables.insert(res.clone());
+            }
         }
 
         self.deferred_variables.swap_remove(&res);
@@ -192,9 +211,17 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
                 }
             }
 
+            let mut local_variables = OrderedHashSet::default();
+            for var in a.local_variables {
+                if b.local_variables.contains(&var) {
+                    local_variables.insert(var);
+                }
+            }
+
             Some(State {
                 deferred_variables,
                 temporary_variables,
+                local_variables,
                 known_stack: a.known_stack.merge_with(&b.known_stack),
             })
         }

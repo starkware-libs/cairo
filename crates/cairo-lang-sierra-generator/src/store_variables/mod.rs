@@ -46,11 +46,12 @@ pub fn add_store_statements<GetLibfuncSignature>(
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
+    params: &[sierra::ids::VarId],
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
-    let mut handler = AddStoreVariableStatements::new(db, local_variables);
+    let mut handler = AddStoreVariableStatements::new(db, local_variables, params);
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements.into_iter() {
         handler.handle_statement(statement, get_lib_func_signature);
@@ -76,12 +77,18 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(db: &'a dyn SierraGenGroup, local_variables: LocalVariables) -> Self {
+    fn new(
+        db: &'a dyn SierraGenGroup,
+        local_variables: LocalVariables,
+        params: &[sierra::ids::VarId],
+    ) -> Self {
+        let mut state = State::default();
+        state.local_variables.extend(params.iter().cloned());
         AddStoreVariableStatements {
             db,
             local_variables,
             result: Vec::new(),
-            state_opt: Some(State::default()),
+            state_opt: Some(state),
             future_states: OrderedHashMap::default(),
         }
     }
@@ -370,6 +377,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
             let ty = self.state().temporary_variables.swap_remove(var).unwrap();
             self.store_local(var, &uninitialized_local_var_id, &ty);
+
             return true;
         }
         false
@@ -442,6 +450,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         uninitialized_local_var_id: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
+        self.state().local_variables.insert(var.clone());
         self.result.push(simple_statement(
             store_local_libfunc_id(self.db, ty.clone()),
             &[uninitialized_local_var_id.clone(), var.clone()],
