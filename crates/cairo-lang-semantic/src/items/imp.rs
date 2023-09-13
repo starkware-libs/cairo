@@ -702,24 +702,24 @@ pub fn module_impl_ids_for_trait_filter(
     trait_filter: TraitFilter,
 ) -> Maybe<Vec<UninferredImpl>> {
     let mut uninferred_impls = Vec::new();
-    for impl_def_id in db.module_impls_ids(module_id)?.iter().copied() {
+    for impl_def_id in db.module_impls_ids(module_id).unwrap_or_default().iter().copied() {
         uninferred_impls.push(UninferredImpl::Def(impl_def_id));
     }
-    for impl_alias_id in db.module_impl_aliases_ids(module_id)?.iter().copied() {
+    for impl_alias_id in db.module_impl_aliases_ids(module_id).unwrap_or_default().iter().copied() {
         uninferred_impls.push(UninferredImpl::ImplAlias(impl_alias_id));
     }
-    for use_id in db.module_uses_ids(module_id)?.iter().copied() {
+    for use_id in db.module_uses_ids(module_id).unwrap_or_default().iter().copied() {
         if let Ok(ResolvedGenericItem::Impl(impl_def_id)) = db.use_resolved_item(use_id) {
             uninferred_impls.push(UninferredImpl::Def(impl_def_id));
         }
     }
     let mut res = Vec::new();
     for uninferred_impl in uninferred_impls {
-        let trait_id = uninferred_impl.trait_id(db)?;
+        let Ok(trait_id) = uninferred_impl.trait_id(db) else {continue};
         if trait_id != trait_filter.trait_id {
             continue;
         }
-        let concrete_trait_id = uninferred_impl.concrete_trait(db)?;
+        let Ok(concrete_trait_id) = uninferred_impl.concrete_trait(db) else {continue};
         if let Ok(true) = concrete_trait_fits_trait_filter(db, concrete_trait_id, &trait_filter) {
             res.push(uninferred_impl);
         }

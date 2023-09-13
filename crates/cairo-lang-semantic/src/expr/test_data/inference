@@ -626,3 +626,34 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:2:12
    let x = "hello";
            ^*****^
+
+//! > ==========================================================================
+
+//! > Test impl inference with an impl of a non-existing trait in context.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   // A NumericLiteral<felt252> should be inferred here.
+   let x = 123;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl MyImpl of NonExistingTrait {
+}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:16
+impl MyImpl of NonExistingTrait {
+               ^**************^
+
+error: Not a trait.
+ --> lib.cairo:1:16
+impl MyImpl of NonExistingTrait {
+               ^**************^
