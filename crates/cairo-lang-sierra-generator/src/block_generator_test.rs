@@ -32,6 +32,7 @@ cairo_lang_test_utils::test_file_test!(
         serialization: "serialization",
         early_return: "early_return",
         panic: "panic",
+        zero_size: "zero_size",
     },
     block_generator_test
 );

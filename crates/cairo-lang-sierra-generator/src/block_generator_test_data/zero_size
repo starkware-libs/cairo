@@ -1,0 +1,48 @@
+//! > Test calling a user function with zero sized parameters.
+
+//! > test_runner_name
+block_generator_test
+
+//! > function
+fn foo() {
+    let (a, b) = get_val();
+    test_func((), a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn get_val() -> (u32, ()) {
+  (13, ())
+}
+
+fn test_func(empty: (), a: u32, b: ()) {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+PushValues() -> ()
+function_call<user@test::get_val>() -> ([0])
+struct_deconstruct<Tuple<u32, Unit>>([0]) -> ([1], [2])
+struct_construct<Unit>() -> ([3])
+PushValues([1]: u32) -> ([4])
+function_call<user@test::test_func>([3], [4], [2]) -> ([5])
+PushValues([5]: Unit) -> ([6])
+return([6])
+
+//! > lowering_flat
+Parameters:
+blk0 (root):
+Statements:
+  (v0: (core::integer::u32, ())) <- test::get_val()
+  (v1: core::integer::u32, v2: ()) <- struct_destructure(v0)
+  (v3: ()) <- struct_construct()
+  (v4: ()) <- test::test_func(v3, v1, v2)
+End:
+  Return(v4)

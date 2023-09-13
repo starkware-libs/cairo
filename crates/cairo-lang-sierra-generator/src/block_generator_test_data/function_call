@@ -19,7 +19,9 @@ foo
 
 //! > module_code
 #[derive(Drop)]
-struct MyStruct {}
+struct MyStruct {
+    x: felt252,
+}
 
 //! > semantic_diagnostics
 
