@@ -13,8 +13,9 @@ trait OptionTrait<T> {
     fn expect(self: Option<T>, err: felt252) -> T;
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics.
     fn unwrap(self: Option<T>) -> T;
-    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to `Result::Ok(v)` and `Option::None` to Result::Err(err)`.
-    fn ok_or<+Drop<E>>(self: Option<T>, err: E) -> Result<T, E>;
+    /// Transforms the `Option<T>` into a `Result<T, E>`, mapping `Option::Some(v)` to
+    /// `Result::Ok(v)` and `Option::None` to `Result::Err(err)`.
+    fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E>;
     /// Returns `true` if the `Option` is `Option::Some`.
     fn is_some(self: @Option<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
@@ -35,7 +36,7 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
     }
 
     #[inline(always)]
-    fn ok_or<+Drop<E>>(self: Option<T>, err: E) -> Result<T, E> {
+    fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E> {
         match self {
             Option::Some(v) => Result::Ok(v),
             Option::None => Result::Err(err),
