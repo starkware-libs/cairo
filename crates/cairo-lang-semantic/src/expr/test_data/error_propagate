@@ -6,7 +6,7 @@ test_function_diagnostics
 //! > function
 fn foo() -> Option::<felt252> {
     with_err()?;
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > function_name
@@ -14,7 +14,7 @@ foo
 
 //! > module_code
 fn with_err() -> Option::<felt252> {
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > expected_diagnostics
@@ -37,7 +37,7 @@ foo
 
 //! > module_code
 fn with_err() -> Option::<felt252> {
-    Option::<felt252>::None(())
+    Option::<felt252>::None
 }
 
 //! > expected_diagnostics

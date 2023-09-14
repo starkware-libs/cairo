@@ -24,7 +24,7 @@ enum EnumForDefault {
 
 #[test]
 fn test_derive_serde_enum() {
-    let a = EnumForSerde::A(());
+    let a = EnumForSerde::A;
     let b = EnumForSerde::B(1);
     let c = EnumForSerde::C(2);
     let mut output = Default::default();

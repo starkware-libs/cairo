@@ -1,3 +1,3 @@
 fn run_tests() {
-    assert(bool::True(()), 1);
+    assert(true, 1);
 }

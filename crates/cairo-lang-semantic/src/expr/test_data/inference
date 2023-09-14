@@ -171,7 +171,7 @@ test_function_diagnostics
 fn foo() {
    MyTrait::foo(5);
    MyTrait::foo(true);
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -241,7 +241,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
    MyTrait::foo(5);
-   MyTrait::foo(Option::<felt252>::None(()));
+   MyTrait::foo(Option::<felt252>::None);
 }
 
 //! > function_name
@@ -279,7 +279,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -305,7 +305,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?1
  --> lib.cairo:17:17
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
                 ^****^
 
 //! > ==========================================================================

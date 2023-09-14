@@ -725,7 +725,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Option::Some(Store::read_at_offset(address_domain, base, 1_u8)?)
             )
         } else if idx == 0 {
-            starknet::SyscallResult::Ok(Option::None(()))
+            starknet::SyscallResult::Ok(Option::None)
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
@@ -753,7 +753,7 @@ impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
                 Option::Some(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
             )
         } else if idx == 0 {
-            starknet::SyscallResult::Ok(Option::None(()))
+            starknet::SyscallResult::Ok(Option::None)
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
