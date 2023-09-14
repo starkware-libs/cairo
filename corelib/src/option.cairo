@@ -35,7 +35,7 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
         self.expect('Option::unwrap failed.')
     }
 
-    #[inline(always)]
+    #[inline]
     fn ok_or<E, +Drop<E>>(self: Option<T>, err: E) -> Result<T, E> {
         match self {
             Option::Some(v) => Result::Ok(v),
