@@ -35,6 +35,7 @@ pub enum SemanticTokenKind {
     Field,
     Annotation,
     InlineMacro,
+    GenericParamImpl,
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node(
@@ -56,6 +57,14 @@ impl SemanticTokenKind {
                 ) =>
             {
                 return Some(SemanticTokenKind::InlineMacro);
+            }
+            SyntaxKind::TokenPlus
+                if matches!(
+                    grandparent_kind(syntax_db, &node),
+                    Some(SyntaxKind::GenericParamImplAnonymous)
+                ) =>
+            {
+                return Some(SemanticTokenKind::GenericParamImpl);
             }
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
@@ -86,7 +95,8 @@ impl SemanticTokenKind {
             return Some(SemanticTokenKind::Keyword);
         }
 
-        let parent_kind = node.parent().unwrap().kind(syntax_db);
+        let parent_node = node.parent().unwrap();
+        let parent_kind = parent_node.kind(syntax_db);
         match parent_kind {
             SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
             SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
@@ -94,6 +104,10 @@ impl SemanticTokenKind {
             SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
             SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
             SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
+            SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
+                return Some(SemanticTokenKind::GenericParamImpl);
+            }
+
             _ => {}
         }
 
@@ -199,6 +213,7 @@ impl SemanticTokenKind {
             SemanticTokenKind::Field => 17,
             SemanticTokenKind::Annotation => 18,
             SemanticTokenKind::InlineMacro => 19,
+            SemanticTokenKind::GenericParamImpl => 20,
         }
     }
     pub fn legend() -> Vec<SemanticTokenType> {
@@ -223,6 +238,7 @@ impl SemanticTokenKind {
             SemanticTokenType::PROPERTY,
             SemanticTokenType::DECORATOR,
             SemanticTokenType::MACRO,
+            SemanticTokenType::INTERFACE,
         ]
     }
 }
