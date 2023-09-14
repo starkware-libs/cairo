@@ -1878,7 +1878,7 @@ fn expr_function_call(
     let expr_function_call =
         ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
     // Check panicable.
-    if signature.panicable && has_panic_incompatiblity(ctx, &expr_function_call)? {
+    if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call)? {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
@@ -1887,7 +1887,7 @@ fn expr_function_call(
 }
 
 /// Checks if a panicable function is called from a disallowed context.
-fn has_panic_incompatiblity(
+fn has_panic_incompatibility(
     ctx: &mut ComputationContext<'_>,
     expr_function_call: &ExprFunctionCall,
 ) -> Maybe<bool> {

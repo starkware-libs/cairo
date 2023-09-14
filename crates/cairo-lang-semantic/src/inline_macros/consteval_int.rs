@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::{
     InlineMacroExprPlugin, InlinePluginResult, PluginDiagnostic, PluginGeneratedFile,
 };
-use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnoticOrigin};
+use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
@@ -45,7 +45,7 @@ impl InlineMacroExprPlugin for ConstevalIntMacro {
                     content,
                     diagnostics_mappings: vec![DiagnosticMapping {
                         span,
-                        origin: DiagnoticOrigin::Span(syntax.as_syntax_node().span(db)),
+                        origin: DiagnosticOrigin::Span(syntax.as_syntax_node().span(db)),
                     }],
                     aux_data: None,
                 }

@@ -74,17 +74,17 @@ pub enum FileKind {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct DiagnosticMapping {
     pub span: TextSpan,
-    pub origin: DiagnoticOrigin,
+    pub origin: DiagnosticOrigin,
 }
 impl DiagnosticMapping {
     pub fn translate(&self, span: TextSpan) -> Option<TextSpan> {
         if self.span.contains(span) {
             Some(match self.origin {
-                DiagnoticOrigin::Start(origin_start) => {
+                DiagnosticOrigin::Start(origin_start) => {
                     let start = origin_start.add_width(span.start - self.span.start);
                     TextSpan { start, end: start.add_width(span.width()) }
                 }
-                DiagnoticOrigin::Span(span) => span,
+                DiagnosticOrigin::Span(span) => span,
             })
         } else {
             None
@@ -94,7 +94,7 @@ impl DiagnosticMapping {
 
 /// The origin of a diagnostic mapping.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub enum DiagnoticOrigin {
+pub enum DiagnosticOrigin {
     /// The origin is a copied node staring at the given offset.
     Start(TextOffset),
     /// The origin was generated from this span, but there's no direct mapping.
