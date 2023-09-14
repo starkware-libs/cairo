@@ -101,7 +101,7 @@ fn write_read_struct() {
         k: 123_felt252.try_into().unwrap(),
         abc: Abc { a: 1_u8, b: 2_u16, c: 3_u32, },
         ts: TupleStructure { v1: 1_u256, v2: 2_u256, },
-        efg1: Efg::E(()),
+        efg1: Efg::E,
         efg2: Efg::G(123_u256)
     };
 

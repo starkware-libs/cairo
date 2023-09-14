@@ -5,7 +5,7 @@ test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
-    let x = Option::None(());
+    let x = Option::None;
     x.is_some();
     x
 }
@@ -34,7 +34,7 @@ test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option::<felt252> {
-    let x = Option::None(());
+    let x = Option::None;
     x.is_foo();
     x.is_bla();
     let y = Option::Some(true);

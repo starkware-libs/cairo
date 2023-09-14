@@ -48,7 +48,7 @@ test_function_lowering
 
 //! > function
 fn foo() -> Option::<felt252> {
-  let x = Option::None(());
+  let x = Option::None;
   x.is_some();
   x
 }
