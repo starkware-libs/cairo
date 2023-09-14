@@ -28,6 +28,7 @@ mod issue3863;
 mod issue4007;
 mod issue4034;
 mod issue4036;
+mod issue4038;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;

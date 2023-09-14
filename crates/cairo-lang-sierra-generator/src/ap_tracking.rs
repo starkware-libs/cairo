@@ -5,7 +5,7 @@ use cairo_lang_lowering::{
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
-use itertools::Itertools;
+use itertools::{izip, Itertools};
 
 /// Information about where AP tracking should be enabled/disabled.
 #[derive(Default)]
@@ -61,8 +61,7 @@ struct ApTrackingAnalysisContext {
 #[derive(Clone)]
 struct ApTrackingAnalysisInfo {
     /// A mapping from variables to the blocks where they are used.
-    /// The block are sorted in reverse order.
-    vars: OrderedHashMap<VariableId, Vec<BlockId>>,
+    vars: OrderedHashMap<VariableId, OrderedHashSet<BlockId>>,
 }
 
 impl ApTrackingAnalysisInfo {
@@ -76,22 +75,7 @@ impl ApTrackingAnalysisInfo {
             if !ctx.vars_of_interest.contains(var_id) {
                 continue;
             }
-
-            match self.vars.entry(*var_id) {
-                indexmap::map::Entry::Occupied(mut e) => {
-                    let blocks = e.get_mut();
-
-                    // Since the blocks are visited in reverse order and the blocks vector is in
-                    // reverse order, we can just check the last element to see if 'block_id'
-                    // was already added.
-                    if blocks.last() != Some(&block_id) {
-                        blocks.push(block_id);
-                    }
-                }
-                indexmap::map::Entry::Vacant(e) => {
-                    e.insert(vec![block_id]);
-                }
-            }
+            self.vars.entry(*var_id).or_default().insert(block_id);
         }
     }
 }
@@ -145,45 +129,32 @@ impl Analyzer<'_> for ApTrackingAnalysisContext {
         match_info: &MatchInfo,
         infos: &[Self::Info],
     ) -> Self::Info {
-        let mut vars = OrderedHashMap::<VariableId, OrderedHashMap<BlockId, usize>>::default();
-
-        for info in infos {
+        // Find all the variables that are alive after this block convergence.
+        // A variable is alive after a converges if it is a alive in some block that is reachable
+        // from it by any arm.
+        let mut vars = OrderedHashMap::<VariableId, OrderedHashSet<BlockId>>::default();
+        let mut any_merges = false;
+        for (arm, info) in izip!(match_info.arms(), infos) {
             for (var_id, blocks) in info.vars.iter() {
-                // Note that the variables that are introduced in this arm can't be used
-                // in other arms so they will be filtered below.
+                if arm.var_ids.iter().contains(var_id) {
+                    continue;
+                }
                 let var_blocks = vars.entry(*var_id).or_default();
                 for block_id in blocks {
-                    *(var_blocks.entry(*block_id).or_default()) += 1;
+                    any_merges |= !var_blocks.insert(*block_id);
                 }
             }
         }
 
-        // Find all the variables that are alive after a convergence.
-        // A variable is alive after a converges if it is a alive in some block that is reachable
-        // through more than one arm.
-        let mut info = Self::Info {
-            vars: OrderedHashMap::from_iter(vars.iter().map(|(var_id, usage)| {
-                (
-                    *var_id,
-                    usage
-                        .iter()
-                        .filter_map(
-                            |(block_id, usage)| if *usage > 1 { Some(*block_id) } else { None },
-                        )
-                        .sorted_by_key(|block_id| std::cmp::Reverse(block_id.0))
-                        .collect(),
-                )
-            })),
-        };
-
-        // If we have a variable the lives after a converges then we need to enable ap tracking
-        // Otherwise we can disable ap tracking.
-        if !info.vars.is_empty() {
+        // If we have a variable the lives in more then one arm we need to enable ap tracking
+        // If there are no variables of interest in any of the arms, we can disable ap tracking.
+        if any_merges {
             self.ap_tracking_configuration.enable_ap_tracking.insert(block_id);
-        } else {
+        } else if vars.is_empty() {
             self.ap_tracking_configuration.disable_ap_tracking.insert(block_id);
         }
 
+        let mut info = Self::Info { vars };
         info.variables_used(
             self,
             match_info.inputs().iter().map(|VarUsage { var_id, .. }| var_id),
