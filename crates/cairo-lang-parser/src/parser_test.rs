@@ -187,7 +187,8 @@ cairo_lang_test_utils::test_file_test!(
         attrs: "attrs",
         inline_macro: "inline_macro",
         generics: "generics",
-    },
+        generic_params: "generic_params",
+},
     test_partial_parser_tree
 );
 cairo_lang_test_utils::test_file_test!(
