@@ -87,20 +87,14 @@ impl SemanticTokenKind {
         }
 
         let parent_kind = node.parent().unwrap().kind(syntax_db);
-        if matches!(parent_kind, SyntaxKind::ItemInlineMacro) {
-            return Some(SemanticTokenKind::InlineMacro);
-        }
-        if ast::Item::is_variant(parent_kind) | matches!(parent_kind, SyntaxKind::AliasClause) {
-            return Some(SemanticTokenKind::Class);
-        }
-        if matches!(parent_kind, SyntaxKind::StructArgSingle) {
-            return Some(SemanticTokenKind::Field);
-        }
-        if matches!(parent_kind, SyntaxKind::FunctionDeclaration) {
-            return Some(SemanticTokenKind::Function);
-        }
-        if matches!(parent_kind, SyntaxKind::GenericParamType) {
-            return Some(SemanticTokenKind::TypeParameter);
+        match parent_kind {
+            SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
+            SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
+            _ if ast::Item::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
+            SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
+            SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
+            SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
+            _ => {}
         }
 
         // Identifier.
@@ -122,7 +116,6 @@ impl SemanticTokenKind {
                 SyntaxKind::PatternIdentifier => return Some(SemanticTokenKind::Variable),
                 SyntaxKind::Variant => return Some(SemanticTokenKind::EnumMember),
                 SyntaxKind::Attribute => return Some(SemanticTokenKind::Annotation),
-
                 _ => {}
             };
 
