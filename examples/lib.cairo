@@ -14,4 +14,3 @@ mod fib_unary;
 mod hash_chain_gas;
 mod hash_chain;
 mod pedersen_test;
-mod testing;
