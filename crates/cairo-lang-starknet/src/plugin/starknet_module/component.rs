@@ -5,7 +5,7 @@ use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
-use indoc::formatdoc;
+use indoc::{formatdoc, indoc};
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
@@ -29,7 +29,14 @@ impl ComponentSpecificGenerationData {
         _diagnostics: &mut [PluginDiagnostic],
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
-            "$has_component_trait$\n\n$generated_impls$",
+            indoc! {"
+            use starknet::storage::{
+                StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+                StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+            };
+            $has_component_trait$
+
+            $generated_impls$"},
             &[
                 ("has_component_trait".to_string(), self.has_component_trait),
                 ("generated_impls".to_string(), RewriteNode::new_modified(self.generated_impls)),

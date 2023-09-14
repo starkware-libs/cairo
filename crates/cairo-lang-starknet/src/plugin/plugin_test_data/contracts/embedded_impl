@@ -184,6 +184,10 @@ enum Event {}
             }
         }
     }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x2b2b877971b3c60903960025f6194f886248a19e63417ddf2399bf77038e11;
 
@@ -451,6 +455,10 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x1bee8e866505ef27d5ea63990112060e0e105e9294afd40e2fb08f711e11fa;
 
