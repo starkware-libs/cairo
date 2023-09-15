@@ -35,6 +35,7 @@ fn test_extract_names() {
                 ("Func1".into(), "Func1".into()),
                 ("Func2".into(), "Func2".into())
             ]),
+            annotations: Default::default(),
         }
     );
 }
@@ -68,6 +69,7 @@ fn test_populate_names() {
             (1.into(), "rename_gb".into()),
         ]),
         user_func_names: HashMap::from([(0.into(), "Func1".into()), (1.into(), "Func2".into())]),
+        annotations: Default::default(),
     }
     .populate(&mut program);
 
