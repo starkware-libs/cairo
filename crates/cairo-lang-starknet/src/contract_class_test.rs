@@ -26,6 +26,7 @@ fn test_serialization() {
             constructor: vec![],
         },
         abi: None,
+        annotations: Default::default(),
     };
 
     let serialized = serde_json::to_string_pretty(&contract).unwrap();

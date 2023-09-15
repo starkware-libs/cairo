@@ -361,6 +361,7 @@ impl Felt252Serde for Program {
             }
             f.entry_point.serialize(output)?;
         }
+        // TODO(mkaput): Consider serializing annotations here.
         Ok(())
     }
 
@@ -408,7 +409,9 @@ impl Felt252Serde for Program {
             funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
             input = next;
         }
-        Ok((Self { type_declarations, libfunc_declarations, statements, funcs }, input))
+        // TODO(mkaput): Consider deserializing annotations here.
+        let annotations = Default::default();
+        Ok((Self { type_declarations, libfunc_declarations, statements, funcs, annotations }, input))
     }
 }
 
