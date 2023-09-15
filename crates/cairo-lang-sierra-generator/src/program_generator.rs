@@ -207,6 +207,7 @@ pub fn get_sierra_program_for_functions(
                 )
             })
             .collect(),
+        annotations: Default::default(),
     }))
 }
 

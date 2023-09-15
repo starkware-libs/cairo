@@ -19,6 +19,7 @@ use itertools::{chain, Itertools};
 use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use cairo_lang_sierra::program::Annotations;
 
 use crate::abi::{AbiBuilder, Contract};
 use crate::aliased::Aliased;
@@ -55,6 +56,11 @@ pub struct ContractClass {
     pub contract_class_version: String,
     pub entry_points_by_type: ContractEntryPoints,
     pub abi: Option<Contract>,
+    /// Non-crucial information about the program, for use by external libraries and tool.
+    ///
+    /// See [`Annotations`] type documentation for more information about this field.
+    #[serde(default, skip_serializing_if = "Annotations::is_empty")]
+    pub annotations: Annotations,
 }
 impl ContractClass {
     /// Extracts Sierra program from the ContractClass and populates it with debug info if
@@ -217,6 +223,7 @@ fn compile_contract_with_prepared_and_checked_db(
             AbiBuilder::submodule_as_contract_abi(db, contract.submodule_id)
                 .with_context(|| "Could not create ABI from contract submodule")?,
         ),
+        annotations: Default::default(),
     };
     Ok(contract_class)
 }
