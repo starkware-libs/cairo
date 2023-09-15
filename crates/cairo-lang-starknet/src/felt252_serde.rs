@@ -411,7 +411,10 @@ impl Felt252Serde for Program {
         }
         // TODO(mkaput): Consider deserializing annotations here.
         let annotations = Default::default();
-        Ok((Self { type_declarations, libfunc_declarations, statements, funcs, annotations }, input))
+        Ok((
+            Self { type_declarations, libfunc_declarations, statements, funcs, annotations },
+            input,
+        ))
     }
 }
 

@@ -1,10 +1,9 @@
 use std::fmt;
 
 use anyhow::Result;
+use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
-
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
