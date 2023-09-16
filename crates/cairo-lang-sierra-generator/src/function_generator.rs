@@ -20,8 +20,9 @@ use crate::local_variables::{analyze_ap_changes, AnalyzeApChangesResult};
 use crate::pre_sierra::{self, Statement};
 use crate::store_variables::{add_store_statements, LibfuncInfo, LocalVariables};
 use crate::utils::{
-    alloc_local_libfunc_id, finalize_locals_libfunc_id, get_concrete_libfunc_id,
-    get_libfunc_signature, revoke_ap_tracking_libfunc_id, simple_statement,
+    alloc_local_libfunc_id, disable_ap_tracking_libfunc_id, finalize_locals_libfunc_id,
+    get_concrete_libfunc_id, get_libfunc_signature, revoke_ap_tracking_libfunc_id,
+    simple_statement,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -55,7 +56,7 @@ fn get_function_code(
     let root_block = lowered_function.blocks.root_block()?;
 
     // Find the local variables.
-    let AnalyzeApChangesResult { known_ap_change: _, local_variables, ap_tracking_configuration } =
+    let AnalyzeApChangesResult { known_ap_change, local_variables, ap_tracking_configuration } =
         analyze_ap_changes(db, lowered_function)?;
 
     // Get lifetime information.
@@ -98,6 +99,13 @@ fn get_function_code(
     let (sierra_local_variables, allocate_local_statements) =
         allocate_local_variables(&mut context, &local_variables)?;
     statements.extend(allocate_local_statements);
+
+    // Revoking ap tracking as the first non-local command for unknown ap-change function, to allow
+    // proper ap-equation solving. TODO(orizi): Fix the solver to not require this constraint.
+    if !known_ap_change && context.get_ap_tracking() {
+        statements.push(simple_statement(disable_ap_tracking_libfunc_id(db), &[], &[]));
+        context.set_ap_tracking(false);
+    }
 
     // Generate the function's code.
     statements.extend(generate_block_code(&mut context, BlockId::root())?);
