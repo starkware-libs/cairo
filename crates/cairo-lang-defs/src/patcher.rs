@@ -1,4 +1,4 @@
-use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnoticOrigin};
+use cairo_lang_filesystem::ids::{DiagnosticMapping, DiagnosticOrigin};
 use cairo_lang_filesystem::span::{TextOffset, TextSpan, TextWidth};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
@@ -236,7 +236,7 @@ impl<'a> PatchBuilder<'a> {
         let start = TextOffset::default().add_width(TextWidth::from_str(&self.code));
         self.diagnostics_mappings.push(DiagnosticMapping {
             span: TextSpan { start, end: start.add_width(orig_span.width()) },
-            origin: DiagnoticOrigin::Start(orig_span.start),
+            origin: DiagnosticOrigin::Start(orig_span.start),
         });
         self.code += node.get_text(self.db).as_str();
     }
@@ -254,7 +254,7 @@ impl<'a> PatchBuilder<'a> {
 
         self.diagnostics_mappings.push(DiagnosticMapping {
             span: TextSpan { start, end: start.add_width(TextWidth::from_str(&text)) },
-            origin: DiagnoticOrigin::Start(orig_start),
+            origin: DiagnosticOrigin::Start(orig_start),
         });
     }
 }
