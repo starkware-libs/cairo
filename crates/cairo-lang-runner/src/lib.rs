@@ -33,6 +33,7 @@ use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::serde::deserialize_program::{BuiltinName, HintParams};
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use casm_run::hint_to_hint_params;
 pub use casm_run::{CairoHintProcessor, StarknetState};
 use itertools::chain;
@@ -215,9 +216,12 @@ impl SierraCasmRunner {
     /// Runs the vm starting from a function with custom hint processor. Function may have
     /// implicits, but no other ref params. The cost of the function is deducted from
     /// available_gas before the execution begins.
-    pub fn run_function<'a, Instructions>(
+    ///
+    /// Allows injecting Cairo VirtualMachine
+    pub fn run_function_with_vm<'a, Instructions>(
         &self,
         func: &Function,
+        vm: &mut VirtualMachine,
         hint_processor: &mut dyn HintProcessor,
         hints_dict: HashMap<usize, Vec<HintParams>>,
         instructions: Instructions,
@@ -227,6 +231,7 @@ impl SierraCasmRunner {
         Instructions: Iterator<Item = &'a Instruction> + Clone,
     {
         let (cells, ap) = casm_run::run_function(
+            vm,
             instructions,
             builtins,
             |context| {
@@ -279,6 +284,24 @@ impl SierraCasmRunner {
             self.handle_main_return_value(ty, values, &cells)?
         };
         Ok(RunResult { gas_counter, memory: cells, value })
+    }
+
+    /// Runs the vm starting from a function with custom hint processor. Function may have
+    /// implicits, but no other ref params. The cost of the function is deducted from
+    /// available_gas before the execution begins.
+    pub fn run_function<'a, Instructions>(
+        &self,
+        func: &Function,
+        hint_processor: &mut dyn HintProcessor,
+        hints_dict: HashMap<usize, Vec<HintParams>>,
+        instructions: Instructions,
+        builtins: Vec<BuiltinName>,
+    ) -> Result<RunResult, RunnerError>
+    where
+        Instructions: Iterator<Item = &'a Instruction> + Clone,
+    {
+        let mut vm = VirtualMachine::new(true);
+        self.run_function_with_vm(func, &mut vm, hint_processor, hints_dict, instructions, builtins)
     }
 
     /// Handling the main return value to create a `RunResultValue`.
