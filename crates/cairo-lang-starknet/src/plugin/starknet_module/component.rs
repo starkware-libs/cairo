@@ -2,10 +2,11 @@ use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::{formatdoc, indoc};
+use itertools::{chain, Itertools};
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
@@ -158,6 +159,8 @@ struct EmbeddableAsImplParams {
     attr_arg_value: ast::Expr,
     /// The generic parameters of the impl.
     generic_params_node: ast::GenericParamList,
+    /// The trait the impl implements.
+    trait_path: ast::ExprPath,
     /// The body of the impl.
     impl_body: ast::ImplBody,
 }
@@ -188,6 +191,8 @@ impl EmbeddableAsImplParams {
             }
         };
 
+        let trait_path = item_impl.trait_path(db);
+
         let impl_body = match item_impl.body(db) {
             ast::MaybeImplBody::Some(impl_body) => impl_body,
             ast::MaybeImplBody::None(semicolon) => {
@@ -201,7 +206,7 @@ impl EmbeddableAsImplParams {
             }
         };
 
-        Some(EmbeddableAsImplParams { attr_arg_value, generic_params_node, impl_body })
+        Some(EmbeddableAsImplParams { attr_arg_value, generic_params_node, trait_path, impl_body })
     }
 }
 
@@ -226,22 +231,12 @@ fn handle_component_impl(
         RewriteNode::empty()
     };
 
-    let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
-    let generated_trait_name = RewriteNode::interpolate_patched(
-        "$impl_name$Trait",
-        &[("impl_name".to_string(), impl_name)].into(),
-    );
-
-    let mut trait_functions = vec![];
     let mut impl_functions = vec![];
     for item in params.impl_body.items(db).elements(db) {
-        let Some((trait_function, impl_function)) =
-            handle_component_embeddable_as_impl_item(db, diagnostics, item)
+        let Some(impl_function) = handle_component_embeddable_as_impl_item(db, diagnostics, item)
         else {
             continue;
         };
-        trait_functions.push(RewriteNode::Text("\n    ".to_string()));
-        trait_functions.push(trait_function);
         impl_functions.push(RewriteNode::Text("\n    ".to_string()));
         impl_functions.push(impl_function);
     }
@@ -249,19 +244,15 @@ fn handle_component_impl(
     let generated_impl_node = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
-        trait $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$trait_functions$
-        }}
-
         #[starknet::embeddable]
         impl $generated_impl_name$<
             $generic_params$$maybe_comma$ impl {GENERIC_CONTRACT_STATE_NAME}Drop: \
              Drop<{GENERIC_CONTRACT_STATE_NAME}>
-        > of $generated_trait_name$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
+        > of $trait_path$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
         }}"
         ),
         &[
-            ("generated_trait_name".to_string(), generated_trait_name),
-            ("trait_functions".to_string(), RewriteNode::new_modified(trait_functions)),
+            ("trait_path".to_string(), remove_generics_from_path(db, &params.trait_path)),
             (
                 "generated_impl_name".to_string(),
                 RewriteNode::Copied(params.attr_arg_value.as_syntax_node()),
@@ -279,12 +270,29 @@ fn handle_component_impl(
     data.specific.generated_impls.push(generated_impl_node);
 }
 
+/// Returns a RewriteNode of a path similar to the given path, but without generic params.
+fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -> RewriteNode {
+    let elements = trait_path.elements(db);
+    let (last, prefix) = elements.split_last().unwrap();
+    let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
+    RewriteNode::new_modified(
+        itertools::Itertools::intersperse(
+            chain!(
+                prefix.into_iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
+                [last_without_generics]
+            ),
+            RewriteNode::Text("::".to_string()),
+        )
+        .collect_vec(),
+    )
+}
+
 /// Handles an item of an `#[embeddable_as]` impl inside a component module.
 fn handle_component_embeddable_as_impl_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     item: ast::ImplItem,
-) -> Option<(RewriteNode, RewriteNode)> {
+) -> Option<RewriteNode> {
     let ast::ImplItem::Function(item_function) = item else {
         return None;
     };
@@ -358,11 +366,6 @@ fn handle_component_embeddable_as_impl_item(
         .into(),
     );
 
-    let trait_function = RewriteNode::interpolate_patched(
-        "$generated_function_sig$;",
-        &[("generated_function_sig".to_string(), generated_function_sig.clone())].into(),
-    );
-
     let impl_function = RewriteNode::interpolate_patched(
         &format!(
             "$generated_function_sig$ {{
@@ -378,7 +381,7 @@ fn handle_component_embeddable_as_impl_item(
         .into(),
     );
 
-    Some((trait_function, impl_function))
+    Some(impl_function)
 }
 
 /// Checks if the first parameter of a function in an impl is a valid value of an impl marked with

@@ -217,17 +217,10 @@ trait HasComponent<TContractState> {
     fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
-trait MyInnerImplTrait<TContractState> {
-    #[external]
-    fn get(self: @TContractState, addr: ContractAddress) -> u32;
-    #[external]
-    fn set(ref self: TContractState, addr: ContractAddress, value: u32);
-}
-
 #[starknet::embeddable]
 impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
-> of MyInnerImplTrait<TContractState> {
+> of MyTrait<TContractState> {
     #[external]
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
