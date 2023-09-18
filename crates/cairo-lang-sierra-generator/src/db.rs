@@ -176,10 +176,7 @@ fn get_type_info(
         SierraGeneratorTypeLongId::Regular(long_id) => long_id,
         SierraGeneratorTypeLongId::CycleBreaker(ty) => {
             let long_id = db.get_concrete_long_type_id(ty)?.as_ref().clone();
-            let info = db.type_info(
-                ImplLookupContext { modules: [].into_iter().collect(), generic_params: vec![] },
-                ty,
-            )?;
+            let info = db.type_info(ImplLookupContext::default(), ty)?;
             return Ok(Arc::new(cairo_lang_sierra::extensions::types::TypeInfo {
                 long_id,
                 storable: true,
