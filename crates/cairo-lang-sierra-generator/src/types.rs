@@ -10,6 +10,7 @@ use cairo_lang_sierra::ids::UserTypeId;
 use cairo_lang_sierra::program::{ConcreteTypeLongId, GenericArg as SierraGenericArg};
 use cairo_lang_utils::try_extract_matches;
 use itertools::chain;
+use semantic::items::imp::ImplLookupContext;
 
 use crate::db::{sierra_concrete_long_id, SierraGenGroup, SierraGeneratorTypeLongId};
 use crate::specialization_context::SierraSignatureSpecializationContext;
@@ -19,18 +20,20 @@ pub fn get_concrete_type_id(
     db: &dyn SierraGenGroup,
     type_id: semantic::TypeId,
 ) -> Maybe<cairo_lang_sierra::ids::ConcreteTypeId> {
-    if matches!(
-        db.lookup_intern_type(type_id),
+    match db.lookup_intern_type(type_id) {
+        semantic::TypeLongId::Snapshot(inner_ty)
+            if db.type_info(ImplLookupContext::default(), inner_ty)?.duplicatable.is_ok() =>
+        {
+            db.get_concrete_type_id(inner_ty)
+        }
         semantic::TypeLongId::Concrete(
-            semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_)
-        )
-    ) && db.is_self_referential(type_id)?
-    {
-        Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
-    } else {
-        Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
+            semantic::ConcreteTypeId::Enum(_) | semantic::ConcreteTypeId::Struct(_),
+        ) if db.is_self_referential(type_id)? => {
+            Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::CycleBreaker(type_id)))
+        }
+        _ => Ok(db.intern_concrete_type(SierraGeneratorTypeLongId::Regular(
             db.get_concrete_long_type_id(type_id)?,
-        )))
+        ))),
     }
 }
 
