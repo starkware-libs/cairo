@@ -38,7 +38,7 @@ use {ark_secp256k1 as secp256k1, ark_secp256r1 as secp256r1};
 
 use self::dict_manager::DictSquashExecScope;
 use crate::short_string::as_cairo_short_string;
-use crate::{build_hints_dict, Arg, RunResultValue, SierraCasmRunner};
+use crate::{Arg, RunResultValue, SierraCasmRunner};
 
 #[cfg(test)]
 mod test;
@@ -1963,30 +1963,6 @@ pub struct RunFunctionContext<'a> {
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
 type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
-
-/// Runs `program` on layout with prime, and returns the memory layout and ap value.
-/// Run used CairoHintProcessor and StarknetState to emulate Starknet behaviour.
-pub fn run_function_with_starknet_context<'a, 'b: 'a, Instructions>(
-    vm: &mut VirtualMachine,
-    instructions: Instructions,
-    builtins: Vec<BuiltinName>,
-    additional_initialization: fn(
-        context: RunFunctionContext<'_>,
-    ) -> Result<(), Box<CairoRunError>>,
-) -> Result<RunFunctionResStarknet, Box<CairoRunError>>
-where
-    Instructions: Iterator<Item = &'a Instruction> + Clone,
-{
-    let (hints_dict, string_to_hint) = build_hints_dict(instructions.clone());
-    let mut hint_processor = CairoHintProcessor {
-        runner: None,
-        string_to_hint,
-        starknet_state: StarknetState::default(),
-        run_resources: RunResources::default(),
-    };
-    run_function(vm, instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
-        .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
-}
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
