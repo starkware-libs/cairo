@@ -582,7 +582,7 @@ impl<'a> MemBuffer<'a> {
 
     /// Writes an array into a new segment and writes the start and end pointers to the current
     /// position of the buffer. Advances the buffer by two.
-    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
+    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item=T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
@@ -1967,6 +1967,7 @@ type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Run used CairoHintProcessor and StarknetState to emulate Starknet behaviour.
 pub fn run_function_with_starknet_context<'a, 'b: 'a, Instructions>(
+    vm: &mut VirtualMachine,
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
@@ -1983,13 +1984,14 @@ where
         starknet_state: StarknetState::default(),
         run_resources: RunResources::default(),
     };
-    run_function(instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
+    run_function(vm, instructions, builtins, additional_initialization, &mut hint_processor, hints_dict)
         .map(|(mem, val)| (mem, val, hint_processor.starknet_state))
 }
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
 pub fn run_function<'a, 'b: 'a, Instructions>(
+    vm: &mut VirtualMachine,
     instructions: Instructions,
     builtins: Vec<BuiltinName>,
     additional_initialization: fn(
@@ -2022,14 +2024,13 @@ where
     let mut runner = CairoRunner::new(&program, "all_cairo", false)
         .map_err(CairoRunError::from)
         .map_err(Box::new)?;
-    let mut vm = VirtualMachine::new(true);
 
-    let end = runner.initialize(&mut vm).map_err(CairoRunError::from)?;
+    let end = runner.initialize(vm).map_err(CairoRunError::from)?;
 
-    additional_initialization(RunFunctionContext { vm: &mut vm, data_len })?;
+    additional_initialization(RunFunctionContext { vm, data_len })?;
 
-    runner.run_until_pc(end, &mut vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.end_run(true, false, &mut vm, hint_processor).map_err(CairoRunError::from)?;
-    runner.relocate(&mut vm, true).map_err(CairoRunError::from)?;
+    runner.run_until_pc(end, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.end_run(true, false, vm, hint_processor).map_err(CairoRunError::from)?;
+    runner.relocate(vm, true).map_err(CairoRunError::from)?;
     Ok((runner.relocated_memory, vm.get_relocated_trace().unwrap().last().unwrap().ap))
 }
