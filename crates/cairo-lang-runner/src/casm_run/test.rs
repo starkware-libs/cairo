@@ -1,14 +1,14 @@
 use cairo_felt::Felt252;
-use cairo_vm::vm::runners::cairo_runner::RunResources;
-use cairo_vm::vm::vm_core::VirtualMachine;
 use cairo_lang_casm::inline::CasmContext;
 use cairo_lang_casm::{casm, deref};
+use cairo_vm::vm::runners::cairo_runner::RunResources;
+use cairo_vm::vm::vm_core::VirtualMachine;
 use itertools::Itertools;
 use num_traits::ToPrimitive;
 use test_case::test_case;
-use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
 
 use crate::casm_run::run_function;
+use crate::{build_hints_dict, CairoHintProcessor, StarknetState};
 
 #[test_case(
     casm! {
@@ -112,9 +112,15 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
         run_resources: RunResources::default(),
     };
 
-    let (cells, ap) =
-        run_function(&mut VirtualMachine::new(true), function.instructions.iter(), vec![], |_| Ok(()), &mut hint_processor, hints_dict)
-            .expect("Running code failed.");
+    let (cells, ap) = run_function(
+        &mut VirtualMachine::new(true),
+        function.instructions.iter(),
+        vec![],
+        |_| Ok(()),
+        &mut hint_processor,
+        hints_dict,
+    )
+    .expect("Running code failed.");
     let cells = cells.into_iter().skip(ap - n_returns);
     assert_eq!(
         cells.take(n_returns).map(|cell| cell.unwrap()).collect_vec(),
@@ -125,11 +131,11 @@ fn test_runner(function: CasmContext, n_returns: usize, expected: &[i128]) {
 #[test]
 fn test_allocate_segment() {
     let casm = casm! {
-            [ap] = 1337, ap++;
-            %{ memory[ap] = segments.add() %}
-            [ap - 1] = [[&deref!([ap])]];
-            ret;
-        };
+        [ap] = 1337, ap++;
+        %{ memory[ap] = segments.add() %}
+        [ap - 1] = [[&deref!([ap])]];
+        ret;
+    };
 
     let (hints_dict, string_to_hint) = build_hints_dict(casm.instructions.iter());
     let mut hint_processor = CairoHintProcessor {
@@ -139,7 +145,14 @@ fn test_allocate_segment() {
         run_resources: RunResources::default(),
     };
 
-    let (memory, ap) = run_function(&mut VirtualMachine::new(true), casm.instructions.iter() , vec![], |_| Ok(()), &mut hint_processor, hints_dict)
+    let (memory, ap) = run_function(
+        &mut VirtualMachine::new(true),
+        casm.instructions.iter(),
+        vec![],
+        |_| Ok(()),
+        &mut hint_processor,
+        hints_dict,
+    )
     .expect("Running code failed.");
     let ptr = memory[ap]
         .as_ref()

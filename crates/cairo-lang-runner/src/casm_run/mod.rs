@@ -582,7 +582,7 @@ impl<'a> MemBuffer<'a> {
 
     /// Writes an array into a new segment and writes the start and end pointers to the current
     /// position of the buffer. Advances the buffer by two.
-    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item=T>>(
+    pub fn write_arr<T: Into<MaybeRelocatable>, Data: Iterator<Item = T>>(
         &mut self,
         data: Data,
     ) -> Result<(), MemoryError> {
@@ -1962,7 +1962,6 @@ pub struct RunFunctionContext<'a> {
 }
 
 type RunFunctionRes = (Vec<Option<Felt252>>, usize);
-type RunFunctionResStarknet = (Vec<Option<Felt252>>, usize, StarknetState);
 
 /// Runs `program` on layout with prime, and returns the memory layout and ap value.
 /// Allows injecting custom HintProcessor.
