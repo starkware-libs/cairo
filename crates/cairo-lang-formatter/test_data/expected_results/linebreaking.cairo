@@ -154,3 +154,15 @@ fn bar(
         )
     );
 }
+
+impl AnImpl<
+    T,
+    impl i: ATrait<
+        T,
+        S,
+        AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,
+        AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,
+        AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,
+    >,
+> of ATrait {}
+

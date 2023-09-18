@@ -307,6 +307,7 @@ impl SyntaxNodeFormat for SyntaxNode {
         &self,
         db: &dyn SyntaxGroup,
     ) -> BreakLinePointsPositions {
+        // TODO(Gil): Make it easier to order the break points precedence.
         match parent_kind(db, self) {
             Some(SyntaxKind::ItemList) => {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
@@ -420,6 +421,14 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::GenericParamList => {
                     BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
                         6,
+                        BreakLinePointIndentation::IndentedWithTail,
+                        true,
+                        false,
+                    ))
+                }
+                SyntaxKind::GenericArgList => {
+                    BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
+                        21,
                         BreakLinePointIndentation::IndentedWithTail,
                         true,
                         false,

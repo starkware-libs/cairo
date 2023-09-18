@@ -39,9 +39,9 @@ extern fn get_block_hash_syscall(
 ) -> SyscallResult<felt252> implicits(GasBuiltin, System) nopanic;
 
 // Gets information about the current execution.
-extern fn get_execution_info_syscall() -> SyscallResult<Box<starknet::info::ExecutionInfo>> implicits(
-    GasBuiltin, System
-) nopanic;
+extern fn get_execution_info_syscall() -> SyscallResult<
+    Box<starknet::info::ExecutionInfo>
+> implicits(GasBuiltin, System) nopanic;
 
 // Calls the requested function in any previously declared class.
 // `class_hash` - The hash of the class you want to use.
