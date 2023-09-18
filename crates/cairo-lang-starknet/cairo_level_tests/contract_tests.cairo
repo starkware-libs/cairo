@@ -4,7 +4,7 @@ use test::test_utils::{assert_eq, assert_ne};
 use super::utils::serialized;
 
 #[starknet::interface]
-trait ITestContract {}
+trait ITestContract<T> {}
 
 #[starknet::contract]
 mod test_contract {
