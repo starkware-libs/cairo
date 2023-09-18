@@ -1,7 +1,7 @@
 //! > Test expansion of a complex starknet contract with a component.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 use starknet::ClassHash;
@@ -966,16 +966,11 @@ trait HasComponent<TContractState> {
     fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
-trait UpgradableTrait<TContractState> {
-    
-    fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
-}
-
 #[starknet::embeddable]
 impl UpgradableImpl<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
-> of UpgradableTrait<TContractState> {
+> of super::IUpgradable<TContractState> {
     
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
