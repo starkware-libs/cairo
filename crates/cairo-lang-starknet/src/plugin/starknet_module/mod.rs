@@ -175,12 +175,6 @@ pub(super) fn handle_module_by_storage(
     // Use declarations to add to the internal submodules. Mapping from 'use' items to their path.
     let mut extra_uses = OrderedHashMap::default();
     for item in body.items(db).elements(db) {
-        // Skip elements that only generate other code, but their code itself is ignored.
-        if matches!(&item, ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME)
-        {
-            continue;
-        }
-
         if let Some(variants) =
             get_starknet_event_variants(db, &mut diagnostics, &item, module_kind)
         {
@@ -259,6 +253,8 @@ fn maybe_add_extra_use(
         ast::Item::Constant(item) => Some(item.name(db)),
         ast::Item::Module(item) => Some(item.name(db)),
         ast::Item::Impl(item) => Some(item.name(db)),
+        // Skip the storage struct, that only generates other code, but its code itself is ignored.
+        ast::Item::Struct(item) if item.name(db).text(db) == STORAGE_STRUCT_NAME => None,
         ast::Item::Struct(item) => Some(item.name(db)),
         ast::Item::Enum(item) => Some(item.name(db)),
         ast::Item::TypeAlias(item) => Some(item.name(db)),
