@@ -8,7 +8,7 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::consts::CALLDATA_PARAM_NAME;
-use super::utils::is_ref_param;
+use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
 /// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
@@ -41,6 +41,28 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 remove_original_item: false,
             };
         }
+    };
+    let generic_params = trait_ast.generic_params(db);
+    let Some(single_generic_param) = (match &generic_params {
+        ast::OptionWrappedGenericParamList::Empty(_) => None,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
+            if let [ast::GenericParam::Type(param)] =
+                generic_params.generic_params(db).elements(db).as_slice()
+            {
+                Some(param.name(db).text(db))
+            } else {
+                None
+            }
+        }
+    }) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "ABIs must have exactly one generic param, which is a type.".to_string(),
+                stable_ptr: generic_params.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
     };
 
     let mut diagnostics = vec![];
@@ -81,9 +103,36 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     });
                     skip_generation = true;
                 }
+                if self_param.is_ref_param(db) {
+                    if !self_param.type_clause(db).ty(db).is_identifier(db, &single_generic_param) {
+                        diagnostics.push(PluginDiagnostic {
+                            message: "The `self` parameter type must match the generic param."
+                                .to_string(),
+                            stable_ptr: self_param.stable_ptr().untyped(),
+                        });
+                        skip_generation = true;
+                    }
+                } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
+                    if !snapped_ty.is_identifier(db, &single_generic_param) {
+                        diagnostics.push(PluginDiagnostic {
+                            message: "The `self` parameter type must match the generic param."
+                                .to_string(),
+                            stable_ptr: self_param.stable_ptr().untyped(),
+                        });
+                        skip_generation = true;
+                    }
+                } else {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "The `self` parameter must either be a snapshot of the generic \
+                                  param or a `ref` to it."
+                            .to_string(),
+                        stable_ptr: self_param.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
 
                 for param in params {
-                    if is_ref_param(db, &param) {
+                    if param.is_ref_param(db) {
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic {

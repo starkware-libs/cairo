@@ -3,21 +3,38 @@ use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionArgListParen
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_utils::try_extract_matches;
 
-/// Checks if the parameter is defined as a ref parameter.
-pub fn is_ref_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
-    let param_modifiers = param.modifiers(db).elements(db);
-    // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
-    // semantic level, we could just ask if it's a reference.
-    matches!(param_modifiers[..], [Modifier::Ref(_)])
+pub trait ParamEx {
+    /// Checks if the parameter is defined as a ref parameter.
+    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Checks if the parameter is defined as a ref parameter.
+    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Extract snapshot type if the parameter is a snapshot parameter. Otherwise, returns None.
+    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr>;
 }
+impl ParamEx for ast::Param {
+    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool {
+        let param_modifiers = self.modifiers(db).elements(db);
+        // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
+        // semantic level, we could just ask if it's a reference.
+        matches!(param_modifiers[..], [Modifier::Ref(_)])
+    }
 
-/// Checks if the parameter is defined as a mut parameter.
-pub fn is_mut_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
-    let param_modifiers = param.modifiers(db).elements(db);
-    // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
-    // semantic level, we could just ask if it's a reference.
-    matches!(param_modifiers[..], [Modifier::Mut(_)])
+    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool {
+        let param_modifiers = self.modifiers(db).elements(db);
+        // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
+        // semantic level, we could just ask if it's a reference.
+        matches!(param_modifiers[..], [Modifier::Mut(_)])
+    }
+
+    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr> {
+        let unary = try_extract_matches!(self.type_clause(db).ty(db), ast::Expr::Unary)?;
+        if !matches!(unary.op(db), ast::UnaryOperator::At(_)) {
+            return None;
+        }
+        Some(unary.expr(db))
+    }
 }
 
 /// Helper trait for syntax queries on `ast::Expr`.
