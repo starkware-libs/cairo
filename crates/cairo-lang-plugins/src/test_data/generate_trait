@@ -83,14 +83,14 @@ trait SomeTrait<T> {
 test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
-#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+#[generate_trait(trait_attrs(inline(attr), implicit_precedence(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
 
 //! > expanded_cairo_code
-#[generate_trait(trait_attrs(some(attr), other(attr2)))]
+#[generate_trait(trait_attrs(inline(attr), implicit_precedence(attr2)))]
 impl OtherImpl<T> of TraitWithAttrs<T>;
-#[some(attr)]
-#[other(attr2)]
+#[inline(attr)]
+#[implicit_precedence(attr2)]
 trait TraitWithAttrs<T>;
 
 //! > expected_diagnostics
