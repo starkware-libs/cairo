@@ -185,7 +185,7 @@ impl<'a> Parser<'a> {
     // ------------------------------- Top level items -------------------------------
 
     /// Returns a GreenId of a node with an Item.* kind (see [syntax::node::ast::Item]), or
-    /// TryParseFauilre if a top-level item can't be parsed.
+    /// TryParseFailure if a top-level item can't be parsed.
     /// In case of an identifier not followed by a `!`, it is skipped inside the function and thus a
     /// TryParseFailure::DoNothing is returned.
     pub fn try_parse_top_level_item(&mut self) -> TryParseResult<ItemGreen> {
