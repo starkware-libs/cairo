@@ -37,6 +37,7 @@ mod upgradable {
     impl Upgradable<
         TContractState, impl X: HasComponent<TContractState>
     > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
@@ -146,6 +147,7 @@ mod upgradable {
     impl Upgradable<
         TContractState, impl X: HasComponent<TContractState>
     > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
@@ -971,7 +973,7 @@ impl UpgradableImpl<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::IUpgradable<TContractState> {
-    
+    #[external(v0)]
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
         component.upgrade(new_class_hash, )
@@ -1053,9 +1055,32 @@ trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_new_class_hash = option::OptionTraitImpl::expect(
+        serde::Serde::<ClassHash>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    UpgradableImpl::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
 
 
 mod __external_UpgradableImpl {
+        use super::__wrapper_upgrade as upgrade;
 }
 
 mod __l1_handler_UpgradableImpl {
