@@ -16,6 +16,7 @@ use cairo_lang_semantic::{
     ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
     TypeId, TypeLongId,
 };
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
@@ -38,11 +39,26 @@ mod test;
 #[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
-    pub items: Vec<Item>,
+    items: OrderedHashSet<Item>,
 }
 impl Contract {
     pub fn json(&self) -> String {
         serde_json::to_string_pretty(&self).unwrap()
+    }
+    /// Inserts an item to the set of items.
+    /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
+    /// item already existed.
+    /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
+    /// specifies whether duplication is OK or not.
+    /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
+    fn insert_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+        let item_description = item.description();
+        let already_existed = !self.items.insert(item);
+        if already_existed && prevent_dups {
+            return Err(ABIError::InvalidDuplicatedItem { description: item_description });
+        }
+
+        Ok(())
     }
 }
 
@@ -58,6 +74,10 @@ pub struct AbiBuilder {
     /// List of events that were included in the abi.
     /// Used to avoid redundancy.
     events: HashSet<TypeId>,
+
+    /// List of entry point names that were included in the abi.
+    /// Used to avoid duplication.
+    entry_point_names: HashSet<String>,
 
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
@@ -173,7 +193,7 @@ impl AbiBuilder {
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
             let function = builder.trait_function_as_abi(db, *trait_function_id, storage_type)?;
-            builder.abi.items.push(function);
+            builder.add_abi_item(function, true)?;
         }
 
         Ok(builder.abi)
@@ -191,10 +211,12 @@ impl AbiBuilder {
         let interface_path = trait_id.full_path(db.upcast());
         let mut items = Vec::new();
         for function in db.trait_functions(trait_id).unwrap_or_default().values() {
+            self.add_entry_point_name(function.name(db.upcast()).into())?;
             items.push(self.trait_function_as_abi(db, *function, storage_type)?);
         }
 
-        self.abi.items.push(Item::Interface(Interface { name: interface_path, items }));
+        let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
+        self.add_abi_item(interface_item, true)?;
 
         Ok(())
     }
@@ -209,7 +231,7 @@ impl AbiBuilder {
     ) -> Result<(), ABIError> {
         for function in db.impl_functions(impl_def_id).unwrap_or_default().values() {
             let function_abi = self.impl_function_as_abi(db, *function, storage_type)?;
-            self.abi.items.push(function_abi);
+            self.add_abi_item(function_abi, true)?;
         }
 
         Ok(())
@@ -231,9 +253,8 @@ impl AbiBuilder {
         // functions as external functions.
         let trait_id = trt.trait_id(db);
         if trait_id.has_attr(db, INTERFACE_ATTR)? {
-            self.abi
-                .items
-                .push(Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path }));
+            let impl_item = Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path });
+            self.add_abi_item(impl_item, true)?;
             self.add_interface(db, trait_id)?;
         } else {
             self.add_non_interface_impl(db, impl_def_id, storage_type)?;
@@ -316,7 +337,7 @@ impl AbiBuilder {
         let signature = db.function_with_body_signature(function_with_body_id)?;
 
         let function = self.function_as_abi(db, &name, signature, storage_type)?;
-        self.abi.items.push(function);
+        self.add_abi_item(function, true)?;
 
         Ok(())
     }
@@ -341,7 +362,8 @@ impl AbiBuilder {
             return Err(ABIError::UnexpectedType);
         }
 
-        self.abi.items.push(Item::Constructor(Constructor { name, inputs }));
+        let constructor_item = Item::Constructor(Constructor { name, inputs });
+        self.add_abi_item(constructor_item, true)?;
 
         Ok(())
     }
@@ -361,7 +383,9 @@ impl AbiBuilder {
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        self.abi.items.push(Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability }));
+        let l1_handler_item =
+            Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability });
+        self.add_abi_item(l1_handler_item, true)?;
 
         Ok(())
     }
@@ -499,8 +523,8 @@ impl AbiBuilder {
                 EventKind::Enum { variants: event_fields }
             }
         };
-        let name = type_id.format(db);
-        self.abi.items.push(Item::Event(Event { name, kind: event_kind }));
+        let event_item = Item::Event(Event { name: type_id.format(db), kind: event_kind });
+        self.add_abi_item(event_item, true)?;
 
         Ok(())
     }
@@ -559,11 +583,13 @@ impl AbiBuilder {
         match concrete {
             ConcreteTypeId::Struct(id) => {
                 let members = self.add_and_get_struct_members(db, id)?;
-                self.abi.items.push(Item::Struct(Struct { name: concrete.format(db), members }))
+                let struct_item = Item::Struct(Struct { name: concrete.format(db), members });
+                self.add_abi_item(struct_item, true)?;
             }
             ConcreteTypeId::Enum(id) => {
                 let variants = self.add_and_get_enum_variants(db, id)?;
-                self.abi.items.push(Item::Enum(Enum { name: concrete.format(db), variants }))
+                let enum_item = Item::Enum(Enum { name: concrete.format(db), variants });
+                self.add_abi_item(enum_item, true)?;
             }
             ConcreteTypeId::Extern(_) => {}
         }
@@ -602,6 +628,29 @@ impl AbiBuilder {
                 Ok(EnumVariant { name: name.to_string(), ty: variant.ty.format(db) })
             })
             .collect::<Result<Vec<_>, ABIError>>()
+    }
+
+    /// Adds an item to the ABI.
+    /// Returns OK on success, or an ABIError on failure.
+    fn add_abi_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+        if let Some(name) = match &item {
+            Item::Function(item) => Some(item.name.to_string()),
+            Item::Constructor(item) => Some(item.name.to_string()),
+            Item::L1Handler(item) => Some(item.name.to_string()),
+            _ => None,
+        } {
+            self.add_entry_point_name(name)?;
+        }
+
+        self.abi.insert_item(item, prevent_dups)
+    }
+
+    /// Adds an entry point name to the set of names, to track unsupported duplication.
+    fn add_entry_point_name(&mut self, name: String) -> Result<(), ABIError> {
+        if !self.entry_point_names.insert(name.clone()) {
+            return Err(ABIError::DuplicateEntryPointName { name });
+        }
+        Ok(())
     }
 }
 
@@ -675,6 +724,13 @@ pub enum ABIError {
     // TODO(yuval): change to per-item.
     #[error("Contract interfaces impls cannot be directly embedded.")]
     ContractInterfaceImplCannotBeEmbedded,
+    #[error(
+        "Invalid duplicated item: {description} is used twice in the same contract. This is not \
+         supported."
+    )]
+    InvalidDuplicatedItem { description: String },
+    #[error("Duplicate entry point name: {name}. This is not currently supported.")]
+    DuplicateEntryPointName { name: String },
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {
@@ -683,7 +739,7 @@ impl From<DiagnosticAdded> for ABIError {
 }
 
 /// Enum of contract item ABIs.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum Item {
     #[serde(rename = "function")]
@@ -703,22 +759,36 @@ pub enum Item {
     #[serde(rename = "impl")]
     Impl(Imp),
 }
+impl Item {
+    fn description(&self) -> String {
+        match self {
+            Item::Function(item) => format!("Function {}", item.name),
+            Item::Constructor(item) => format!("Constructor {}", item.name),
+            Item::L1Handler(item) => format!("L1 Handler {}", item.name),
+            Item::Event(item) => format!("Event {}", item.name),
+            Item::Struct(item) => format!("Struct {}", item.name),
+            Item::Enum(item) => format!("Enum {}", item.name),
+            Item::Interface(item) => format!("Interface {}", item.name),
+            Item::Impl(item) => format!("Impl {}", item.name),
+        }
+    }
+}
 
 /// Contract interface ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Interface {
     pub name: String,
     pub items: Vec<Item>,
 }
 
 /// Contract impl ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Imp {
     pub name: String,
     pub interface_name: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum StateMutability {
     #[serde(rename = "external")]
     External,
@@ -727,7 +797,7 @@ pub enum StateMutability {
 }
 
 /// Contract function ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -738,14 +808,14 @@ pub struct Function {
 }
 
 /// Contract constructor ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Constructor {
     pub name: String,
     pub inputs: Vec<Input>,
 }
 
 /// Contract L1 handler ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct L1Handler {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -756,7 +826,7 @@ pub struct L1Handler {
 }
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Event {
     pub name: String,
     #[serde(flatten)]
@@ -764,7 +834,7 @@ pub struct Event {
 }
 
 /// Contract event kind.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "kind")]
 pub enum EventKind {
     #[serde(rename = "struct")]
@@ -774,7 +844,7 @@ pub enum EventKind {
 }
 
 /// Contract event field (member/variant).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct EventField {
     pub name: String,
     #[serde(rename = "type")]
@@ -783,7 +853,7 @@ pub struct EventField {
 }
 
 /// Function input ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Input {
     pub name: String,
     #[serde(rename = "type")]
@@ -791,21 +861,21 @@ pub struct Input {
 }
 
 /// Function Output ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Output {
     #[serde(rename = "type")]
     pub ty: String,
 }
 
 /// Struct ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Struct {
     pub name: String,
     pub members: Vec<StructMember>,
 }
 
 /// Struct member.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct StructMember {
     pub name: String,
     #[serde(rename = "type")]
@@ -813,14 +883,14 @@ pub struct StructMember {
 }
 
 /// Enum ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Enum {
     pub name: String,
     pub variants: Vec<EnumVariant>,
 }
 
 /// Enum variant.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct EnumVariant {
     pub name: String,
     #[serde(rename = "type")]

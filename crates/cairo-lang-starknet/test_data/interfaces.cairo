@@ -13,8 +13,16 @@ mod comp {
     #[storage]
     struct Storage {}
 
-    #[embeddable_as(I1I)]
-    impl Interface1_Implementation<
+    #[embeddable_as(I1I1)]
+    impl Interface1_Implementation1<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::Interface1<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn foo(ref self: ComponentState<TContractState>) {}
+    }
+
+    #[embeddable_as(I1I2)]
+    impl Interface1_Implementation2<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
         #[external(v0)]
@@ -47,7 +55,9 @@ mod counter_contract {
     }
 
     #[embed(v0)]
-    impl EmbeddedI1I = super::comp::I1I<ContractState>;
+    impl EmbeddedI1I1 = super::comp::I1I1<ContractState>;
+    #[embed(v0)]
+    impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
     #[embed(v0)]
     impl EmbeddedI2I = super::comp::I2I<ContractState>;
 
