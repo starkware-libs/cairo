@@ -202,6 +202,7 @@ fn compile_contract_with_prepared_and_checked_db(
         // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
+    // TODO(yuval/ori): validate consistency between abi and entry_points.
     let contract_class = ContractClass {
         sierra_program: sierra_to_felt252s(
             compiler_version::current_sierra_version_id(),

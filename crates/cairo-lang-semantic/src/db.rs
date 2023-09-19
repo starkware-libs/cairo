@@ -270,7 +270,7 @@ pub trait SemanticGroup:
 
     // Impl Alias.
     // ====
-    /// Returns the impl defintion pointed to by the impl alias.
+    /// Returns the impl definition pointed to by the impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_impl_def)]
     fn impl_alias_impl_def(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId>;
     /// Private query to compute data about a type alias.
@@ -301,6 +301,9 @@ pub trait SemanticGroup:
     /// Returns the resolution resolved_items of a type alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolver_data)]
     fn impl_alias_resolver_data(&self, impl_alias_id: ImplAliasId) -> Maybe<Arc<ResolverData>>;
+    /// Returns the attributes attached to the impl alias.
+    #[salsa::invoke(items::impl_alias::impl_alias_attributes)]
+    fn impl_alias_attributes(&self, impl_def_id: ImplAliasId) -> Maybe<Vec<Attribute>>;
 
     // Trait.
     // =======

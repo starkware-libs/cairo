@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
-    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId,
+    ModuleItemId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::DiagnosticAdded;
 use cairo_lang_semantic::corelib::core_submodule;
@@ -24,8 +24,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
-    INTERFACE_ATTR, L1_HANDLER_ATTR,
+    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBEDDABLE_ATTR, EMBED_ATTR, EVENT_ATTR,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -76,12 +76,14 @@ impl AbiBuilder {
         let mut enums = Vec::new();
         let mut structs = Vec::new();
         let mut impls = Vec::new();
+        let mut impl_aliases = Vec::new();
         for item in &*db.module_items(module_id).unwrap_or_default() {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
                 ModuleItemId::Enum(id) => enums.push(*id),
                 ModuleItemId::Impl(id) => impls.push(*id),
+                ModuleItemId::ImplAlias(id) => impl_aliases.push(*id),
                 _ => {}
             }
         }
@@ -116,6 +118,11 @@ impl AbiBuilder {
                 builder.add_impl(db, impl_id, storage_type)?;
             } else if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
                 builder.add_embedded_impl(db, impl_id, storage_type)?;
+            }
+        }
+        for impl_alias in impl_aliases {
+            if impl_alias.has_attr(db.upcast(), EMBED_ATTR)? {
+                builder.add_embedded_impl_alias(db, impl_alias, storage_type)?;
             }
         }
 
@@ -235,7 +242,7 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds an impl to the ABI.
+    /// Adds an embedded impl to the ABI.
     fn add_embedded_impl(
         &mut self,
         db: &dyn SemanticGroup,
@@ -253,6 +260,31 @@ impl AbiBuilder {
                 storage_type,
             )?;
         }
+        Ok(())
+    }
+
+    /// Adds an embedded impl alias to the ABI.
+    fn add_embedded_impl_alias(
+        &mut self,
+        db: &dyn SemanticGroup,
+        impl_alias_id: ImplAliasId,
+        storage_type: TypeId,
+    ) -> Result<(), ABIError> {
+        let impl_def = db.impl_alias_impl_def(impl_alias_id)?;
+
+        // Verify the impl definition has #[starknet::embeddable].
+        if !impl_def.has_attr(db, EMBEDDABLE_ATTR)? {
+            return Err(ABIError::EmbeddedImplNotEmbeddable);
+        }
+
+        // Verify the trait is marked as #[starknet::interface].
+        if !db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)? {
+            return Err(ABIError::EmbeddedImplMustBeInterface);
+        }
+
+        // Add the impl to the ABI.
+        self.add_impl(db, impl_def, storage_type)?;
+
         Ok(())
     }
 
@@ -632,7 +664,16 @@ pub enum ABIError {
     EntrypointMustHaveSelf,
     #[error("Entrypoint attribute must match the mutability of the self parameter")]
     AttributeMismatch,
-    #[error("Contract interfaces impls cannot be embedded.")]
+    #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
+    EmbeddedImplMustBeInterface,
+    #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
+    EmbeddedImplNotEmbeddable,
+    #[error("The first generic parameter of an embedded impl must be `TContractState`.")]
+    WrongEmbeddedImplFirstGeneric,
+    #[error("Only the first generic parameter of an embeddable impl can be a type.")]
+    EmbeddableImplWithExtraGenerics,
+    // TODO(yuval): change to per-item.
+    #[error("Contract interfaces impls cannot be directly embedded.")]
     ContractInterfaceImplCannotBeEmbedded,
 }
 impl From<DiagnosticAdded> for ABIError {
