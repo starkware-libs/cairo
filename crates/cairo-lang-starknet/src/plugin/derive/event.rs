@@ -6,7 +6,9 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
-use crate::plugin::consts::{EVENT_TRAIT, EVENT_TYPE_NAME, FLAT_ATTR, NESTED_ATTR};
+use crate::plugin::consts::{
+    EVENT_TRAIT, EVENT_TYPE_NAME, FLAT_ATTR, KEY_ATTR, NESTED_ATTR, SERDE_ATTR,
+};
 use crate::plugin::events::{EventData, EventFieldKind};
 
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
@@ -107,8 +109,8 @@ fn get_field_kind_for_member(
     default: EventFieldKind,
 ) -> EventFieldKind {
     let is_nested = member.has_attr(db, NESTED_ATTR);
-    let is_key = member.has_attr(db, "key");
-    let is_serde = member.has_attr(db, "serde");
+    let is_key = member.has_attr(db, KEY_ATTR);
+    let is_serde = member.has_attr(db, SERDE_ATTR);
 
     // Currently, nested fields are unsupported.
     if is_nested {
@@ -141,8 +143,8 @@ fn get_field_kind_for_variant(
     default: EventFieldKind,
 ) -> EventFieldKind {
     let is_nested = variant.has_attr(db, NESTED_ATTR);
-    let is_key = variant.has_attr(db, "key");
-    let is_serde = variant.has_attr(db, "serde");
+    let is_key = variant.has_attr(db, KEY_ATTR);
+    let is_serde = variant.has_attr(db, SERDE_ATTR);
 
     // Currently, nested fields are unsupported.
     if is_nested {

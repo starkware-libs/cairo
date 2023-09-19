@@ -72,6 +72,13 @@ pub trait MacroPlugin: std::fmt::Debug + Sync + Send {
     /// Otherwise, returns (virtual_module_name, module_content), and a virtual submodule
     /// with that name and content should be created.
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult;
+
+    /// Attributes this plugin uses.
+    /// Attributes the plugin uses without declaring here are likely to cause a compilation error
+    /// for unknown attribute.
+    /// Note: They may not cause a diagnostic if some other plugin declares such attribute, but
+    /// plugin writters should not rely on that.
+    fn declared_attributes(&self) -> Vec<String>;
 }
 
 /// Result of plugin code generation.
