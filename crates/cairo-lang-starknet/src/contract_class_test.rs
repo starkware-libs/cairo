@@ -60,11 +60,17 @@ fn test_serialization() {
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 #[test_case("upgradable_counter")]
-#[test_case("interfaces")]
 fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+/// Test cases where the generation of the ABI should fail.
+#[test_case("interfaces")]
+#[should_panic(expected = "Duplicate entry point name: foo. This is not currently supported.")]
+fn test_abi_generation_failure(example_file_name: &str) {
+    get_test_contract(format!("{example_file_name}.cairo").as_str());
 }
 
 /// Tests that the sierra compiled from <test_case>.cairo is the same as in <test_case>.sierra, and
@@ -77,7 +83,6 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 #[test_case("erc20")]
 #[test_case("token_bridge")]
 #[test_case("upgradable_counter")]
-#[test_case("interfaces")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 
