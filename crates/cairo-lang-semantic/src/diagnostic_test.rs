@@ -116,6 +116,10 @@ impl MacroPlugin for AddInlineModuleDummyPlugin {
             _ => PluginResult::default(),
         }
     }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec!["test_change_return_type".to_string()]
+    }
 }
 
 #[test]

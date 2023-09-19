@@ -24,6 +24,8 @@ mod serde;
 #[non_exhaustive]
 pub struct DerivePlugin;
 
+const DERIVE_ATTR: &str = "derive";
+
 impl MacroPlugin for DerivePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         generate_derive_code_for_type(
@@ -53,6 +55,10 @@ impl MacroPlugin for DerivePlugin {
                 _ => return PluginResult::default(),
             },
         )
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
     }
 }
 
@@ -219,7 +225,7 @@ pub struct DeriveResult {
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> PluginResult {
     let mut result = DeriveResult::default();
-    for attr in info.attributes.query_attr(db, "derive") {
+    for attr in info.attributes.query_attr(db, DERIVE_ATTR) {
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {

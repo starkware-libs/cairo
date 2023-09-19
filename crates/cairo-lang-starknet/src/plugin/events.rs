@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 use super::aux_data::StarkNetEventAuxData;
-use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, NESTED_ATTR};
+use super::consts::{EVENT_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, KEY_ATTR, NESTED_ATTR, SERDE_ATTR};
 use super::starknet_module::StarknetModuleKind;
 
 /// Generated auxiliary data for the `#[derive(starknet::Event)]` attribute.
@@ -136,8 +136,8 @@ fn get_field_kind_for_member(
     default: EventFieldKind,
 ) -> EventFieldKind {
     let is_nested = member.has_attr(db, NESTED_ATTR);
-    let is_key = member.has_attr(db, "key");
-    let is_serde = member.has_attr(db, "serde");
+    let is_key = member.has_attr(db, KEY_ATTR);
+    let is_serde = member.has_attr(db, SERDE_ATTR);
 
     // Currently, nested fields are unsupported.
     if is_nested {
@@ -170,8 +170,8 @@ fn get_field_kind_for_variant(
     default: EventFieldKind,
 ) -> EventFieldKind {
     let is_nested = variant.has_attr(db, NESTED_ATTR);
-    let is_key = variant.has_attr(db, "key");
-    let is_serde = variant.has_attr(db, "serde");
+    let is_key = variant.has_attr(db, KEY_ATTR);
+    let is_serde = variant.has_attr(db, SERDE_ATTR);
 
     // Currently, nested fields are unsupported.
     if is_nested {
