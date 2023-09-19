@@ -3,6 +3,7 @@ trait IAnotherContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 
+#[starknet::interface]
 trait OutsideTrait<TContractState> {
     fn ret_3(self: @TContractState) -> felt252;
 }

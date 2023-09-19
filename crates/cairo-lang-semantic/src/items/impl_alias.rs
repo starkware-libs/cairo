@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cairo_lang_defs::ids::{ImplAliasId, ImplDefId, LanguageElementId, LookupItemId, ModuleItemId};
 use cairo_lang_diagnostics::{Diagnostics, Maybe, ToMaybe};
 use cairo_lang_proc_macros::DebugWithDb;
+use cairo_lang_syntax::attribute::structured::{Attribute, AttributeListStructurize};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::try_extract_matches;
 
@@ -23,6 +24,7 @@ pub struct ImplAliasData {
     diagnostics: Diagnostics<SemanticDiagnostic>,
     resolved_impl: Maybe<ImplId>,
     generic_params: Vec<GenericParam>,
+    attributes: Vec<Attribute>,
     resolver_data: Arc<ResolverData>,
 }
 impl ImplAliasData {
@@ -78,11 +80,13 @@ pub fn priv_impl_alias_semantic_data(
     let resolved_impl = resolver.inference().rewrite(resolved_impl).no_err();
     let generic_params = resolver.inference().rewrite(generic_params).no_err();
 
+    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
     let resolver_data = Arc::new(resolver.data);
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl,
         generic_params,
+        attributes,
         resolver_data,
     })
 }
@@ -105,11 +109,13 @@ pub fn priv_impl_alias_semantic_data_cycle(
     let inference_id = InferenceId::LookupItemDeclaration(LookupItemId::ModuleItem(
         ModuleItemId::ImplAlias(*impl_alias_id),
     ));
+    let attributes = impl_alias_ast.attributes(syntax_db).structurize(syntax_db);
 
     Ok(ImplAliasData {
         diagnostics: diagnostics.build(),
         resolved_impl: err,
         generic_params,
+        attributes,
         resolver_data: Arc::new(ResolverData::new(module_file_id, inference_id)),
     })
 }
@@ -173,6 +179,14 @@ pub fn impl_alias_resolver_data(
     impl_alias_id: ImplAliasId,
 ) -> Maybe<Arc<ResolverData>> {
     Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.resolver_data)
+}
+
+/// Query implementation of [crate::db::SemanticGroup::impl_alias_attributes].
+pub fn impl_alias_attributes(
+    db: &dyn SemanticGroup,
+    impl_alias_id: ImplAliasId,
+) -> Maybe<Vec<Attribute>> {
+    Ok(db.priv_impl_alias_semantic_data(impl_alias_id)?.attributes)
 }
 
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].

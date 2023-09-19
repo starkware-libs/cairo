@@ -2311,6 +2311,28 @@
       "state_mutability": "external"
     },
     {
+      "type": "impl",
+      "name": "OutsideImpl",
+      "interface_name": "test::OutsideTrait"
+    },
+    {
+      "type": "interface",
+      "name": "test::OutsideTrait",
+      "items": [
+        {
+          "type": "function",
+          "name": "ret_3",
+          "inputs": [],
+          "outputs": [
+            {
+              "type": "core::felt252"
+            }
+          ],
+          "state_mutability": "view"
+        }
+      ]
+    },
+    {
       "type": "event",
       "name": "test::test_contract::Event",
       "kind": "enum",
