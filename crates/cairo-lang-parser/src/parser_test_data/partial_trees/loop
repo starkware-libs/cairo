@@ -30,10 +30,11 @@ StatementLet
     │   └── body (kind: ExprBlock)
     │       ├── lbrace (kind: TokenLBrace): '{'
     │       ├── statements (kind: StatementList)
-    │       │   └── child #0 (kind: StatementBreak)
-    │       │       ├── break_kw (kind: TokenBreak): 'break'
-    │       │       ├── expr_clause (kind: ExprClause)
-    │       │       │   └── expr (kind: TokenLiteralNumber): '5'
+    │       │   └── child #0 (kind: StatementExpr)
+    │       │       ├── expr (kind: ExprBreak)
+    │       │       │   ├── break_kw (kind: TokenBreak): 'break'
+    │       │       │   └── expr_clause (kind: ExprClause)
+    │       │       │       └── expr (kind: TokenLiteralNumber): '5'
     │       │       └── semicolon (kind: TokenSemicolon): ';'
     │       └── rbrace (kind: TokenRBrace): '}'
     └── semicolon (kind: TokenSemicolon): ';'

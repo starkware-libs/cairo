@@ -177,15 +177,16 @@ skipped tokens
     │   │       │   │   │           │                   └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   │           └── rbrace (kind: TokenRBrace): '}'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
-    │   │       │   ├── child #5 (kind: StatementReturn)
-    │   │       │   │   ├── return_kw (kind: TokenReturn): 'return'
-    │   │       │   │   ├── expr_clause (kind: ExprClause)
-    │   │       │   │   │   └── expr (kind: ExprBinary)
-    │   │       │   │   │       ├── lhs (kind: ExprPath)
-    │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │       └── ident (kind: TokenIdentifier): 'df'
-    │   │       │   │   │       ├── op (kind: TokenEqEq): '=='
-    │   │       │   │   │       └── rhs (kind: TokenLiteralNumber): '6'
+    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprReturn)
+    │   │       │   │   │   ├── return_kw (kind: TokenReturn): 'return'
+    │   │       │   │   │   └── expr_clause (kind: ExprClause)
+    │   │       │   │   │       └── expr (kind: ExprBinary)
+    │   │       │   │   │           ├── lhs (kind: ExprPath)
+    │   │       │   │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           │       └── ident (kind: TokenIdentifier): 'df'
+    │   │       │   │   │           ├── op (kind: TokenEqEq): '=='
+    │   │       │   │   │           └── rhs (kind: TokenLiteralNumber): '6'
     │   │       │   │   └── semicolon (kind: TokenSemicolon): ';'
     │   │       │   └── child #6 (kind: StatementExpr)
     │   │       │       ├── expr (kind: ExprBinary)
@@ -777,31 +778,32 @@ skipped tokens
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'
     │   │       │   │       └── trailing_trivia (kind: Trivia)
     │   │       │   │           └── child #0 (kind: TokenNewline).
-    │   │       │   ├── child #5 (kind: StatementReturn)
-    │   │       │   │   ├── return_kw (kind: TerminalReturn)
-    │   │       │   │   │   ├── leading_trivia (kind: Trivia)
-    │   │       │   │   │   │   └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │   ├── token (kind: TokenReturn): 'return'
-    │   │       │   │   │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   ├── expr_clause (kind: ExprClause)
-    │   │       │   │   │   └── expr (kind: ExprBinary)
-    │   │       │   │   │       ├── lhs (kind: ExprPath)
-    │   │       │   │   │       │   └── item #0 (kind: PathSegmentSimple)
-    │   │       │   │   │       │       └── ident (kind: TerminalIdentifier)
-    │   │       │   │   │       │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │           ├── token (kind: TokenIdentifier): 'df'
-    │   │       │   │   │       │           └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       │               └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       ├── op (kind: TerminalEqEq)
-    │   │       │   │   │       │   ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │       │   ├── token (kind: TokenEqEq): '=='
-    │   │       │   │   │       │   └── trailing_trivia (kind: Trivia)
-    │   │       │   │   │       │       └── child #0 (kind: TokenWhitespace).
-    │   │       │   │   │       └── rhs (kind: TerminalLiteralNumber)
-    │   │       │   │   │           ├── leading_trivia (kind: Trivia) []
-    │   │       │   │   │           ├── token (kind: TokenLiteralNumber): '6'
-    │   │       │   │   │           └── trailing_trivia (kind: Trivia) []
+    │   │       │   ├── child #5 (kind: StatementExpr)
+    │   │       │   │   ├── expr (kind: ExprReturn)
+    │   │       │   │   │   ├── return_kw (kind: TerminalReturn)
+    │   │       │   │   │   │   ├── leading_trivia (kind: Trivia)
+    │   │       │   │   │   │   │   └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   │   ├── token (kind: TokenReturn): 'return'
+    │   │       │   │   │   │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │   │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │   └── expr_clause (kind: ExprClause)
+    │   │       │   │   │       └── expr (kind: ExprBinary)
+    │   │       │   │   │           ├── lhs (kind: ExprPath)
+    │   │       │   │   │           │   └── item #0 (kind: PathSegmentSimple)
+    │   │       │   │   │           │       └── ident (kind: TerminalIdentifier)
+    │   │       │   │   │           │           ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │           ├── token (kind: TokenIdentifier): 'df'
+    │   │       │   │   │           │           └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │           │               └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │           ├── op (kind: TerminalEqEq)
+    │   │       │   │   │           │   ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │           │   ├── token (kind: TokenEqEq): '=='
+    │   │       │   │   │           │   └── trailing_trivia (kind: Trivia)
+    │   │       │   │   │           │       └── child #0 (kind: TokenWhitespace).
+    │   │       │   │   │           └── rhs (kind: TerminalLiteralNumber)
+    │   │       │   │   │               ├── leading_trivia (kind: Trivia) []
+    │   │       │   │   │               ├── token (kind: TokenLiteralNumber): '6'
+    │   │       │   │   │               └── trailing_trivia (kind: Trivia) []
     │   │       │   │   └── semicolon (kind: TerminalSemicolon)
     │   │       │   │       ├── leading_trivia (kind: Trivia) []
     │   │       │   │       ├── token (kind: TokenSemicolon): ';'

@@ -995,6 +995,17 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalLoop if lbrace_allowed == LbraceAllowed::Allow => {
                 Ok(self.expect_loop_expr().into())
             }
+            SyntaxKind::TerminalContinue => Ok(self.take::<TerminalContinue>().into()),
+            SyntaxKind::TerminalReturn => {
+                let return_kw = self.take::<TerminalReturn>();
+                let expr = self.parse_option_expression_clause();
+                Ok(ExprReturn::new_green(self.db, return_kw, expr).into())
+            }
+            SyntaxKind::TerminalBreak => {
+                let break_kw = self.take::<TerminalBreak>();
+                let expr = self.parse_option_expression_clause();
+                Ok(ExprBreak::new_green(self.db, break_kw, expr).into())
+            }
 
             _ => {
                 // TODO(yuval): report to diagnostics.
@@ -1327,7 +1338,7 @@ impl<'a> Parser<'a> {
     /// Returns a GreenId of a node with kind OptionExprClause or OptionExprClauseEmpty if an
     /// argument expression `("Expr")` can't be parsed.
     fn parse_option_expression_clause(&mut self) -> OptionExprClauseGreen {
-        if self.peek().kind == SyntaxKind::TerminalSemicolon {
+        if matches!(self.peek().kind, SyntaxKind::TerminalSemicolon | SyntaxKind::TerminalComma) {
             OptionExprClauseEmpty::new_green(self.db).into()
         } else {
             let value = self.parse_expr();
@@ -1574,23 +1585,6 @@ impl<'a> Parser<'a> {
                     semicolon,
                 )
                 .into())
-            }
-            SyntaxKind::TerminalContinue => {
-                let continue_kw = self.take::<TerminalContinue>();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
-                Ok(StatementContinue::new_green(self.db, continue_kw, semicolon).into())
-            }
-            SyntaxKind::TerminalReturn => {
-                let return_kw = self.take::<TerminalReturn>();
-                let expr = self.parse_option_expression_clause();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
-                Ok(StatementReturn::new_green(self.db, return_kw, expr, semicolon).into())
-            }
-            SyntaxKind::TerminalBreak => {
-                let break_kw = self.take::<TerminalBreak>();
-                let expr = self.parse_option_expression_clause();
-                let semicolon = self.parse_token::<TerminalSemicolon>();
-                Ok(StatementBreak::new_green(self.db, break_kw, expr, semicolon).into())
             }
             _ => match self.try_parse_expr() {
                 Ok(expr) => {

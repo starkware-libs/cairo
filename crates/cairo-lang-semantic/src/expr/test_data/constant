@@ -52,10 +52,10 @@ error: Function call is not supported outside of functions.
     return foo();
            ^***^
 
-error: Return statement is not supported outside of functions.
+error: `return` is not supported outside of functions.
  --> lib.cairo:2:5
     return foo();
-    ^***********^
+    ^**********^
 
 error: The '?' operator is not supported outside of functions.
  --> lib.cairo:3:5

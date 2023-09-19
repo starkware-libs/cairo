@@ -104,17 +104,6 @@ impl BlockUsages {
                         Statement::Expr(stmt) => {
                             self.handle_expr(function_body, stmt.expr, &mut usage)
                         }
-                        Statement::Continue(_) => (),
-                        Statement::Return(stmt) => {
-                            if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(function_body, expr, &mut usage)
-                            };
-                        }
-                        Statement::Break(stmt) => {
-                            if let Some(expr) = stmt.expr_option {
-                                self.handle_expr(function_body, expr, &mut usage)
-                            };
-                        }
                     };
                 }
                 if let Some(expr_id) = expr.tail {
@@ -214,6 +203,17 @@ impl BlockUsages {
             }
             Expr::PropagateError(expr) => self.handle_expr(function_body, expr.inner, current),
             Expr::Constant(_) => {}
+            Expr::Continue(_) => {}
+            Expr::Return(stmt) => {
+                if let Some(expr) = stmt.expr_option {
+                    self.handle_expr(function_body, expr, current)
+                };
+            }
+            Expr::Break(stmt) => {
+                if let Some(expr) = stmt.expr_option {
+                    self.handle_expr(function_body, expr, current)
+                };
+            }
             Expr::Missing(_) => {}
         }
     }

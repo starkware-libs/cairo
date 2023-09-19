@@ -490,7 +490,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
                     UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
-                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnExpr => "`return`",
                     UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
@@ -888,7 +888,7 @@ pub enum NotFoundItemType {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum UnsupportedOutsideOfFunctionFeatureName {
     FunctionCall,
-    ReturnStatement,
+    ReturnExpr,
     ErrorPropagate,
 }
 
