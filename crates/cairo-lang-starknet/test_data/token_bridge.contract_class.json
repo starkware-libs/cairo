@@ -3243,31 +3243,31 @@
     "user_func_names": [
       [
         0,
-        "test::token_bridge::__wrapper_get_version"
+        "test::token_bridge::__wrapper__TokenBridgeImpl__get_version"
       ],
       [
         1,
-        "test::token_bridge::__wrapper_get_identity"
+        "test::token_bridge::__wrapper__TokenBridgeImpl__get_identity"
       ],
       [
         2,
-        "test::token_bridge::__wrapper_set_l1_bridge"
+        "test::token_bridge::__wrapper__TokenBridgeImpl__set_l1_bridge"
       ],
       [
         3,
-        "test::token_bridge::__wrapper_set_l2_token"
+        "test::token_bridge::__wrapper__TokenBridgeImpl__set_l2_token"
       ],
       [
         4,
-        "test::token_bridge::__wrapper_initiate_withdraw"
+        "test::token_bridge::__wrapper__TokenBridgeImpl__initiate_withdraw"
       ],
       [
         5,
-        "test::token_bridge::__wrapper_handle_deposit"
+        "test::token_bridge::__wrapper__handle_deposit"
       ],
       [
         6,
-        "test::token_bridge::__wrapper_constructor"
+        "test::token_bridge::__wrapper__constructor"
       ],
       [
         7,

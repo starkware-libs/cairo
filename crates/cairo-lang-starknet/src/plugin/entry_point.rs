@@ -118,6 +118,7 @@ pub struct EntryPointGenerationParams<'a> {
     pub entry_point_kind: EntryPointKind,
     pub item_function: &'a FunctionWithBody,
     pub wrapped_function_path: RewriteNode,
+    pub wrapper_identifier: String,
     pub unsafe_new_contract_state_prefix: &'a str,
     pub generic_params: RewriteNode,
 }
@@ -129,6 +130,7 @@ pub fn handle_entry_point(
         entry_point_kind,
         item_function,
         wrapped_function_path,
+        wrapper_identifier,
         unsafe_new_contract_state_prefix,
         generic_params,
     }: EntryPointGenerationParams<'_>,
@@ -169,7 +171,7 @@ pub fn handle_entry_point(
     }
     let function_name = RewriteNode::new_trimmed(name_node.as_syntax_node());
     let wrapper_function_name = RewriteNode::interpolate_patched(
-        &format!("{WRAPPER_PREFIX}$function_name$"),
+        &format!("{WRAPPER_PREFIX}{wrapper_identifier}"),
         &[("function_name".into(), function_name.clone())].into(),
     );
     match generate_entry_point_wrapper(

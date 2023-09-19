@@ -374,7 +374,7 @@
     "user_func_names": [
       [
         0,
-        "test::minimal_contract::__wrapper_empty"
+        "test::minimal_contract::__wrapper__empty"
       ],
       [
         1,

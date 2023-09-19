@@ -224,12 +224,12 @@ impl MyImpl<
     #[external]
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
-        component.get(addr, )
+        MyTrait::get(component, addr, )
     }
     #[external]
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = self.get_component_mut();
-        component.set(addr, value, )
+        MyTrait::set(ref component, addr, value, )
     }
 }
 
@@ -301,7 +301,7 @@ trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -323,7 +323,7 @@ fn __wrapper_get<TContractState, impl X: HasComponent<TContractState>, impl TCon
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -350,8 +350,8 @@ fn __wrapper_set<TContractState, impl X: HasComponent<TContractState>, impl TCon
 
 
 mod __external_MyImpl {
-        use super::__wrapper_get as get;
-        use super::__wrapper_set as set;
+        use super::__wrapper__MyImpl__get as get;
+        use super::__wrapper__MyImpl__set as set;
 }
 
 mod __l1_handler_MyImpl {

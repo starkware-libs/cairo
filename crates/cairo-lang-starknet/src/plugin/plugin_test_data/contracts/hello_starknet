@@ -111,7 +111,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -132,7 +132,7 @@ fn __wrapper_increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -152,8 +152,8 @@ fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_increase_balance as increase_balance;
-        use super::__wrapper_get_balance as get_balance;
+        use super::__wrapper__increase_balance as increase_balance;
+        use super::__wrapper__get_balance as get_balance;
     }
 
     mod __l1_handler {
