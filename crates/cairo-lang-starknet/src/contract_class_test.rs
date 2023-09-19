@@ -60,6 +60,7 @@ fn test_serialization() {
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 #[test_case("upgradable_counter")]
+#[test_case("interfaces")]
 fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
@@ -76,6 +77,7 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 #[test_case("erc20")]
 #[test_case("token_bridge")]
 #[test_case("upgradable_counter")]
+#[test_case("interfaces")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 

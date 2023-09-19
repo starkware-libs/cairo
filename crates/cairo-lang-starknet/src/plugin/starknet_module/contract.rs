@@ -332,6 +332,7 @@ fn handle_contract_entry_point(
     entry_point_kind: EntryPointKind,
     item_function: &ast::FunctionWithBody,
     wrapped_function_path: RewriteNode,
+    wrapper_identifier: String,
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     data: &mut EntryPointsGenerationData,
@@ -342,6 +343,7 @@ fn handle_contract_entry_point(
             entry_point_kind,
             item_function,
             wrapped_function_path,
+            wrapper_identifier,
             unsafe_new_contract_state_prefix: "",
             generic_params: RewriteNode::empty(),
         },
@@ -362,12 +364,13 @@ fn handle_contract_free_function(
     else {
         return;
     };
-    let function_name =
-        RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
+    let function_name = item_function.declaration(db).name(db);
+    let function_name_node = RewriteNode::new_trimmed(function_name.as_syntax_node());
     handle_contract_entry_point(
         entry_point_kind,
         item_function,
-        function_name,
+        function_name_node,
+        function_name.text(db).into(),
         db,
         diagnostics,
         data,
@@ -389,7 +392,8 @@ fn handle_contract_impl(
     let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
         return;
     };
-    let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
+    let impl_name = item_impl.name(db);
+    let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     for item in impl_body.items(db).elements(db) {
         if is_external {
             for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
@@ -407,20 +411,21 @@ fn handle_contract_impl(
         } else {
             continue;
         };
-        let function_name =
-            RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
-        let function_name = RewriteNode::interpolate_patched(
+        let function_name = item_function.declaration(db).name(db);
+        let function_name_node = RewriteNode::interpolate_patched(
             "$impl_name$::$func_name$",
             &[
-                ("impl_name".to_string(), impl_name.clone()),
-                ("func_name".to_string(), function_name),
+                ("impl_name".to_string(), impl_name_node.clone()),
+                ("func_name".to_string(), RewriteNode::new_trimmed(function_name.as_syntax_node())),
             ]
             .into(),
         );
+        let wrapper_identifier = format!("{}__{}", impl_name.text(db), function_name.text(db));
         handle_contract_entry_point(
             entry_point_kind,
             &item_function,
-            function_name,
+            function_name_node,
+            wrapper_identifier,
             db,
             diagnostics,
             data,

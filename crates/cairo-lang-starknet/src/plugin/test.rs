@@ -79,6 +79,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         with_component_diagnostics: "with_component_diagnostics",
         with_ownable: "with_ownable",
         upgradable_counter: "upgradable_counter",
+        interfaces: "interfaces",
     },
     ExpandContractTestRunner
 );

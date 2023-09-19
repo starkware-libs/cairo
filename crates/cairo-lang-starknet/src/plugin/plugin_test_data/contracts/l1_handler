@@ -60,7 +60,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -85,7 +85,7 @@ fn __wrapper_good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -114,8 +114,8 @@ fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt25
     }
 
     mod __l1_handler {
-        use super::__wrapper_good_l1_handler as good_l1_handler;
-        use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
+        use super::__wrapper__good_l1_handler as good_l1_handler;
+        use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
     }
 
     mod __constructor {

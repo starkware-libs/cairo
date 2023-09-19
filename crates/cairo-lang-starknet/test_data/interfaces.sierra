@@ -1,0 +1,332 @@
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type Array<felt252> = Array<felt252> [storable: true, drop: true, dup: false, zero_sized: false];
+type Snapshot<Array<felt252>> = Snapshot<Array<felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type core::array::Span::<core::felt252> = Struct<ut@[782572820229152792105145177694740816763001980856532159945905090893343825762], Snapshot<Array<felt252>>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Tuple<core::array::Span::<core::felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::array::Span::<core::felt252>> [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643]> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::comp::ComponentState::<test::counter_contract::ContractState> = Struct<ut@[67242412116820577600370001472173219324999461360090860232108586015737332647]> [storable: true, drop: true, dup: true, zero_sized: true];
+type test::counter_contract::ContractState = Struct<ut@[1192156358373769896814859956756436472422101778085379128421987133341353646328], test::comp::ComponentState::<test::counter_contract::ContractState>> [storable: true, drop: true, dup: true, zero_sized: true];
+type BuiltinCosts = BuiltinCosts [storable: true, drop: true, dup: true, zero_sized: false];
+type System = System [storable: true, drop: false, dup: false, zero_sized: false];
+type core::panics::Panic = Struct<ut@[640126984585624630990013944782631102820301644699864366139839615702772668018]> [storable: true, drop: true, dup: true, zero_sized: true];
+type Tuple<core::panics::Panic, Array<felt252>> = Struct<ut@[1325343513152088812341467750635149026053683136611136091911357178651207272643], core::panics::Panic, Array<felt252>> [storable: true, drop: true, dup: false, zero_sized: false];
+type core::panics::PanicResult::<(core::array::Span::<core::felt252>,)> = Enum<ut@[270671131472959732993844072583327084608513343873724697777364695367457417702], Tuple<core::array::Span::<core::felt252>>, Tuple<core::panics::Panic, Array<felt252>>> [storable: true, drop: true, dup: false, zero_sized: false];
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type u32 = u32 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+
+libfunc revoke_ap_tracking = revoke_ap_tracking;
+libfunc withdraw_gas = withdraw_gas;
+libfunc branch_align = branch_align;
+libfunc struct_deconstruct<core::array::Span::<core::felt252>> = struct_deconstruct<core::array::Span::<core::felt252>>;
+libfunc array_len<felt252> = array_len<felt252>;
+libfunc snapshot_take<u32> = snapshot_take<u32>;
+libfunc drop<u32> = drop<u32>;
+libfunc u32_const<0> = u32_const<0>;
+libfunc rename<u32> = rename<u32>;
+libfunc store_temp<u32> = store_temp<u32>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc u32_eq = u32_eq;
+libfunc array_new<felt252> = array_new<felt252>;
+libfunc felt252_const<7733229381460288120802334208475838166080759535023995805565484692595> = felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc array_append<felt252> = array_append<felt252>;
+libfunc struct_construct<core::panics::Panic> = struct_construct<core::panics::Panic>;
+libfunc struct_construct<Tuple<core::panics::Panic, Array<felt252>>> = struct_construct<Tuple<core::panics::Panic, Array<felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<System> = store_temp<System>;
+libfunc store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>> = store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>;
+libfunc get_builtin_costs = get_builtin_costs;
+libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
+libfunc withdraw_gas_all = withdraw_gas_all;
+libfunc struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>> = struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>;
+libfunc struct_construct<test::counter_contract::ContractState> = struct_construct<test::counter_contract::ContractState>;
+libfunc snapshot_take<test::counter_contract::ContractState> = snapshot_take<test::counter_contract::ContractState>;
+libfunc drop<test::counter_contract::ContractState> = drop<test::counter_contract::ContractState>;
+libfunc store_temp<test::counter_contract::ContractState> = store_temp<test::counter_contract::ContractState>;
+libfunc function_call<user@test::counter_contract::foo> = function_call<user@test::counter_contract::foo>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc snapshot_take<Array<felt252>> = snapshot_take<Array<felt252>>;
+libfunc drop<Array<felt252>> = drop<Array<felt252>>;
+libfunc struct_construct<core::array::Span::<core::felt252>> = struct_construct<core::array::Span::<core::felt252>>;
+libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_construct<Tuple<core::array::Span::<core::felt252>>>;
+libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
+libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
+libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
+libfunc function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
+libfunc function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>> = store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>;
+libfunc function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
+libfunc drop<test::comp::ComponentState::<test::counter_contract::ContractState>> = drop<test::comp::ComponentState::<test::counter_contract::ContractState>>;
+libfunc function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
+
+revoke_ap_tracking() -> (); // 0
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 64([6], [7]) }; // 1
+branch_align() -> (); // 2
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 3
+array_len<felt252>([8]) -> ([9]); // 4
+snapshot_take<u32>([9]) -> ([10], [11]); // 5
+drop<u32>([10]) -> (); // 6
+u32_const<0>() -> ([12]); // 7
+snapshot_take<u32>([12]) -> ([13], [14]); // 8
+drop<u32>([13]) -> (); // 9
+rename<u32>([11]) -> ([15]); // 10
+rename<u32>([14]) -> ([16]); // 11
+store_temp<u32>([15]) -> ([15]); // 12
+store_temp<RangeCheck>([4]) -> ([4]); // 13
+u32_eq([15], [16]) { fallthrough() 28() }; // 14
+branch_align() -> (); // 15
+array_new<felt252>() -> ([17]); // 16
+felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 17
+store_temp<felt252>([18]) -> ([18]); // 18
+array_append<felt252>([17], [18]) -> ([19]); // 19
+struct_construct<core::panics::Panic>() -> ([20]); // 20
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([20], [19]) -> ([21]); // 21
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([21]) -> ([22]); // 22
+store_temp<RangeCheck>([4]) -> ([23]); // 23
+store_temp<GasBuiltin>([5]) -> ([24]); // 24
+store_temp<System>([2]) -> ([25]); // 25
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([22]) -> ([26]); // 26
+return([23], [24], [25], [26]); // 27
+branch_align() -> (); // 28
+get_builtin_costs() -> ([27]); // 29
+store_temp<BuiltinCosts>([27]) -> ([27]); // 30
+withdraw_gas_all([4], [5], [27]) { fallthrough([28], [29]) 51([30], [31]) }; // 31
+branch_align() -> (); // 32
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 33
+struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 34
+snapshot_take<test::counter_contract::ContractState>([33]) -> ([34], [35]); // 35
+drop<test::counter_contract::ContractState>([34]) -> (); // 36
+store_temp<test::counter_contract::ContractState>([35]) -> ([37]); // 37
+function_call<user@test::counter_contract::foo>([37]) -> ([36]); // 38
+drop<Unit>([36]) -> (); // 39
+array_new<felt252>() -> ([38]); // 40
+snapshot_take<Array<felt252>>([38]) -> ([39], [40]); // 41
+drop<Array<felt252>>([39]) -> (); // 42
+struct_construct<core::array::Span::<core::felt252>>([40]) -> ([41]); // 43
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([41]) -> ([42]); // 44
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([42]) -> ([43]); // 45
+store_temp<RangeCheck>([28]) -> ([44]); // 46
+store_temp<GasBuiltin>([29]) -> ([45]); // 47
+store_temp<System>([2]) -> ([46]); // 48
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([43]) -> ([47]); // 49
+return([44], [45], [46], [47]); // 50
+branch_align() -> (); // 51
+array_new<felt252>() -> ([48]); // 52
+felt252_const<375233589013918064796019>() -> ([49]); // 53
+store_temp<felt252>([49]) -> ([49]); // 54
+array_append<felt252>([48], [49]) -> ([50]); // 55
+struct_construct<core::panics::Panic>() -> ([51]); // 56
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([51], [50]) -> ([52]); // 57
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([52]) -> ([53]); // 58
+store_temp<RangeCheck>([30]) -> ([54]); // 59
+store_temp<GasBuiltin>([31]) -> ([55]); // 60
+store_temp<System>([2]) -> ([56]); // 61
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([53]) -> ([57]); // 62
+return([54], [55], [56], [57]); // 63
+branch_align() -> (); // 64
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 65
+array_new<felt252>() -> ([58]); // 66
+felt252_const<375233589013918064796019>() -> ([59]); // 67
+store_temp<felt252>([59]) -> ([59]); // 68
+array_append<felt252>([58], [59]) -> ([60]); // 69
+struct_construct<core::panics::Panic>() -> ([61]); // 70
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([61], [60]) -> ([62]); // 71
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([62]) -> ([63]); // 72
+store_temp<RangeCheck>([6]) -> ([64]); // 73
+store_temp<GasBuiltin>([7]) -> ([65]); // 74
+store_temp<System>([2]) -> ([66]); // 75
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([63]) -> ([67]); // 76
+return([64], [65], [66], [67]); // 77
+revoke_ap_tracking() -> (); // 78
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 141([6], [7]) }; // 79
+branch_align() -> (); // 80
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 81
+array_len<felt252>([8]) -> ([9]); // 82
+snapshot_take<u32>([9]) -> ([10], [11]); // 83
+drop<u32>([10]) -> (); // 84
+u32_const<0>() -> ([12]); // 85
+snapshot_take<u32>([12]) -> ([13], [14]); // 86
+drop<u32>([13]) -> (); // 87
+rename<u32>([11]) -> ([15]); // 88
+rename<u32>([14]) -> ([16]); // 89
+store_temp<u32>([15]) -> ([15]); // 90
+store_temp<RangeCheck>([4]) -> ([4]); // 91
+u32_eq([15], [16]) { fallthrough() 106() }; // 92
+branch_align() -> (); // 93
+array_new<felt252>() -> ([17]); // 94
+felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 95
+store_temp<felt252>([18]) -> ([18]); // 96
+array_append<felt252>([17], [18]) -> ([19]); // 97
+struct_construct<core::panics::Panic>() -> ([20]); // 98
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([20], [19]) -> ([21]); // 99
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([21]) -> ([22]); // 100
+store_temp<RangeCheck>([4]) -> ([23]); // 101
+store_temp<GasBuiltin>([5]) -> ([24]); // 102
+store_temp<System>([2]) -> ([25]); // 103
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([22]) -> ([26]); // 104
+return([23], [24], [25], [26]); // 105
+branch_align() -> (); // 106
+get_builtin_costs() -> ([27]); // 107
+store_temp<BuiltinCosts>([27]) -> ([27]); // 108
+withdraw_gas_all([4], [5], [27]) { fallthrough([28], [29]) 128([30], [31]) }; // 109
+branch_align() -> (); // 110
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 111
+struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 112
+store_temp<test::counter_contract::ContractState>([33]) -> ([36]); // 113
+function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 114
+drop<test::counter_contract::ContractState>([34]) -> (); // 115
+drop<Unit>([35]) -> (); // 116
+array_new<felt252>() -> ([37]); // 117
+snapshot_take<Array<felt252>>([37]) -> ([38], [39]); // 118
+drop<Array<felt252>>([38]) -> (); // 119
+struct_construct<core::array::Span::<core::felt252>>([39]) -> ([40]); // 120
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([40]) -> ([41]); // 121
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([41]) -> ([42]); // 122
+store_temp<RangeCheck>([28]) -> ([43]); // 123
+store_temp<GasBuiltin>([29]) -> ([44]); // 124
+store_temp<System>([2]) -> ([45]); // 125
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([46]); // 126
+return([43], [44], [45], [46]); // 127
+branch_align() -> (); // 128
+array_new<felt252>() -> ([47]); // 129
+felt252_const<375233589013918064796019>() -> ([48]); // 130
+store_temp<felt252>([48]) -> ([48]); // 131
+array_append<felt252>([47], [48]) -> ([49]); // 132
+struct_construct<core::panics::Panic>() -> ([50]); // 133
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 134
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([51]) -> ([52]); // 135
+store_temp<RangeCheck>([30]) -> ([53]); // 136
+store_temp<GasBuiltin>([31]) -> ([54]); // 137
+store_temp<System>([2]) -> ([55]); // 138
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([52]) -> ([56]); // 139
+return([53], [54], [55], [56]); // 140
+branch_align() -> (); // 141
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 142
+array_new<felt252>() -> ([57]); // 143
+felt252_const<375233589013918064796019>() -> ([58]); // 144
+store_temp<felt252>([58]) -> ([58]); // 145
+array_append<felt252>([57], [58]) -> ([59]); // 146
+struct_construct<core::panics::Panic>() -> ([60]); // 147
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([60], [59]) -> ([61]); // 148
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([61]) -> ([62]); // 149
+store_temp<RangeCheck>([6]) -> ([63]); // 150
+store_temp<GasBuiltin>([7]) -> ([64]); // 151
+store_temp<System>([2]) -> ([65]); // 152
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([62]) -> ([66]); // 153
+return([63], [64], [65], [66]); // 154
+revoke_ap_tracking() -> (); // 155
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 218([6], [7]) }; // 156
+branch_align() -> (); // 157
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 158
+array_len<felt252>([8]) -> ([9]); // 159
+snapshot_take<u32>([9]) -> ([10], [11]); // 160
+drop<u32>([10]) -> (); // 161
+u32_const<0>() -> ([12]); // 162
+snapshot_take<u32>([12]) -> ([13], [14]); // 163
+drop<u32>([13]) -> (); // 164
+rename<u32>([11]) -> ([15]); // 165
+rename<u32>([14]) -> ([16]); // 166
+store_temp<u32>([15]) -> ([15]); // 167
+store_temp<RangeCheck>([4]) -> ([4]); // 168
+u32_eq([15], [16]) { fallthrough() 183() }; // 169
+branch_align() -> (); // 170
+array_new<felt252>() -> ([17]); // 171
+felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 172
+store_temp<felt252>([18]) -> ([18]); // 173
+array_append<felt252>([17], [18]) -> ([19]); // 174
+struct_construct<core::panics::Panic>() -> ([20]); // 175
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([20], [19]) -> ([21]); // 176
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([21]) -> ([22]); // 177
+store_temp<RangeCheck>([4]) -> ([23]); // 178
+store_temp<GasBuiltin>([5]) -> ([24]); // 179
+store_temp<System>([2]) -> ([25]); // 180
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([22]) -> ([26]); // 181
+return([23], [24], [25], [26]); // 182
+branch_align() -> (); // 183
+get_builtin_costs() -> ([27]); // 184
+store_temp<BuiltinCosts>([27]) -> ([27]); // 185
+withdraw_gas_all([4], [5], [27]) { fallthrough([28], [29]) 205([30], [31]) }; // 186
+branch_align() -> (); // 187
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 188
+struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 189
+store_temp<test::counter_contract::ContractState>([33]) -> ([36]); // 190
+function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 191
+drop<test::counter_contract::ContractState>([34]) -> (); // 192
+drop<Unit>([35]) -> (); // 193
+array_new<felt252>() -> ([37]); // 194
+snapshot_take<Array<felt252>>([37]) -> ([38], [39]); // 195
+drop<Array<felt252>>([38]) -> (); // 196
+struct_construct<core::array::Span::<core::felt252>>([39]) -> ([40]); // 197
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([40]) -> ([41]); // 198
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([41]) -> ([42]); // 199
+store_temp<RangeCheck>([28]) -> ([43]); // 200
+store_temp<GasBuiltin>([29]) -> ([44]); // 201
+store_temp<System>([2]) -> ([45]); // 202
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([46]); // 203
+return([43], [44], [45], [46]); // 204
+branch_align() -> (); // 205
+array_new<felt252>() -> ([47]); // 206
+felt252_const<375233589013918064796019>() -> ([48]); // 207
+store_temp<felt252>([48]) -> ([48]); // 208
+array_append<felt252>([47], [48]) -> ([49]); // 209
+struct_construct<core::panics::Panic>() -> ([50]); // 210
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 211
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([51]) -> ([52]); // 212
+store_temp<RangeCheck>([30]) -> ([53]); // 213
+store_temp<GasBuiltin>([31]) -> ([54]); // 214
+store_temp<System>([2]) -> ([55]); // 215
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([52]) -> ([56]); // 216
+return([53], [54], [55], [56]); // 217
+branch_align() -> (); // 218
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 219
+array_new<felt252>() -> ([57]); // 220
+felt252_const<375233589013918064796019>() -> ([58]); // 221
+store_temp<felt252>([58]) -> ([58]); // 222
+array_append<felt252>([57], [58]) -> ([59]); // 223
+struct_construct<core::panics::Panic>() -> ([60]); // 224
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([60], [59]) -> ([61]); // 225
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([61]) -> ([62]); // 226
+store_temp<RangeCheck>([6]) -> ([63]); // 227
+store_temp<GasBuiltin>([7]) -> ([64]); // 228
+store_temp<System>([2]) -> ([65]); // 229
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([62]) -> ([66]); // 230
+return([63], [64], [65], [66]); // 231
+drop<test::counter_contract::ContractState>([0]) -> (); // 232
+struct_construct<Unit>() -> ([1]); // 233
+store_temp<Unit>([1]) -> ([2]); // 234
+return([2]); // 235
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 236
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 237
+function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 238
+drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 239
+store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 240
+store_temp<Unit>([3]) -> ([6]); // 241
+return([5], [6]); // 242
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 243
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 244
+function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 245
+drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 246
+store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 247
+store_temp<Unit>([3]) -> ([6]); // 248
+return([5], [6]); // 249
+struct_construct<Unit>() -> ([1]); // 250
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 251
+store_temp<Unit>([1]) -> ([3]); // 252
+return([2], [3]); // 253
+struct_construct<Unit>() -> ([1]); // 254
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 255
+store_temp<Unit>([1]) -> ([3]); // 256
+return([2], [3]); // 257
+
+test::counter_contract::__wrapper__foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::comp::__wrapper__I1I__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI1I>@78([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::comp::__wrapper__I2I__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI2I>@155([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::counter_contract::foo@232([0]: test::counter_contract::ContractState) -> (Unit);
+test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@236([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
+test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@243([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
+test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@250([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
+test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@254([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);

@@ -66,7 +66,7 @@ trait UnsafeNewContractStateTraitForOutsideImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImpl__ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -85,7 +85,7 @@ fn __wrapper_ret_3<TContractState, impl UnsafeNewContractState: UnsafeNewContrac
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImpl<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -113,11 +113,11 @@ fn __wrapper_ret_identity<TContractState, impl UnsafeNewContractState: UnsafeNew
 
 
 mod __external_OutsideImpl {
-        use super::__wrapper_ret_3 as ret_3;
+        use super::__wrapper__OutsideImpl__ret_3 as ret_3;
 }
 
 mod __l1_handler_OutsideImpl {
-        use super::__wrapper_ret_identity as ret_identity;
+        use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
 }
 
 mod __constructor_OutsideImpl {
@@ -353,7 +353,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_3<TContractState,
+fn __wrapper__OutsideImplWithDestruct__ret_3<TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
@@ -375,7 +375,7 @@ fn __wrapper_ret_3<TContractState,
 
 
 mod __external_OutsideImplWithDestruct {
-        use super::__wrapper_ret_3 as ret_3;
+        use super::__wrapper__OutsideImplWithDestruct__ret_3 as ret_3;
 }
 
 mod __l1_handler_OutsideImplWithDestruct {
@@ -402,7 +402,7 @@ trait UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_ret_5<TContractState,
+fn __wrapper__OutsideImplWithPanicDestruct__ret_5<TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithPanicDestruct<TContractState>, impl TContractStateDrop: Drop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
@@ -424,7 +424,7 @@ fn __wrapper_ret_5<TContractState,
 
 
 mod __external_OutsideImplWithPanicDestruct {
-        use super::__wrapper_ret_5 as ret_5;
+        use super::__wrapper__OutsideImplWithPanicDestruct__ret_5 as ret_5;
 }
 
 mod __l1_handler_OutsideImplWithPanicDestruct {

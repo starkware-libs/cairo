@@ -2015,35 +2015,35 @@
     "user_func_names": [
       [
         0,
-        "test::test_contract::__wrapper_test"
+        "test::test_contract::__wrapper__Impl__test"
       ],
       [
         1,
-        "test::test_contract::__wrapper_another_function"
+        "test::test_contract::__wrapper__Impl__another_function"
       ],
       [
         2,
-        "test::test_contract::__wrapper_call_foo"
+        "test::test_contract::__wrapper__Impl__call_foo"
       ],
       [
         3,
-        "test::test_contract::__wrapper_libcall_foo"
+        "test::test_contract::__wrapper__Impl__libcall_foo"
       ],
       [
         4,
-        "test::test_contract::__wrapper_segment_arena_builtin"
+        "test::test_contract::__wrapper__Impl__segment_arena_builtin"
       ],
       [
         5,
-        "test::__wrapper_ret_3::<test::test_contract::ContractState, test::test_contract::ContractStateDrop, test::test_contract::ContractStateOutsideImpl>"
+        "test::__wrapper__OutsideImpl__ret_3::<test::test_contract::ContractState, test::test_contract::ContractStateDrop, test::test_contract::ContractStateOutsideImpl>"
       ],
       [
         6,
-        "test::test_contract::__wrapper_l1_handle"
+        "test::test_contract::__wrapper__Impl__l1_handle"
       ],
       [
         7,
-        "test::test_contract::__wrapper_constructor"
+        "test::test_contract::__wrapper__Impl__constructor"
       ],
       [
         8,
