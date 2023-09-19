@@ -976,7 +976,7 @@ impl UpgradableImpl<
     #[external(v0)]
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
-        super::IUpgradable::upgrade(ref component, new_class_hash, )
+        Upgradable::upgrade(ref component, new_class_hash, )
     }
 }
 

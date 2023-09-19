@@ -19,13 +19,20 @@ mod comp {
     #[storage]
     struct Storage {}
 
-    #[embeddable_as(I1I)]
-    impl Interface1_Implementation<
+    #[embeddable_as(I1I1)]
+    impl Interface1_Implementation1<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
         #[external(v0)]
-        fn foo(ref self: ComponentState<TContractState>) {
-        }
+        fn foo(ref self: ComponentState<TContractState>) {}
+    }
+
+    #[embeddable_as(I1I2)]
+    impl Interface1_Implementation2<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::Interface1<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I2I)]
@@ -55,7 +62,9 @@ mod counter_contract {
     }
 
     #[embed(v0)]
-    impl EmbeddedI1I = super::comp::I1I<ContractState>;
+    impl EmbeddedI1I1 = super::comp::I1I1<ContractState>;
+    #[embed(v0)]
+    impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
     #[embed(v0)]
     impl EmbeddedI2I = super::comp::I2I<ContractState>;
 
@@ -81,13 +90,20 @@ mod comp {
     #[storage]
     struct Storage {}
 
-    #[embeddable_as(I1I)]
-    impl Interface1_Implementation<
+    #[embeddable_as(I1I1)]
+    impl Interface1_Implementation1<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
         #[external(v0)]
-        fn foo(ref self: ComponentState<TContractState>) {
-        }
+        fn foo(ref self: ComponentState<TContractState>) {}
+    }
+
+    #[embeddable_as(I1I2)]
+    impl Interface1_Implementation2<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::Interface1<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn foo(ref self: ComponentState<TContractState>) {}
     }
 
     #[embeddable_as(I2I)]
@@ -117,7 +133,9 @@ mod counter_contract {
     }
 
     #[embed(v0)]
-    impl EmbeddedI1I = super::comp::I1I<ContractState>;
+    impl EmbeddedI1I1 = super::comp::I1I1<ContractState>;
+    #[embed(v0)]
+    impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
     #[embed(v0)]
     impl EmbeddedI2I = super::comp::I2I<ContractState>;
 
@@ -744,14 +762,24 @@ trait HasComponent<TContractState> {
 }
 
 #[starknet::embeddable]
-impl I1I<
+impl I1I1<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
     #[external(v0)]
     fn foo(ref self: TContractState) {
         let mut component = self.get_component_mut();
-        super::Interface1::foo(ref component, )
+        Interface1_Implementation1::foo(ref component, )
+    }
+}#[starknet::embeddable]
+impl I1I2<
+            TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>
+> of super::Interface1<TContractState> {
+    #[external(v0)]
+    fn foo(ref self: TContractState) {
+        let mut component = self.get_component_mut();
+        Interface1_Implementation2::foo(ref component, )
     }
 }#[starknet::embeddable]
 impl I2I<
@@ -761,7 +789,7 @@ impl I2I<
     #[external(v0)]
     fn foo(ref self: TContractState) {
         let mut component = self.get_component_mut();
-        super::Interface2::foo(ref component, )
+        Interface2_Implementation::foo(ref component, )
     }
 }
 
@@ -792,13 +820,13 @@ impl EventIsEvent of starknet::Event<Event> {
 
 embeddable:
 
-trait UnsafeNewContractStateTraitForI1I<TContractState> {
+trait UnsafeNewContractStateTraitForI1I1<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__I1I__foo<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__I1I1__foo<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I1<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -808,7 +836,7 @@ fn __wrapper__I1I__foo<TContractState, impl X: HasComponent<TContractState>
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    I1I::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
+    I1I1::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -817,14 +845,52 @@ fn __wrapper__I1I__foo<TContractState, impl X: HasComponent<TContractState>
 
 
 
-mod __external_I1I {
-        use super::__wrapper__I1I__foo as foo;
+mod __external_I1I1 {
+        use super::__wrapper__I1I1__foo as foo;
 }
 
-mod __l1_handler_I1I {
+mod __l1_handler_I1I1 {
 }
 
-mod __constructor_I1I {
+mod __constructor_I1I1 {
+}
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForI1I2<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__I1I2__foo<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForI1I2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    I1I2::<TContractState, X, TContractStateDrop>::foo(ref contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_I1I2 {
+        use super::__wrapper__I1I2__foo as foo;
+}
+
+mod __l1_handler_I1I2 {
+}
+
+mod __constructor_I1I2 {
 }
 
 
@@ -891,10 +957,16 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x27ccf570f71bf3f868757298fcf06a4bce91b2a41ac51580736aca4a3d24a87;
+const TEST_CLASS_HASH: felt252 = 0x32c6b4e20c06a4b817045ea521b447741217d9834ea03f9c985643871a989d0;
 
-impl ContractStateI1I of
-    super::comp::UnsafeNewContractStateTraitForI1I<ContractState> {
+impl ContractStateI1I1 of
+    super::comp::UnsafeNewContractStateTraitForI1I1<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateI1I2 of
+    super::comp::UnsafeNewContractStateTraitForI1I2<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }

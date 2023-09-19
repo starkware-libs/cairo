@@ -27,7 +27,7 @@ pub enum EventData {
 }
 
 /// Describes how to serialize the event's field.
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum EventFieldKind {
     // Serialize to `keys` using `Serde`.
     #[serde(rename = "key")]
