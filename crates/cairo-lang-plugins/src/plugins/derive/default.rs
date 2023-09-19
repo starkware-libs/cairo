@@ -10,6 +10,8 @@ use itertools::Itertools;
 use super::{unsupported_for_extern_diagnostic, DeriveInfo, DeriveResult};
 use crate::plugins::derive::TypeVariantInfo;
 
+pub const DEFAULT_ATTR: &str = "default";
+
 /// Adds derive result for the `Default` trait.
 pub fn handle_default(
     db: &dyn SyntaxGroup,
@@ -25,7 +27,7 @@ pub fn handle_default(
         match &info.specific_info {
             TypeVariantInfo::Enum(variants) => {
                 let mut default_variants = variants.iter().filter_map(|variant| {
-                    Some((variant, variant.attributes.find_attr(db, "default")?))
+                    Some((variant, variant.attributes.find_attr(db, DEFAULT_ATTR)?))
                 });
                 let Some((default_variant, _)) = default_variants.next() else {
                     result.diagnostics.push(PluginDiagnostic {

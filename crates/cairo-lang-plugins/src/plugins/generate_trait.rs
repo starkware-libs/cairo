@@ -11,6 +11,8 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 #[non_exhaustive]
 pub struct GenerateTraitPlugin;
 
+const GENERATE_TRAIT_ATTR: &str = "generate_trait";
+
 impl MacroPlugin for GenerateTraitPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         match item_ast {
@@ -18,10 +20,14 @@ impl MacroPlugin for GenerateTraitPlugin {
             _ => PluginResult::default(),
         }
     }
+
+    fn used_attributes(&self) -> Vec<String> {
+        vec![GENERATE_TRAIT_ATTR.to_string()]
+    }
 }
 
 fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
-    let Some(attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
+    let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);

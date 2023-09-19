@@ -16,8 +16,8 @@ fn test_expr_lookup() {
     let test_module = setup_test_module(
         db,
         indoc::indoc! {"
-            #[external]
-            #[my_attr]
+            // Just to have an allowed attribute.
+            #[inline]
             fn foo<A, B>(a: felt252) -> felt252 {
                 let x = 5 + 5;
                 match 1 * (1) {
@@ -88,8 +88,5 @@ fn test_expr_lookup() {
     );
 
     let attributes = db.function_with_body_attributes(function_id).unwrap();
-    assert_eq!(
-        format!("{:?}", attributes.debug(db)),
-        "[Attribute { id: \"external\" }, Attribute { id: \"my_attr\" }]"
-    );
+    assert_eq!(format!("{:?}", attributes.debug(db)), "[Attribute { id: \"inline\" }]");
 }

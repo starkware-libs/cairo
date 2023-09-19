@@ -80,7 +80,7 @@ trait SomeTrait<T> {
 //! > Test expansion of generate_trait with one generic parameter and custom attributes.
 
 //! > test_runner_name
-test_expand_plugin(expect_diagnostics: false)
+test_expand_plugin(expect_diagnostics: true)
 
 //! > cairo_code
 #[generate_trait(trait_attrs(some(attr), other(attr2)))]
@@ -94,6 +94,15 @@ impl OtherImpl<T> of TraitWithAttrs<T>;
 trait TraitWithAttrs<T>;
 
 //! > expected_diagnostics
+error: Unsupported attribute.
+ --> test_src/lib.cairo[generate_trait]:1:1
+#[some(attr)]
+^***********^
+
+error: Unsupported attribute.
+ --> test_src/lib.cairo[generate_trait]:2:1
+#[other(attr2)]
+^*************^
 
 //! > ==========================================================================
 

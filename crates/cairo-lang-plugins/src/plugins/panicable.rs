@@ -13,6 +13,8 @@ use smol_str::SmolStr;
 #[non_exhaustive]
 pub struct PanicablePlugin;
 
+const PANIC_WITH_ATTR: &str = "panic_with";
+
 impl MacroPlugin for PanicablePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let (declaration, attributes) = match item_ast {
@@ -27,6 +29,10 @@ impl MacroPlugin for PanicablePlugin {
 
         generate_panicable_code(db, declaration, attributes)
     }
+
+    fn used_attributes(&self) -> Vec<String> {
+        vec![PANIC_WITH_ATTR.to_string()]
+    }
 }
 
 /// Generate code defining a panicable variant of a function marked with `#[panic_with]` attribute.
@@ -35,7 +41,7 @@ fn generate_panicable_code(
     declaration: ast::FunctionDeclaration,
     attributes: ast::AttributeList,
 ) -> PluginResult {
-    let mut attrs = attributes.query_attr(db, "panic_with");
+    let mut attrs = attributes.query_attr(db, PANIC_WITH_ATTR);
     if attrs.is_empty() {
         return PluginResult::default();
     }

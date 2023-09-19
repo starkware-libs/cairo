@@ -7,9 +7,12 @@ use cairo_lang_filesystem::ids::{CrateId, Directory, FileId, FileKind, FileLongI
 use cairo_lang_parser::db::ParserGroup;
 use cairo_lang_syntax::node::ast::MaybeModuleBody;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::element_list::ElementList;
+use cairo_lang_syntax::node::helpers::QueryAttrs;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::Upcast;
 
 use crate::ids::*;
@@ -68,6 +71,9 @@ pub trait DefsGroup:
     fn macro_plugins(&self) -> Vec<Arc<dyn MacroPlugin>>;
     #[salsa::input]
     fn inline_macro_plugins(&self) -> Arc<OrderedHashMap<String, Arc<dyn InlineMacroExprPlugin>>>;
+
+    /// Returns the set of allowed attributes.
+    fn allowed_attributes(&self) -> Arc<OrderedHashSet<String>>;
 
     // Module to syntax.
     /// Gets the main file of the module.
@@ -163,6 +169,19 @@ pub trait DefsGroup:
         &self,
         module_id: ModuleId,
     ) -> Maybe<Arc<Vec<(ModuleFileId, PluginDiagnostic)>>>;
+}
+
+fn allowed_attributes(db: &dyn DefsGroup) -> Arc<OrderedHashSet<String>> {
+    let mut all_attributes = OrderedHashSet::from_iter([
+        "inline".into(),
+        "implicit_precedence".into(),
+        // TODO(orizi): Remove this once `starknet` is removed from corelib.
+        "starknet::interface".into(),
+    ]);
+    for plugin in db.macro_plugins() {
+        all_attributes.extend(plugin.used_attributes());
+    }
+    Arc::new(all_attributes)
 }
 
 fn module_main_file(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<FileId> {
@@ -282,6 +301,7 @@ pub struct ModuleData {
 fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData> {
     let syntax_db = db.upcast();
     let module_file = db.module_main_file(module_id)?;
+    let allowed_attributes = db.allowed_attributes();
 
     let file_syntax = db.file_module_syntax(module_file)?;
     let mut main_file_info: Option<GeneratedFileInfo> = None;
@@ -335,6 +355,13 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         files.push(module_file);
 
         for item_ast in item_asts.elements(syntax_db) {
+            validate_attributes(
+                syntax_db,
+                &allowed_attributes,
+                module_file_id,
+                &item_ast,
+                &mut plugin_diagnostics,
+            );
             let mut remove_original_item = false;
             // Iterate the plugins by their order. The first one to change something (either
             // generate new code, remove the original code, or both), breaks the loop. If more
@@ -487,6 +514,97 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         plugin_diagnostics,
     };
     Ok(res)
+}
+
+/// Validates that all attributes on an item are in the allowed set or adds diagnostics.
+fn validate_attributes_flat(
+    db: &dyn SyntaxGroup,
+    allowed_attributes: &OrderedHashSet<String>,
+    module_file_id: ModuleFileId,
+    item: &impl QueryAttrs,
+    plugin_diagnostics: &mut Vec<(ModuleFileId, PluginDiagnostic)>,
+) {
+    for attr in item.attributes_elements(db) {
+        if !allowed_attributes.contains(&attr.attr(db).as_syntax_node().get_text_without_trivia(db))
+        {
+            plugin_diagnostics.push((
+                module_file_id,
+                PluginDiagnostic {
+                    stable_ptr: attr.stable_ptr().untyped(),
+                    message: "Unsupported attribute.".to_string(),
+                },
+            ));
+        }
+    }
+}
+
+/// Validates that all attributes on an the items in an element list are in the allowed set or adds
+/// diagnostics.
+fn validate_attributes_element_list<Item: QueryAttrs + TypedSyntaxNode, const STEP: usize>(
+    db: &dyn SyntaxGroup,
+    allowed_attributes: &OrderedHashSet<String>,
+    module_file_id: ModuleFileId,
+    items: &ElementList<Item, STEP>,
+    plugin_diagnostics: &mut Vec<(ModuleFileId, PluginDiagnostic)>,
+) {
+    for item in items.elements(db) {
+        validate_attributes_flat(db, allowed_attributes, module_file_id, &item, plugin_diagnostics);
+    }
+}
+
+/// Validates that all attributes on an item or on items contained within it are in the allowed set
+/// or adds diagnostics.
+fn validate_attributes(
+    db: &dyn SyntaxGroup,
+    allowed_attributes: &OrderedHashSet<String>,
+    module_file_id: ModuleFileId,
+    item_ast: &ast::Item,
+    plugin_diagnostics: &mut Vec<(ModuleFileId, PluginDiagnostic)>,
+) {
+    validate_attributes_flat(db, allowed_attributes, module_file_id, item_ast, plugin_diagnostics);
+    match item_ast {
+        ast::Item::Trait(item) => {
+            if let ast::MaybeTraitBody::Some(body) = item.body(db) {
+                validate_attributes_element_list(
+                    db,
+                    allowed_attributes,
+                    module_file_id,
+                    &body.items(db),
+                    plugin_diagnostics,
+                );
+            }
+        }
+        ast::Item::Impl(item) => {
+            if let ast::MaybeImplBody::Some(body) = item.body(db) {
+                validate_attributes_element_list(
+                    db,
+                    allowed_attributes,
+                    module_file_id,
+                    &body.items(db),
+                    plugin_diagnostics,
+                );
+            }
+        }
+        ast::Item::Struct(item) => {
+            validate_attributes_element_list(
+                db,
+                allowed_attributes,
+                module_file_id,
+                &item.members(db),
+                plugin_diagnostics,
+            );
+        }
+        ast::Item::Enum(item) => {
+            validate_attributes_element_list(
+                db,
+                allowed_attributes,
+                module_file_id,
+                &item.variants(db),
+                plugin_diagnostics,
+            );
+        }
+        _ => {}
+    }
 }
 
 /// Returns all the path leaves under a given use path.

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_defs::ids::ModuleItemId;
 use cairo_lang_semantic::db::SemanticGroup;
-use cairo_lang_semantic::test_utils::{setup_test_module, SemanticDatabaseForTesting};
+use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_utils::extract_matches;
 use indoc::indoc;
 use pretty_assertions::assert_eq;
@@ -14,9 +14,14 @@ use crate::plugin::StarkNetPlugin;
 
 #[test]
 fn test_abi() {
-    let db_val = SemanticDatabaseForTesting::default();
+    let db = &mut RootDatabase::builder()
+        .detect_corelib()
+        .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+        .build()
+        .unwrap();
     let module_id = setup_test_module(
-        &db_val,
+        db,
         indoc! {"
             struct MyStruct<T> {
               a: T,
@@ -45,7 +50,6 @@ fn test_abi() {
     .unwrap()
     .module_id;
 
-    let db = &db_val;
     let trait_id = extract_matches!(
         db.module_item_by_name(module_id, "MyAbi".into()).unwrap().unwrap(),
         ModuleItemId::Trait

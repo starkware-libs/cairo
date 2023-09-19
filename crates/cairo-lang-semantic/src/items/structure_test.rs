@@ -33,6 +33,11 @@ fn test_struct() {
     assert_eq!(
         diagnostics,
         indoc! {r#"
+        error: Plugin diagnostic: Unsupported attribute.
+         --> lib.cairo:1:1
+        #[contract(MyImpl1, MyImpl2)]
+        ^***************************^
+
         error: Redefinition of member "a" on struct "test::A".
          --> lib.cairo:6:5
             a: (),

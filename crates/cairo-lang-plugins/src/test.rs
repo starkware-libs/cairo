@@ -214,4 +214,8 @@ impl MacroPlugin for DoubleIndirectionPlugin {
             _ => PluginResult::default(),
         }
     }
+
+    fn used_attributes(&self) -> Vec<String> {
+        vec!["first".to_string(), "second".to_string()]
+    }
 }
