@@ -15,7 +15,7 @@ use crate::plugin::consts::{
     GENERIC_CONTRACT_STATE_NAME, HAS_COMPONENT_TRAIT, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::{is_ref_param, AstPathExtract, GenericParamExtract};
+use crate::plugin::utils::{AstPathExtract, GenericParamExtract, ParamEx};
 
 /// Accumulated data specific for component generation.
 #[derive(Default)]
@@ -394,7 +394,7 @@ fn handle_first_param_for_embeddable_as(
     if param.name(db).text(db) != "self" {
         return None;
     }
-    if is_ref_param(db, param) {
+    if param.is_ref_param(db) {
         return if param.type_clause(db).ty(db).is_name_with_arg(
             db,
             COMPONENT_STATE_NAME,
@@ -408,11 +408,11 @@ fn handle_first_param_for_embeddable_as(
             None
         };
     }
-    let unary = try_extract_matches!(param.type_clause(db).ty(db), ast::Expr::Unary)?;
-    if !matches!(unary.op(db), ast::UnaryOperator::At(_)) {
-        return None;
-    }
-    if unary.expr(db).is_name_with_arg(db, "ComponentState", GENERIC_CONTRACT_STATE_NAME) {
+    if param.try_extract_snapshot(db)?.is_name_with_arg(
+        db,
+        "ComponentState",
+        GENERIC_CONTRACT_STATE_NAME,
+    ) {
         Some((
             format!("self: @{GENERIC_CONTRACT_STATE_NAME}"),
             "let component = self.get_component();".to_string(),

@@ -8,10 +8,10 @@ use indoc::formatdoc;
 use itertools::Itertools;
 
 use super::consts::CALLDATA_PARAM_NAME;
-use super::utils::is_ref_param;
+use super::utils::{AstPathExtract, ParamEx};
 use super::{DEPRECATED_ABI_ATTR, INTERFACE_ATTR, STORE_TRAIT};
 
-/// If the trait is annotated with ABI_ATTR, generate the relevant dispatcher logic.
+/// If the trait is annotated with INTERFACE_ATTR, generate the relevant dispatcher logic.
 pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginResult {
     if trait_ast.has_attr(db, DEPRECATED_ABI_ATTR) {
         return PluginResult {
@@ -35,12 +35,36 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             return PluginResult {
                 code: None,
                 diagnostics: vec![PluginDiagnostic {
-                    message: "ABIs without body are not supported.".to_string(),
+                    message: "Starknet interfaces without body are not supported.".to_string(),
                     stable_ptr: empty_body.stable_ptr().untyped(),
                 }],
                 remove_original_item: false,
             };
         }
+    };
+    let generic_params = trait_ast.generic_params(db);
+    let Some(single_generic_param) = (match &generic_params {
+        ast::OptionWrappedGenericParamList::Empty(_) => None,
+        ast::OptionWrappedGenericParamList::WrappedGenericParamList(generic_params) => {
+            if let [ast::GenericParam::Type(param)] =
+                generic_params.generic_params(db).elements(db).as_slice()
+            {
+                Some(param.name(db).text(db))
+            } else {
+                None
+            }
+        }
+    }) else {
+        return PluginResult {
+            code: None,
+            diagnostics: vec![PluginDiagnostic {
+                message: "Starknet interfaces must have exactly one generic parameter, which is a \
+                          type."
+                    .to_string(),
+                stable_ptr: generic_params.stable_ptr().untyped(),
+            }],
+            remove_original_item: false,
+        };
     };
 
     let mut diagnostics = vec![];
@@ -69,21 +93,39 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic {
-                        message: "ABI functions must have a `self` parameter.".to_string(),
+                        message: "Starknet interface functions must have a `self` parameter."
+                            .to_string(),
                         stable_ptr: declaration.stable_ptr().untyped(),
                     });
                     continue;
                 };
                 if self_param.name(db).text(db) != "self" {
                     diagnostics.push(PluginDiagnostic {
-                        message: "The `self` parameter must be named `self`.".to_string(),
+                        message: "The first parameter must be named `self`.".to_string(),
+                        stable_ptr: self_param.stable_ptr().untyped(),
+                    });
+                    skip_generation = true;
+                }
+                let self_param_type_ok = if self_param.is_ref_param(db) {
+                    self_param.type_clause(db).ty(db).is_identifier(db, &single_generic_param)
+                } else if let Some(snapped_ty) = self_param.try_extract_snapshot(db) {
+                    snapped_ty.is_identifier(db, &single_generic_param)
+                } else {
+                    false
+                };
+                if !self_param_type_ok {
+                    diagnostics.push(PluginDiagnostic {
+                        message: "The first parameter of an interface function must be a \
+                                  reference to the generic parameter of the interface trait or a \
+                                  snapshot of it."
+                            .to_string(),
                         stable_ptr: self_param.stable_ptr().untyped(),
                     });
                     skip_generation = true;
                 }
 
                 for param in params {
-                    if is_ref_param(db, &param) {
+                    if param.is_ref_param(db) {
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic {
