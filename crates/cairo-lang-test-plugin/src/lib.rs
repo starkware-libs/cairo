@@ -30,6 +30,11 @@ pub mod plugin;
 pub mod test_config;
 pub use plugin::TestPlugin;
 
+const TEST_ATTR: &str = "test";
+const SHOULD_PANIC_ATTR: &str = "should_panic";
+const IGNORE_ATTR: &str = "ignore";
+const AVAILABLE_GAS_ATTR: &str = "available_gas";
+
 /// Runs Cairo compiler.
 ///
 /// # Arguments

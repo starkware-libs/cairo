@@ -37,6 +37,8 @@ pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
 pub const COMPONENT_INLINE_MACRO: &str = "component";
 pub const HAS_COMPONENT_TRAIT: &str = "HasComponent";
 pub const NESTED_ATTR: &str = "nested";
+pub const KEY_ATTR: &str = "key";
+pub const SERDE_ATTR: &str = "serde";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
