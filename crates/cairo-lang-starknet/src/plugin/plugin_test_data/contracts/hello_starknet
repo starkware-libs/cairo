@@ -4,23 +4,7 @@
 ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[starknet::contract]
-mod hello_starknet {
-    #[storage]
-    struct Storage { balance: felt252, }
-
-    // Increases the balance by the given amount.
-    #[external(v0)]
-    fn increase_balance(ref self: ContractState, amount: felt252) {
-        self.balance.write(self.balance.read() + amount);
-    }
-
-    // Returns the current balance.
-    #[external(v0)]
-    fn get_balance(self: @ContractState) -> felt252 {
-        self.balance.read()
-    }
-}
+>>> file: test_data/hello_starknet.cairo
 
 //! > generated_cairo_code
 lib.cairo:
@@ -28,7 +12,9 @@ lib.cairo:
 #[starknet::contract]
 mod hello_starknet {
     #[storage]
-    struct Storage { balance: felt252, }
+    struct Storage {
+        balance: felt252,
+    }
 
     // Increases the balance by the given amount.
     #[external(v0)]
@@ -42,6 +28,7 @@ mod hello_starknet {
         self.balance.read()
     }
 }
+
 
 contract:
 
@@ -108,7 +95,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x26fe9125a5d8c4c9324a8d36f6db6556eae6da7c600981e5af5546d55df8222;
+const TEST_CLASS_HASH: felt252 = 0x18df9dcbb945576b4ead2218f9ec3152eda3e5c4da89528a52ba77bfbd7a9fb;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_increase_balance(mut data: Span::<felt252>) -> Span::<felt252> {
