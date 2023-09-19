@@ -660,7 +660,7 @@ fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from(""));
     prelude.push(String::from("open Casm Tactic Nat"));
     prelude.push(String::from(""));
-    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)"));
+    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] {mem : F → F} (σ : RegisterState F)"));
     prelude.push(String::from(""));
 
     prelude
@@ -950,7 +950,7 @@ impl LeanGenerator for AutoSpecs {
 
         self.push(
             indent,
-            &format!("def auto_spec_{func_name} (mem : F → F) (κ : ℕ) ({args_str} : F) : Prop :="));
+            &format!("def auto_spec_{func_name} (κ : ℕ) ({args_str} : F) : Prop :="));
     }
 
     fn generate_intro(
@@ -1592,7 +1592,7 @@ impl LeanGenerator for AutoProof {
         self.push_main(indent, &format!("-- {var_name} {op} 0"));
         self.push_main4(indent, &format!("have a{pc} : {var_name} {op} 0, {{ simp only [hl_{var_name}], exact hcond{pc} }},"),
             &format!("have a{pc} : {var_name} {op} 0 := by simp only [hl_{var_name}]; exact hcond{pc}"));
-        self.push_final4_with_comma(0, (if is_eq { "left" } else { "right" }));;
+        self.push_final4_with_comma(0, if is_eq { "left" } else { "right" });
         self.push_final4(0, &format!("use_only [a{pc}],"),
             &format!("use_only a{pc}"));
 
@@ -1781,7 +1781,7 @@ fn generate_soundness_user_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
         lean_info.get_arg_names().iter().chain(lean_info.get_explicit_ret_arg_names().iter()).join(" ");
 
     let mut user_spec: Vec<String> = Vec::new();
-    user_spec.push(format!("def spec_{func_name} (mem : F → F) (κ : ℕ) ({args_str} : F) : Prop :="));
+    user_spec.push(format!("def spec_{func_name} (κ : ℕ) ({args_str} : F) : Prop :="));
     user_spec.push(String::from("  true"));
 
     user_spec
@@ -2144,27 +2144,69 @@ fn generate_func_lean_soundness(
     soundness
 }
 
-pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
-    let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
-    let func_name = test_name.split_whitespace().next().unwrap();
-    let lean_path = lean_verification_path(test_path);
-    let soundness_file_path = lean_file_path(
-        &lean_path, &lean_soundness_file_name(func_name, true));
-    fs::create_dir_all(lean_path)?;
-    fs::write(soundness_file_path, soundness_str)
-}
+//
+// Lean code file generation
+//
 
-/// Generates the lean assembly code file for a single function.
-pub fn write_lean_code_file(
-    test_path: &Path, test_name: &str, casm: Option<&String>, is_lean3: bool
-) -> Result<(), std::io::Error> {
+fn make_at_mem_theorem(pc: usize, instr_str: &str, op_size: usize, instr_pos: usize) -> Vec<String> {
 
-    if is_lean3 {
-        return Ok(()); // Not supported in Lean 3.
+    let mut code: Vec<String> = Vec::new();
+
+    let pred = if op_size == 1 { "" } else if instr_pos == 0 { "@Prod.fst F F " } else { "@Prod.snd F F " };
+
+    if 0 < pc {
+        let pc_prev = pc - 1;
+        if 1 < pc {
+            let pc_prev_prev = pc - 2;
+            code.push(format!("def haux{pc_prev} := (haux{pc_prev_prev} hmem).2"));
+        } else {
+            code.push("def haux0 := hmem.2".into());
+        }
+        code.push(format!("theorem hmem{pc} : mem (pos + {pc}) = {pred}casm_instr!{{ {instr_str}; }} := by"));
+        if 1 < pc {
+            code.push(format!("  refine Eq.trans ?_ (haux{pc_prev} hmem).1; simp only [add_assoc]; norm_num1; rfl"));
+        } else {
+            code.push(format!("  refine Eq.trans ?_ (haux0 hmem).1; rfl"));
+        }
+    } else {
+        code.push(format!("theorem hmem0 : mem pos = {pred}casm_instr!{{ {instr_str}; }} := by"));
+        code.push("  refine Eq.trans ?_ hmem.1; rfl".into());
     }
 
-    let orig_casm_lines = match casm { Some(code) => &code[..], _ => "-- No casm generated." }.split('\n');
+    code
+}
+
+pub fn generate_lean_code_hyp(cairo_program: &CairoProgram) -> Vec<String> {
+
+    let mut mem_hyp: Vec<String> = Vec::new();
+    let mut pc: usize = 0;
+
+    for instr in &cairo_program.instructions {
+        if let Some(instr_str) = instr.to_string().rsplit_terminator("%}\n").next() {
+            if instr.body.op_size() == 2 {
+                mem_hyp.append(make_at_mem_theorem(pc, instr_str, 2, 0).as_mut());
+                mem_hyp.append(make_at_mem_theorem(pc + 1, instr_str, 2, 1).as_mut());
+                pc += 2;
+            } else {
+                mem_hyp.append(make_at_mem_theorem(pc, instr_str, 1, 0).as_mut());
+                pc += 1;
+            }
+        }
+    }
+
+    mem_hyp
+}
+
+pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram, is_lean3: bool) -> String {
+    if is_lean3 {
+        // Not supported for Lean 3.
+        return "".into();
+    }
+
+    let casm = cairo_program.to_string();
+    let orig_casm_lines = casm.split("\n");
     let mut casm_lines: Vec<String> = Vec::new();
+
     // Comment out the hints (and indent)
     let mut in_hint = false;
     for line in orig_casm_lines {
@@ -2176,46 +2218,65 @@ pub fn write_lean_code_file(
         in_hint = !(!in_hint || line.contains("%}"));
     }
 
+    let mut lean_code: Vec<String> = Vec::new();
+
+    let func_name = test_name.split_whitespace().next().unwrap();
+
+    lean_code.push("import Verification.Semantics.Assembly".into());
+    lean_code.push("import Verification.Semantics.Soundness.Hoare".into());
+    lean_code.push("import Verification.Libfuncs.Basic".into());
+    lean_code.push("".into());
+    lean_code.push("open Casm".into());
+    lean_code.push("".into());
+    lean_code.push("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] {mem : F → F}".into());
+    lean_code.push("".into());
+    lean_code.push(format!("def {func_name}_code : List F := casm_code!{{"));
+    lean_code.append(&mut casm_lines);
+    lean_code.push("}".into());
+    lean_code.push("".into());
+
+    //lean_code.push("section".into());
+    //lean_code.push("open Casm".into());
+    //lean_code.push("".into());
+    //lean_code.push("variable {F : Type _} [Field F]".into());
+    //lean_code.push("variable {mem : F → F}".into());
+    lean_code.push("variable {pos : F}".into());
+    lean_code.push(format!("variable (hmem : MemAt mem {func_name}_code pos)"));
+    lean_code.push("".into());
+    lean_code.append(generate_lean_code_hyp(cairo_program).as_mut());
+    //lean_code.push("end".into());
+    lean_code.push("".into());
+
+    lean_code.join("\n")
+}
+
+//
+// Lean Output Functions.
+//
+
+pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
+    let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
+    let func_name = test_name.split_whitespace().next().unwrap();
+    let lean_path = lean_verification_path(test_path);
+    let soundness_file_path = lean_file_path(
+        &lean_path, &lean_soundness_file_name(func_name, true));
+    fs::create_dir_all(lean_path)?;
+    fs::write(soundness_file_path, soundness_str)
+}
+
+pub fn write_lean_code_file(
+    test_path: &Path, test_name: &str, lean_code: Option<&String>, is_lean3: bool
+) -> Result<(), std::io::Error> {
+
+    if is_lean3 {
+        return Ok(()); // Not supported in Lean 3.
+    }
+
+    let code_str = match lean_code { Some(content) => { content }, _ => { return Ok(()); }};
     let func_name = test_name.split_whitespace().next().unwrap();
     let lean_path = lean_verification_path(test_path);
     let code_file_path = lean_file_path(
         &lean_path, &lean_code_file_name(func_name, true));
-
     fs::create_dir_all(lean_path)?;
-
-    let mut lean_casm = String::new();
-    lean_casm.push_str("import Verification.Semantics.Assembly\n");
-    lean_casm.push_str("import Verification.Semantics.Soundness.Hoare\n");
-    lean_casm.push_str("import Verification.Libfuncs.Basic\n\n");
-    lean_casm.push_str("open Casm\n\n");
-    lean_casm.push_str("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F] (mem : F → F) (σ : RegisterState F)\n\n");
-    lean_casm.push_str(&format!("def {func_name}_code : List F := casm_code!{{\n"));
-    lean_casm.push_str(&casm_lines.join("\n"));
-    lean_casm.push_str("\n");
-    lean_casm.push_str("}\n");
-
-    fs::write(code_file_path, lean_casm)
+    fs::write(code_file_path, code_str)
 }
-
-/* pub fn dump_to_test_file(
-    tests: OrderedHashMap<String, Test>,
-    filename: &str,
-) -> Result<(), std::io::Error> {
-    let mut test_strings = Vec::new();
-    for (test_name, test) in tests {
-        let mut tag_strings = vec![TAG_PREFIX.to_string() + &test_name];
-        for (tag, content) in test.attributes {
-            tag_strings.push(
-                TAG_PREFIX.to_string()
-                    + &tag
-                    + if content.is_empty() { "" } else { "\n" }
-                    + &content,
-            );
-        }
-        test_strings.push(tag_strings.join("\n\n"));
-    }
-    fs::write(
-        filename,
-        test_strings.join(&("\n\n".to_string() + TAG_PREFIX + TEST_SEPARATOR + "\n\n")) + "\n",
-    )
-}*/

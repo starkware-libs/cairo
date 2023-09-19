@@ -19,7 +19,7 @@ use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::Itertools;
-use cairo_lang_lean::lean_generator::generate_lean_soundness;
+use cairo_lang_lean::lean_generator::{generate_lean_soundness, generate_lean_code};
 
 /// Salsa databases configured to find the corelib, when reused by different tests should be able to
 /// use the cached queries that rely on the corelib's code, which vastly reduces the tests runtime.
@@ -287,6 +287,8 @@ fn run_e2e_test(
     let is_lean3_version: bool = std::env::var("CAIRO_LEAN_VERSION") == Ok("3".into());
     let lean_soundness = generate_lean_soundness(inputs["test_name"].as_str(), &cairo_program, is_lean3_version);
     res.insert("lean_soundness".into(), lean_soundness);
+    let lean_code = generate_lean_code(inputs["test_name"].as_str(), &cairo_program, is_lean3_version);
+    res.insert("lean_code".into(), lean_code);
 
     TestRunnerResult::success(res)
 }
