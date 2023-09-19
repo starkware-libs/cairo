@@ -37,6 +37,7 @@ mod upgradable {
     impl Upgradable<
         TContractState, impl X: HasComponent<TContractState>
     > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
@@ -55,7 +56,7 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    component!(path: super::upgradable, storage: upgradable, event: UpgradableEvent);
+    component!(path: super::upgradable, storage: upgradable, event: Event);
 
     #[storage]
     struct Storage {
@@ -69,7 +70,7 @@ mod counter_contract {
     enum Event {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        UpgradableEvent: super::upgradable::Event
+        Event: super::upgradable::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -146,6 +147,7 @@ mod upgradable {
     impl Upgradable<
         TContractState, impl X: HasComponent<TContractState>
     > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
@@ -164,7 +166,7 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
-    component!(path: super::upgradable, storage: upgradable, event: UpgradableEvent);
+    component!(path: super::upgradable, storage: upgradable, event: Event);
 
     #[storage]
     struct Storage {
@@ -178,7 +180,7 @@ mod counter_contract {
     enum Event {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        UpgradableEvent: super::upgradable::Event
+        Event: super::upgradable::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -971,7 +973,7 @@ impl UpgradableImpl<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::IUpgradable<TContractState> {
-    
+    #[external(v0)]
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
         component.upgrade(new_class_hash, )
@@ -1053,9 +1055,32 @@ trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
     fn unsafe_new_contract_state() -> TContractState;
 }
 
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_new_class_hash = option::OptionTraitImpl::expect(
+        serde::Serde::<ClassHash>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    UpgradableImpl::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
 
 
 mod __external_UpgradableImpl {
+        use super::__wrapper_upgrade as upgrade;
 }
 
 mod __l1_handler_UpgradableImpl {
@@ -1133,7 +1158,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1ca3cca5f50b21c2ada01141c946b7a4c6182d593e2d51039eef86c3a1156ee;
+const TEST_CLASS_HASH: felt252 = 0x25dd3498a2c21c1a58007d8c0862974eac70774bab7639576bc93f89123268a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -1272,7 +1297,7 @@ impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractStat
     fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
         let event: super::upgradable::Event = traits::Into::into(event);
         let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::UpgradableEvent(event));
+        contract.emit(Event::Event(event));
     }
 }
 
@@ -1295,8 +1320,8 @@ impl EventIsEvent of starknet::Event<Event> {
                     val, ref keys, ref data
                 );
             },
-            Event::UpgradableEvent(val) => {
-                array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
+            Event::Event(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Event"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -1320,11 +1345,11 @@ impl EventIsEvent of starknet::Event<Event> {
                 )?;
                 return Option::Some(Event::CounterDecreased(val));
             }
-            if selector == selector!("UpgradableEvent") {
+            if selector == selector!("Event") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
-                return Option::Some(Event::UpgradableEvent(val));
+                return Option::Some(Event::Event(val));
             }
         Option::None
     }
@@ -1339,9 +1364,9 @@ impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
         Event::CounterDecreased(self)
     }
 }
-impl EventUpgradableEventIntoEvent of Into<super::upgradable::Event, Event> {
+impl EventEventIntoEvent of Into<super::upgradable::Event, Event> {
     fn into(self: super::upgradable::Event) -> Event {
-        Event::UpgradableEvent(self)
+        Event::Event(self)
     }
 }
 
