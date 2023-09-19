@@ -142,15 +142,11 @@ impl EcPointAdd of Add<EcPoint> {
     fn add(lhs: EcPoint, rhs: EcPoint) -> EcPoint {
         let lhs_nz = match lhs.try_into() {
             Option::Some(pt) => pt,
-            Option::None => {
-                return rhs;
-            },
+            Option::None => return rhs,
         };
         let rhs_nz = match rhs.try_into() {
             Option::Some(pt) => pt,
-            Option::None => {
-                return lhs;
-            },
+            Option::None => return lhs,
         };
         let mut state = ec_state_init();
         state.add(lhs_nz);
@@ -172,10 +168,8 @@ impl EcPointSub of Sub<EcPoint> {
         let nz_point: Option<NonZero<EcPoint>> = rhs.try_into();
         match nz_point {
             Option::Some(_) => {},
-            Option::None => {
-                // lhs - 0 = lhs.
-                return lhs;
-            },
+            // lhs - 0 = lhs.
+            Option::None => return lhs,
         };
         // lhs - rhs = lhs + (-rhs).
         lhs + (-rhs)

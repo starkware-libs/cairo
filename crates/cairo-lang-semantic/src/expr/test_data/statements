@@ -45,10 +45,10 @@ error: Missing token TerminalSemicolon.
 
 //! > ==========================================================================
 
-//! > Missing semicolon in return statement (parsing error).
+//! > Return statement with no semicolon as block is OK.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -64,33 +64,6 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Missing token TerminalSemicolon.
- --> lib.cairo:3:17
-        return 1
-                ^
-
-//! > ==========================================================================
-
-//! > Missing semicolon in "tail" return statement (parsing error).
-
-//! > test_runner_name
-test_function_diagnostics
-
-//! > function
-fn foo() -> felt252 {
-    return 1
-}
-
-//! > function_name
-foo
-
-//! > module_code
-
-//! > expected_diagnostics
-error: Missing token TerminalSemicolon.
- --> lib.cairo:2:13
-    return 1
-            ^
 
 //! > ==========================================================================
 

@@ -165,19 +165,16 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::StatementExpr => {
             vec![]
         }
-        SyntaxKind::StatementContinue => {
-            vec![]
-        }
         SyntaxKind::ExprClause => {
             vec![]
         }
         SyntaxKind::OptionExprClauseEmpty => {
             vec![]
         }
-        SyntaxKind::StatementReturn => {
+        SyntaxKind::ExprReturn => {
             vec![]
         }
-        SyntaxKind::StatementBreak => {
+        SyntaxKind::ExprBreak => {
             vec![]
         }
         SyntaxKind::Param => {

@@ -51,18 +51,12 @@ impl DebugWithDb<ExprFormatter<'_>> for StatementId {
 pub enum Statement {
     Expr(StatementExpr),
     Let(StatementLet),
-    Continue(StatementContinue),
-    Return(StatementReturn),
-    Break(StatementBreak),
 }
 impl Statement {
     pub fn stable_ptr(&self) -> ast::StatementPtr {
         match self {
             Statement::Expr(stmt) => stmt.stable_ptr,
             Statement::Let(stmt) => stmt.stable_ptr,
-            Statement::Continue(stmt) => stmt.stable_ptr,
-            Statement::Return(stmt) => stmt.stable_ptr,
-            Statement::Break(stmt) => stmt.stable_ptr,
         }
     }
 }
@@ -81,32 +75,6 @@ pub struct StatementExpr {
 pub struct StatementLet {
     pub pattern: PatternId,
     pub expr: ExprId,
-    #[hide_field_debug_with_db]
-    #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementContinue {
-    #[hide_field_debug_with_db]
-    #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementReturn {
-    pub expr_option: Option<ExprId>,
-    #[hide_field_debug_with_db]
-    #[dont_rewrite]
-    pub stable_ptr: ast::StatementPtr,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
-#[debug_db(ExprFormatter<'a>)]
-pub struct StatementBreak {
-    pub expr_option: Option<ExprId>,
     #[hide_field_debug_with_db]
     #[dont_rewrite]
     pub stable_ptr: ast::StatementPtr,
@@ -134,6 +102,9 @@ pub enum Expr {
     EnumVariantCtor(ExprEnumVariantCtor),
     PropagateError(ExprPropagateError),
     Constant(ExprConstant),
+    Continue(ExprContinue),
+    Return(ExprReturn),
+    Break(ExprBreak),
     Missing(ExprMissing),
 }
 impl Expr {
@@ -157,6 +128,9 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.ty,
             Expr::PropagateError(expr) => expr.ok_variant.ty,
             Expr::Constant(expr) => expr.ty,
+            Expr::Continue(expr) => expr.ty,
+            Expr::Return(expr) => expr.ty,
+            Expr::Break(expr) => expr.ty,
             Expr::Missing(expr) => expr.ty,
         }
     }
@@ -180,6 +154,9 @@ impl Expr {
             Expr::EnumVariantCtor(expr) => expr.stable_ptr,
             Expr::PropagateError(expr) => expr.stable_ptr,
             Expr::Constant(expr) => expr.stable_ptr,
+            Expr::Continue(expr) => expr.stable_ptr,
+            Expr::Return(expr) => expr.stable_ptr,
+            Expr::Break(expr) => expr.stable_ptr,
             Expr::Missing(expr) => expr.stable_ptr,
         }
     }
@@ -469,6 +446,35 @@ pub struct ExprConstant {
     pub ty: semantic::TypeId,
     #[dont_rewrite]
     #[hide_field_debug_with_db]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprContinue {
+    pub ty: semantic::TypeId,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprReturn {
+    pub ty: semantic::TypeId,
+    pub expr_option: Option<ExprId>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
+    pub stable_ptr: ast::ExprPtr,
+}
+
+#[derive(Clone, Debug, Hash, PartialEq, Eq, DebugWithDb, SemanticObject)]
+#[debug_db(ExprFormatter<'a>)]
+pub struct ExprBreak {
+    pub ty: semantic::TypeId,
+    pub expr_option: Option<ExprId>,
+    #[hide_field_debug_with_db]
+    #[dont_rewrite]
     pub stable_ptr: ast::ExprPtr,
 }
 

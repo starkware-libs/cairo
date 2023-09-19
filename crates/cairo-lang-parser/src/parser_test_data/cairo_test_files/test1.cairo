@@ -54,6 +54,45 @@ fn match_e_enum(e: E) -> felt252 {
     }
 }
 
+fn match_with_return(e: E) -> felt252 {
+    let x = match e {
+        E::V1(_) => 1,
+        E::V2(x) => return x,
+        E::VEmpty => 0,
+    };
+    x
+}
+
+fn match_in_loop(e: E) -> felt252 {
+    let mut x = 0;
+    loop {
+        x = match e {
+            E::V1(_) => continue,
+            E::V2(x) => break x,
+            E::VEmpty => 0,
+        };
+    }
+    x
+}
+
+fn match_with_return_no_type(e: E) {
+    match e {
+        E::V1(_) => 1,
+        E::V2(x) => return,
+        E::VEmpty => 0,
+    };
+}
+
+fn match_in_loop_no_type(e: E) {
+    loop {
+        x = match e {
+            E::V1(_) => continue,
+            E::V2(x) => break,
+            E::VEmpty => 0,
+        };
+    }
+}
+
 type Renamed = submod::inner::Other;
 type Generic<T> = super::other::OtherGeneric::<T>;
 

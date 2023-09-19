@@ -490,7 +490,7 @@ impl DiagnosticEntry for SemanticDiagnostic {
             SemanticDiagnosticKind::UnsupportedOutsideOfFunction { feature_name } => {
                 let feature_name_str = match feature_name {
                     UnsupportedOutsideOfFunctionFeatureName::FunctionCall => "Function call",
-                    UnsupportedOutsideOfFunctionFeatureName::ReturnStatement => "Return statement",
+                    UnsupportedOutsideOfFunctionFeatureName::ReturnExpr => "`return`",
                     UnsupportedOutsideOfFunctionFeatureName::ErrorPropagate => "The '?' operator",
                 };
                 format!("{feature_name_str} is not supported outside of functions.")
@@ -544,10 +544,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Tail expression not allow in a `loop` block.".into()
             }
             SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
-                "Continue only allowed inside a `loop`.".into()
+                "`continue` only allowed inside a `loop`.".into()
             }
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
-                "Break only allowed inside a `loop`.".into()
+                "`break` only allowed inside a `loop`.".into()
             }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
@@ -888,7 +888,7 @@ pub enum NotFoundItemType {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum UnsupportedOutsideOfFunctionFeatureName {
     FunctionCall,
-    ReturnStatement,
+    ReturnExpr,
     ErrorPropagate,
 }
 

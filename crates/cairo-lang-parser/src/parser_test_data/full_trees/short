@@ -57,12 +57,13 @@ false
     │       └── body (kind: ExprBlock)
     │           ├── lbrace (kind: TokenLBrace): '{'
     │           ├── statements (kind: StatementList)
-    │           │   └── child #0 (kind: StatementReturn)
-    │           │       ├── return_kw (kind: TokenReturn): 'return'
-    │           │       ├── expr_clause (kind: ExprClause)
-    │           │       │   └── expr (kind: ExprPath)
-    │           │       │       └── item #0 (kind: PathSegmentSimple)
-    │           │       │           └── ident (kind: TokenIdentifier): 'a'
+    │           │   └── child #0 (kind: StatementExpr)
+    │           │       ├── expr (kind: ExprReturn)
+    │           │       │   ├── return_kw (kind: TokenReturn): 'return'
+    │           │       │   └── expr_clause (kind: ExprClause)
+    │           │       │       └── expr (kind: ExprPath)
+    │           │       │           └── item #0 (kind: PathSegmentSimple)
+    │           │       │               └── ident (kind: TokenIdentifier): 'a'
     │           │       └── semicolon (kind: TokenSemicolon): ';'
     │           └── rbrace (kind: TokenRBrace): '}'
     └── eof (kind: TokenEndOfFile).
@@ -128,12 +129,13 @@ true
     │       └── [36mbody[0m (kind: ExprBlock)
     │           ├── [34mlbrace[0m (kind: TokenLBrace): '[1;32m{[0m'
     │           ├── [36mstatements[0m (kind: StatementList)
-    │           │   └── [36mchild #0[0m (kind: StatementReturn)
-    │           │       ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
-    │           │       ├── [36mexpr_clause[0m (kind: ExprClause)
-    │           │       │   └── [36mexpr[0m (kind: ExprPath)
-    │           │       │       └── [36mitem #0[0m (kind: PathSegmentSimple)
-    │           │       │           └── [34mident[0m (kind: TokenIdentifier): '[1;32ma[0m'
+    │           │   └── [36mchild #0[0m (kind: StatementExpr)
+    │           │       ├── [36mexpr[0m (kind: ExprReturn)
+    │           │       │   ├── [34mreturn_kw[0m (kind: TokenReturn): '[1;32mreturn[0m'
+    │           │       │   └── [36mexpr_clause[0m (kind: ExprClause)
+    │           │       │       └── [36mexpr[0m (kind: ExprPath)
+    │           │       │           └── [36mitem #0[0m (kind: PathSegmentSimple)
+    │           │       │               └── [34mident[0m (kind: TokenIdentifier): '[1;32ma[0m'
     │           │       └── [34msemicolon[0m (kind: TokenSemicolon): '[1;32m;[0m'
     │           └── [34mrbrace[0m (kind: TokenRBrace): '[1;32m}[0m'
     └── [34meof[0m (kind: TokenEndOfFile).

@@ -43,10 +43,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Continue only allowed inside a `loop`.
+error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
-    ^*******^
+    ^******^
 
 //! > ==========================================================================
 
@@ -66,10 +66,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
-    ^******^
+    ^*****^
 
 //! > ==========================================================================
 
@@ -94,7 +94,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return true;
-        ^**********^
+        ^*********^
 
 //! > ==========================================================================
 
@@ -182,7 +182,7 @@ foo
 error: `return` not allowed inside a `loop`.
  --> lib.cairo:3:9
         return;
-        ^*****^
+        ^****^
 
 //! > ==========================================================================
 
@@ -248,10 +248,10 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
-    ^****^
+    ^***^
 
 //! > ==========================================================================
 

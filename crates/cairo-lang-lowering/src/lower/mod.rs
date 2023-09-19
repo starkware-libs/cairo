@@ -325,25 +325,6 @@ pub fn lower_statement(
             let pattern = ctx.function_body.patterns[*pattern].clone();
             lower_single_pattern(ctx, builder, pattern, lowered_expr)?
         }
-        semantic::Statement::Continue(semantic::StatementContinue { stable_ptr }) => {
-            log::trace!("Lowering a continue statement.");
-            let loop_expr = ctx.current_loop_expr.clone().unwrap();
-            let lowered_expr = call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
-            let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
-            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
-        }
-        semantic::Statement::Return(semantic::StatementReturn { expr_option, stable_ptr })
-        | semantic::Statement::Break(semantic::StatementBreak { expr_option, stable_ptr }) => {
-            log::trace!("Lowering a return | break statement.");
-            let ret_var = match expr_option {
-                None => {
-                    let location = ctx.get_location(stable_ptr.untyped());
-                    LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
-                }
-                Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
-            };
-            return Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())));
-        }
     }
     Ok(())
 }
@@ -512,6 +493,25 @@ fn lower_expr(
         semantic::Expr::StructCtor(expr) => lower_expr_struct_ctor(ctx, expr, builder),
         semantic::Expr::EnumVariantCtor(expr) => lower_expr_enum_ctor(ctx, expr, builder),
         semantic::Expr::PropagateError(expr) => lower_expr_error_propagate(ctx, expr, builder),
+        semantic::Expr::Continue(semantic::ExprContinue { stable_ptr, ty: _ }) => {
+            log::trace!("Lowering a continue expression.");
+            let loop_expr = ctx.current_loop_expr.clone().unwrap();
+            let lowered_expr = call_loop_func(ctx, ctx.signature.clone(), builder, &loop_expr)?;
+            let ret_var = lowered_expr.as_var_usage(ctx, builder)?;
+            Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())))
+        }
+        semantic::Expr::Return(semantic::ExprReturn { expr_option, stable_ptr, ty: _ })
+        | semantic::Expr::Break(semantic::ExprBreak { expr_option, stable_ptr, ty: _ }) => {
+            log::trace!("Lowering a return | break expression.");
+            let ret_var = match expr_option {
+                None => {
+                    let location = ctx.get_location(stable_ptr.untyped());
+                    LoweredExpr::Tuple { exprs: vec![], location }.as_var_usage(ctx, builder)?
+                }
+                Some(expr) => lower_expr_to_var_usage(ctx, builder, *expr)?,
+            };
+            Err(LoweringFlowError::Return(ret_var, ctx.get_location(stable_ptr.untyped())))
+        }
         semantic::Expr::Missing(semantic::ExprMissing { diag_added, .. }) => {
             Err(LoweringFlowError::Failed(*diag_added))
         }

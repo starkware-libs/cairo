@@ -6,8 +6,9 @@ get_diagnostics
 //! > cairo_code
 fn f() {
     let x = 123
-    let y = 4   let z = 5
+    let y = 4   let z = 5 return 9
     let y = 6 // comment
+    return 3,
     let w = 7 +
 }
 
@@ -19,12 +20,12 @@ error: Missing token TerminalSemicolon.
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:14
-    let y = 4   let z = 5
+    let y = 4   let z = 5 return 9
              ^
 
 error: Missing token TerminalSemicolon.
  --> dummy_file.cairo:3:26
-    let y = 4   let z = 5
+    let y = 4   let z = 5 return 9
                          ^
 
 error: Missing token TerminalSemicolon.
@@ -32,12 +33,17 @@ error: Missing token TerminalSemicolon.
     let y = 6 // comment
              ^
 
+error: Skipped tokens. Expected: statement.
+ --> dummy_file.cairo:5:13
+    return 3,
+            ^
+
 error: Missing tokens. Expected an expression.
- --> dummy_file.cairo:5:16
+ --> dummy_file.cairo:6:16
     let w = 7 +
                ^
 
 error: Missing token TerminalSemicolon.
- --> dummy_file.cairo:5:16
+ --> dummy_file.cairo:6:16
     let w = 7 +
                ^
