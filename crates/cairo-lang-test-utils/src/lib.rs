@@ -73,3 +73,17 @@ pub fn bool_input(input: &str) -> bool {
     let input = input.trim().to_lowercase();
     bool::from_str(&input).unwrap_or_else(|_| panic!("Expected 'true' or 'false', actual: {input}"))
 }
+
+/// Parses a test input that may be a file input. If the input starts with ">>> file: " it reads the
+/// file and returns the file path and content, otherwise, it returns the input and a default dummy
+/// path.
+pub fn parse_maybe_file_input(input: &str) -> (String, String) {
+    if let Some(path) = input.strip_prefix(">>> file: ") {
+        (
+            path.to_string(),
+            fs::read_to_string(path).unwrap_or_else(|_| panic!("Could not read file: '{path}'")),
+        )
+    } else {
+        ("dummy_file.cairo".to_string(), input.to_string())
+    }
+}
