@@ -238,7 +238,7 @@ fn handle_component_impl(
         let Some(impl_function) = handle_component_embeddable_as_impl_item(
             db,
             diagnostics,
-            &trait_path_without_generics,
+            RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node()),
             item,
         ) else {
             continue;
@@ -297,7 +297,7 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
 fn handle_component_embeddable_as_impl_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    trait_path: &RewriteNode,
+    impl_path: RewriteNode,
     item: ast::ImplItem,
 ) -> Option<RewriteNode> {
     let ast::ImplItem::Function(item_function) = item else {
@@ -377,12 +377,12 @@ fn handle_component_embeddable_as_impl_item(
         &format!(
             "$generated_function_sig$ {{
         {get_component_call}
-        $trait_path$::$function_name$({callsite_modifier}component, $args_node$)
+        $impl_path$::$function_name$({callsite_modifier}component, $args_node$)
     }}"
         ),
         &[
             ("generated_function_sig".to_string(), generated_function_sig),
-            ("trait_path".to_string(), trait_path.clone()),
+            ("impl_path".to_string(), impl_path),
             ("function_name".to_string(), function_name),
             ("args_node".to_string(), args_node),
         ]

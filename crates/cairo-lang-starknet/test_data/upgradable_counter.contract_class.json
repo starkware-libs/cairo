@@ -2642,25 +2642,7 @@
     {
       "type": "impl",
       "name": "UpgradableImpl2",
-      "interface_name": "test::IUpgradable2"
-    },
-    {
-      "type": "interface",
-      "name": "test::IUpgradable2",
-      "items": [
-        {
-          "type": "function",
-          "name": "upgrade",
-          "inputs": [
-            {
-              "name": "new_class_hash",
-              "type": "core::starknet::class_hash::ClassHash"
-            }
-          ],
-          "outputs": [],
-          "state_mutability": "external"
-        }
-      ]
+      "interface_name": "test::IUpgradable"
     },
     {
       "type": "constructor",
