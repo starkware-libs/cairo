@@ -14,13 +14,10 @@ fn test_impl() {
     let (test_module, diagnostics) = setup_test_module(
         db,
         indoc::indoc! {"
-            #[ABI]
             trait IContract {
                 fn foo(a: felt252);
             }
 
-
-            #[Contract]
             impl Contract of IContract {
                 fn foo(a: felt252) {
                 }

@@ -18,6 +18,8 @@ use cairo_lang_utils::try_extract_matches;
 #[non_exhaustive]
 pub struct ConfigPlugin;
 
+const CFG_ATTR: &str = "cfg";
+
 impl MacroPlugin for ConfigPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
         let cfg_set = db.cfg_set();
@@ -40,6 +42,10 @@ impl MacroPlugin for ConfigPlugin {
         } else {
             PluginResult { code: None, diagnostics, remove_original_item: false }
         }
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![CFG_ATTR.to_string()]
     }
 }
 
@@ -118,7 +124,7 @@ fn should_drop<Item: QueryAttrs>(
     item: &Item,
     diagnostics: &mut Vec<PluginDiagnostic>,
 ) -> bool {
-    item.query_attr(db, "cfg").into_iter().any(|attr| {
+    item.query_attr(db, CFG_ATTR).into_iter().any(|attr| {
         matches!(
             parse_predicate(db, attr.structurize(db), diagnostics),
             Some(pattern) if !cfg_set.is_superset(&pattern)

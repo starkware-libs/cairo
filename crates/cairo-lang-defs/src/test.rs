@@ -251,6 +251,10 @@ impl MacroPlugin for DummyPlugin {
             _ => PluginResult::default(),
         }
     }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec!["remove_original".to_string()]
+    }
 }
 
 #[test]
@@ -316,6 +320,10 @@ impl MacroPlugin for RemoveOrigPlugin {
         }
         PluginResult { code: None, diagnostics: vec![], remove_original_item: true }
     }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec!["remove_orig".to_string()]
+    }
 }
 
 /// Changes a function 'foo' to 'bar' if annotated with #[foo_to_bar]. Doesn't remove the original
@@ -345,6 +353,10 @@ impl MacroPlugin for FooToBarPlugin {
             diagnostics: vec![],
             remove_original_item: false,
         }
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec!["foo_to_bar".to_string()]
     }
 }
 

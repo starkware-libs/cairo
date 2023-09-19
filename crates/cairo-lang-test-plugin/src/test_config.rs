@@ -7,6 +7,8 @@ use cairo_lang_utils::OptionHelper;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 
+use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, TEST_ATTR};
+
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum PanicExpectation {
@@ -42,10 +44,10 @@ pub fn try_extract_test_config(
     db: &dyn SyntaxGroup,
     attrs: Vec<Attribute>,
 ) -> Result<Option<TestConfig>, Vec<PluginDiagnostic>> {
-    let test_attr = attrs.iter().find(|attr| attr.id.as_str() == "test");
-    let ignore_attr = attrs.iter().find(|attr| attr.id.as_str() == "ignore");
-    let available_gas_attr = attrs.iter().find(|attr| attr.id.as_str() == "available_gas");
-    let should_panic_attr = attrs.iter().find(|attr| attr.id.as_str() == "should_panic");
+    let test_attr = attrs.iter().find(|attr| attr.id.as_str() == TEST_ATTR);
+    let ignore_attr = attrs.iter().find(|attr| attr.id.as_str() == IGNORE_ATTR);
+    let available_gas_attr = attrs.iter().find(|attr| attr.id.as_str() == AVAILABLE_GAS_ATTR);
+    let should_panic_attr = attrs.iter().find(|attr| attr.id.as_str() == SHOULD_PANIC_ATTR);
     let mut diagnostics = vec![];
     if let Some(attr) = test_attr {
         if !attr.args.is_empty() {

@@ -3,6 +3,7 @@ use cairo_lang_syntax::attribute::structured::AttributeListStructurize;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
 
+use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, TEST_ATTR};
 use crate::test_config::try_extract_test_config;
 
 /// Plugin to create diagnostics for tests attributes.
@@ -22,5 +23,14 @@ impl MacroPlugin for TestPlugin {
             .unwrap_or_default(),
             remove_original_item: false,
         }
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![
+            TEST_ATTR.to_string(),
+            AVAILABLE_GAS_ATTR.to_string(),
+            SHOULD_PANIC_ATTR.to_string(),
+            IGNORE_ATTR.to_string(),
+        ]
     }
 }
