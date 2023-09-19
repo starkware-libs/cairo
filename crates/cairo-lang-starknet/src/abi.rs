@@ -13,8 +13,8 @@ use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
-    ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId,
-    TypeLongId,
+    ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
+    TypeId, TypeLongId,
 };
 use cairo_lang_utils::try_extract_matches;
 use itertools::zip_eq;
@@ -165,7 +165,8 @@ impl AbiBuilder {
         let mut builder = Self::default();
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
-            builder.add_trait_function(db, *trait_function_id, storage_type)?;
+            let function = builder.trait_function_as_abi(db, *trait_function_id, storage_type)?;
+            builder.abi.items.push(function);
         }
 
         Ok(builder.abi)
@@ -183,7 +184,7 @@ impl AbiBuilder {
         let interface_path = trait_id.full_path(db.upcast());
         let mut items = Vec::new();
         for function in db.trait_functions(trait_id).unwrap_or_default().values() {
-            items.push(Item::Function(self.trait_function_as_abi(db, *function, storage_type)?));
+            items.push(self.trait_function_as_abi(db, *function, storage_type)?);
         }
 
         self.abi.items.push(Item::Interface(Interface { name: interface_path, items }));
@@ -200,8 +201,7 @@ impl AbiBuilder {
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
         for function in db.impl_functions(impl_def_id).unwrap_or_default().values() {
-            let function_abi =
-                Item::Function(self.impl_function_as_abi(db, *function, storage_type)?);
+            let function_abi = self.impl_function_as_abi(db, *function, storage_type)?;
             self.abi.items.push(function_abi);
         }
 
@@ -283,12 +283,8 @@ impl AbiBuilder {
         let name: String = function_with_body_id.name(db.upcast()).into();
         let signature = db.function_with_body_signature(function_with_body_id)?;
 
-        let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
-
-        let outputs = self.get_signature_outputs(db, &signature)?;
-
-        self.abi.items.push(Item::Function(Function { name, inputs, outputs, state_mutability }));
+        let function = self.function_as_abi(db, &name, signature, storage_type)?;
+        self.abi.items.push(function);
 
         Ok(())
     }
@@ -391,16 +387,27 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         trait_function_id: TraitFunctionId,
         storage_type: TypeId,
-    ) -> Result<Function, ABIError> {
-        let name = trait_function_id.name(db.upcast()).into();
+    ) -> Result<Item, ABIError> {
+        let name: String = trait_function_id.name(db.upcast()).into();
         let signature = db.trait_function_signature(trait_function_id)?;
 
+        self.function_as_abi(db, &name, signature, storage_type)
+    }
+
+    /// Converts a function name and signature to an ABI::Function.
+    fn function_as_abi(
+        &mut self,
+        db: &dyn SemanticGroup,
+        name: &str,
+        signature: Signature,
+        storage_type: TypeId,
+    ) -> Result<Item, ABIError> {
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        Ok(Function { name, inputs, outputs, state_mutability })
+        Ok(Item::Function(Function { name: name.to_string(), inputs, outputs, state_mutability }))
     }
 
     /// Converts a TraitFunctionId to an ABI::Function.
@@ -409,7 +416,7 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         impl_function_id: ImplFunctionId,
         storage_type: TypeId,
-    ) -> Result<Function, ABIError> {
+    ) -> Result<Item, ABIError> {
         let name = impl_function_id.name(db.upcast()).into();
         let signature = db.impl_function_signature(impl_function_id)?;
 
@@ -418,20 +425,7 @@ impl AbiBuilder {
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        Ok(Function { name, inputs, outputs, state_mutability })
-    }
-
-    /// Adds a function to the ABI from a TraitFunctionId.
-    fn add_trait_function(
-        &mut self,
-        db: &dyn SemanticGroup,
-        trait_function_id: TraitFunctionId,
-        storage_type: TypeId,
-    ) -> Result<(), ABIError> {
-        let function = self.trait_function_as_abi(db, trait_function_id, storage_type)?;
-        self.abi.items.push(Item::Function(function));
-
-        Ok(())
+        Ok(Item::Function(Function { name, inputs, outputs, state_mutability }))
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
