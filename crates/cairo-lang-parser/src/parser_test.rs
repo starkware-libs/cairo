@@ -2,12 +2,12 @@
 
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
-use cairo_lang_test_utils::{bool_input, verify_diagnostics_expectation};
+use cairo_lang_test_utils::{bool_input, get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::colored_printer::print_colored;
 use crate::printer::{print_partial_tree, print_tree};
-use crate::test_utils::{create_virtual_file, get_diagnostics, read_file};
+use crate::test_utils::{create_virtual_file, get_diagnostics};
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
 /// Tests a partial parser tree of a given Cairo code, according to the configuration.
@@ -109,12 +109,7 @@ fn get_syntax_root_and_diagnostics_from_inputs(
     db: &SimpleParserDatabase,
     inputs: &OrderedHashMap<String, String>,
 ) -> (SyntaxNode, String) {
-    let mut cairo_code = inputs["cairo_code"].clone();
-    let mut file_path = "dummy_file.cairo".to_string();
-    if let Some(path) = cairo_code.strip_prefix(">>> file: ") {
-        file_path = path.to_string();
-        cairo_code = read_file(&file_path);
-    }
+    let (file_path, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
     let file_id = create_virtual_file(db, file_path, &cairo_code);
     let (syntax_root, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, &cairo_code);
     (syntax_root, diagnostics.format(db))
