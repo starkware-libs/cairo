@@ -5,6 +5,11 @@ trait IUpgradable<TCS> {
     fn upgrade(ref self: TCS, new_class_hash: ClassHash);
 }
 
+#[starknet::interface]
+trait IUpgradable2<TCS> {
+    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+}
+
 #[starknet::component]
 mod upgradable {
     use starknet::ClassHash;
@@ -37,6 +42,15 @@ mod upgradable {
             let old_class_hash = self.current_implementation.read();
             self.emit(ContractUpgraded { old_class_hash, new_class_hash });
             self.current_implementation.write(new_class_hash);
+        }
+    }
+
+    #[embeddable_as(UpgradableImpl2)]
+    impl Upgradable2<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable2<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
         }
     }
 }
@@ -103,4 +117,7 @@ mod counter_contract {
 
     #[embed(v0)]
     impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+
+    #[embed(v0)]
+    impl Upgradable2 = super::upgradable::UpgradableImpl2<ContractState>;
 }

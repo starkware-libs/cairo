@@ -29,7 +29,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     };
     let mut diagnostics = vec![];
     let generic_params = item_impl.generic_params(db);
-    let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
+    let impl_name = item_impl.name(db);
+    let impl_name_str = impl_name.text(db);
+    let impl_name = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     let (is_valid_params, generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
             (false, RewriteNode::empty(), RewriteNode::empty())
@@ -114,8 +116,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) else {
             continue;
         };
-        let function_name =
-            RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
+        let function_name = item_function.declaration(db).name(db);
+        let function_name_str = function_name.text(db);
+        let function_name = RewriteNode::new_trimmed(function_name.as_syntax_node());
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$generic_args$::$func_name$",
             &[
@@ -125,12 +128,14 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             ]
             .into(),
         );
+        let wrapper_identifier = format!("{impl_name_str}__{function_name_str}");
         handle_entry_point(
             db,
             EntryPointGenerationParams {
                 entry_point_kind,
                 item_function: &item_function,
                 wrapped_function_path: function_path,
+                wrapper_identifier,
                 unsafe_new_contract_state_prefix: "UnsafeNewContractState::",
                 generic_params: generic_params_node.clone(),
             },

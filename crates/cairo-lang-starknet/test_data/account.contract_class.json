@@ -3098,23 +3098,23 @@
     "user_func_names": [
       [
         0,
-        "test::account::__wrapper___validate_deploy__"
+        "test::account::__wrapper____validate_deploy__"
       ],
       [
         1,
-        "test::account::__wrapper___validate_declare__"
+        "test::account::__wrapper__AccountContractImpl____validate_declare__"
       ],
       [
         2,
-        "test::account::__wrapper___validate__"
+        "test::account::__wrapper__AccountContractImpl____validate__"
       ],
       [
         3,
-        "test::account::__wrapper___execute__"
+        "test::account::__wrapper__AccountContractImpl____execute__"
       ],
       [
         4,
-        "test::account::__wrapper_constructor"
+        "test::account::__wrapper__constructor"
       ],
       [
         5,

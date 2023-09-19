@@ -249,7 +249,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x249c5f29e706f89a44a94a5f82ef3954a3f7e9c1c751b31b18850ec806b8ec5;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -269,7 +269,7 @@ fn __wrapper_get_data(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_data as get_data;
+        use super::__wrapper__get_data as get_data;
     }
 
     mod __l1_handler {
@@ -626,7 +626,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -646,7 +646,7 @@ fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_sum as get_sum;
+        use super::__wrapper__get_sum as get_sum;
     }
 
     mod __l1_handler {
@@ -1040,7 +1040,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1060,7 +1060,7 @@ fn __wrapper_get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_sum as get_sum;
+        use super::__wrapper__get_sum as get_sum;
     }
 
     mod __l1_handler {

@@ -11,113 +11,8 @@ trait IUpgradable<TCS> {
     fn upgrade(ref self: TCS, new_class_hash: ClassHash);
 }
 
-#[starknet::component]
-mod upgradable {
-    use starknet::ClassHash;
-    use starknet::syscalls::replace_class_syscall;
-
-    #[storage]
-    struct Storage {
-        current_implementation: ClassHash
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        ContractUpgraded: ContractUpgraded
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct ContractUpgraded {
-        old_class_hash: ClassHash,
-        new_class_hash: ClassHash
-    }
-
-    #[embeddable_as(UpgradableImpl)]
-    impl Upgradable<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::IUpgradable<ComponentState<TContractState>> {
-        #[external(v0)]
-        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
-            replace_class_syscall(new_class_hash).unwrap();
-            let old_class_hash = self.current_implementation.read();
-            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
-            self.current_implementation.write(new_class_hash);
-        }
-    }
-}
-
 #[starknet::interface]
-trait ICounterContract<TContractState> {
-    fn increase_counter(ref self: TContractState, amount: u128);
-    fn decrease_counter(ref self: TContractState, amount: u128);
-    fn get_counter(self: @TContractState) -> u128;
-}
-
-#[starknet::contract]
-mod counter_contract {
-    component!(path: super::upgradable, storage: upgradable, event: Event);
-
-    #[storage]
-    struct Storage {
-        counter: u128,
-        #[nested(v0)]
-        upgradable: super::upgradable::Storage
-    }
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        CounterIncreased: CounterIncreased,
-        CounterDecreased: CounterDecreased,
-        Event: super::upgradable::Event
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterIncreased {
-        amount: u128
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct CounterDecreased {
-        amount: u128
-    }
-
-    #[constructor]
-    fn constructor(ref self: ContractState, initial_counter: u128) {
-        self.counter.write(initial_counter);
-    }
-
-    #[external(v0)]
-    impl CounterContract of super::ICounterContract<ContractState> {
-        fn get_counter(self: @ContractState) -> u128 {
-            self.counter.read()
-        }
-
-        fn increase_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current + amount);
-            self.emit(CounterIncreased { amount });
-        }
-
-        fn decrease_counter(ref self: ContractState, amount: u128) {
-            let current = self.counter.read();
-            self.counter.write(current - amount);
-            self.emit(CounterDecreased { amount });
-        }
-    }
-
-    #[embed(v0)]
-    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
-}
-
-//! > generated_cairo_code
-lib.cairo:
-
-use starknet::ClassHash;
-
-#[starknet::interface]
-trait IUpgradable<TCS> {
+trait IUpgradable2<TCS> {
     fn upgrade(ref self: TCS, new_class_hash: ClassHash);
 }
 
@@ -155,6 +50,15 @@ mod upgradable {
             self.current_implementation.write(new_class_hash);
         }
     }
+
+    #[embeddable_as(UpgradableImpl2)]
+    impl Upgradable2<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable2<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
+        }
+    }
 }
 
 #[starknet::interface]
@@ -219,6 +123,136 @@ mod counter_contract {
 
     #[embed(v0)]
     impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+
+    #[embed(v0)]
+    impl Upgradable2 = super::upgradable::UpgradableImpl2<ContractState>;
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+use starknet::ClassHash;
+
+#[starknet::interface]
+trait IUpgradable<TCS> {
+    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+}
+
+#[starknet::interface]
+trait IUpgradable2<TCS> {
+    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+}
+
+#[starknet::component]
+mod upgradable {
+    use starknet::ClassHash;
+    use starknet::syscalls::replace_class_syscall;
+
+    #[storage]
+    struct Storage {
+        current_implementation: ClassHash
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ContractUpgraded: ContractUpgraded
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ContractUpgraded {
+        old_class_hash: ClassHash,
+        new_class_hash: ClassHash
+    }
+
+    #[embeddable_as(UpgradableImpl)]
+    impl Upgradable<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
+            replace_class_syscall(new_class_hash).unwrap();
+            let old_class_hash = self.current_implementation.read();
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
+            self.current_implementation.write(new_class_hash);
+        }
+    }
+
+    #[embeddable_as(UpgradableImpl2)]
+    impl Upgradable2<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable2<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
+        }
+    }
+}
+
+#[starknet::interface]
+trait ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128);
+    fn decrease_counter(ref self: TContractState, amount: u128);
+    fn get_counter(self: @TContractState) -> u128;
+}
+
+#[starknet::contract]
+mod counter_contract {
+    component!(path: super::upgradable, storage: upgradable, event: Event);
+
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[nested(v0)]
+        upgradable: super::upgradable::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        CounterIncreased: CounterIncreased,
+        CounterDecreased: CounterDecreased,
+        Event: super::upgradable::Event
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterIncreased {
+        amount: u128
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterDecreased {
+        amount: u128
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, initial_counter: u128) {
+        self.counter.write(initial_counter);
+    }
+
+    #[external(v0)]
+    impl CounterContract of super::ICounterContract<ContractState> {
+        fn get_counter(self: @ContractState) -> u128 {
+            self.counter.read()
+        }
+
+        fn increase_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current + amount);
+            self.emit(CounterIncreased { amount });
+        }
+
+        fn decrease_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current - amount);
+            self.emit(CounterDecreased { amount });
+        }
+    }
+
+    #[embed(v0)]
+    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+
+    #[embed(v0)]
+    impl Upgradable2 = super::upgradable::UpgradableImpl2<ContractState>;
 }
 
 IUpgradableDispatcherTrait:
@@ -302,6 +336,102 @@ struct IUpgradableSafeDispatcher {
 
 impl IUpgradableSafeDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradableSafeDispatcher> {
     fn upgrade(self: IUpgradableSafeDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+IUpgradable2DispatcherTrait:
+
+trait IUpgradable2DispatcherTrait<T> {
+    fn upgrade(self: T, new_class_hash: ClassHash);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradable2Dispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl IUpgradable2DispatcherImpl of IUpgradable2DispatcherTrait<IUpgradable2Dispatcher> {
+    fn upgrade(self: IUpgradable2Dispatcher, new_class_hash: ClassHash) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradable2LibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IUpgradable2LibraryDispatcherImpl of IUpgradable2DispatcherTrait<IUpgradable2LibraryDispatcher> {
+    fn upgrade(self: IUpgradable2LibraryDispatcher, new_class_hash: ClassHash) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait IUpgradable2SafeDispatcherTrait<T> {
+    fn upgrade(self: T, new_class_hash: ClassHash) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradable2SafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IUpgradable2SafeLibraryDispatcherImpl of IUpgradable2SafeDispatcherTrait<IUpgradable2SafeLibraryDispatcher> {
+    fn upgrade(self: IUpgradable2SafeLibraryDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradable2SafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl IUpgradable2SafeDispatcherImpl of IUpgradable2SafeDispatcherTrait<IUpgradable2SafeDispatcher> {
+    fn upgrade(self: IUpgradable2SafeDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
 
@@ -723,6 +853,206 @@ impl StoreIUpgradableSafeDispatcher of starknet::Store::<IUpgradableSafeDispatch
 
 impls:
 
+impl IUpgradable2DispatcherCopy of Copy::<IUpgradable2Dispatcher>;
+impl IUpgradable2DispatcherDrop of Drop::<IUpgradable2Dispatcher>;
+impl IUpgradable2DispatcherSerde of Serde::<IUpgradable2Dispatcher> {
+    fn serialize(self: @IUpgradable2Dispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradable2Dispatcher> {
+        Option::Some(IUpgradable2Dispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradable2Dispatcher of starknet::Store::<IUpgradable2Dispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradable2Dispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2Dispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradable2Dispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradable2Dispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2Dispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradable2Dispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
+impl IUpgradable2LibraryDispatcherCopy of Copy::<IUpgradable2LibraryDispatcher>;
+impl IUpgradable2LibraryDispatcherDrop of Drop::<IUpgradable2LibraryDispatcher>;
+impl IUpgradable2LibraryDispatcherSerde of Serde::<IUpgradable2LibraryDispatcher> {
+    fn serialize(self: @IUpgradable2LibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradable2LibraryDispatcher> {
+        Option::Some(IUpgradable2LibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradable2LibraryDispatcher of starknet::Store::<IUpgradable2LibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradable2LibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2LibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradable2LibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradable2LibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2LibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradable2LibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl IUpgradable2SafeLibraryDispatcherCopy of Copy::<IUpgradable2SafeLibraryDispatcher>;
+impl IUpgradable2SafeLibraryDispatcherDrop of Drop::<IUpgradable2SafeLibraryDispatcher>;
+impl IUpgradable2SafeLibraryDispatcherSerde of Serde::<IUpgradable2SafeLibraryDispatcher> {
+    fn serialize(self: @IUpgradable2SafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradable2SafeLibraryDispatcher> {
+        Option::Some(IUpgradable2SafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradable2SafeLibraryDispatcher of starknet::Store::<IUpgradable2SafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradable2SafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2SafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradable2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradable2SafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2SafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradable2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl IUpgradable2SafeDispatcherCopy of Copy::<IUpgradable2SafeDispatcher>;
+impl IUpgradable2SafeDispatcherDrop of Drop::<IUpgradable2SafeDispatcher>;
+impl IUpgradable2SafeDispatcherSerde of Serde::<IUpgradable2SafeDispatcher> {
+    fn serialize(self: @IUpgradable2SafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradable2SafeDispatcher> {
+        Option::Some(IUpgradable2SafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradable2SafeDispatcher of starknet::Store::<IUpgradable2SafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradable2SafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2SafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradable2SafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradable2SafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradable2SafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradable2SafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
 impl ICounterContractDispatcherCopy of Copy::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherDrop of Drop::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherSerde of Serde::<ICounterContractDispatcher> {
@@ -947,6 +1277,7 @@ component:
         use super::Event;
         use super::ContractUpgraded;
         use super::Upgradable;
+        use super::Upgradable2;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
         impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ClassHash> {
@@ -976,7 +1307,17 @@ impl UpgradableImpl<
     #[external(v0)]
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
-        component.upgrade(new_class_hash, )
+        super::IUpgradable::upgrade(ref component, new_class_hash, )
+    }
+}#[starknet::embeddable]
+impl UpgradableImpl2<
+            TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>
+> of super::IUpgradable2<TContractState> {
+    #[external(v0)]
+    fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
+        let mut component = self.get_component_mut();
+        super::IUpgradable2::upgrade(ref component, new_class_hash, )
     }
 }
 
@@ -1056,7 +1397,7 @@ trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
+fn __wrapper__UpgradableImpl__upgrade<TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
@@ -1080,13 +1421,54 @@ fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
 
 
 mod __external_UpgradableImpl {
-        use super::__wrapper_upgrade as upgrade;
+        use super::__wrapper__UpgradableImpl__upgrade as upgrade;
 }
 
 mod __l1_handler_UpgradableImpl {
 }
 
 mod __constructor_UpgradableImpl {
+}
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForUpgradableImpl2<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__UpgradableImpl2__upgrade<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl2<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_new_class_hash = option::OptionTraitImpl::expect(
+        serde::Serde::<ClassHash>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    UpgradableImpl2::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_UpgradableImpl2 {
+        use super::__wrapper__UpgradableImpl2__upgrade as upgrade;
+}
+
+mod __l1_handler_UpgradableImpl2 {
+}
+
+mod __constructor_UpgradableImpl2 {
 }
 
 
@@ -1158,10 +1540,10 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x25dd3498a2c21c1a58007d8c0862974eac70774bab7639576bc93f89123268a;
+const TEST_CLASS_HASH: felt252 = 0x2bee8d6cc1a36811f65cc6b037cded78cb123bdc6a7c907aa8248611964c22a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1182,7 +1564,7 @@ fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1201,7 +1583,7 @@ fn __wrapper_get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1222,7 +1604,7 @@ fn __wrapper_increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1248,18 +1630,24 @@ impl ContractStateUpgradableImpl of
         unsafe_new_contract_state()
     }
 }
+impl ContractStateUpgradableImpl2 of
+    super::upgradable::UnsafeNewContractStateTraitForUpgradableImpl2<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
 
     mod __external {
-        use super::__wrapper_get_counter as get_counter;
-        use super::__wrapper_increase_counter as increase_counter;
-        use super::__wrapper_decrease_counter as decrease_counter;
+        use super::__wrapper__CounterContract__get_counter as get_counter;
+        use super::__wrapper__CounterContract__increase_counter as increase_counter;
+        use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
     }
 
     mod __l1_handler {
     }
 
     mod __constructor {
-        use super::__wrapper_constructor as constructor;
+        use super::__wrapper__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

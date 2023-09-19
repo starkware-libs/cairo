@@ -681,22 +681,22 @@ impl Transfer<
     
     fn init_ownable(ref self: TContractState, owner: ContractAddress) {
         let mut component = self.get_component_mut();
-        component.init_ownable(owner, )
+        super::TransferTrait::init_ownable(ref component, owner, )
     }
     #[external(v0)]
     fn owner(self: @TContractState) -> ContractAddress {
         let component = self.get_component();
-        component.owner()
+        super::TransferTrait::owner(component, )
     }
     #[external(v0)]
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress) {
         let mut component = self.get_component_mut();
-        component.transfer_ownership(new_owner, )
+        super::TransferTrait::transfer_ownership(ref component, new_owner, )
     }
     
     fn validate_ownership(self: @TContractState) {
         let component = self.get_component();
-        component.validate_ownership()
+        super::TransferTrait::validate_ownership(component, )
     }
 }
 
@@ -732,7 +732,7 @@ trait UnsafeNewContractStateTraitForTransfer<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_owner<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Transfer__owner<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -751,7 +751,7 @@ fn __wrapper_owner<TContractState, impl X: HasComponent<TContractState>, impl TC
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_transfer_ownership<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Transfer__transfer_ownership<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -774,8 +774,8 @@ fn __wrapper_transfer_ownership<TContractState, impl X: HasComponent<TContractSt
 
 
 mod __external_Transfer {
-        use super::__wrapper_owner as owner;
-        use super::__wrapper_transfer_ownership as transfer_ownership;
+        use super::__wrapper__Transfer__owner as owner;
+        use super::__wrapper__Transfer__transfer_ownership as transfer_ownership;
 }
 
 mod __l1_handler_Transfer {
@@ -861,7 +861,7 @@ impl ContractStateTransfer of
     }
 }
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -886,7 +886,7 @@ fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -905,7 +905,7 @@ fn __wrapper_get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -927,15 +927,15 @@ fn __wrapper_set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_balance as get_balance;
-        use super::__wrapper_set_balance as set_balance;
+        use super::__wrapper__Impl__get_balance as get_balance;
+        use super::__wrapper__Impl__set_balance as set_balance;
     }
 
     mod __l1_handler {
     }
 
     mod __constructor {
-        use super::__wrapper_constructor as constructor;
+        use super::__wrapper__Impl__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
