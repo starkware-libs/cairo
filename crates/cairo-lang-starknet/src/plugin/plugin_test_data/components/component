@@ -224,12 +224,12 @@ impl MyImpl<
     #[external]
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
-        MyTrait::get(component, addr, )
+        MyInnerImpl::get(component, addr, )
     }
     #[external]
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = self.get_component_mut();
-        MyTrait::set(ref component, addr, value, )
+        MyInnerImpl::set(ref component, addr, value, )
     }
 }
 

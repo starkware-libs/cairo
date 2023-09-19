@@ -54,13 +54,15 @@ libfunc struct_construct<Tuple<core::array::Span::<core::felt252>>> = struct_con
 libfunc enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0> = enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>;
 libfunc felt252_const<375233589013918064796019> = felt252_const<375233589013918064796019>;
 libfunc drop<core::array::Span::<core::felt252>> = drop<core::array::Span::<core::felt252>>;
-libfunc function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
+libfunc function_call<user@test::comp::I1I1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I1I1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
+libfunc function_call<user@test::comp::I1I2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I1I2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
 libfunc function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo> = function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>> = store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>;
-libfunc function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
+libfunc function_call<user@test::comp::Interface1_Implementation1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface1_Implementation1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
 libfunc drop<test::comp::ComponentState::<test::counter_contract::ContractState>> = drop<test::comp::ComponentState::<test::counter_contract::ContractState>>;
+libfunc function_call<user@test::comp::Interface1_Implementation2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface1_Implementation2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
 libfunc function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo> = function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>;
 
 revoke_ap_tracking() -> (); // 0
@@ -177,7 +179,7 @@ branch_align() -> (); // 110
 struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 111
 struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 112
 store_temp<test::counter_contract::ContractState>([33]) -> ([36]); // 113
-function_call<user@test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 114
+function_call<user@test::comp::I1I1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 114
 drop<test::counter_contract::ContractState>([34]) -> (); // 115
 drop<Unit>([35]) -> (); // 116
 array_new<felt252>() -> ([37]); // 117
@@ -254,7 +256,7 @@ branch_align() -> (); // 187
 struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 188
 struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 189
 store_temp<test::counter_contract::ContractState>([33]) -> ([36]); // 190
-function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 191
+function_call<user@test::comp::I1I2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 191
 drop<test::counter_contract::ContractState>([34]) -> (); // 192
 drop<Unit>([35]) -> (); // 193
 array_new<felt252>() -> ([37]); // 194
@@ -295,38 +297,129 @@ store_temp<GasBuiltin>([7]) -> ([64]); // 228
 store_temp<System>([2]) -> ([65]); // 229
 store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([62]) -> ([66]); // 230
 return([63], [64], [65], [66]); // 231
-drop<test::counter_contract::ContractState>([0]) -> (); // 232
-struct_construct<Unit>() -> ([1]); // 233
-store_temp<Unit>([1]) -> ([2]); // 234
-return([2]); // 235
-struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 236
-store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 237
-function_call<user@test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 238
-drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 239
-store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 240
-store_temp<Unit>([3]) -> ([6]); // 241
-return([5], [6]); // 242
-struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 243
-store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 244
-function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 245
-drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 246
-store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 247
-store_temp<Unit>([3]) -> ([6]); // 248
-return([5], [6]); // 249
-struct_construct<Unit>() -> ([1]); // 250
-store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 251
-store_temp<Unit>([1]) -> ([3]); // 252
-return([2], [3]); // 253
-struct_construct<Unit>() -> ([1]); // 254
-store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 255
-store_temp<Unit>([1]) -> ([3]); // 256
-return([2], [3]); // 257
+revoke_ap_tracking() -> (); // 232
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 295([6], [7]) }; // 233
+branch_align() -> (); // 234
+struct_deconstruct<core::array::Span::<core::felt252>>([3]) -> ([8]); // 235
+array_len<felt252>([8]) -> ([9]); // 236
+snapshot_take<u32>([9]) -> ([10], [11]); // 237
+drop<u32>([10]) -> (); // 238
+u32_const<0>() -> ([12]); // 239
+snapshot_take<u32>([12]) -> ([13], [14]); // 240
+drop<u32>([13]) -> (); // 241
+rename<u32>([11]) -> ([15]); // 242
+rename<u32>([14]) -> ([16]); // 243
+store_temp<u32>([15]) -> ([15]); // 244
+store_temp<RangeCheck>([4]) -> ([4]); // 245
+u32_eq([15], [16]) { fallthrough() 260() }; // 246
+branch_align() -> (); // 247
+array_new<felt252>() -> ([17]); // 248
+felt252_const<7733229381460288120802334208475838166080759535023995805565484692595>() -> ([18]); // 249
+store_temp<felt252>([18]) -> ([18]); // 250
+array_append<felt252>([17], [18]) -> ([19]); // 251
+struct_construct<core::panics::Panic>() -> ([20]); // 252
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([20], [19]) -> ([21]); // 253
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([21]) -> ([22]); // 254
+store_temp<RangeCheck>([4]) -> ([23]); // 255
+store_temp<GasBuiltin>([5]) -> ([24]); // 256
+store_temp<System>([2]) -> ([25]); // 257
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([22]) -> ([26]); // 258
+return([23], [24], [25], [26]); // 259
+branch_align() -> (); // 260
+get_builtin_costs() -> ([27]); // 261
+store_temp<BuiltinCosts>([27]) -> ([27]); // 262
+withdraw_gas_all([4], [5], [27]) { fallthrough([28], [29]) 282([30], [31]) }; // 263
+branch_align() -> (); // 264
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([32]); // 265
+struct_construct<test::counter_contract::ContractState>([32]) -> ([33]); // 266
+store_temp<test::counter_contract::ContractState>([33]) -> ([36]); // 267
+function_call<user@test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo>([36]) -> ([34], [35]); // 268
+drop<test::counter_contract::ContractState>([34]) -> (); // 269
+drop<Unit>([35]) -> (); // 270
+array_new<felt252>() -> ([37]); // 271
+snapshot_take<Array<felt252>>([37]) -> ([38], [39]); // 272
+drop<Array<felt252>>([38]) -> (); // 273
+struct_construct<core::array::Span::<core::felt252>>([39]) -> ([40]); // 274
+struct_construct<Tuple<core::array::Span::<core::felt252>>>([40]) -> ([41]); // 275
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>([41]) -> ([42]); // 276
+store_temp<RangeCheck>([28]) -> ([43]); // 277
+store_temp<GasBuiltin>([29]) -> ([44]); // 278
+store_temp<System>([2]) -> ([45]); // 279
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([42]) -> ([46]); // 280
+return([43], [44], [45], [46]); // 281
+branch_align() -> (); // 282
+array_new<felt252>() -> ([47]); // 283
+felt252_const<375233589013918064796019>() -> ([48]); // 284
+store_temp<felt252>([48]) -> ([48]); // 285
+array_append<felt252>([47], [48]) -> ([49]); // 286
+struct_construct<core::panics::Panic>() -> ([50]); // 287
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([50], [49]) -> ([51]); // 288
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([51]) -> ([52]); // 289
+store_temp<RangeCheck>([30]) -> ([53]); // 290
+store_temp<GasBuiltin>([31]) -> ([54]); // 291
+store_temp<System>([2]) -> ([55]); // 292
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([52]) -> ([56]); // 293
+return([53], [54], [55], [56]); // 294
+branch_align() -> (); // 295
+drop<core::array::Span::<core::felt252>>([3]) -> (); // 296
+array_new<felt252>() -> ([57]); // 297
+felt252_const<375233589013918064796019>() -> ([58]); // 298
+store_temp<felt252>([58]) -> ([58]); // 299
+array_append<felt252>([57], [58]) -> ([59]); // 300
+struct_construct<core::panics::Panic>() -> ([60]); // 301
+struct_construct<Tuple<core::panics::Panic, Array<felt252>>>([60], [59]) -> ([61]); // 302
+enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>([61]) -> ([62]); // 303
+store_temp<RangeCheck>([6]) -> ([63]); // 304
+store_temp<GasBuiltin>([7]) -> ([64]); // 305
+store_temp<System>([2]) -> ([65]); // 306
+store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>([62]) -> ([66]); // 307
+return([63], [64], [65], [66]); // 308
+drop<test::counter_contract::ContractState>([0]) -> (); // 309
+struct_construct<Unit>() -> ([1]); // 310
+store_temp<Unit>([1]) -> ([2]); // 311
+return([2]); // 312
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 313
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 314
+function_call<user@test::comp::Interface1_Implementation1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 315
+drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 316
+store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 317
+store_temp<Unit>([3]) -> ([6]); // 318
+return([5], [6]); // 319
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 320
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 321
+function_call<user@test::comp::Interface1_Implementation2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 322
+drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 323
+store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 324
+store_temp<Unit>([3]) -> ([6]); // 325
+return([5], [6]); // 326
+struct_construct<test::comp::ComponentState::<test::counter_contract::ContractState>>() -> ([1]); // 327
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([1]) -> ([4]); // 328
+function_call<user@test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo>([4]) -> ([2], [3]); // 329
+drop<test::comp::ComponentState::<test::counter_contract::ContractState>>([2]) -> (); // 330
+store_temp<test::counter_contract::ContractState>([0]) -> ([5]); // 331
+store_temp<Unit>([3]) -> ([6]); // 332
+return([5], [6]); // 333
+struct_construct<Unit>() -> ([1]); // 334
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 335
+store_temp<Unit>([1]) -> ([3]); // 336
+return([2], [3]); // 337
+struct_construct<Unit>() -> ([1]); // 338
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 339
+store_temp<Unit>([1]) -> ([3]); // 340
+return([2], [3]); // 341
+struct_construct<Unit>() -> ([1]); // 342
+store_temp<test::comp::ComponentState::<test::counter_contract::ContractState>>([0]) -> ([2]); // 343
+store_temp<Unit>([1]) -> ([3]); // 344
+return([2], [3]); // 345
 
 test::counter_contract::__wrapper__foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-test::comp::__wrapper__I1I__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI1I>@78([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-test::comp::__wrapper__I2I__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI2I>@155([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
-test::counter_contract::foo@232([0]: test::counter_contract::ContractState) -> (Unit);
-test::comp::I1I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@236([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
-test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@243([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
-test::comp::Interface1_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@250([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
-test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@254([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
+test::comp::__wrapper__I1I1__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI1I1>@78([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::comp::__wrapper__I1I2__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI1I2>@155([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::comp::__wrapper__I2I__foo::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateI2I>@232([0]: RangeCheck, [1]: GasBuiltin, [2]: System, [3]: core::array::Span::<core::felt252>) -> (RangeCheck, GasBuiltin, System, core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>);
+test::counter_contract::foo@309([0]: test::counter_contract::ContractState) -> (Unit);
+test::comp::I1I1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@313([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
+test::comp::I1I2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@320([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
+test::comp::I2I::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp, test::counter_contract::ContractStateDrop>::foo@327([0]: test::counter_contract::ContractState) -> (test::counter_contract::ContractState, Unit);
+test::comp::Interface1_Implementation1::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@334([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
+test::comp::Interface1_Implementation2::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@338([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
+test::comp::Interface2_Implementation::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_comp>::foo@342([0]: test::comp::ComponentState::<test::counter_contract::ContractState>) -> (test::comp::ComponentState::<test::counter_contract::ContractState>, Unit);
