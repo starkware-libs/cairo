@@ -16,19 +16,19 @@ pub const GENERIC_COMPONENT_STATE_NAME: &str =
 pub const CONCRETE_COMPONENT_STATE_NAME: &str =
     formatcp!("{}<{}>", COMPONENT_STATE_NAME, CONTRACT_STATE_NAME);
 
-// TODO(spapini): Remove this attribute. It's for the old contract syntax.
-pub const DEPRECATED_ABI_ATTR: &str = "abi";
+// TODO(spapini): Remove these attributes. They're for the old contract syntax.
+pub const DEPRECATED_ABI_ATTR: &str = "abi"; // TODO(yg): don't remove, change logic for deprecated error message.
+pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
-pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub(super) const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
-pub const EXTERNAL_ATTR: &str = "external";
+pub const EXTERNAL_ATTR: &str = "external"; // todo(yg): rename to deprecate_
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
-pub const EMBED_ATTR: &str = "embed";
+pub const EMBED_ATTR: &str = "embed"; // todo(yg): rename to deprecate_
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
@@ -37,6 +37,11 @@ pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
 pub const COMPONENT_INLINE_MACRO: &str = "component";
 pub const HAS_COMPONENT_TRAIT: &str = "HasComponent";
 pub const NESTED_ATTR: &str = "nested";
+
+// ABI attribute
+pub const ABI_ATTR: &str = "abi";
+pub const ABI_ATTR_PER_ITEM_ARG: &str = "per_item";
+pub const ABI_ATTR_EMBED_ARG: &str = "embed";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";
