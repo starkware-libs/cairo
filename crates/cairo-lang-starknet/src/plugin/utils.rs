@@ -156,6 +156,16 @@ pub fn has_v0_attribute(
     true
 }
 
+/// Checks if the given object has an attribute with the given name and argument.
+pub fn has_attr_with_arg(
+    db: &dyn SyntaxGroup,
+    object: &impl QueryAttrs,
+    attr_name: &str,
+    arg_name: &str,
+) -> bool {
+    object.query_attr(db, attr_name).iter().any(|attr| is_single_arg_attr(db, attr, arg_name))
+}
+
 /// Assuming the attribute is `name`, validates it's #[`name`(v0)].
 fn validate_v0(
     db: &dyn SyntaxGroup,
@@ -163,7 +173,7 @@ fn validate_v0(
     attr: &Attribute,
     name: &str,
 ) {
-    if !is_arg_v0(db, attr) {
+    if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic {
             message: format!("Only #[{name}(v0)] is supported."),
             stable_ptr: attr.stable_ptr().untyped(),
@@ -171,12 +181,12 @@ fn validate_v0(
     }
 }
 
-/// Checks if the only arg of the given attribute is "v0".
-fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
+/// Checks if the given attribute has a single argument with the given name.
+fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str) -> bool {
     match attr.arguments(db) {
-        OptionArgListParenthesized::ArgListParenthesized(y) => {
-            matches!(&y.args(db).elements(db)[..],
-            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
+        OptionArgListParenthesized::ArgListParenthesized(args) => {
+            matches!(&args.args(db).elements(db)[..],
+                    [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
         }
         OptionArgListParenthesized::Empty(_) => false,
     }
