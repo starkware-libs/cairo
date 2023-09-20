@@ -681,22 +681,22 @@ impl Transfer<
     
     fn init_ownable(ref self: TContractState, owner: ContractAddress) {
         let mut component = self.get_component_mut();
-        super::TransferTrait::init_ownable(ref component, owner, )
+        TransferImpl::init_ownable(ref component, owner, )
     }
     #[external(v0)]
     fn owner(self: @TContractState) -> ContractAddress {
         let component = self.get_component();
-        super::TransferTrait::owner(component, )
+        TransferImpl::owner(component, )
     }
     #[external(v0)]
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress) {
         let mut component = self.get_component_mut();
-        super::TransferTrait::transfer_ownership(ref component, new_owner, )
+        TransferImpl::transfer_ownership(ref component, new_owner, )
     }
     
     fn validate_ownership(self: @TContractState) {
         let component = self.get_component();
-        super::TransferTrait::validate_ownership(component, )
+        TransferImpl::validate_ownership(component, )
     }
 }
 
