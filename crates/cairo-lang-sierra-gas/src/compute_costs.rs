@@ -47,9 +47,7 @@ pub fn compute_costs<
 ) -> GasInfo {
     let mut context = CostContext { program, costs: UnorderedHashMap::default(), get_cost_fn };
 
-    for i in 0..program.statements.len() {
-        context.prepare_wallet_at(&StatementIdx(i), specific_cost_context);
-    }
+    context.prepare_wallet(specific_cost_context);
 
     let mut variable_values = VariableValues::default();
     for i in 0..program.statements.len() {
@@ -256,14 +254,6 @@ impl<CostType: CostTypeTrait> std::ops::Add for WalletInfo<CostType> {
     }
 }
 
-/// Represents the status of the computation of the wallet at a given statement.
-enum CostComputationStatus<CostType: CostTypeTrait> {
-    /// The computation is in progress.
-    InProgress,
-    /// The computation was completed.
-    Done(WalletInfo<CostType>),
-}
-
 /// Helper struct for computing the wallet value at each statement.
 struct CostContext<'a, CostType: CostTypeTrait> {
     /// The Sierra program.
@@ -271,7 +261,7 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     /// A callback function returning the cost of a libfunc for every output branch.
     get_cost_fn: &'a dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     /// The cost before executing a Sierra statement.
-    costs: UnorderedHashMap<StatementIdx, CostComputationStatus<CostType>>,
+    costs: UnorderedHashMap<StatementIdx, WalletInfo<CostType>>,
 }
 impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     /// Returns the cost of a libfunc for every output branch.
@@ -281,80 +271,45 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 
     /// Returns the required value in the wallet before executing statement `idx`.
     ///
-    /// Assumes that [Self::prepare_wallet_at] was called before.
+    /// Assumes that [Self::prepare_wallet] was called before.
     ///
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
-        match self.costs.get(idx) {
-            Some(CostComputationStatus::Done(res)) => res.clone(),
-            _ => {
-                panic!("Wallet value for statement {idx} was not yet computed.")
-            }
-        }
+        self.costs.get(idx).expect("Wallet value for statement {idx} was not yet computed.").clone()
     }
 
     /// Prepares the values for [Self::wallet_at].
-    fn prepare_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
+    fn prepare_wallet<SpecificCostContext: SpecificCostContextTrait<CostType>>(
         &mut self,
-        idx: &StatementIdx,
         specific_cost_context: &SpecificCostContext,
     ) {
-        // A stack of statements to call `no_cache_compute_wallet_at()` on.
-        let mut statements_to_visit = vec![*idx];
+        let topological_order =
+            compute_topological_order(self.program.statements.len(), &|current_idx| {
+                match &self.program.get_statement(current_idx).unwrap() {
+                    Statement::Return(_) => {
+                        // Return has no dependencies.
+                        vec![]
+                    }
+                    Statement::Invocation(invocation) => {
+                        let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
 
-        while let Some(current_idx) = statements_to_visit.last() {
-            // Check the current status of the computation.
-            match self.costs.get(current_idx) {
-                Some(CostComputationStatus::InProgress) => {
-                    // The computation of the dependencies was completed.
-                    let res = self.no_cache_compute_wallet_at(current_idx, specific_cost_context);
-                    // Update the cache with the result.
-                    self.costs.insert(*current_idx, CostComputationStatus::Done(res.clone()));
-
-                    // Remove `idx` from `statements_to_visit`.
-                    statements_to_visit.pop();
-                    continue;
+                        get_branch_requirements_dependencies(current_idx, invocation, &libfunc_cost)
+                            .into_iter()
+                            .collect()
+                    }
                 }
-                Some(CostComputationStatus::Done(_)) => {
-                    // Remove `idx` from `statements_to_visit`.
-                    statements_to_visit.pop();
-                    continue;
-                }
-                None => (),
-            }
+            });
 
-            // Mark the statement's computation as in-progress.
-            self.costs.insert(*current_idx, CostComputationStatus::InProgress);
-
-            // Keep the current statement in the stack, and add the missing dependencies on top of
-            // it.
-            match &self.program.get_statement(current_idx).unwrap() {
-                // Return has no dependencies.
-                Statement::Return(_) => {}
-                Statement::Invocation(invocation) => {
-                    let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
-
-                    let missing_dependencies = get_branch_requirements_dependencies(
-                        current_idx,
-                        invocation,
-                        &libfunc_cost,
-                    )
-                    .into_iter()
-                    .filter(|dep| match self.costs.get(dep) {
-                        None => true,
-                        Some(CostComputationStatus::Done(_)) => false,
-                        Some(CostComputationStatus::InProgress) => {
-                            panic!("Found an unexpected cycle during cost computation.");
-                        }
-                    });
-                    statements_to_visit.extend(missing_dependencies);
-                }
-            };
+        for current_idx in topological_order {
+            // The computation of the dependencies was completed.
+            let res = self.no_cache_compute_wallet_at(&current_idx, specific_cost_context);
+            // Update the cache with the result.
+            self.costs.insert(current_idx, res.clone());
         }
     }
 
-    /// Helper function for `prepare_wallet_at()`.
+    /// Helper function for `prepare_wallet()`.
     ///
     /// Assumes that the values was already computed for the dependencies.
     fn no_cache_compute_wallet_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
@@ -366,12 +321,6 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             Statement::Return(_) => Default::default(),
             Statement::Invocation(invocation) => {
                 let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
-
-                for dependency in
-                    get_branch_requirements_dependencies(idx, invocation, &libfunc_cost)
-                {
-                    self.prepare_wallet_at(&dependency, specific_cost_context);
-                }
 
                 // For each branch, compute the required value for the wallet.
                 let branch_requirements: Vec<WalletInfo<CostType>> = get_branch_requirements(
@@ -388,6 +337,71 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
             }
         }
     }
+}
+
+#[derive(Debug)]
+enum DfsStatus {
+    /// The computation is in progress.
+    InProgress,
+    /// The computation was completed.
+    Done,
+}
+
+/// Generates a topological ordering of the statements according to the given dependencies_callback.
+///
+/// Each statement appears in the ordering after its dependencies.
+fn compute_topological_order(
+    n_statements: usize,
+    dependencies_callback: &dyn Fn(&StatementIdx) -> Vec<StatementIdx>,
+) -> Vec<StatementIdx> {
+    // A stack of statements to visit.
+    let mut statements_to_visit: Vec<StatementIdx> =
+        (0..n_statements).rev().map(|idx| StatementIdx(idx)).collect();
+    // The status of each statement visited.
+    let mut status: UnorderedHashMap<StatementIdx, DfsStatus> = Default::default();
+    let mut topological_order: Vec<StatementIdx> = Default::default();
+
+    while let Some(current_idx) = statements_to_visit.last() {
+        // Check the current status.
+        match status.get(current_idx) {
+            Some(DfsStatus::InProgress) => {
+                // All the dependencies of `current_idx` were already visited. Mark it as `Done` and
+                // add it to the topological order.
+                status.insert(*current_idx, DfsStatus::Done);
+                topological_order.push(*current_idx);
+
+                // Remove `idx` from `statements_to_visit`.
+                statements_to_visit.pop();
+            }
+            Some(DfsStatus::Done) => {
+                // Remove `idx` from `statements_to_visit`.
+                statements_to_visit.pop();
+            }
+            None => {
+                // Mark the statement's status as in-progress.
+                status.insert(*current_idx, DfsStatus::InProgress);
+
+                // Keep the current statement in the stack, and add the missing dependencies on top
+                // of it.
+                let missing_dependencies =
+                    dependencies_callback(current_idx).into_iter().filter(|dep| {
+                        match status.get(dep) {
+                            None => true,
+                            Some(DfsStatus::Done) => false,
+                            Some(DfsStatus::InProgress) => {
+                                panic!(
+                                    "Found an unexpected cycle during cost computation: {}",
+                                    dep
+                                );
+                            }
+                        }
+                    });
+                statements_to_visit.extend(missing_dependencies);
+            }
+        }
+    }
+
+    topological_order
 }
 
 pub struct PreCostContext {}
