@@ -60,6 +60,7 @@ fn test_serialization() {
 #[test_case("hello_starknet")]
 #[test_case("erc20")]
 #[test_case("with_erc20")]
+#[test_case("with_ownable")]
 #[test_case("upgradable_counter")]
 fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
@@ -84,6 +85,7 @@ fn test_abi_generation_failure(example_file_name: &str) {
 #[test_case("erc20")]
 #[test_case("token_bridge")]
 #[test_case("with_erc20")]
+#[test_case("with_ownable")]
 #[test_case("upgradable_counter")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
