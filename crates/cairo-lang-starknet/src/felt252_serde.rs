@@ -361,7 +361,6 @@ impl Felt252Serde for Program {
             }
             f.entry_point.serialize(output)?;
         }
-        // TODO(mkaput): Consider serializing annotations here.
         Ok(())
     }
 
