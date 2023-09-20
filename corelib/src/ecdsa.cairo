@@ -39,26 +39,20 @@ fn check_ecdsa_signature(
     // Check that the public key is the x coordinate of a point on the curve and get such a point.
     let public_key_point = match ec::EcPointTrait::new_from_x(public_key) {
         Option::Some(point) => point,
-        Option::None => {
-            return false;
-        },
+        Option::None => { return false; },
     };
 
     // Check that `r` is the x coordinate of a point on the curve and get such a point.
     // Note that this ensures that `r != 0`.
     let signature_r_point = match EcPointTrait::new_from_x(signature_r) {
         Option::Some(point) => point,
-        Option::None => {
-            return false;
-        },
+        Option::None => { return false; },
     };
 
     // Retrieve the generator point.
     let gen_point = match EcPointTrait::new(ec::stark_curve::GEN_X, ec::stark_curve::GEN_Y) {
         Option::Some(point) => point,
-        Option::None => {
-            return false;
-        },
+        Option::None => { return false; },
     };
 
     // To verify ECDSA, obtain:
@@ -74,9 +68,7 @@ fn check_ecdsa_signature(
             let (x, _) = ec::ec_point_unwrap(pt);
             x
         },
-        Option::None => {
-            return false;
-        },
+        Option::None => { return false; },
     };
 
     let zG: EcPoint = gen_point.mul(message_hash);

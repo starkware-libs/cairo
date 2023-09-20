@@ -192,12 +192,8 @@ impl ArrayTCloneImpl<T, +Clone<T>, +Drop<T>> of Clone<Array<T>> {
         let mut span = self.span();
         loop {
             match span.pop_front() {
-                Option::Some(v) => {
-                    response.append(v.clone());
-                },
-                Option::None => {
-                    break ();
-                },
+                Option::Some(v) => { response.append(v.clone()); },
+                Option::None => { break (); },
             };
         };
         response
@@ -227,9 +223,7 @@ impl SpanPartialEq<T, +PartialEq<T>> of PartialEq<Span<T>> {
                         break false;
                     }
                 },
-                Option::None => {
-                    break true;
-                },
+                Option::None => { break true; },
             };
         }
     }

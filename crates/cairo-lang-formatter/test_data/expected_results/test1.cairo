@@ -40,9 +40,7 @@ struct B {}
 // Calculates fib, but all variables are boxes.
 fn fib(a: Box::<felt252>, b: Box::<felt252>, n: Box::<felt252>) -> Box::<felt252> {
     match n {
-        0 => {
-            a
-        },
+        0 => { a },
         _ => {
             fib(
                 b,
