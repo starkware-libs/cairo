@@ -16,10 +16,21 @@ struct B {
     x: felt252,
 }
 
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum NestedEventEnum {
+    B: B,
+}
+
+
 #[derive(starknet::Event, PartialEq, Drop)]
 enum MyEventEnum {
     A: A,
     B: B,
+    #[flat]
+    C: NestedEventEnum,
+    #[flat]
+    D: NestedEventEnum,
 }
 
 //! > generated_cairo_code
@@ -37,10 +48,21 @@ struct B {
     x: felt252,
 }
 
+
+#[derive(starknet::Event, PartialEq, Drop)]
+enum NestedEventEnum {
+    B: B,
+}
+
+
 #[derive(starknet::Event, PartialEq, Drop)]
 enum MyEventEnum {
     A: A,
     B: B,
+    #[flat]
+    C: NestedEventEnum,
+    #[flat]
+    D: NestedEventEnum,
 }
 
 impls:
@@ -176,16 +198,86 @@ impl BIsEvent of starknet::Event<B> {
 
 impls:
 
+impl NestedEventEnumPartialEq of PartialEq::<NestedEventEnum> {
+    fn eq(lhs: @NestedEventEnum, rhs: @NestedEventEnum) -> bool {
+        match lhs {
+            NestedEventEnum::B(x) => match rhs {
+                NestedEventEnum::B(y) => x == y,
+            },
+        }
+    }
+    #[inline(always)]
+    fn ne(lhs: @NestedEventEnum, rhs: @NestedEventEnum) -> bool {
+        !(lhs == rhs)
+    }
+}
+impl NestedEventEnumDrop of Drop::<NestedEventEnum>;
+
+
+starknet_derive:
+
+impl NestedEventEnumIsEvent of starknet::Event<NestedEventEnum> {
+    fn append_keys_and_data(
+        self: @NestedEventEnum, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            NestedEventEnum::B(val) => {
+                array::ArrayTrait::append(ref keys, selector!("B"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<NestedEventEnum> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("B") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(NestedEventEnum::B(val));
+        }
+        Option::None
+    }
+}
+impl NestedEventEnumBIntoEvent of Into<B, NestedEventEnum> {
+    fn into(self: B) -> NestedEventEnum {
+        NestedEventEnum::B(self)
+    }
+}
+
+
+
+impls:
+
 impl MyEventEnumPartialEq of PartialEq::<MyEventEnum> {
     fn eq(lhs: @MyEventEnum, rhs: @MyEventEnum) -> bool {
         match lhs {
             MyEventEnum::A(x) => match rhs {
                 MyEventEnum::A(y) => x == y,
                 MyEventEnum::B(y) => false,
+                MyEventEnum::C(y) => false,
+                MyEventEnum::D(y) => false,
             },
             MyEventEnum::B(x) => match rhs {
                 MyEventEnum::A(y) => false,
                 MyEventEnum::B(y) => x == y,
+                MyEventEnum::C(y) => false,
+                MyEventEnum::D(y) => false,
+            },
+            MyEventEnum::C(x) => match rhs {
+                MyEventEnum::A(y) => false,
+                MyEventEnum::B(y) => false,
+                MyEventEnum::C(y) => x == y,
+                MyEventEnum::D(y) => false,
+            },
+            MyEventEnum::D(x) => match rhs {
+                MyEventEnum::A(y) => false,
+                MyEventEnum::B(y) => false,
+                MyEventEnum::C(y) => false,
+                MyEventEnum::D(y) => x == y,
             },
         }
     }
@@ -216,25 +308,54 @@ impl MyEventEnumIsEvent of starknet::Event<MyEventEnum> {
                     val, ref keys, ref data
                 );
             },
+            MyEventEnum::C(val) => {
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            MyEventEnum::D(val) => {
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
         }
     }
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<MyEventEnum> {
+        {
+            let mut keys = keys;
+            let mut data = data;
+            match starknet::Event::deserialize(ref keys, ref data) {
+                Option::Some(val) => {
+                    return Option::Some(MyEventEnum::C(val));
+                },
+                Option::None => {},
+            };
+        }
+        {
+            let mut keys = keys;
+            let mut data = data;
+            match starknet::Event::deserialize(ref keys, ref data) {
+                Option::Some(val) => {
+                    return Option::Some(MyEventEnum::D(val));
+                },
+                Option::None => {},
+            };
+        }
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
-            if selector == selector!("A") {
+        if selector == selector!("A") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::A(val));
-            }
-            if selector == selector!("B") {
+        }
+        if selector == selector!("B") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(MyEventEnum::B(val));
-            }
+        }
         Option::None
     }
 }
@@ -246,6 +367,16 @@ impl MyEventEnumAIntoEvent of Into<A, MyEventEnum> {
 impl MyEventEnumBIntoEvent of Into<B, MyEventEnum> {
     fn into(self: B) -> MyEventEnum {
         MyEventEnum::B(self)
+    }
+}
+impl MyEventEnumCIntoEvent of Into<NestedEventEnum, MyEventEnum> {
+    fn into(self: NestedEventEnum) -> MyEventEnum {
+        MyEventEnum::C(self)
+    }
+}
+impl MyEventEnumDIntoEvent of Into<NestedEventEnum, MyEventEnum> {
+    fn into(self: NestedEventEnum) -> MyEventEnum {
+        MyEventEnum::D(self)
     }
 }
 
