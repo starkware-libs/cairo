@@ -115,7 +115,7 @@ impl AbiBuilder {
         // Add impls to ABI.
         for impl_id in impls {
             if impl_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
-                builder.add_impl(db, impl_id, storage_type)?;
+                builder.add_impl(db, impl_id, storage_type, None)?;
             } else if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
                 builder.add_embedded_impl(db, impl_id, storage_type)?;
             }
@@ -216,11 +216,13 @@ impl AbiBuilder {
     }
 
     /// Adds an impl to the ABI.
+    /// `impl_alias_name` can override the given impl name and is used in the ABI if set.
     fn add_impl(
         &mut self,
         db: &dyn SemanticGroup,
         impl_def_id: ImplDefId,
         storage_type: TypeId,
+        impl_alias_name: Option<String>,
     ) -> Result<(), ABIError> {
         let impl_name = impl_def_id.name(db.upcast());
 
@@ -231,9 +233,8 @@ impl AbiBuilder {
         // functions as external functions.
         let trait_id = trt.trait_id(db);
         if trait_id.has_attr(db, INTERFACE_ATTR)? {
-            self.abi
-                .items
-                .push(Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path }));
+            let abi_name = impl_alias_name.unwrap_or(impl_name.into());
+            self.abi.items.push(Item::Impl(Imp { name: abi_name, interface_name: trt_path }));
             self.add_interface(db, trait_id)?;
         } else {
             self.add_non_interface_impl(db, impl_def_id, storage_type)?;
@@ -283,7 +284,7 @@ impl AbiBuilder {
         }
 
         // Add the impl to the ABI.
-        self.add_impl(db, impl_def, storage_type)?;
+        self.add_impl(db, impl_def, storage_type, Some(impl_alias_id.name(db.upcast()).into()))?;
 
         Ok(())
     }
