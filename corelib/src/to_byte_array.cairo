@@ -112,12 +112,8 @@ fn append_formatted_to_byte_array<
     let mut span = reversed_digits.span();
     loop {
         match span.pop_back() {
-            Option::Some(byte) => {
-                byte_array.append_byte(*byte);
-            },
-            Option::None => {
-                break;
-            },
+            Option::Some(byte) => { byte_array.append_byte(*byte); },
+            Option::None => { break; },
         };
     };
 }

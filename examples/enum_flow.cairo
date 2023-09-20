@@ -34,25 +34,15 @@ fn main() -> felt252 {
 
 fn match_short(e: MyEnumShort) -> felt252 {
     match e {
-        MyEnumShort::a(x) => {
-            x
-        },
-        MyEnumShort::b(x) => {
-            x
-        },
+        MyEnumShort::a(x) => { x },
+        MyEnumShort::b(x) => { x },
     }
 }
 
 fn match_long(e: MyEnumLong) -> felt252 {
     match e {
-        MyEnumLong::a(x) => {
-            x
-        },
-        MyEnumLong::b(x) => {
-            x
-        },
-        MyEnumLong::c(x) => {
-            x
-        },
+        MyEnumLong::a(x) => { x },
+        MyEnumLong::b(x) => { x },
+        MyEnumLong::c(x) => { x },
     }
 }
