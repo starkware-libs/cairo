@@ -541,13 +541,13 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 ty.format(db)
             ),
             SemanticDiagnosticKind::TailExpressionNotAllowedInLoop => {
-                "Tail expression not allow in a `loop` block.".into()
+                "Tail expression not allowed in a `loop` block.".into()
             }
             SemanticDiagnosticKind::ContinueOnlyAllowedInsideALoop => {
-                "Continue only allowed inside a `loop`.".into()
+                "`continue` only allowed inside a `loop`.".into()
             }
             SemanticDiagnosticKind::BreakOnlyAllowedInsideALoop => {
-                "Break only allowed inside a `loop`.".into()
+                "`break` only allowed inside a `loop`.".into()
             }
             SemanticDiagnosticKind::ReturnNotAllowedInsideALoop => {
                 "`return` not allowed inside a `loop`.".into()
