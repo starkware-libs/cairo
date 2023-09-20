@@ -1,7 +1,7 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionArgListParenthesized};
+use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
@@ -163,21 +163,10 @@ fn validate_v0(
     attr: &Attribute,
     name: &str,
 ) {
-    if !is_arg_v0(db, attr) {
+    if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic {
             message: format!("Only #[{name}(v0)] is supported."),
             stable_ptr: attr.stable_ptr().untyped(),
         });
-    }
-}
-
-/// Checks if the only arg of the given attribute is "v0".
-fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
-    match attr.arguments(db) {
-        OptionArgListParenthesized::ArgListParenthesized(y) => {
-            matches!(&y.args(db).elements(db)[..],
-            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
-        }
-        OptionArgListParenthesized::Empty(_) => false,
     }
 }

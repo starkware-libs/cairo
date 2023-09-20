@@ -107,7 +107,7 @@ mod counter_contract {
         }
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
 }
 
@@ -217,7 +217,7 @@ mod counter_contract {
         }
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
 }
 
@@ -1157,7 +1157,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1ca3cca5f50b21c2ada01141c946b7a4c6182d593e2d51039eef86c3a1156ee;
+const TEST_CLASS_HASH: felt252 = 0x2c8d40271fb41f951531d21c7f09a9ea56d4f082a2d2b153de27cfbbffcc2b5;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {

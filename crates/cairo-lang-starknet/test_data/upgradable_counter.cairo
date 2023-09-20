@@ -101,6 +101,6 @@ mod counter_contract {
         }
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
 }

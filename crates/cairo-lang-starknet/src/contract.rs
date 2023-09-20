@@ -35,7 +35,7 @@ use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 use crate::aliased::Aliased;
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
-use crate::plugin::consts::EMBED_ATTR;
+use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_ARG};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -189,7 +189,7 @@ fn get_impl_aliases_abi_functions(
         .with_context(|| "Failed to get external module impl aliases.")?
         .iter()
     {
-        if !impl_alias.has_attr(syntax_db, EMBED_ATTR) {
+        if !impl_alias.has_attr_with_arg(db.upcast(), ABI_ATTR, ABI_ATTR_EMBED_ARG) {
             continue;
         }
         let resolver_data = db
