@@ -13,7 +13,7 @@ pub Program: Program = {
     <libfunc_declarations:LibfuncDeclaration*>
     <statements:PreStatement*>
     <funcs:Function*>
-    => Program{type_declarations, libfunc_declarations, statements: finalize_prestatements(statements), funcs},
+    => Program{type_declarations, libfunc_declarations, statements: finalize_prestatements(statements), funcs, debug_info: None},
 }
 
 TypeDeclaration: TypeDeclaration = {
