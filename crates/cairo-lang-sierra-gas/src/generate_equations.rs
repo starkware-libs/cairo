@@ -100,7 +100,7 @@ impl StatementFutureCost for EquationGenerator {
 }
 
 #[derive(Clone, Debug)]
-enum TopologicalOrderStatus {
+pub enum TopologicalOrderStatus {
     /// The computation for that statement did not start.
     NotStarted,
     /// The computation is in progress.
@@ -118,6 +118,7 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
             &mut ordering,
             &mut status,
             &f.entry_point,
+            false,
             |idx| match program.get_statement(idx).unwrap() {
                 cairo_lang_sierra::program::Statement::Invocation(invocation) => invocation
                     .branches
@@ -135,10 +136,11 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
 }
 
 /// Recursively calculates the topological ordering of the program.
-fn calculate_reverse_topological_ordering(
+pub fn calculate_reverse_topological_ordering(
     ordering: &mut Vec<StatementIdx>,
     status: &mut [TopologicalOrderStatus],
     idx0: &StatementIdx,
+    detect_cycles: bool,
     children_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<(), CostError> {
     // A stack of statements to visit.
@@ -158,8 +160,13 @@ fn calculate_reverse_topological_ordering(
                 stack.push(idx);
                 for child in children_callback(&idx) {
                     match status.get(child.0) {
-                        Some(TopologicalOrderStatus::InProgress)
-                        | Some(TopologicalOrderStatus::Done) => {
+                        Some(TopologicalOrderStatus::InProgress) => {
+                            if detect_cycles {
+                                return Err(CostError::UnexpectedCycle);
+                            }
+                            continue;
+                        }
+                        Some(TopologicalOrderStatus::Done) => {
                             continue;
                         }
                         Some(TopologicalOrderStatus::NotStarted) => {
