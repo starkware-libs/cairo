@@ -54,11 +54,11 @@ mod counter_contract {
         CompEvent: super::comp::Event
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl EmbeddedI1I1 = super::comp::I1I1<ContractState>;
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl EmbeddedI1I2 = super::comp::I1I2<ContractState>;
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl EmbeddedI2I = super::comp::I2I<ContractState>;
 
     #[external(v0)]
