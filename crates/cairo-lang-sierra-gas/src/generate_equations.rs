@@ -99,16 +99,36 @@ impl StatementFutureCost for EquationGenerator {
     }
 }
 
+#[derive(Clone, Debug)]
+enum TopologicalOrderStatus {
+    /// The computation for that statement did not start.
+    NotStarted,
+    /// The computation is in progress.
+    InProgress,
+    /// The computation was completed, and all the children were visited.
+    Done,
+}
+
 /// Returns the reverse topological ordering of the program statements.
 fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementIdx>, CostError> {
     let mut ordering = vec![];
-    let mut visited = vec![false; program.statements.len()];
+    let mut status = vec![TopologicalOrderStatus::NotStarted; program.statements.len()];
     for f in &program.funcs {
         calculate_reverse_topological_ordering(
-            program,
             &mut ordering,
-            &mut visited,
+            &mut status,
             &f.entry_point,
+            |idx| match program.get_statement(&idx).unwrap() {
+                cairo_lang_sierra::program::Statement::Invocation(invocation) => invocation
+                    .branches
+                    .iter()
+                    .rev()
+                    .map(|branch| idx.next(&branch.target))
+                    .collect(),
+                cairo_lang_sierra::program::Statement::Return(_) => {
+                    vec![]
+                }
+            },
         )?;
     }
     Ok(ordering)
@@ -116,49 +136,45 @@ fn get_reverse_topological_ordering(program: &Program) -> Result<Vec<StatementId
 
 /// Recursively calculates the topological ordering of the program.
 fn calculate_reverse_topological_ordering(
-    program: &Program,
     ordering: &mut Vec<StatementIdx>,
-    visited: &mut [bool],
+    status: &mut [TopologicalOrderStatus],
     idx0: &StatementIdx,
+    children_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<(), CostError> {
-    // A pair of (statement index, is_done).
+    // A stack of statements to visit.
     // When the pair is popped out of the stack, `is_done=true` means that we've already visited
     // all of its children, and we just need to add it to the ordering.
-    let mut stack = vec![(*idx0, false)];
+    let mut stack = vec![*idx0];
 
-    while let Some((idx, is_done)) = stack.pop() {
-        if is_done {
-            // Adding element to ordering after visiting all children - therefore we have reverse
-            // topological ordering.
-            ordering.push(idx);
-            continue;
-        }
+    while let Some(idx) = stack.pop() {
+        println!("Visiting {idx}");
+        match status.get(idx.0) {
+            Some(TopologicalOrderStatus::NotStarted) => {
+                // Mark the statement as `InProgress`.
+                status[idx.0] = TopologicalOrderStatus::InProgress;
 
-        // Check if we've already visited this statement. If we did, skip it.
-        match visited.get(idx.0) {
-            Some(true) => {
-                continue;
+                // Push the statement back to the stack, so that after visiting all
+                // of its children, we would add it to the ordering.
+                // Add the missing children on top of it.
+                stack.push(idx);
+                for child in children_callback(&idx) {
+                    stack.push(child);
+                }
             }
-            Some(false) => {}
+            Some(TopologicalOrderStatus::InProgress) => {
+                // Mark the statement as `Done`.
+                status[idx.0] = TopologicalOrderStatus::Done;
+
+                // Add the element to the ordering after visiting all its children.
+                // This gives us reverse topological ordering.
+                ordering.push(idx);
+            }
+            Some(TopologicalOrderStatus::Done) => {
+                // Do nothing.
+            }
             None => {
                 return Err(CostError::StatementOutOfBounds(idx));
             }
-        }
-
-        // Mark the statement as visited.
-        visited[idx.0] = true;
-
-        // Push the statement back to the stack, with `is_done=true` so that after visiting all
-        // of its children, we would add it to the ordering.
-        stack.push((idx, true));
-
-        match program.get_statement(&idx).unwrap() {
-            cairo_lang_sierra::program::Statement::Invocation(invocation) => {
-                for branch in invocation.branches.iter().rev() {
-                    stack.push((idx.next(&branch.target), false));
-                }
-            }
-            cairo_lang_sierra::program::Statement::Return(_) => {}
         }
     }
 
