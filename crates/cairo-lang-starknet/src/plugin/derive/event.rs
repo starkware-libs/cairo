@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use indoc::{formatdoc, indoc};
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
-use crate::plugin::consts::{EVENT_TRAIT, EVENT_TYPE_NAME, NESTED_ATTR};
+use crate::plugin::consts::{EVENT_TRAIT, EVENT_TYPE_NAME, FLAT_ATTR, NESTED_ATTR};
 use crate::plugin::events::{EventData, EventFieldKind};
 
 /// Returns the relevant information for the `#[derive(starknet::Event)]` attribute.
@@ -184,6 +184,7 @@ fn handle_enum(
     };
 
     let mut append_variants = vec![];
+    let mut deserialize_flat_variants = vec![];
     let mut deserialize_variants = vec![];
     let mut variants = vec![];
     let mut event_into_impls = vec![];
@@ -194,17 +195,26 @@ fn handle_enum(
                 RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
             }
         };
+
+        let maybe_add_variant_to_keys = if variant.has_attr(db, FLAT_ATTR) {
+            ""
+        } else {
+            "
+                array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));"
+        };
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let member_kind =
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
+
         let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
         let append_variant = RewriteNode::interpolate_patched(
-            "
-            $enum_name$::$variant_name$(val) => {
-                array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));$append_member$
-            },",
+            &format!(
+                "
+            $enum_name$::$variant_name$(val) => {{{maybe_add_variant_to_keys}$append_member$
+            }},"
+            ),
             &[
                 ("enum_name".to_string(), enum_name.clone()),
                 ("variant_name".to_string(), variant_name.clone()),
@@ -212,21 +222,45 @@ fn handle_enum(
             ]
             .into(),
         );
-        let deserialize_member = deserialize_field(member_kind, RewriteNode::Text("val".into()));
-        let deserialize_variant = RewriteNode::interpolate_patched(
-            "
-            if selector == selector!(\"$variant_name$\") {$deserialize_member$
-                return Option::Some($enum_name$::$variant_name$(val));
-            }",
-            &[
-                ("enum_name".to_string(), enum_name.clone()),
-                ("variant_name".to_string(), variant_name.clone()),
-                ("deserialize_member".to_string(), deserialize_member),
-            ]
-            .into(),
-        );
+        let deserialize_member = try_deserialize_field(member_kind);
+
+        if variant.has_attr(db, FLAT_ATTR) {
+            let deserialize_variant = RewriteNode::interpolate_patched(
+                "{
+            let mut keys = keys;
+            let mut data = data;
+            match $deserialize_member$ {
+                Option::Some(val) => {
+                    return Option::Some($enum_name$::$variant_name$(val));
+                },
+                Option::None => {},
+            };
+        }",
+                &[
+                    ("enum_name".to_string(), enum_name.clone()),
+                    ("variant_name".to_string(), variant_name.clone()),
+                    ("deserialize_member".to_string(), deserialize_member),
+                ]
+                .into(),
+            );
+            deserialize_flat_variants.push(deserialize_variant);
+        } else {
+            let deserialize_variant = RewriteNode::interpolate_patched(
+                "
+        if selector == selector!(\"$variant_name$\") {
+            return Option::Some($enum_name$::$variant_name$($deserialize_member$?));
+        }",
+                &[
+                    ("enum_name".to_string(), enum_name.clone()),
+                    ("variant_name".to_string(), variant_name.clone()),
+                    ("deserialize_member".to_string(), deserialize_member),
+                ]
+                .into(),
+            );
+
+            deserialize_variants.push(deserialize_variant);
+        }
         append_variants.push(append_variant);
-        deserialize_variants.push(deserialize_variant);
         let into_impl = RewriteNode::interpolate_patched(
             indoc! {"
                 impl $enum_name$$variant_name$IntoEvent of Into<$ty$, $enum_name$> {
@@ -246,6 +280,8 @@ fn handle_enum(
     }
     let event_data = EventData::Enum { variants };
     let append_variants = RewriteNode::Modified(ModifiedNode { children: Some(append_variants) });
+    let deserialize_flat_variants =
+        RewriteNode::Modified(ModifiedNode { children: Some(deserialize_flat_variants) });
     let deserialize_variants =
         RewriteNode::Modified(ModifiedNode { children: Some(deserialize_variants) });
 
@@ -263,8 +299,8 @@ fn handle_enum(
                 fn deserialize(
                     ref keys: Span<felt252>, ref data: Span<felt252>,
                 ) -> Option<$enum_name$> {{
-                    let selector = *array::SpanTrait::pop_front(ref keys)?;
-                    $deserialize_variants$
+                    $deserialize_flat_variants$
+                    let selector = *array::SpanTrait::pop_front(ref keys)?;$deserialize_variants$
                     Option::None
                 }}
             }}
@@ -274,6 +310,7 @@ fn handle_enum(
         &[
             ("enum_name".to_string(), enum_name),
             ("append_variants".to_string(), append_variants),
+            ("deserialize_flat_variants".to_string(), deserialize_flat_variants),
             ("deserialize_variants".to_string(), deserialize_variants),
             (
                 "event_into_impls".to_string(),
@@ -334,5 +371,16 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
             }
         },
         &[("member_name".to_string(), member_name)].into(),
+    )
+}
+
+fn try_deserialize_field(member_kind: EventFieldKind) -> RewriteNode {
+    RewriteNode::Text(
+        match member_kind {
+            EventFieldKind::Nested => "starknet::Event::deserialize(ref keys, ref data)",
+            EventFieldKind::KeySerde => "serde::Serde::deserialize(ref keys)",
+            EventFieldKind::DataSerde => "serde::Serde::deserialize(ref data)",
+        }
+        .to_string(),
     )
 }

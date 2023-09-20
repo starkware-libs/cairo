@@ -221,6 +221,14 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
                 RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
             }
         };
+
+        eprintln!("variant: {:?}, {:?}", variant.name(db).text(db), variant.attributes(db));
+
+        let maybe_add_variant = if variant.has_attr(db, "flatten") {
+            ""
+        } else {
+            "array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"))"
+        };
         let variant_name = RewriteNode::new_trimmed(variant.name(db).as_syntax_node());
         let name = variant.name(db).text(db);
         let member_kind =
@@ -230,12 +238,13 @@ pub fn handle_enum(db: &dyn SyntaxGroup, enum_ast: ast::ItemEnum) -> PluginResul
         let append_variant = RewriteNode::interpolate_patched(
             "
             $enum_name$::$variant_name$(val) => {
-                array::ArrayTrait::append(ref keys, selector!(\"$variant_name$\"));$append_member$
+                $maybe_add_variant$;$append_member$
             },",
             &[
                 ("enum_name".to_string(), enum_name.clone()),
                 ("variant_name".to_string(), variant_name.clone()),
                 ("append_member".to_string(), append_member),
+                ("maybe_add_variant".to_string(), RewriteNode::Text(maybe_add_variant.into())),
             ]
             .into(),
         );
