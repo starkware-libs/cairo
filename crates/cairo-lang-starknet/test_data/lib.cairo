@@ -7,4 +7,5 @@ mod test_contract;
 mod token_bridge;
 mod upgradable_counter;
 mod with_erc20;
+mod with_ownable;
 mod interfaces;
