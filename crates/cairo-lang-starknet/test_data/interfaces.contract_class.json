@@ -527,7 +527,7 @@
   "abi": [
     {
       "type": "impl",
-      "name": "I1I",
+      "name": "EmbeddedI1I",
       "interface_name": "test::Interface1"
     },
     {
@@ -545,7 +545,7 @@
     },
     {
       "type": "impl",
-      "name": "I2I",
+      "name": "EmbeddedI2I",
       "interface_name": "test::Interface2"
     },
     {

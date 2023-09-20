@@ -2550,7 +2550,7 @@
     },
     {
       "type": "impl",
-      "name": "UpgradableImpl",
+      "name": "Upgradable",
       "interface_name": "test::IUpgradable"
     },
     {
