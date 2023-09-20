@@ -6,6 +6,7 @@ use starknet::SyscallResultTrait;
 #[starknet::interface]
 trait IContractWithEvent<T> {
     fn emit_event(ref self: T, incremental: bool);
+    fn emit_flat_event(ref self: T);
 }
 
 #[starknet::contract]
@@ -24,11 +25,18 @@ mod contract_with_event {
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     struct StaticEvent {}
 
+    #[derive(Copy, Drop, PartialEq, starknet::Event)]
+    enum FlatEvent {
+        FlatEvent: StaticEvent,
+    }
+
     #[event]
     #[derive(Copy, Drop, PartialEq, starknet::Event)]
     enum Event {
         IncrementalEvent: IncrementalEvent,
         StaticEvent: StaticEvent,
+        #[flat]
+        FlatEvent: FlatEvent,
     }
 
     #[constructor]
@@ -45,9 +53,14 @@ mod contract_with_event {
             self.emit(Event::StaticEvent(StaticEvent {}));
         }
     }
+
+    #[external(v0)]
+    fn emit_flat_event(ref self: ContractState) {
+        self.emit(FlatEvent::FlatEvent(StaticEvent {}));
+    }
 }
 
-use contract_with_event::{Event, IncrementalEvent, StaticEvent};
+use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
 
 #[test]
 #[available_gas(30000000)]
@@ -69,12 +82,15 @@ fn test_events() {
     contract.emit_event(true);
     contract.emit_event(false);
     contract.emit_event(true);
+    contract.emit_flat_event();
+    contract.emit_flat_event();
 
     assert_eq(
         @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 0 }),
         'event == IncrementalEvent(0)'
     );
+
     assert_eq(
         @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 1 }),
@@ -104,6 +120,17 @@ fn test_events() {
         @starknet::testing::pop_log(contract_address).unwrap(),
         @Event::IncrementalEvent(IncrementalEvent { value: 3 }),
         'event == IncrementalEvent(3)'
+    );
+    assert_eq(
+        @starknet::testing::pop_log(contract_address).unwrap(),
+        @Event::FlatEvent(FlatEvent::FlatEvent(StaticEvent {})),
+        'event == FlatEvent'
+    );
+    // Check that `FlatEvent` is flattened and can be deserialized directly.
+    assert_eq(
+        @starknet::testing::pop_log(contract_address).unwrap(),
+        @FlatEvent::FlatEvent(StaticEvent {}),
+        'event == FlatEvent'
     );
     assert(starknet::testing::pop_log_raw(contract_address).is_none(), 'no more events');
 }

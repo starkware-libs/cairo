@@ -1004,13 +1004,12 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
-            if selector == selector!("ContractUpgraded") {
+        if selector == selector!("ContractUpgraded") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::ContractUpgraded(val));
-            }
+        }
         Option::None
     }
 }
@@ -1332,25 +1331,24 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
-            if selector == selector!("CounterIncreased") {
+        if selector == selector!("CounterIncreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterIncreased(val));
-            }
-            if selector == selector!("CounterDecreased") {
+        }
+        if selector == selector!("CounterDecreased") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::CounterDecreased(val));
-            }
-            if selector == selector!("UpgradableEvent") {
+        }
+        if selector == selector!("UpgradableEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::UpgradableEvent(val));
-            }
+        }
         Option::None
     }
 }
