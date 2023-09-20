@@ -7,7 +7,7 @@ trait IAnotherContract<T> {
 trait OutsideTrait<TContractState> {
     fn ret_3(self: @TContractState) -> felt252;
 }
-#[starknet::embeddable(v0)]
+#[starknet::embeddable]
 impl OutsideImpl<TContractState, +Drop<TContractState>> of OutsideTrait<TContractState> {
     #[external]
     fn ret_3(self: @TContractState) -> felt252 {

@@ -4,7 +4,7 @@
 ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
-#[starknet::embeddable(v0)]
+#[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
     #[external]
@@ -29,7 +29,7 @@ mod empty_contract {
 //! > generated_cairo_code
 lib.cairo:
 
-#[starknet::embeddable(v0)]
+#[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
     #[external]
