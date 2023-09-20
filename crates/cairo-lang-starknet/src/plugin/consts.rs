@@ -16,13 +16,10 @@ pub const GENERIC_COMPONENT_STATE_NAME: &str =
 pub const CONCRETE_COMPONENT_STATE_NAME: &str =
     formatcp!("{}<{}>", COMPONENT_STATE_NAME, CONTRACT_STATE_NAME);
 
-// TODO(spapini): Remove this attribute. It's for the old contract syntax.
-pub const DEPRECATED_ABI_ATTR: &str = "abi";
 pub const EVENT_ATTR: &str = "event";
 pub const EVENT_TRAIT: &str = "starknet::Event";
 pub const STORE_TRAIT: &str = "starknet::Store";
 pub const INTERFACE_ATTR: &str = "starknet::interface";
-pub(super) const DEPRECATED_CONTRACT_ATTR: &str = "contract";
 pub(super) const CONTRACT_ATTR: &str = "starknet::contract";
 pub(super) const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";

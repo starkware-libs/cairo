@@ -18,8 +18,7 @@ use self::contract::generate_contract_specific_code;
 use super::events::{get_starknet_event_variants, EMPTY_EVENT_CODE};
 use crate::plugin::aux_data::StarkNetContractAuxData;
 use crate::plugin::consts::{
-    COMPONENT_ATTR, CONTRACT_ATTR, DEPRECATED_CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME,
-    STORAGE_ATTR, STORAGE_STRUCT_NAME,
+    COMPONENT_ATTR, CONTRACT_ATTR, GENERIC_CONTRACT_STATE_NAME, STORAGE_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 
@@ -91,19 +90,6 @@ impl StarknetModuleKind {
 
 /// Handles a contract/component module item.
 pub(super) fn handle_module(db: &dyn SyntaxGroup, module_ast: ast::ItemModule) -> PluginResult {
-    if module_ast.has_attr(db, DEPRECATED_CONTRACT_ATTR) {
-        return PluginResult {
-            code: None,
-            diagnostics: vec![PluginDiagnostic {
-                message: format!(
-                    "The '{DEPRECATED_CONTRACT_ATTR}' attribute was deprecated, please use \
-                     `{CONTRACT_ATTR}` instead.",
-                ),
-                stable_ptr: module_ast.stable_ptr().untyped(),
-            }],
-            remove_original_item: false,
-        };
-    }
     if let Some(kind) = StarknetModuleKind::from_module(db, &module_ast) {
         return validate_module(db, module_ast, kind.to_str_capital());
     }
