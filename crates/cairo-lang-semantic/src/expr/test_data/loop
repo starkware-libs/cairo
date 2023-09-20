@@ -10,7 +10,7 @@ fn foo() {
             break true;
         } else {
             break 0;
-        };
+        }
     };
 }
 
@@ -43,7 +43,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Continue only allowed inside a `loop`.
+error: `continue` only allowed inside a `loop`.
  --> lib.cairo:2:5
     continue;
     ^*******^
@@ -66,7 +66,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break 5;
     ^******^
@@ -248,7 +248,7 @@ foo
 //! > module_code
 
 //! > expected_diagnostics
-error: Break only allowed inside a `loop`.
+error: `break` only allowed inside a `loop`.
  --> lib.cairo:2:5
     break;
     ^****^
@@ -281,3 +281,76 @@ error: `?` not allowed inside a `loop`.
  --> lib.cairo:5:9
         res?;
         ^**^
+
+//! > ==========================================================================
+
+//! > Loop with a felt252 tail expression.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        1
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+error: Tail expression not allowed in a `loop` block.
+ --> lib.cairo:4:9
+        1
+        ^
+
+//! > ==========================================================================
+
+//! > Loop with a unit tail expression.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        ()
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Loop with a never tail expression.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() -> Option<bool> {
+    loop {
+        panic_with_felt252('no return')
+    };
+    Option::None
+}
+
+//! > function_name
+foo
+
+//! > module_code
+use option::Option;
+
+//! > expected_diagnostics
