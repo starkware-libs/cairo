@@ -61,7 +61,6 @@ fn main() -> anyhow::Result<()> {
         contract_class_version,
         entry_points_by_type,
         abi: None,
-        annotations: Default::default(),
     };
     validate_compatible_sierra_version(&contract_class, list_selector)?;
     let casm_contract =

@@ -1,10 +1,10 @@
 use std::fmt;
 
 use anyhow::Result;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
+use crate::debug_info::DebugInfo;
 use crate::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
 };
@@ -57,11 +57,8 @@ pub struct Program {
     pub statements: Vec<Statement>,
     /// Descriptions of the functions - signatures and entry points.
     pub funcs: Vec<Function>,
-    /// Non-crucial information about the program, for use by external libraries and tool.
-    ///
-    /// See [`Annotations`] type documentation for more information about this field.
-    #[serde(default, skip_serializing_if = "Annotations::is_empty")]
-    pub annotations: Annotations,
+    /// Debug information for a Sierra program.
+    pub debug_info: Option<DebugInfo>,
 }
 impl Program {
     pub fn get_statement(&self, id: &StatementIdx) -> Option<&Statement> {
@@ -255,29 +252,6 @@ pub type Statement = GenStatement<StatementIdx>;
 pub type Invocation = GenInvocation<StatementIdx>;
 pub type BranchInfo = GenBranchInfo<StatementIdx>;
 pub type BranchTarget = GenBranchTarget<StatementIdx>;
-
-/// Store for non-crucial information about the program, for use by external libraries and tool.
-///
-/// Keys represent tool namespaces, and values are tool-specific annotations themselves.
-/// Annotation values are JSON values, so they can be arbitrarily complex.
-///
-/// ## Namespaces
-///
-/// In order to avoid collisions between tools, namespaces should be URL-like, contain tool name.
-/// It is not required for namespace URLs to exist, but it is preferable nonetheless.
-///
-/// A single tool might want to use multiple namespaces, for example to group together annotations
-/// coming from different subcomponents of the tool. In such case, namespaces should use path-like
-/// notation (e.g. `example.com/sub-namespace`).
-///
-/// For future-proofing, it might be a good idea to version namespaces, e.g. `example.com/v1`.
-///
-/// ### Example well-formed namespaces
-///
-/// - `scarb.swmansion.com`
-/// - `scarb.swmansion.com/v1`
-/// - `scarb.swmansion.com/build-info/v1`
-pub type Annotations = OrderedHashMap<String, serde_json::Value>;
 
 impl Program {
     /// Checks if this Sierra program needs a gas counter set up in order to be executed.

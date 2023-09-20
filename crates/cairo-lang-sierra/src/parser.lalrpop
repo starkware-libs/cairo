@@ -18,7 +18,6 @@ pub Program: Program = {
         libfunc_declarations,
         statements: finalize_prestatements(statements),
         funcs,
-        annotations: Default::default(),
     },
 }
 

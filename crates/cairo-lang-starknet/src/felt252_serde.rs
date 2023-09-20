@@ -409,10 +409,8 @@ impl Felt252Serde for Program {
             funcs.push(Function { id: FunctionId::new(i as u64), signature, params, entry_point });
             input = next;
         }
-        // TODO(mkaput): Consider deserializing annotations here.
-        let annotations = Default::default();
         Ok((
-            Self { type_declarations, libfunc_declarations, statements, funcs, annotations },
+            Self { type_declarations, libfunc_declarations, statements, funcs, debug_info: None },
             input,
         ))
     }
