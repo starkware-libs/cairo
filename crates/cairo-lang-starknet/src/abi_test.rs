@@ -239,7 +239,7 @@ fn test_abi_failure() {
                                          ^******************^
 
         error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
-         --> lib.cairo[starknet_derive]:20:44
+         --> lib.cairo[starknet_derive]:19:44
                         let val = starknet::Event::deserialize(
                                                    ^*********^
 
