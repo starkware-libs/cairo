@@ -356,7 +356,7 @@ impl ByteArrayImpl of ByteArrayTrait {
     }
 }
 
-impl U128Add of Add<ByteArray> {
+impl ByteArrayAdd of Add<ByteArray> {
     #[inline]
     fn add(lhs: ByteArray, rhs: ByteArray) -> ByteArray {
         ByteArrayTrait::concat(@lhs, @rhs)
