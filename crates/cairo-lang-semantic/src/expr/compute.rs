@@ -906,11 +906,16 @@ fn compute_expr_loop_semantic(
         let old_flow_merge = new_ctx.loop_flow_merge.replace(FlowMergeTypeHelper::new(db));
 
         let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
-        // Remove the tail expression, if exists.
-        let tail = get_tail_expression(syntax_db, statements.as_slice());
-        if let Some(tail) = tail {
-            new_ctx.diagnostics.report(&tail, TailExpressionNotAllowedInLoop);
+        // Remove the typed tail expression, if exists.
+        let tail = get_tail_expression(syntax_db, statements.as_slice())
+            .map(|tail| compute_expr_semantic(new_ctx, &tail));
+        if let Some(tail) = &tail {
             statements.pop();
+            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
+                new_ctx
+                    .diagnostics
+                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
+            }
         }
 
         // Convert statements to semantic model.
@@ -926,7 +931,7 @@ fn compute_expr_loop_semantic(
 
         let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
-            tail: None,
+            tail: tail.map(|tail| tail.id),
             ty: unit_ty(db),
             stable_ptr: syntax.stable_ptr().into(),
         }));
