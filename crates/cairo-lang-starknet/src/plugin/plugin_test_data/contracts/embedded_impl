@@ -22,7 +22,7 @@ mod empty_contract {
     #[storage]
     struct Storage { value: felt252, }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 }
 
@@ -47,7 +47,7 @@ mod empty_contract {
     #[storage]
     struct Storage { value: felt252, }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 }
 
@@ -189,7 +189,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2b2b877971b3c60903960025f6194f886248a19e63417ddf2399bf77038e11;
+const TEST_CLASS_HASH: felt252 = 0x2642978564a46e618664a6067eb6f36304e4408bd713c2bc8c637d865371013;
 
 impl ContractStateOutsideImpl of
     super::UnsafeNewContractStateTraitForOutsideImpl<ContractState> {
@@ -289,10 +289,10 @@ mod empty_contract {
     #[storage]
     struct Storage {}
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Usage1 = super::OutsideImplWithDestruct<ContractState>;
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Usage2 = super::OutsideImplWithPanicDestruct<ContractState>;
 }
 
@@ -328,10 +328,10 @@ mod empty_contract {
     #[storage]
     struct Storage {}
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Usage1 = super::OutsideImplWithDestruct<ContractState>;
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl Usage2 = super::OutsideImplWithPanicDestruct<ContractState>;
 }
 
@@ -459,7 +459,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1bee8e866505ef27d5ea63990112060e0e105e9294afd40e2fb08f711e11fa;
+const TEST_CLASS_HASH: felt252 = 0x2f3505035216cb9786b44e88c45f03e355e52c775f1b6ee6be27556e20667b;
 
 impl ContractStateOutsideImplWithDestruct of
     super::UnsafeNewContractStateTraitForOutsideImplWithDestruct<ContractState> {

@@ -64,10 +64,10 @@ mod my_contract {
 
     component!(path: super::ownable, storage: ownable, event: Ownable);
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
 
-    #[embed(v0)]
+    #[abi(per_item)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]
@@ -150,10 +150,10 @@ mod my_contract {
 
     component!(path: super::ownable, storage: ownable, event: Ownable);
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
 
-    #[embed(v0)]
+    #[abi(per_item)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]
@@ -851,7 +851,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xe0444b0e3e2ebc94534b4e9603fe33e5720f7f9ded7694df89ed3113eab701;
+const TEST_CLASS_HASH: felt252 = 0x3b4684c5132eba4d76c5d2d1d67fcaff988f7e78a77c1b403f831b2258d05e;
 
 impl ContractStateTransfer of
     super::ownable::UnsafeNewContractStateTraitForTransfer<ContractState> {

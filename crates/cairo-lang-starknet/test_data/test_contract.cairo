@@ -31,10 +31,10 @@ mod test_contract {
         -1
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 
-    #[embed(v0)]
+    #[abi(per_item)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]
