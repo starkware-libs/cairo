@@ -976,7 +976,7 @@ impl UpgradableImpl<
     #[external(v0)]
     fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
         let mut component = self.get_component_mut();
-        component.upgrade(new_class_hash, )
+        super::IUpgradable::upgrade(ref component, new_class_hash, )
     }
 }
 
@@ -1056,7 +1056,7 @@ trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
+fn __wrapper__UpgradableImpl__upgrade<TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
@@ -1080,7 +1080,7 @@ fn __wrapper_upgrade<TContractState, impl X: HasComponent<TContractState>
 
 
 mod __external_UpgradableImpl {
-        use super::__wrapper_upgrade as upgrade;
+        use super::__wrapper__UpgradableImpl__upgrade as upgrade;
 }
 
 mod __l1_handler_UpgradableImpl {
@@ -1161,7 +1161,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x1ca3cca5f50b21c2ada01141c946b7a4c6182d593e2d51039eef86c3a1156ee;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1182,7 +1182,7 @@ fn __wrapper_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1201,7 +1201,7 @@ fn __wrapper_get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1222,7 +1222,7 @@ fn __wrapper_increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1250,16 +1250,16 @@ impl ContractStateUpgradableImpl of
 }
 
     mod __external {
-        use super::__wrapper_get_counter as get_counter;
-        use super::__wrapper_increase_counter as increase_counter;
-        use super::__wrapper_decrease_counter as decrease_counter;
+        use super::__wrapper__CounterContract__get_counter as get_counter;
+        use super::__wrapper__CounterContract__increase_counter as increase_counter;
+        use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
     }
 
     mod __l1_handler {
     }
 
     mod __constructor {
-        use super::__wrapper_constructor as constructor;
+        use super::__wrapper__constructor as constructor;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<

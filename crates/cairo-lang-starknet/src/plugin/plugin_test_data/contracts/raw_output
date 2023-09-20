@@ -72,7 +72,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -86,7 +86,7 @@ fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -101,8 +101,8 @@ fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<fe
 
 
     mod __external {
-        use super::__wrapper_test_raw_output as test_raw_output;
-        use super::__wrapper_test_raw_output_with_spaces as test_raw_output_with_spaces;
+        use super::__wrapper__test_raw_output as test_raw_output;
+        use super::__wrapper__test_raw_output_with_spaces as test_raw_output_with_spaces;
     }
 
     mod __l1_handler {

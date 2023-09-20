@@ -231,10 +231,16 @@ fn handle_component_impl(
         RewriteNode::empty()
     };
 
+    let trait_path_without_generics = remove_generics_from_path(db, &params.trait_path);
+
     let mut impl_functions = vec![];
     for item in params.impl_body.items(db).elements(db) {
-        let Some(impl_function) = handle_component_embeddable_as_impl_item(db, diagnostics, item)
-        else {
+        let Some(impl_function) = handle_component_embeddable_as_impl_item(
+            db,
+            diagnostics,
+            &trait_path_without_generics,
+            item,
+        ) else {
             continue;
         };
         impl_functions.push(RewriteNode::Text("\n    ".to_string()));
@@ -252,7 +258,7 @@ fn handle_component_impl(
         }}"
         ),
         &[
-            ("trait_path".to_string(), remove_generics_from_path(db, &params.trait_path)),
+            ("trait_path".to_string(), trait_path_without_generics),
             (
                 "generated_impl_name".to_string(),
                 RewriteNode::Copied(params.attr_arg_value.as_syntax_node()),
@@ -291,6 +297,7 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
 fn handle_component_embeddable_as_impl_item(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
+    trait_path: &RewriteNode,
     item: ast::ImplItem,
 ) -> Option<RewriteNode> {
     let ast::ImplItem::Function(item_function) = item else {
@@ -314,7 +321,7 @@ fn handle_component_embeddable_as_impl_item(
         });
         return None;
     };
-    let Some((self_param, get_component_call)) =
+    let Some((self_param, get_component_call, callsite_modifier)) =
         handle_first_param_for_embeddable_as(db, first_param)
     else {
         diagnostics.push(PluginDiagnostic {
@@ -370,11 +377,12 @@ fn handle_component_embeddable_as_impl_item(
         &format!(
             "$generated_function_sig$ {{
         {get_component_call}
-        component.$function_name$($args_node$)
+        $trait_path$::$function_name$({callsite_modifier}component, $args_node$)
     }}"
         ),
         &[
             ("generated_function_sig".to_string(), generated_function_sig),
+            ("trait_path".to_string(), trait_path.clone()),
             ("function_name".to_string(), function_name),
             ("args_node".to_string(), args_node),
         ]
@@ -385,12 +393,12 @@ fn handle_component_embeddable_as_impl_item(
 }
 
 /// Checks if the first parameter of a function in an impl is a valid value of an impl marked with
-/// `#[embeddable_as]`, and returns the matching wrapping function contract state param, and the
-/// code for fetching the matching component state from it.
+/// `#[embeddable_as]`, and returns the matching (wrapping function contract state param, code for
+/// fetching the matching component state from it, callsite_modifier).
 fn handle_first_param_for_embeddable_as(
     db: &dyn SyntaxGroup,
     param: &ast::Param,
-) -> Option<(String, String)> {
+) -> Option<(String, String, String)> {
     if param.name(db).text(db) != "self" {
         return None;
     }
@@ -403,6 +411,7 @@ fn handle_first_param_for_embeddable_as(
             Some((
                 format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
                 "let mut component = self.get_component_mut();".to_string(),
+                "ref ".to_string(),
             ))
         } else {
             None
@@ -416,6 +425,7 @@ fn handle_first_param_for_embeddable_as(
         Some((
             format!("self: @{GENERIC_CONTRACT_STATE_NAME}"),
             "let component = self.get_component();".to_string(),
+            "".to_string(),
         ))
     } else {
         None

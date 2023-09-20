@@ -129,7 +129,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_something(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -156,7 +156,7 @@ fn __wrapper_get_something(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set_something(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -182,7 +182,7 @@ fn __wrapper_set_something(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -211,7 +211,7 @@ fn __wrapper_l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -241,13 +241,13 @@ fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_something as get_something;
-        use super::__wrapper_set_something as set_something;
-        use super::__wrapper_test_serde as test_serde;
+        use super::__wrapper__get_something as get_something;
+        use super::__wrapper__set_something as set_something;
+        use super::__wrapper__test_serde as test_serde;
     }
 
     mod __l1_handler {
-        use super::__wrapper_l1_handler_func as l1_handler_func;
+        use super::__wrapper__l1_handler_func as l1_handler_func;
     }
 
     mod __constructor {

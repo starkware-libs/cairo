@@ -182,7 +182,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x3bd690d1a73da0d8c43f46ecc3a006978d8343a075e91a1c7a24529e7d244a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -207,7 +207,7 @@ fn __wrapper_invalid_constructor_name(mut data: Span::<felt252>) -> Span::<felt2
     }
 
     mod __constructor {
-        use super::__wrapper_invalid_constructor_name as invalid_constructor_name;
+        use super::__wrapper__invalid_constructor_name as invalid_constructor_name;
     }
 
     impl ContractStateEventEmitter of starknet::event::EventEmitter<
@@ -462,7 +462,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0xdee30876537447b8a21b901cf0379b47de6b9fcb087ab5e54f097e822f243c;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -483,7 +483,7 @@ fn __wrapper_foo_v0(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -504,7 +504,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -526,9 +526,9 @@ fn __wrapper_foo_v1(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo_v0 as foo_v0;
-        use super::__wrapper_foo as foo;
-        use super::__wrapper_foo_v1 as foo_v1;
+        use super::__wrapper__foo_v0 as foo_v0;
+        use super::__wrapper__foo as foo;
+        use super::__wrapper__foo_v1 as foo_v1;
     }
 
     mod __l1_handler {
@@ -659,7 +659,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0xd3b97940b766b03f59196c092939b4f964559ef1cd235415d018804dbdcfe3;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -681,7 +681,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo as foo;
+        use super::__wrapper__foo as foo;
     }
 
     mod __l1_handler {
@@ -798,7 +798,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x114e2e703df7c3eba53b970519666cfce0ede18d79e35b62fa95c0ecb6601fc;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -818,7 +818,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo as foo;
+        use super::__wrapper__foo as foo;
     }
 
     mod __l1_handler {
@@ -935,7 +935,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x2cc0463f1cfda138e64b2f35959f33601b5e1076814981ef2444d17ce259dfb;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -957,7 +957,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo as foo;
+        use super::__wrapper__foo as foo;
     }
 
     mod __l1_handler {
@@ -1091,7 +1091,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x34ebdf0a4defb7a8b628dda81a7dc347d8d3459040c2e1165ae0f7856bb7a29;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__foo(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1118,7 +1118,7 @@ fn __wrapper_foo(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo as foo;
+        use super::__wrapper__foo as foo;
     }
 
     mod __l1_handler {
@@ -1245,7 +1245,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x291a42fae50c99636dc1d6bc0c4e28fdb0e21f47c26aa0d5e22c21d993823d8;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper___validate__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1263,7 +1263,7 @@ fn __wrapper___validate__(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper___validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1281,7 +1281,7 @@ fn __wrapper___validate_declare__(mut data: Span::<felt252>) -> Span::<felt252> 
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper___validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1299,7 +1299,7 @@ fn __wrapper___validate_deploy__(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper___execute__(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper____execute__(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -1318,10 +1318,10 @@ fn __wrapper___execute__(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper___validate__ as __validate__;
-        use super::__wrapper___validate_declare__ as __validate_declare__;
-        use super::__wrapper___validate_deploy__ as __validate_deploy__;
-        use super::__wrapper___execute__ as __execute__;
+        use super::__wrapper____validate__ as __validate__;
+        use super::__wrapper____validate_declare__ as __validate_declare__;
+        use super::__wrapper____validate_deploy__ as __validate_deploy__;
+        use super::__wrapper____execute__ as __execute__;
     }
 
     mod __l1_handler {
@@ -2054,7 +2054,7 @@ use starknet::storage::{
 const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__AImpl__foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2072,7 +2072,7 @@ fn __wrapper_foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__AImpl__foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2090,7 +2090,7 @@ fn __wrapper_foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__AImpl__foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2109,9 +2109,9 @@ fn __wrapper_foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_foo_external as foo_external;
-        use super::__wrapper_foo_l1_handler as foo_l1_handler;
-        use super::__wrapper_foo_constructor as foo_constructor;
+        use super::__wrapper__AImpl__foo_external as foo_external;
+        use super::__wrapper__AImpl__foo_l1_handler as foo_l1_handler;
+        use super::__wrapper__AImpl__foo_constructor as foo_constructor;
     }
 
     mod __l1_handler {
