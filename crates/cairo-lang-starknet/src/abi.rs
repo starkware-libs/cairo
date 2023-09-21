@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId,
@@ -102,6 +102,14 @@ impl Contract {
     }
 }
 
+/// Event information.
+enum EventInfo {
+    /// The event is a struct.
+    Struct,
+    /// The event is an enum, contains its set of selectors.
+    Enum(HashSet<String>),
+}
+
 #[derive(Default)]
 pub struct AbiBuilder {
     // The constructed ABI.
@@ -111,9 +119,9 @@ pub struct AbiBuilder {
     /// Used to avoid redundancy.
     types: HashSet<TypeId>,
 
-    /// List of events that were included in the abi.
-    /// Used to avoid redundancy.
-    events: HashSet<TypeId>,
+    /// A map of events that were included in the abi to their info.
+    /// Used to avoid redundancy, as well as preventing enum events from repeating selectors.
+    event_info: HashMap<TypeId, EventInfo>,
 
     /// List of entry point names that were included in the abi.
     /// Used to avoid duplication.
@@ -122,7 +130,6 @@ pub struct AbiBuilder {
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
 }
-
 impl AbiBuilder {
     /// Creates a Starknet contract ABI from a ModuleId.
     pub fn submodule_as_contract_abi(
@@ -529,7 +536,7 @@ impl AbiBuilder {
 
     /// Adds an event to the ABI from a type with an Event derive.
     fn add_event(&mut self, db: &dyn SemanticGroup, type_id: TypeId) -> Result<(), ABIError> {
-        if !self.events.insert(type_id) {
+        if self.event_info.contains_key(&type_id) {
             // The event was handled previously.
             return Ok(());
         }
@@ -550,19 +557,44 @@ impl AbiBuilder {
                         self.add_event_field(db, kind, ty, name)
                     })
                     .collect::<Result<_, ABIError>>()?;
+                self.event_info.insert(type_id, EventInfo::Struct);
                 EventKind::Struct { members: event_fields }
             }
             EventData::Enum { variants } => {
                 let ConcreteTypeId::Enum(concrete_enum_id) = concrete else {
                     unreachable!();
                 };
+                let mut selectors = HashSet::new();
+                let mut add_selector = |selector: &str| {
+                    if !selectors.insert(selector.to_string()) {
+                        Err(ABIError::EventSelectorDuplication {
+                            event: type_id.format(db),
+                            selector: selector.to_string(),
+                        })
+                    } else {
+                        Ok(())
+                    }
+                };
                 let concrete_variants = db.concrete_enum_variants(concrete_enum_id)?;
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
-                        let ty = concrete_variant.ty;
-                        self.add_event_field(db, kind, ty, name)
+                        if kind == EventFieldKind::Nested {
+                            add_selector(&name)?;
+                        }
+                        let field = self.add_event_field(db, kind, concrete_variant.ty, name)?;
+                        if kind == EventFieldKind::Flat {
+                            if let EventInfo::Enum(inner) = &self.event_info[&concrete_variant.ty] {
+                                for selector in inner {
+                                    add_selector(selector)?;
+                                }
+                            } else {
+                                return Err(ABIError::EventFlatVariantMustBeEnum);
+                            }
+                        }
+                        Ok(field)
                     })
                     .collect::<Result<_, ABIError>>()?;
+                self.event_info.insert(type_id, EventInfo::Enum(selectors));
                 EventKind::Enum { variants: event_fields }
             }
         };
@@ -747,10 +779,14 @@ pub enum ABIError {
     SemanticError,
     #[error("Event must be an enum.")]
     EventMustBeEnum,
+    #[error("`starknet::Event` variant marked with `#[flat]` must be an enum.")]
+    EventFlatVariantMustBeEnum,
     #[error("Event must have no generic parameters.")]
     EventWithGenericParams,
     #[error("Event type must derive `starknet::Event`.")]
     EventNotDerived,
+    #[error("Event `{event}` has duplicate selector `{selector}`.")]
+    EventSelectorDuplication { event: String, selector: String },
     #[error("Interfaces must have exactly one generic parameter.")]
     ExpectedOneGenericParam,
     #[error("Contracts must have only one constructor.")]
