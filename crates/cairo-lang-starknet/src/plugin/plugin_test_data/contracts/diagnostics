@@ -1956,10 +1956,20 @@ trait ContractAbi {
 }
 
 //! > expected_diagnostics
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:1:1
+#[contract]
+^*********^
+
 error: Plugin diagnostic: The 'contract' attribute was deprecated, please use `starknet::contract` instead.
  --> lib.cairo:1:1
 #[contract]
 ^*********^
+
+error: Plugin diagnostic: Unsupported attribute.
+ --> lib.cairo:6:1
+#[abi]
+^****^
 
 error: Plugin diagnostic: The 'abi' attribute was deprecated, please use `starknet::interface` instead.
  --> lib.cairo:6:1

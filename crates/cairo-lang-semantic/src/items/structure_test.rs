@@ -15,7 +15,7 @@ fn test_struct() {
     let (test_module, diagnostics) = setup_test_module(
         db,
         indoc::indoc! {"
-            #[contract(MyImpl1, MyImpl2)]
+            #[inline(MyImpl1, MyImpl2)]
             struct A {
                 a: felt252,
                 b: (felt252, felt252),
@@ -73,6 +73,6 @@ fn test_struct() {
             .map(|attr| format!("{:?}", attr.debug(db)))
             .collect::<Vec<_>>()
             .join(",\n"),
-        r#"Attribute { id: "contract", args: ["MyImpl1", "MyImpl2", ] }"#
+        r#"Attribute { id: "inline", args: ["MyImpl1", "MyImpl2", ] }"#
     );
 }
