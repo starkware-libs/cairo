@@ -93,7 +93,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 // The first parameter is the `self` parameter.
                 let Some(self_param) = params.next() else {
                     diagnostics.push(PluginDiagnostic {
-                        message: "Starknet interface functions must have a `self` parameter."
+                        message: "`starknet::interface` functions must have a `self` parameter."
                             .to_string(),
                         stable_ptr: declaration.stable_ptr().untyped(),
                     });
@@ -115,9 +115,8 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                 };
                 if !self_param_type_ok {
                     diagnostics.push(PluginDiagnostic {
-                        message: "The first parameter of an interface function must be a \
-                                  reference to the generic parameter of the interface trait or a \
-                                  snapshot of it."
+                        message: "`starknet::interface` function first parameter must be a \
+                                  reference to trait's generic parameter or a snapshot of it."
                             .to_string(),
                         stable_ptr: self_param.stable_ptr().untyped(),
                     });
@@ -129,9 +128,20 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                         skip_generation = true;
 
                         diagnostics.push(PluginDiagnostic {
-                            message: "`ref` parameters are not supported in the ABI of a contract."
+                            message: "`starknet::interface` function non-first `ref` parameters \
+                                      are not supported."
                                 .to_string(),
                             stable_ptr: param.modifiers(db).stable_ptr().untyped(),
+                        })
+                    }
+                    if param.type_clause(db).ty(db).is_dependent_type(db, &single_generic_param) {
+                        skip_generation = true;
+
+                        diagnostics.push(PluginDiagnostic {
+                            message: "`starknet::interface` function non-first parameters cannot \
+                                      depend on the trait's generic param type."
+                                .to_string(),
+                            stable_ptr: param.type_clause(db).ty(db).stable_ptr().untyped(),
                         })
                     }
 

@@ -43,9 +43,14 @@ pub trait AstPathExtract {
     /// Returns true if `self` matches `identifier`.
     /// Does not resolve paths or type aliases.
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool;
-    /// Returns true if `type_path` matches `$name$<$generic_arg$>`.
+    /// Returns true if `self` matches `$name$<$generic_arg$>`.
     /// Does not resolve paths, type aliases or named generics.
     fn is_name_with_arg(&self, db: &dyn SyntaxGroup, name: &str, generic_arg: &str) -> bool;
+    /// Returns true if `self` is dependent on `identifier` in an internal type.
+    /// For example given identifier `T` will return true for:
+    /// `T`, `Array<T>`, `Array<Array<T>>`, `(T, felt252)`.
+    /// Does not resolve paths, type aliases or named generics.
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool;
     /// Returns true if `self` is `felt252`.
     /// Does not resolve paths or type aliases.
     fn is_felt252(&self, db: &dyn SyntaxGroup) -> bool {
@@ -88,6 +93,30 @@ impl AstPathExtract for ast::ExprPath {
 
         arg_expr.expr(db).is_identifier(db, generic_arg)
     }
+
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+        let segments = self.elements(db);
+        let Some((last, head)) = segments.split_last() else { return false };
+        match last {
+            ast::PathSegment::Simple(arg_segment) => {
+                head.is_empty() && arg_segment.ident(db).text(db) == identifier
+            }
+            ast::PathSegment::WithGenericArgs(with_generics) => {
+                with_generics.generic_args(db).generic_args(db).elements(db).iter().any(|arg| {
+                    let generic_arg_value = match arg {
+                        ast::GenericArg::Named(named) => named.value(db),
+                        ast::GenericArg::Unnamed(unnamed) => unnamed.value(db),
+                    };
+                    match generic_arg_value {
+                        ast::GenericArgValue::Expr(arg_expr) => {
+                            arg_expr.expr(db).is_dependent_type(db, identifier)
+                        }
+                        ast::GenericArgValue::Underscore(_) => false,
+                    }
+                })
+            }
+        }
+    }
 }
 impl AstPathExtract for ast::Expr {
     fn is_identifier(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
@@ -103,6 +132,23 @@ impl AstPathExtract for ast::Expr {
             type_path.is_name_with_arg(db, name, generic_arg)
         } else {
             false
+        }
+    }
+
+    fn is_dependent_type(&self, db: &dyn SyntaxGroup, identifier: &str) -> bool {
+        match self {
+            ast::Expr::Path(type_path) => type_path.is_dependent_type(db, identifier),
+            ast::Expr::Unary(unary) => unary.expr(db).is_dependent_type(db, identifier),
+            ast::Expr::Binary(binary) => {
+                binary.lhs(db).is_dependent_type(db, identifier)
+                    || binary.rhs(db).is_dependent_type(db, identifier)
+            }
+            ast::Expr::Tuple(tuple) => tuple
+                .expressions(db)
+                .elements(db)
+                .iter()
+                .any(|expr| expr.is_dependent_type(db, identifier)),
+            _ => false,
         }
     }
 }
