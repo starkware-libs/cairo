@@ -13,8 +13,8 @@ use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, COMPONENT_INLINE_MACRO,
     CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_TRAIT,
-    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, NESTED_ATTR,
-    STORAGE_STRUCT_NAME,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, STORAGE_STRUCT_NAME,
+    SUBSTORAGE_ATTR,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -35,8 +35,8 @@ pub struct ContractSpecificGenerationData {
 struct ComponentsGenerationData {
     /// The components defined in the contract using the `component!` inline macro.
     pub components: Vec<NestedComponent>,
-    /// The contract's storage members that are marked with the `nested` attribute.
-    pub nested_storage_members: Vec<String>,
+    /// The contract's storage members that are marked with the `substorage` attribute.
+    pub substorage_members: Vec<String>,
     /// The contract's event variants that are defined in the main event enum of the contract.
     pub nested_event_variants: Vec<SmolStr>,
 }
@@ -133,13 +133,13 @@ impl ComponentsGenerationData {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.nested_storage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: storage_name.stable_ptr().untyped(),
                 message: format!(
-                    "`{0}` is not a nested member in the contract's \
+                    "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
-                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{NESTED_ATTR}(v0)]\n{0}: \
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
                      path::to::component::{STORAGE_STRUCT_NAME},\n````",
                     storage_name_syntax_node.get_text_without_trivia(db)
                 )
@@ -251,10 +251,10 @@ fn handle_contract_item(
             for member in item_struct.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already
                 // verified in handle_storage_struct above.
-                if member.has_attr(db, NESTED_ATTR) {
+                if member.has_attr(db, SUBSTORAGE_ATTR) {
                     data.specific
                         .components_data
-                        .nested_storage_members
+                        .substorage_members
                         .push(member.name(db).text(db).to_string());
                 }
             }

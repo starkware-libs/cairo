@@ -51,7 +51,7 @@ mod counter_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         comp_storage: super::comp::Storage
     }
 
@@ -122,7 +122,7 @@ mod counter_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         comp_storage: super::comp::Storage
     }
 
@@ -956,7 +956,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0xec111d3ee73e1d1273b5393380f8cbe63f960e1fbb684dbe7a105963c03486;
+const TEST_CLASS_HASH: felt252 = 0x1086dfc31bbcf268e659eae270c18772df580a79d61a03d56056059861c874a;
 
 impl ContractStateI1I1 of
     super::comp::UnsafeNewContractStateTraitForI1I1<ContractState> {

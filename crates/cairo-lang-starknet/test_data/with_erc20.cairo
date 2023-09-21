@@ -214,7 +214,7 @@ mod my_contract {
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         erc20_token: super::erc20::Storage,
     }
 

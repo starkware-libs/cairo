@@ -17,7 +17,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
         normal_member1: usize,
         normal_member2: usize,
@@ -51,7 +51,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
         normal_member1: usize,
         normal_member2: usize,
@@ -245,7 +245,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x249c5f29e706f89a44a94a5f82ef3954a3f7e9c1c751b31b18850ec806b8ec5;
+const TEST_CLASS_HASH: felt252 = 0x13b620794e5b3dc7cc2033d0b9381b35d5d10d1f0a43fe1f5e1d495f793ebab;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -387,9 +387,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -431,9 +431,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -619,7 +619,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
+const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -796,9 +796,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -842,9 +842,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -1030,7 +1030,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x3c447736e39c2bd5aa9e786706ddea3f429b9c39177b1c5819576b263b4829a;
+const TEST_CLASS_HASH: felt252 = 0x20768e618c747c9e742de0446492553ae65eafb837da660ed6516e1ed6b52fc;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {
