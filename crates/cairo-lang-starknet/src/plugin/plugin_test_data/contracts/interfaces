@@ -377,6 +377,7 @@ impl StoreInterface1Dispatcher of starknet::Store::<Interface1Dispatcher> {
     }
 }
 
+
 impls:
 
 impl Interface1LibraryDispatcherCopy of Copy::<Interface1LibraryDispatcher>;
@@ -426,6 +427,7 @@ impl StoreInterface1LibraryDispatcher of starknet::Store::<Interface1LibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -477,6 +479,7 @@ impl StoreInterface1SafeLibraryDispatcher of starknet::Store::<Interface1SafeLib
     }
 }
 
+
 impls:
 
 impl Interface1SafeDispatcherCopy of Copy::<Interface1SafeDispatcher>;
@@ -526,6 +529,7 @@ impl StoreInterface1SafeDispatcher of starknet::Store::<Interface1SafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 impls:
 
@@ -577,6 +581,7 @@ impl StoreInterface2Dispatcher of starknet::Store::<Interface2Dispatcher> {
     }
 }
 
+
 impls:
 
 impl Interface2LibraryDispatcherCopy of Copy::<Interface2LibraryDispatcher>;
@@ -626,6 +631,7 @@ impl StoreInterface2LibraryDispatcher of starknet::Store::<Interface2LibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -677,6 +683,7 @@ impl StoreInterface2SafeLibraryDispatcher of starknet::Store::<Interface2SafeLib
     }
 }
 
+
 impls:
 
 impl Interface2SafeDispatcherCopy of Copy::<Interface2SafeDispatcher>;
@@ -726,6 +733,7 @@ impl StoreInterface2SafeDispatcher of starknet::Store::<Interface2SafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 component:
 
@@ -1043,6 +1051,7 @@ impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
         contract.emit(Event::CompEvent(event));
     }
 }
+
 
 impls:
 

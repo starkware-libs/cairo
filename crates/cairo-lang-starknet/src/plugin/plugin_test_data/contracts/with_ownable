@@ -477,6 +477,7 @@ impl StoreTransferTraitDispatcher of starknet::Store::<TransferTraitDispatcher> 
     }
 }
 
+
 impls:
 
 impl TransferTraitLibraryDispatcherCopy of Copy::<TransferTraitLibraryDispatcher>;
@@ -526,6 +527,7 @@ impl StoreTransferTraitLibraryDispatcher of starknet::Store::<TransferTraitLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -577,6 +579,7 @@ impl StoreTransferTraitSafeLibraryDispatcher of starknet::Store::<TransferTraitS
     }
 }
 
+
 impls:
 
 impl TransferTraitSafeDispatcherCopy of Copy::<TransferTraitSafeDispatcher>;
@@ -626,6 +629,7 @@ impl StoreTransferTraitSafeDispatcher of starknet::Store::<TransferTraitSafeDisp
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 component:
 
@@ -975,6 +979,7 @@ impl HasComponentImpl_ownable of super::ownable::HasComponent<ContractState> {
         contract.emit(Event::Ownable(event));
     }
 }
+
 
 impls:
 

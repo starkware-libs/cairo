@@ -86,7 +86,8 @@ fn handle_struct(
                 ) -> Option<$struct_name$> {{$deserialize_members$
                     Option::Some($struct_name$ {{$ctor$}})
                 }}
-            }}"
+            }}
+            "
         ),
         &[
             ("struct_name".to_string(), struct_name),

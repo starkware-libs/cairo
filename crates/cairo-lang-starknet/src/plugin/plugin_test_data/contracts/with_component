@@ -316,6 +316,7 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
     }
 }
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -688,7 +689,8 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
         let mut contract = super::component1::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::Comp1Event(event));
     }
-}impl HasComponentImpl_component2 of super::component2::HasComponent<ContractState> {
+}
+impl HasComponentImpl_component2 of super::component2::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @super::component2::ComponentState<ContractState> {
         self.component2_storage
     }
@@ -707,6 +709,7 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
         contract.emit(Event::Comp2Event(event));
     }
 }
+
 
 impls:
 
@@ -1099,7 +1102,8 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
         let mut contract = super::component1::HasComponent::get_contract_mut(ref self);
         contract.emit(Event::Comp1Event(event));
     }
-}impl HasComponentImpl_component2 of super::component2::HasComponent<ContractState> {
+}
+impl HasComponentImpl_component2 of super::component2::HasComponent<ContractState> {
     fn get_component(self: @ContractState) -> @super::component2::ComponentState<ContractState> {
         self.component2_storage
     }
@@ -1118,6 +1122,7 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
         contract.emit(Event::Comp2Event(event));
     }
 }
+
 
 impls:
 

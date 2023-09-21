@@ -571,6 +571,7 @@ impl StoreIUpgradableDispatcher of starknet::Store::<IUpgradableDispatcher> {
     }
 }
 
+
 impls:
 
 impl IUpgradableLibraryDispatcherCopy of Copy::<IUpgradableLibraryDispatcher>;
@@ -620,6 +621,7 @@ impl StoreIUpgradableLibraryDispatcher of starknet::Store::<IUpgradableLibraryDi
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -671,6 +673,7 @@ impl StoreIUpgradableSafeLibraryDispatcher of starknet::Store::<IUpgradableSafeL
     }
 }
 
+
 impls:
 
 impl IUpgradableSafeDispatcherCopy of Copy::<IUpgradableSafeDispatcher>;
@@ -720,6 +723,7 @@ impl StoreIUpgradableSafeDispatcher of starknet::Store::<IUpgradableSafeDispatch
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 impls:
 
@@ -771,6 +775,7 @@ impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispat
     }
 }
 
+
 impls:
 
 impl ICounterContractLibraryDispatcherCopy of Copy::<ICounterContractLibraryDispatcher>;
@@ -820,6 +825,7 @@ impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContrac
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -871,6 +877,7 @@ impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterCon
     }
 }
 
+
 impls:
 
 impl ICounterContractSafeDispatcherCopy of Copy::<ICounterContractSafeDispatcher>;
@@ -920,6 +927,7 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 component:
 
@@ -1047,6 +1055,7 @@ impl ContractUpgradedIsEvent of starknet::Event<ContractUpgraded> {
         Option::Some(ContractUpgraded {old_class_hash, new_class_hash, })
     }
 }
+
 
 embeddable:
 
@@ -1300,6 +1309,7 @@ impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractStat
     }
 }
 
+
 starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
@@ -1392,6 +1402,7 @@ impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
         Option::Some(CounterIncreased {amount, })
     }
 }
+
 
 impls:
 

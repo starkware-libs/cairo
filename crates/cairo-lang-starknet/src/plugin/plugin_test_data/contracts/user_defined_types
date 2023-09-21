@@ -382,6 +382,7 @@ impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     }
 }
 
+
 impls:
 
 impl ZeroSizeDrop of Drop::<ZeroSize>;
@@ -441,6 +442,7 @@ impl StoreZeroSize of starknet::Store::<ZeroSize> {
         0
     }
 }
+
 
 impls:
 
@@ -538,6 +540,7 @@ impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
         1_u8 + cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size())
     }
 }
+
 
 impls:
 
@@ -659,6 +662,7 @@ impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
         1_u8 + cmp::max(starknet::Store::<u32>::size(), cmp::max(starknet::Store::<u16>::size(), starknet::Store::<u8>::size()))
     }
 }
+
 
 impls:
 

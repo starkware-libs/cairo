@@ -111,7 +111,8 @@ impl AIsEvent of starknet::Event<A> {
                 )?;
         Option::Some(A {x, data, })
     }
-}impl StoreA of starknet::Store::<A> {
+}
+impl StoreA of starknet::Store::<A> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<A> {
         let x = starknet::Store::<felt252>::read(address_domain, base)?;
         let mut current_offset = starknet::Store::<felt252>::size();
@@ -154,6 +155,7 @@ impl AIsEvent of starknet::Event<A> {
     }
 }
 
+
 impls:
 
 impl BPartialEq of PartialEq::<B> {
@@ -195,6 +197,7 @@ impl BIsEvent of starknet::Event<B> {
         Option::Some(B {x, })
     }
 }
+
 
 impls:
 

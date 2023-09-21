@@ -359,6 +359,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     }
 }
 
+
 impls:
 
 impl BestEventEverDrop of Drop::<BestEventEver>;

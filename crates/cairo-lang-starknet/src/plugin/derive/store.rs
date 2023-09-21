@@ -138,7 +138,8 @@ fn handle_struct(db: &dyn SyntaxGroup, struct_ast: &ast::ItemStruct) -> Option<R
             fn size() -> u8 {{
                 {sizes}
             }}
-        }}",
+        }}
+        ",
         struct_name = struct_ast.name(db).as_syntax_node().get_text_without_trivia(db),
         reads_values_at_offset = reads_values_at_offset.join("\n        "),
         reads_values = reads_values.join("\n        "),
@@ -265,7 +266,8 @@ fn handle_enum(
             fn size() -> u8 {{
                 1_u8 + {match_size}
             }}
-        }}",
+        }}
+        ",
         match_idx = indent_by(8, match_idx.join("\nelse ")),
         match_idx_at_offset = indent_by(8, match_idx_at_offset.join("\nelse ")),
         match_value = indent_by(12, match_value.join(",\n")),

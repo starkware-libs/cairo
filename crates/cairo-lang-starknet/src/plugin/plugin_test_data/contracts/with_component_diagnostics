@@ -1199,6 +1199,7 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
     }
 }
 
+
 impls:
 
 impl EventDrop of Drop::<Event>;
@@ -2657,6 +2658,7 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
         contract.emit(Event::Comp1Event(event));
     }
 }
+
 
 impls:
 

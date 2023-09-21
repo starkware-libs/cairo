@@ -125,6 +125,7 @@ impl StoreOuterType of starknet::Store::<OuterType> {
     }
 }
 
+
 contract:
 
 #[event]
