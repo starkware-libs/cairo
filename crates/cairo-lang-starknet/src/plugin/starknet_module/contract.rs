@@ -310,16 +310,32 @@ pub(super) fn generate_contract_specific_code(
     generation_data.into_rewrite_node(db, diagnostics)
 }
 
-/// Forbids the given attribute in the given impl, assuming it's marked with #[abi(embed)].
-fn forbid_attribute_in_embedded_impl(
+/// Forbids `#[external]`, `#[l1_handler]` and `#[constructor]` attributes in the given impl.
+fn forbid_attributes_in_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    embedded_impl_attr: &str,
+) {
+    for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
+        forbid_attribute_in_impl(db, diagnostics, impl_item, attr, embedded_impl_attr);
+    }
+}
+
+/// Forbids the given attribute in the given impl, assuming it's marked `embedded_impl_attr`.
+fn forbid_attribute_in_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     impl_item: &ast::ImplItem,
     attr_name: &str,
+    embedded_impl_attr: &str,
 ) {
     if let Some(attr) = impl_item.find_attr(db, attr_name) {
         diagnostics.push(PluginDiagnostic {
-            message: format!("The '{attr_name}' attribute is not allowed inside an external impl."),
+            message: format!(
+                "The `{attr_name}` attribute is not allowed inside an impl marked as \
+                 `{embedded_impl_attr}`."
+            ),
             stable_ptr: attr.stable_ptr().untyped(),
         });
     }
@@ -382,9 +398,10 @@ fn handle_contract_impl(
     imp: &ast::ItemImpl,
     data: &mut EntryPointsGenerationData,
 ) {
-    let is_embed = is_impl_abi_embed(db, diagnostics, imp);
+    let is_embed = is_impl_abi_embed(db, imp);
+    let is_external = has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR);
     let is_per_item = is_impl_abi_per_item(db, imp);
-    if !is_embed && !is_per_item {
+    if !is_embed && !is_per_item && !is_external {
         return;
     }
     let ast::MaybeImplBody::Some(impl_body) = imp.body(db) else {
@@ -394,20 +411,24 @@ fn handle_contract_impl(
     let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     for item in impl_body.items(db).elements(db) {
         if is_embed {
-            for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
-                forbid_attribute_in_embedded_impl(db, diagnostics, &item, attr);
-            }
+            forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
+        } else if is_external {
+            forbid_attributes_in_impl(db, diagnostics, &item, "#[external(v0)]");
         }
 
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if is_embed {
-            EntryPointKind::External
-        } else if let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) {
+        let entry_point_kind = if is_per_item {
+            let Some(entry_point_kind) =
+                EntryPointKind::try_from_attrs(db, diagnostics, &item_function)
+            else {
+                continue;
+            };
             entry_point_kind
         } else {
-            continue;
+            // is_embed || is_external
+            EntryPointKind::External
         };
         let function_name = item_function.declaration(db).name(db);
         let function_name_node = RewriteNode::interpolate_patched(
@@ -431,14 +452,9 @@ fn handle_contract_impl(
     }
 }
 
-/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
-fn is_impl_abi_embed(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    imp: &ast::ItemImpl,
-) -> bool {
+/// Checks whether the impl is marked with `#[abi(embed_v0)]`.
+fn is_impl_abi_embed(db: &dyn SyntaxGroup, imp: &ast::ItemImpl) -> bool {
     imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
-        || has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR)
 }
 
 /// Checks whether the impl is marked with `#[abi(per_item)]`.

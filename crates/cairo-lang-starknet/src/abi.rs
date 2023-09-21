@@ -181,15 +181,29 @@ impl AbiBuilder {
 
         // Add impls to ABI.
         for impl_def in impl_defs {
-            if is_impl_abi_embed(db, impl_def)? {
-                builder.add_impl(db, impl_def, storage_type, None)?;
+            let is_of_interface = db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)?;
+            // TODO(v3): deprecate the external attribute.
+            if impl_def.has_attr(db, EXTERNAL_ATTR)? {
+                if is_of_interface {
+                    builder.add_embedded_impl(db, impl_def, None)?;
+                } else {
+                    builder.add_non_interface_impl(db, impl_def, storage_type)?;
+                }
+            } else if is_impl_abi_embed(db, impl_def)? {
+                if !is_of_interface {
+                    return Err(ABIError::EmbeddedImplMustBeInterface);
+                }
+                builder.add_embedded_impl(db, impl_def, None)?;
             } else if is_impl_abi_per_item(db, impl_def)? {
-                builder.add_embedded_impl(db, impl_def, storage_type)?;
+                if is_of_interface {
+                    return Err(ABIError::ContractInterfaceImplCannotBePerItem);
+                }
+                builder.add_per_item_impl(db, impl_def, storage_type)?;
             }
         }
         for impl_alias in impl_aliases {
             if impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)? {
-                builder.add_embedded_impl_alias(db, impl_alias, storage_type)?;
+                builder.add_embedded_impl_alias(db, impl_alias)?;
             }
         }
 
@@ -268,8 +282,8 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds the functions of a non-interface impl to the ABI as external functions.
-    /// A non-interface impl is an impl whose trait is not marked as `#[starknet::interface]`
+    /// Adds the functions of an `external` impl of non-interface trait to the ABI as external
+    /// functions.
     fn add_non_interface_impl(
         &mut self,
         db: &dyn SemanticGroup,
@@ -284,13 +298,12 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds an impl to the ABI.
+    /// Adds an impl of a starknet interface to the ABI.
     /// `impl_alias_name` can override the given impl name and is used in the ABI if set.
-    fn add_impl(
+    fn add_embedded_impl(
         &mut self,
         db: &dyn SemanticGroup,
         impl_def_id: ImplDefId,
-        storage_type: TypeId,
         impl_alias_name: Option<String>,
     ) -> Result<(), ABIError> {
         let impl_name = impl_def_id.name(db.upcast());
@@ -298,32 +311,23 @@ impl AbiBuilder {
         let trt = db.impl_def_concrete_trait(impl_def_id)?;
         let trt_path = trt.full_path(db);
 
-        // If the trait is marked as starknet::interface, add the interface. Otherwise, add the
-        // functions as external functions.
         let trait_id = trt.trait_id(db);
-        if trait_id.has_attr(db, INTERFACE_ATTR)? {
-            let abi_name = impl_alias_name.unwrap_or(impl_name.into());
-            let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
-            self.add_abi_item(impl_item, true)?;
-            self.add_interface(db, trait_id)?;
-        } else {
-            self.add_non_interface_impl(db, impl_def_id, storage_type)?;
-        }
+
+        let abi_name = impl_alias_name.unwrap_or(impl_name.into());
+        let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
+        self.add_abi_item(impl_item, true)?;
+        self.add_interface(db, trait_id)?;
 
         Ok(())
     }
 
     /// Adds an embedded impl to the ABI.
-    fn add_embedded_impl(
+    fn add_per_item_impl(
         &mut self,
         db: &dyn SemanticGroup,
         impl_def_id: ImplDefId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        // Make sure trait is not marked as starknet::interface.
-        if db.impl_def_concrete_trait(impl_def_id)?.trait_id(db).has_attr(db, INTERFACE_ATTR)? {
-            return Err(ABIError::ContractInterfaceImplCannotBeEmbedded);
-        }
         for impl_function_id in db.impl_functions(impl_def_id).unwrap_or_default().values() {
             self.maybe_add_function_with_body(
                 db,
@@ -339,7 +343,6 @@ impl AbiBuilder {
         &mut self,
         db: &dyn SemanticGroup,
         impl_alias_id: ImplAliasId,
-        storage_type: TypeId,
     ) -> Result<(), ABIError> {
         let impl_def = db.impl_alias_impl_def(impl_alias_id)?;
 
@@ -354,7 +357,7 @@ impl AbiBuilder {
         }
 
         // Add the impl to the ABI.
-        self.add_impl(db, impl_def, storage_type, Some(impl_alias_id.name(db.upcast()).into()))?;
+        self.add_embedded_impl(db, impl_def, Some(impl_alias_id.name(db.upcast()).into()))?;
 
         Ok(())
     }
@@ -523,15 +526,10 @@ impl AbiBuilder {
         impl_function_id: ImplFunctionId,
         storage_type: TypeId,
     ) -> Result<Item, ABIError> {
-        let name = impl_function_id.name(db.upcast()).into();
+        let name: String = impl_function_id.name(db.upcast()).into();
         let signature = db.impl_function_signature(impl_function_id)?;
 
-        let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
-
-        let outputs = self.get_signature_outputs(db, &signature)?;
-
-        Ok(Item::Function(Function { name, inputs, outputs, state_mutability }))
+        self.function_as_abi(db, &name, signature, storage_type)
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
@@ -729,10 +727,9 @@ impl AbiBuilder {
     }
 }
 
-/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
+/// Checks whether the impl is marked with #[abi(embed_v0)].
 fn is_impl_abi_embed(db: &dyn SemanticGroup, imp: ImplDefId) -> Maybe<bool> {
-    Ok(imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)?
-        || imp.has_attr(db, EXTERNAL_ATTR)?)
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
 }
 
 /// Checks whether the impl is marked with `#[abi(per_item)]`.
@@ -811,9 +808,12 @@ pub enum ABIError {
     WrongEmbeddedImplFirstGeneric,
     #[error("Only the first generic parameter of an embeddable impl can be a type.")]
     EmbeddableImplWithExtraGenerics,
-    // TODO(yuval): change to per-item.
-    #[error("Contract interfaces impls cannot be directly embedded.")]
-    ContractInterfaceImplCannotBeEmbedded,
+    #[error(
+        "An impl marked with #[abi(per_item)] can't be of a trait marked with \
+         #[starknet::interface]. Consider using #[abi(embed_v0)] instead, or use a non-interface \
+         trait."
+    )]
+    ContractInterfaceImplCannotBePerItem,
     #[error(
         "Invalid duplicated item: {description} is used twice in the same contract. This is not \
          supported."

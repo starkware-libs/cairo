@@ -7,7 +7,7 @@ ExpandContractTestRunner(expect_diagnostics: false)
 #[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -32,7 +32,7 @@ lib.cairo:
 #[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -266,7 +266,7 @@ impl OutsideImplWithDestruct<
     TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -278,7 +278,7 @@ impl OutsideImplWithPanicDestruct<
     TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_5(self: @TContractState) -> felt252 {
         5
     }
@@ -305,7 +305,7 @@ impl OutsideImplWithDestruct<
     TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -317,7 +317,7 @@ impl OutsideImplWithPanicDestruct<
     TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_5(self: @TContractState) -> felt252 {
         5
     }
