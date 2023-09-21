@@ -58,6 +58,7 @@ pub struct Program {
     /// Descriptions of the functions - signatures and entry points.
     pub funcs: Vec<Function>,
     /// Debug information for a Sierra program.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub debug_info: Option<DebugInfo>,
 }
 impl Program {
