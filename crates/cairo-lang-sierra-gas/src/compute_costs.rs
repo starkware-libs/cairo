@@ -278,7 +278,10 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
-        self.costs.get(idx).expect("Wallet value for statement {idx} was not yet computed.").clone()
+        self.costs
+            .get(idx)
+            .unwrap_or_else(|| panic!("Wallet value for statement {idx} was not yet computed."))
+            .clone()
     }
 
     /// Prepares the values for [Self::wallet_at].
