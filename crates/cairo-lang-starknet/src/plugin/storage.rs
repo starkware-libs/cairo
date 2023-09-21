@@ -124,7 +124,7 @@ fn get_storage_member_code(
     get_simple_storage_member_code(db, diagnostics, member, starknet_module_kind, extra_uses_node)
 }
 
-/// Returns the relevant code for a simple (non-nested) storage member.
+/// Returns the relevant code for a simple (`Store` implementing type) storage member.
 fn get_simple_storage_member_code(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
@@ -259,7 +259,7 @@ fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode
     }
 }
 
-/// Returns the relevant code for a nested storage member.
+/// Returns the relevant code for a substorage storage member.
 fn get_substorage_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
