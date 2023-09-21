@@ -35,6 +35,7 @@ pub(super) const RAW_OUTPUT_ATTR: &str = "raw_output";
 pub const EMBEDDABLE_AS_ATTR: &str = "embeddable_as";
 pub const COMPONENT_INLINE_MACRO: &str = "component";
 pub const HAS_COMPONENT_TRAIT: &str = "HasComponent";
+pub const SUBSTORAGE_ATTR: &str = "substorage";
 pub const NESTED_ATTR: &str = "nested";
 pub const FLAT_ATTR: &str = "flat";
 pub const KEY_ATTR: &str = "key";

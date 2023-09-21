@@ -57,21 +57,22 @@ impl MacroPlugin for StarkNetPlugin {
 
     fn declared_attributes(&self) -> Vec<String> {
         vec![
+            ABI_ATTR.to_string(),
             COMPONENT_ATTR.to_string(),
             CONSTRUCTOR_ATTR.to_string(),
             CONTRACT_ATTR.to_string(),
             EMBEDDABLE_AS_ATTR.to_string(),
             EMBEDDABLE_ATTR.to_string(),
-            FLAT_ATTR.to_string(),
             EVENT_ATTR.to_string(),
             EXTERNAL_ATTR.to_string(),
+            FLAT_ATTR.to_string(),
             INTERFACE_ATTR.to_string(),
             KEY_ATTR.to_string(),
             L1_HANDLER_ATTR.to_string(),
             NESTED_ATTR.to_string(),
             RAW_OUTPUT_ATTR.to_string(),
             STORAGE_ATTR.to_string(),
-            ABI_ATTR.to_string(),
+            SUBSTORAGE_ATTR.to_string(),
         ]
     }
 }

@@ -55,7 +55,7 @@ mod counter_contract {
     #[storage]
     struct Storage {
         counter: u128,
-        #[nested(v0)]
+        #[substorage(v0)]
         upgradable: super::upgradable::Storage
     }
 
