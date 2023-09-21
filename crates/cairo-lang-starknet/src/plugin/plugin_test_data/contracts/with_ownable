@@ -29,12 +29,10 @@ mod ownable {
     impl TransferImpl<
         TContractState, impl X: HasComponent<TContractState>
     > of super::TransferTrait<ComponentState<TContractState>> {
-        #[external(v0)]
         fn owner(self: @ComponentState<TContractState>) -> ContractAddress {
             self.owner.read()
         }
 
-        #[external(v0)]
         fn transfer_ownership(
             ref self: ComponentState<TContractState>, new_owner: ContractAddress
         ) {
@@ -513,12 +511,12 @@ impl Transfer<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::TransferTrait<TContractState> {
-    #[external(v0)]
+    
     fn owner(self: @TContractState) -> ContractAddress {
         let component = self.get_component();
         TransferImpl::owner(component, )
     }
-    #[external(v0)]
+    
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress
 ) {
         let mut component = self.get_component_mut();

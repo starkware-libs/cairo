@@ -13,7 +13,7 @@ use super::consts::{
 use super::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
-use super::utils::GenericParamExtract;
+use super::utils::{forbid_attributes_in_impl, GenericParamExtract};
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
 pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
@@ -110,12 +110,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     };
     let mut data = EntryPointsGenerationData::default();
     for item in body.items(db).elements(db) {
+        // TODO(yuval): do the same in embeddable_As, to get a better diagnostic.
+        forbid_attributes_in_impl(db, &mut diagnostics, &item, "#[embeddable]");
         let ast::ImplItem::Function(item_function) = item else {
-            continue;
-        };
-        let Some(entry_point_kind) =
-            EntryPointKind::try_from_attrs(db, &mut diagnostics, &item_function)
-        else {
             continue;
         };
         let function_name = item_function.declaration(db).name(db);
@@ -134,7 +131,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         handle_entry_point(
             db,
             EntryPointGenerationParams {
-                entry_point_kind,
+                entry_point_kind: EntryPointKind::External,
                 item_function: &item_function,
                 wrapped_function_path: function_path,
                 wrapper_identifier,

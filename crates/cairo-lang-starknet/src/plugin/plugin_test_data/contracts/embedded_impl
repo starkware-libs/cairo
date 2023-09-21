@@ -7,11 +7,9 @@ ExpandContractTestRunner(expect_diagnostics: false)
 #[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
-    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
-    #[l1_handler]
     fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252 {
         value
     }
@@ -32,11 +30,9 @@ lib.cairo:
 #[starknet::embeddable]
 #[generate_trait]
 impl OutsideImpl<TContractState> of OutsideTrait<TContractState> {
-    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
-    #[l1_handler]
     fn ret_identity(ref self: TContractState, from_address: felt252, value: felt252) -> felt252 {
         value
     }
@@ -114,10 +110,10 @@ fn __wrapper__OutsideImpl__ret_identity<TContractState, impl UnsafeNewContractSt
 
 mod __external_OutsideImpl {
         use super::__wrapper__OutsideImpl__ret_3 as ret_3;
+        use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
 }
 
 mod __l1_handler_OutsideImpl {
-        use super::__wrapper__OutsideImpl__ret_identity as ret_identity;
 }
 
 mod __constructor_OutsideImpl {
@@ -266,7 +262,6 @@ impl OutsideImplWithDestruct<
     TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
-    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -278,7 +273,6 @@ impl OutsideImplWithPanicDestruct<
     TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
-    #[external(v0)]
     fn ret_5(self: @TContractState) -> felt252 {
         5
     }
@@ -305,7 +299,6 @@ impl OutsideImplWithDestruct<
     TContractState,
     impl DisallowedDestruct: Destruct<TContractState>,
 > of OutsideTraitWithDestruct<TContractState> {
-    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -317,7 +310,6 @@ impl OutsideImplWithPanicDestruct<
     TContractState,
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
 > of OutsideTraitWithPanicDestruct<TContractState> {
-    #[external(v0)]
     fn ret_5(self: @TContractState) -> felt252 {
         5
     }
@@ -533,6 +525,6 @@ error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Des
     ^***********************************************^
 
 error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
- --> lib.cairo:17:5
+ --> lib.cairo:16:5
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
