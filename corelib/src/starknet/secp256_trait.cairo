@@ -1,5 +1,4 @@
 use array::ArrayTrait;
-use keccak::keccak_u256s_be_inputs;
 use math::{u256_mul_mod_n, inv_mod};
 use option::OptionTrait;
 use starknet::{eth_address::U256IntoEthAddress, EthAddress, SyscallResult, SyscallResultTrait};
@@ -35,6 +34,9 @@ trait Secp256Trait<Secp256Point> {
     fn secp256_ec_get_point_from_x_syscall(
         x: u256, y_parity: bool
     ) -> SyscallResult<Option<Secp256Point>>;
+    fn secp256_ec_get_point_from_xy_syscall(
+        x: u256, y: u256
+    ) -> SyscallResult<Option<Secp256Point>>;
 }
 
 trait Secp256PointTrait<Secp256Point> {
@@ -43,6 +45,43 @@ trait Secp256PointTrait<Secp256Point> {
     fn mul(self: Secp256Point, scalar: u256) -> SyscallResult<Secp256Point>;
 }
 
+/// Checks whether `value` is in the range [1, N), where N is the size of the curve.
+fn is_signature_entry_valid<
+    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
+>(
+    value: u256
+) -> bool {
+    value != 0_u256 && value < Secp256Impl::get_curve_size()
+}
+
+fn verify_signature<
+    Secp256Point,
+    +Drop<Secp256Point>,
+    impl Secp256Impl: Secp256Trait<Secp256Point>,
+    +Secp256PointTrait<Secp256Point>
+>(
+    msg_hash: u256, r: u256, s: u256, public_key: Secp256Point
+) -> Result<bool, felt252> {
+    if !is_signature_entry_valid::<Secp256Point>(r) {
+        return Result::Err('Signature out of range');
+    }
+    if !is_signature_entry_valid::<Secp256Point>(s) {
+        return Result::Err('Signature out of range');
+    }
+
+    let n_nz = Secp256Impl::get_curve_size().try_into().unwrap();
+    let s_inv = inv_mod(s.try_into().unwrap(), n_nz).unwrap();
+    let u1 = u256_mul_mod_n(msg_hash, s_inv, n_nz);
+    let u2 = u256_mul_mod_n(r, s_inv, n_nz);
+
+    let generator_point = Secp256Impl::get_generator_point();
+    let point1 = generator_point.mul(u1).unwrap_syscall();
+    let point2 = public_key.mul(u2).unwrap_syscall();
+    let sum = point1.add(point2).unwrap_syscall();
+
+    let (x, y) = sum.get_coordinates().unwrap_syscall();
+    return Result::Ok(x == r);
+}
 
 /// Receives a signature and the signed message hash.
 /// Returns the public key associated with the signer, represented as a point on the curve.
@@ -84,70 +123,4 @@ fn secp256_ec_negate_scalar<
     c: u256
 ) -> u256 {
     Secp256Impl::get_curve_size() - c
-}
-
-
-/// Checks a Secp256 ECDSA signature.
-/// Also verifies that r and s components of the signature are in the range (0, N),
-/// where N is the size of the curve.
-/// Returns a Result with an error string if the signature is invalid.
-fn is_eth_signature_valid<
-    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
->(
-    msg_hash: u256, signature: Signature, eth_address: EthAddress
-) -> Result<(), felt252> {
-    if !is_signature_entry_valid::<Secp256Point>(signature.r) {
-        return Result::Err('Signature out of range');
-    }
-    if !is_signature_entry_valid::<Secp256Point>(signature.s) {
-        return Result::Err('Signature out of range');
-    }
-
-    let public_key_point = recover_public_key::<Secp256Point>(:msg_hash, :signature).unwrap();
-    let calculated_eth_address = public_key_point_to_eth_address(:public_key_point);
-    if eth_address != calculated_eth_address {
-        return Result::Err('Invalid signature');
-    }
-    Result::Ok(())
-}
-
-/// Asserts that a Secp256 ECDSA signature is valid.
-/// Also verifies that r and s components of the signature are in the range (0, N),
-/// where N is the size of the curve.
-fn verify_eth_signature<
-    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
->(
-    msg_hash: u256, signature: Signature, eth_address: EthAddress
-) {
-    match is_eth_signature_valid::<Secp256Point>(:msg_hash, :signature, :eth_address) {
-        Result::Ok(()) => {},
-        Result::Err(err) => panic_with_felt252(err),
-    }
-}
-
-/// Checks whether `value` is in the range [1, N), where N is the size of the curve.
-fn is_signature_entry_valid<
-    Secp256Point, +Drop<Secp256Point>, impl Secp256Impl: Secp256Trait<Secp256Point>
->(
-    value: u256
-) -> bool {
-    value != 0_u256 && value < Secp256Impl::get_curve_size()
-}
-
-/// Converts a public key point to the corresponding Ethereum address.
-fn public_key_point_to_eth_address<
-    Secp256Point, +Drop<Secp256Point>, +Secp256Trait<Secp256Point>, +Secp256PointTrait<Secp256Point>
->(
-    public_key_point: Secp256Point
-) -> EthAddress {
-    let (x, y) = public_key_point.get_coordinates().unwrap_syscall();
-
-    // Keccak output is little endian.
-    let point_hash_le = keccak_u256s_be_inputs(array![x, y].span());
-    let point_hash = u256 {
-        low: integer::u128_byte_reverse(point_hash_le.high),
-        high: integer::u128_byte_reverse(point_hash_le.low)
-    };
-
-    point_hash.into()
 }
