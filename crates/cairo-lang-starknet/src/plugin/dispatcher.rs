@@ -18,7 +18,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
             code: None,
             diagnostics: vec![PluginDiagnostic {
                 message: format!(
-                    "The '{DEPRECATED_ABI_ATTR}' attribute was deprecated, please use \
+                    "The '{DEPRECATED_ABI_ATTR}' attribute for traits was deprecated, please use \
                      `{INTERFACE_ATTR}` instead.",
                 ),
                 stable_ptr: trait_ast.stable_ptr().untyped(),

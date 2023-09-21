@@ -62,7 +62,6 @@ impl MacroPlugin for StarkNetPlugin {
             CONTRACT_ATTR.to_string(),
             EMBEDDABLE_AS_ATTR.to_string(),
             EMBEDDABLE_ATTR.to_string(),
-            EMBED_ATTR.to_string(),
             FLAT_ATTR.to_string(),
             EVENT_ATTR.to_string(),
             EXTERNAL_ATTR.to_string(),
@@ -72,6 +71,7 @@ impl MacroPlugin for StarkNetPlugin {
             NESTED_ATTR.to_string(),
             RAW_OUTPUT_ATTR.to_string(),
             STORAGE_ATTR.to_string(),
+            ABI_ATTR.to_string(),
         ]
     }
 }

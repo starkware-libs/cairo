@@ -11,9 +11,10 @@ use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerat
 use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
-    COMPONENT_INLINE_MACRO, CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
-    EMBED_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR,
-    NESTED_ATTR, STORAGE_STRUCT_NAME,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, COMPONENT_INLINE_MACRO,
+    CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_TRAIT,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, NESTED_ATTR,
+    STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -237,13 +238,7 @@ fn handle_contract_item(
             );
         }
         ast::Item::Impl(item_impl) => {
-            handle_contract_impl(
-                db,
-                diagnostics,
-                item,
-                item_impl,
-                &mut data.specific.entry_points_code,
-            );
+            handle_contract_impl(db, diagnostics, item_impl, &mut data.specific.entry_points_code);
         }
         ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
             handle_storage_struct(
@@ -264,7 +259,9 @@ fn handle_contract_item(
                 }
             }
         }
-        ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, EMBED_ATTR) => {
+        ast::Item::ImplAlias(alias_ast)
+            if alias_ast.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) =>
+        {
             handle_embed_impl_alias(
                 db,
                 diagnostics,
@@ -312,8 +309,8 @@ pub(super) fn generate_contract_specific_code(
     generation_data.into_rewrite_node(db, diagnostics)
 }
 
-/// Forbids the given attribute in the given impl, assuming it's external.
-fn forbid_attribute_in_external_impl(
+/// Forbids the given attribute in the given impl, assuming it's marked with #[abi(embed)].
+fn forbid_attribute_in_embedded_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     impl_item: &ast::ImplItem,
@@ -381,30 +378,30 @@ fn handle_contract_free_function(
 fn handle_contract_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
-    item_impl: &ast::ItemImpl,
+    imp: &ast::ItemImpl,
     data: &mut EntryPointsGenerationData,
 ) {
-    let is_external = has_v0_attribute(db, diagnostics, item, EXTERNAL_ATTR);
-    if !(is_external || has_v0_attribute(db, diagnostics, item, EMBED_ATTR)) {
+    let is_embed = is_impl_abi_embed(db, diagnostics, imp);
+    let is_per_item = is_impl_abi_per_item(db, imp);
+    if !is_embed && !is_per_item {
         return;
     }
-    let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
+    let ast::MaybeImplBody::Some(impl_body) = imp.body(db) else {
         return;
     };
-    let impl_name = item_impl.name(db);
+    let impl_name = imp.name(db);
     let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     for item in impl_body.items(db).elements(db) {
-        if is_external {
+        if is_embed {
             for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
-                forbid_attribute_in_external_impl(db, diagnostics, &item, attr);
+                forbid_attribute_in_embedded_impl(db, diagnostics, &item, attr);
             }
         }
 
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if is_external {
+        let entry_point_kind = if is_embed {
             EntryPointKind::External
         } else if let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) {
             entry_point_kind
@@ -433,6 +430,21 @@ fn handle_contract_impl(
     }
 }
 
+/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
+fn is_impl_abi_embed(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    imp: &ast::ItemImpl,
+) -> bool {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
+        || has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR)
+}
+
+/// Checks whether the impl is marked with `#[abi(per_item)]`.
+fn is_impl_abi_per_item(db: &dyn SyntaxGroup, imp: &ast::ItemImpl) -> bool {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
+}
+
 /// Handles an embedded impl by an impl alias.
 fn handle_embed_impl_alias(
     db: &dyn SyntaxGroup,
@@ -450,7 +462,8 @@ fn handle_embed_impl_alias(
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
             message: format!(
-                "Generic parameters are not supported in impl aliases with `#[{EMBED_ATTR}]`."
+                "Generic parameters are not supported in impl aliases with \
+                 `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]`."
             ),
         });
         return;
@@ -464,8 +477,8 @@ fn handle_embed_impl_alias(
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
             message: format!(
-                "First generic argument of impl alias with `#[{EMBED_ATTR}]` must be \
-                 `{CONTRACT_STATE_NAME}`."
+                "First generic argument of impl alias with \
+                 `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]` must be `{CONTRACT_STATE_NAME}`."
             ),
         });
         return;

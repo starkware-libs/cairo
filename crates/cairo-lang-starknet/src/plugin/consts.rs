@@ -28,7 +28,6 @@ pub(super) const COMPONENT_ATTR: &str = "starknet::component";
 pub const STORAGE_ATTR: &str = "storage";
 pub const EXTERNAL_ATTR: &str = "external";
 pub const EMBEDDABLE_ATTR: &str = "starknet::embeddable";
-pub const EMBED_ATTR: &str = "embed";
 pub const L1_HANDLER_ATTR: &str = "l1_handler";
 pub const CONSTRUCTOR_ATTR: &str = "constructor";
 pub const CONSTRUCTOR_NAME: &str = "constructor";
@@ -40,6 +39,11 @@ pub const NESTED_ATTR: &str = "nested";
 pub const FLAT_ATTR: &str = "flat";
 pub const KEY_ATTR: &str = "key";
 pub const SERDE_ATTR: &str = "serde";
+
+// ABI attribute
+pub const ABI_ATTR: &str = "abi";
+pub const ABI_ATTR_PER_ITEM_ARG: &str = "per_item";
+pub const ABI_ATTR_EMBED_V0_ARG: &str = "embed_v0";
 
 pub(super) const L1_HANDLER_FIRST_PARAM_NAME: &str = "from_address";
 pub(super) const CALLDATA_PARAM_NAME: &str = "__calldata__";

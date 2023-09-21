@@ -4,7 +4,7 @@ use cairo_lang_defs::ids::{
     FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId,
     ModuleItemId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -25,8 +25,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBEDDABLE_ATTR, EMBED_ATTR, EVENT_ATTR,
-    EVENT_TYPE_NAME, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
+    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -95,14 +95,14 @@ impl AbiBuilder {
         let mut free_functions = Vec::new();
         let mut enums = Vec::new();
         let mut structs = Vec::new();
-        let mut impls = Vec::new();
+        let mut impl_defs = Vec::new();
         let mut impl_aliases = Vec::new();
         for item in &*db.module_items(module_id).unwrap_or_default() {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
                 ModuleItemId::Enum(id) => enums.push(*id),
-                ModuleItemId::Impl(id) => impls.push(*id),
+                ModuleItemId::Impl(id) => impl_defs.push(*id),
                 ModuleItemId::ImplAlias(id) => impl_aliases.push(*id),
                 _ => {}
             }
@@ -133,15 +133,15 @@ impl AbiBuilder {
         };
 
         // Add impls to ABI.
-        for impl_id in impls {
-            if impl_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
-                builder.add_impl(db, impl_id, storage_type, None)?;
-            } else if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
-                builder.add_embedded_impl(db, impl_id, storage_type)?;
+        for impl_def in impl_defs {
+            if is_impl_abi_embed(db, impl_def)? {
+                builder.add_impl(db, impl_def, storage_type, None)?;
+            } else if is_impl_abi_per_item(db, impl_def)? {
+                builder.add_embedded_impl(db, impl_def, storage_type)?;
             }
         }
         for impl_alias in impl_aliases {
-            if impl_alias.has_attr(db.upcast(), EMBED_ATTR)? {
+            if impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)? {
                 builder.add_embedded_impl_alias(db, impl_alias, storage_type)?;
             }
         }
@@ -655,6 +655,17 @@ impl AbiBuilder {
         }
         Ok(())
     }
+}
+
+/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
+fn is_impl_abi_embed(db: &dyn SemanticGroup, imp: ImplDefId) -> Maybe<bool> {
+    Ok(imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)?
+        || imp.has_attr(db, EXTERNAL_ATTR)?)
+}
+
+/// Checks whether the impl is marked with `#[abi(per_item)]`.
+fn is_impl_abi_per_item(db: &dyn SemanticGroup, imp: ImplDefId) -> Maybe<bool> {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
 }
 
 /// Fetch the event data for the given type. Returns None if the given event type doesn't derive
