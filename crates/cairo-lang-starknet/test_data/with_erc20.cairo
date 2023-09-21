@@ -53,39 +53,32 @@ mod erc20 {
     impl ERC20Impl<
         TContractState, +HasComponent<TContractState>
     > of super::ERC20Trait<ComponentState<TContractState>> {
-        #[external(v0)]
         fn get_name(self: @ComponentState<TContractState>) -> felt252 {
             self.name.read()
         }
 
-        #[external(v0)]
         fn get_symbol(self: @ComponentState<TContractState>) -> felt252 {
             self.symbol.read()
         }
 
-        #[external(v0)]
         fn get_decimals(self: @ComponentState<TContractState>) -> u8 {
             self.decimals.read()
         }
 
-        #[external(v0)]
         fn get_total_supply(self: @ComponentState<TContractState>) -> u256 {
             self.total_supply.read()
         }
 
-        #[external(v0)]
         fn balance_of(self: @ComponentState<TContractState>, account: ContractAddress) -> u256 {
             self.balances.read(account)
         }
 
-        #[external(v0)]
         fn allowance(
             self: @ComponentState<TContractState>, owner: ContractAddress, spender: ContractAddress
         ) -> u256 {
             self.allowances.read((owner, spender))
         }
 
-        #[external(v0)]
         fn transfer(
             ref self: ComponentState<TContractState>, recipient: ContractAddress, amount: u256
         ) {
@@ -93,7 +86,6 @@ mod erc20 {
             self.transfer_helper(sender, recipient, amount);
         }
 
-        #[external(v0)]
         fn transfer_from(
             ref self: ComponentState<TContractState>,
             sender: ContractAddress,
@@ -105,7 +97,6 @@ mod erc20 {
             self.transfer_helper(sender, recipient, amount);
         }
 
-        #[external(v0)]
         fn approve(
             ref self: ComponentState<TContractState>, spender: ContractAddress, amount: u256
         ) {
@@ -113,7 +104,6 @@ mod erc20 {
             self.approve_helper(caller, spender, amount);
         }
 
-        #[external(v0)]
         fn increase_allowance(
             ref self: ComponentState<TContractState>, spender: ContractAddress, added_value: u256
         ) {
@@ -124,7 +114,6 @@ mod erc20 {
                 );
         }
 
-        #[external(v0)]
         fn decrease_allowance(
             ref self: ComponentState<TContractState>,
             spender: ContractAddress,

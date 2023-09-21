@@ -31,7 +31,6 @@ mod upgradable {
     impl Upgradable<
         TContractState, impl X: HasComponent<TContractState>
     > of super::IUpgradable<ComponentState<TContractState>> {
-        #[external(v0)]
         fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
             replace_class_syscall(new_class_hash).unwrap();
             let old_class_hash = self.current_implementation.read();
