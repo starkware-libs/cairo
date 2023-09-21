@@ -66,6 +66,18 @@ impl ContractClass {
         }
         Ok(sierra_program)
     }
+
+    /// Sanity checks the contract class.
+    /// Currently only checks that if ABI exists it matches the entry points.
+    pub fn sanity_check(&self) {
+        if let Some(abi) = &self.abi {
+            abi.sanity_check(
+                self.entry_points_by_type.external.len(),
+                self.entry_points_by_type.l1_handler.len(),
+                self.entry_points_by_type.constructor.len(),
+            );
+        }
+    }
 }
 
 const DEFAULT_CONTRACT_CLASS_VERSION: &str = "0.1.0";
@@ -202,7 +214,6 @@ fn compile_contract_with_prepared_and_checked_db(
         // Later generation of ABI verifies that there is up to one constructor.
         constructor: get_entry_points(db, &constructor, &replacer)?,
     };
-    // TODO(yuval/ori): validate consistency between abi and entry_points.
     let contract_class = ContractClass {
         sierra_program: sierra_to_felt252s(
             compiler_version::current_sierra_version_id(),
@@ -219,6 +230,7 @@ fn compile_contract_with_prepared_and_checked_db(
                 .with_context(|| "Could not create ABI from contract submodule")?,
         ),
     };
+    contract_class.sanity_check();
     Ok(contract_class)
 }
 

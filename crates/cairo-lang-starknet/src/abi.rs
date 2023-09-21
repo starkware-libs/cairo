@@ -18,6 +18,7 @@ use cairo_lang_semantic::{
 };
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -45,6 +46,45 @@ impl Contract {
     pub fn json(&self) -> String {
         serde_json::to_string_pretty(&self).unwrap()
     }
+
+    /// Validates the ABI entry points counts match the expected counts.
+    pub fn sanity_check(
+        &self,
+        expected_external_count: usize,
+        expected_l1_handler_count: usize,
+        expected_constructor_count: usize,
+    ) {
+        let trait_fn_count: UnorderedHashMap<_, _> = self
+            .items
+            .iter()
+            .filter_map(|item| {
+                let Item::Interface(imp) = item else {
+                    return None;
+                };
+                Some((imp.name.clone(), imp.items.len()))
+            })
+            .collect();
+        let mut external_count = 0;
+        let mut l1_handler_count = 0;
+        let mut constructor_count = 0;
+        for item in &self.items {
+            match item {
+                Item::Function(_) => external_count += 1,
+                Item::L1Handler(_) => l1_handler_count += 1,
+                Item::Constructor(_) => constructor_count += 1,
+                Item::Impl(imp) => {
+                    external_count += trait_fn_count.get(&imp.interface_name).unwrap_or_else(|| {
+                        panic!("Interface `{}` not found in ABI.", imp.interface_name)
+                    })
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(external_count, expected_external_count);
+        assert_eq!(l1_handler_count, expected_l1_handler_count);
+        assert_eq!(constructor_count, expected_constructor_count);
+    }
+
     /// Inserts an item to the set of items.
     /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
     /// item already existed.
