@@ -17,7 +17,6 @@ mod comp {
     impl Interface1_Implementation1<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -25,7 +24,6 @@ mod comp {
     impl Interface1_Implementation2<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -33,7 +31,6 @@ mod comp {
     impl Interface2_Implementation<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface2<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 }

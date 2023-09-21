@@ -334,7 +334,6 @@ fn generate_entry_point_wrapper(
     }));
 
     let arg_definitions = RewriteNode::Text(arg_definitions.join("\n    "));
-
     Ok(RewriteNode::interpolate_patched(
         &formatdoc! {"
             $implicit_precedence$
