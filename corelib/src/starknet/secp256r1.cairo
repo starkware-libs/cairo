@@ -32,6 +32,17 @@ impl Secp256r1Impl of Secp256Trait<Secp256r1Point> {
     ) -> SyscallResult<Option<Secp256r1Point>> {
         secp256r1_get_point_from_x_syscall(x, y_parity)
     }
+    fn secp256_ec_get_point_from_xy_syscall(
+        x: u256, y: u256
+    ) -> SyscallResult<Option<Secp256r1Point>> {
+        let point = secp256r1_get_point_from_x_syscall(x, false).unwrap_syscall().unwrap();
+        let (_, point_y) = point.get_coordinates().unwrap_syscall();
+        if (point_y == y) {
+            return SyscallResult::Ok(Option::Some(point));
+        } else {
+            return secp256r1_get_point_from_x_syscall(x, true);
+        }
+    }
 }
 
 impl Secp256r1PointImpl of Secp256PointTrait<Secp256r1Point> {
