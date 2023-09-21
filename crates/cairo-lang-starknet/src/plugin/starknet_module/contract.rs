@@ -12,15 +12,14 @@ use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
     ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, COMPONENT_INLINE_MACRO,
-    CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_TRAIT,
-    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, NESTED_ATTR,
-    STORAGE_STRUCT_NAME,
+    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, EVENT_TRAIT, EVENT_TYPE_NAME,
+    EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, NESTED_ATTR, STORAGE_STRUCT_NAME,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
 use crate::plugin::storage::handle_storage_struct;
-use crate::plugin::utils::has_v0_attribute;
+use crate::plugin::utils::{forbid_attributes_in_impl, has_v0_attribute};
 
 /// Accumulated data specific for contract generation.
 #[derive(Default)]
@@ -307,37 +306,6 @@ pub(super) fn generate_contract_specific_code(
     ));
 
     generation_data.into_rewrite_node(db, diagnostics)
-}
-
-/// Forbids `#[external]`, `#[l1_handler]` and `#[constructor]` attributes in the given impl.
-fn forbid_attributes_in_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    impl_item: &ast::ImplItem,
-    embedded_impl_attr: &str,
-) {
-    for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
-        forbid_attribute_in_impl(db, diagnostics, impl_item, attr, embedded_impl_attr);
-    }
-}
-
-/// Forbids the given attribute in the given impl, assuming it's marked `embedded_impl_attr`.
-fn forbid_attribute_in_impl(
-    db: &dyn SyntaxGroup,
-    diagnostics: &mut Vec<PluginDiagnostic>,
-    impl_item: &ast::ImplItem,
-    attr_name: &str,
-    embedded_impl_attr: &str,
-) {
-    if let Some(attr) = impl_item.find_attr(db, attr_name) {
-        diagnostics.push(PluginDiagnostic {
-            message: format!(
-                "The `{attr_name}` attribute is not allowed inside an impl marked as \
-                 `{embedded_impl_attr}`."
-            ),
-            stable_ptr: attr.stable_ptr().untyped(),
-        });
-    }
 }
 
 /// Handles a contract entrypoint function.

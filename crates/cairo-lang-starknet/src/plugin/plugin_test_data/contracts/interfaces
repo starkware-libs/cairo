@@ -23,7 +23,6 @@ mod comp {
     impl Interface1_Implementation1<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -31,7 +30,6 @@ mod comp {
     impl Interface1_Implementation2<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -39,7 +37,6 @@ mod comp {
     impl Interface2_Implementation<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface2<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {
         }
     }
@@ -94,7 +91,6 @@ mod comp {
     impl Interface1_Implementation1<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -102,7 +98,6 @@ mod comp {
     impl Interface1_Implementation2<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface1<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {}
     }
 
@@ -110,7 +105,6 @@ mod comp {
     impl Interface2_Implementation<
         TContractState, impl X: HasComponent<TContractState>
     > of super::Interface2<ComponentState<TContractState>> {
-        #[external(v0)]
         fn foo(ref self: ComponentState<TContractState>) {
         }
     }
@@ -766,7 +760,7 @@ impl I1I1<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
-    #[external(v0)]
+    
     fn foo(ref self: TContractState) {
         let mut component = self.get_component_mut();
         Interface1_Implementation1::foo(ref component, )
@@ -776,7 +770,7 @@ impl I1I2<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface1<TContractState> {
-    #[external(v0)]
+    
     fn foo(ref self: TContractState) {
         let mut component = self.get_component_mut();
         Interface1_Implementation2::foo(ref component, )
@@ -786,7 +780,7 @@ impl I2I<
             TContractState, impl X: HasComponent<TContractState>
 , impl TContractStateDrop: Drop<TContractState>
 > of super::Interface2<TContractState> {
-    #[external(v0)]
+    
     fn foo(ref self: TContractState) {
         let mut component = self.get_component_mut();
         Interface2_Implementation::foo(ref component, )

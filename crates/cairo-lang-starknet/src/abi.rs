@@ -175,8 +175,7 @@ impl AbiBuilder {
         // Add impls to ABI.
         for impl_def in impl_defs {
             let is_of_interface = db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)?;
-            // TODO(v3): deprecate this.
-            // TODO(YG): v0?
+            // TODO(v3): deprecate the external attribute.
             if impl_def.has_attr(db, EXTERNAL_ATTR)? {
                 if is_of_interface {
                     builder.add_embedded_impl(db, impl_def, None)?;

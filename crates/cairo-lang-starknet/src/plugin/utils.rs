@@ -5,6 +5,8 @@ use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 
+use super::consts::{CONSTRUCTOR_ATTR, EXTERNAL_ATTR, L1_HANDLER_ATTR};
+
 /// Helper trait for syntax queries on `ast::Param`.
 pub trait ParamEx {
     /// Checks if the parameter is defined as a ref parameter.
@@ -166,6 +168,37 @@ fn validate_v0(
     if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic {
             message: format!("Only #[{name}(v0)] is supported."),
+            stable_ptr: attr.stable_ptr().untyped(),
+        });
+    }
+}
+
+/// Forbids `#[external]`, `#[l1_handler]` and `#[constructor]` attributes in the given impl.
+pub fn forbid_attributes_in_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    embedded_impl_attr: &str,
+) {
+    for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
+        forbid_attribute_in_impl(db, diagnostics, impl_item, attr, embedded_impl_attr);
+    }
+}
+
+/// Forbids the given attribute in the given impl, assuming it's marked `embedded_impl_attr`.
+pub fn forbid_attribute_in_impl(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    impl_item: &ast::ImplItem,
+    attr_name: &str,
+    embedded_impl_attr: &str,
+) {
+    if let Some(attr) = impl_item.find_attr(db, attr_name) {
+        diagnostics.push(PluginDiagnostic {
+            message: format!(
+                "The `{attr_name}` attribute is not allowed inside an impl marked as \
+                 `{embedded_impl_attr}`."
+            ),
             stable_ptr: attr.stable_ptr().untyped(),
         });
     }
