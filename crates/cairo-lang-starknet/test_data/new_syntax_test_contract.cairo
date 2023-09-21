@@ -25,7 +25,7 @@ mod counter_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
         counter: u128,
         other_contract: IOtherContractDispatcher

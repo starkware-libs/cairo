@@ -61,7 +61,7 @@ mod counter_contract {
     #[storage]
     struct Storage {
         counter: u128,
-        #[nested(v0)]
+        #[substorage(v0)]
         upgradable: super::upgradable::Storage
     }
 
@@ -171,7 +171,7 @@ mod counter_contract {
     #[storage]
     struct Storage {
         counter: u128,
-        #[nested(v0)]
+        #[substorage(v0)]
         upgradable: super::upgradable::Storage
     }
 
@@ -1157,7 +1157,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2c8d40271fb41f951531d21c7f09a9ea56d4f082a2d2b153de27cfbbffcc2b5;
+const TEST_CLASS_HASH: felt252 = 0x239792ec4ee70273f735a613d15f9d6d83e7ea764b7dfb28aeed22ba0a12fd9;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
