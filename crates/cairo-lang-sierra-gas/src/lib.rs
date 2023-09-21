@@ -43,6 +43,8 @@ pub enum CostError {
     StatementOutOfBounds(StatementIdx),
     #[error("failed solving the symbol tables")]
     SolvingGasEquationFailed,
+    #[error("found an unexpected cycle during cost computation")]
+    UnexpectedCycle,
 }
 
 /// Helper to implement the `InvocationCostInfoProvider` for the equation generation.
@@ -108,7 +110,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
     let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
     let type_sizes = get_type_size_map(program, &registry).unwrap();
 
-    Ok(compute_costs::compute_costs(
+    compute_costs::compute_costs(
         program,
         &(|libfunc_id| {
             let core_libfunc = registry
@@ -117,7 +119,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
             core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_sizes)
         }),
         &compute_costs::PreCostContext {},
-    ))
+    )
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
