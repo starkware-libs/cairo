@@ -542,7 +542,7 @@ impl AbiBuilder {
     ) -> Result<EventField, ABIError> {
         match kind {
             EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(db, ty)?,
-            EventFieldKind::Nested => self.add_event(db, ty)?,
+            EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(db, ty)?,
         };
         Ok(EventField { name: name.into(), ty: ty.format(db), kind })
     }

@@ -34,6 +34,7 @@ mod counter_contract {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        #[flat]
         ABC: super::test_component::Event,
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
