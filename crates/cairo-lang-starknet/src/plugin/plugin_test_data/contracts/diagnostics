@@ -1979,42 +1979,487 @@ error: Plugin diagnostic: The 'abi' attribute for traits was deprecated, please 
 ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
+#[starknet::interface]
+trait InterfaceTrait<TContractState> {
+    fn foo_external1(self: @TContractState);
+    fn foo_l1_handler1(self: @TContractState);
+    fn foo_constructor1(self: @TContractState);
+}
+
 #[starknet::contract]
 mod test_contract {
     #[storage]
     struct Storage {
     }
 
+    #[external(v0)]
+    impl Impl2 of super::InterfaceTrait<ContractState> {
+        #[external(v0)]
+        fn foo_external1(self: @ContractState) {}
+        #[l1_handler]
+        fn foo_l1_handler1(self: @ContractState) {}
+        #[constructor]
+        fn foo_constructor1(self: @ContractState) {}
+    }
+
     #[generate_trait]
     #[external(v0)]
-    impl AImpl of ATrait {
+    impl Impl1 of NonInterfaceTrait {
         #[external(v0)]
-        fn foo_external(ref self: ContractState) {}
+        fn foo_external2(self: @ContractState) {}
         #[l1_handler]
-        fn foo_l1_handler(ref self: ContractState) {}
+        fn foo_l1_handler2(self: @ContractState) {}
         #[constructor]
-        fn foo_constructor(ref self: ContractState) {}
+        fn foo_constructor2(self: @ContractState) {}
     }
 }
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:16:9
+        #[external(v0)]
+        ^*************^
+
+error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:18:9
+        #[l1_handler]
+        ^***********^
+
+error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:20:9
+        #[constructor]
+        ^************^
+
+error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:27:9
+        #[external(v0)]
+        ^*************^
+
+error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:29:9
+        #[l1_handler]
+        ^***********^
+
+error: Plugin diagnostic: The `constructor` attribute is not allowed inside an impl marked as `#[external(v0)]`.
+ --> lib.cairo:31:9
+        #[constructor]
+        ^************^
 
 //! > generated_cairo_code
 lib.cairo:
 
+#[starknet::interface]
+trait InterfaceTrait<TContractState> {
+    fn foo_external1(self: @TContractState);
+    fn foo_l1_handler1(self: @TContractState);
+    fn foo_constructor1(self: @TContractState);
+}
+
 #[starknet::contract]
 mod test_contract {
     #[storage]
     struct Storage {
     }
 
+    #[external(v0)]
+    impl Impl2 of super::InterfaceTrait<ContractState> {
+        #[external(v0)]
+        fn foo_external1(self: @ContractState) {}
+        #[l1_handler]
+        fn foo_l1_handler1(self: @ContractState) {}
+        #[constructor]
+        fn foo_constructor1(self: @ContractState) {}
+    }
+
     #[generate_trait]
     #[external(v0)]
-    impl AImpl of ATrait {
+    impl Impl1 of NonInterfaceTrait {
         #[external(v0)]
-        fn foo_external(ref self: ContractState) {}
+        fn foo_external2(self: @ContractState) {}
         #[l1_handler]
-        fn foo_l1_handler(ref self: ContractState) {}
+        fn foo_l1_handler2(self: @ContractState) {}
         #[constructor]
-        fn foo_constructor(ref self: ContractState) {}
+        fn foo_constructor2(self: @ContractState) {}
+    }
+}
+
+InterfaceTraitDispatcherTrait:
+
+trait InterfaceTraitDispatcherTrait<T> {
+    fn foo_external1(self: T, );    fn foo_l1_handler1(self: T, );    fn foo_constructor1(self: T, );
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct InterfaceTraitDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl InterfaceTraitDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitDispatcher> {
+    fn foo_external1(self: InterfaceTraitDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_external1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn foo_l1_handler1(self: InterfaceTraitDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_l1_handler1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn foo_constructor1(self: InterfaceTraitDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_constructor1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct InterfaceTraitLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl InterfaceTraitLibraryDispatcherImpl of InterfaceTraitDispatcherTrait<InterfaceTraitLibraryDispatcher> {
+    fn foo_external1(self: InterfaceTraitLibraryDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_external1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn foo_l1_handler1(self: InterfaceTraitLibraryDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_l1_handler1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn foo_constructor1(self: InterfaceTraitLibraryDispatcher, ) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_constructor1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait InterfaceTraitSafeDispatcherTrait<T> {
+    fn foo_external1(self: T, ) -> starknet::SyscallResult<()>;    fn foo_l1_handler1(self: T, ) -> starknet::SyscallResult<()>;    fn foo_constructor1(self: T, ) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct InterfaceTraitSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl InterfaceTraitSafeLibraryDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeLibraryDispatcher> {
+    fn foo_external1(self: InterfaceTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_external1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn foo_l1_handler1(self: InterfaceTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_l1_handler1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn foo_constructor1(self: InterfaceTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo_constructor1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct InterfaceTraitSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl InterfaceTraitSafeDispatcherImpl of InterfaceTraitSafeDispatcherTrait<InterfaceTraitSafeDispatcher> {
+    fn foo_external1(self: InterfaceTraitSafeDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_external1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn foo_l1_handler1(self: InterfaceTraitSafeDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_l1_handler1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn foo_constructor1(self: InterfaceTraitSafeDispatcher, ) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo_constructor1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+impls:
+
+impl InterfaceTraitDispatcherCopy of Copy::<InterfaceTraitDispatcher>;
+impl InterfaceTraitDispatcherDrop of Drop::<InterfaceTraitDispatcher>;
+impl InterfaceTraitDispatcherSerde of Serde::<InterfaceTraitDispatcher> {
+    fn serialize(self: @InterfaceTraitDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<InterfaceTraitDispatcher> {
+        Option::Some(InterfaceTraitDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreInterfaceTraitDispatcher of starknet::Store::<InterfaceTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<InterfaceTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: InterfaceTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: InterfaceTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
+impl InterfaceTraitLibraryDispatcherCopy of Copy::<InterfaceTraitLibraryDispatcher>;
+impl InterfaceTraitLibraryDispatcherDrop of Drop::<InterfaceTraitLibraryDispatcher>;
+impl InterfaceTraitLibraryDispatcherSerde of Serde::<InterfaceTraitLibraryDispatcher> {
+    fn serialize(self: @InterfaceTraitLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<InterfaceTraitLibraryDispatcher> {
+        Option::Some(InterfaceTraitLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreInterfaceTraitLibraryDispatcher of starknet::Store::<InterfaceTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<InterfaceTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: InterfaceTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: InterfaceTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl InterfaceTraitSafeLibraryDispatcherCopy of Copy::<InterfaceTraitSafeLibraryDispatcher>;
+impl InterfaceTraitSafeLibraryDispatcherDrop of Drop::<InterfaceTraitSafeLibraryDispatcher>;
+impl InterfaceTraitSafeLibraryDispatcherSerde of Serde::<InterfaceTraitSafeLibraryDispatcher> {
+    fn serialize(self: @InterfaceTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<InterfaceTraitSafeLibraryDispatcher> {
+        Option::Some(InterfaceTraitSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreInterfaceTraitSafeLibraryDispatcher of starknet::Store::<InterfaceTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<InterfaceTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: InterfaceTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl InterfaceTraitSafeDispatcherCopy of Copy::<InterfaceTraitSafeDispatcher>;
+impl InterfaceTraitSafeDispatcherDrop of Drop::<InterfaceTraitSafeDispatcher>;
+impl InterfaceTraitSafeDispatcherSerde of Serde::<InterfaceTraitSafeDispatcher> {
+    fn serialize(self: @InterfaceTraitSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<InterfaceTraitSafeDispatcher> {
+        Option::Some(InterfaceTraitSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreInterfaceTraitSafeDispatcher of starknet::Store::<InterfaceTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<InterfaceTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<InterfaceTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            InterfaceTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: InterfaceTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
     }
 }
 
@@ -2044,10 +2489,10 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x175195a62d6ec1ad2c24dce7c098f7b31cc8165b5d6dd9c979328eb5bb87d44;
+const TEST_CLASS_HASH: felt252 = 0xf88f1c8a0a8d514425e46be98fb5ba0ba2db1093397ff93bd36d471ed4b970;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__AImpl__foo_external(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_external1(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2057,7 +2502,7 @@ fn __wrapper__AImpl__foo_external(mut data: Span::<felt252>) -> Span::<felt252> 
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
-    AImpl::foo_external(ref contract_state, );
+    Impl2::foo_external1(@contract_state, );
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -2065,7 +2510,7 @@ fn __wrapper__AImpl__foo_external(mut data: Span::<felt252>) -> Span::<felt252> 
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__AImpl__foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_l1_handler1(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2075,7 +2520,7 @@ fn __wrapper__AImpl__foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
-    AImpl::foo_l1_handler(ref contract_state, );
+    Impl2::foo_l1_handler1(@contract_state, );
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -2083,7 +2528,7 @@ fn __wrapper__AImpl__foo_l1_handler(mut data: Span::<felt252>) -> Span::<felt252
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__AImpl__foo_constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__Impl2__foo_constructor1(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -2093,7 +2538,61 @@ fn __wrapper__AImpl__foo_constructor(mut data: Span::<felt252>) -> Span::<felt25
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = unsafe_new_contract_state();
-    AImpl::foo_constructor(ref contract_state, );
+    Impl2::foo_constructor1(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Impl1__foo_external2(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    Impl1::foo_external2(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Impl1__foo_l1_handler2(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    Impl1::foo_l1_handler2(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Impl1__foo_constructor2(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    Impl1::foo_constructor2(@contract_state, );
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -2102,9 +2601,12 @@ fn __wrapper__AImpl__foo_constructor(mut data: Span::<felt252>) -> Span::<felt25
 
 
     mod __external {
-        use super::__wrapper__AImpl__foo_external as foo_external;
-        use super::__wrapper__AImpl__foo_l1_handler as foo_l1_handler;
-        use super::__wrapper__AImpl__foo_constructor as foo_constructor;
+        use super::__wrapper__Impl2__foo_external1 as foo_external1;
+        use super::__wrapper__Impl2__foo_l1_handler1 as foo_l1_handler1;
+        use super::__wrapper__Impl2__foo_constructor1 as foo_constructor1;
+        use super::__wrapper__Impl1__foo_external2 as foo_external2;
+        use super::__wrapper__Impl1__foo_l1_handler2 as foo_l1_handler2;
+        use super::__wrapper__Impl1__foo_constructor2 as foo_constructor2;
     }
 
     mod __l1_handler {
@@ -2136,10 +2638,10 @@ fn __wrapper__AImpl__foo_constructor(mut data: Span::<felt252>) -> Span::<felt25
 
 generate_trait:
 
-    trait ATrait {
-        fn foo_external(ref self: ContractState);
-        fn foo_l1_handler(ref self: ContractState);
-        fn foo_constructor(ref self: ContractState);
+    trait NonInterfaceTrait {
+        fn foo_external2(self: @ContractState);
+        fn foo_l1_handler2(self: @ContractState);
+        fn foo_constructor2(self: @ContractState);
     }
 
 
@@ -2164,22 +2666,6 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-
-//! > expected_diagnostics
-error: Plugin diagnostic: The 'external' attribute is not allowed inside an external impl.
- --> lib.cairo:10:9
-        #[external(v0)]
-        ^*************^
-
-error: Plugin diagnostic: The 'l1_handler' attribute is not allowed inside an external impl.
- --> lib.cairo:12:9
-        #[l1_handler]
-        ^***********^
-
-error: Plugin diagnostic: The 'constructor' attribute is not allowed inside an external impl.
- --> lib.cairo:14:9
-        #[constructor]
-        ^************^
 
 //! > ==========================================================================
 

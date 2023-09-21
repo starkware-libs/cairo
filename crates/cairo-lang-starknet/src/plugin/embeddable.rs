@@ -113,7 +113,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) else {
+        let Some(entry_point_kind) =
+            EntryPointKind::try_from_attrs(db, &mut diagnostics, &item_function)
+        else {
             continue;
         };
         let function_name = item_function.declaration(db).name(db);
