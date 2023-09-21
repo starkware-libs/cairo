@@ -32,6 +32,9 @@ pub enum EventFieldKind {
     // Serialize as a nested event.
     #[serde(rename = "nested")]
     Nested,
+    // Serialize as a flat event.
+    #[serde(rename = "flat")]
+    Flat,
 }
 
 /// Returns true if the type should be derived as an event.

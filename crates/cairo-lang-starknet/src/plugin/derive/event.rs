@@ -141,6 +141,7 @@ fn get_field_kind_for_variant(
     default: EventFieldKind,
 ) -> EventFieldKind {
     let is_nested = variant.has_attr(db, NESTED_ATTR);
+    let is_flat = variant.has_attr(db, FLAT_ATTR);
     let is_key = variant.has_attr(db, "key");
     let is_serde = variant.has_attr(db, "serde");
 
@@ -151,6 +152,11 @@ fn get_field_kind_for_variant(
             stable_ptr: variant.stable_ptr().untyped(),
         });
     }
+
+    if is_flat {
+        return EventFieldKind::Flat;
+    }
+
     // Currently, serde fields are unsupported.
     if is_serde {
         diagnostics.push(PluginDiagnostic {
@@ -329,7 +335,7 @@ fn handle_enum(
 /// Generates code to emit an event for a field
 fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode {
     match member_kind {
-        EventFieldKind::Nested => RewriteNode::interpolate_patched(
+        EventFieldKind::Nested | EventFieldKind::Flat => RewriteNode::interpolate_patched(
             &format!(
                 "
                 {EVENT_TRAIT}::append_keys_and_data(
@@ -354,7 +360,7 @@ fn append_field(member_kind: EventFieldKind, field: RewriteNode) -> RewriteNode 
 fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> RewriteNode {
     RewriteNode::interpolate_patched(
         match member_kind {
-            EventFieldKind::Nested => {
+            EventFieldKind::Nested | EventFieldKind::Flat => {
                 "
                 let $member_name$ = starknet::Event::deserialize(
                     ref keys, ref data
@@ -380,7 +386,9 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
 fn try_deserialize_field(member_kind: EventFieldKind) -> RewriteNode {
     RewriteNode::Text(
         match member_kind {
-            EventFieldKind::Nested => "starknet::Event::deserialize(ref keys, ref data)",
+            EventFieldKind::Nested | EventFieldKind::Flat => {
+                "starknet::Event::deserialize(ref keys, ref data)"
+            }
             EventFieldKind::KeySerde => "serde::Serde::deserialize(ref keys)",
             EventFieldKind::DataSerde => "serde::Serde::deserialize(ref data)",
         }
