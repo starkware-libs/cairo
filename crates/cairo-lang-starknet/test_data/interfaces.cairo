@@ -44,7 +44,7 @@ mod counter_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         comp_storage: super::comp::Storage
     }
 

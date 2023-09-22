@@ -6,8 +6,8 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
 use super::consts::{
-    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, NESTED_ATTR,
-    STORAGE_MAPPING, STORAGE_STRUCT_NAME, STORE_TRAIT,
+    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, STORAGE_MAPPING,
+    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
 };
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
@@ -101,9 +101,9 @@ fn get_storage_member_code(
     extra_uses_node: RewriteNode,
 ) -> StorageMemberCodePieces {
     if starknet_module_kind == StarknetModuleKind::Contract
-        && has_v0_attribute(db, diagnostics, &member, NESTED_ATTR)
+        && has_v0_attribute(db, diagnostics, &member, SUBSTORAGE_ATTR)
     {
-        if let Some((member_code, member_init_code)) = get_nested_storage_member_code(db, &member) {
+        if let Some((member_code, member_init_code)) = get_substorage_member_code(db, &member) {
             return StorageMemberCodePieces {
                 member_code: Some(member_code),
                 init_code: Some(member_init_code),
@@ -112,7 +112,7 @@ fn get_storage_member_code(
         } else {
             diagnostics.push(PluginDiagnostic {
                 message: format!(
-                    "`{NESTED_ATTR}` attribute is only allowed for members of type \
+                    "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                      [some_path::]{STORAGE_STRUCT_NAME}`"
                 ),
                 stable_ptr: member.stable_ptr().untyped(),
@@ -260,7 +260,7 @@ fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode
 }
 
 /// Returns the relevant code for a nested storage member.
-fn get_nested_storage_member_code(
+fn get_substorage_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
 ) -> Option<(RewriteNode, RewriteNode)> {

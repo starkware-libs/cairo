@@ -985,7 +985,7 @@ error: Plugin diagnostic: Invalid component macro, expected `component!(name: "<
 
 //! > ==========================================================================
 
-//! > Illegal nested storage members.
+//! > Illegal substorage storage members.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: true)
@@ -1004,12 +1004,12 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         non_path_type: (usize, usize),
-        #[nested(v0)]
+        #[substorage(v0)]
         non_component: usize,
-        // non-v0 nested member.
-        #[nested]
+        // non-v0 substorage member.
+        #[substorage]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1036,12 +1036,12 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         non_path_type: (usize, usize),
-        #[nested(v0)]
+        #[substorage(v0)]
         non_component: usize,
-        // non-v0 nested member.
-        #[nested]
+        // non-v0 substorage member.
+        #[substorage]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1148,7 +1148,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1f94e0473876f4a847f49fbb8b6322c40bbca56818da7f3936ec6653a7bdab6;
+const TEST_CLASS_HASH: felt252 = 0x13a81b6876baa1445c90fd69add3e928a4f6c6807e5227544ac6f6698c463b2;
 
 
     mod __external {
@@ -1239,20 +1239,20 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `nested` attribute is only allowed for members of type [some_path::]Storage`
+error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:14:9
-        #[nested(v0)]
-        ^***********^
+        #[substorage(v0)]
+        ^***************^
 
-error: Plugin diagnostic: `nested` attribute is only allowed for members of type [some_path::]Storage`
+error: Plugin diagnostic: `substorage` attribute is only allowed for members of type [some_path::]Storage`
  --> lib.cairo:16:9
-        #[nested(v0)]
-        ^***********^
+        #[substorage(v0)]
+        ^***************^
 
-error: Plugin diagnostic: Only #[nested(v0)] is supported.
+error: Plugin diagnostic: Only #[substorage(v0)] is supported.
  --> lib.cairo:19:9
-        #[nested]
-        ^*******^
+        #[substorage]
+        ^***********^
 
 //! > ==========================================================================
 
@@ -1284,10 +1284,10 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `non_existing` is not a nested member in the contract's `Storage`.
+error: Plugin diagnostic: `non_existing` is not a substorage member in the contract's `Storage`.
 Consider adding to `Storage`:
 ```
-#[nested(v0)]
+#[substorage(v0)]
 non_existing: path::to::component::Storage,
 ````
  --> lib.cairo:11:54
@@ -1486,7 +1486,7 @@ impl EventABCIntoEvent of Into<super::test_component::Event, Event> {
 
 //! > ==========================================================================
 
-//! > component! macro points to a non nested storage.
+//! > component! macro points to a non substorage storage member.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: true)
@@ -1516,10 +1516,10 @@ mod test_contract {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: `test_component_storage` is not a nested member in the contract's `Storage`.
+error: Plugin diagnostic: `test_component_storage` is not a substorage member in the contract's `Storage`.
 Consider adding to `Storage`:
 ```
-#[nested(v0)]
+#[substorage(v0)]
 test_component_storage: path::to::component::Storage,
 ````
  --> lib.cairo:11:54
@@ -1819,7 +1819,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1856,7 +1856,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: NonExisting);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -1965,7 +1965,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x1dc154c949240eed8f9415230990ac2d33c0b26a829589ba95f9cd597b9bc93;
+const TEST_CLASS_HASH: felt252 = 0x8f9d2a9bd3a3fe28e42c16030ed25a2756a86a13d4297597e43683c3df9a02;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2066,7 +2066,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -2111,7 +2111,7 @@ mod test_contract {
     component!(path: super::test_component, storage: test_component_storage, event: ABC);
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         test_component_storage: super::test_component::Storage,
     }
 
@@ -2261,7 +2261,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x3b49abc37cfbb34d8eb6415c4d79a7b4dcf658273c791a0e6d1ad6df58a60c8;
+const TEST_CLASS_HASH: felt252 = 0x150d2e1961908098174a1d0101315691e91ab91682760b04003683fab54f03e;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_data(mut data: Span::<felt252>) -> Span::<felt252> {
@@ -2343,9 +2343,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -2399,9 +2399,9 @@ mod test_contract {
 
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component1_storage: super::component1::Storage,
-        #[nested(v0)]
+        #[substorage(v0)]
         component2_storage: super::component2::Storage,
     }
 
@@ -2587,7 +2587,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x2de0db684947018f4a2ab085e0b63764becb76dc394968a66352642aa4bf359;
+const TEST_CLASS_HASH: felt252 = 0xa09b926ceb282d29edce76bb84e4aeb97f1a82ce15099322f1c2869a49b549;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__get_sum(mut data: Span::<felt252>) -> Span::<felt252> {

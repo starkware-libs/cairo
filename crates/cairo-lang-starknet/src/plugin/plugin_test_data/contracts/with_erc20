@@ -225,7 +225,7 @@ mod my_contract {
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         erc20_token: super::erc20::Storage,
     }
 
@@ -1837,7 +1837,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x37e8c8e507616d607517977a3d375fe1648d6bfbe1638bad9f9d5eeb1786fff;
+const TEST_CLASS_HASH: felt252 = 0x3b03a0456e96acd5a232049466f737dc422085636411a804c096a704ff692c4;
 
 impl ContractStateIERC20 of
     super::erc20::UnsafeNewContractStateTraitForIERC20<ContractState> {

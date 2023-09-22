@@ -51,7 +51,7 @@ mod my_contract {
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         ownable: super::ownable::Storage,
         balance: u128,
     }
@@ -137,7 +137,7 @@ mod my_contract {
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         ownable: super::ownable::Storage,
         balance: u128,
     }
@@ -851,7 +851,7 @@ use starknet::storage::{
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x3b4684c5132eba4d76c5d2d1d67fcaff988f7e78a77c1b403f831b2258d05e;
+const TEST_CLASS_HASH: felt252 = 0x208707dacc7138db09fcc88e3f801ee105aa0c20211ceae10cba4518b7fef27;
 
 impl ContractStateTransfer of
     super::ownable::UnsafeNewContractStateTraitForTransfer<ContractState> {
