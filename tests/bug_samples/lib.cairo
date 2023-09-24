@@ -30,6 +30,7 @@ mod issue4034;
 mod issue4036;
 mod issue4038;
 mod issue4075;
+mod issue4092;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;
