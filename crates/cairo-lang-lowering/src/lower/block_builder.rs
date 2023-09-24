@@ -117,25 +117,6 @@ impl BlockBuilder {
             .map(|var_id| VarUsage { var_id, location })
     }
 
-    /// Gets a VarUsage with the current lowered variable bound to a semantic variable.
-    pub fn get_semantic(
-        &mut self,
-        ctx: &mut LoweringContext<'_, '_>,
-        semantic_var_id: semantic::VarId,
-        location: LocationId,
-    ) -> VarUsage {
-        VarUsage {
-            var_id: self
-                .semantics
-                .get(
-                    BlockStructRecomposer { statements: &mut self.statements, ctx, location },
-                    &MemberPath::Var(semantic_var_id),
-                )
-                .expect("Use of undefined variable cannot happen after semantic phase."),
-            location,
-        }
-    }
-
     /// Gets the type of a semantic variable.
     pub fn get_ty(
         &mut self,
@@ -254,23 +235,32 @@ impl BlockBuilder {
                 });
             }
             for member_path in subscope.changed_member_paths.iter() {
-                let Some(member_path) =
+                let Some(containing_member_path) =
                     self.semantics.topmost_containing_member_path(member_path.clone())
                 else {
                     // This variable is local to the subscope.
                     continue;
                 };
-                // Only consider the topmost member path that is contained in the parent.
-                // This avoids edge cases regarding de/constructing structs.
-
-                // This variable belongs to an outer builder, and it is changed in at least one
-                // branch. It should be remapped.
-                semantic_remapping.member_path_value.entry(member_path.clone()).or_insert_with(
-                    || {
-                        let ty = self.get_ty(ctx, &member_path);
+                // Consider the topmost member path that contains the changed member, as it might be
+                // needed in the merge site.
+                let mut queue = vec![containing_member_path];
+                while let Some(v) = queue.pop() {
+                    // If we reached the original member path, it needs to be restructured - so no
+                    // need to continue recursively.
+                    if v != *member_path {
+                        // If it is scattered - add its members instead of itself, to avoid a
+                        // possibly unnecessary restructuring.
+                        if let Some(members) = self.semantics.get_scattered_members(&v) {
+                            queue.extend(members);
+                            continue;
+                        }
+                    }
+                    // Actually adding to the remapping.
+                    semantic_remapping.member_path_value.entry(v.clone()).or_insert_with(|| {
+                        let ty = self.get_ty(ctx, &v);
                         ctx.new_var(VarRequest { ty, location })
-                    },
-                );
+                    });
+                }
             }
         }
 
