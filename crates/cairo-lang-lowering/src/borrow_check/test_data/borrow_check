@@ -627,9 +627,9 @@ struct MyStruct {
 
 //! > lowering_diagnostics
 error: Variable was previously moved.
- --> lib.cairo:9:5
-    if self.b == 0 {
-    ^**************^
+ --> lib.cairo:8:12
+fn foo(ref self: MyStruct) {
+           ^**^
 note: variable was previously used here:
   --> lib.cairo:11:19
        invalidate(self.a);
@@ -655,21 +655,84 @@ blk1:
 Statements:
   (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
   () <- test::invalidate(v10{`self.a`})
-  (v13: test::MyStruct) <- struct_construct(v10{`if self.b == 0 { self.a = Default::default(); invalidate(self.a); }`}, v3{`if self.b == 0 { self.a = Default::default(); invalidate(self.a); }`})
 End:
-  Goto(blk3, {v13 -> v12})
+  Goto(blk3, {v3 -> v12, v10 -> v13})
 
 blk2:
 Statements:
-  (v14: test::MyStruct) <- struct_construct(v1{`if self.b == 0 { self.a = Default::default(); invalidate(self.a); }`}, v3{`if self.b == 0 { self.a = Default::default(); invalidate(self.a); }`})
 End:
-  Goto(blk3, {v14 -> v12})
+  Goto(blk3, {v3 -> v12, v1 -> v13})
 
 blk3:
 Statements:
-  (v15: ()) <- struct_construct()
+  (v14: ()) <- struct_construct()
+  (v15: test::MyStruct) <- struct_construct(v13{`self`}, v12{`self`})
 End:
-  Return(v12, v15)
+  Return(v15, v14)
+
+//! > ==========================================================================
+
+//! > Test no moved error on a reconstructed var due to lowered if.
+
+//! > test_runner_name
+test_borrow_check
+
+//! > function
+fn foo(mut v: MyStruct) -> u8 {
+    if v.b == 0 {
+       v.a = Default::default();
+       invalidate(v.a);
+    }
+    v.b
+}
+
+//! > function_name
+foo
+
+//! > module_code
+extern fn invalidate(a: Array<felt252>) nopanic;
+
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<felt252>,
+    b: u8,
+}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > lowering
+Parameters: v0: test::MyStruct
+blk0 (root):
+Statements:
+  (v1: core::array::Array::<core::felt252>, v2: core::integer::u8) <- struct_destructure(v0{`v`})
+  (v3: core::integer::u8, v4: @core::integer::u8) <- snapshot(v2{`v.b`})
+  (v5: core::integer::u8) <- 0u
+  (v6: core::integer::u8, v7: @core::integer::u8) <- snapshot(v5{`0`})
+  (v8: core::bool) <- core::integer::U8PartialEq::eq(v4{`v.b`}, v7{`0`})
+End:
+  Match(match_enum(v8{`v.b == 0`}) {
+    bool::False(v11) => blk2,
+    bool::True(v9) => blk1,
+  })
+
+blk1:
+Statements:
+  (v10: core::array::Array::<core::felt252>) <- core::array::ArrayDefault::<core::felt252>::default()
+  () <- test::invalidate(v10{`v.a`})
+End:
+  Goto(blk3, {v3 -> v12, v10 -> v13})
+
+blk2:
+Statements:
+End:
+  Goto(blk3, {v3 -> v12, v1 -> v13})
+
+blk3:
+Statements:
+End:
+  Return(v12)
 
 //! > ==========================================================================
 
