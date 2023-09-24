@@ -65,9 +65,7 @@ pub fn compute_costs<
         .funcs
         .iter()
         .map(|func| {
-            let res = SpecificCostContext::to_cost_map(
-                context.wallet_at(&func.entry_point).get_pure_value(),
-            );
+            let res = SpecificCostContext::to_cost_map(context.wallet_at(&func.entry_point).value);
             (func.id.clone(), res)
         })
         .collect();
@@ -144,12 +142,12 @@ fn analyze_gas_statements<
         &libfunc_cost,
     );
 
-    let wallet_value = context.wallet_at(idx).get_value();
+    let wallet_value = context.wallet_at(idx).value;
 
     for (branch_info, branch_cost, branch_requirement) in
         zip_eq3(&invocation.branches, &libfunc_cost, &branch_requirements)
     {
-        let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).get_value();
+        let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).value;
         // TODO(lior): Consider checking that idx.next(&branch_info.target) is indeed branch
         //   align.
         if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
@@ -173,7 +171,7 @@ fn analyze_gas_statements<
                 );
             }
         } else if invocation.branches.len() > 1 {
-            let cost = wallet_value.clone() - branch_requirement.get_value();
+            let cost = wallet_value.clone() - branch_requirement.value.clone();
             for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
                 assert_eq!(
                     variable_values.insert((idx.next(&branch_info.target), token_type), amount),
@@ -221,17 +219,6 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
     fn merge(branches: Vec<Self>) -> Self {
         let max_value = CostType::max(branches.iter().map(|wallet_info| wallet_info.value.clone()));
         WalletInfo { value: max_value }
-    }
-
-    /// Returns the value.
-    fn get_value(&self) -> CostType {
-        self.value.clone()
-    }
-
-    /// Returns the value, assuming there are no used cost variables (panics otherwise).
-    // TODO(lior): Support cost variables - currently this function is identical to `get_value()`.
-    fn get_pure_value(self) -> CostType {
-        self.get_value()
     }
 }
 
@@ -397,7 +384,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
             BranchCost::Regular { const_cost: _, pre_cost } => pre_cost.clone(),
             BranchCost::BranchAlign => Default::default(),
             BranchCost::FunctionCall { const_cost: _, function } => {
-                wallet_at_fn(&function.entry_point).get_pure_value()
+                wallet_at_fn(&function.entry_point).value
             }
             BranchCost::WithdrawGas { const_cost: _, success, with_builtin_costs: _ } => {
                 if *success {
