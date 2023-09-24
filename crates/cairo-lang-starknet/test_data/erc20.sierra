@@ -350,6 +350,7 @@ libfunc function_call<user@test::erc_20::ContractStateEventEmitter::emit::<test:
 libfunc u128_const<340282366920938463463374607431768211455> = u128_const<340282366920938463463374607431768211455>;
 libfunc snapshot_take<u128> = snapshot_take<u128>;
 libfunc u128_eq = u128_eq;
+libfunc store_temp<u128> = store_temp<u128>;
 libfunc felt252_const<101313248740993271302566317381896466254801065025584> = felt252_const<101313248740993271302566317381896466254801065025584>;
 libfunc function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write> = function_call<user@test::erc_20::allowances::InternalContractMemberStateImpl::write>;
 libfunc enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>> = enum_match<core::panics::PanicResult::<(test::erc_20::allowances::ContractMemberState, ())>>;
@@ -477,7 +478,6 @@ libfunc struct_deconstruct<Tuple<u128, core::bool>> = struct_deconstruct<Tuple<u
 libfunc struct_construct<Tuple<core::integer::u256, core::bool>> = struct_construct<Tuple<core::integer::u256, core::bool>>;
 libfunc store_temp<Tuple<core::integer::u256, core::bool>> = store_temp<Tuple<core::integer::u256, core::bool>>;
 libfunc u128_const<1> = u128_const<1>;
-libfunc store_temp<u128> = store_temp<u128>;
 libfunc drop<core::bool> = drop<core::bool>;
 libfunc rename<Tuple<core::integer::u256, core::bool>> = rename<Tuple<core::integer::u256, core::bool>>;
 libfunc u128_overflowing_sub = u128_overflowing_sub;
@@ -3703,109 +3703,109 @@ struct_deconstruct<core::integer::u256>([35]) -> ([36], [37]); // 3211
 snapshot_take<u128>([36]) -> ([38], [39]); // 3212
 rename<u128>([39]) -> ([40]); // 3213
 rename<u128>([34]) -> ([41]); // 3214
-u128_eq([40], [41]) { fallthrough() 3224() }; // 3215
+u128_eq([40], [41]) { fallthrough() 3223() }; // 3215
 branch_align() -> (); // 3216
 drop<u128>([33]) -> (); // 3217
 struct_construct<Unit>() -> ([42]); // 3218
 enum_init<core::bool, 0>([42]) -> ([43]); // 3219
-struct_construct<core::integer::u256>([38], [37]) -> ([44]); // 3220
-store_temp<core::integer::u256>([44]) -> ([45]); // 3221
-store_temp<core::bool>([43]) -> ([46]); // 3222
-jump() { 3243() }; // 3223
-branch_align() -> (); // 3224
-snapshot_take<u128>([37]) -> ([47], [48]); // 3225
-snapshot_take<u128>([33]) -> ([49], [50]); // 3226
-drop<u128>([49]) -> (); // 3227
-rename<u128>([48]) -> ([51]); // 3228
-rename<u128>([50]) -> ([52]); // 3229
-u128_eq([51], [52]) { fallthrough() 3236() }; // 3230
-branch_align() -> (); // 3231
-struct_construct<Unit>() -> ([53]); // 3232
-enum_init<core::bool, 0>([53]) -> ([54]); // 3233
-store_temp<core::bool>([54]) -> ([55]); // 3234
-jump() { 3240() }; // 3235
-branch_align() -> (); // 3236
-struct_construct<Unit>() -> ([56]); // 3237
-enum_init<core::bool, 1>([56]) -> ([57]); // 3238
-store_temp<core::bool>([57]) -> ([55]); // 3239
-struct_construct<core::integer::u256>([38], [47]) -> ([58]); // 3240
-store_temp<core::integer::u256>([58]) -> ([45]); // 3241
-store_temp<core::bool>([55]) -> ([46]); // 3242
-enum_match<core::bool>([46]) { fallthrough([59]) 3297([60]) }; // 3243
-branch_align() -> (); // 3244
-drop<Unit>([59]) -> (); // 3245
-store_temp<RangeCheck>([19]) -> ([63]); // 3246
-store_temp<core::integer::u256>([45]) -> ([64]); // 3247
-store_temp<core::integer::u256>([7]) -> ([65]); // 3248
-function_call<user@core::integer::U256Sub::sub>([63], [64], [65]) -> ([61], [62]); // 3249
-enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([62]) { fallthrough([66]) 3281([67]) }; // 3250
-branch_align() -> (); // 3251
-struct_deconstruct<Tuple<core::integer::u256>>([66]) -> ([68]); // 3252
-struct_construct<test::erc_20::ContractState>([8], [9], [10], [11], [12], [14]) -> ([69]); // 3253
-store_temp<RangeCheck>([61]) -> ([75]); // 3254
-store_temp<GasBuiltin>([20]) -> ([76]); // 3255
-store_temp<Pedersen>([21]) -> ([77]); // 3256
-store_temp<System>([22]) -> ([78]); // 3257
-store_temp<test::erc_20::ContractState>([69]) -> ([79]); // 3258
-store_temp<ContractAddress>([5]) -> ([80]); // 3259
-store_temp<ContractAddress>([6]) -> ([81]); // 3260
-store_temp<core::integer::u256>([68]) -> ([82]); // 3261
-function_call<user@test::erc_20::StorageImpl::approve_helper>([75], [76], [77], [78], [79], [80], [81], [82]) -> ([70], [71], [72], [73], [74]); // 3262
-enum_match<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([74]) { fallthrough([83]) 3273([84]) }; // 3263
-branch_align() -> (); // 3264
-struct_deconstruct<Tuple<test::erc_20::ContractState, Unit>>([83]) -> ([85], [86]); // 3265
-drop<Unit>([86]) -> (); // 3266
-store_temp<RangeCheck>([70]) -> ([87]); // 3267
-store_temp<GasBuiltin>([71]) -> ([88]); // 3268
-store_temp<Pedersen>([72]) -> ([89]); // 3269
-store_temp<System>([73]) -> ([90]); // 3270
-store_temp<test::erc_20::ContractState>([85]) -> ([91]); // 3271
-jump() { 3309() }; // 3272
-branch_align() -> (); // 3273
-enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([84]) -> ([92]); // 3274
-store_temp<RangeCheck>([70]) -> ([93]); // 3275
-store_temp<GasBuiltin>([71]) -> ([94]); // 3276
-store_temp<Pedersen>([72]) -> ([95]); // 3277
-store_temp<System>([73]) -> ([96]); // 3278
-store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([92]) -> ([97]); // 3279
-return([93], [94], [95], [96], [97]); // 3280
-branch_align() -> (); // 3281
-drop<test::erc_20::name::ContractMemberState>([8]) -> (); // 3282
-drop<ContractAddress>([6]) -> (); // 3283
-drop<ContractAddress>([5]) -> (); // 3284
-drop<test::erc_20::allowances::ContractMemberState>([14]) -> (); // 3285
-drop<test::erc_20::balances::ContractMemberState>([12]) -> (); // 3286
-drop<test::erc_20::total_supply::ContractMemberState>([11]) -> (); // 3287
-drop<test::erc_20::decimals::ContractMemberState>([10]) -> (); // 3288
-drop<test::erc_20::symbol::ContractMemberState>([9]) -> (); // 3289
-enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([67]) -> ([98]); // 3290
-store_temp<RangeCheck>([61]) -> ([99]); // 3291
-store_temp<GasBuiltin>([20]) -> ([100]); // 3292
-store_temp<Pedersen>([21]) -> ([101]); // 3293
-store_temp<System>([22]) -> ([102]); // 3294
-store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([98]) -> ([103]); // 3295
-return([99], [100], [101], [102], [103]); // 3296
-branch_align() -> (); // 3297
-drop<Unit>([60]) -> (); // 3298
-drop<ContractAddress>([6]) -> (); // 3299
-drop<ContractAddress>([5]) -> (); // 3300
-drop<core::integer::u256>([7]) -> (); // 3301
-drop<core::integer::u256>([45]) -> (); // 3302
-struct_construct<test::erc_20::ContractState>([8], [9], [10], [11], [12], [14]) -> ([104]); // 3303
-store_temp<RangeCheck>([19]) -> ([87]); // 3304
-store_temp<GasBuiltin>([20]) -> ([88]); // 3305
-store_temp<Pedersen>([21]) -> ([89]); // 3306
-store_temp<System>([22]) -> ([90]); // 3307
-store_temp<test::erc_20::ContractState>([104]) -> ([91]); // 3308
-struct_construct<Unit>() -> ([105]); // 3309
-struct_construct<Tuple<test::erc_20::ContractState, Unit>>([91], [105]) -> ([106]); // 3310
-enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 0>([106]) -> ([107]); // 3311
-store_temp<RangeCheck>([87]) -> ([108]); // 3312
-store_temp<GasBuiltin>([88]) -> ([109]); // 3313
-store_temp<Pedersen>([89]) -> ([110]); // 3314
-store_temp<System>([90]) -> ([111]); // 3315
-store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([107]) -> ([112]); // 3316
-return([108], [109], [110], [111], [112]); // 3317
+store_temp<u128>([37]) -> ([44]); // 3220
+store_temp<core::bool>([43]) -> ([45]); // 3221
+jump() { 3241() }; // 3222
+branch_align() -> (); // 3223
+snapshot_take<u128>([37]) -> ([46], [47]); // 3224
+snapshot_take<u128>([33]) -> ([48], [49]); // 3225
+drop<u128>([48]) -> (); // 3226
+rename<u128>([47]) -> ([50]); // 3227
+rename<u128>([49]) -> ([51]); // 3228
+u128_eq([50], [51]) { fallthrough() 3235() }; // 3229
+branch_align() -> (); // 3230
+struct_construct<Unit>() -> ([52]); // 3231
+enum_init<core::bool, 0>([52]) -> ([53]); // 3232
+store_temp<core::bool>([53]) -> ([54]); // 3233
+jump() { 3239() }; // 3234
+branch_align() -> (); // 3235
+struct_construct<Unit>() -> ([55]); // 3236
+enum_init<core::bool, 1>([55]) -> ([56]); // 3237
+store_temp<core::bool>([56]) -> ([54]); // 3238
+store_temp<u128>([46]) -> ([44]); // 3239
+store_temp<core::bool>([54]) -> ([45]); // 3240
+enum_match<core::bool>([45]) { fallthrough([57]) 3296([58]) }; // 3241
+branch_align() -> (); // 3242
+drop<Unit>([57]) -> (); // 3243
+struct_construct<core::integer::u256>([38], [44]) -> ([59]); // 3244
+store_temp<RangeCheck>([19]) -> ([62]); // 3245
+store_temp<core::integer::u256>([59]) -> ([63]); // 3246
+store_temp<core::integer::u256>([7]) -> ([64]); // 3247
+function_call<user@core::integer::U256Sub::sub>([62], [63], [64]) -> ([60], [61]); // 3248
+enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([61]) { fallthrough([65]) 3280([66]) }; // 3249
+branch_align() -> (); // 3250
+struct_deconstruct<Tuple<core::integer::u256>>([65]) -> ([67]); // 3251
+struct_construct<test::erc_20::ContractState>([8], [9], [10], [11], [12], [14]) -> ([68]); // 3252
+store_temp<RangeCheck>([60]) -> ([74]); // 3253
+store_temp<GasBuiltin>([20]) -> ([75]); // 3254
+store_temp<Pedersen>([21]) -> ([76]); // 3255
+store_temp<System>([22]) -> ([77]); // 3256
+store_temp<test::erc_20::ContractState>([68]) -> ([78]); // 3257
+store_temp<ContractAddress>([5]) -> ([79]); // 3258
+store_temp<ContractAddress>([6]) -> ([80]); // 3259
+store_temp<core::integer::u256>([67]) -> ([81]); // 3260
+function_call<user@test::erc_20::StorageImpl::approve_helper>([74], [75], [76], [77], [78], [79], [80], [81]) -> ([69], [70], [71], [72], [73]); // 3261
+enum_match<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([73]) { fallthrough([82]) 3272([83]) }; // 3262
+branch_align() -> (); // 3263
+struct_deconstruct<Tuple<test::erc_20::ContractState, Unit>>([82]) -> ([84], [85]); // 3264
+drop<Unit>([85]) -> (); // 3265
+store_temp<RangeCheck>([69]) -> ([86]); // 3266
+store_temp<GasBuiltin>([70]) -> ([87]); // 3267
+store_temp<Pedersen>([71]) -> ([88]); // 3268
+store_temp<System>([72]) -> ([89]); // 3269
+store_temp<test::erc_20::ContractState>([84]) -> ([90]); // 3270
+jump() { 3309() }; // 3271
+branch_align() -> (); // 3272
+enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([83]) -> ([91]); // 3273
+store_temp<RangeCheck>([69]) -> ([92]); // 3274
+store_temp<GasBuiltin>([70]) -> ([93]); // 3275
+store_temp<Pedersen>([71]) -> ([94]); // 3276
+store_temp<System>([72]) -> ([95]); // 3277
+store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([91]) -> ([96]); // 3278
+return([92], [93], [94], [95], [96]); // 3279
+branch_align() -> (); // 3280
+drop<test::erc_20::name::ContractMemberState>([8]) -> (); // 3281
+drop<ContractAddress>([6]) -> (); // 3282
+drop<ContractAddress>([5]) -> (); // 3283
+drop<test::erc_20::allowances::ContractMemberState>([14]) -> (); // 3284
+drop<test::erc_20::balances::ContractMemberState>([12]) -> (); // 3285
+drop<test::erc_20::total_supply::ContractMemberState>([11]) -> (); // 3286
+drop<test::erc_20::decimals::ContractMemberState>([10]) -> (); // 3287
+drop<test::erc_20::symbol::ContractMemberState>([9]) -> (); // 3288
+enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([66]) -> ([97]); // 3289
+store_temp<RangeCheck>([60]) -> ([98]); // 3290
+store_temp<GasBuiltin>([20]) -> ([99]); // 3291
+store_temp<Pedersen>([21]) -> ([100]); // 3292
+store_temp<System>([22]) -> ([101]); // 3293
+store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([97]) -> ([102]); // 3294
+return([98], [99], [100], [101], [102]); // 3295
+branch_align() -> (); // 3296
+drop<Unit>([58]) -> (); // 3297
+drop<ContractAddress>([6]) -> (); // 3298
+drop<ContractAddress>([5]) -> (); // 3299
+drop<core::integer::u256>([7]) -> (); // 3300
+drop<u128>([44]) -> (); // 3301
+drop<u128>([38]) -> (); // 3302
+struct_construct<test::erc_20::ContractState>([8], [9], [10], [11], [12], [14]) -> ([103]); // 3303
+store_temp<RangeCheck>([19]) -> ([86]); // 3304
+store_temp<GasBuiltin>([20]) -> ([87]); // 3305
+store_temp<Pedersen>([21]) -> ([88]); // 3306
+store_temp<System>([22]) -> ([89]); // 3307
+store_temp<test::erc_20::ContractState>([103]) -> ([90]); // 3308
+struct_construct<Unit>() -> ([104]); // 3309
+struct_construct<Tuple<test::erc_20::ContractState, Unit>>([90], [104]) -> ([105]); // 3310
+enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 0>([105]) -> ([106]); // 3311
+store_temp<RangeCheck>([86]) -> ([107]); // 3312
+store_temp<GasBuiltin>([87]) -> ([108]); // 3313
+store_temp<Pedersen>([88]) -> ([109]); // 3314
+store_temp<System>([89]) -> ([110]); // 3315
+store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([106]) -> ([111]); // 3316
+return([107], [108], [109], [110], [111]); // 3317
 branch_align() -> (); // 3318
 drop<test::erc_20::name::ContractMemberState>([8]) -> (); // 3319
 drop<ContractAddress>([6]) -> (); // 3320
@@ -3816,13 +3816,13 @@ drop<test::erc_20::balances::ContractMemberState>([12]) -> (); // 3324
 drop<test::erc_20::total_supply::ContractMemberState>([11]) -> (); // 3325
 drop<test::erc_20::decimals::ContractMemberState>([10]) -> (); // 3326
 drop<core::integer::u256>([7]) -> (); // 3327
-enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([31]) -> ([113]); // 3328
-store_temp<RangeCheck>([19]) -> ([114]); // 3329
-store_temp<GasBuiltin>([20]) -> ([115]); // 3330
-store_temp<Pedersen>([21]) -> ([116]); // 3331
-store_temp<System>([22]) -> ([117]); // 3332
-store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([113]) -> ([118]); // 3333
-return([114], [115], [116], [117], [118]); // 3334
+enum_init<core::panics::PanicResult::<(test::erc_20::ContractState, ())>, 1>([31]) -> ([112]); // 3328
+store_temp<RangeCheck>([19]) -> ([113]); // 3329
+store_temp<GasBuiltin>([20]) -> ([114]); // 3330
+store_temp<Pedersen>([21]) -> ([115]); // 3331
+store_temp<System>([22]) -> ([116]); // 3332
+store_temp<core::panics::PanicResult::<(test::erc_20::ContractState, ())>>([112]) -> ([117]); // 3333
+return([113], [114], [115], [116], [117]); // 3334
 dup<ContractAddress>([6]) -> ([6], [9]); // 3335
 contract_address_to_felt252([9]) -> ([8]); // 3336
 snapshot_take<felt252>([8]) -> ([10], [11]); // 3337
