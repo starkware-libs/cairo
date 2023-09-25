@@ -146,41 +146,39 @@ fn analyze_gas_statements<
 
     let wallet_value = context.wallet_at(idx).get_value();
 
-    if invocation.branches.len() > 1 {
-        for (branch_info, branch_cost, branch_requirement) in
-            zip_eq3(&invocation.branches, &libfunc_cost, &branch_requirements)
-        {
-            let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).get_value();
-            // TODO(lior): Consider checking that idx.next(&branch_info.target) is indeed branch
-            //   align.
-            if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
-                for (token_type, amount) in specific_context.get_withdraw_gas_values(
-                    branch_cost,
-                    &wallet_value,
-                    future_wallet_value,
-                ) {
-                    assert_eq!(
-                        variable_values.insert((*idx, token_type), std::cmp::max(amount, 0)),
-                        None
-                    );
+    for (branch_info, branch_cost, branch_requirement) in
+        zip_eq3(&invocation.branches, &libfunc_cost, &branch_requirements)
+    {
+        let future_wallet_value = context.wallet_at(&idx.next(&branch_info.target)).get_value();
+        // TODO(lior): Consider checking that idx.next(&branch_info.target) is indeed branch
+        //   align.
+        if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
+            let withdrawal = specific_context.get_gas_withdrawal(
+                branch_cost,
+                &wallet_value,
+                future_wallet_value,
+            );
+            for (token_type, amount) in SpecificCostContext::to_full_cost_map(withdrawal) {
+                assert_eq!(
+                    variable_values.insert((*idx, token_type), std::cmp::max(amount, 0)),
+                    None
+                );
 
-                    assert_eq!(
-                        variable_values.insert(
-                            (idx.next(&branch_info.target), token_type),
-                            std::cmp::max(-amount, 0),
-                        ),
-                        None
-                    );
-                }
-            } else {
-                for (token_type, amount) in specific_context
-                    .get_branch_align_values(&wallet_value, &branch_requirement.get_value())
-                {
-                    assert_eq!(
-                        variable_values.insert((idx.next(&branch_info.target), token_type), amount),
-                        None
-                    );
-                }
+                assert_eq!(
+                    variable_values.insert(
+                        (idx.next(&branch_info.target), token_type),
+                        std::cmp::max(-amount, 0),
+                    ),
+                    None
+                );
+            }
+        } else if invocation.branches.len() > 1 {
+            let cost = wallet_value.clone() - branch_requirement.get_value();
+            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+                assert_eq!(
+                    variable_values.insert((idx.next(&branch_info.target), token_type), amount),
+                    None
+                );
             }
         }
     }
@@ -190,20 +188,17 @@ pub trait SpecificCostContextTrait<CostType: CostTypeTrait> {
     /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
     fn to_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64>;
 
-    /// Computes the value that should be withdrawn and added to the wallet for each token type.
-    fn get_withdraw_gas_values(
+    /// Converts a `CostType` to a [OrderedHashMap] from [CostTokenType] to i64.
+    /// All relevant [CostTokenType] are included (even if their value is 0).
+    fn to_full_cost_map(cost: CostType) -> OrderedHashMap<CostTokenType, i64>;
+
+    /// Computes the value that should be withdrawn and added to the wallet.
+    fn get_gas_withdrawal(
         &self,
         branch_cost: &BranchCost,
         wallet_value: &CostType,
         future_wallet_value: CostType,
-    ) -> OrderedHashMap<CostTokenType, i64>;
-
-    /// Computes the value that should be reduced from the wallet for each token type.
-    fn get_branch_align_values(
-        &self,
-        wallet_value: &CostType,
-        branch_requirement: &CostType,
-    ) -> OrderedHashMap<CostTokenType, i64>;
+    ) -> CostType;
 
     /// Returns the required value for the wallet for a single branch.
     fn get_branch_requirement(
@@ -376,27 +371,19 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
         res.into_iter().map(|(token_type, val)| (token_type, val as i64)).collect()
     }
 
-    fn get_withdraw_gas_values(
+    fn to_full_cost_map(cost: PreCost) -> OrderedHashMap<CostTokenType, i64> {
+        CostTokenType::iter_precost()
+            .map(|token_type| (*token_type, (*cost.0.get(token_type).unwrap_or(&0)).into()))
+            .collect()
+    }
+
+    fn get_gas_withdrawal(
         &self,
         _branch_cost: &BranchCost,
         wallet_value: &PreCost,
         future_wallet_value: PreCost,
-    ) -> OrderedHashMap<CostTokenType, i64> {
-        let res = (future_wallet_value - wallet_value.clone()).0;
-        CostTokenType::iter_precost()
-            .map(|token_type| (*token_type, *res.get(token_type).unwrap_or(&0) as i64))
-            .collect()
-    }
-
-    fn get_branch_align_values(
-        &self,
-        wallet_value: &PreCost,
-        branch_requirement: &PreCost,
-    ) -> OrderedHashMap<CostTokenType, i64> {
-        let res = (wallet_value.clone() - branch_requirement.clone()).0;
-        CostTokenType::iter_precost()
-            .map(|token_type| (*token_type, *res.get(token_type).unwrap_or(&0) as i64))
-            .collect()
+    ) -> PreCost {
+        future_wallet_value - wallet_value.clone()
     }
 
     fn get_branch_requirement(
