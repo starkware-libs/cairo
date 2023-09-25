@@ -1,7 +1,7 @@
 //! > Test expansion of a basic component.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Drop, starknet::Store)]
@@ -32,19 +32,21 @@ mod component {
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         #[external]
-        fn get_data(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
-            self.data.read()
+        fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
+            self.data.read() + self.map.read(10)
         }
         #[external]
-        fn set_data(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
+        fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
+            self.map.write(10, value);
             self.data.write(value);
+            self.emit(Log{});
         }
     }
 }
 use starknet::ContractAddress;
 trait MyTrait<T> {
-    fn get_data(self: @T, addr: ContractAddress) -> u32;
-    fn set_data(ref self: T, addr: ContractAddress, value: u32);
+    fn get(self: @T, addr: ContractAddress) -> u32;
+    fn set(ref self: T, addr: ContractAddress, value: u32);
 }
 
 //! > generated_cairo_code
@@ -78,19 +80,21 @@ mod component {
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
         #[external]
-        fn get_data(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
-            self.data.read()
+        fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
+            self.data.read() + self.map.read(10)
         }
         #[external]
-        fn set_data(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
+        fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
+            self.map.write(10, value);
             self.data.write(value);
+            self.emit(Log{});
         }
     }
 }
 use starknet::ContractAddress;
 trait MyTrait<T> {
-    fn get_data(self: @T, addr: ContractAddress) -> u32;
-    fn set_data(ref self: T, addr: ContractAddress, value: u32);
+    fn get(self: @T, addr: ContractAddress) -> u32;
+    fn set(ref self: T, addr: ContractAddress, value: u32);
 }
 
 impls:
@@ -98,7 +102,7 @@ impls:
 impl MyTypeDrop of Drop::<MyType>;
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreMyType of starknet::Store::<MyType> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyType> {
@@ -156,7 +160,6 @@ component:
         unsafe_new_component_state::<TContractState>()
     }
     
-    use data::InternalComponentMemberStateTrait as dataComponentMemberStateTrait;
     mod data {
         use super::ContractAddress;
         use super::MyTrait;
@@ -165,40 +168,12 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> u32;
-            fn write(ref self: ComponentMemberState, value: u32);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, u32> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x354f1c2d0eb5771cd5bf67a6689fcd6eed9444d91a39e5ef32a9b4ae5ca14ff>()
-            }
-            fn read(self: @ComponentMemberState) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
-    use map::InternalComponentMemberStateTrait as mapComponentMemberStateTrait;
     mod map {
         use super::ContractAddress;
         use super::MyTrait;
@@ -207,41 +182,14 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState, key: u32) -> u32;
-            fn write(ref self: ComponentMemberState, key: u32, value: u32);
-        }
 
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
+        impl StorageMapComponentMemberStateImpl of starknet::storage::StorageMapMemberAddressTrait<ComponentMemberState, u32, u32> {
             fn address(self: @ComponentMemberState, key: u32) -> starknet::StorageBaseAddress {
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<u32>::hash(0x1af9e30ee4fed507d9432e0f1308eb5bd12221bef97071a48d86951102231be, key))
             }
-            fn read(self: @ComponentMemberState, key: u32) -> u32 {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::read(
-                        address_domain,
-                        self.address(key),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, key: u32, value: u32) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<u32>::write(
-                        address_domain,
-                        self.address(key),
-                        value,
-                    )
-                )
-            }
         }
     }
-    use my_type_var::InternalComponentMemberStateTrait as my_type_varComponentMemberStateTrait;
     mod my_type_var {
         use super::ContractAddress;
         use super::MyTrait;
@@ -250,68 +198,38 @@ component:
         use super::MyInnerImpl;
         #[derive(Copy, Drop)]
         struct ComponentMemberState {}
-        trait InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ComponentMemberState) -> super::super::MyType;
-            fn write(ref self: ComponentMemberState, value: super::super::MyType);
-        }
-
-        impl InternalComponentMemberStateImpl of InternalComponentMemberStateTrait {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress {
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, super::super::MyType> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
                 starknet::storage_base_address_const::<0x1d7ac842e8e2a1c4fd94662d0a812cd378294e5156fee62dafbd49a010246c7>()
-            }
-            fn read(self: @ComponentMemberState) -> super::super::MyType {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::super::MyType>::read(
-                        address_domain,
-                        self.address(),
-                    )
-                )
-            }
-            fn write(ref self: ComponentMemberState, value: super::super::MyType) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::super::MyType>::write(
-                        address_domain,
-                        self.address(),
-                        value,
-                    )
-                )
             }
         }
     }
 
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
 trait HasComponent<TContractState> {
     fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
     fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
     fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
     fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit(ref self: ComponentState<TContractState>, event: Event);
-}
-
-trait MyInnerImplTrait<TContractState> {
-    #[external]
-    fn get_data(self: @TContractState, addr: ContractAddress) -> u32;
-    #[external]
-    fn set_data(ref self: TContractState, addr: ContractAddress, value: u32);
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
 }
 
 #[starknet::embeddable]
 impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
-> of MyInnerImplTrait<TContractState> {
+> of MyTrait<TContractState> {
     #[external]
-    fn get_data(self: @TContractState, addr: ContractAddress) -> u32 {
+    fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
-        component.get_data(addr, )
+        MyInnerImpl::get(component, addr, )
     }
     #[external]
-    fn set_data(ref self: TContractState, addr: ContractAddress, value: u32) {
+    fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = self.get_component_mut();
-        component.set_data(addr, value, )
+        MyInnerImpl::set(ref component, addr, value, )
     }
 }
 
@@ -320,7 +238,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -339,13 +257,12 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
-            if selector == selector!("Log") {
+        if selector == selector!("Log") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::Log(val));
-            }
+        }
         Option::None
     }
 }
@@ -362,7 +279,7 @@ impls:
 impl LogDrop of Drop::<Log>;
 
 
-event_impl:
+starknet_derive:
 
 impl LogIsEvent of starknet::Event<Log> {
     fn append_keys_and_data(
@@ -383,7 +300,7 @@ trait UnsafeNewContractStateTraitForMyImpl<TContractState> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__get<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -396,7 +313,7 @@ fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    let res = MyImpl::<TContractState, X, TContractStateDrop>::get_data(@contract_state, __arg_addr);
+    let res = MyImpl::<TContractState, X, TContractStateDrop>::get(@contract_state, __arg_addr);
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -405,7 +322,7 @@ fn __wrapper_get_data<TContractState, impl X: HasComponent<TContractState>, impl
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__MyImpl__set<TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMyImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -422,7 +339,7 @@ fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    MyImpl::<TContractState, X, TContractStateDrop>::set_data(ref contract_state, __arg_addr, __arg_value);
+    MyImpl::<TContractState, X, TContractStateDrop>::set(ref contract_state, __arg_addr, __arg_value);
     let mut arr = array::array_new();
     // References.
     // Result.
@@ -432,8 +349,8 @@ fn __wrapper_set_data<TContractState, impl X: HasComponent<TContractState>, impl
 
 
 mod __external_MyImpl {
-        use super::__wrapper_get_data as get_data;
-        use super::__wrapper_set_data as set_data;
+        use super::__wrapper__MyImpl__get as get;
+        use super::__wrapper__MyImpl__set as set;
 }
 
 mod __l1_handler_MyImpl {

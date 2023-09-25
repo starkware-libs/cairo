@@ -26,9 +26,12 @@ mod issue3345;
 mod issue3658;
 mod issue3863;
 mod issue4007;
+mod issue4034;
+mod issue4036;
+mod issue4038;
+mod issue4075;
 mod loop_only_change;
 mod inconsistent_gas;
 mod partial_param_local;
 mod loop_break_in_match;
 mod generic_cycles;
-

@@ -11,9 +11,10 @@ use super::generation_data::{ContractGenerationData, StarknetModuleCommonGenerat
 use super::{grand_grand_parent_starknet_module, StarknetModuleKind};
 use crate::contract::starknet_keccak;
 use crate::plugin::consts::{
-    COMPONENT_INLINE_MACRO, CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
-    EMBED_ATTR, EVENT_TRAIT, EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR,
-    NESTED_ATTR, STORAGE_STRUCT_NAME,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, COMPONENT_INLINE_MACRO,
+    CONCRETE_COMPONENT_STATE_NAME, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EVENT_TRAIT,
+    EVENT_TYPE_NAME, EXTERNAL_ATTR, HAS_COMPONENT_TRAIT, L1_HANDLER_ATTR, STORAGE_STRUCT_NAME,
+    SUBSTORAGE_ATTR,
 };
 use crate::plugin::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
@@ -34,8 +35,8 @@ pub struct ContractSpecificGenerationData {
 struct ComponentsGenerationData {
     /// The components defined in the contract using the `component!` inline macro.
     pub components: Vec<NestedComponent>,
-    /// The contract's storage members that are marked with the `nested` attribute.
-    pub nested_storage_members: Vec<String>,
+    /// The contract's storage members that are marked with the `substorage` attribute.
+    pub substorage_members: Vec<String>,
     /// The contract's event variants that are defined in the main event enum of the contract.
     pub nested_event_variants: Vec<SmolStr>,
 }
@@ -86,8 +87,9 @@ impl ComponentsGenerationData {
                      {CONTRACT_STATE_NAME} {{
                unsafe_new_contract_state()
            }}
-           fn emit(ref self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: \
-                     $component_path$::{EVENT_TYPE_NAME}) {{
+           fn emit<S, impl IntoImp: traits::Into<S, $component_path$::{EVENT_TYPE_NAME}>>(ref \
+                     self: $component_path$::{CONCRETE_COMPONENT_STATE_NAME}, event: S) {{
+               let event: $component_path$::{EVENT_TYPE_NAME} = traits::Into::into(event);
                let mut contract = $component_path$::{HAS_COMPONENT_TRAIT}::get_contract_mut(ref \
                      self);
                contract.emit(Event::$event_name$(event));
@@ -131,13 +133,13 @@ impl ComponentsGenerationData {
         let mut is_valid = true;
 
         let storage_name_syntax_node = storage_name.as_syntax_node();
-        if !self.nested_storage_members.contains(&storage_name_syntax_node.get_text(db)) {
+        if !self.substorage_members.contains(&storage_name_syntax_node.get_text(db)) {
             diagnostics.push(PluginDiagnostic {
                 stable_ptr: storage_name.stable_ptr().untyped(),
                 message: format!(
-                    "`{0}` is not a nested member in the contract's \
+                    "`{0}` is not a substorage member in the contract's \
                      `{STORAGE_STRUCT_NAME}`.\nConsider adding to \
-                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{NESTED_ATTR}(v0)]\n{0}: \
+                     `{STORAGE_STRUCT_NAME}`:\n```\n#[{SUBSTORAGE_ATTR}(v0)]\n{0}: \
                      path::to::component::{STORAGE_STRUCT_NAME},\n````",
                     storage_name_syntax_node.get_text_without_trivia(db)
                 )
@@ -198,6 +200,10 @@ impl ContractSpecificGenerationData {
     ) -> RewriteNode {
         RewriteNode::interpolate_patched(
             &formatdoc! {"
+                use starknet::storage::{{
+                    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+                    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+                }};
                 $test_config$
                 $entry_points_code$
                 {EVENT_EMITTER_CODE}
@@ -232,13 +238,7 @@ fn handle_contract_item(
             );
         }
         ast::Item::Impl(item_impl) => {
-            handle_contract_impl(
-                db,
-                diagnostics,
-                item,
-                item_impl,
-                &mut data.specific.entry_points_code,
-            );
+            handle_contract_impl(db, diagnostics, item_impl, &mut data.specific.entry_points_code);
         }
         ast::Item::Struct(item_struct) if item_struct.name(db).text(db) == STORAGE_STRUCT_NAME => {
             handle_storage_struct(
@@ -251,15 +251,17 @@ fn handle_contract_item(
             for member in item_struct.members(db).elements(db) {
                 // v0 is not validated here to not create multiple diagnostics. It's already
                 // verified in handle_storage_struct above.
-                if member.has_attr(db, NESTED_ATTR) {
+                if member.has_attr(db, SUBSTORAGE_ATTR) {
                     data.specific
                         .components_data
-                        .nested_storage_members
+                        .substorage_members
                         .push(member.name(db).text(db).to_string());
                 }
             }
         }
-        ast::Item::ImplAlias(alias_ast) if alias_ast.has_attr(db, EMBED_ATTR) => {
+        ast::Item::ImplAlias(alias_ast)
+            if alias_ast.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) =>
+        {
             handle_embed_impl_alias(
                 db,
                 diagnostics,
@@ -307,8 +309,8 @@ pub(super) fn generate_contract_specific_code(
     generation_data.into_rewrite_node(db, diagnostics)
 }
 
-/// Forbids the given attribute in the given impl, assuming it's external.
-fn forbid_attribute_in_external_impl(
+/// Forbids the given attribute in the given impl, assuming it's marked with #[abi(embed)].
+fn forbid_attribute_in_embedded_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     impl_item: &ast::ImplItem,
@@ -327,6 +329,7 @@ fn handle_contract_entry_point(
     entry_point_kind: EntryPointKind,
     item_function: &ast::FunctionWithBody,
     wrapped_function_path: RewriteNode,
+    wrapper_identifier: String,
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     data: &mut EntryPointsGenerationData,
@@ -337,6 +340,7 @@ fn handle_contract_entry_point(
             entry_point_kind,
             item_function,
             wrapped_function_path,
+            wrapper_identifier,
             unsafe_new_contract_state_prefix: "",
             generic_params: RewriteNode::empty(),
         },
@@ -357,12 +361,13 @@ fn handle_contract_free_function(
     else {
         return;
     };
-    let function_name =
-        RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
+    let function_name = item_function.declaration(db).name(db);
+    let function_name_node = RewriteNode::new_trimmed(function_name.as_syntax_node());
     handle_contract_entry_point(
         entry_point_kind,
         item_function,
-        function_name,
+        function_name_node,
+        function_name.text(db).into(),
         db,
         diagnostics,
         data,
@@ -373,54 +378,71 @@ fn handle_contract_free_function(
 fn handle_contract_impl(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
-    item: &ast::Item,
-    item_impl: &ast::ItemImpl,
+    imp: &ast::ItemImpl,
     data: &mut EntryPointsGenerationData,
 ) {
-    let is_external = has_v0_attribute(db, diagnostics, item, EXTERNAL_ATTR);
-    if !(is_external || has_v0_attribute(db, diagnostics, item, EMBED_ATTR)) {
+    let is_embed = is_impl_abi_embed(db, diagnostics, imp);
+    let is_per_item = is_impl_abi_per_item(db, imp);
+    if !is_embed && !is_per_item {
         return;
     }
-    let ast::MaybeImplBody::Some(impl_body) = item_impl.body(db) else {
+    let ast::MaybeImplBody::Some(impl_body) = imp.body(db) else {
         return;
     };
-    let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
+    let impl_name = imp.name(db);
+    let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     for item in impl_body.items(db).elements(db) {
-        if is_external {
+        if is_embed {
             for attr in [EXTERNAL_ATTR, CONSTRUCTOR_ATTR, L1_HANDLER_ATTR] {
-                forbid_attribute_in_external_impl(db, diagnostics, &item, attr);
+                forbid_attribute_in_embedded_impl(db, diagnostics, &item, attr);
             }
         }
 
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if is_external {
+        let entry_point_kind = if is_embed {
             EntryPointKind::External
         } else if let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) {
             entry_point_kind
         } else {
             continue;
         };
-        let function_name =
-            RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
-        let function_name = RewriteNode::interpolate_patched(
+        let function_name = item_function.declaration(db).name(db);
+        let function_name_node = RewriteNode::interpolate_patched(
             "$impl_name$::$func_name$",
             &[
-                ("impl_name".to_string(), impl_name.clone()),
-                ("func_name".to_string(), function_name),
+                ("impl_name".to_string(), impl_name_node.clone()),
+                ("func_name".to_string(), RewriteNode::new_trimmed(function_name.as_syntax_node())),
             ]
             .into(),
         );
+        let wrapper_identifier = format!("{}__{}", impl_name.text(db), function_name.text(db));
         handle_contract_entry_point(
             entry_point_kind,
             &item_function,
-            function_name,
+            function_name_node,
+            wrapper_identifier,
             db,
             diagnostics,
             data,
         );
     }
+}
+
+/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
+fn is_impl_abi_embed(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    imp: &ast::ItemImpl,
+) -> bool {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
+        || has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR)
+}
+
+/// Checks whether the impl is marked with `#[abi(per_item)]`.
+fn is_impl_abi_per_item(db: &dyn SyntaxGroup, imp: &ast::ItemImpl) -> bool {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
 }
 
 /// Handles an embedded impl by an impl alias.
@@ -440,7 +462,8 @@ fn handle_embed_impl_alias(
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
             message: format!(
-                "Generic parameters are not supported in impl aliases with `#[{EMBED_ATTR}]`."
+                "Generic parameters are not supported in impl aliases with \
+                 `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]`."
             ),
         });
         return;
@@ -454,8 +477,8 @@ fn handle_embed_impl_alias(
         diagnostics.push(PluginDiagnostic {
             stable_ptr: alias_ast.stable_ptr().untyped(),
             message: format!(
-                "First generic argument of impl alias with `#[{EMBED_ATTR}]` must be \
-                 `{CONTRACT_STATE_NAME}`."
+                "First generic argument of impl alias with \
+                 `#[{ABI_ATTR}({ABI_ATTR_EMBED_V0_ARG})]` must be `{CONTRACT_STATE_NAME}`."
             ),
         });
         return;

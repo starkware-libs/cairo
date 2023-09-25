@@ -1,7 +1,7 @@
 //! > Test expansion of StarkNet storage logic.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[derive(Drop, starknet::Store, Hash)]
@@ -91,7 +91,7 @@ impl OuterTypeHash<
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreOuterType of starknet::Store::<OuterType> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<OuterType> {
@@ -711,6 +711,10 @@ enum Event {}
             }
         }
     }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x33d119d7988d8f3251d554948b07e3215c9d66cf56f21bc80a6e513ea8e536;
 
@@ -750,7 +754,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -763,7 +767,6 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
         Option::None
     }
 }

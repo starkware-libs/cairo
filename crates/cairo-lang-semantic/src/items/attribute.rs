@@ -1,9 +1,10 @@
 use cairo_lang_defs::ids::{
-    EnumId, FreeFunctionId, FunctionWithBodyId, ImplDefId, ImplFunctionId, ModuleId, StructId,
-    SubmoduleId, TraitFunctionId, TraitId,
+    EnumId, FreeFunctionId, FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, ModuleId,
+    StructId, SubmoduleId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_syntax::attribute::structured::Attribute;
+use cairo_lang_syntax::node::TypedSyntaxNode;
 
 use crate::db::SemanticGroup;
 
@@ -52,6 +53,33 @@ pub trait SemanticQueryAttrs {
     fn has_attr(&self, db: &dyn SemanticGroup, attr: &str) -> Maybe<bool> {
         Ok(self.find_attr(db, attr)?.is_some())
     }
+
+    /// Checks if the given object has an attribute with the given name and argument.
+    fn has_attr_with_arg(
+        &self,
+        db: &dyn SemanticGroup,
+        attr_name: &str,
+        arg_name: &str,
+    ) -> Maybe<bool> {
+        Ok(self
+            .query_attr(db, attr_name)?
+            .iter()
+            .any(|attr| is_single_arg_attr(db, attr, arg_name)))
+    }
+}
+
+/// Checks if the given attribute has a single argument with the given name.
+fn is_single_arg_attr(db: &dyn SemanticGroup, attr: &Attribute, arg_name: &str) -> bool {
+    match &attr.args[..] {
+        [arg] => match &arg.variant {
+            cairo_lang_syntax::attribute::structured::AttributeArgVariant::Unnamed {
+                value,
+                ..
+            } => value.as_syntax_node().get_text_without_trivia(db.upcast()) == arg_name,
+            _ => false,
+        },
+        _ => false,
+    }
 }
 
 impl SemanticQueryAttrs for ModuleId {
@@ -87,6 +115,11 @@ impl SemanticQueryAttrs for FunctionWithBodyId {
 impl SemanticQueryAttrs for ImplDefId {
     fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
         db.impl_def_attributes(*self)
+    }
+}
+impl SemanticQueryAttrs for ImplAliasId {
+    fn attributes_elements(&self, db: &dyn SemanticGroup) -> Maybe<Vec<Attribute>> {
+        db.impl_alias_attributes(*self)
     }
 }
 impl SemanticQueryAttrs for EnumId {

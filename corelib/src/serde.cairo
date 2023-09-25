@@ -1,7 +1,5 @@
 use array::ArrayTrait;
 use array::SpanTrait;
-use traits::Into;
-use traits::TryInto;
 
 trait Serde<T> {
     fn serialize(self: @T, ref output: Array<felt252>);
@@ -15,44 +13,29 @@ impl TupleSize0Serde of Serde<()> {
     }
 }
 
-impl TupleSize1Serde<E0, impl E0Serde: Serde<E0>> of Serde<(E0,)> {
+impl TupleSize1Serde<E0, +Serde<E0>> of Serde<(E0,)> {
     fn serialize(self: @(E0,), ref output: Array<felt252>) {
         let (e0,) = self;
         e0.serialize(ref output)
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<(E0,)> {
-        Option::Some((E0Serde::deserialize(ref serialized)?,))
+        Option::Some((Serde::deserialize(ref serialized)?,))
     }
 }
 
-impl TupleSize2Serde<
-    E0,
-    E1,
-    impl E0Serde: Serde<E0>,
-    impl E0Drop: Drop<E0>,
-    impl E1Serde: Serde<E1>,
-    impl E0Drop: Drop<E1>
-> of Serde<(E0, E1)> {
+impl TupleSize2Serde<E0, E1, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>> of Serde<(E0, E1)> {
     fn serialize(self: @(E0, E1), ref output: Array<felt252>) {
         let (e0, e1) = self;
         e0.serialize(ref output);
         e1.serialize(ref output)
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1)> {
-        Option::Some((E0Serde::deserialize(ref serialized)?, E1Serde::deserialize(ref serialized)?))
+        Option::Some((Serde::deserialize(ref serialized)?, Serde::deserialize(ref serialized)?))
     }
 }
 
 impl TupleSize3Serde<
-    E0,
-    E1,
-    E2,
-    impl E0Serde: Serde<E0>,
-    impl E0Drop: Drop<E0>,
-    impl E1Serde: Serde<E1>,
-    impl E1Drop: Drop<E1>,
-    impl E2Serde: Serde<E2>,
-    impl E2Drop: Drop<E2>
+    E0, E1, E2, +Serde<E0>, +Drop<E0>, +Serde<E1>, +Drop<E1>, +Serde<E2>, +Drop<E2>
 > of Serde<(E0, E1, E2)> {
     fn serialize(self: @(E0, E1, E2), ref output: Array<felt252>) {
         let (e0, e1, e2) = self;
@@ -63,9 +46,9 @@ impl TupleSize3Serde<
     fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1, E2)> {
         Option::Some(
             (
-                E0Serde::deserialize(ref serialized)?,
-                E1Serde::deserialize(ref serialized)?,
-                E2Serde::deserialize(ref serialized)?
+                Serde::deserialize(ref serialized)?,
+                Serde::deserialize(ref serialized)?,
+                Serde::deserialize(ref serialized)?
             )
         )
     }
@@ -76,14 +59,14 @@ impl TupleSize4Serde<
     E1,
     E2,
     E3,
-    impl E0Serde: Serde<E0>,
-    impl E0Drop: Drop<E0>,
-    impl E1Serde: Serde<E1>,
-    impl E1Drop: Drop<E1>,
-    impl E2Serde: Serde<E2>,
-    impl E2Drop: Drop<E2>,
-    impl E3Serde: Serde<E3>,
-    impl E3Drop: Drop<E3>
+    +Serde<E0>,
+    +Drop<E0>,
+    +Serde<E1>,
+    +Drop<E1>,
+    +Serde<E2>,
+    +Drop<E2>,
+    +Serde<E3>,
+    +Drop<E3>
 > of Serde<(E0, E1, E2, E3)> {
     fn serialize(self: @(E0, E1, E2, E3), ref output: Array<felt252>) {
         let (e0, e1, e2, e3) = self;
@@ -95,11 +78,31 @@ impl TupleSize4Serde<
     fn deserialize(ref serialized: Span<felt252>) -> Option<(E0, E1, E2, E3)> {
         Option::Some(
             (
-                E0Serde::deserialize(ref serialized)?,
-                E1Serde::deserialize(ref serialized)?,
-                E2Serde::deserialize(ref serialized)?,
-                E3Serde::deserialize(ref serialized)?
+                Serde::deserialize(ref serialized)?,
+                Serde::deserialize(ref serialized)?,
+                Serde::deserialize(ref serialized)?,
+                Serde::deserialize(ref serialized)?
             )
         )
+    }
+}
+
+/// Impl for `Serde` for types that can be converted into `felt252` using the `Into` trait and from `felt252` using the `TryInto` trait.
+/// Usage example:
+/// ```ignore
+/// impl MyTypeSerde = core::serde::into_felt252_based::SerdeImpl<MyType>;`
+/// ```
+mod into_felt252_based {
+    use traits::{Into, TryInto};
+    use core::array::ArrayTrait;
+    impl SerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::Serde<T> {
+        #[inline(always)]
+        fn serialize(self: @T, ref output: Array<felt252>) {
+            output.append((*self).into());
+        }
+        #[inline(always)]
+        fn deserialize(ref serialized: Span<felt252>) -> Option<T> {
+            Option::Some((*serialized.pop_front()?).try_into()?)
+        }
     }
 }

@@ -1,19 +1,11 @@
-fn index_of_min<
-    T,
-    impl TPartialEq: PartialEq<T>,
-    impl TPartialOrd: PartialOrd<T>,
-    impl TDrop: Drop<T>,
-    impl TCopy: Copy<T>
->(
+fn index_of_min<T, +PartialEq<T>, +PartialOrd<T>, +Drop<T>, +Copy<T>>(
     mut span: Span<T>
 ) -> Option<usize> {
     let mut current_index = 0;
     let mut min_index = 0;
     let mut min = match span.pop_front() {
         Option::Some(item) => *item,
-        Option::None => {
-            return Option::None;
-        },
+        Option::None => { return Option::None; },
     };
     loop {
         match span.pop_front() {
@@ -24,9 +16,7 @@ fn index_of_min<
                     min_index = current_index;
                 }
             },
-            Option::None => {
-                break Option::Some(min_index);
-            },
+            Option::None => { break Option::Some(min_index); },
         };
     }
 }

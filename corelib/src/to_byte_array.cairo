@@ -15,9 +15,7 @@ trait FormatAsByteArray<T> {
     fn format_as_byte_array(self: T, base: NonZero<T>) -> ByteArray;
 }
 
-impl FormatAsByteArrayImpl<
-    T, impl AppendImpl: AppendFormattedToByteArray<T>
-> of FormatAsByteArray<T> {
+impl FormatAsByteArrayImpl<T, +AppendFormattedToByteArray<T>> of FormatAsByteArray<T> {
     fn format_as_byte_array(self: T, base: NonZero<T>) -> ByteArray {
         let mut byte_array = "";
         self.append_formatted_to_byte_array(ref byte_array, :base);
@@ -78,12 +76,7 @@ impl Felt252AppendFormattedToByteArray of AppendFormattedToByteArray<felt252> {
 /// result into the given ByteArray.
 /// `base` must be in the range [2, 36]. Otherwise, this function panics.
 fn append_formatted_to_byte_array<
-    T,
-    impl DropImpl: Drop<T>,
-    impl CopyImpl: Copy<T>,
-    impl DivRemImpl: DivRem<T>,
-    impl TryIntoU8: TryInto<T, u8>,
-    impl ZeroableImpl: Zeroable<T>,
+    T, +Drop<T>, +Copy<T>, +DivRem<T>, +TryInto<T, u8>, +Zeroable<T>,
 >(
     mut value: T, ref byte_array: ByteArray, base_nz: NonZero<T>,
 ) {
@@ -119,12 +112,8 @@ fn append_formatted_to_byte_array<
     let mut span = reversed_digits.span();
     loop {
         match span.pop_back() {
-            Option::Some(byte) => {
-                byte_array.append_byte(*byte);
-            },
-            Option::None => {
-                break;
-            },
+            Option::Some(byte) => { byte_array.append_byte(*byte); },
+            Option::None => { break; },
         };
     };
 }

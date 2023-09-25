@@ -1,7 +1,7 @@
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::{grandparent_kind, parent_kind};
-use cairo_lang_syntax::node::SyntaxNode;
+use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
 
 use crate::formatter_impl::{
     BreakLinePointIndentation, BreakLinePointProperties, BreakLinePointsPositions, SyntaxNodeFormat,
@@ -20,7 +20,10 @@ impl SyntaxNodeFormat for SyntaxNode {
             | SyntaxKind::TokenLBrack
             | SyntaxKind::TokenSingleLineComment => true,
             SyntaxKind::TokenNot
-                if matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprInlineMacro)) =>
+                if matches!(
+                    grandparent_kind(db, self),
+                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
+                ) =>
             {
                 true
             }
@@ -36,6 +39,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenColon
                 if grandparent_kind(db, self) != Some(SyntaxKind::ArgClauseFieldInitShorthand) =>
+            {
+                true
+            }
+            SyntaxKind::TokenPlus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
             {
                 true
             }
@@ -92,6 +100,11 @@ impl SyntaxNodeFormat for SyntaxNode {
             }
             SyntaxKind::TokenMinus | SyntaxKind::TokenMul => {
                 matches!(grandparent_kind(db, self), Some(SyntaxKind::ExprUnary))
+            }
+            SyntaxKind::TokenPlus
+                if grandparent_kind(db, self) == Some(SyntaxKind::GenericParamImplAnonymous) =>
+            {
+                true
             }
             SyntaxKind::TokenLT
                 if matches!(
@@ -307,7 +320,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 BreakLinePointsPositions::Trailing(BreakLinePointProperties::new(
                     10,
                     BreakLinePointIndentation::NotIndented,
-                    false,
+                    is_statement_list_break_point_optional(db, &self.parent().unwrap()),
                     false,
                 ))
             }
@@ -383,7 +396,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                     BreakLinePointsPositions::new_symmetric(BreakLinePointProperties::new(
                         4,
                         BreakLinePointIndentation::IndentedWithTail,
-                        false,
+                        is_statement_list_break_point_optional(db, self),
                         true,
                     ))
                 }
@@ -412,7 +425,9 @@ impl SyntaxNodeFormat for SyntaxNode {
                         false,
                     ))
                 }
-                SyntaxKind::TerminalPlus => {
+                SyntaxKind::TerminalPlus
+                    if parent_kind(db, self) != Some(SyntaxKind::GenericParamImplAnonymous) =>
+                {
                     BreakLinePointsPositions::Leading(BreakLinePointProperties::new(
                         7,
                         BreakLinePointIndentation::Indented,
@@ -565,12 +580,30 @@ impl SyntaxNodeFormat for SyntaxNode {
             let path_node = self.parent().unwrap().parent().unwrap();
             matches!(
                 parent_kind(db, &path_node),
-                Some(SyntaxKind::ItemImpl)
-                    | Some(SyntaxKind::GenericParamImpl)
-                    | Some(SyntaxKind::GenericArgValueExpr)
+                Some(
+                    SyntaxKind::ItemImpl
+                        | SyntaxKind::GenericParamImplNamed
+                        | SyntaxKind::GenericParamImplAnonymous
+                        | SyntaxKind::GenericArgValueExpr
+                )
             )
         } else {
             false
         }
     }
+}
+
+/// For statement lists, returns if we want these as a single line.
+fn is_statement_list_break_point_optional(db: &dyn SyntaxGroup, node: &SyntaxNode) -> bool {
+    // Currently, we only want single line blocks for match arms, with a single statments, with no
+    // single line comments.
+    grandparent_kind(db, node) == Some(SyntaxKind::MatchArm)
+        && node.children(db).len() == 1
+        && node.descendants(db).all(|d| {
+            d.kind(db) != SyntaxKind::Trivia
+                || ast::Trivia::from_syntax_node(db, d)
+                    .elements(db)
+                    .iter()
+                    .all(|t| !matches!(t, ast::Trivium::SingleLineComment(_)))
+        })
 }

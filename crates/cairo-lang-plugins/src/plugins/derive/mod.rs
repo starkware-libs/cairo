@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::ast::{
     AttributeList, MemberList, OptionWrappedGenericParamList, VariantList,
 };
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use itertools::{chain, Itertools};
@@ -23,6 +23,8 @@ mod serde;
 #[derive(Debug, Default)]
 #[non_exhaustive]
 pub struct DerivePlugin;
+
+const DERIVE_ATTR: &str = "derive";
 
 impl MacroPlugin for DerivePlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
@@ -53,6 +55,10 @@ impl MacroPlugin for DerivePlugin {
                 _ => return PluginResult::default(),
             },
         )
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![DERIVE_ATTR.to_string(), default::DEFAULT_ATTR.to_string()]
     }
 }
 
@@ -85,29 +91,16 @@ impl GenericParamsInfo {
         let mut ordered = vec![];
         let mut type_generics = vec![];
         let mut other_generics = vec![];
-        match generic_params {
-            OptionWrappedGenericParamList::WrappedGenericParamList(gens) => gens
-                .generic_params(db)
-                .elements(db)
-                .into_iter()
-                .map(|param| match param {
-                    ast::GenericParam::Type(t) => {
-                        let name = t.name(db).text(db);
-                        type_generics.push(name.clone());
-                        ordered.push(name);
-                    }
-                    ast::GenericParam::Impl(i) => {
-                        other_generics.push(i.as_syntax_node().get_text_without_trivia(db));
-                        ordered.push(i.name(db).text(db));
-                    }
-                    ast::GenericParam::Const(c) => {
-                        other_generics.push(c.as_syntax_node().get_text_without_trivia(db));
-                        ordered.push(c.name(db).text(db));
-                    }
-                })
-                .collect(),
-            OptionWrappedGenericParamList::Empty(_) => vec![],
-        };
+        if let OptionWrappedGenericParamList::WrappedGenericParamList(gens) = generic_params {
+            for param in gens.generic_params(db).elements(db) {
+                ordered.push(param.name(db).map(|n| n.text(db)).unwrap_or_else(|| "_".into()));
+                if let ast::GenericParam::Type(t) = param {
+                    type_generics.push(t.name(db).text(db));
+                } else {
+                    other_generics.push(param.as_syntax_node().get_text_without_trivia(db));
+                }
+            }
+        }
         Self { ordered, type_generics, other_generics }
     }
 
@@ -232,7 +225,7 @@ pub struct DeriveResult {
 /// Adds an implementation for all requested derives for the type.
 fn generate_derive_code_for_type(db: &dyn SyntaxGroup, info: DeriveInfo) -> PluginResult {
     let mut result = DeriveResult::default();
-    for attr in info.attributes.query_attr(db, "derive") {
+    for attr in info.attributes.query_attr(db, DERIVE_ATTR) {
         let attr = attr.structurize(db);
 
         if attr.args.is_empty() {

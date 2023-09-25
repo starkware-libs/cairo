@@ -1,28 +1,26 @@
-use std::fs;
 use std::sync::Arc;
 
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{FileId, FileKind, FileLongId, VirtualFile};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use smol_str::SmolStr;
 
 use crate::utils::{get_syntax_root_and_diagnostics, SimpleParserDatabase};
 
-pub fn read_file(filename: &str) -> String {
-    fs::read_to_string(filename)
-        .unwrap_or_else(|_| panic!("Something went wrong reading file {filename}"))
-}
-
 pub fn get_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SimpleParserDatabase::default();
     let code = &inputs["cairo_code"];
 
     let file_id = create_virtual_file(db, "dummy_file.cairo", code);
     let (_, diagnostics) = get_syntax_root_and_diagnostics(db, file_id, code);
-    Ok(OrderedHashMap::from([("expected_diagnostics".into(), diagnostics.format(db))]))
+    TestRunnerResult::success(OrderedHashMap::from([(
+        "expected_diagnostics".into(),
+        diagnostics.format(db),
+    )]))
 }
 
 // TODO(yuval): stop virtual files for tests anymore. See semantic tests.

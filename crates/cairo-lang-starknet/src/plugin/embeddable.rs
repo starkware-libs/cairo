@@ -1,6 +1,7 @@
 use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::helpers::GenericParamEx;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
@@ -12,7 +13,7 @@ use super::consts::{
 use super::entry_point::{
     handle_entry_point, EntryPointGenerationParams, EntryPointKind, EntryPointsGenerationData,
 };
-use super::utils::AstPathExtract;
+use super::utils::GenericParamExtract;
 
 /// Handles an embeddable impl, generating entry point wrappers and modules pointing to them.
 pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> PluginResult {
@@ -28,7 +29,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
     };
     let mut diagnostics = vec![];
     let generic_params = item_impl.generic_params(db);
-    let impl_name = RewriteNode::new_trimmed(item_impl.name(db).as_syntax_node());
+    let impl_name = item_impl.name(db);
+    let impl_name_str = impl_name.text(db);
+    let impl_name = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     let (is_valid_params, generic_args, generic_params_node) = match &generic_params {
         ast::OptionWrappedGenericParamList::Empty(_) => {
             (false, RewriteNode::empty(), RewriteNode::empty())
@@ -36,15 +39,12 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         ast::OptionWrappedGenericParamList::WrappedGenericParamList(params) => {
             let generic_params_node = params.generic_params(db);
             let elements = generic_params_node.elements(db);
-            let has_drop_impl = elements.iter().any(|param| {
-                if let ast::GenericParam::Impl(imp) = param {
-                    imp.trait_path(db).is_name_with_arg(db, "Drop", GENERIC_CONTRACT_STATE_NAME)
-                } else {
-                    false
-                }
-            });
+            let has_drop_impl = elements
+                .iter()
+                .any(|param| param.is_impl_of(db, "Drop", GENERIC_CONTRACT_STATE_NAME));
             for param in &elements {
-                if matches!(param, ast::GenericParam::Impl(imp) if imp.trait_path(db).is_name_with_arg(db, "Destruct", GENERIC_CONTRACT_STATE_NAME) || imp.trait_path(db).is_name_with_arg(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME))
+                if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
+                    || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
                 {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: param.stable_ptr().untyped(),
@@ -66,11 +66,10 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                     [RewriteNode::Text(format!("::<{GENERIC_CONTRACT_STATE_NAME}"))],
                     elements.flat_map(|param| [
                         RewriteNode::Text(", ".to_string()),
-                        RewriteNode::new_trimmed(match param {
-                            ast::GenericParam::Type(t) => t.as_syntax_node(),
-                            ast::GenericParam::Const(c) => c.name(db).as_syntax_node(),
-                            ast::GenericParam::Impl(i) => i.name(db).as_syntax_node(),
-                        }),
+                        param
+                            .name(db)
+                            .map(|name| RewriteNode::new_trimmed(name.as_syntax_node()))
+                            .unwrap_or_else(|| RewriteNode::Text("_".into()))
                     ]),
                     [RewriteNode::Text(">".to_string())],
                 )
@@ -117,8 +116,9 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
         let Some(entry_point_kind) = EntryPointKind::try_from_attrs(db, &item_function) else {
             continue;
         };
-        let function_name =
-            RewriteNode::new_trimmed(item_function.declaration(db).name(db).as_syntax_node());
+        let function_name = item_function.declaration(db).name(db);
+        let function_name_str = function_name.text(db);
+        let function_name = RewriteNode::new_trimmed(function_name.as_syntax_node());
         let function_path = RewriteNode::interpolate_patched(
             "$impl_name$$generic_args$::$func_name$",
             &[
@@ -128,12 +128,14 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
             ]
             .into(),
         );
+        let wrapper_identifier = format!("{impl_name_str}__{function_name_str}");
         handle_entry_point(
             db,
             EntryPointGenerationParams {
                 entry_point_kind,
                 item_function: &item_function,
                 wrapped_function_path: function_path,
+                wrapper_identifier,
                 unsafe_new_contract_state_prefix: "UnsafeNewContractState::",
                 generic_params: generic_params_node.clone(),
             },

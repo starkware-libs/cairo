@@ -9,7 +9,7 @@ fn foo(flag: bool) -> Option<A>{
     if flag {
         Option::Some(a)
     } else {
-        Option::None(())
+        Option::None
     }
 }
 

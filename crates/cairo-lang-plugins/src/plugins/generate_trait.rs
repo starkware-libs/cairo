@@ -4,12 +4,14 @@ use cairo_lang_defs::patcher::{PatchBuilder, RewriteNode};
 use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile, PluginResult};
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
 #[non_exhaustive]
 pub struct GenerateTraitPlugin;
+
+const GENERATE_TRAIT_ATTR: &str = "generate_trait";
 
 impl MacroPlugin for GenerateTraitPlugin {
     fn generate_code(&self, db: &dyn SyntaxGroup, item_ast: ast::Item) -> PluginResult {
@@ -18,10 +20,14 @@ impl MacroPlugin for GenerateTraitPlugin {
             _ => PluginResult::default(),
         }
     }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![GENERATE_TRAIT_ATTR.to_string()]
+    }
 }
 
 fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> PluginResult {
-    let Some(attr) = impl_ast.attributes(db).find_attr(db, "generate_trait") else {
+    let Some(attr) = impl_ast.attributes(db).find_attr(db, GENERATE_TRAIT_ATTR) else {
         return PluginResult::default();
     };
     let trait_ast = impl_ast.trait_path(db);
@@ -80,6 +86,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 impl_generic_params,
             ) = impl_generic_params.clone()
             {
+                // TODO(orizi): Support generic args that do not directly match the generic params.
                 let trait_generic_args = segment.generic_args(db).generic_args(db).elements(db);
                 let impl_generic_params = impl_generic_params.generic_params(db).elements(db);
                 zip(trait_generic_args, impl_generic_params).all(
@@ -101,10 +108,8 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                             return false;
                         };
                         let trait_generic_arg_name = trait_generic_arg.ident(db);
-                        let impl_generic_param_name = match impl_generic_param {
-                            ast::GenericParam::Type(param) => param.name(db),
-                            ast::GenericParam::Const(param) => param.name(db),
-                            ast::GenericParam::Impl(param) => param.name(db),
+                        let Some(impl_generic_param_name) = impl_generic_param.name(db) else {
+                            return false;
                         };
                         trait_generic_arg_name.text(db) == impl_generic_param_name.text(db)
                     },

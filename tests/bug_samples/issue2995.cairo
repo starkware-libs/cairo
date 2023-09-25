@@ -1,8 +1,8 @@
 trait ATrait {}
 
-struct B<T, G, impl GImpl: ATrait> {
+struct B<T, G, +ATrait> {
     t: T,
     g: G,
 }
 
-impl BCopy<T, G, impl GImpl: ATrait, impl TCopy: Copy<T>, impl GCopy: Copy<G>> of Copy<B<T, G>>;
+impl BCopy<T, G, +ATrait, +Copy<T>, +Copy<G>> of Copy<B<T, G>>;

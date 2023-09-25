@@ -101,6 +101,14 @@ some restrictions to the generic types used by the item.
 For example, `foo` from the above example can't have a concrete form in which `T` is `u128`
 as there is no impl of `MulTrait` for `u128`.
 
+In this case, you can also use anonymous impl generic parameters:
+[source,rust]
+----
+fn foo<T, +MyTrait<T>>(x: T) -> T {
+    MyTrait::mul(x)
+}
+----
+
 Note that in many cases generic arguments can be inferred and thus can be omitted from the
 use of the item.
 

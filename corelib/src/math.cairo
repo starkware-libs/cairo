@@ -14,21 +14,21 @@ use integer::{u256_wide_mul, u512_safe_div_rem_by_u256};
 /// Uses the Extended Euclidean algorithm.
 fn egcd<
     T,
-    impl TCopyImpl: Copy<T>,
-    impl TDropImpl: Drop<T>,
-    impl TAddImpl: Add<T>,
-    impl TMulImpl: Mul<T>,
-    impl TDivRemImpl: DivRem<T>,
-    impl TZeroableImpl: Zeroable<T>,
-    impl TOneableImpl: Oneable<T>,
-    impl TTryIntoNonZeroImpl: TryInto<T, NonZero<T>>,
+    +Copy<T>,
+    +Drop<T>,
+    +Add<T>,
+    +Mul<T>,
+    +DivRem<T>,
+    +Zeroable<T>,
+    +Oneable<T>,
+    +TryInto<T, NonZero<T>>,
 >(
     a: NonZero<T>, b: NonZero<T>
 ) -> (T, T, T, bool) {
-    let (q, r) = TDivRemImpl::div_rem(a.into(), b);
+    let (q, r) = DivRem::<T>::div_rem(a.into(), b);
 
     if r.is_zero() {
-        return (b.into(), TZeroableImpl::zero(), TOneableImpl::one(), false);
+        return (b.into(), Zeroable::zero(), Oneable::one(), false);
     }
 
     // `sign` (1 for true, -1 for false) is the sign of `g` in the current iteration.
@@ -44,20 +44,20 @@ fn egcd<
 /// Returns the inverse of `a` modulo `n`, or None if `gcd(a, n) > 1`.
 fn inv_mod<
     T,
-    impl TCopyImpl: Copy<T>,
-    impl TDropImpl: Drop<T>,
-    impl TAddImpl: Add<T>,
-    impl TSubImpl: Sub<T>,
-    impl TMulImpl: Mul<T>,
-    impl TDivRemImpl: DivRem<T>,
-    impl TZeroableImpl: Zeroable<T>,
-    impl TOneableImpl: Oneable<T>,
-    impl TTryIntoNonZeroImpl: TryInto<T, NonZero<T>>,
+    +Copy<T>,
+    +Drop<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +DivRem<T>,
+    +Zeroable<T>,
+    +Oneable<T>,
+    +TryInto<T, NonZero<T>>,
 >(
     a: NonZero<T>, n: NonZero<T>
 ) -> Option<T> {
-    if TOneableImpl::is_one(n.into()) {
-        return Option::Some(TZeroableImpl::zero());
+    if Oneable::<T>::is_one(n.into()) {
+        return Option::Some(Zeroable::zero());
     }
     let (g, s, _, sub_direction) = egcd(a, n);
     if g.is_one() {

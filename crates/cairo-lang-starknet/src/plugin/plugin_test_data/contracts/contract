@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -121,11 +121,15 @@ contract:
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x23beac7cb7e82c7f5e87d1938f705760cd22de93f3a5ad133f48f1fdbcc14c1;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_get_something(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__get_something(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -152,7 +156,7 @@ fn __wrapper_get_something(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_set_something(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__set_something(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -178,7 +182,7 @@ fn __wrapper_set_something(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -207,7 +211,7 @@ fn __wrapper_l1_handler_func(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -237,13 +241,13 @@ fn __wrapper_test_serde(mut data: Span::<felt252>) -> Span::<felt252> {
 
 
     mod __external {
-        use super::__wrapper_get_something as get_something;
-        use super::__wrapper_set_something as set_something;
-        use super::__wrapper_test_serde as test_serde;
+        use super::__wrapper__get_something as get_something;
+        use super::__wrapper__set_something as set_something;
+        use super::__wrapper__test_serde as test_serde;
     }
 
     mod __l1_handler {
-        use super::__wrapper_l1_handler_func as l1_handler_func;
+        use super::__wrapper__l1_handler_func as l1_handler_func;
     }
 
     mod __constructor {
@@ -275,7 +279,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -300,19 +304,18 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
-            if selector == selector!("AwesomeEvent") {
+        if selector == selector!("AwesomeEvent") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::AwesomeEvent(val));
-            }
-            if selector == selector!("BestEventEver") {
+        }
+        if selector == selector!("BestEventEver") {
                 let val = starknet::Event::deserialize(
                     ref keys, ref data
                 )?;
                 return Option::Some(Event::BestEventEver(val));
-            }
+        }
         Option::None
     }
 }
@@ -334,7 +337,7 @@ impls:
 impl AwesomeEventDrop of Drop::<AwesomeEvent>;
 
 
-event_impl:
+starknet_derive:
 
 impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     fn append_keys_and_data(
@@ -361,7 +364,7 @@ impls:
 impl BestEventEverDrop of Drop::<BestEventEver>;
 
 
-event_impl:
+starknet_derive:
 
 impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
     fn append_keys_and_data(

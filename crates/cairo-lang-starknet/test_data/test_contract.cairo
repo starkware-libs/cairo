@@ -3,11 +3,12 @@ trait IAnotherContract<T> {
     fn foo(ref self: T, a: u128) -> u128;
 }
 
-#[starknet::embeddable(v0)]
-#[generate_trait]
-impl OutsideImpl<
-    TContractState, impl TContractStateDrop: Drop<TContractState>
-> of OutsideTrait<TContractState, TContractStateDrop> {
+#[starknet::interface]
+trait OutsideTrait<TContractState> {
+    fn ret_3(self: @TContractState) -> felt252;
+}
+#[starknet::embeddable]
+impl OutsideImpl<TContractState, +Drop<TContractState>> of OutsideTrait<TContractState> {
     #[external]
     fn ret_3(self: @TContractState) -> felt252 {
         3
@@ -30,10 +31,10 @@ mod test_contract {
         -1
     }
 
-    #[embed(v0)]
+    #[abi(embed_v0)]
     impl WorkingUsage = super::OutsideImpl<ContractState>;
 
-    #[embed(v0)]
+    #[abi(per_item)]
     #[generate_trait]
     impl Impl of Trait {
         #[constructor]

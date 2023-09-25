@@ -1,7 +1,7 @@
 //! > Test colored printing of parsed code.
 
 //! > test_runner_name
-test_colored_parsed_code(allow_diagnostics: true)
+test_colored_parsed_code(expect_diagnostics: true)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/colored.cairo
@@ -24,7 +24,7 @@ false
 //! > Test verbose colored printing of parsed code.
 
 //! > test_runner_name
-test_colored_parsed_code(allow_diagnostics: true)
+test_colored_parsed_code(expect_diagnostics: true)
 
 //! > cairo_code
 >>> file: src/parser_test_data/cairo_test_files/colored.cairo

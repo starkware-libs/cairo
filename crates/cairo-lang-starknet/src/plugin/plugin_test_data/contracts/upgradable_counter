@@ -1,0 +1,1419 @@
+//! > Test expansion of a complex starknet contract with a component.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+use starknet::ClassHash;
+
+#[starknet::interface]
+trait IUpgradable<TCS> {
+    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+}
+
+#[starknet::component]
+mod upgradable {
+    use starknet::ClassHash;
+    use starknet::syscalls::replace_class_syscall;
+
+    #[storage]
+    struct Storage {
+        current_implementation: ClassHash
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ContractUpgraded: ContractUpgraded
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ContractUpgraded {
+        old_class_hash: ClassHash,
+        new_class_hash: ClassHash
+    }
+
+    #[embeddable_as(UpgradableImpl)]
+    impl Upgradable<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
+            replace_class_syscall(new_class_hash).unwrap();
+            let old_class_hash = self.current_implementation.read();
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
+            self.current_implementation.write(new_class_hash);
+        }
+    }
+}
+
+#[starknet::interface]
+trait ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128);
+    fn decrease_counter(ref self: TContractState, amount: u128);
+    fn get_counter(self: @TContractState) -> u128;
+}
+
+#[starknet::contract]
+mod counter_contract {
+    component!(path: super::upgradable, storage: upgradable, event: UpgradableEvent);
+
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: super::upgradable::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        CounterIncreased: CounterIncreased,
+        CounterDecreased: CounterDecreased,
+        UpgradableEvent: super::upgradable::Event
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterIncreased {
+        amount: u128
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterDecreased {
+        amount: u128
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, initial_counter: u128) {
+        self.counter.write(initial_counter);
+    }
+
+    #[external(v0)]
+    impl CounterContract of super::ICounterContract<ContractState> {
+        fn get_counter(self: @ContractState) -> u128 {
+            self.counter.read()
+        }
+
+        fn increase_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current + amount);
+            self.emit(CounterIncreased { amount });
+        }
+
+        fn decrease_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current - amount);
+            self.emit(CounterDecreased { amount });
+        }
+    }
+
+    #[abi(embed_v0)]
+    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+use starknet::ClassHash;
+
+#[starknet::interface]
+trait IUpgradable<TCS> {
+    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+}
+
+#[starknet::component]
+mod upgradable {
+    use starknet::ClassHash;
+    use starknet::syscalls::replace_class_syscall;
+
+    #[storage]
+    struct Storage {
+        current_implementation: ClassHash
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ContractUpgraded: ContractUpgraded
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ContractUpgraded {
+        old_class_hash: ClassHash,
+        new_class_hash: ClassHash
+    }
+
+    #[embeddable_as(UpgradableImpl)]
+    impl Upgradable<
+        TContractState, impl X: HasComponent<TContractState>
+    > of super::IUpgradable<ComponentState<TContractState>> {
+        #[external(v0)]
+        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
+            replace_class_syscall(new_class_hash).unwrap();
+            let old_class_hash = self.current_implementation.read();
+            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
+            self.current_implementation.write(new_class_hash);
+        }
+    }
+}
+
+#[starknet::interface]
+trait ICounterContract<TContractState> {
+    fn increase_counter(ref self: TContractState, amount: u128);
+    fn decrease_counter(ref self: TContractState, amount: u128);
+    fn get_counter(self: @TContractState) -> u128;
+}
+
+#[starknet::contract]
+mod counter_contract {
+    component!(path: super::upgradable, storage: upgradable, event: UpgradableEvent);
+
+    #[storage]
+    struct Storage {
+        counter: u128,
+        #[substorage(v0)]
+        upgradable: super::upgradable::Storage
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        CounterIncreased: CounterIncreased,
+        CounterDecreased: CounterDecreased,
+        UpgradableEvent: super::upgradable::Event
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterIncreased {
+        amount: u128
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct CounterDecreased {
+        amount: u128
+    }
+
+    #[constructor]
+    fn constructor(ref self: ContractState, initial_counter: u128) {
+        self.counter.write(initial_counter);
+    }
+
+    #[external(v0)]
+    impl CounterContract of super::ICounterContract<ContractState> {
+        fn get_counter(self: @ContractState) -> u128 {
+            self.counter.read()
+        }
+
+        fn increase_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current + amount);
+            self.emit(CounterIncreased { amount });
+        }
+
+        fn decrease_counter(ref self: ContractState, amount: u128) {
+            let current = self.counter.read();
+            self.counter.write(current - amount);
+            self.emit(CounterDecreased { amount });
+        }
+    }
+
+    #[abi(embed_v0)]
+    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+}
+
+IUpgradableDispatcherTrait:
+
+trait IUpgradableDispatcherTrait<T> {
+    fn upgrade(self: T, new_class_hash: ClassHash);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradableDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl IUpgradableDispatcherImpl of IUpgradableDispatcherTrait<IUpgradableDispatcher> {
+    fn upgrade(self: IUpgradableDispatcher, new_class_hash: ClassHash) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradableLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IUpgradableLibraryDispatcherImpl of IUpgradableDispatcherTrait<IUpgradableLibraryDispatcher> {
+    fn upgrade(self: IUpgradableLibraryDispatcher, new_class_hash: ClassHash) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait IUpgradableSafeDispatcherTrait<T> {
+    fn upgrade(self: T, new_class_hash: ClassHash) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradableSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl IUpgradableSafeLibraryDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradableSafeLibraryDispatcher> {
+    fn upgrade(self: IUpgradableSafeLibraryDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct IUpgradableSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl IUpgradableSafeDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradableSafeDispatcher> {
+    fn upgrade(self: IUpgradableSafeDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("upgrade"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+ICounterContractDispatcherTrait:
+
+trait ICounterContractDispatcherTrait<T> {
+    fn increase_counter(self: T, amount: u128);    fn decrease_counter(self: T, amount: u128);    fn get_counter(self: T, ) -> u128;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ICounterContractDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractDispatcher> {
+    fn increase_counter(self: ICounterContractDispatcher, amount: u128) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("increase_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn decrease_counter(self: ICounterContractDispatcher, amount: u128) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn get_counter(self: ICounterContractDispatcher, ) -> u128 {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u128>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ICounterContractLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<ICounterContractLibraryDispatcher> {
+    fn increase_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("increase_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn decrease_counter(self: ICounterContractLibraryDispatcher, amount: u128) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+    fn get_counter(self: ICounterContractLibraryDispatcher, ) -> u128 {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u128>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+
+}
+
+trait ICounterContractSafeDispatcherTrait<T> {
+    fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;    fn decrease_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;    fn get_counter(self: T, ) -> starknet::SyscallResult<u128>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ICounterContractSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeLibraryDispatcher> {
+    fn increase_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("increase_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn decrease_counter(self: ICounterContractSafeLibraryDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("decrease_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn get_counter(self: ICounterContractSafeLibraryDispatcher, ) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u128>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct ICounterContractSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<ICounterContractSafeDispatcher> {
+    fn increase_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("increase_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn decrease_counter(self: ICounterContractSafeDispatcher, amount: u128) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<u128>::serialize(@amount, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("decrease_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+    fn get_counter(self: ICounterContractSafeDispatcher, ) -> starknet::SyscallResult<u128> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get_counter"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u128>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+impls:
+
+impl IUpgradableDispatcherCopy of Copy::<IUpgradableDispatcher>;
+impl IUpgradableDispatcherDrop of Drop::<IUpgradableDispatcher>;
+impl IUpgradableDispatcherSerde of Serde::<IUpgradableDispatcher> {
+    fn serialize(self: @IUpgradableDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableDispatcher> {
+        Option::Some(IUpgradableDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradableDispatcher of starknet::Store::<IUpgradableDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
+impl IUpgradableLibraryDispatcherCopy of Copy::<IUpgradableLibraryDispatcher>;
+impl IUpgradableLibraryDispatcherDrop of Drop::<IUpgradableLibraryDispatcher>;
+impl IUpgradableLibraryDispatcherSerde of Serde::<IUpgradableLibraryDispatcher> {
+    fn serialize(self: @IUpgradableLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableLibraryDispatcher> {
+        Option::Some(IUpgradableLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradableLibraryDispatcher of starknet::Store::<IUpgradableLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl IUpgradableSafeLibraryDispatcherCopy of Copy::<IUpgradableSafeLibraryDispatcher>;
+impl IUpgradableSafeLibraryDispatcherDrop of Drop::<IUpgradableSafeLibraryDispatcher>;
+impl IUpgradableSafeLibraryDispatcherSerde of Serde::<IUpgradableSafeLibraryDispatcher> {
+    fn serialize(self: @IUpgradableSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableSafeLibraryDispatcher> {
+        Option::Some(IUpgradableSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradableSafeLibraryDispatcher of starknet::Store::<IUpgradableSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl IUpgradableSafeDispatcherCopy of Copy::<IUpgradableSafeDispatcher>;
+impl IUpgradableSafeDispatcherDrop of Drop::<IUpgradableSafeDispatcher>;
+impl IUpgradableSafeDispatcherSerde of Serde::<IUpgradableSafeDispatcher> {
+    fn serialize(self: @IUpgradableSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableSafeDispatcher> {
+        Option::Some(IUpgradableSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreIUpgradableSafeDispatcher of starknet::Store::<IUpgradableSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            IUpgradableSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
+impl ICounterContractDispatcherCopy of Copy::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherDrop of Drop::<ICounterContractDispatcher>;
+impl ICounterContractDispatcherSerde of Serde::<ICounterContractDispatcher> {
+    fn serialize(self: @ICounterContractDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractDispatcher> {
+        Option::Some(ICounterContractDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreICounterContractDispatcher of starknet::Store::<ICounterContractDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ICounterContractDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+impls:
+
+impl ICounterContractLibraryDispatcherCopy of Copy::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherDrop of Drop::<ICounterContractLibraryDispatcher>;
+impl ICounterContractLibraryDispatcherSerde of Serde::<ICounterContractLibraryDispatcher> {
+    fn serialize(self: @ICounterContractLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractLibraryDispatcher> {
+        Option::Some(ICounterContractLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreICounterContractLibraryDispatcher of starknet::Store::<ICounterContractLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ICounterContractLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl ICounterContractSafeLibraryDispatcherCopy of Copy::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherDrop of Drop::<ICounterContractSafeLibraryDispatcher>;
+impl ICounterContractSafeLibraryDispatcherSerde of Serde::<ICounterContractSafeLibraryDispatcher> {
+    fn serialize(self: @ICounterContractSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeLibraryDispatcher> {
+        Option::Some(ICounterContractSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreICounterContractSafeLibraryDispatcher of starknet::Store::<ICounterContractSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+impls:
+
+impl ICounterContractSafeDispatcherCopy of Copy::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherDrop of Drop::<ICounterContractSafeDispatcher>;
+impl ICounterContractSafeDispatcherSerde of Serde::<ICounterContractSafeDispatcher> {
+    fn serialize(self: @ICounterContractSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<ICounterContractSafeDispatcher> {
+        Option::Some(ICounterContractSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<ICounterContractSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            ICounterContractSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: ICounterContractSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+component:
+
+
+
+    struct ComponentState<TContractState> {
+        current_implementation: current_implementation::ComponentMemberState,
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+            current_implementation: current_implementation::ComponentMemberState {},
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+    mod current_implementation {
+        use super::ClassHash;
+        use super::replace_class_syscall;
+        use super::Event;
+        use super::ContractUpgraded;
+        use super::Upgradable;
+        #[derive(Copy, Drop)]
+        struct ComponentMemberState {}
+        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ClassHash> {
+            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
+                starknet::storage_base_address_const::<0x454ac3c855f3ea5ac58d9742da466de68252f6efa5081486a78dc60b2a3379>()
+            }
+        }
+    }
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+#[starknet::embeddable]
+impl UpgradableImpl<
+            TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>
+> of super::IUpgradable<TContractState> {
+    #[external(v0)]
+    fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
+        let mut component = self.get_component_mut();
+        Upgradable::upgrade(ref component, new_class_hash, )
+    }
+}
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::ContractUpgraded(val) => {
+                array::ArrayTrait::append(ref keys, selector!("ContractUpgraded"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("ContractUpgraded") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::ContractUpgraded(val));
+        }
+        Option::None
+    }
+}
+impl EventContractUpgradedIntoEvent of Into<ContractUpgraded, Event> {
+    fn into(self: ContractUpgraded) -> Event {
+        Event::ContractUpgraded(self)
+    }
+}
+
+
+
+impls:
+
+impl ContractUpgradedDrop of Drop::<ContractUpgraded>;
+
+
+starknet_derive:
+
+impl ContractUpgradedIsEvent of starknet::Event<ContractUpgraded> {
+    fn append_keys_and_data(
+        self: @ContractUpgraded, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.old_class_hash, ref data);
+                serde::Serde::serialize(self.new_class_hash, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<ContractUpgraded> {
+                let old_class_hash = serde::Serde::deserialize(
+                    ref data
+                )?;
+                let new_class_hash = serde::Serde::deserialize(
+                    ref data
+                )?;
+        Option::Some(ContractUpgraded {old_class_hash, new_class_hash, })
+    }
+}
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__UpgradableImpl__upgrade<TContractState, impl X: HasComponent<TContractState>
+, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_new_class_hash = option::OptionTraitImpl::expect(
+        serde::Serde::<ClassHash>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    UpgradableImpl::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_UpgradableImpl {
+        use super::__wrapper__UpgradableImpl__upgrade as upgrade;
+}
+
+mod __l1_handler_UpgradableImpl {
+}
+
+mod __constructor_UpgradableImpl {
+}
+
+
+contract:
+
+
+
+    struct ContractState {
+        counter: counter::ContractMemberState,
+        upgradable: super::upgradable::ComponentState<ContractState>,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            counter: counter::ContractMemberState {},
+            upgradable: super::upgradable::unsafe_new_component_state::<ContractState>(),
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
+    use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
+    mod counter {
+        use super::Event;
+        use super::CounterIncreased;
+        use super::CounterDecreased;
+        use super::CounterContract;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> u128;
+            fn write(ref self: ContractMemberState, value: u128);
+        }
+
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x7ebcc807b5c7e19f245995a55aed6f46f5f582f476a886b91b834b0ddf5854>()
+            }
+            fn read(self: @ContractMemberState) -> u128 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::read(
+                        address_domain,
+                        self.address(),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: u128) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::write(
+                        address_domain,
+                        self.address(),
+                        value,
+                    )
+                )
+            }
+        }
+    }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x239792ec4ee70273f735a613d15f9d6d83e7ea764b7dfb28aeed22ba0a12fd9;
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_initial_counter = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    constructor(ref contract_state, __arg_initial_counter);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__CounterContract__get_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = CounterContract::get_counter(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<u128>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__CounterContract__increase_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_amount = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    CounterContract::increase_counter(ref contract_state, __arg_amount);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_amount = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    CounterContract::decrease_counter(ref contract_state, __arg_amount);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+impl ContractStateUpgradableImpl of
+    super::upgradable::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+
+    mod __external {
+        use super::__wrapper__CounterContract__get_counter as get_counter;
+        use super::__wrapper__CounterContract__increase_counter as increase_counter;
+        use super::__wrapper__CounterContract__decrease_counter as decrease_counter;
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+        use super::__wrapper__constructor as constructor;
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @super::upgradable::ComponentState<ContractState> {
+        self.upgradable
+    }
+    fn get_component_mut(ref self: ContractState) -> super::upgradable::ComponentState<ContractState> {
+        super::upgradable::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @super::upgradable::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: super::upgradable::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
+        let event: super::upgradable::Event = traits::Into::into(event);
+        let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
+        contract.emit(Event::UpgradableEvent(event));
+    }
+}
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::CounterIncreased(val) => {
+                array::ArrayTrait::append(ref keys, selector!("CounterIncreased"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::CounterDecreased(val) => {
+                array::ArrayTrait::append(ref keys, selector!("CounterDecreased"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::UpgradableEvent(val) => {
+                array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("CounterIncreased") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::CounterIncreased(val));
+        }
+        if selector == selector!("CounterDecreased") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::CounterDecreased(val));
+        }
+        if selector == selector!("UpgradableEvent") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::UpgradableEvent(val));
+        }
+        Option::None
+    }
+}
+impl EventCounterIncreasedIntoEvent of Into<CounterIncreased, Event> {
+    fn into(self: CounterIncreased) -> Event {
+        Event::CounterIncreased(self)
+    }
+}
+impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
+    fn into(self: CounterDecreased) -> Event {
+        Event::CounterDecreased(self)
+    }
+}
+impl EventUpgradableEventIntoEvent of Into<super::upgradable::Event, Event> {
+    fn into(self: super::upgradable::Event) -> Event {
+        Event::UpgradableEvent(self)
+    }
+}
+
+
+
+impls:
+
+impl CounterIncreasedDrop of Drop::<CounterIncreased>;
+
+
+starknet_derive:
+
+impl CounterIncreasedIsEvent of starknet::Event<CounterIncreased> {
+    fn append_keys_and_data(
+        self: @CounterIncreased, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.amount, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<CounterIncreased> {
+                let amount = serde::Serde::deserialize(
+                    ref data
+                )?;
+        Option::Some(CounterIncreased {amount, })
+    }
+}
+
+impls:
+
+impl CounterDecreasedDrop of Drop::<CounterDecreased>;
+
+
+starknet_derive:
+
+impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
+    fn append_keys_and_data(
+        self: @CounterDecreased, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+                serde::Serde::serialize(self.amount, ref data);
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<CounterDecreased> {
+                let amount = serde::Serde::deserialize(
+                    ref data
+                )?;
+        Option::Some(CounterDecreased {amount, })
+    }
+}
+
+//! > expected_diagnostics

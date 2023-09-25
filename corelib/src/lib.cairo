@@ -172,8 +172,8 @@ impl Felt252PartialEq of PartialEq<felt252> {
     #[inline(always)]
     fn eq(lhs: @felt252, rhs: @felt252) -> bool {
         match *lhs - *rhs {
-            0 => bool::True(()),
-            _ => bool::False(()),
+            0 => true,
+            _ => false,
         }
     }
     #[inline(always)]

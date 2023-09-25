@@ -1,7 +1,7 @@
 //! > Test expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -64,11 +64,15 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0xe8fd97ed2950722a36523186b7f01aeba6db1a2faedf427e91639a6252388a;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -82,7 +86,7 @@ fn __wrapper_test_raw_output(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -97,8 +101,8 @@ fn __wrapper_test_raw_output_with_spaces(mut data: Span::<felt252>) -> Span::<fe
 
 
     mod __external {
-        use super::__wrapper_test_raw_output as test_raw_output;
-        use super::__wrapper_test_raw_output_with_spaces as test_raw_output_with_spaces;
+        use super::__wrapper__test_raw_output as test_raw_output;
+        use super::__wrapper__test_raw_output_with_spaces as test_raw_output_with_spaces;
     }
 
     mod __l1_handler {
@@ -133,7 +137,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -146,7 +150,6 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
         Option::None
     }
 }

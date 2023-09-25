@@ -566,7 +566,7 @@ impl<'db> Inference<'db> {
         })
     }
 
-    /// Computes the solution set for an trait with a recursive query.
+    /// Computes the solution set for a trait with a recursive query.
     pub fn trait_solution_set(
         &mut self,
         concrete_trait_id: ConcreteTraitId,

@@ -14,9 +14,7 @@ use super::consts::{
     IMPLICIT_PRECEDENCE, L1_HANDLER_ATTR, L1_HANDLER_FIRST_PARAM_NAME, L1_HANDLER_MODULE,
     RAW_OUTPUT_ATTR, WRAPPER_PREFIX,
 };
-use super::utils::{
-    has_v0_attribute, is_mut_param, is_ref_param, maybe_strip_underscore, AstPathExtract,
-};
+use super::utils::{has_v0_attribute, maybe_strip_underscore, AstPathExtract, ParamEx};
 
 /// Kind of an entry point. Determined by the entry point's attributes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -120,6 +118,7 @@ pub struct EntryPointGenerationParams<'a> {
     pub entry_point_kind: EntryPointKind,
     pub item_function: &'a FunctionWithBody,
     pub wrapped_function_path: RewriteNode,
+    pub wrapper_identifier: String,
     pub unsafe_new_contract_state_prefix: &'a str,
     pub generic_params: RewriteNode,
 }
@@ -131,6 +130,7 @@ pub fn handle_entry_point(
         entry_point_kind,
         item_function,
         wrapped_function_path,
+        wrapper_identifier,
         unsafe_new_contract_state_prefix,
         generic_params,
     }: EntryPointGenerationParams<'_>,
@@ -162,7 +162,7 @@ pub fn handle_entry_point(
     let params = declaration.signature(db).parameters(db);
     for (param_idx, param) in params.elements(db).iter().enumerate() {
         // This assumes `mut` can only appear alone.
-        if is_mut_param(db, param) {
+        if param.is_mut_param(db) {
             original_parameters
                 .modify_child(db, param_idx * 2)
                 .modify_child(db, ast::Param::INDEX_MODIFIERS)
@@ -171,7 +171,7 @@ pub fn handle_entry_point(
     }
     let function_name = RewriteNode::new_trimmed(name_node.as_syntax_node());
     let wrapper_function_name = RewriteNode::interpolate_patched(
-        &format!("{WRAPPER_PREFIX}$function_name$"),
+        &format!("{WRAPPER_PREFIX}{wrapper_identifier}"),
         &[("function_name".into(), function_name.clone())].into(),
     );
     match generate_entry_point_wrapper(
@@ -246,7 +246,7 @@ fn generate_entry_point_wrapper(
         let arg_type_ast = param.type_clause(db).ty(db);
         let type_name = arg_type_ast.as_syntax_node().get_text_without_trivia(db);
 
-        let is_ref = is_ref_param(db, &param);
+        let is_ref = param.is_ref_param(db);
         if raw_output && is_ref {
             diagnostics.push(PluginDiagnostic {
                 message: format!("`{RAW_OUTPUT_ATTR}` functions cannot have `ref` parameters."),

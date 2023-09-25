@@ -1,7 +1,7 @@
 //! > Test valid expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: false)
+ExpandContractTestRunner(expect_diagnostics: false)
 
 //! > cairo_code
 #[starknet::contract]
@@ -52,11 +52,15 @@ enum Event {}
         unsafe_new_contract_state()
     }
     
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x32a1956d182625bfe7f9834635d01441624366b326c190ecbf557e699f94b76;
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -81,7 +85,7 @@ fn __wrapper_good_l1_handler(mut data: Span::<felt252>) -> Span::<felt252> {
 }
 
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
+fn __wrapper__good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
     option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
@@ -110,8 +114,8 @@ fn __wrapper_good_l1_handler_ignored(mut data: Span::<felt252>) -> Span::<felt25
     }
 
     mod __l1_handler {
-        use super::__wrapper_good_l1_handler as good_l1_handler;
-        use super::__wrapper_good_l1_handler_ignored as good_l1_handler_ignored;
+        use super::__wrapper__good_l1_handler as good_l1_handler;
+        use super::__wrapper__good_l1_handler_ignored as good_l1_handler_ignored;
     }
 
     mod __constructor {
@@ -143,7 +147,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -156,7 +160,6 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
         Option::None
     }
 }
@@ -168,7 +171,7 @@ impl EventIsEvent of starknet::Event<Event> {
 //! > Test erroneous expansion of a simple starknet contract.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]

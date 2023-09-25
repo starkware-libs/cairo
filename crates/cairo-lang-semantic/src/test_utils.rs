@@ -15,6 +15,8 @@ use cairo_lang_parser::db::ParserDatabase;
 use cairo_lang_plugins::get_default_plugins;
 use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::{SyntaxDatabase, SyntaxGroup};
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
+use cairo_lang_test_utils::verify_diagnostics_expectation;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::{extract_matches, OptionFrom, Upcast};
 use once_cell::sync::Lazy;
@@ -258,9 +260,9 @@ pub fn setup_test_block(
 pub fn test_expr_diagnostics(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    Ok(OrderedHashMap::from([(
+    TestRunnerResult::success(OrderedHashMap::from([(
         "expected_diagnostics".into(),
         setup_test_expr(
             db,
@@ -274,19 +276,23 @@ pub fn test_expr_diagnostics(
 
 pub fn test_function_diagnostics(
     inputs: &OrderedHashMap<String, String>,
-    _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+    args: &OrderedHashMap<String, String>,
+) -> TestRunnerResult {
     let db = &SemanticDatabaseForTesting::default();
-    Ok(OrderedHashMap::from([(
-        "expected_diagnostics".into(),
-        setup_test_function(
-            db,
-            inputs["function"].as_str(),
-            inputs["function_name"].as_str(),
-            inputs["module_code"].as_str(),
-        )
-        .get_diagnostics(),
-    )]))
+
+    let diagnostics = setup_test_function(
+        db,
+        inputs["function"].as_str(),
+        inputs["function_name"].as_str(),
+        inputs["module_code"].as_str(),
+    )
+    .get_diagnostics();
+    let error = verify_diagnostics_expectation(args, &diagnostics);
+
+    TestRunnerResult {
+        outputs: OrderedHashMap::from([("expected_diagnostics".into(), diagnostics)]),
+        error,
+    }
 }
 
 /// Gets the diagnostics for all the modules (including nested) in the given crate.

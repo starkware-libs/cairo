@@ -1,7 +1,7 @@
 //! > Test submodule syntax tree.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 mod my_mod;
@@ -25,7 +25,7 @@ ItemModule
 //! > Test inline module syntax tree.
 
 //! > test_runner_name
-test_partial_parser_tree(allow_diagnostics: false)
+test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
 mod my_mod {

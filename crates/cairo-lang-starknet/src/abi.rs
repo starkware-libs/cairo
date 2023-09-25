@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId, ModuleItemId,
-    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId,
+    ModuleItemId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
-use cairo_lang_diagnostics::DiagnosticAdded;
+use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
 use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::attribute::SemanticQueryAttrs;
@@ -13,10 +13,12 @@ use cairo_lang_semantic::items::imp::{ImplId, ImplLookupContext};
 use cairo_lang_semantic::items::structure::SemanticStructEx;
 use cairo_lang_semantic::types::{get_impl_at_context, ConcreteEnumLongId, ConcreteStructLongId};
 use cairo_lang_semantic::{
-    ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, TypeId,
-    TypeLongId,
+    ConcreteTraitLongId, ConcreteTypeId, GenericArgumentId, GenericParam, Mutability, Signature,
+    TypeId, TypeLongId,
 };
+use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::try_extract_matches;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use itertools::zip_eq;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -24,8 +26,8 @@ use thiserror::Error;
 
 use crate::plugin::aux_data::StarkNetEventAuxData;
 use crate::plugin::consts::{
-    CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME, EMBED_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR,
-    INTERFACE_ATTR, L1_HANDLER_ATTR,
+    ABI_ATTR, ABI_ATTR_EMBED_V0_ARG, ABI_ATTR_PER_ITEM_ARG, CONSTRUCTOR_ATTR, CONTRACT_STATE_NAME,
+    EMBEDDABLE_ATTR, EVENT_ATTR, EVENT_TYPE_NAME, EXTERNAL_ATTR, INTERFACE_ATTR, L1_HANDLER_ATTR,
 };
 use crate::plugin::events::{EventData, EventFieldKind};
 
@@ -38,11 +40,65 @@ mod test;
 #[serde(transparent)]
 pub struct Contract {
     // TODO(spapini): Add storage variables.
-    pub items: Vec<Item>,
+    items: OrderedHashSet<Item>,
 }
 impl Contract {
     pub fn json(&self) -> String {
         serde_json::to_string_pretty(&self).unwrap()
+    }
+
+    /// Validates the ABI entry points counts match the expected counts.
+    pub fn sanity_check(
+        &self,
+        expected_external_count: usize,
+        expected_l1_handler_count: usize,
+        expected_constructor_count: usize,
+    ) {
+        let trait_fn_count: UnorderedHashMap<_, _> = self
+            .items
+            .iter()
+            .filter_map(|item| {
+                let Item::Interface(imp) = item else {
+                    return None;
+                };
+                Some((imp.name.clone(), imp.items.len()))
+            })
+            .collect();
+        let mut external_count = 0;
+        let mut l1_handler_count = 0;
+        let mut constructor_count = 0;
+        for item in &self.items {
+            match item {
+                Item::Function(_) => external_count += 1,
+                Item::L1Handler(_) => l1_handler_count += 1,
+                Item::Constructor(_) => constructor_count += 1,
+                Item::Impl(imp) => {
+                    external_count += trait_fn_count.get(&imp.interface_name).unwrap_or_else(|| {
+                        panic!("Interface `{}` not found in ABI.", imp.interface_name)
+                    })
+                }
+                _ => {}
+            }
+        }
+        assert_eq!(external_count, expected_external_count);
+        assert_eq!(l1_handler_count, expected_l1_handler_count);
+        assert_eq!(constructor_count, expected_constructor_count);
+    }
+
+    /// Inserts an item to the set of items.
+    /// Returns OK on success, or an ABIError on failure, e.g. if `prevent_dups` is true but the
+    /// item already existed.
+    /// This is the only way to insert an item to the ABI, to make sure the caller explicitly
+    /// specifies whether duplication is OK or not.
+    /// Should not be used directly, but only through `AbiBuilder::add_abi_item`.
+    fn insert_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+        let item_description = item.description();
+        let already_existed = !self.items.insert(item);
+        if already_existed && prevent_dups {
+            return Err(ABIError::InvalidDuplicatedItem { description: item_description });
+        }
+
+        Ok(())
     }
 }
 
@@ -58,6 +114,10 @@ pub struct AbiBuilder {
     /// List of events that were included in the abi.
     /// Used to avoid redundancy.
     events: HashSet<TypeId>,
+
+    /// List of entry point names that were included in the abi.
+    /// Used to avoid duplication.
+    entry_point_names: HashSet<String>,
 
     /// The constructor for the contract.
     ctor: Option<FunctionWithBodyId>,
@@ -75,13 +135,15 @@ impl AbiBuilder {
         let mut free_functions = Vec::new();
         let mut enums = Vec::new();
         let mut structs = Vec::new();
-        let mut impls = Vec::new();
+        let mut impl_defs = Vec::new();
+        let mut impl_aliases = Vec::new();
         for item in &*db.module_items(module_id).unwrap_or_default() {
             match item {
                 ModuleItemId::FreeFunction(id) => free_functions.push(*id),
                 ModuleItemId::Struct(id) => structs.push(*id),
                 ModuleItemId::Enum(id) => enums.push(*id),
-                ModuleItemId::Impl(id) => impls.push(*id),
+                ModuleItemId::Impl(id) => impl_defs.push(*id),
+                ModuleItemId::ImplAlias(id) => impl_aliases.push(*id),
                 _ => {}
             }
         }
@@ -111,11 +173,16 @@ impl AbiBuilder {
         };
 
         // Add impls to ABI.
-        for impl_id in impls {
-            if impl_id.has_attr(db.upcast(), EXTERNAL_ATTR)? {
-                builder.add_impl(db, impl_id, storage_type)?;
-            } else if impl_id.has_attr(db.upcast(), EMBED_ATTR)? {
-                builder.add_embedded_impl(db, impl_id, storage_type)?;
+        for impl_def in impl_defs {
+            if is_impl_abi_embed(db, impl_def)? {
+                builder.add_impl(db, impl_def, storage_type, None)?;
+            } else if is_impl_abi_per_item(db, impl_def)? {
+                builder.add_embedded_impl(db, impl_def, storage_type)?;
+            }
+        }
+        for impl_alias in impl_aliases {
+            if impl_alias.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)? {
+                builder.add_embedded_impl_alias(db, impl_alias, storage_type)?;
             }
         }
 
@@ -165,7 +232,8 @@ impl AbiBuilder {
         let mut builder = Self::default();
 
         for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
-            builder.add_trait_function(db, *trait_function_id, storage_type)?;
+            let function = builder.trait_function_as_abi(db, *trait_function_id, storage_type)?;
+            builder.add_abi_item(function, true)?;
         }
 
         Ok(builder.abi)
@@ -183,10 +251,12 @@ impl AbiBuilder {
         let interface_path = trait_id.full_path(db.upcast());
         let mut items = Vec::new();
         for function in db.trait_functions(trait_id).unwrap_or_default().values() {
-            items.push(Item::Function(self.trait_function_as_abi(db, *function, storage_type)?));
+            self.add_entry_point_name(function.name(db.upcast()).into())?;
+            items.push(self.trait_function_as_abi(db, *function, storage_type)?);
         }
 
-        self.abi.items.push(Item::Interface(Interface { name: interface_path, items }));
+        let interface_item = Item::Interface(Interface { name: interface_path.clone(), items });
+        self.add_abi_item(interface_item, true)?;
 
         Ok(())
     }
@@ -200,20 +270,21 @@ impl AbiBuilder {
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
         for function in db.impl_functions(impl_def_id).unwrap_or_default().values() {
-            let function_abi =
-                Item::Function(self.impl_function_as_abi(db, *function, storage_type)?);
-            self.abi.items.push(function_abi);
+            let function_abi = self.impl_function_as_abi(db, *function, storage_type)?;
+            self.add_abi_item(function_abi, true)?;
         }
 
         Ok(())
     }
 
     /// Adds an impl to the ABI.
+    /// `impl_alias_name` can override the given impl name and is used in the ABI if set.
     fn add_impl(
         &mut self,
         db: &dyn SemanticGroup,
         impl_def_id: ImplDefId,
         storage_type: TypeId,
+        impl_alias_name: Option<String>,
     ) -> Result<(), ABIError> {
         let impl_name = impl_def_id.name(db.upcast());
 
@@ -224,9 +295,9 @@ impl AbiBuilder {
         // functions as external functions.
         let trait_id = trt.trait_id(db);
         if trait_id.has_attr(db, INTERFACE_ATTR)? {
-            self.abi
-                .items
-                .push(Item::Impl(Imp { name: impl_name.into(), interface_name: trt_path }));
+            let abi_name = impl_alias_name.unwrap_or(impl_name.into());
+            let impl_item = Item::Impl(Imp { name: abi_name, interface_name: trt_path });
+            self.add_abi_item(impl_item, true)?;
             self.add_interface(db, trait_id)?;
         } else {
             self.add_non_interface_impl(db, impl_def_id, storage_type)?;
@@ -235,7 +306,7 @@ impl AbiBuilder {
         Ok(())
     }
 
-    /// Adds an impl to the ABI.
+    /// Adds an embedded impl to the ABI.
     fn add_embedded_impl(
         &mut self,
         db: &dyn SemanticGroup,
@@ -253,6 +324,31 @@ impl AbiBuilder {
                 storage_type,
             )?;
         }
+        Ok(())
+    }
+
+    /// Adds an embedded impl alias to the ABI.
+    fn add_embedded_impl_alias(
+        &mut self,
+        db: &dyn SemanticGroup,
+        impl_alias_id: ImplAliasId,
+        storage_type: TypeId,
+    ) -> Result<(), ABIError> {
+        let impl_def = db.impl_alias_impl_def(impl_alias_id)?;
+
+        // Verify the impl definition has #[starknet::embeddable].
+        if !impl_def.has_attr(db, EMBEDDABLE_ATTR)? {
+            return Err(ABIError::EmbeddedImplNotEmbeddable);
+        }
+
+        // Verify the trait is marked as #[starknet::interface].
+        if !db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)? {
+            return Err(ABIError::EmbeddedImplMustBeInterface);
+        }
+
+        // Add the impl to the ABI.
+        self.add_impl(db, impl_def, storage_type, Some(impl_alias_id.name(db.upcast()).into()))?;
+
         Ok(())
     }
 
@@ -283,12 +379,8 @@ impl AbiBuilder {
         let name: String = function_with_body_id.name(db.upcast()).into();
         let signature = db.function_with_body_signature(function_with_body_id)?;
 
-        let (inputs, state_mutability) =
-            self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
-
-        let outputs = self.get_signature_outputs(db, &signature)?;
-
-        self.abi.items.push(Item::Function(Function { name, inputs, outputs, state_mutability }));
+        let function = self.function_as_abi(db, &name, signature, storage_type)?;
+        self.add_abi_item(function, true)?;
 
         Ok(())
     }
@@ -313,7 +405,8 @@ impl AbiBuilder {
             return Err(ABIError::UnexpectedType);
         }
 
-        self.abi.items.push(Item::Constructor(Constructor { name, inputs }));
+        let constructor_item = Item::Constructor(Constructor { name, inputs });
+        self.add_abi_item(constructor_item, true)?;
 
         Ok(())
     }
@@ -333,7 +426,9 @@ impl AbiBuilder {
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        self.abi.items.push(Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability }));
+        let l1_handler_item =
+            Item::L1Handler(L1Handler { name, inputs, outputs, state_mutability });
+        self.add_abi_item(l1_handler_item, true)?;
 
         Ok(())
     }
@@ -391,16 +486,27 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         trait_function_id: TraitFunctionId,
         storage_type: TypeId,
-    ) -> Result<Function, ABIError> {
-        let name = trait_function_id.name(db.upcast()).into();
+    ) -> Result<Item, ABIError> {
+        let name: String = trait_function_id.name(db.upcast()).into();
         let signature = db.trait_function_signature(trait_function_id)?;
 
+        self.function_as_abi(db, &name, signature, storage_type)
+    }
+
+    /// Converts a function name and signature to an ABI::Function.
+    fn function_as_abi(
+        &mut self,
+        db: &dyn SemanticGroup,
+        name: &str,
+        signature: Signature,
+        storage_type: TypeId,
+    ) -> Result<Item, ABIError> {
         let (inputs, state_mutability) =
             self.get_function_signature_inputs_and_mutability(&signature, storage_type, db)?;
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        Ok(Function { name, inputs, outputs, state_mutability })
+        Ok(Item::Function(Function { name: name.to_string(), inputs, outputs, state_mutability }))
     }
 
     /// Converts a TraitFunctionId to an ABI::Function.
@@ -409,7 +515,7 @@ impl AbiBuilder {
         db: &dyn SemanticGroup,
         impl_function_id: ImplFunctionId,
         storage_type: TypeId,
-    ) -> Result<Function, ABIError> {
+    ) -> Result<Item, ABIError> {
         let name = impl_function_id.name(db.upcast()).into();
         let signature = db.impl_function_signature(impl_function_id)?;
 
@@ -418,20 +524,7 @@ impl AbiBuilder {
 
         let outputs = self.get_signature_outputs(db, &signature)?;
 
-        Ok(Function { name, inputs, outputs, state_mutability })
-    }
-
-    /// Adds a function to the ABI from a TraitFunctionId.
-    fn add_trait_function(
-        &mut self,
-        db: &dyn SemanticGroup,
-        trait_function_id: TraitFunctionId,
-        storage_type: TypeId,
-    ) -> Result<(), ABIError> {
-        let function = self.trait_function_as_abi(db, trait_function_id, storage_type)?;
-        self.abi.items.push(Item::Function(function));
-
-        Ok(())
+        Ok(Item::Function(Function { name, inputs, outputs, state_mutability }))
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
@@ -467,20 +560,14 @@ impl AbiBuilder {
                 let event_fields = zip_eq(variants, concrete_variants)
                     .map(|((name, kind), concrete_variant)| {
                         let ty = concrete_variant.ty;
-
-                        let ty_name = get_type_name(db, ty).unwrap_or_default();
-                        if name != ty_name {
-                            return Err(ABIError::EventEnumVariantTypeMismatch);
-                        }
-
                         self.add_event_field(db, kind, ty, name)
                     })
                     .collect::<Result<_, ABIError>>()?;
                 EventKind::Enum { variants: event_fields }
             }
         };
-        let name = type_id.format(db);
-        self.abi.items.push(Item::Event(Event { name, kind: event_kind }));
+        let event_item = Item::Event(Event { name: type_id.format(db), kind: event_kind });
+        self.add_abi_item(event_item, true)?;
 
         Ok(())
     }
@@ -495,7 +582,7 @@ impl AbiBuilder {
     ) -> Result<EventField, ABIError> {
         match kind {
             EventFieldKind::KeySerde | EventFieldKind::DataSerde => self.add_type(db, ty)?,
-            EventFieldKind::Nested => self.add_event(db, ty)?,
+            EventFieldKind::Nested | EventFieldKind::Flat => self.add_event(db, ty)?,
         };
         Ok(EventField { name: name.into(), ty: ty.format(db), kind })
     }
@@ -539,11 +626,13 @@ impl AbiBuilder {
         match concrete {
             ConcreteTypeId::Struct(id) => {
                 let members = self.add_and_get_struct_members(db, id)?;
-                self.abi.items.push(Item::Struct(Struct { name: concrete.format(db), members }))
+                let struct_item = Item::Struct(Struct { name: concrete.format(db), members });
+                self.add_abi_item(struct_item, true)?;
             }
             ConcreteTypeId::Enum(id) => {
                 let variants = self.add_and_get_enum_variants(db, id)?;
-                self.abi.items.push(Item::Enum(Enum { name: concrete.format(db), variants }))
+                let enum_item = Item::Enum(Enum { name: concrete.format(db), variants });
+                self.add_abi_item(enum_item, true)?;
             }
             ConcreteTypeId::Extern(_) => {}
         }
@@ -583,6 +672,40 @@ impl AbiBuilder {
             })
             .collect::<Result<Vec<_>, ABIError>>()
     }
+
+    /// Adds an item to the ABI.
+    /// Returns OK on success, or an ABIError on failure.
+    fn add_abi_item(&mut self, item: Item, prevent_dups: bool) -> Result<(), ABIError> {
+        if let Some(name) = match &item {
+            Item::Function(item) => Some(item.name.to_string()),
+            Item::Constructor(item) => Some(item.name.to_string()),
+            Item::L1Handler(item) => Some(item.name.to_string()),
+            _ => None,
+        } {
+            self.add_entry_point_name(name)?;
+        }
+
+        self.abi.insert_item(item, prevent_dups)
+    }
+
+    /// Adds an entry point name to the set of names, to track unsupported duplication.
+    fn add_entry_point_name(&mut self, name: String) -> Result<(), ABIError> {
+        if !self.entry_point_names.insert(name.clone()) {
+            return Err(ABIError::DuplicateEntryPointName { name });
+        }
+        Ok(())
+    }
+}
+
+/// Checks whether the impl is marked with `#[abi(embed_v0)]`, or the old equivalent `#[external]`.
+fn is_impl_abi_embed(db: &dyn SemanticGroup, imp: ImplDefId) -> Maybe<bool> {
+    Ok(imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)?
+        || imp.has_attr(db, EXTERNAL_ATTR)?)
+}
+
+/// Checks whether the impl is marked with `#[abi(per_item)]`.
+fn is_impl_abi_per_item(db: &dyn SemanticGroup, imp: ImplDefId) -> Maybe<bool> {
+    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
 }
 
 /// Fetch the event data for the given type. Returns None if the given event type doesn't derive
@@ -618,17 +741,10 @@ fn fetch_event_data(db: &dyn SemanticGroup, event_type_id: TypeId) -> Option<Eve
     Some(aux_data.0.as_any().downcast_ref::<StarkNetEventAuxData>()?.event_data.clone())
 }
 
-fn get_type_name(db: &dyn SemanticGroup, ty: TypeId) -> Option<SmolStr> {
-    let concrete_ty = try_extract_matches!(db.lookup_intern_type(ty), TypeLongId::Concrete)?;
-    Some(concrete_ty.generic_type(db).name(db.upcast()))
-}
-
 #[derive(Error, Debug)]
 pub enum ABIError {
     #[error("Semantic error")]
     SemanticError,
-    #[error("Event enum variant type must be a struct with the same name as the variant.")]
-    EventEnumVariantTypeMismatch,
     #[error("Event must be an enum.")]
     EventMustBeEnum,
     #[error("Event must have no generic parameters.")]
@@ -651,8 +767,24 @@ pub enum ABIError {
     EntrypointMustHaveSelf,
     #[error("Entrypoint attribute must match the mutability of the self parameter")]
     AttributeMismatch,
-    #[error("Contract interfaces impls cannot be embedded.")]
+    #[error("An embedded impl must be an impl of a trait marked with #[starknet::interface].")]
+    EmbeddedImplMustBeInterface,
+    #[error("Embedded impls must be annotated with #[starknet::embeddable].")]
+    EmbeddedImplNotEmbeddable,
+    #[error("The first generic parameter of an embedded impl must be `TContractState`.")]
+    WrongEmbeddedImplFirstGeneric,
+    #[error("Only the first generic parameter of an embeddable impl can be a type.")]
+    EmbeddableImplWithExtraGenerics,
+    // TODO(yuval): change to per-item.
+    #[error("Contract interfaces impls cannot be directly embedded.")]
     ContractInterfaceImplCannotBeEmbedded,
+    #[error(
+        "Invalid duplicated item: {description} is used twice in the same contract. This is not \
+         supported."
+    )]
+    InvalidDuplicatedItem { description: String },
+    #[error("Duplicate entry point name: {name}. This is not currently supported.")]
+    DuplicateEntryPointName { name: String },
 }
 impl From<DiagnosticAdded> for ABIError {
     fn from(_: DiagnosticAdded) -> Self {
@@ -661,7 +793,7 @@ impl From<DiagnosticAdded> for ABIError {
 }
 
 /// Enum of contract item ABIs.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "type")]
 pub enum Item {
     #[serde(rename = "function")]
@@ -681,22 +813,36 @@ pub enum Item {
     #[serde(rename = "impl")]
     Impl(Imp),
 }
+impl Item {
+    fn description(&self) -> String {
+        match self {
+            Item::Function(item) => format!("Function {}", item.name),
+            Item::Constructor(item) => format!("Constructor {}", item.name),
+            Item::L1Handler(item) => format!("L1 Handler {}", item.name),
+            Item::Event(item) => format!("Event {}", item.name),
+            Item::Struct(item) => format!("Struct {}", item.name),
+            Item::Enum(item) => format!("Enum {}", item.name),
+            Item::Interface(item) => format!("Interface {}", item.name),
+            Item::Impl(item) => format!("Impl {}", item.name),
+        }
+    }
+}
 
 /// Contract interface ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Interface {
     pub name: String,
     pub items: Vec<Item>,
 }
 
 /// Contract impl ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Imp {
     pub name: String,
     pub interface_name: String,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub enum StateMutability {
     #[serde(rename = "external")]
     External,
@@ -705,7 +851,7 @@ pub enum StateMutability {
 }
 
 /// Contract function ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Function {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -716,14 +862,14 @@ pub struct Function {
 }
 
 /// Contract constructor ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Constructor {
     pub name: String,
     pub inputs: Vec<Input>,
 }
 
 /// Contract L1 handler ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct L1Handler {
     pub name: String,
     pub inputs: Vec<Input>,
@@ -734,7 +880,7 @@ pub struct L1Handler {
 }
 
 /// Contract event.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Event {
     pub name: String,
     #[serde(flatten)]
@@ -742,7 +888,7 @@ pub struct Event {
 }
 
 /// Contract event kind.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 #[serde(tag = "kind")]
 pub enum EventKind {
     #[serde(rename = "struct")]
@@ -752,7 +898,7 @@ pub enum EventKind {
 }
 
 /// Contract event field (member/variant).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct EventField {
     pub name: String,
     #[serde(rename = "type")]
@@ -761,7 +907,7 @@ pub struct EventField {
 }
 
 /// Function input ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Input {
     pub name: String,
     #[serde(rename = "type")]
@@ -769,21 +915,21 @@ pub struct Input {
 }
 
 /// Function Output ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Output {
     #[serde(rename = "type")]
     pub ty: String,
 }
 
 /// Struct ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Struct {
     pub name: String,
     pub members: Vec<StructMember>,
 }
 
 /// Struct member.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct StructMember {
     pub name: String,
     #[serde(rename = "type")]
@@ -791,14 +937,14 @@ pub struct StructMember {
 }
 
 /// Enum ABI.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Enum {
     pub name: String,
     pub variants: Vec<EnumVariant>,
 }
 
 /// Enum variant.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct EnumVariant {
     pub name: String,
     #[serde(rename = "type")]

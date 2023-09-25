@@ -5,9 +5,7 @@ use integer::u256_from_felt252;
 fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
-        Option::None => {
-            panic(array!['OOG']);
-        }
+        Option::None => { panic(array!['OOG']); }
     }
     let a = 1;
     let b = 2;

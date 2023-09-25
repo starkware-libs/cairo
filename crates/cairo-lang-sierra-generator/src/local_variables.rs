@@ -5,7 +5,9 @@ mod test;
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::{BlockId, VariableId};
-use cairo_lang_sierra::extensions::lib_func::{BranchSignature, LibfuncSignature};
+use cairo_lang_sierra::extensions::lib_func::{
+    BranchSignature, DeferredOutputKind, LibfuncSignature,
+};
 use cairo_lang_sierra::extensions::OutputVarReferenceInfo;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
@@ -281,12 +283,13 @@ impl<'a> FindLocalsContext<'a> {
                 OutputVarReferenceInfo::PartialParam { param_idx } => {
                     self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
                 }
+                OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const)
+                | OutputVarReferenceInfo::NewLocalVar => {
+                    self.non_ap_based.insert(*var);
+                }
                 OutputVarReferenceInfo::NewTempVar { .. }
                 | OutputVarReferenceInfo::SimpleDerefs
                 | OutputVarReferenceInfo::Deferred(_) => {}
-                OutputVarReferenceInfo::NewLocalVar => {
-                    self.non_ap_based.insert(*var);
-                }
             }
         }
 

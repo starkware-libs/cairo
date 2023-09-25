@@ -934,16 +934,16 @@ fn test_u256_try_into_felt252() {
 fn cast_must_pass<
     A,
     B,
-    impl DropA: Drop<A>,
-    impl DropB: Drop<B>,
-    impl CopyB: Copy<B>,
-    impl CopyA: Copy<A>,
-    impl APartialEq: PartialEq<A>,
-    impl BPartialEq: PartialEq<B>,
-    impl BIA: BoundedInt<A>,
-    impl BIB: BoundedInt<B>,
-    impl IAB: Into<A, B>,
-    impl IBA: TryInto<B, A>
+    +Drop<A>,
+    +Drop<B>,
+    +Copy<B>,
+    +Copy<A>,
+    +PartialEq<A>,
+    +PartialEq<B>,
+    +BoundedInt<A>,
+    +BoundedInt<B>,
+    +Into<A, B>,
+    +TryInto<B, A>
 >(
     ui: A, uj: B
 ) -> bool {
@@ -1563,6 +1563,20 @@ fn test_i128_operators() {
     assert_eq(@(-3_i128 + -6_i128), @-9_i128, '-3 + -6 == -9');
     assert_eq(@(-3_i128 - -1_i128), @-2_i128, '-3 - -1 == -2');
     assert_eq(@(-231_i128 - -131_i128), @-100_i128, '-231--131=-100');
+    assert_eq(@(1_i128 * 3_i128), @3_i128, '1 * 3 == 3');
+    assert_eq(@(7_i128 * 0_i128), @0_i128, '7 * 0 == 0');
+    assert_eq(@(2_i128 * 4_i128), @8_i128, '2 * 4 == 8');
+    assert_eq(@(-1_i128 * 3_i128), @-3_i128, '-1 * 3 == -3');
+    assert_eq(@(-2_i128 * 4_i128), @-8_i128, '-2 * 4 == -8');
+    assert_eq(@(1_i128 * -3_i128), @-3_i128, '1 * -3 == -3');
+    assert_eq(@(2_i128 * -4_i128), @-8_i128, '2 * -4 == -8');
+    assert_eq(@(-1_i128 * -3_i128), @3_i128, '-1 * -3 == 3');
+    assert_eq(@(-2_i128 * -4_i128), @8_i128, '-2 * -4 == 8');
+    assert_eq(
+        @(0x800000000000000_i128 * -0x100000000000000000_i128),
+        @-0x80000000000000000000000000000000_i128,
+        'failed MIN_I128 as mul result'
+    );
     assert_lt(1_i128, 4_i128, '1 < 4');
     assert_le(1_i128, 4_i128, '1 <= 4');
     assert(!(4_i128 < 4_i128), '!(4 < 4)');
@@ -1620,6 +1634,24 @@ fn test_i128_add_overflow_2() {
 #[should_panic(expected: ('i128_add Underflow',))]
 fn test_i128_add_underflow() {
     -0x64000000000000000000000000000000_i128 + -0x1e000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic]
+fn test_i128_mul_overflow_1() {
+    0x10000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic]
+fn test_i128_mul_overflow_2() {
+    0x11000000000000000000000000000000_i128 * 0x10000000000000000000000000000000_i128;
+}
+
+#[test]
+#[should_panic]
+fn test_i128_mul_overflow_3() {
+    2_i128 * 0x40000000000000000000000000000000_i128;
 }
 
 #[test]

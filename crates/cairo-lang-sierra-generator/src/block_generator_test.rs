@@ -8,6 +8,7 @@ use cairo_lang_lowering as lowering;
 use cairo_lang_lowering::db::LoweringGroup;
 use cairo_lang_lowering::BlockId;
 use cairo_lang_semantic::test_utils::setup_test_function;
+use cairo_lang_test_utils::parse_test_file::TestRunnerResult;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::UpcastMut;
@@ -38,7 +39,7 @@ cairo_lang_test_utils::test_file_test!(
 fn block_generator_test(
     inputs: &OrderedHashMap<String, String>,
     _args: &OrderedHashMap<String, String>,
-) -> Result<OrderedHashMap<String, String>, String> {
+) -> TestRunnerResult {
     let db = &mut SierraGenDatabaseForTesting::new_empty();
 
     // Tests have recursions for revoking AP. Automatic addition of 'withdraw_gas` calls would add
@@ -64,7 +65,7 @@ fn block_generator_test(
     let lowered = match db.concrete_function_with_body_lowered(function_id) {
         Ok(lowered) if !lowered.blocks.is_empty() => lowered,
         _ => {
-            return Ok(OrderedHashMap::from([
+            return TestRunnerResult::success(OrderedHashMap::from([
                 ("semantic_diagnostics".into(), semantic_diagnostics),
                 ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
                 ("sierra_gen_diagnostics".into(), "".into()),
@@ -93,7 +94,7 @@ fn block_generator_test(
     }
 
     let lowered_formatter = LoweredFormatter::new(db, &lowered.variables);
-    Ok(OrderedHashMap::from([
+    TestRunnerResult::success(OrderedHashMap::from([
         ("semantic_diagnostics".into(), semantic_diagnostics),
         ("lowering_diagnostics".into(), lowering_diagnostics.format(db)),
         ("lowering_flat".into(), format!("{:?}", lowered.debug(&lowered_formatter))),

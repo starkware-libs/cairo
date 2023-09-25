@@ -6,6 +6,7 @@ use cairo_lang_semantic::db::SemanticGroup;
 use cairo_lang_semantic::items::function_with_body::SemanticExprLookup;
 use cairo_lang_semantic::resolve::{ResolvedConcreteItem, ResolvedGenericItem};
 use cairo_lang_syntax::node::kind::SyntaxKind;
+use cairo_lang_syntax::node::utils::grandparent_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
 use lsp::SemanticTokenType;
@@ -33,6 +34,8 @@ pub enum SemanticTokenKind {
     String,
     Field,
     Annotation,
+    InlineMacro,
+    GenericParamImpl,
 }
 impl SemanticTokenKind {
     pub fn from_syntax_node(
@@ -47,6 +50,22 @@ impl SemanticTokenKind {
             SyntaxKind::TokenIdentifier => {}
             _ if kind.is_keyword_token() => return Some(SemanticTokenKind::Keyword),
             SyntaxKind::TokenLiteralNumber => return Some(SemanticTokenKind::Number),
+            SyntaxKind::TokenNot
+                if matches!(
+                    grandparent_kind(syntax_db, &node),
+                    Some(SyntaxKind::ExprInlineMacro | SyntaxKind::ItemInlineMacro)
+                ) =>
+            {
+                return Some(SemanticTokenKind::InlineMacro);
+            }
+            SyntaxKind::TokenPlus
+                if matches!(
+                    grandparent_kind(syntax_db, &node),
+                    Some(SyntaxKind::GenericParamImplAnonymous)
+                ) =>
+            {
+                return Some(SemanticTokenKind::GenericParamImpl);
+            }
             SyntaxKind::TokenAnd
             | SyntaxKind::TokenAndAnd
             | SyntaxKind::TokenOr
@@ -71,22 +90,37 @@ impl SemanticTokenKind {
         };
         node = node.parent().unwrap();
         let identifier = ast::TerminalIdentifier::from_syntax_node(syntax_db, node.clone());
+
         if identifier.text(syntax_db) == "super" {
             return Some(SemanticTokenKind::Keyword);
         }
 
-        let parent_kind = node.parent().unwrap().kind(syntax_db);
-        if ast::Item::is_variant(parent_kind) | matches!(parent_kind, SyntaxKind::AliasClause) {
-            return Some(SemanticTokenKind::Class);
-        }
-        if matches!(parent_kind, SyntaxKind::StructArgSingle) {
-            return Some(SemanticTokenKind::Field);
-        }
-        if matches!(parent_kind, SyntaxKind::FunctionDeclaration) {
-            return Some(SemanticTokenKind::Function);
-        }
-        if matches!(parent_kind, SyntaxKind::GenericParamType) {
-            return Some(SemanticTokenKind::TypeParameter);
+        let parent_node = node.parent().unwrap();
+        let parent_kind = parent_node.kind(syntax_db);
+        match parent_kind {
+            SyntaxKind::ItemInlineMacro => return Some(SemanticTokenKind::InlineMacro),
+            SyntaxKind::AliasClause => return Some(SemanticTokenKind::Class),
+            _ if ast::Item::is_variant(parent_kind) => return Some(SemanticTokenKind::Class),
+            SyntaxKind::StructArgSingle => return Some(SemanticTokenKind::Field),
+            SyntaxKind::FunctionDeclaration => return Some(SemanticTokenKind::Function),
+            SyntaxKind::GenericParamType => return Some(SemanticTokenKind::TypeParameter),
+            SyntaxKind::PathSegmentSimple | SyntaxKind::PathSegmentWithGenericArgs => {
+                match grandparent_kind(syntax_db, &parent_node) {
+                    Some(SyntaxKind::GenericParamImplAnonymous) => {
+                        return Some(SemanticTokenKind::GenericParamImpl);
+                    }
+                    Some(
+                        SyntaxKind::GenericArgNamed
+                        | SyntaxKind::GenericArgUnnamed
+                        | SyntaxKind::GenericArgValueExpr,
+                    ) => {
+                        return Some(SemanticTokenKind::TypeParameter);
+                    }
+                    _ => {}
+                }
+            }
+
+            _ => {}
         }
 
         // Identifier.
@@ -99,6 +133,7 @@ impl SemanticTokenKind {
             let module_file_id = ModuleFileId(module_id, file_index);
 
             match node.kind(syntax_db) {
+                SyntaxKind::ExprInlineMacro => return Some(SemanticTokenKind::InlineMacro),
                 SyntaxKind::ExprPath => {
                     expr_path_ptr =
                         Some(ast::ExprPath::from_syntax_node(syntax_db, node.clone()).stable_ptr());
@@ -189,6 +224,8 @@ impl SemanticTokenKind {
             SemanticTokenKind::String => 16,
             SemanticTokenKind::Field => 17,
             SemanticTokenKind::Annotation => 18,
+            SemanticTokenKind::InlineMacro => 19,
+            SemanticTokenKind::GenericParamImpl => 20,
         }
     }
     pub fn legend() -> Vec<SemanticTokenType> {
@@ -212,6 +249,8 @@ impl SemanticTokenKind {
             SemanticTokenType::STRING,
             SemanticTokenType::PROPERTY,
             SemanticTokenType::DECORATOR,
+            SemanticTokenType::MACRO,
+            SemanticTokenType::INTERFACE,
         ]
     }
 }

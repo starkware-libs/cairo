@@ -1,7 +1,7 @@
 //! > Test ignoring of test config in the test config.
 
 //! > test_runner_name
-test_expand_plugin(allow_diagnostics: false)
+test_expand_plugin(expect_diagnostics: false)
 
 //! > cfg
 ["a", "b", ["k", "a"], ["k", "b"]]

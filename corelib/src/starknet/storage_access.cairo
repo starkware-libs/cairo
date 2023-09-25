@@ -447,7 +447,7 @@ impl TupleSize0Store of Store<()> {
     }
 }
 
-impl TupleSize1Store<E0, impl E0Store: Store<E0>, impl E0Drop: Drop<E0>> of Store<(E0,)> {
+impl TupleSize1Store<E0, impl E0Store: Store<E0>, +Drop<E0>> of Store<(E0,)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0,)> {
         Result::Ok((E0Store::read(address_domain, base)?,))
@@ -477,12 +477,7 @@ impl TupleSize1Store<E0, impl E0Store: Store<E0>, impl E0Drop: Drop<E0>> of Stor
 }
 
 impl TupleSize2Store<
-    E0,
-    E1,
-    impl E0Store: Store<E0>,
-    impl E0Drop: Drop<E0>,
-    impl E1Store: Store<E1>,
-    impl E0Drop: Drop<E1>
+    E0, E1, impl E0Store: Store<E0>, +Drop<E0>, impl E1Store: Store<E1>, +Drop<E1>
 > of Store<(E0, E1)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1)> {
@@ -525,11 +520,11 @@ impl TupleSize3Store<
     E1,
     E2,
     impl E0Store: Store<E0>,
-    impl E0Drop: Drop<E0>,
+    +Drop<E0>,
     impl E1Store: Store<E1>,
-    impl E1Drop: Drop<E1>,
+    +Drop<E1>,
     impl E2Store: Store<E2>,
-    impl E2Drop: Drop<E2>
+    +Drop<E2>
 > of Store<(E0, E1, E2)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2)> {
@@ -585,13 +580,13 @@ impl TupleSize4Store<
     E2,
     E3,
     impl E0Store: Store<E0>,
-    impl E0Drop: Drop<E0>,
+    +Drop<E0>,
     impl E1Store: Store<E1>,
-    impl E1Drop: Drop<E1>,
+    +Drop<E1>,
     impl E2Store: Store<E2>,
-    impl E2Drop: Drop<E2>,
+    +Drop<E2>,
     impl E3Store: Store<E3>,
-    impl E3Drop: Drop<E3>
+    +Drop<E3>
 > of Store<(E0, E1, E2, E3)> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<(E0, E1, E2, E3)> {
@@ -650,9 +645,7 @@ impl TupleSize4Store<
 }
 
 
-impl ResultStore<
-    T, E, impl TStore: Store<T>, impl EStore: Store<E>, impl TDrop: Drop<T>, impl EDrop: Drop<E>,
-> of Store<Result<T, E>> {
+impl ResultStore<T, E, +Store<T>, +Store<E>, +Drop<T>, +Drop<E>> of Store<Result<T, E>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Result<T, E>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
@@ -723,7 +716,7 @@ impl ResultStore<
     }
 }
 
-impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option<T>> {
+impl OptionStore<T, +Store<T>, +Drop<T>,> of Store<Option<T>> {
     #[inline(always)]
     fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Option<T>> {
         let idx = Store::<felt252>::read(address_domain, base)?;
@@ -732,7 +725,7 @@ impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option
                 Option::Some(Store::read_at_offset(address_domain, base, 1_u8)?)
             )
         } else if idx == 0 {
-            starknet::SyscallResult::Ok(Option::None(()))
+            starknet::SyscallResult::Ok(Option::None)
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
@@ -744,9 +737,7 @@ impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(_) => {
-                Store::write(address_domain, base, 0)?;
-            }
+            Option::None(_) => { Store::write(address_domain, base, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }
@@ -760,7 +751,7 @@ impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option
                 Option::Some(Store::read_at_offset(address_domain, base, offset + 1_u8)?)
             )
         } else if idx == 0 {
-            starknet::SyscallResult::Ok(Option::None(()))
+            starknet::SyscallResult::Ok(Option::None)
         } else {
             starknet::SyscallResult::Err(array!['Incorrect index:'])
         }
@@ -774,9 +765,7 @@ impl OptionStore<T, impl TStore: Store<T>, impl TDrop: Drop<T>,> of Store<Option
                 Store::write(address_domain, base, 1)?;
                 Store::write_at_offset(address_domain, base, 1_u8, x)?;
             },
-            Option::None(x) => {
-                Store::write(address_domain, base, 0)?;
-            }
+            Option::None(x) => { Store::write(address_domain, base, 0)?; }
         };
         starknet::SyscallResult::Ok(())
     }

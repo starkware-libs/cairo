@@ -1,23 +1,41 @@
 use cairo_lang_defs::plugin::PluginDiagnostic;
-use cairo_lang_syntax::node::ast::{self, Attribute, Modifier, OptionArgListParenthesized};
+use cairo_lang_syntax::node::ast::{self, Attribute, Modifier};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::QueryAttrs;
+use cairo_lang_syntax::node::helpers::{is_single_arg_attr, QueryAttrs};
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use cairo_lang_utils::try_extract_matches;
 
-/// Checks if the parameter is defined as a ref parameter.
-pub fn is_ref_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
-    let param_modifiers = param.modifiers(db).elements(db);
-    // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
-    // semantic level, we could just ask if it's a reference.
-    matches!(param_modifiers[..], [Modifier::Ref(_)])
+/// Helper trait for syntax queries on `ast::Param`.
+pub trait ParamEx {
+    /// Checks if the parameter is defined as a ref parameter.
+    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Checks if the parameter is defined as a mutable parameter.
+    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool;
+    /// Extracts the snapshot type if the parameter's type is a snapshot. Otherwise, returns None.
+    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr>;
 }
+impl ParamEx for ast::Param {
+    fn is_ref_param(&self, db: &dyn SyntaxGroup) -> bool {
+        let param_modifiers = self.modifiers(db).elements(db);
+        // TODO(yuval): This works only if "ref" is the only modifier. If the expansion was at the
+        // semantic level, we could just ask if it's a reference.
+        matches!(param_modifiers[..], [Modifier::Ref(_)])
+    }
 
-/// Checks if the parameter is defined as a mut parameter.
-pub fn is_mut_param(db: &dyn SyntaxGroup, param: &ast::Param) -> bool {
-    let param_modifiers = param.modifiers(db).elements(db);
-    // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
-    // semantic level, we could just ask if it's a reference.
-    matches!(param_modifiers[..], [Modifier::Mut(_)])
+    fn is_mut_param(&self, db: &dyn SyntaxGroup) -> bool {
+        let param_modifiers = self.modifiers(db).elements(db);
+        // TODO(yuval): This works only if "mut" is the only modifier. If the expansion was at the
+        // semantic level, we could just ask if it's a reference.
+        matches!(param_modifiers[..], [Modifier::Mut(_)])
+    }
+
+    fn try_extract_snapshot(&self, db: &dyn SyntaxGroup) -> Option<ast::Expr> {
+        let unary = try_extract_matches!(self.type_clause(db).ty(db), ast::Expr::Unary)?;
+        if !matches!(unary.op(db), ast::UnaryOperator::At(_)) {
+            return None;
+        }
+        Some(unary.expr(db))
+    }
 }
 
 /// Helper trait for syntax queries on `ast::Expr`.
@@ -89,6 +107,30 @@ impl AstPathExtract for ast::Expr {
     }
 }
 
+/// Helper trait for syntax queries on `ast::GenericParam`.
+pub trait GenericParamExtract {
+    /// Returns the trait_path of the generic param if it is an impl.
+    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath>;
+    /// Returns true if `self` matches an impl of `$trait_name$<$generic_arg$>`.
+    /// Does not resolve paths or type aliases.
+    fn is_impl_of(&self, db: &dyn SyntaxGroup, trait_name: &str, generic_arg: &str) -> bool {
+        if let Some(path) = self.trait_path(db) {
+            path.is_name_with_arg(db, trait_name, generic_arg)
+        } else {
+            false
+        }
+    }
+}
+impl GenericParamExtract for ast::GenericParam {
+    fn trait_path(&self, db: &dyn SyntaxGroup) -> Option<ast::ExprPath> {
+        match self {
+            ast::GenericParam::Type(_) | ast::GenericParam::Const(_) => None,
+            ast::GenericParam::ImplNamed(i) => Some(i.trait_path(db)),
+            ast::GenericParam::ImplAnonymous(i) => Some(i.trait_path(db)),
+        }
+    }
+}
+
 /// Strips one preceding underscore from the given string slice, if any.
 pub fn maybe_strip_underscore(s: &str) -> &str {
     match s.strip_prefix('_') {
@@ -121,21 +163,10 @@ fn validate_v0(
     attr: &Attribute,
     name: &str,
 ) {
-    if !is_arg_v0(db, attr) {
+    if !is_single_arg_attr(db, attr, "v0") {
         diagnostics.push(PluginDiagnostic {
             message: format!("Only #[{name}(v0)] is supported."),
             stable_ptr: attr.stable_ptr().untyped(),
         });
-    }
-}
-
-/// Checks if the only arg of the given attribute is "v0".
-fn is_arg_v0(db: &dyn SyntaxGroup, attr: &Attribute) -> bool {
-    match attr.arguments(db) {
-        OptionArgListParenthesized::ArgListParenthesized(y) => {
-            matches!(&y.args(db).elements(db)[..],
-            [arg] if arg.as_syntax_node().get_text_without_trivia(db) == "v0")
-        }
-        OptionArgListParenthesized::Empty(_) => false,
     }
 }

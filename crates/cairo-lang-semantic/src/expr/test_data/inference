@@ -171,7 +171,7 @@ test_function_diagnostics
 fn foo() {
    MyTrait::foo(5);
    MyTrait::foo(true);
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -241,7 +241,7 @@ test_function_diagnostics
 //! > function
 fn foo() {
    MyTrait::foo(5);
-   MyTrait::foo(Option::<felt252>::None(()));
+   MyTrait::foo(Option::<felt252>::None);
 }
 
 //! > function_name
@@ -279,7 +279,7 @@ test_function_diagnostics
 
 //! > function
 fn foo() {
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
 }
 
 //! > function_name
@@ -305,7 +305,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 //! > expected_diagnostics
 error: Type annotations needed. Failed to infer ?1
  --> lib.cairo:17:17
-   MyTrait::foo(Option::None(()));
+   MyTrait::foo(Option::None);
                 ^****^
 
 //! > ==========================================================================
@@ -626,3 +626,34 @@ error: Type annotations needed. Failed to infer ?0
  --> lib.cairo:2:12
    let x = "hello";
            ^*****^
+
+//! > ==========================================================================
+
+//! > Test impl inference with an impl of a non-existing trait in context.
+
+//! > test_runner_name
+test_function_diagnostics
+
+//! > function
+fn foo() {
+   // A NumericLiteral<felt252> should be inferred here.
+   let x = 123;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+impl MyImpl of NonExistingTrait {
+}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:16
+impl MyImpl of NonExistingTrait {
+               ^**************^
+
+error: Not a trait.
+ --> lib.cairo:1:16
+impl MyImpl of NonExistingTrait {
+               ^**************^

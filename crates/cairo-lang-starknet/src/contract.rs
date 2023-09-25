@@ -23,16 +23,19 @@ use cairo_lang_sierra_generator::replace_ids::SierraIdReplacer;
 use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_utils::extract_matches;
-use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::ordered_hash_map::{
+    deserialize_ordered_hashmap_vec, serialize_ordered_hashmap_vec, OrderedHashMap,
+};
 use itertools::chain;
 use num_bigint::BigUint;
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Keccak256};
 use {cairo_lang_lowering as lowering, cairo_lang_semantic as semantic};
 
 use crate::aliased::Aliased;
 use crate::contract_class::{extract_semantic_entrypoints, SemanticEntryPoints};
 use crate::plugin::aux_data::StarkNetContractAuxData;
-use crate::plugin::consts::EMBED_ATTR;
+use crate::plugin::consts::{ABI_ATTR, ABI_ATTR_EMBED_V0_ARG};
 
 #[cfg(test)]
 #[path = "contract_test.rs"]
@@ -186,7 +189,7 @@ fn get_impl_aliases_abi_functions(
         .with_context(|| "Failed to get external module impl aliases.")?
         .iter()
     {
-        if !impl_alias.has_attr(syntax_db, EMBED_ATTR) {
+        if !impl_alias.has_attr_with_arg(db.upcast(), ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) {
             continue;
         }
         let resolver_data = db
@@ -289,12 +292,21 @@ fn get_submodule_id(
 }
 
 /// Sierra information of a contract.
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 pub struct ContractInfo {
     /// Sierra function of the constructor.
     pub constructor: Option<FunctionId>,
     /// Sierra functions of the external functions.
+    #[serde(
+        serialize_with = "serialize_ordered_hashmap_vec",
+        deserialize_with = "deserialize_ordered_hashmap_vec"
+    )]
     pub externals: OrderedHashMap<Felt252, FunctionId>,
     /// Sierra functions of the l1 handler functions.
+    #[serde(
+        serialize_with = "serialize_ordered_hashmap_vec",
+        deserialize_with = "deserialize_ordered_hashmap_vec"
+    )]
     pub l1_handlers: OrderedHashMap<Felt252, FunctionId>,
 }
 

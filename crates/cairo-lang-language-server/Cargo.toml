@@ -34,4 +34,3 @@ tokio.workspace = true
 tower-lsp.workspace = true
 
 [dev-dependencies]
-test-log.workspace = true

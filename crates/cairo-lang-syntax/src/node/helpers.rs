@@ -4,8 +4,8 @@ use super::ast::{
     self, FunctionDeclaration, FunctionDeclarationGreen, FunctionWithBody, FunctionWithBodyPtr,
     ImplItem, Item, ItemConstant, ItemEnum, ItemExternFunction, ItemExternFunctionPtr,
     ItemExternType, ItemImpl, ItemImplAlias, ItemInlineMacro, ItemModule, ItemStruct, ItemTrait,
-    ItemTypeAlias, ItemUse, Member, Modifier, TerminalIdentifierGreen, TokenIdentifierGreen,
-    TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
+    ItemTypeAlias, ItemUse, Member, Modifier, OptionArgListParenthesized, TerminalIdentifierGreen,
+    TokenIdentifierGreen, TraitItem, TraitItemFunction, TraitItemFunctionPtr, Variant,
 };
 use super::db::SyntaxGroup;
 use super::{Terminal, TypedSyntaxNode};
@@ -148,6 +148,32 @@ impl NameGreen for TraitItemFunctionPtr {
     }
 }
 
+pub trait GenericParamEx {
+    /// Returns the name of a generic param if one exists.
+    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier>;
+}
+impl GenericParamEx for ast::GenericParam {
+    fn name(&self, db: &dyn SyntaxGroup) -> Option<ast::TerminalIdentifier> {
+        match self {
+            ast::GenericParam::Type(t) => Some(t.name(db)),
+            ast::GenericParam::Const(c) => Some(c.name(db)),
+            ast::GenericParam::ImplNamed(i) => Some(i.name(db)),
+            ast::GenericParam::ImplAnonymous(_) => None,
+        }
+    }
+}
+
+/// Checks if the given attribute has a single argument with the given name.
+pub fn is_single_arg_attr(db: &dyn SyntaxGroup, attr: &Attribute, arg_name: &str) -> bool {
+    match attr.arguments(db) {
+        OptionArgListParenthesized::ArgListParenthesized(args) => {
+            matches!(&args.args(db).elements(db)[..],
+                    [arg] if arg.as_syntax_node().get_text_without_trivia(db) == arg_name)
+        }
+        OptionArgListParenthesized::Empty(_) => false,
+    }
+}
+
 /// Trait for querying attributes of AST items.
 pub trait QueryAttrs {
     /// Generic call `self.attributes(db).elements(db)`.
@@ -173,7 +199,13 @@ pub trait QueryAttrs {
     fn has_attr(&self, db: &dyn SyntaxGroup, attr: &str) -> bool {
         self.find_attr(db, attr).is_some()
     }
+
+    /// Checks if the given object has an attribute with the given name and argument.
+    fn has_attr_with_arg(&self, db: &dyn SyntaxGroup, attr_name: &str, arg_name: &str) -> bool {
+        self.query_attr(db, attr_name).iter().any(|attr| is_single_arg_attr(db, attr, arg_name))
+    }
 }
+
 impl QueryAttrs for ItemConstant {
     fn attributes_elements(&self, db: &dyn SyntaxGroup) -> Vec<Attribute> {
         self.attributes(db).elements(db)

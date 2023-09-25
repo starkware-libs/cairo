@@ -1,7 +1,7 @@
 //! > Test expansion of Starknet for user types.
 
 //! > test_runner_name
-ExpandContractTestRunner(allow_diagnostics: true)
+ExpandContractTestRunner(expect_diagnostics: true)
 
 //! > cairo_code
 #[starknet::contract]
@@ -294,6 +294,10 @@ enum Event {}
             }
         }
     }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 #[cfg(test)]
 const TEST_CLASS_HASH: felt252 = 0x22a6a9ef9e77b4a6859543ea1095bf317324bd00f9420953f068bcafc59b605;
 
@@ -344,7 +348,7 @@ impl WrappedFelt252Hash<
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreWrappedFelt252 of starknet::Store::<WrappedFelt252> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<WrappedFelt252> {
@@ -404,7 +408,7 @@ impl ZeroSizeSerde of Serde::<ZeroSize> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreZeroSize of starknet::Store::<ZeroSize> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<ZeroSize> {
@@ -459,7 +463,7 @@ impl SimpleEnumSerde of Serde::<SimpleEnum> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreSimpleEnum of starknet::Store::<SimpleEnum> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<SimpleEnum> {
@@ -558,7 +562,7 @@ impl EnumWithDefaultSerde of Serde::<EnumWithDefault> {
 }
 
 
-starknet_store_impl:
+starknet_derive:
 
 impl StoreEnumWithDefault of starknet::Store::<EnumWithDefault> {
     fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<EnumWithDefault> {
@@ -684,7 +688,7 @@ impls:
 impl EventDrop of Drop::<Event>;
 
 
-event_impl:
+starknet_derive:
 
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
@@ -697,7 +701,6 @@ impl EventIsEvent of starknet::Event<Event> {
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<Event> {
         let selector = *array::SpanTrait::pop_front(ref keys)?;
-        
         Option::None
     }
 }

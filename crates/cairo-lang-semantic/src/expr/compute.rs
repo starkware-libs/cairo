@@ -906,11 +906,16 @@ fn compute_expr_loop_semantic(
         let old_flow_merge = new_ctx.loop_flow_merge.replace(FlowMergeTypeHelper::new(db));
 
         let mut statements = syntax.body(syntax_db).statements(syntax_db).elements(syntax_db);
-        // Remove the tail expression, if exists.
-        let tail = get_tail_expression(syntax_db, statements.as_slice());
-        if let Some(tail) = tail {
-            new_ctx.diagnostics.report(&tail, TailExpressionNotAllowedInLoop);
+        // Remove the typed tail expression, if exists.
+        let tail = get_tail_expression(syntax_db, statements.as_slice())
+            .map(|tail| compute_expr_semantic(new_ctx, &tail));
+        if let Some(tail) = &tail {
             statements.pop();
+            if !tail.ty().is_missing(db) && !tail.ty().is_unit(db) && tail.ty() != never_ty(db) {
+                new_ctx
+                    .diagnostics
+                    .report_by_ptr(tail.stable_ptr().untyped(), TailExpressionNotAllowedInLoop);
+            }
         }
 
         // Convert statements to semantic model.
@@ -926,7 +931,7 @@ fn compute_expr_loop_semantic(
 
         let body = new_ctx.exprs.alloc(Expr::Block(ExprBlock {
             statements: statements_semantic,
-            tail: None,
+            tail: tail.map(|tail| tail.id),
             ty: unit_ty(db),
             stable_ptr: syntax.stable_ptr().into(),
         }));
@@ -1609,7 +1614,7 @@ fn method_call_expr(
     let mut candidate_traits = traits_in_context(ctx)?;
 
     // Add traits from impl generic args in the context.
-    for generic_param in ctx.resolver.data.generic_params.values() {
+    for generic_param in &ctx.resolver.data.generic_params {
         if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
             let trait_id = ctx.db.generic_impl_param_trait(*generic_param)?;
             candidate_traits.insert(trait_id);
@@ -1878,22 +1883,32 @@ fn expr_function_call(
     let expr_function_call =
         ExprFunctionCall { function: function_id, args, ty: signature.return_type, stable_ptr };
     // Check panicable.
-    if signature.panicable
-        && !ctx
-            .get_signature(
-                stable_ptr.untyped(),
-                UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
-            )?
-            .panicable
-        // Minus literals are a special case, since we know these cannot panic, as they would fail
-        // on value in illegal bounds.
-        && try_extract_minus_literal(ctx.db, &ctx.exprs, &expr_function_call).is_none()
-    {
+    if signature.panicable && has_panic_incompatibility(ctx, &expr_function_call)? {
         // TODO(spapini): Delay this check until after inference, to allow resolving specific
         //   impls first.
         return Err(ctx.diagnostics.report_by_ptr(stable_ptr.untyped(), PanicableFromNonPanicable));
     }
     Ok(Expr::FunctionCall(expr_function_call))
+}
+
+/// Checks if a panicable function is called from a disallowed context.
+fn has_panic_incompatibility(
+    ctx: &mut ComputationContext<'_>,
+    expr_function_call: &ExprFunctionCall,
+) -> Maybe<bool> {
+    // If this is not an actual function call, but actually a minus literal (e.g. -1), then this is
+    // the same as nopanic.
+    if try_extract_minus_literal(ctx.db, &ctx.exprs, expr_function_call).is_some() {
+        return Ok(false);
+    }
+    // If this is not from within a context of a function - e.g. a const item, we will exit with an
+    // error here, as this is a call with bad context.
+    let caller_signature = ctx.get_signature(
+        expr_function_call.stable_ptr.untyped(),
+        UnsupportedOutsideOfFunctionFeatureName::FunctionCall,
+    )?;
+    // If the caller is nopanic, then this is a panic incompatibility.
+    Ok(!caller_signature.panicable)
 }
 
 /// Checks the correctness of the named arguments, and outputs diagnostics on errors.

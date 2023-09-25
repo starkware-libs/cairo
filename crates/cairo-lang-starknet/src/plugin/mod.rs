@@ -10,19 +10,18 @@ use cairo_lang_syntax::node::{ast, Terminal};
 use consts::*;
 
 pub mod aux_data;
+mod derive;
 mod dispatcher;
 mod embeddable;
 mod entry_point;
 pub mod events;
 mod starknet_module;
 mod storage;
-mod store;
 mod utils;
 
 use dispatcher::handle_trait;
-use events::derive_event_needed;
-use store::derive_store_needed;
 
+use self::derive::{derive_needed, handle_derive};
 use self::embeddable::handle_embeddable;
 use self::starknet_module::{handle_module, handle_module_by_storage};
 
@@ -38,20 +37,11 @@ impl MacroPlugin for StarkNetPlugin {
             ast::Item::Impl(impl_ast) if impl_ast.has_attr(db, EMBEDDABLE_ATTR) => {
                 handle_embeddable(db, impl_ast)
             }
-            ast::Item::Struct(struct_ast) if derive_event_needed(&struct_ast, db) => {
-                events::handle_struct(db, struct_ast)
-            }
-            ast::Item::Struct(struct_ast) if derive_store_needed(&struct_ast, db) => {
-                store::handle_struct(db, struct_ast)
-            }
             ast::Item::Struct(struct_ast) if struct_ast.has_attr(db, STORAGE_ATTR) => {
                 handle_module_by_storage(db, struct_ast).unwrap_or_default()
             }
-            ast::Item::Enum(enum_ast) if derive_store_needed(&enum_ast, db) => {
-                store::handle_enum(db, enum_ast)
-            }
-            ast::Item::Enum(enum_ast) if derive_event_needed(&enum_ast, db) => {
-                events::handle_enum(db, enum_ast)
+            ast::Item::Struct(_) | ast::Item::Enum(_) if derive_needed(&item_ast, db) => {
+                handle_derive(db, item_ast)
             }
             ast::Item::InlineMacro(inline_macro_ast)
                 if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
@@ -63,5 +53,26 @@ impl MacroPlugin for StarkNetPlugin {
             // Nothing to do for other items.
             _ => PluginResult::default(),
         }
+    }
+
+    fn declared_attributes(&self) -> Vec<String> {
+        vec![
+            ABI_ATTR.to_string(),
+            COMPONENT_ATTR.to_string(),
+            CONSTRUCTOR_ATTR.to_string(),
+            CONTRACT_ATTR.to_string(),
+            EMBEDDABLE_AS_ATTR.to_string(),
+            EMBEDDABLE_ATTR.to_string(),
+            EVENT_ATTR.to_string(),
+            EXTERNAL_ATTR.to_string(),
+            FLAT_ATTR.to_string(),
+            INTERFACE_ATTR.to_string(),
+            KEY_ATTR.to_string(),
+            L1_HANDLER_ATTR.to_string(),
+            NESTED_ATTR.to_string(),
+            RAW_OUTPUT_ATTR.to_string(),
+            STORAGE_ATTR.to_string(),
+            SUBSTORAGE_ATTR.to_string(),
+        ]
     }
 }

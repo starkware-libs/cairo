@@ -21,9 +21,12 @@ mod counter_contract {
         IOtherContractDispatcher, IOtherContractDispatcherTrait, IOtherContractLibraryDispatcher,
         OutOfScopeEvent,
     };
+    component!(path: super::test_component, storage: test_component_storage, event: ABC);
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        test_component_storage: super::test_component::Storage,
         counter: u128,
         other_contract: IOtherContractDispatcher
     }
@@ -31,6 +34,8 @@ mod counter_contract {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        #[flat]
+        ABC: super::test_component::Event,
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
         OutOfScopeEvent: OutOfScopeEvent
@@ -76,5 +81,14 @@ mod counter_contract {
                 self.emit(CounterDecreased { amount });
             }
         }
+    }
+}
+
+
+#[starknet::component]
+mod test_component {
+    #[storage]
+    struct Storage {
+        data: u32
     }
 }

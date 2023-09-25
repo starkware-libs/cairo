@@ -1,3 +1,5 @@
+#![cfg(any(feature = "testing", test))]
+
 pub mod parse_test_file;
 use std::fs;
 use std::path::Path;
@@ -37,21 +39,32 @@ pub fn test_lock<'a, T: ?Sized + 'a>(m: &'a Mutex<T>) -> MutexGuard<'a, T> {
     }
 }
 
-// Disallow diagnostics if args.allow_diagnostics == false.
-pub fn has_disallowed_diagnostics(
+/// Returns an error string if there are diagnostics when args.expect_diagnostics is false.
+/// Returns an error string if there are no diagnostics when args.expect_diagnostics is true.
+/// Returns None on success.
+pub fn verify_diagnostics_expectation(
     args: &OrderedHashMap<String, String>,
     diagnostics: &str,
-) -> Result<(), String> {
-    if let Some(allow_diagnostics) = args.get("allow_diagnostics") {
-        if !bool_input(allow_diagnostics) && !diagnostics.is_empty() {
-            return Err(format!(
-                "allow_diagnostics is false, but diagnostics were generated:\n{}",
-                diagnostics
-            ));
-        }
+) -> Option<String> {
+    let Some(expect_diagnostics) = args.get("expect_diagnostics") else {
+        return None;
+    };
+    if expect_diagnostics.trim() == "*" {
+        return None;
     }
 
-    Ok(())
+    let expect_diagnostics = bool_input(expect_diagnostics);
+    let has_diagnostics = !diagnostics.is_empty();
+    if !expect_diagnostics && has_diagnostics {
+        Some(format!(
+            "`expect_diagnostics` is false, but diagnostics were generated:\n{}",
+            diagnostics
+        ))
+    } else if expect_diagnostics && !has_diagnostics {
+        Some("`expect_diagnostics` is true, but no diagnostics were generated.\n".to_string())
+    } else {
+        None
+    }
 }
 
 /// Translates a string test input to bool ("false" -> false, "true" -> true). Panics if invalid.
@@ -59,4 +72,18 @@ pub fn has_disallowed_diagnostics(
 pub fn bool_input(input: &str) -> bool {
     let input = input.trim().to_lowercase();
     bool::from_str(&input).unwrap_or_else(|_| panic!("Expected 'true' or 'false', actual: {input}"))
+}
+
+/// Parses a test input that may be a file input. If the input starts with ">>> file: " it reads the
+/// file and returns the file path and content, otherwise, it returns the input and a default dummy
+/// path.
+pub fn get_direct_or_file_content(input: &str) -> (String, String) {
+    if let Some(path) = input.strip_prefix(">>> file: ") {
+        (
+            path.to_string(),
+            fs::read_to_string(path).unwrap_or_else(|_| panic!("Could not read file: '{path}'")),
+        )
+    } else {
+        ("dummy_file.cairo".to_string(), input.to_string())
+    }
 }

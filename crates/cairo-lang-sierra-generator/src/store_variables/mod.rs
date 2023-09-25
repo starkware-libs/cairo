@@ -312,8 +312,9 @@ impl<'a> AddStoreVariableStatements<'a> {
                 } else if self.store_deferred_ex(var, var_on_stack, deferred_info) {
                     if *dup {
                         // In the dup case we dup `var_on_stack` that is ready for push into
-                        // `var` that should still be available.
+                        // `var` that should still be available as a temporary var.
                         self.dup(var_on_stack, var, ty);
+                        self.state().temporary_variables.insert(var.clone(), ty.clone());
                     }
                     continue;
                 } else {

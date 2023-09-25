@@ -494,9 +494,7 @@ fn compare_byte_array(
                     panic_with_felt252('wrong data');
                 }
             },
-            Option::None(_) => {
-                break;
-            }
+            Option::None(_) => { break; }
         }
         data_index += 1;
     };

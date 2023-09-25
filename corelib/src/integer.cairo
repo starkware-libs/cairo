@@ -2,7 +2,6 @@ use option::OptionTrait;
 use result::ResultTrait;
 use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
-use serde::Serde;
 use array::ArrayTrait;
 use array::SpanTrait;
 
@@ -15,14 +14,7 @@ extern type u128;
 impl NumericLiteralu128 of NumericLiteral<u128>;
 extern fn u128_const<value>() -> u128 nopanic;
 
-impl U128Serde of Serde<u128> {
-    fn serialize(self: @u128, ref output: Array<felt252>) {
-        Into::<u128, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u128> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U128Serde = core::serde::into_felt252_based::SerdeImpl<u128>;
 
 enum U128sFromFelt252Result {
     Narrow: u128,
@@ -282,14 +274,7 @@ extern fn u8_try_from_felt252(a: felt252) -> Option<u8> implicits(RangeCheck) no
 
 extern fn u8_eq(lhs: u8, rhs: u8) -> bool implicits() nopanic;
 
-impl U8Serde of Serde<u8> {
-    fn serialize(self: @u8, ref output: Array<felt252>) {
-        Into::<u8, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u8> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U8Serde = core::serde::into_felt252_based::SerdeImpl<u8>;
 
 impl U8PartialEq of PartialEq<u8> {
     #[inline(always)]
@@ -479,14 +464,7 @@ extern fn u16_try_from_felt252(a: felt252) -> Option<u16> implicits(RangeCheck) 
 
 extern fn u16_eq(lhs: u16, rhs: u16) -> bool implicits() nopanic;
 
-impl U16Serde of Serde<u16> {
-    fn serialize(self: @u16, ref output: Array<felt252>) {
-        Into::<u16, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u16> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U16Serde = core::serde::into_felt252_based::SerdeImpl<u16>;
 
 impl U16PartialEq of PartialEq<u16> {
     #[inline(always)]
@@ -676,14 +654,7 @@ extern fn u32_try_from_felt252(a: felt252) -> Option<u32> implicits(RangeCheck) 
 
 extern fn u32_eq(lhs: u32, rhs: u32) -> bool implicits() nopanic;
 
-impl U32Serde of Serde<u32> {
-    fn serialize(self: @u32, ref output: Array<felt252>) {
-        Into::<u32, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u32> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U32Serde = core::serde::into_felt252_based::SerdeImpl<u32>;
 
 impl U32PartialEq of PartialEq<u32> {
     #[inline(always)]
@@ -873,14 +844,7 @@ extern fn u64_try_from_felt252(a: felt252) -> Option<u64> implicits(RangeCheck) 
 
 extern fn u64_eq(lhs: u64, rhs: u64) -> bool implicits() nopanic;
 
-impl U64Serde of Serde<u64> {
-    fn serialize(self: @u64, ref output: Array<felt252>) {
-        Into::<u64, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<u64> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl U64Serde = core::serde::into_felt252_based::SerdeImpl<u64>;
 
 impl U64PartialEq of PartialEq<u64> {
     #[inline(always)]
@@ -1786,15 +1750,13 @@ impl U128Felt252DictValue of Felt252DictValue<u128> {
     }
 }
 
-impl UpcastableInto<From, To, impl FromToUpcastable: Upcastable<From, To>> of Into<From, To> {
+impl UpcastableInto<From, To, +Upcastable<From, To>> of Into<From, To> {
     fn into(self: From) -> To {
         upcast(self)
     }
 }
 
-impl DowncastableTryInto<
-    From, To, impl FromToDowncastable: Downcastable<From, To>
-> of TryInto<From, To> {
+impl DowncastableTryInto<From, To, +Downcastable<From, To>> of TryInto<From, To> {
     fn try_into(self: From) -> Option<To> {
         downcast(self)
     }
@@ -1992,7 +1954,7 @@ enum SignedIntegerResult<T> {
     Underflow: T,
     Overflow: T,
 }
-impl SignedIntegerResultDrop<T, impl TDrop: Drop<T>> of Drop<SignedIntegerResult<T>>;
+impl SignedIntegerResultDrop<T, +Drop<T>> of Drop<SignedIntegerResult<T>>;
 
 #[derive(Copy, Drop)]
 extern type i8;
@@ -2004,14 +1966,7 @@ extern fn i8_to_felt252(a: i8) -> felt252 nopanic;
 extern fn i8_is_zero(a: i8) -> IsZeroResult<i8> implicits() nopanic;
 extern fn i8_eq(lhs: i8, rhs: i8) -> bool implicits() nopanic;
 
-impl I8Serde of Serde<i8> {
-    fn serialize(self: @i8, ref output: Array<felt252>) {
-        Into::<i8, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<i8> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl I8Serde = core::serde::into_felt252_based::SerdeImpl<i8>;
 
 impl I8PartialEq of PartialEq<i8> {
     #[inline(always)]
@@ -2112,14 +2067,7 @@ extern fn i16_to_felt252(a: i16) -> felt252 nopanic;
 extern fn i16_is_zero(a: i16) -> IsZeroResult<i16> implicits() nopanic;
 extern fn i16_eq(lhs: i16, rhs: i16) -> bool implicits() nopanic;
 
-impl I16Serde of Serde<i16> {
-    fn serialize(self: @i16, ref output: Array<felt252>) {
-        Into::<i16, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<i16> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl I16Serde = core::serde::into_felt252_based::SerdeImpl<i16>;
 
 impl I16PartialEq of PartialEq<i16> {
     #[inline(always)]
@@ -2220,14 +2168,7 @@ extern fn i32_to_felt252(a: i32) -> felt252 nopanic;
 extern fn i32_is_zero(a: i32) -> IsZeroResult<i32> implicits() nopanic;
 extern fn i32_eq(lhs: i32, rhs: i32) -> bool implicits() nopanic;
 
-impl I32Serde of Serde<i32> {
-    fn serialize(self: @i32, ref output: Array<felt252>) {
-        Into::<i32, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<i32> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl I32Serde = core::serde::into_felt252_based::SerdeImpl<i32>;
 
 impl I32PartialEq of PartialEq<i32> {
     #[inline(always)]
@@ -2328,14 +2269,7 @@ extern fn i64_to_felt252(a: i64) -> felt252 nopanic;
 extern fn i64_is_zero(a: i64) -> IsZeroResult<i64> implicits() nopanic;
 extern fn i64_eq(lhs: i64, rhs: i64) -> bool implicits() nopanic;
 
-impl I64Serde of Serde<i64> {
-    fn serialize(self: @i64, ref output: Array<felt252>) {
-        Into::<i64, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<i64> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl I64Serde = core::serde::into_felt252_based::SerdeImpl<i64>;
 
 impl I64PartialEq of PartialEq<i64> {
     #[inline(always)]
@@ -2436,14 +2370,7 @@ extern fn i128_to_felt252(a: i128) -> felt252 nopanic;
 extern fn i128_is_zero(a: i128) -> IsZeroResult<i128> implicits() nopanic;
 extern fn i128_eq(lhs: i128, rhs: i128) -> bool implicits() nopanic;
 
-impl I128Serde of Serde<i128> {
-    fn serialize(self: @i128, ref output: Array<felt252>) {
-        Into::<i128, felt252>::into(*self).serialize(ref output);
-    }
-    fn deserialize(ref serialized: Span<felt252>) -> Option<i128> {
-        Option::Some(((*serialized.pop_front()?).try_into())?)
-    }
-}
+impl I128Serde = core::serde::into_felt252_based::SerdeImpl<i128>;
 
 impl I128PartialEq of PartialEq<i128> {
     #[inline(always)]
@@ -2497,6 +2424,32 @@ impl I128Neg of Neg<i128> {
     #[inline(always)]
     fn neg(a: i128) -> i128 {
         0 - a
+    }
+}
+
+impl I128Mul of Mul<i128> {
+    fn mul(lhs: i128, rhs: i128) -> i128 {
+        let (lhs_u127, lhs_neg) = match i128_diff(lhs, 0) {
+            Result::Ok(v) => (v, false),
+            Result::Err(v) => (~v + 1, true),
+        };
+        let (rhs_u127, res_neg) = match i128_diff(rhs, 0) {
+            Result::Ok(v) => (v, lhs_neg),
+            Result::Err(v) => (~v + 1, !lhs_neg),
+        };
+        let res_as_u128 = lhs_u127 * rhs_u127;
+        let res_as_felt252: felt252 = if res_neg {
+            -res_as_u128.into()
+        } else {
+            res_as_u128.into()
+        };
+        res_as_felt252.try_into().expect('i128_mul Overflow')
+    }
+}
+impl I128MulEq of MulEq<i128> {
+    #[inline(always)]
+    fn mul_eq(ref self: i128, other: i128) {
+        self = Mul::mul(self, other);
     }
 }
 

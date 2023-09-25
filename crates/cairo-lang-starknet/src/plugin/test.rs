@@ -3,8 +3,8 @@ use cairo_lang_defs::db::DefsGroup;
 use cairo_lang_defs::ids::ModuleId;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_semantic::test_utils::setup_test_module;
-use cairo_lang_test_utils::has_disallowed_diagnostics;
-use cairo_lang_test_utils::parse_test_file::TestFileRunner;
+use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
+use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expectation};
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::test_utils::SHARED_DB;
@@ -17,10 +17,10 @@ impl TestFileRunner for ExpandContractTestRunner {
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         args: &OrderedHashMap<String, String>,
-    ) -> Result<OrderedHashMap<String, String>, String> {
+    ) -> TestRunnerResult {
         let db = SHARED_DB.lock().unwrap().snapshot();
-        let (test_module, _semantic_diagnostics) =
-            setup_test_module(&db, inputs["cairo_code"].as_str()).split();
+        let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
+        let (test_module, _semantic_diagnostics) = setup_test_module(&db, &cairo_code).split();
 
         let mut module_ids = vec![test_module.module_id];
         module_ids.extend(
@@ -47,12 +47,15 @@ impl TestFileRunner for ExpandContractTestRunner {
         }
 
         let diagnostics = get_diagnostics_as_string(&db, &[test_module.crate_id]);
-        has_disallowed_diagnostics(args, &diagnostics)?;
+        let error = verify_diagnostics_expectation(args, &diagnostics);
 
-        Ok(OrderedHashMap::from([
-            ("generated_cairo_code".into(), file_contents.join("\n\n")),
-            ("expected_diagnostics".into(), diagnostics),
-        ]))
+        TestRunnerResult {
+            outputs: OrderedHashMap::from([
+                ("generated_cairo_code".into(), file_contents.join("\n\n")),
+                ("expected_diagnostics".into(), diagnostics),
+            ]),
+            error,
+        }
     }
 }
 
@@ -74,7 +77,10 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         external_event: "external_event",
         with_component: "with_component",
         with_component_diagnostics: "with_component_diagnostics",
-        with_ownable: "with_ownable"
+        with_ownable: "with_ownable",
+        with_erc20: "with_erc20",
+        upgradable_counter: "upgradable_counter",
+        interfaces: "interfaces",
     },
     ExpandContractTestRunner
 );

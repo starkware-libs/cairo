@@ -10,7 +10,7 @@ use cairo_lang_semantic::test_utils::setup_test_module;
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
 use cairo_lang_sierra_to_casm::test_utils::build_metadata;
-use cairo_lang_test_utils::parse_test_file::TestFileRunner;
+use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::Upcast;
@@ -96,7 +96,7 @@ impl TestFileRunner for SmallE2ETestRunner {
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
-    ) -> Result<OrderedHashMap<String, String>, String> {
+    ) -> TestRunnerResult {
         let locked_db = test_lock(&SHARED_DB);
         // Parse code and create semantic model.
         let db = locked_db.snapshot();
@@ -126,7 +126,7 @@ impl TestFileRunner for SmallE2ETestRunner {
             .to_string();
         drop(locked_db);
 
-        Ok(OrderedHashMap::from([
+        TestRunnerResult::success(OrderedHashMap::from([
             ("casm".into(), casm),
             ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),
@@ -141,7 +141,7 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
         &mut self,
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
-    ) -> Result<OrderedHashMap<String, String>, String> {
+    ) -> TestRunnerResult {
         let mut locked_db = test_lock(&SHARED_DB);
         let add_withdraw_gas_flag_id =
             FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
@@ -174,7 +174,7 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
             .unwrap()
             .to_string();
 
-        Ok(OrderedHashMap::from([
+        TestRunnerResult::success(OrderedHashMap::from([
             ("casm".into(), casm),
             ("function_costs".into(), function_costs_str),
             ("sierra_code".into(), sierra_program_str),

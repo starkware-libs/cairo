@@ -6,8 +6,8 @@ use cairo_lang_utils::try_extract_matches;
 use indoc::formatdoc;
 
 use super::consts::{
-    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, NESTED_ATTR,
-    STORAGE_MAPPING, STORAGE_STRUCT_NAME, STORE_TRAIT,
+    CONCRETE_COMPONENT_STATE_NAME, CONTRACT_STATE_NAME, LEGACY_STORAGE_MAPPING, STORAGE_MAPPING,
+    STORAGE_STRUCT_NAME, STORE_TRAIT, SUBSTORAGE_ATTR,
 };
 use super::starknet_module::generation_data::StarknetModuleCommonGenerationData;
 use super::starknet_module::StarknetModuleKind;
@@ -30,7 +30,6 @@ pub fn handle_storage_struct(
     let generic_arg_str = starknet_module_kind.get_generic_arg_str();
     let full_generic_arg_str = starknet_module_kind.get_full_generic_arg_str();
     let full_state_struct_name = starknet_module_kind.get_full_state_struct_name();
-    let member_state_name = starknet_module_kind.get_member_state_name();
 
     for member in struct_ast.members(db).elements(db) {
         let member_code_pieces = get_storage_member_code(
@@ -38,7 +37,6 @@ pub fn handle_storage_struct(
             diagnostics,
             starknet_module_kind,
             member,
-            &member_state_name,
             data.extra_uses_node.clone(),
         );
         if let Some(member_code) = member_code_pieces.member_code {
@@ -100,13 +98,12 @@ fn get_storage_member_code(
     diagnostics: &mut Vec<PluginDiagnostic>,
     starknet_module_kind: StarknetModuleKind,
     member: ast::Member,
-    member_state_name: &String,
     extra_uses_node: RewriteNode,
 ) -> StorageMemberCodePieces {
     if starknet_module_kind == StarknetModuleKind::Contract
-        && has_v0_attribute(db, diagnostics, &member, NESTED_ATTR)
+        && has_v0_attribute(db, diagnostics, &member, SUBSTORAGE_ATTR)
     {
-        if let Some((member_code, member_init_code)) = get_nested_storage_member_code(db, &member) {
+        if let Some((member_code, member_init_code)) = get_substorage_member_code(db, &member) {
             return StorageMemberCodePieces {
                 member_code: Some(member_code),
                 init_code: Some(member_init_code),
@@ -115,7 +112,7 @@ fn get_storage_member_code(
         } else {
             diagnostics.push(PluginDiagnostic {
                 message: format!(
-                    "`{NESTED_ATTR}` attribute is only allowed for members of type \
+                    "`{SUBSTORAGE_ATTR}` attribute is only allowed for members of type \
                      [some_path::]{STORAGE_STRUCT_NAME}`"
                 ),
                 stable_ptr: member.stable_ptr().untyped(),
@@ -124,7 +121,7 @@ fn get_storage_member_code(
         }
     }
 
-    get_simple_storage_member_code(db, diagnostics, member, member_state_name, extra_uses_node)
+    get_simple_storage_member_code(db, diagnostics, member, starknet_module_kind, extra_uses_node)
 }
 
 /// Returns the relevant code for a simple (non-nested) storage member.
@@ -132,13 +129,13 @@ fn get_simple_storage_member_code(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,
     member: ast::Member,
-    member_state_name: &String,
+    starknet_module_kind: StarknetModuleKind,
     extra_uses_node: RewriteNode,
 ) -> StorageMemberCodePieces {
     let name_node = member.name(db).as_syntax_node();
     let name = member.name(db).text(db);
     let member_node = RewriteNode::interpolate_patched(
-        &format!("$name$: $name$::{member_state_name}"),
+        &format!("$name$: $name$::{}", starknet_module_kind.get_member_state_name()),
         &[("name".to_string(), RewriteNode::new_trimmed(name_node.clone()))].into(),
     );
     let member_code = RewriteNode::interpolate_patched(
@@ -165,7 +162,7 @@ fn get_simple_storage_member_code(
                 return Default::default();
             };
             Some(RewriteNode::interpolate_patched(
-                &handle_legacy_mapping_storage_member(&address, member_state_name),
+                &handle_legacy_mapping_storage_member(&address, starknet_module_kind),
                 &[
                     (
                         "storage_member_name".to_string(),
@@ -188,7 +185,7 @@ fn get_simple_storage_member_code(
         None => {
             let type_path = get_full_path_type(db, &type_ast);
             Some(RewriteNode::interpolate_patched(
-                &handle_simple_storage_member(&address, member_state_name),
+                &handle_simple_storage_member(&address, starknet_module_kind),
                 &[
                     (
                         "storage_member_name".to_string(),
@@ -263,7 +260,7 @@ fn get_full_path_type(db: &dyn SyntaxGroup, type_ast: &ast::Expr) -> RewriteNode
 }
 
 /// Returns the relevant code for a nested storage member.
-fn get_nested_storage_member_code(
+fn get_substorage_member_code(
     db: &dyn SyntaxGroup,
     member: &ast::Member,
 ) -> Option<(RewriteNode, RewriteNode)> {
@@ -357,11 +354,16 @@ fn try_extract_mapping_types(
 }
 
 /// Generate getters and setters skeleton for a non-mapping member in the storage struct.
-fn handle_simple_storage_member(address: &str, member_state_name: &str) -> String {
-    format!(
-        "
+fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetModuleKind) -> String {
+    let member_state_name = starknet_module_kind.get_member_state_name();
+    // TODO(v3): remove this divergence. Contracts should be as components. It's currently different
+    // to not break existing code.
+    match starknet_module_kind {
+        StarknetModuleKind::Contract => {
+            format!(
+                "
     use $storage_member_name$::Internal{member_state_name}Trait as \
-         $storage_member_name${member_state_name}Trait;
+                 $storage_member_name${member_state_name}Trait;
     mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
         struct {member_state_name} {{}}
@@ -398,28 +400,51 @@ fn handle_simple_storage_member(address: &str, member_state_name: &str) -> Strin
             }}
         }}
     }}"
-    )
+            )
+        }
+        StarknetModuleKind::Component => format!(
+            "
+    mod $storage_member_name$ {{$extra_uses$
+        #[derive(Copy, Drop)]
+        struct {member_state_name} {{}}
+        impl Storage{member_state_name}Impl of \
+             starknet::storage::StorageMemberAddressTrait<{member_state_name}, $type_path$> {{
+            fn address(self: @{member_state_name}) -> starknet::StorageBaseAddress nopanic {{
+                starknet::storage_base_address_const::<{address}>()
+            }}
+        }}
+    }}"
+        ),
+    }
 }
 
 /// Generate getters and setters skeleton for a mapping member in the storage struct.
-fn handle_legacy_mapping_storage_member(address: &str, member_state_name: &str) -> String {
-    format!(
-        "
+fn handle_legacy_mapping_storage_member(
+    address: &str,
+    starknet_module_kind: StarknetModuleKind,
+) -> String {
+    let member_state_name = starknet_module_kind.get_member_state_name();
+    // TODO(v3): remove this divergence. Contracts should be as components. It's currently different
+    // to not break existing code.
+    match starknet_module_kind {
+        StarknetModuleKind::Contract => {
+            format!(
+                "
     use $storage_member_name$::Internal{member_state_name}Trait as \
-         $storage_member_name${member_state_name}Trait;
+                 $storage_member_name${member_state_name}Trait;
     mod $storage_member_name$ {{$extra_uses$
         #[derive(Copy, Drop)]
         struct {member_state_name} {{}}
         trait Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-         starknet::StorageBaseAddress;
+                 starknet::StorageBaseAddress;
             fn read(self: @{member_state_name}, key: $key_type$) -> $value_type$;
             fn write(ref self: {member_state_name}, key: $key_type$, value: $value_type$);
         }}
 
         impl Internal{member_state_name}Impl of Internal{member_state_name}Trait {{
             fn address(self: @{member_state_name}, key: $key_type$) -> \
-         starknet::StorageBaseAddress {{
+                 starknet::StorageBaseAddress {{
                 starknet::storage_base_address_from_felt252(
                     hash::LegacyHash::<$key_type$>::hash({address}, key))
             }}
@@ -446,5 +471,24 @@ fn handle_legacy_mapping_storage_member(address: &str, member_state_name: &str) 
             }}
         }}
     }}"
-    )
+            )
+        }
+        StarknetModuleKind::Component => format!(
+            "
+    mod $storage_member_name$ {{$extra_uses$
+        #[derive(Copy, Drop)]
+        struct {member_state_name} {{}}
+
+        impl StorageMap{member_state_name}Impl of \
+             starknet::storage::StorageMapMemberAddressTrait<{member_state_name}, $key_type$, \
+             $value_type$> {{
+            fn address(self: @{member_state_name}, key: $key_type$) -> \
+             starknet::StorageBaseAddress {{
+                starknet::storage_base_address_from_felt252(
+                    hash::LegacyHash::<$key_type$>::hash({address}, key))
+            }}
+        }}
+    }}"
+        ),
+    }
 }
