@@ -97,40 +97,7 @@ impl TestFileRunner for SmallE2ETestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        let locked_db = test_lock(&SHARED_DB);
-        // Parse code and create semantic model.
-        let db = locked_db.snapshot();
-        let test_module = setup_test_module(&db, inputs["cairo"].as_str()).unwrap();
-        DiagnosticsReporter::stderr()
-            .with_extra_crates(&[test_module.crate_id])
-            .ensure(&db)
-            .unwrap();
-
-        // Compile to Sierra.
-        let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
-        let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
-        let sierra_program_str = sierra_program.to_string();
-
-        // Compute the metadata.
-        let metadata = build_metadata(&sierra_program, true);
-        let function_costs_str = metadata
-            .gas_info
-            .function_costs
-            .iter()
-            .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
-            .join("\n");
-
-        // Compile to casm.
-        let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
-            .unwrap()
-            .to_string();
-        drop(locked_db);
-
-        TestRunnerResult::success(OrderedHashMap::from([
-            ("casm".into(), casm),
-            ("function_costs".into(), function_costs_str),
-            ("sierra_code".into(), sierra_program_str),
-        ]))
+        run_e2e_test(inputs, true)
     }
 }
 
@@ -142,42 +109,49 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        let mut locked_db = test_lock(&SHARED_DB);
-        let add_withdraw_gas_flag_id =
-            FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
-        locked_db.set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(false))));
-        // Parse code and create semantic model.
-        let test_module =
-            setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
-        let db = locked_db.snapshot();
-        DiagnosticsReporter::stderr()
-            .with_extra_crates(&[test_module.crate_id])
-            .ensure(&db)
-            .unwrap();
-
-        // Compile to Sierra.
-        let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
-        let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
-        let sierra_program_str = sierra_program.to_string();
-
-        // Compute the metadata.
-        let metadata = build_metadata(&sierra_program, true);
-        let function_costs_str = metadata
-            .gas_info
-            .function_costs
-            .iter()
-            .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
-            .join("\n");
-
-        // Compile to casm.
-        let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
-            .unwrap()
-            .to_string();
-
-        TestRunnerResult::success(OrderedHashMap::from([
-            ("casm".into(), casm),
-            ("function_costs".into(), function_costs_str),
-            ("sierra_code".into(), sierra_program_str),
-        ]))
+        run_e2e_test(inputs, false)
     }
+}
+
+/// Runs the e2e test.
+///
+/// * `add_withdraw_gas` - whether to set the `add_withdraw_gas` flag that automatically adds
+///   `withdraw_gas` calls.
+fn run_e2e_test(
+    inputs: &OrderedHashMap<String, String>,
+    add_withdraw_gas: bool,
+) -> TestRunnerResult {
+    let mut locked_db = test_lock(&SHARED_DB);
+    let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
+    locked_db
+        .set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(add_withdraw_gas))));
+    // Parse code and create semantic model.
+    let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
+    let db = locked_db.snapshot();
+    DiagnosticsReporter::stderr().with_extra_crates(&[test_module.crate_id]).ensure(&db).unwrap();
+
+    // Compile to Sierra.
+    let sierra_program = db.get_sierra_program(vec![test_module.crate_id]).unwrap();
+    let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
+    let sierra_program_str = sierra_program.to_string();
+
+    // Compute the metadata.
+    let metadata = build_metadata(&sierra_program, true);
+    let function_costs_str = metadata
+        .gas_info
+        .function_costs
+        .iter()
+        .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
+        .join("\n");
+
+    // Compile to casm.
+    let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
+        .unwrap()
+        .to_string();
+
+    TestRunnerResult::success(OrderedHashMap::from([
+        ("casm".into(), casm),
+        ("function_costs".into(), function_costs_str),
+        ("sierra_code".into(), sierra_program_str),
+    ]))
 }
