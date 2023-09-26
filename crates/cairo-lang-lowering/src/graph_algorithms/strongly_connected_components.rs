@@ -1,8 +1,8 @@
 use cairo_lang_defs::ids::UnstableSalsaId;
 use cairo_lang_utils::graph_algos::strongly_connected_components::compute_scc;
 
-use super::concrete_function_node::{
-    ConcreteFunctionWithBodyNode, ConcreteFunctionWithBodyPostPanicNode,
+use super::concrete_function_postiniline_node::{
+    ConcreteFunctionWithBodyPostInlineNode, ConcreteFunctionWithBodyPostPanicNode,
 };
 use crate::db::{ConcreteSCCRepresentative, LoweringGroup};
 use crate::ids::ConcreteFunctionWithBodyId;
@@ -26,7 +26,7 @@ pub fn concrete_function_with_body_scc(
     db: &dyn LoweringGroup,
     function_id: ConcreteFunctionWithBodyId,
 ) -> Vec<ConcreteFunctionWithBodyId> {
-    compute_scc(&ConcreteFunctionWithBodyNode { function_id, db: db.upcast() })
+    compute_scc(&ConcreteFunctionWithBodyPostInlineNode { function_id, db: db.upcast() })
 }
 
 /// Query implementation of
