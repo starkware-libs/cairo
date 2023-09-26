@@ -410,7 +410,7 @@ fn handle_first_param_for_embeddable_as(
         ) {
             Some((
                 format!("ref self: {GENERIC_CONTRACT_STATE_NAME}"),
-                "let mut component = self.get_component_mut();".to_string(),
+                format!("let mut component = {HAS_COMPONENT_TRAIT}::get_component_mut(ref self);"),
                 "ref ".to_string(),
             ))
         } else {
@@ -424,7 +424,7 @@ fn handle_first_param_for_embeddable_as(
     ) {
         Some((
             format!("self: @{GENERIC_CONTRACT_STATE_NAME}"),
-            "let component = self.get_component();".to_string(),
+            format!("let component = {HAS_COMPONENT_TRAIT}::get_component(self);"),
             "".to_string(),
         ))
     } else {

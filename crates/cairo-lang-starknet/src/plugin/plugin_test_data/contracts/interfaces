@@ -770,7 +770,7 @@ impl I1I1<
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = self.get_component_mut();
+        let mut component = HasComponent::get_component_mut(ref self);
         Interface1_Implementation1::foo(ref component, )
     }
 }#[starknet::embeddable]
@@ -780,7 +780,7 @@ impl I1I2<
 > of super::Interface1<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = self.get_component_mut();
+        let mut component = HasComponent::get_component_mut(ref self);
         Interface1_Implementation2::foo(ref component, )
     }
 }#[starknet::embeddable]
@@ -790,7 +790,7 @@ impl I2I<
 > of super::Interface2<TContractState> {
     
     fn foo(ref self: TContractState) {
-        let mut component = self.get_component_mut();
+        let mut component = HasComponent::get_component_mut(ref self);
         Interface2_Implementation::foo(ref component, )
     }
 }

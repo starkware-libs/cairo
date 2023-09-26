@@ -590,12 +590,12 @@ impl MyImpl<
 > of MyTrait<TContractState> {
     
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
-        let component = self.get_component();
+        let component = HasComponent::get_component(self);
         MyInnerImpl::get(component, addr, )
     }
     
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
-        let mut component = self.get_component_mut();
+        let mut component = HasComponent::get_component_mut(ref self);
         MyInnerImpl::set(ref component, addr, value, )
     }
 }
