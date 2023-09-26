@@ -16,3 +16,6 @@ fn bar(first_arg: T, second_arg: T, third_arg: T, fourth_arg: T, fifth_arg: T, s
     let some_tuple = (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg);
     let rec_tuple = ((first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg), (first_arg, second_arg, third_arg, fourth_arg, fifth_arg, sixth_arg, seventh_arg, eighth_arg));
 }
+
+impl AnImpl<T, impl i: ATrait<T,S,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,AVeryVeryVeryVerVeryVeryVeryVeryVeryVeryVeryVeryLongOne,>,> of ATrait {}
+
