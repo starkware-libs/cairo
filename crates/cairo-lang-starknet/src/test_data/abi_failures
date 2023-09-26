@@ -1,0 +1,168 @@
+//! > Test event variant not deriving starknet::Event.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: true)
+
+//! > cairo_code
+#[derive(Drop)]
+struct A {}
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        A: super::A
+    }
+}
+
+//! > expected_error
+Event type must derive `starknet::Event`.
+
+//! > expected_diagnostics
+error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
+ --> lib.cairo[starknet_derive]:8:34
+                starknet::Event::append_keys_and_data(
+                                 ^******************^
+
+error: Trait has no implementation in context: core::starknet::event::Event::<test::A>
+ --> lib.cairo[starknet_derive]:19:44
+                let val = starknet::Event::deserialize(
+                                           ^*********^
+
+//! > ==========================================================================
+
+//! > Test flat event variant which is not an enum.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: false)
+
+//! > cairo_code
+#[derive(Drop, starknet::Event)]
+struct A {}
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        A: super::A,
+    }
+}
+
+//! > expected_error
+`starknet::Event` variant marked with `#[flat]` must be an enum.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test duplicate event selector.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: false)
+
+//! > cairo_code
+#[derive(Drop, starknet::Event)]
+enum A { Dup: B, }
+#[derive(Drop, starknet::Event)]
+struct B {}
+
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        A: super::A,
+        Dup: super::B,
+    }
+}
+
+//! > expected_error
+Event `test::test_contract::Event` has duplicate selector `Dup`.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test duplicate entry points with the same name.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: false)
+
+//! > cairo_code
+>>> file: test_data/interfaces.cairo
+
+//! > expected_error
+Duplicate entry point: 'foo'. This is not currently supported.
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test embed impl of non-interface trait.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: false)
+
+//! > cairo_code
+trait NonInterfaceTrait<TContractState> {
+    fn foo(self: @TContractState);
+}
+
+#[starknet::contract]
+mod contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl Impl of super::NonInterfaceTrait<ContractState> {
+        fn foo(self: @ContractState) {}
+    }
+}
+
+//! > expected_error
+An embedded impl must be an impl of a trait marked with #[starknet::interface].
+
+//! > expected_diagnostics
+
+//! > ==========================================================================
+
+//! > Test per-item impl of a starknet interface.
+
+//! > test_runner_name
+test_abi_failure(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::interface]
+trait InterfaceTrait<TContractState> {
+    fn foo(self: @TContractState);
+}
+
+#[starknet::contract]
+mod contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(per_item)]
+    impl Impl of super::InterfaceTrait<ContractState> {
+        fn foo(self: @ContractState) {}
+    }
+}
+
+//! > expected_error
+An impl marked with #[abi(per_item)] can't be of a trait marked with #[starknet::interface].
+    Consider using #[abi(embed_v0)] instead, or use a non-interface trait.
+
+//! > expected_diagnostics
