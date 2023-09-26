@@ -74,6 +74,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
 
+    /// Computes the lowered representation after the inlining phase.
+    fn priv_concrete_function_with_body_postinline_lowered(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+    ) -> Maybe<Arc<FlatLowered>>;
+
     /// Computes the lowered representation after the panic phase.
     fn concrete_function_with_body_postpanic_lowered(
         &self,
@@ -85,6 +91,12 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Arc<FlatLowered>>;
+
+    /// Returns the set of direct callees of a concrete function with a body after the inline phase.
+    fn concrete_function_with_body_postinline_direct_callees(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ids::FunctionId>>;
 
     /// Returns the set of direct callees of a concrete function with a body after the panic phase.
     fn concrete_function_with_body_postpanic_direct_callees(
@@ -101,6 +113,13 @@ pub trait LoweringGroup: SemanticGroup + Upcast<dyn SemanticGroup> {
     /// Returns the set of direct callees which are functions with body of a concrete function with
     /// a body (i.e. excluding libfunc callees).
     fn concrete_function_with_body_direct_callees_with_body(
+        &self,
+        function_id: ids::ConcreteFunctionWithBodyId,
+    ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
+
+    /// Returns the set of direct callees which are functions with body of a concrete function with
+    /// a body (i.e. excluding libfunc callees), after the inline phase.
+    fn concrete_function_with_body_postinline_direct_callees_with_body(
         &self,
         function_id: ids::ConcreteFunctionWithBodyId,
     ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>>;
@@ -318,7 +337,16 @@ fn priv_concrete_function_with_body_lowered_flat(
     Ok(Arc::new(lowered))
 }
 
-// * Applies inlining.
+// Applies inlining.
+fn priv_concrete_function_with_body_postinline_lowered(
+    db: &dyn LoweringGroup,
+    function: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Arc<FlatLowered>> {
+    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
+    apply_inlining(db, function, &mut lowered)?;
+    Ok(Arc::new(lowered))
+}
+
 // * Adds `withdraw_gas` calls.
 // * Adds panics.
 // * Adds destructor calls.
@@ -326,9 +354,8 @@ fn concrete_function_with_body_postpanic_lowered(
     db: &dyn LoweringGroup,
     function: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Arc<FlatLowered>> {
-    let mut lowered = (*db.priv_concrete_function_with_body_lowered_flat(function)?).clone();
+    let mut lowered = (*db.priv_concrete_function_with_body_postinline_lowered(function)?).clone();
 
-    apply_inlining(db, function, &mut lowered)?;
     add_withdraw_gas(db, function, &mut lowered)?;
     lowered = lower_panics(db, function, &lowered)?;
     add_destructs(db, function, &mut lowered);
@@ -363,6 +390,22 @@ fn concrete_function_with_body_lowered(
     Ok(Arc::new(lowered))
 }
 
+/// Given the lowering of a function, returns the set of direct callees of that function.
+fn get_direct_callees(lowered_function: &FlatLowered) -> Vec<ids::FunctionId> {
+    let mut direct_callees = Vec::new();
+    for (_, block) in &lowered_function.blocks {
+        for statement in &block.statements {
+            if let Statement::Call(statement_call) = statement {
+                direct_callees.push(statement_call.function);
+            }
+        }
+        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
+            direct_callees.push(s.function);
+        }
+    }
+    direct_callees
+}
+
 fn concrete_function_with_body_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
@@ -383,52 +426,65 @@ fn concrete_function_with_body_direct_callees(
     Ok(direct_callees)
 }
 
+fn concrete_function_with_body_postinline_direct_callees(
+    db: &dyn LoweringGroup,
+    function_id: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ids::FunctionId>> {
+    let lowered_function = db.priv_concrete_function_with_body_postinline_lowered(function_id)?;
+    Ok(get_direct_callees(&lowered_function))
+}
+
 fn concrete_function_with_body_postpanic_direct_callees(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ids::FunctionId>> {
-    let mut direct_callees = Vec::new();
-    let lowered_function =
-        (*db.concrete_function_with_body_postpanic_lowered(function_id)?).clone();
-    for (_, block) in &lowered_function.blocks {
-        for statement in &block.statements {
-            if let Statement::Call(statement_call) = statement {
-                direct_callees.push(statement_call.function);
-            }
-        }
-        if let FlatBlockEnd::Match { info: MatchInfo::Extern(s) } = &block.end {
-            direct_callees.push(s.function);
-        }
-    }
-    Ok(direct_callees)
+    let lowered_function = db.concrete_function_with_body_postpanic_lowered(function_id)?;
+    Ok(get_direct_callees(&lowered_function))
+}
+
+/// Given a vector of FunctionIds returns the vector of FunctionWithBodyIds of the
+/// ConcreteFunctionWithBodyIds
+fn functions_with_body_from_function_ids(
+    db: &dyn LoweringGroup,
+    function_ids: Vec<ids::FunctionId>,
+) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
+    Ok(function_ids
+        .into_iter()
+        .map(|concrete| concrete.body(db.upcast()))
+        .collect::<Maybe<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect_vec())
 }
 
 fn concrete_function_with_body_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
-    Ok(db
-        .concrete_function_with_body_direct_callees(function_id)?
-        .into_iter()
-        .map(|concrete| concrete.body(db.upcast()))
-        .collect::<Maybe<Vec<_>>>()?
-        .into_iter()
-        .flatten()
-        .collect_vec())
+    functions_with_body_from_function_ids(
+        db,
+        db.concrete_function_with_body_direct_callees(function_id)?,
+    )
+}
+
+fn concrete_function_with_body_postinline_direct_callees_with_body(
+    db: &dyn LoweringGroup,
+    function_id: ids::ConcreteFunctionWithBodyId,
+) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
+    functions_with_body_from_function_ids(
+        db,
+        db.concrete_function_with_body_postinline_direct_callees(function_id)?,
+    )
 }
 
 fn concrete_function_with_body_postpanic_direct_callees_with_body(
     db: &dyn LoweringGroup,
     function_id: ids::ConcreteFunctionWithBodyId,
 ) -> Maybe<Vec<ids::ConcreteFunctionWithBodyId>> {
-    Ok(db
-        .concrete_function_with_body_postpanic_direct_callees(function_id)?
-        .into_iter()
-        .map(|concrete| concrete.body(db.upcast()))
-        .collect::<Maybe<Vec<_>>>()?
-        .into_iter()
-        .flatten()
-        .collect_vec())
+    functions_with_body_from_function_ids(
+        db,
+        db.concrete_function_with_body_postpanic_direct_callees(function_id)?,
+    )
 }
 
 fn function_with_body_lowering_diagnostics(
