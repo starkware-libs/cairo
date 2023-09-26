@@ -31,11 +31,9 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        #[external(v0)]
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
-        #[external(v0)]
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
@@ -44,6 +42,7 @@ mod component {
     }
 }
 use starknet::ContractAddress;
+#[starknet::interface]
 trait MyTrait<T> {
     fn get(self: @T, addr: ContractAddress) -> u32;
     fn set(ref self: T, addr: ContractAddress, value: u32);
@@ -79,11 +78,9 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        #[external(v0)]
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
-        #[external(v0)]
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
@@ -92,6 +89,7 @@ mod component {
     }
 }
 use starknet::ContractAddress;
+#[starknet::interface]
 trait MyTrait<T> {
     fn get(self: @T, addr: ContractAddress) -> u32;
     fn set(ref self: T, addr: ContractAddress, value: u32);
@@ -133,6 +131,374 @@ impl StoreMyType of starknet::Store::<MyType> {
     #[inline(always)]
     fn size() -> u8 {
         starknet::Store::<u32>::size()
+    }
+}
+
+
+MyTraitDispatcherTrait:
+
+trait MyTraitDispatcherTrait<T> {
+    fn get(self: T, addr: ContractAddress) -> u32;    fn set(self: T, addr: ContractAddress, value: u32);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl MyTraitDispatcherImpl of MyTraitDispatcherTrait<MyTraitDispatcher> {
+    fn get(self: MyTraitDispatcher, addr: ContractAddress) -> u32 {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u32>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+    fn set(self: MyTraitDispatcher, addr: ContractAddress, value: u32) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("set"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl MyTraitLibraryDispatcherImpl of MyTraitDispatcherTrait<MyTraitLibraryDispatcher> {
+    fn get(self: MyTraitLibraryDispatcher, addr: ContractAddress) -> u32 {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u32>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+    fn set(self: MyTraitLibraryDispatcher, addr: ContractAddress, value: u32) {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("set"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait MyTraitSafeDispatcherTrait<T> {
+    fn get(self: T, addr: ContractAddress) -> starknet::SyscallResult<u32>;    fn set(self: T, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl MyTraitSafeLibraryDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeLibraryDispatcher> {
+    fn get(self: MyTraitSafeLibraryDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u32>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+    fn set(self: MyTraitSafeLibraryDispatcher, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("set"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct MyTraitSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl MyTraitSafeDispatcherImpl of MyTraitSafeDispatcherTrait<MyTraitSafeDispatcher> {
+    fn get(self: MyTraitSafeDispatcher, addr: ContractAddress) -> starknet::SyscallResult<u32> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u32>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+    fn set(self: MyTraitSafeDispatcher, addr: ContractAddress, value: u32) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+        serde::Serde::<ContractAddress>::serialize(@addr, ref __calldata__);
+        serde::Serde::<u32>::serialize(@value, ref __calldata__);
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("set"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+impls:
+
+impl MyTraitDispatcherCopy of Copy::<MyTraitDispatcher>;
+impl MyTraitDispatcherDrop of Drop::<MyTraitDispatcher>;
+impl MyTraitDispatcherSerde of Serde::<MyTraitDispatcher> {
+    fn serialize(self: @MyTraitDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitDispatcher> {
+        Option::Some(MyTraitDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreMyTraitDispatcher of starknet::Store::<MyTraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+
+impls:
+
+impl MyTraitLibraryDispatcherCopy of Copy::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherDrop of Drop::<MyTraitLibraryDispatcher>;
+impl MyTraitLibraryDispatcherSerde of Serde::<MyTraitLibraryDispatcher> {
+    fn serialize(self: @MyTraitLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitLibraryDispatcher> {
+        Option::Some(MyTraitLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreMyTraitLibraryDispatcher of starknet::Store::<MyTraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl MyTraitSafeLibraryDispatcherCopy of Copy::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherDrop of Drop::<MyTraitSafeLibraryDispatcher>;
+impl MyTraitSafeLibraryDispatcherSerde of Serde::<MyTraitSafeLibraryDispatcher> {
+    fn serialize(self: @MyTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeLibraryDispatcher> {
+        Option::Some(MyTraitSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreMyTraitSafeLibraryDispatcher of starknet::Store::<MyTraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl MyTraitSafeDispatcherCopy of Copy::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherDrop of Drop::<MyTraitSafeDispatcher>;
+impl MyTraitSafeDispatcherSerde of Serde::<MyTraitSafeDispatcher> {
+    fn serialize(self: @MyTraitSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<MyTraitSafeDispatcher> {
+        Option::Some(MyTraitSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreMyTraitSafeDispatcher of starknet::Store::<MyTraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<MyTraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            MyTraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: MyTraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
     }
 }
 
@@ -222,12 +588,12 @@ trait HasComponent<TContractState> {
 impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
 > of MyTrait<TContractState> {
-    #[external(v0)]
+    
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
         MyInnerImpl::get(component, addr, )
     }
-    #[external(v0)]
+    
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = self.get_component_mut();
         MyInnerImpl::set(ref component, addr, value, )
