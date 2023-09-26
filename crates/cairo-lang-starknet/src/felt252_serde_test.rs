@@ -16,6 +16,7 @@ use crate::test_utils::get_example_file_path;
 #[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("with_erc20")]
+#[test_case("with_ownable")]
 #[test_case("upgradable_counter")]
 fn test_felt252_serde(example_file_name: &str) {
     let sierra = ProgramParser::new()
