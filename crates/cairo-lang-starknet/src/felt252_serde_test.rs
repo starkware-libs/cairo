@@ -19,6 +19,7 @@ use crate::test_utils::get_example_file_path;
 #[test_case("with_ownable")]
 #[test_case("ownable_erc20")]
 #[test_case("upgradable_counter")]
+#[test_case("mintable")]
 fn test_felt252_serde(example_file_name: &str) {
     let sierra = ProgramParser::new()
         .parse(
