@@ -82,6 +82,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         upgradable_counter: "upgradable_counter",
         ownable_erc20: "ownable_erc20",
         interfaces: "interfaces",
+        mintable: "mintable",
     },
     ExpandContractTestRunner
 );
