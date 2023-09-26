@@ -224,13 +224,21 @@ fn handle_component_impl(
     let Some(params) = EmbeddableAsImplParams::from_impl(db, diagnostics, item_impl, attr) else {
         return;
     };
-
-    let maybe_comma = if params.generic_params_node.has_tail(db) {
-        RewriteNode::Text(",".to_string())
-    } else {
-        RewriteNode::empty()
-    };
-
+    for param in &params.generic_params_node.elements(db) {
+        if param.is_impl_of(db, "Destruct", GENERIC_CONTRACT_STATE_NAME)
+            || param.is_impl_of(db, "PanicDestruct", GENERIC_CONTRACT_STATE_NAME)
+        {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: param.stable_ptr().untyped(),
+                message: format!(
+                    "`embeddable_as` impls can't have impl generic parameters of \
+                     `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
+                     `PanicDestruct<{GENERIC_CONTRACT_STATE_NAME}>`."
+                ),
+            });
+            return;
+        }
+    }
     let trait_path_without_generics = remove_generics_from_path(db, &params.trait_path);
 
     let mut impl_functions = vec![];
@@ -246,14 +254,27 @@ fn handle_component_impl(
         impl_functions.push(RewriteNode::Text("\n    ".to_string()));
         impl_functions.push(impl_function);
     }
+    let has_drop_impl = params
+        .generic_params_node
+        .elements(db)
+        .iter()
+        .any(|param| param.is_impl_of(db, "Drop", GENERIC_CONTRACT_STATE_NAME));
+    let maybe_drop_impl = if has_drop_impl {
+        "".to_string()
+    } else {
+        format!(
+            "{maybe_comma}impl {GENERIC_CONTRACT_STATE_NAME}Drop: \
+             Drop<{GENERIC_CONTRACT_STATE_NAME}>",
+            maybe_comma = if params.generic_params_node.has_tail(db) { ", " } else { "" }
+        )
+    };
 
     let generated_impl_node = RewriteNode::interpolate_patched(
         &formatdoc!(
             "
         #[starknet::embeddable]
         impl $generated_impl_name$<
-            $generic_params$$maybe_comma$ impl {GENERIC_CONTRACT_STATE_NAME}Drop: \
-             Drop<{GENERIC_CONTRACT_STATE_NAME}>
+            $generic_params${maybe_drop_impl}
         > of $trait_path$<{GENERIC_CONTRACT_STATE_NAME}> {{$impl_functions$
         }}"
         ),
@@ -267,7 +288,6 @@ fn handle_component_impl(
                 "generic_params".to_string(),
                 RewriteNode::Copied(params.generic_params_node.as_syntax_node()),
             ),
-            ("maybe_comma".to_string(), maybe_comma),
             ("impl_functions".to_string(), RewriteNode::new_modified(impl_functions)),
         ]
         .into(),

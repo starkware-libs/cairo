@@ -519,12 +519,201 @@ impl EventIsEvent of starknet::Event<Event> {
 }
 
 //! > expected_diagnostics
-error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:5:5
     impl DisallowedDestruct: Destruct<TContractState>,
     ^***********************************************^
 
-error: Plugin diagnostic: Embeddable impl can't have impl generic params of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
+error: Plugin diagnostic: `embeddable` impls can't have impl generic parameters of `Destruct<TContractState>` or `PanicDestruct<TContractState>`.
  --> lib.cairo:16:5
     impl DisallowedPanicDestruct: PanicDestruct<TContractState>
     ^*********************************************************^
+
+//! > ==========================================================================
+
+//! > Test embeddable impl with exisiting drop impl..
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: false)
+
+//! > cairo_code
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithDrop<
+    TContractState,
+    +Drop<TContractState>,
+> of OutsideTraitWithDrop<TContractState> {
+    fn ret_8(self: @TContractState) -> felt252 {
+        8
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl Usage1 = super::OutsideImplWithDrop<ContractState>;
+}
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::embeddable]
+#[generate_trait]
+impl OutsideImplWithDrop<
+    TContractState,
+    +Drop<TContractState>,
+> of OutsideTraitWithDrop<TContractState> {
+    fn ret_8(self: @TContractState) -> felt252 {
+        8
+    }
+}
+
+#[starknet::contract]
+mod empty_contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(embed_v0)]
+    impl Usage1 = super::OutsideImplWithDrop<ContractState>;
+}
+
+generate_trait:
+
+trait OutsideTraitWithDrop<
+    TContractState,
+    +Drop<TContractState>,
+> {
+    fn ret_8(self: @TContractState) -> felt252;
+}
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__OutsideImplWithDrop__ret_8<TContractState,
+    +Drop<TContractState>,impl UnsafeNewContractState: UnsafeNewContractStateTraitForOutsideImplWithDrop<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    let res = OutsideImplWithDrop::<TContractState, _>::ret_8(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<felt252>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_OutsideImplWithDrop {
+        use super::__wrapper__OutsideImplWithDrop__ret_8 as ret_8;
+}
+
+mod __l1_handler_OutsideImplWithDrop {
+}
+
+mod __constructor_OutsideImplWithDrop {
+}
+
+
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x7abed9c637e9d7ff4d836f1e5e23fa64efc1ba2169cc22aa5d822ad70fed47;
+
+impl ContractStateOutsideImplWithDrop of
+    super::UnsafeNewContractStateTraitForOutsideImplWithDrop<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+
+    mod __external {
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+//! > expected_diagnostics

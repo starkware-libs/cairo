@@ -49,7 +49,7 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: param.stable_ptr().untyped(),
                         message: format!(
-                            "Embeddable impl can't have impl generic params of \
+                            "`embeddable` impls can't have impl generic parameters of \
                              `Destruct<{GENERIC_CONTRACT_STATE_NAME}>` or \
                              `PanicDestruct<{GENERIC_CONTRACT_STATE_NAME}>`."
                         ),
