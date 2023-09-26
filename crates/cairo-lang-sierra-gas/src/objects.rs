@@ -55,7 +55,7 @@ impl PreCost {
     }
 }
 
-/// Adds two [ConstCost] instances.
+/// Adds two [PreCost] instances.
 impl std::ops::Add for PreCost {
     type Output = Self;
 
@@ -64,7 +64,7 @@ impl std::ops::Add for PreCost {
     }
 }
 
-/// Subtracts two [ConstCost] instances.
+/// Subtracts two [PreCost] instances.
 impl std::ops::Sub for PreCost {
     type Output = Self;
 
@@ -74,7 +74,7 @@ impl std::ops::Sub for PreCost {
 }
 
 /// The cost of executing a libfunc for a specific output branch.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum BranchCost {
     /// The cost of the statement is independent on other statements.
     Regular { const_cost: ConstCost, pre_cost: PreCost },

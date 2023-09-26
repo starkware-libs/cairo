@@ -10,9 +10,12 @@ use itertools::Itertools;
 use crate::metadata::{calc_metadata, Metadata, MetadataComputationConfig};
 
 /// Builds the metadata for a Sierra program.
-pub fn build_metadata(program: &Program, calculate_gas_info: bool) -> Metadata {
+///
+/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
+/// equations.
+pub fn build_metadata(program: &Program, calculate_gas_info: bool, no_eq_solver: bool) -> Metadata {
     if calculate_gas_info {
-        calc_metadata(program, MetadataComputationConfig::default())
+        calc_metadata(program, MetadataComputationConfig::default(), no_eq_solver)
             .expect("Failed calculating gas or ap change.")
     } else {
         Metadata {

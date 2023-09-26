@@ -64,6 +64,15 @@ ret;
 test::foo: OrderedHashMap({Const: 1200})
 test::bar: OrderedHashMap({})
 
+//! > gas_solution_no_solver
+#2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 240})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 180})
+
+test::foo: OrderedHashMap({Const: 1200})
+test::bar: OrderedHashMap({})
+
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];

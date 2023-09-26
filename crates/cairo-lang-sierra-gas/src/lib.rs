@@ -123,6 +123,7 @@ pub fn compute_precost_info(program: &Program) -> Result<GasInfo, CostError> {
 }
 
 /// Calculates gas postcost information for a given program - the gas costs of step token.
+// TODO(lior): Remove this function once [compute_postcost_info] is used.
 pub fn calc_gas_postcost_info<ApChangeVarValue: Fn(StatementIdx) -> usize>(
     program: &Program,
     function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
@@ -256,4 +257,26 @@ fn calc_gas_info_inner<
         }
     }
     Ok(GasInfo { variable_values, function_costs })
+}
+
+/// Calculates gas postcost information for a given program - the gas costs of step token.
+pub fn compute_postcost_info(
+    program: &Program,
+    get_ap_change_fn: &dyn Fn(&StatementIdx) -> usize,
+    precost_gas_info: &GasInfo,
+) -> Result<GasInfo, CostError> {
+    let registry = ProgramRegistry::<CoreType, CoreLibfunc>::new(program)?;
+    let type_size_map = get_type_size_map(program, &registry).unwrap();
+    let specific_cost_context =
+        compute_costs::PostcostContext { get_ap_change_fn, precost_gas_info };
+    compute_costs::compute_costs(
+        program,
+        &(|libfunc_id| {
+            let core_libfunc = registry
+                .get_libfunc(libfunc_id)
+                .expect("Program registry creation would have already failed.");
+            core_libfunc_cost_base::core_libfunc_cost(core_libfunc, &type_size_map)
+        }),
+        &specific_cost_context,
+    )
 }
