@@ -46,6 +46,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -82,6 +83,7 @@ pub async fn serve_language_service() {
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(TestPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
