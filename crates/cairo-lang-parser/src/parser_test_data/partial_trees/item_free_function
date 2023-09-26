@@ -4,9 +4,9 @@
 test_partial_parser_tree(expect_diagnostics: false)
 
 //! > cairo_code
-#[external]
+#[attr1]
 #[with_args(arg1, arg2)]
-#[external]
+#[attr2]
 fn foo(a: int) -> felt252 {
     return a;
 }

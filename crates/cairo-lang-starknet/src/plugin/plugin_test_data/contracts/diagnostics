@@ -4191,7 +4191,7 @@ trait Interface<TContractState> {
 }
 #[starknet::embeddable]
 impl EmbeddableImpl<TContractState> of Interface<TContractState> {
-    #[external]
+    #[external(v0)]
     fn foo1(self: @TContractState) {}
     #[l1_handler]
     fn foo2(self: @TContractState) {}
@@ -4202,8 +4202,8 @@ impl EmbeddableImpl<TContractState> of Interface<TContractState> {
 //! > expected_diagnostics
 error: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:9:5
-    #[external]
-    ^*********^
+    #[external(v0)]
+    ^*************^
 
 error: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:11:5
@@ -4226,7 +4226,7 @@ trait Interface<TContractState> {
 }
 #[starknet::embeddable]
 impl EmbeddableImpl<TContractState> of Interface<TContractState> {
-    #[external]
+    #[external(v0)]
     fn foo1(self: @TContractState) {}
     #[l1_handler]
     fn foo2(self: @TContractState) {}
@@ -4713,7 +4713,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<TContractState, impl X: HasComponent<TContractState>> of super::Interface::<ComponentState::<TContractState>> {
-        #[external]
+        #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
         #[l1_handler]
         fn foo2(self: @ComponentState<TContractState>) {}
@@ -4745,8 +4745,8 @@ mod contract {
 //! > expected_diagnostics
 error: Plugin diagnostic: Plugin diagnostic: The `external` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:14:9
-        #[external]
-        ^*********^
+        #[external(v0)]
+        ^*************^
 
 error: Plugin diagnostic: Plugin diagnostic: The `l1_handler` attribute is not allowed inside an impl marked as `#[embeddable]`.
  --> lib.cairo:16:9
@@ -4829,7 +4829,7 @@ mod component {
 
     #[embeddable_as(MyEmbeddableImpl)]
     impl MyImpl<TContractState, impl X: HasComponent<TContractState>> of super::Interface::<ComponentState::<TContractState>> {
-        #[external]
+        #[external(v0)]
         fn foo1(self: @ComponentState<TContractState>) {}
         #[l1_handler]
         fn foo2(self: @ComponentState<TContractState>) {}
@@ -5280,7 +5280,7 @@ trait HasComponent<TContractState> {
 impl MyEmbeddableImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
 > of super::Interface<TContractState> {
-    #[external]
+    #[external(v0)]
     fn foo1(self: @TContractState) {
         let component = HasComponent::get_component(self);
         MyImpl::foo1(component, )
