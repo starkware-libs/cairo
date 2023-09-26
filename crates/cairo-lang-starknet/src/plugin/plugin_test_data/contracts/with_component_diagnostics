@@ -1195,7 +1195,7 @@ impl HasComponentImpl_test_component of super::test_component::HasComponent<Cont
     fn emit<S, impl IntoImp: traits::Into<S, super::test_component::Event>>(ref self: super::test_component::ComponentState<ContractState>, event: S) {
         let event: super::test_component::Event = traits::Into::into(event);
         let mut contract = super::test_component::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::ABC(event));
+        ContractStateEventEmitter::emit(ref contract, Event::ABC(event));
     }
 }
 
@@ -1705,7 +1705,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::test_component::Storage>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -1715,7 +1715,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::test_component::Storage>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -2655,7 +2655,7 @@ impl HasComponentImpl_component1 of super::component1::HasComponent<ContractStat
     fn emit<S, impl IntoImp: traits::Into<S, super::component1::Event>>(ref self: super::component1::ComponentState<ContractState>, event: S) {
         let event: super::component1::Event = traits::Into::into(event);
         let mut contract = super::component1::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::Comp1Event(event));
+        ContractStateEventEmitter::emit(ref contract, Event::Comp1Event(event));
     }
 }
 

@@ -1937,7 +1937,7 @@ impl HasComponentImpl_erc20 of super::erc20::HasComponent<ContractState> {
     fn emit<S, impl IntoImp: traits::Into<S, super::erc20::Event>>(ref self: super::erc20::ComponentState<ContractState>, event: S) {
         let event: super::erc20::Event = traits::Into::into(event);
         let mut contract = super::erc20::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::ERC20Token(event));
+        ContractStateEventEmitter::emit(ref contract, Event::ERC20Token(event));
     }
 }
 
