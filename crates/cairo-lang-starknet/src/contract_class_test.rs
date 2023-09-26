@@ -63,6 +63,7 @@ fn test_serialization() {
 #[test_case("with_ownable")]
 #[test_case("ownable_erc20")]
 #[test_case("upgradable_counter")]
+#[test_case("mintable")]
 fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
@@ -104,6 +105,7 @@ fn test_abi_generation_failure_per_item_interface() {
 #[test_case("ownable_erc20")]
 #[test_case("with_ownable")]
 #[test_case("upgradable_counter")]
+#[test_case("mintable")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
 
