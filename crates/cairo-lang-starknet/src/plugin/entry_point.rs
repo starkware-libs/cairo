@@ -47,8 +47,12 @@ impl EntryPointKind {
     }
 
     /// Returns the entry point kind if the attributes mark it as an entry point.
-    pub fn try_from_attrs(db: &dyn SyntaxGroup, attrs: &impl QueryAttrs) -> Option<Self> {
-        if attrs.has_attr(db, EXTERNAL_ATTR) {
+    pub fn try_from_attrs(
+        db: &dyn SyntaxGroup,
+        diagnostics: &mut Vec<PluginDiagnostic>,
+        attrs: &impl QueryAttrs,
+    ) -> Option<Self> {
+        if has_v0_attribute(db, diagnostics, attrs, EXTERNAL_ATTR) {
             Some(EntryPointKind::External)
         } else if attrs.has_attr(db, CONSTRUCTOR_ATTR) {
             Some(EntryPointKind::Constructor)

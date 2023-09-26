@@ -69,10 +69,25 @@ fn test_full_contract_deserialization(example_file_name: &str) {
 }
 
 /// Test cases where the generation of the ABI should fail.
-#[test_case("interfaces")]
+#[test]
 #[should_panic(expected = "Duplicate entry point name: foo. This is not currently supported.")]
-fn test_abi_generation_failure(example_file_name: &str) {
-    get_test_contract(format!("{example_file_name}.cairo").as_str());
+fn test_abi_generation_failure_dup_entry_points() {
+    get_test_contract("interfaces.cairo");
+}
+
+#[test]
+#[should_panic(
+    expected = "An embedded impl must be an impl of a trait marked with #[starknet::interface]."
+)]
+fn test_abi_generation_failure_embed_non_interface() {
+    get_test_contract("embed_non_interface.cairo");
+}
+
+#[test]
+#[should_panic(expected = "An impl marked with #[abi(per_item)] can't be of a trait marked with \
+                           #[starknet::interface]")]
+fn test_abi_generation_failure_per_item_interface() {
+    get_test_contract("per_item_interface.cairo");
 }
 
 /// Tests that the sierra compiled from <test_case>.cairo is the same as in <test_case>.sierra, and

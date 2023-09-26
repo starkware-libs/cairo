@@ -31,11 +31,11 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        #[external]
+        #[external(v0)]
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
-        #[external]
+        #[external(v0)]
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
@@ -79,11 +79,11 @@ mod component {
 
     #[embeddable_as(MyImpl)]
     impl MyInnerImpl<TContractState, impl X: HasComponent<TContractState>> of MyTrait<ComponentState<TContractState>> {
-        #[external]
+        #[external(v0)]
         fn get(self: @ComponentState<TContractState>, addr: ContractAddress) -> u32 {
             self.data.read() + self.map.read(10)
         }
-        #[external]
+        #[external(v0)]
         fn set(ref self: ComponentState<TContractState>, addr: ContractAddress, value: u32) {
             self.map.write(10, value);
             self.data.write(value);
@@ -222,12 +222,12 @@ trait HasComponent<TContractState> {
 impl MyImpl<
     TContractState, impl X: HasComponent<TContractState>, impl TContractStateDrop: Drop<TContractState>
 > of MyTrait<TContractState> {
-    #[external]
+    #[external(v0)]
     fn get(self: @TContractState, addr: ContractAddress) -> u32 {
         let component = self.get_component();
         MyInnerImpl::get(component, addr, )
     }
-    #[external]
+    #[external(v0)]
     fn set(ref self: TContractState, addr: ContractAddress, value: u32) {
         let mut component = self.get_component_mut();
         MyInnerImpl::set(ref component, addr, value, )

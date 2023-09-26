@@ -9,7 +9,7 @@ trait OutsideTrait<TContractState> {
 }
 #[starknet::embeddable]
 impl OutsideImpl<TContractState, +Drop<TContractState>> of OutsideTrait<TContractState> {
-    #[external]
+    #[external(v0)]
     fn ret_3(self: @TContractState) -> felt252 {
         3
     }
@@ -42,7 +42,7 @@ mod test_contract {
             self.my_storage_var.write(initial);
         }
 
-        #[external]
+        #[external(v0)]
         fn test(
             ref self: ContractState, ref arg: felt252, arg1: felt252, arg2: felt252
         ) -> felt252 {
@@ -52,24 +52,24 @@ mod test_contract {
             x + internal_func()
         }
 
-        #[external]
+        #[external(v0)]
         fn another_function(ref self: ContractState, x: MyType) {}
 
-        #[external]
+        #[external(v0)]
         fn call_foo(
             ref self: ContractState, another_contract_address: starknet::ContractAddress, a: u128
         ) -> u128 {
             IAnotherContractDispatcher { contract_address: another_contract_address }.foo(a)
         }
 
-        #[external]
+        #[external(v0)]
         fn libcall_foo(ref self: ContractState, a: u128) -> u128 {
             IAnotherContractLibraryDispatcher { class_hash: starknet::class_hash_const::<0>() }
                 .foo(a)
         }
 
         /// An external method that requires the `segment_arena` builtin.
-        #[external]
+        #[external(v0)]
         fn segment_arena_builtin(ref self: ContractState,) {
             let x = felt252_dict_new::<felt252>();
             x.squash();
