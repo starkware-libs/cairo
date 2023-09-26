@@ -3681,3 +3681,180 @@ impl StoreIContractSafeDispatcher of starknet::Store::<IContractSafeDispatcher> 
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
+//! > ==========================================================================
+
+//! > Test `#[abi(..)]` bad arguments.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[generate_trait]
+impl SomeImpl<T> of SomeTrait<T> {
+    fn foo(self: @T) {}
+}
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(v0)]
+    impl Alias = SomeImpl<ContractState>;
+
+    #[abi(embed)]
+    impl InlineImpl of SomeTrait<ContractState> {
+        fn foo(self: @ContractState) {}
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The 'abi' attribute must have the 'embed_v0' argument.
+ --> lib.cairo:10:5
+    #[abi(v0)]
+    ^********^
+
+error: Plugin diagnostic: The 'abi' attribute must have the 'per_item' or 'embed_v0' argument.
+ --> lib.cairo:13:5
+    #[abi(embed)]
+    ^***********^
+
+error: Impl not found.
+ --> lib.cairo:11:18
+    impl Alias = SomeImpl<ContractState>;
+                 ^******^
+
+error: Trait not found.
+ --> lib.cairo:14:24
+    impl InlineImpl of SomeTrait<ContractState> {
+                       ^*******^
+
+error: Not a trait.
+ --> lib.cairo:14:24
+    impl InlineImpl of SomeTrait<ContractState> {
+                       ^**********************^
+
+error: Trait not found.
+ --> lib.cairo[contract]:28:5
+    UnsafeNewContractStateTraitForSomeImpl<ContractState> {
+    ^************************************^
+
+error: Not a trait.
+ --> lib.cairo[contract]:28:5
+    UnsafeNewContractStateTraitForSomeImpl<ContractState> {
+    ^***************************************************^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[generate_trait]
+impl SomeImpl<T> of SomeTrait<T> {
+    fn foo(self: @T) {}
+}
+#[starknet::contract]
+mod test_contract {
+    #[storage]
+    struct Storage {}
+
+    #[abi(v0)]
+    impl Alias = SomeImpl<ContractState>;
+
+    #[abi(embed)]
+    impl InlineImpl of SomeTrait<ContractState> {
+        fn foo(self: @ContractState) {}
+    }
+}
+
+generate_trait:
+
+trait SomeTrait<T> {
+    fn foo(self: @T);
+}
+
+
+contract:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ContractState {
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn contract_state_for_testing() -> ContractState {
+        unsafe_new_contract_state()
+    }
+    
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+#[cfg(test)]
+const TEST_CLASS_HASH: felt252 = 0x1b436541a195336130ddea44286906038cb83452df38a0c0e3e242bee206122;
+
+impl ContractStateSomeImpl of
+    UnsafeNewContractStateTraitForSomeImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+
+    mod __external {
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
