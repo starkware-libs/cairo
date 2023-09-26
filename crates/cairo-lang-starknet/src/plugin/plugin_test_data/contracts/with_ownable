@@ -513,13 +513,13 @@ impl Transfer<
 > of super::TransferTrait<TContractState> {
     
     fn owner(self: @TContractState) -> ContractAddress {
-        let component = self.get_component();
+        let component = HasComponent::get_component(self);
         TransferImpl::owner(component, )
     }
     
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress
 ) {
-        let mut component = self.get_component_mut();
+        let mut component = HasComponent::get_component_mut(ref self);
         TransferImpl::transfer_ownership(ref component, new_owner, )
     }
 }

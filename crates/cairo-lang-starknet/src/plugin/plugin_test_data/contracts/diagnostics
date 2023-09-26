@@ -5282,17 +5282,17 @@ impl MyEmbeddableImpl<
 > of super::Interface<TContractState> {
     #[external]
     fn foo1(self: @TContractState) {
-        let component = self.get_component();
+        let component = HasComponent::get_component(self);
         MyImpl::foo1(component, )
     }
     #[l1_handler]
     fn foo2(self: @TContractState) {
-        let component = self.get_component();
+        let component = HasComponent::get_component(self);
         MyImpl::foo2(component, )
     }
     #[constructor]
     fn foo3(self: @TContractState) {
-        let component = self.get_component();
+        let component = HasComponent::get_component(self);
         MyImpl::foo3(component, )
     }
 }
