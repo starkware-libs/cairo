@@ -89,6 +89,15 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     SmallE2ETestRunner
 );
 
+cairo_lang_test_utils::test_file_test_with_runner!(
+    cost_computation_e2e,
+    "e2e_test_data",
+    {
+        cost_computation: "cost_computation",
+    },
+    SmallE2ETestRunnerCostComputation
+);
+
 #[derive(Default)]
 struct SmallE2ETestRunner;
 impl TestFileRunner for SmallE2ETestRunner {
@@ -97,7 +106,7 @@ impl TestFileRunner for SmallE2ETestRunner {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, true)
+        run_e2e_test(inputs, E2eTestParams::default())
     }
 }
 
@@ -109,22 +118,51 @@ impl TestFileRunner for SmallE2ETestRunnerSkipAddGas {
         inputs: &OrderedHashMap<String, String>,
         _args: &OrderedHashMap<String, String>,
     ) -> TestRunnerResult {
-        run_e2e_test(inputs, false)
+        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, ..E2eTestParams::default() })
+    }
+}
+
+#[derive(Default)]
+struct SmallE2ETestRunnerCostComputation;
+impl TestFileRunner for SmallE2ETestRunnerCostComputation {
+    fn run(
+        &mut self,
+        inputs: &OrderedHashMap<String, String>,
+        _args: &OrderedHashMap<String, String>,
+    ) -> TestRunnerResult {
+        run_e2e_test(inputs, E2eTestParams { add_withdraw_gas: false, cost_computation: true })
+    }
+}
+
+/// Represents the parameters of `run_e2e_test`.
+struct E2eTestParams {
+    /// Argument for `run_e2e_test` that controls whether to set the `add_withdraw_gas` flag
+    /// that automatically adds `withdraw_gas` calls.
+    add_withdraw_gas: bool,
+
+    /// Argument for `run_e2e_test` that controls whether to add cost computation information to
+    /// the test outputs.
+    cost_computation: bool,
+}
+
+/// Implements default for `E2eTestParams`.
+impl Default for E2eTestParams {
+    fn default() -> Self {
+        Self { add_withdraw_gas: true, cost_computation: false }
     }
 }
 
 /// Runs the e2e test.
-///
-/// * `add_withdraw_gas` - whether to set the `add_withdraw_gas` flag that automatically adds
-///   `withdraw_gas` calls.
 fn run_e2e_test(
     inputs: &OrderedHashMap<String, String>,
-    add_withdraw_gas: bool,
+    params: E2eTestParams,
 ) -> TestRunnerResult {
     let mut locked_db = test_lock(&SHARED_DB);
     let add_withdraw_gas_flag_id = FlagId::new(locked_db.snapshot().upcast(), "add_withdraw_gas");
-    locked_db
-        .set_flag(add_withdraw_gas_flag_id, Some(Arc::new(Flag::AddWithdrawGas(add_withdraw_gas))));
+    locked_db.set_flag(
+        add_withdraw_gas_flag_id,
+        Some(Arc::new(Flag::AddWithdrawGas(params.add_withdraw_gas))),
+    );
     // Parse code and create semantic model.
     let test_module = setup_test_module(locked_db.deref_mut(), inputs["cairo"].as_str()).unwrap();
     let db = locked_db.snapshot();
@@ -137,21 +175,25 @@ fn run_e2e_test(
 
     // Compute the metadata.
     let metadata = build_metadata(&sierra_program, true);
-    let function_costs_str = metadata
-        .gas_info
-        .function_costs
-        .iter()
-        .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
-        .join("\n");
 
     // Compile to casm.
     let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
         .unwrap()
         .to_string();
 
-    TestRunnerResult::success(OrderedHashMap::from([
-        ("casm".into(), casm),
-        ("function_costs".into(), function_costs_str),
-        ("sierra_code".into(), sierra_program_str),
-    ]))
+    let mut res: OrderedHashMap<String, String> =
+        OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
+    if params.cost_computation {
+        res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
+    } else {
+        let function_costs_str = metadata
+            .gas_info
+            .function_costs
+            .iter()
+            .map(|(func_id, cost)| format!("{func_id}: {cost:?}"))
+            .join("\n");
+        res.insert("function_costs".into(), format!("{}", function_costs_str));
+    }
+
+    TestRunnerResult::success(res)
 }
