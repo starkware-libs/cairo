@@ -1,0 +1,135 @@
+//! > redeposit_gas libfunc
+
+//! > test_runner_name
+SmallE2ETestRunnerCostComputation
+
+//! > cairo
+// TODO(lior): Use gas::redeposit_gas once it's there.
+extern fn redeposit_gas() implicits(GasBuiltin) nopanic;
+
+fn foo(x: felt252) {
+    if x == 0 {
+        bar();
+        bar();
+        bar();
+        bar();
+        bar();
+        redeposit_gas();
+        return ();
+    } else {
+        redeposit_gas();
+        if x == 1 {
+            bar();
+        } else {
+            redeposit_gas();
+        }
+        return ();
+    }
+}
+
+#[inline(never)]
+fn bar() {
+}
+
+//! > casm
+jmp rel 14 if [fp + -3] != 0;
+call rel 30;
+call rel 28;
+call rel 26;
+call rel 24;
+call rel 22;
+[ap + 0] = [fp + -4], ap++;
+ret;
+ap += 6;
+[fp + -3] = [ap + 0] + 1, ap++;
+[ap + 0] = [fp + -4] + 240, ap++;
+jmp rel 7 if [ap + -2] != 0;
+call rel 10;
+[ap + 0] = [ap + -3], ap++;
+jmp rel 6;
+ap += 2;
+[ap + 0] = [ap + -3] + 180, ap++;
+ret;
+ret;
+
+//! > gas_solution
+#2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Const: 0})
+#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#21: OrderedHashMap({Const: 240})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#34: OrderedHashMap({Const: 180})
+
+test::foo: OrderedHashMap({Const: 1200})
+test::bar: OrderedHashMap({})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc dup<felt252> = dup<felt252>;
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc drop<felt252> = drop<felt252>;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc redeposit_gas = redeposit_gas;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc felt252_const<1> = felt252_const<1>;
+libfunc felt252_sub = felt252_sub;
+libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc jump = jump;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+
+dup<felt252>([1]) -> ([1], [2]); // 0
+felt252_is_zero([2]) { fallthrough() 19([3]) }; // 1
+branch_align() -> (); // 2
+drop<felt252>([1]) -> (); // 3
+function_call<user@test::bar>() -> ([4]); // 4
+drop<Unit>([4]) -> (); // 5
+function_call<user@test::bar>() -> ([5]); // 6
+drop<Unit>([5]) -> (); // 7
+function_call<user@test::bar>() -> ([6]); // 8
+drop<Unit>([6]) -> (); // 9
+function_call<user@test::bar>() -> ([7]); // 10
+drop<Unit>([7]) -> (); // 11
+function_call<user@test::bar>() -> ([8]); // 12
+drop<Unit>([8]) -> (); // 13
+redeposit_gas([0]) -> ([9]); // 14
+struct_construct<Unit>() -> ([10]); // 15
+store_temp<GasBuiltin>([9]) -> ([11]); // 16
+store_temp<Unit>([10]) -> ([12]); // 17
+return([11], [12]); // 18
+branch_align() -> (); // 19
+drop<NonZero<felt252>>([3]) -> (); // 20
+redeposit_gas([0]) -> ([13]); // 21
+felt252_const<1>() -> ([14]); // 22
+felt252_sub([1], [14]) -> ([15]); // 23
+store_temp<felt252>([15]) -> ([15]); // 24
+store_temp<GasBuiltin>([13]) -> ([13]); // 25
+felt252_is_zero([15]) { fallthrough() 32([16]) }; // 26
+branch_align() -> (); // 27
+function_call<user@test::bar>() -> ([17]); // 28
+drop<Unit>([17]) -> (); // 29
+store_temp<GasBuiltin>([13]) -> ([18]); // 30
+jump() { 36() }; // 31
+branch_align() -> (); // 32
+drop<NonZero<felt252>>([16]) -> (); // 33
+redeposit_gas([13]) -> ([19]); // 34
+store_temp<GasBuiltin>([19]) -> ([18]); // 35
+struct_construct<Unit>() -> ([20]); // 36
+rename<GasBuiltin>([18]) -> ([21]); // 37
+store_temp<Unit>([20]) -> ([22]); // 38
+return([21], [22]); // 39
+struct_construct<Unit>() -> ([0]); // 40
+store_temp<Unit>([0]) -> ([1]); // 41
+return([1]); // 42
+
+test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
+test::bar@40() -> (Unit);
