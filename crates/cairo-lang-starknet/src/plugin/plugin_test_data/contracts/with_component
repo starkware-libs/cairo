@@ -1,4 +1,4 @@
-//! > Test expansion of a simple starknet contract.
+//! > Test expansion of a simple starknet contract with a component.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: false)

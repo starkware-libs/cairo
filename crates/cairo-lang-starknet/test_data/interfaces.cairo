@@ -1,11 +1,11 @@
 #[starknet::interface]
-trait Interface1<TCS> {
-    fn foo(ref self: TCS);
+trait Interface1<TContractState> {
+    fn foo(ref self: TContractState);
 }
 
 #[starknet::interface]
-trait Interface2<TCS> {
-    fn foo(ref self: TCS);
+trait Interface2<TContractState> {
+    fn foo(ref self: TContractState);
 }
 
 #[starknet::component]
