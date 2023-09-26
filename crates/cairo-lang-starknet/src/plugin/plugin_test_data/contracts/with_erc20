@@ -1498,18 +1498,32 @@ generate_trait:
         TContractState, impl X: HasComponent<TContractState>
     > {
         fn transfer_helper(
-            ref self: ComponentState<TContractState>,             sender: ContractAddress,             recipient: ContractAddress,             amount: u256
+            ref self: ComponentState<TContractState>,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
         );
 
         fn spend_allowance(
-            ref self: ComponentState<TContractState>,             owner: ContractAddress,             spender: ContractAddress,             amount: u256
+            ref self: ComponentState<TContractState>,
+            owner: ContractAddress,
+            spender: ContractAddress,
+            amount: u256
         );
 
         fn approve_helper(
-            ref self: ComponentState<TContractState>,             owner: ContractAddress,             spender: ContractAddress,             amount: u256
+            ref self: ComponentState<TContractState>,
+            owner: ContractAddress,
+            spender: ContractAddress,
+            amount: u256
         );
         fn init(
-            ref self: ComponentState<TContractState>,             name: felt252,             symbol: felt252,             decimals: u8,             initial_supply: u256,             recipient: ContractAddress
+            ref self: ComponentState<TContractState>,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress
         );
     }
 
@@ -1968,7 +1982,12 @@ generate_trait:
 
     trait CtorTrait {
         fn constructor(
-            ref self: ContractState,             name: felt252,             symbol: felt252,             decimals: u8,             initial_supply: u256,             recipient: ContractAddress
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress
         );
     }
 

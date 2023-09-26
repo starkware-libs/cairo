@@ -5,6 +5,7 @@ use cairo_lang_defs::plugin::{MacroPlugin, PluginDiagnostic, PluginGeneratedFile
 use cairo_lang_syntax::attribute::structured::{AttributeArgVariant, AttributeStructurize};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{GenericParamEx, QueryAttrs};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 
 #[derive(Debug, Default)]
@@ -149,18 +150,20 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 builder.add_node(decl.name(db).as_syntax_node());
                 builder.add_node(decl.generic_params(db).as_syntax_node());
                 builder.add_node(signature.lparen(db).as_syntax_node());
-                for (i, param) in signature.parameters(db).elements(db).into_iter().enumerate() {
-                    if i != 0 {
-                        builder.add_str(", ");
-                    }
-                    for modifier in param.modifiers(db).elements(db) {
-                        // `mut` modifiers are only relevant for impls, not traits.
-                        if !matches!(modifier, ast::Modifier::Mut(_)) {
-                            builder.add_node(modifier.as_syntax_node());
+                for node in signature.parameters(db).node.children(db) {
+                    if node.kind(db) != SyntaxKind::Param {
+                        builder.add_node(node);
+                    } else {
+                        let param = ast::Param::from_syntax_node(db, node);
+                        for modifier in param.modifiers(db).elements(db) {
+                            // `mut` modifiers are only relevant for impls, not traits.
+                            if !matches!(modifier, ast::Modifier::Mut(_)) {
+                                builder.add_node(modifier.as_syntax_node());
+                            }
                         }
+                        builder.add_node(param.name(db).as_syntax_node());
+                        builder.add_node(param.type_clause(db).as_syntax_node());
                     }
-                    builder.add_node(param.name(db).as_syntax_node());
-                    builder.add_node(param.type_clause(db).as_syntax_node());
                 }
                 let rparen = signature.rparen(db);
                 let ret_ty = signature.ret_ty(db);
