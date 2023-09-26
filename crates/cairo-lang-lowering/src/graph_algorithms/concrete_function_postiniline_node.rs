@@ -7,22 +7,26 @@ use crate::ids::ConcreteFunctionWithBodyId;
 
 /// A node to use in graph-algorithms.
 #[derive(Clone)]
-pub struct ConcreteFunctionWithBodyNode<'a> {
+pub struct ConcreteFunctionWithBodyPostInlineNode<'a> {
     pub function_id: ConcreteFunctionWithBodyId,
     pub db: &'a dyn LoweringGroup,
 }
-impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
+impl<'a> GraphNode for ConcreteFunctionWithBodyPostInlineNode<'a> {
     type NodeId = ConcreteFunctionWithBodyId;
 
     fn get_neighbors(&self) -> Vec<Self> {
-        let Ok(direct_callees) =
-            self.db.concrete_function_with_body_direct_callees_with_body(self.function_id)
+        let Ok(direct_callees) = self
+            .db
+            .concrete_function_with_body_postinline_direct_callees_with_body(self.function_id)
         else {
             return vec![];
         };
         direct_callees
             .into_iter()
-            .map(|callee| ConcreteFunctionWithBodyNode { function_id: callee, db: self.db })
+            .map(|callee| ConcreteFunctionWithBodyPostInlineNode {
+                function_id: callee,
+                db: self.db,
+            })
             .collect()
     }
 
@@ -30,7 +34,7 @@ impl<'a> GraphNode for ConcreteFunctionWithBodyNode<'a> {
         self.function_id
     }
 }
-impl<'a> ComputeScc for ConcreteFunctionWithBodyNode<'a> {
+impl<'a> ComputeScc for ConcreteFunctionWithBodyPostInlineNode<'a> {
     fn compute_scc(&self) -> Vec<Self::NodeId> {
         concrete_function_with_body_scc(self.db, self.function_id)
     }
