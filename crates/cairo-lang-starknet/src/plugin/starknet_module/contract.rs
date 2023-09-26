@@ -448,7 +448,7 @@ enum ImplAbiConfig {
 }
 
 /// Returns the configuration of an impl addition to the abi using `#[abi(...)]` or the old
-/// equivalent `#[external]`.
+/// equivalent `#[external(v0)]`.
 fn impl_abi_config(
     db: &dyn SyntaxGroup,
     diagnostics: &mut Vec<PluginDiagnostic>,

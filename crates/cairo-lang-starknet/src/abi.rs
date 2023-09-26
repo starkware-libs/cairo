@@ -237,29 +237,6 @@ impl AbiBuilder {
         Ok(builder.abi)
     }
 
-    // TODO(yuval): Remove, this was for the old syntax (remove add_trait_function, add_event and
-    // trait_function_has_attr as well).
-    /// Creates a Starknet contract ABI from a TraitId.
-    pub fn trait_as_interface_abi(
-        db: &dyn SemanticGroup,
-        trait_id: TraitId,
-    ) -> Result<Contract, ABIError> {
-        let generic_params = db.trait_generic_params(trait_id)?;
-        let [GenericParam::Type(storage_type)] = generic_params.as_slice() else {
-            return Err(ABIError::ExpectedOneGenericParam);
-        };
-        let storage_type = db.intern_type(TypeLongId::GenericParameter(storage_type.id));
-
-        let mut builder = Self::default();
-
-        for trait_function_id in db.trait_functions(trait_id).unwrap_or_default().values() {
-            let function = builder.trait_function_as_abi(db, *trait_function_id, storage_type)?;
-            builder.add_abi_item(function, true)?;
-        }
-
-        Ok(builder.abi)
-    }
-
     /// Adds an interface to the ABI.
     fn add_interface(&mut self, db: &dyn SemanticGroup, trait_id: TraitId) -> Result<(), ABIError> {
         // Get storage type
