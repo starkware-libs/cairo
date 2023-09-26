@@ -1460,13 +1460,6 @@ impl Felt252TryInto of TryInto<felt252, felt252> {
     }
 }
 
-impl Felt252IntoFelt252 of Into<felt252, felt252> {
-    #[inline(always)]
-    fn into(self: felt252) -> felt252 {
-        self
-    }
-}
-
 impl Felt252TryIntoU8 of TryInto<felt252, u8> {
     #[inline(always)]
     fn try_into(self: felt252) -> Option<u8> {
