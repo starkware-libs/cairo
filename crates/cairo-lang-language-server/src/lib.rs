@@ -72,19 +72,23 @@ pub mod vfs;
 const MAX_CRATE_DETECTION_DEPTH: usize = 20;
 
 pub async fn serve_language_service() {
-    #[cfg(feature = "runtime-agnostic")]
-    use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
-
-    let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
-    #[cfg(feature = "runtime-agnostic")]
-    let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
-
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
+
+    serve_language_service_with_db(db).await;
+}
+
+pub async fn serve_language_service_with_db(db: RootDatabase) {
+    #[cfg(feature = "runtime-agnostic")]
+    use tokio_util::compat::{TokioAsyncReadCompatExt, TokioAsyncWriteCompatExt};
+
+    let (stdin, stdout) = (tokio::io::stdin(), tokio::io::stdout());
+    #[cfg(feature = "runtime-agnostic")]
+    let (stdin, stdout) = (stdin.compat(), stdout.compat_write());
 
     let (service, socket) = LspService::build(|client| Backend::new(client, db))
         .custom_method("vfs/provide", Backend::vfs_provide)
