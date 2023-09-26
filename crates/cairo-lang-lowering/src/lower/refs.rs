@@ -15,7 +15,9 @@ pub struct SemanticLoweringMapping {
     scattered: OrderedHashMap<MemberPath, Value>,
 }
 impl SemanticLoweringMapping {
-    pub fn topmost_containing_member_path(
+    /// Returns the topmost mapped member path containing the given member path, or None no such
+    /// member path exists in the mapping.
+    pub fn topmost_mapped_containing_member_path(
         &mut self,
         mut member_path: MemberPath,
     ) -> Option<MemberPath> {
@@ -29,6 +31,25 @@ impl SemanticLoweringMapping {
             };
             member_path = *parent;
         }
+    }
+
+    /// Returns the scattered members of the given member path, or None if the member path is not
+    /// scattered.
+    pub fn get_scattered_members(&mut self, member_path: &MemberPath) -> Option<Vec<MemberPath>> {
+        let Some(Value::Scattered(scattered)) = self.scattered.get(member_path) else {
+            return None;
+        };
+        Some(
+            scattered
+                .members
+                .iter()
+                .map(|(member_id, _)| MemberPath::Member {
+                    parent: member_path.clone().into(),
+                    member_id: *member_id,
+                    concrete_struct_id: scattered.concrete_struct_id,
+                })
+                .collect(),
+        )
     }
 
     pub fn get<TContext: StructRecomposer>(
