@@ -1042,7 +1042,7 @@ impl HasComponentImpl_comp of super::comp::HasComponent<ContractState> {
     fn emit<S, impl IntoImp: traits::Into<S, super::comp::Event>>(ref self: super::comp::ComponentState<ContractState>, event: S) {
         let event: super::comp::Event = traits::Into::into(event);
         let mut contract = super::comp::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::CompEvent(event));
+        ContractStateEventEmitter::emit(ref contract, Event::CompEvent(event));
     }
 }
 

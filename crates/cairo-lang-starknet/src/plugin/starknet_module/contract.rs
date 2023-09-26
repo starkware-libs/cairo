@@ -93,7 +93,7 @@ impl ComponentsGenerationData {
                let event: $component_path$::{EVENT_TYPE_NAME} = traits::Into::into(event);
                let mut contract = $component_path$::{HAS_COMPONENT_TRAIT}::get_contract_mut(ref \
                      self);
-               contract.emit(Event::$event_name$(event));
+               ContractStateEventEmitter::emit(ref contract, Event::$event_name$(event));
            }}
        }}
        "

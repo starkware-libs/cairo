@@ -1142,7 +1142,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -1152,7 +1152,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -1303,7 +1303,7 @@ impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractStat
     fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
         let event: super::upgradable::Event = traits::Into::into(event);
         let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::UpgradableEvent(event));
+        ContractStateEventEmitter::emit(ref contract, Event::UpgradableEvent(event));
     }
 }
 

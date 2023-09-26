@@ -383,7 +383,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::read(
                         address_domain,
-                        self.address(),
+                        Internal{member_state_name}Impl::address(self),
                     )
                 )
             }}
@@ -393,7 +393,7 @@ fn handle_simple_storage_member(address: &str, starknet_module_kind: StarknetMod
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     {STORE_TRAIT}::<$type_path$>::write(
                         address_domain,
-                        self.address(),
+                        Internal{member_state_name}Impl::address(@self),
                         value,
                     )
                 )
@@ -454,7 +454,7 @@ fn handle_legacy_mapping_storage_member(
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::read(
                         address_domain,
-                        self.address(key),
+                        Internal{member_state_name}Impl::address(self, key),
                     )
                 )
             }}
@@ -464,7 +464,7 @@ fn handle_legacy_mapping_storage_member(
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     {STORE_TRAIT}::<$value_type$>::write(
                         address_domain,
-                        self.address(key),
+                        Internal{member_state_name}Impl::address(@self, key),
                         value,
                     )
                 )

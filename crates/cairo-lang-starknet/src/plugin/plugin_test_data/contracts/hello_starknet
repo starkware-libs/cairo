@@ -73,7 +73,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -83,7 +83,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )

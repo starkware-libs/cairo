@@ -665,7 +665,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -675,7 +675,7 @@ contract:
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -808,7 +808,7 @@ impl HasComponentImpl_ownable of super::ownable::HasComponent<ContractState> {
     fn emit<S, impl IntoImp: traits::Into<S, super::ownable::Event>>(ref self: super::ownable::ComponentState<ContractState>, event: S) {
         let event: super::ownable::Event = traits::Into::into(event);
         let mut contract = super::ownable::HasComponent::get_contract_mut(ref self);
-        contract.emit(Event::Ownable(event));
+        ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
 }
 

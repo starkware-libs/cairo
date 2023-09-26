@@ -196,7 +196,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -206,7 +206,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -234,7 +234,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u8>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -244,7 +244,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u8>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -272,7 +272,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u16>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -282,7 +282,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u16>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -310,7 +310,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u32>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -320,7 +320,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u32>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -348,7 +348,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u64>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -358,7 +358,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u64>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -386,7 +386,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -396,7 +396,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -424,7 +424,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<bool>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -434,7 +434,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<bool>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -463,7 +463,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::read(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(self, key),
                     )
                 )
             }
@@ -473,7 +473,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<u128>::write(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(@self, key),
                         value,
                     )
                 )
@@ -502,7 +502,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<bool>::read(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(self, key),
                     )
                 )
             }
@@ -512,7 +512,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<bool>::write(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(@self, key),
                         value,
                     )
                 )
@@ -541,7 +541,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::read(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(self, key),
                     )
                 )
             }
@@ -551,7 +551,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<felt252>::write(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(@self, key),
                         value,
                     )
                 )
@@ -579,7 +579,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::OuterType>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -589,7 +589,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::OuterType>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -618,7 +618,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::OuterType>::read(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(self, key),
                     )
                 )
             }
@@ -628,7 +628,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<super::super::OuterType>::write(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(@self, key),
                         value,
                     )
                 )
@@ -656,7 +656,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<inner::InnerType>::read(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(self),
                     )
                 )
             }
@@ -666,7 +666,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<inner::InnerType>::write(
                         address_domain,
-                        self.address(),
+                        InternalContractMemberStateImpl::address(@self),
                         value,
                     )
                 )
@@ -695,7 +695,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<inner::InnerType>::read(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(self, key),
                     )
                 )
             }
@@ -705,7 +705,7 @@ enum Event {}
                 starknet::SyscallResultTraitImpl::unwrap_syscall(
                     starknet::Store::<inner::InnerType>::write(
                         address_domain,
-                        self.address(key),
+                        InternalContractMemberStateImpl::address(@self, key),
                         value,
                     )
                 )
