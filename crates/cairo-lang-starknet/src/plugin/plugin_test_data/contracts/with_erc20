@@ -12,20 +12,22 @@ lib.cairo:
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait ERC20Trait<TCS> {
-    fn get_name(self: @TCS) -> felt252;
-    fn get_symbol(self: @TCS) -> felt252;
-    fn get_decimals(self: @TCS) -> u8;
-    fn get_total_supply(self: @TCS) -> u256;
-    fn balance_of(self: @TCS, account: ContractAddress) -> u256;
-    fn allowance(self: @TCS, owner: ContractAddress, spender: ContractAddress) -> u256;
-    fn transfer(ref self: TCS, recipient: ContractAddress, amount: u256);
+trait ERC20Trait<TContractState> {
+    fn get_name(self: @TContractState) -> felt252;
+    fn get_symbol(self: @TContractState) -> felt252;
+    fn get_decimals(self: @TContractState) -> u8;
+    fn get_total_supply(self: @TContractState) -> u256;
+    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
+    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256);
     fn transfer_from(
-        ref self: TCS, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     );
-    fn approve(ref self: TCS, spender: ContractAddress, amount: u256);
-    fn increase_allowance(ref self: TCS, spender: ContractAddress, added_value: u256);
-    fn decrease_allowance(ref self: TCS, spender: ContractAddress, subtracted_value: u256);
+    fn approve(ref self: TContractState, spender: ContractAddress, amount: u256);
+    fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256);
+    fn decrease_allowance(
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+    );
 }
 
 #[starknet::component]
@@ -254,7 +256,9 @@ ERC20TraitDispatcherTrait:
 trait ERC20TraitDispatcherTrait<T> {
     fn get_name(self: T, ) -> felt252;    fn get_symbol(self: T, ) -> felt252;    fn get_decimals(self: T, ) -> u8;    fn get_total_supply(self: T, ) -> u256;    fn balance_of(self: T, account: ContractAddress) -> u256;    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> u256;    fn transfer(self: T, recipient: ContractAddress, amount: u256);    fn transfer_from(
 self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    );    fn approve(self: T, spender: ContractAddress, amount: u256);    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256);    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256);
+    );    fn approve(self: T, spender: ContractAddress, amount: u256);    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256);    fn decrease_allowance(
+self: T, spender: ContractAddress, subtracted_value: u256
+    );
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -406,10 +410,13 @@ self: ERC20TraitDispatcher, sender: ContractAddress, recipient: ContractAddress,
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
-    fn decrease_allowance(self: ERC20TraitDispatcher, spender: ContractAddress, subtracted_value: u256) {
+    fn decrease_allowance(
+self: ERC20TraitDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
-        serde::Serde::<u256>::serialize(@subtracted_value, ref __calldata__);
+        serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,
@@ -571,10 +578,13 @@ self: ERC20TraitLibraryDispatcher, sender: ContractAddress, recipient: ContractA
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
-    fn decrease_allowance(self: ERC20TraitLibraryDispatcher, spender: ContractAddress, subtracted_value: u256) {
+    fn decrease_allowance(
+self: ERC20TraitLibraryDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
-        serde::Serde::<u256>::serialize(@subtracted_value, ref __calldata__);
+        serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
@@ -590,7 +600,9 @@ self: ERC20TraitLibraryDispatcher, sender: ContractAddress, recipient: ContractA
 trait ERC20TraitSafeDispatcherTrait<T> {
     fn get_name(self: T, ) -> starknet::SyscallResult<felt252>;    fn get_symbol(self: T, ) -> starknet::SyscallResult<felt252>;    fn get_decimals(self: T, ) -> starknet::SyscallResult<u8>;    fn get_total_supply(self: T, ) -> starknet::SyscallResult<u256>;    fn balance_of(self: T, account: ContractAddress) -> starknet::SyscallResult<u256>;    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256>;    fn transfer(self: T, recipient: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;    fn transfer_from(
 self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> starknet::SyscallResult<()>;    fn approve(self: T, spender: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()>;    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256) -> starknet::SyscallResult<()>;
+    ) -> starknet::SyscallResult<()>;    fn approve(self: T, spender: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()>;    fn decrease_allowance(
+self: T, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -754,10 +766,13 @@ self: ERC20TraitSafeLibraryDispatcher, sender: ContractAddress, recipient: Contr
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
-    fn decrease_allowance(self: ERC20TraitSafeLibraryDispatcher, spender: ContractAddress, subtracted_value: u256) -> starknet::SyscallResult<()> {
+    fn decrease_allowance(
+self: ERC20TraitSafeLibraryDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
-        serde::Serde::<u256>::serialize(@subtracted_value, ref __calldata__);
+        serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
             self.class_hash,
@@ -932,10 +947,13 @@ self: ERC20TraitSafeDispatcher, sender: ContractAddress, recipient: ContractAddr
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
-    fn decrease_allowance(self: ERC20TraitSafeDispatcher, spender: ContractAddress, subtracted_value: u256) -> starknet::SyscallResult<()> {
+    fn decrease_allowance(
+self: ERC20TraitSafeDispatcher, spender: ContractAddress, subtracted_value: u256
+    ) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
         serde::Serde::<ContractAddress>::serialize(@spender, ref __calldata__);
-        serde::Serde::<u256>::serialize(@subtracted_value, ref __calldata__);
+        serde::Serde::<u256
+>::serialize(@subtracted_value, ref __calldata__);
 
         let mut ret_data = starknet::call_contract_syscall(
             self.contract_address,

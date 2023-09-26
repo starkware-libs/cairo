@@ -1,8 +1,8 @@
 use starknet::ClassHash;
 
 #[starknet::interface]
-trait IUpgradable<TCS> {
-    fn upgrade(ref self: TCS, new_class_hash: ClassHash);
+trait IUpgradable<TContractState> {
+    fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
 }
 
 #[starknet::component]
