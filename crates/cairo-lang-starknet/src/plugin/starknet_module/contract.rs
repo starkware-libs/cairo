@@ -1,7 +1,9 @@
 use cairo_lang_defs::patcher::RewriteNode;
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
-use cairo_lang_syntax::node::helpers::{GetIdentifier, PathSegmentEx, QueryAttrs};
+use cairo_lang_syntax::node::helpers::{
+    is_single_arg_attr, GetIdentifier, PathSegmentEx, QueryAttrs,
+};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use const_format::formatcp;
 use indoc::formatdoc;
@@ -259,15 +261,27 @@ fn handle_contract_item(
                 }
             }
         }
-        ast::Item::ImplAlias(alias_ast)
-            if alias_ast.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG) =>
-        {
-            handle_embed_impl_alias(
-                db,
-                diagnostics,
-                alias_ast,
-                &mut data.specific.entry_points_code,
-            );
+        ast::Item::ImplAlias(alias_ast) => {
+            let abi_attrs = alias_ast.query_attr(db, ABI_ATTR);
+            if abi_attrs.is_empty() {
+                return;
+            }
+            if abi_attrs.iter().all(|attr| is_single_arg_attr(db, attr, ABI_ATTR_EMBED_V0_ARG)) {
+                handle_embed_impl_alias(
+                    db,
+                    diagnostics,
+                    alias_ast,
+                    &mut data.specific.entry_points_code,
+                );
+            } else {
+                diagnostics.push(PluginDiagnostic {
+                    message: format!(
+                        "The '{ABI_ATTR}' attribute for impl aliases only supports the \
+                         '{ABI_ATTR_EMBED_V0_ARG}' argument.",
+                    ),
+                    stable_ptr: alias_ast.stable_ptr().untyped(),
+                });
+            }
         }
         ast::Item::InlineMacro(inline_macro_ast)
             if inline_macro_ast.name(db).text(db) == COMPONENT_INLINE_MACRO =>
@@ -366,10 +380,8 @@ fn handle_contract_impl(
     imp: &ast::ItemImpl,
     data: &mut EntryPointsGenerationData,
 ) {
-    let is_embed = is_impl_abi_embed(db, imp);
-    let is_external = has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR);
-    let is_per_item = is_impl_abi_per_item(db, imp);
-    if !is_embed && !is_per_item && !is_external {
+    let abi_config = impl_abi_config(db, diagnostics, imp);
+    if abi_config == ImplAbiConfig::None {
         return;
     }
     let ast::MaybeImplBody::Some(impl_body) = imp.body(db) else {
@@ -378,16 +390,16 @@ fn handle_contract_impl(
     let impl_name = imp.name(db);
     let impl_name_node = RewriteNode::new_trimmed(impl_name.as_syntax_node());
     for item in impl_body.items(db).elements(db) {
-        if is_embed {
+        if abi_config == ImplAbiConfig::Embed {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[abi(embed_v0)]");
-        } else if is_external {
+        } else if abi_config == ImplAbiConfig::External {
             forbid_attributes_in_impl(db, diagnostics, &item, "#[external(v0)]");
         }
 
         let ast::ImplItem::Function(item_function) = item else {
             continue;
         };
-        let entry_point_kind = if is_per_item {
+        let entry_point_kind = if abi_config == ImplAbiConfig::PerItem {
             let Some(entry_point_kind) =
                 EntryPointKind::try_from_attrs(db, diagnostics, &item_function)
             else {
@@ -395,7 +407,7 @@ fn handle_contract_impl(
             };
             entry_point_kind
         } else {
-            // is_embed || is_external
+            // matches!(abi_config, ImplAbiConfig::Embed | ImplAbiConfig::External)
             EntryPointKind::External
         };
         let function_name = item_function.declaration(db).name(db);
@@ -420,14 +432,48 @@ fn handle_contract_impl(
     }
 }
 
-/// Checks whether the impl is marked with `#[abi(embed_v0)]`.
-fn is_impl_abi_embed(db: &dyn SyntaxGroup, imp: &ast::ItemImpl) -> bool {
-    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_EMBED_V0_ARG)
+/// The configuration of an impl addition to the abi.
+#[derive(PartialEq, Eq)]
+enum ImplAbiConfig {
+    /// No ABI configuration.
+    None,
+    /// The impl is marked with `#[abi(per_item)]`. Each item should provide its own configuration.
+    PerItem,
+    /// The impl is marked with `#[abi(embed_v0)]`. The entire impl and the interface are embedded
+    /// into the ABI.
+    Embed,
+    /// The impl is marked with `#[external(v0)]`. The entire impl is embedded into the ABI as
+    /// external functions.
+    External,
 }
 
-/// Checks whether the impl is marked with `#[abi(per_item)]`.
-fn is_impl_abi_per_item(db: &dyn SyntaxGroup, imp: &ast::ItemImpl) -> bool {
-    imp.has_attr_with_arg(db, ABI_ATTR, ABI_ATTR_PER_ITEM_ARG)
+/// Returns the configuration of an impl addition to the abi using `#[abi(...)]` or the old
+/// equivalent `#[external]`.
+fn impl_abi_config(
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+    imp: &ast::ItemImpl,
+) -> ImplAbiConfig {
+    if let Some(abi_attr) = imp.find_attr(db, ABI_ATTR) {
+        if is_single_arg_attr(db, &abi_attr, ABI_ATTR_PER_ITEM_ARG) {
+            ImplAbiConfig::PerItem
+        } else if is_single_arg_attr(db, &abi_attr, ABI_ATTR_EMBED_V0_ARG) {
+            ImplAbiConfig::Embed
+        } else {
+            diagnostics.push(PluginDiagnostic {
+                message: format!(
+                    "The '{ABI_ATTR}' attribute for impls only supports the \
+                     '{ABI_ATTR_PER_ITEM_ARG}' or '{ABI_ATTR_EMBED_V0_ARG}' argument.",
+                ),
+                stable_ptr: abi_attr.stable_ptr().untyped(),
+            });
+            ImplAbiConfig::None
+        }
+    } else if has_v0_attribute(db, diagnostics, imp, EXTERNAL_ATTR) {
+        ImplAbiConfig::External
+    } else {
+        ImplAbiConfig::None
+    }
 }
 
 /// Handles an embedded impl by an impl alias.
