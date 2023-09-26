@@ -130,6 +130,7 @@ impl AwesomeEventIsEvent of starknet::Event<AwesomeEvent> {
     }
 }
 
+
 impls:
 
 impl BestEventEverDrop of Drop::<BestEventEver>;
@@ -148,6 +149,7 @@ impl BestEventEverIsEvent of starknet::Event<BestEventEver> {
         Option::Some(BestEventEver {})
     }
 }
+
 
 contract:
 

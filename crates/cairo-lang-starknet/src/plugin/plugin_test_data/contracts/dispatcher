@@ -237,6 +237,7 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
     }
 }
 
+
 impls:
 
 impl IContractLibraryDispatcherCopy of Copy::<IContractLibraryDispatcher>;
@@ -287,6 +288,7 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
     }
 }
 
+
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of Copy::<IContractSafeLibraryDispatcher>;
@@ -336,6 +338,7 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -512,6 +515,7 @@ impl StoreIContractDispatcher of starknet::Store::<IContractDispatcher> {
     }
 }
 
+
 impls:
 
 impl IContractLibraryDispatcherCopy of Copy::<IContractLibraryDispatcher>;
@@ -562,6 +566,7 @@ impl StoreIContractLibraryDispatcher of starknet::Store::<IContractLibraryDispat
     }
 }
 
+
 impls:
 
 impl IContractSafeLibraryDispatcherCopy of Copy::<IContractSafeLibraryDispatcher>;
@@ -611,6 +616,7 @@ impl StoreIContractSafeLibraryDispatcher of starknet::Store::<IContractSafeLibra
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 

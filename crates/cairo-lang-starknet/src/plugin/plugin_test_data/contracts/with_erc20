@@ -1010,6 +1010,7 @@ impl StoreERC20TraitDispatcher of starknet::Store::<ERC20TraitDispatcher> {
     }
 }
 
+
 impls:
 
 impl ERC20TraitLibraryDispatcherCopy of Copy::<ERC20TraitLibraryDispatcher>;
@@ -1059,6 +1060,7 @@ impl StoreERC20TraitLibraryDispatcher of starknet::Store::<ERC20TraitLibraryDisp
         starknet::Store::<starknet::ClassHash>::size()
     }
 }
+
 
 impls:
 
@@ -1110,6 +1112,7 @@ impl StoreERC20TraitSafeLibraryDispatcher of starknet::Store::<ERC20TraitSafeLib
     }
 }
 
+
 impls:
 
 impl ERC20TraitSafeDispatcherCopy of Copy::<ERC20TraitSafeDispatcher>;
@@ -1159,6 +1162,7 @@ impl StoreERC20TraitSafeDispatcher of starknet::Store::<ERC20TraitSafeDispatcher
         starknet::Store::<starknet::ContractAddress>::size()
     }
 }
+
 
 component:
 
@@ -1466,6 +1470,7 @@ impl TransferEventIsEvent of starknet::Event<TransferEvent> {
     }
 }
 
+
 impls:
 
 impl ApprovalEventDrop of Drop::<ApprovalEvent>;
@@ -1496,6 +1501,7 @@ impl ApprovalEventIsEvent of starknet::Event<ApprovalEvent> {
         Option::Some(ApprovalEvent {owner, spender, value, })
     }
 }
+
 
 generate_trait:
 
@@ -1931,6 +1937,7 @@ impl HasComponentImpl_erc20 of super::erc20::HasComponent<ContractState> {
         contract.emit(Event::ERC20Token(event));
     }
 }
+
 
 starknet_derive:
 

@@ -94,7 +94,8 @@ impl ComponentsGenerationData {
                      self);
                contract.emit(Event::$event_name$(event));
            }}
-       }}"
+       }}
+       "
                 ),
                 &[
                     (

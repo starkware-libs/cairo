@@ -136,6 +136,7 @@ impl StoreMyType of starknet::Store::<MyType> {
     }
 }
 
+
 component:
 
 
@@ -292,6 +293,7 @@ impl LogIsEvent of starknet::Event<Log> {
         Option::Some(Log {})
     }
 }
+
 
 embeddable:
 
