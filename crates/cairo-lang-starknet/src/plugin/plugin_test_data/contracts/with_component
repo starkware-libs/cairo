@@ -30,7 +30,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_data(self: @ContractState) -> u32 {
+    fn get_data(self: @ContractState, t: (u32)) -> u32 {
         self.test_component_storage.data.read()
     }
 }
@@ -64,7 +64,7 @@ mod test_contract {
     }
 
     #[external(v0)]
-    fn get_data(self: @ContractState) -> u32 {
+    fn get_data(self: @ContractState, t: (u32)) -> u32 {
         self.test_component_storage.data.read()
     }
 }
