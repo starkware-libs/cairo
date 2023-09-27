@@ -174,7 +174,7 @@ fn run_e2e_test(
     let sierra_program_str = sierra_program.to_string();
 
     // Compute the metadata.
-    let metadata = build_metadata(&sierra_program, true);
+    let metadata = build_metadata(&sierra_program, true, false);
 
     // Compile to casm.
     let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
@@ -184,7 +184,9 @@ fn run_e2e_test(
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
     if params.cost_computation {
+        let metadata_no_solver = build_metadata(&sierra_program, true, true);
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
+        res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
     } else {
         let function_costs_str = metadata
             .gas_info

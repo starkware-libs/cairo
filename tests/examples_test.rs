@@ -149,7 +149,7 @@ fn cairo_to_casm(
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &build_metadata(&program, enable_gas_checks),
+            &build_metadata(&program, enable_gas_checks, false),
             enable_gas_checks,
         )
         .unwrap()
@@ -167,7 +167,7 @@ fn cairo_to_casm_auto_gas(#[case] name: &str, example_dir_data: &ExampleDirData)
         "casm",
         cairo_lang_sierra_to_casm::compiler::compile(
             &program,
-            &build_metadata(&program, true),
+            &build_metadata(&program, true, false),
             true,
         )
         .unwrap()

@@ -270,7 +270,7 @@ impl CasmContractClass {
                 .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
         };
-        let metadata = calc_metadata(&program, metadata_computation_config)?;
+        let metadata = calc_metadata(&program, metadata_computation_config, false)?;
 
         let gas_usage_check = true;
         let cairo_program =
