@@ -15,7 +15,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use state::{merge_optional_states, State};
 
-use self::state::{DeferredVariableInfo, DeferredVariableKind};
+use self::state::{DeferredVariableInfo, DeferredVariableKind, VarState};
 use crate::db::SierraGenGroup;
 use crate::pre_sierra;
 use crate::store_variables::known_stack::KnownStack;
@@ -125,7 +125,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                         // This starts a branch. Store all deferred variables.
                         if invocation.branches.len() > 1 {
                             self.store_all_possibly_lost_variables();
-                            self.store_temporary_variables_as_locals();
                         }
 
                         // Go over the branches. The state of a branch that points to `Fallthrough`
@@ -156,9 +155,11 @@ impl<'a> AddStoreVariableStatements<'a> {
             pre_sierra::Statement::Sierra(GenStatement::Return(_return_statement)) => {
                 self.result.push(statement);
                 // `return` statements are preceded by `PushValues` which takes care of pushing
-                // the return values onto the stack. The rest of the deferred variables are not
+                // the return values onto the stack. The rest of the variables are not
                 // needed.
-                self.clear_deffered_variables();
+
+                self.state().variables.clear();
+
                 // The next statement is not reachable from this one. Set `state` to `None`.
                 self.state_opt = None;
             }
@@ -220,36 +221,45 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) -> (bool, Option<DeferredVariableInfo>) {
         let mut res_deferred_info: Option<DeferredVariableInfo> = None;
 
-        if let Some(deferred_info) = self.state().deferred_variables.swap_remove(arg) {
-            if self.local_variables.get(arg).is_some() {
-                // If a deferred argument was marked as a local variable, then store
-                // it. This is important in case an alias of the variable is used later
-                // (for example, due to `SameAsParam` output).
-                return (self.store_deferred(arg, deferred_info), None);
-            } else {
-                match deferred_info.kind {
-                    state::DeferredVariableKind::Const => {
-                        if !allow_const {
-                            return (self.store_deferred(arg, deferred_info), None);
-                        }
+        if let Some(var_state) = self.state().variables.swap_remove(arg) {
+            match var_state {
+                VarState::Deferred { info: deferred_info } => {
+                    if self.local_variables.get(arg).is_some() {
+                        // If a deferred argument was marked as a local variable, then store
+                        // it. This is important in case an alias of the variable is used later
+                        // (for example, due to `SameAsParam` output).
+                        return (self.store_deferred(arg, deferred_info), None);
+                    } else {
+                        match deferred_info.kind {
+                            state::DeferredVariableKind::Const => {
+                                if !allow_const {
+                                    return (self.store_deferred(arg, deferred_info), None);
+                                }
+                            }
+                            state::DeferredVariableKind::AddConst => {
+                                if !allow_add_const {
+                                    return (self.store_deferred(arg, deferred_info), None);
+                                }
+                            }
+                            state::DeferredVariableKind::Generic => {
+                                if !allow_deferred {
+                                    return (self.store_deferred(arg, deferred_info), None);
+                                }
+                            }
+                        };
                     }
-                    state::DeferredVariableKind::AddConst => {
-                        if !allow_add_const {
-                            return (self.store_deferred(arg, deferred_info), None);
-                        }
-                    }
-                    state::DeferredVariableKind::Generic => {
-                        if !allow_deferred {
-                            return (self.store_deferred(arg, deferred_info), None);
-                        }
-                    }
-                };
-            }
 
-            res_deferred_info = Some(deferred_info);
+                    res_deferred_info = Some(deferred_info);
+                }
+                VarState::TempVar { ty } => {
+                    self.state().variables.insert(arg.clone(), VarState::TempVar { ty });
+                }
+            }
         }
 
-        if self.state().temporary_variables.get(arg).is_some() && self.store_temp_as_local(arg) {
+        if matches!(self.state().variables.get(arg), Some(VarState::TempVar { .. }))
+            && self.store_temp_as_local(arg)
+        {
             self.known_stack().remove_variable(arg);
         }
 
@@ -296,31 +306,41 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let is_on_stack = if let Some(deferred_info) =
-                self.state().deferred_variables.swap_remove(var)
-            {
+            let var_state = self.state().variables.swap_remove(var);
+
+            let is_on_stack = if let Some(VarState::Deferred { info: deferred_info }) = var_state {
+                let deferred_info = deferred_info.clone();
                 if let DeferredVariableKind::Const = deferred_info.kind {
                     // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
                     if *dup {
                         self.dup(var, var_on_stack, ty);
-                        self.state().deferred_variables.insert(var.clone(), deferred_info.clone());
                         self.store_temp(var_on_stack, var_on_stack, ty);
+                        self.state().variables.insert(
+                            var.clone(),
+                            VarState::Deferred { info: deferred_info.clone() },
+                        );
                     } else {
                         self.store_temp(var, var_on_stack, ty);
                     }
                     continue;
-                } else if self.store_deferred_ex(var, var_on_stack, deferred_info) {
+                } else if self.store_deferred_ex(var, var_on_stack, deferred_info.clone()) {
+                    self.state()
+                        .variables
+                        .insert(var.clone(), VarState::TempVar { ty: ty.clone() });
                     if *dup {
                         // In the dup case we dup `var_on_stack` that is ready for push into
                         // `var` that should still be available as a temporary var.
                         self.dup(var_on_stack, var, ty);
-                        self.state().temporary_variables.insert(var.clone(), ty.clone());
                     }
                     continue;
                 } else {
                     false
                 }
             } else {
+                if let Some(var_state) = var_state {
+                    self.state().variables.insert(var.clone(), var_state);
+                }
+
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
                 i < prefix_size
@@ -345,30 +365,32 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Stores all the variables that may possibly get misaligned due to branches and removes them
-    /// from [State::deferred_variables].
     /// The variables will be added according to the order of creation.
     fn store_all_possibly_lost_variables(&mut self) {
-        for (var, deferred_info) in self.state().deferred_variables.clone() {
-            if deferred_info.kind != DeferredVariableKind::Const {
-                self.state().deferred_variables.swap_remove(&var);
-                self.store_deferred(&var, deferred_info);
+        for (var, var_state) in self.state().variables.clone() {
+            match var_state {
+                VarState::TempVar { .. } => {
+                    self.store_temp_as_local(&var);
+                }
+                VarState::Deferred { info } => {
+                    if info.kind != DeferredVariableKind::Const {
+                        self.state().variables.swap_remove(&var);
+                        self.store_deferred(&var, info);
+                    }
+                }
             }
         }
     }
 
-    /// Copies all the temporary variables that are marked as locals into local variables,
-    /// and removes them from [State::temporary_variables].
-    fn store_temporary_variables_as_locals(&mut self) {
-        for (var, _) in self.state().temporary_variables.clone() {
-            self.store_temp_as_local(&var);
-        }
-    }
-
     /// Copies the given variable into a local variable if it is marked as local.
-    /// Removes it from [State::temporary_variables].
+    /// Removes it from [State::variables].
     fn store_temp_as_local(&mut self, var: &sierra::ids::VarId) -> bool {
         if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
-            let ty = self.state().temporary_variables.swap_remove(var).unwrap();
+            let var_state = self.state().variables.swap_remove(var).unwrap();
+
+            let VarState::TempVar { ty } = var_state else {
+                panic!("Expected a temporary variable");
+            };
             self.store_local(var, &uninitialized_local_var_id, &ty);
             return true;
         }
@@ -382,27 +404,20 @@ impl<'a> AddStoreVariableStatements<'a> {
             sierra::ids::VarId,
             sierra::ids::ConcreteTypeId,
         )> = vec![];
-        for (var, deferred_info) in self.state_ref().deferred_variables.iter() {
+        for (var, var_state) in self.state_ref().variables.iter() {
             if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
-                vars_to_store.push((
-                    var.clone(),
-                    uninitialized_local_var_id,
-                    deferred_info.ty.clone(),
-                ));
+                let ty = match var_state {
+                    VarState::Deferred { info } => &info.ty,
+                    VarState::TempVar { ty } => ty,
+                };
+                vars_to_store.push((var.clone(), uninitialized_local_var_id, ty.clone()));
             }
         }
 
         for (var, uninitialized_local_var_id, ty) in vars_to_store {
             self.store_local(&var, &uninitialized_local_var_id, &ty);
-            assert!(self.state().deferred_variables.swap_remove(&var).is_some());
+            assert!(self.state().variables.swap_remove(&var).is_some());
         }
-
-        self.store_temporary_variables_as_locals();
-    }
-
-    /// Clears all the deferred variables.
-    fn clear_deffered_variables(&mut self) {
-        self.state().deferred_variables.clear();
     }
 
     fn finalize(self) -> Vec<pre_sierra::Statement> {
@@ -431,7 +446,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         ));
 
         self.known_stack().push(var_on_stack);
-        self.state().temporary_variables.insert(var_on_stack.clone(), ty.clone());
+        self.state().variables.insert(var_on_stack.clone(), VarState::TempVar { ty: ty.clone() });
     }
 
     /// Adds a `store_local` command storing `var` into itself using the preallocated
