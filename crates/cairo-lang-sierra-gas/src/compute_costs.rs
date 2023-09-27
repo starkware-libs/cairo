@@ -1,3 +1,4 @@
+use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
@@ -8,6 +9,7 @@ use cairo_lang_utils::iterators::zip_eq3;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
+use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
@@ -22,16 +24,41 @@ type VariableValues = OrderedHashMap<(StatementIdx, CostTokenType), i64>;
 pub trait CostTypeTrait:
     std::fmt::Debug + Default + Clone + Eq + Add<Output = Self> + Sub<Output = Self>
 {
+    fn min2(value1: &Self, value2: &Self) -> Self;
+    /// Computes the maximum of the given value.
+    ///
+    /// Assumes that the `values` are non-negative.
     fn max(values: impl Iterator<Item = Self>) -> Self;
+
+    /// For each token type, returns the value if it is non-negative and 0 otherwise.
+    fn rectify(value: &Self) -> Self;
 }
 
 impl CostTypeTrait for i32 {
+    fn min2(value1: &Self, value2: &Self) -> Self {
+        *std::cmp::min(value1, value2)
+    }
+
     fn max(values: impl Iterator<Item = Self>) -> Self {
         values.max().unwrap_or_default()
+    }
+
+    fn rectify(value: &Self) -> Self {
+        return std::cmp::max(*value, 0);
     }
 }
 
 impl CostTypeTrait for PreCost {
+    fn min2(value1: &Self, value2: &Self) -> Self {
+        let map_fn = |(token_type, val1)| {
+            // The tokens that should appear are the tokens that appear in the intersection of both
+            // parameters. Return `None` if the token does not appear in `value2`.
+            let val2 = value2.0.get(token_type)?;
+            Some((*token_type, *std::cmp::min(val1, val2)))
+        };
+        PreCost(value1.0.iter().filter_map(map_fn).collect())
+    }
+
     fn max(values: impl Iterator<Item = Self>) -> Self {
         let mut res = Self::default();
         for value in values {
@@ -40,6 +67,13 @@ impl CostTypeTrait for PreCost {
             }
         }
         res
+    }
+
+    fn rectify(value: &Self) -> Self {
+        let map_fn = |(token_type, val): (&CostTokenType, &i32)| {
+            (token_type.clone(), std::cmp::max(val.clone(), 0))
+        };
+        PreCost(value.0.iter().map(map_fn).collect())
     }
 }
 
@@ -57,6 +91,9 @@ pub fn compute_costs<
     let mut context = CostContext { program, costs: UnorderedHashMap::default(), get_cost_fn };
 
     context.prepare_wallet(specific_cost_context)?;
+
+    // Compute the excess cost at each statement.
+    context.compute_target_values(specific_cost_context)?;
 
     let mut variable_values = VariableValues::default();
     for i in 0..program.statements.len() {
@@ -332,6 +369,137 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 // The wallet value at the beginning of the statement is the maximal value
                 // required by all the branches.
                 WalletInfo::merge(branch_requirements)
+            }
+        }
+    }
+
+    /// Computes the target value for each statement. Rerunning `prepare_wallet` with these
+    /// target values will try to set the values of statements such as `branch_align`,
+    /// `withdraw_gas` and `redeposit_gas` to achieve these targets.
+    fn compute_target_values<SpecificCostContext: SpecificCostContextTrait<CostType>>(
+        &self,
+        specific_cost_context: &SpecificCostContext,
+    ) -> Result<UnorderedHashMap<StatementIdx, CostType>, CostError> {
+        // Compute a topological order of the statements.
+        // Unlike `prepare_wallet`:
+        // * function calls are not treated as edges and
+        // * the success branches of `withdraw_gas` are treated as edges.
+        let topological_order =
+            compute_topological_order(self.program.statements.len(), &|current_idx| {
+                match &self.program.get_statement(current_idx).unwrap() {
+                    Statement::Return(_) => {
+                        // Return has no dependencies.
+                        vec![]
+                    }
+                    Statement::Invocation(invocation) => invocation
+                        .branches
+                        .iter()
+                        .map(|branch_info| current_idx.next(&branch_info.target))
+                        .collect(),
+                }
+            })?;
+
+        // Compute the excess mapping - additional amount of cost that, if possible, should be
+        // added to the wallet value.
+        let mut excess = UnorderedHashMap::<StatementIdx, CostType>::default();
+        // The set of statements for which the excess value was already finalized.
+        let mut finalized_excess_statements = UnorderedHashSet::<StatementIdx>::default();
+
+        for idx in topological_order.iter().rev() {
+            self.handle_excess_at(
+                idx,
+                specific_cost_context,
+                &mut excess,
+                &mut finalized_excess_statements,
+            );
+        }
+
+        // Compute the target value for each statement by adding the excess to the wallet value.
+        Ok((0..self.program.statements.len())
+            .map(|i| {
+                let idx = StatementIdx(i);
+                (idx, self.wallet_at(&idx).value + excess.get(&idx).cloned().unwrap_or_default())
+            })
+            .collect())
+    }
+
+    /// Handles the excess at the given statement by pushing it to the next statement(s).
+    ///
+    /// * `redeposit_gas` - consumes all the excess, as it can be redeposited.
+    /// * `branch_align` - adds the difference to the excess, so that it will be possible by
+    ///   a future `redeposit_gas`.
+    /// * `withdraw_gas` - removes the planned withdrawal from the excess, so that the excess will
+    ///   be used instead of a withdrawal.
+    fn handle_excess_at<SpecificCostContext: SpecificCostContextTrait<CostType>>(
+        &self,
+        idx: &StatementIdx,
+        specific_cost_context: &SpecificCostContext,
+        excess: &mut UnorderedHashMap<StatementIdx, CostType>,
+        finalized_excess_statements: &mut UnorderedHashSet<StatementIdx>,
+    ) {
+        finalized_excess_statements.insert(*idx);
+
+        let wallet_value = self.wallet_at(idx).value;
+        let current_excess = excess.get(idx).cloned().unwrap_or_default();
+
+        let invocation = match &self.program.get_statement(idx).unwrap() {
+            Statement::Invocation(invocation) => invocation,
+            Statement::Return(_) => {
+                // Excess cannot be handled, simply drop it.
+                return;
+            }
+        };
+
+        let libfunc_cost: Vec<BranchCost> = self.get_cost(&invocation.libfunc_id);
+
+        let branch_requirements = get_branch_requirements(
+            specific_cost_context,
+            &|statement_idx| self.wallet_at(statement_idx),
+            idx,
+            invocation,
+            &libfunc_cost,
+        );
+
+        // Pass the excess to the branches.
+        for (branch_info, branch_cost, branch_requirement) in
+            zip_eq3(&invocation.branches, &libfunc_cost, branch_requirements)
+        {
+            let branch_statement = idx.next(&branch_info.target);
+            if finalized_excess_statements.contains(&branch_statement) {
+                // Don't update statements which were already visited.
+                return;
+            }
+            let future_wallet_value = self.wallet_at(&branch_statement).value;
+            let mut actual_excess = current_excess.clone();
+
+            if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
+                let planned_withdrawal = specific_cost_context.get_gas_withdrawal(
+                    idx,
+                    branch_cost,
+                    &wallet_value,
+                    future_wallet_value,
+                );
+
+                actual_excess = CostType::rectify(&(actual_excess - planned_withdrawal));
+            } else if let BranchCost::RedepositGas = branch_cost {
+                // All the excess can be redeposited.
+                actual_excess = Default::default();
+            } else if invocation.branches.len() > 1 {
+                // Branch align which is not WithdrawGas.
+                let additional_excess = wallet_value.clone() - branch_requirement.value;
+                actual_excess = actual_excess + CostType::rectify(&additional_excess);
+            }
+
+            // Update the excess for `branch_statement` using the minimum of the existing excess and
+            // `actual_excess`.
+            match excess.entry(branch_statement) {
+                hash_map::Entry::Occupied(mut entry) => {
+                    let current_value = entry.get();
+                    entry.insert(CostType::min2(current_value, &actual_excess));
+                }
+                hash_map::Entry::Vacant(entry) => {
+                    entry.insert(actual_excess);
+                }
             }
         }
     }
