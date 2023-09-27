@@ -21,6 +21,7 @@ use crate::test_utils::{get_example_file_path, get_test_contract};
 #[test_case("with_ownable")]
 #[test_case("ownable_erc20")]
 #[test_case("upgradable_counter")]
+#[test_case("mintable")]
 fn test_casm_contract_from_contract_class(example_file_name: &str) {
     let contract_class = get_test_contract(format!("{example_file_name}.cairo").as_str());
     let add_pythonic_hints = true;
