@@ -192,7 +192,7 @@ impl FunctionId {
     }
 
     pub fn name(&self, db: &dyn SemanticGroup) -> SmolStr {
-        format!("{:?}", self.get_concrete(db)).into()
+        format!("{:?}", self.get_concrete(db).generic_function.name(db)).into()
     }
 }
 
