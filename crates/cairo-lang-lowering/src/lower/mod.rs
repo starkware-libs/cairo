@@ -1258,14 +1258,14 @@ fn extract_concrete_enum(
     ctx: &mut LoweringContext<'_, '_>,
     expr: &semantic::ExprMatch,
 ) -> Result<ExtractedEnumDetails, LoweringFlowError> {
-    let ty = ctx.function_body.exprs[expr.matched_expr].ty();
+    let matched_expr = &ctx.function_body.exprs[expr.matched_expr];
+    let ty = matched_expr.ty();
     let (n_snapshots, long_ty) = peel_snapshots(ctx.db.upcast(), ty);
 
     // Semantic model should have made sure the type is an enum.
-    let concrete_ty = extract_matches!(long_ty, TypeLongId::Concrete);
-    let Some(concrete_enum_id) = try_extract_matches!(concrete_ty, ConcreteTypeId::Enum) else {
+    let TypeLongId::Concrete(ConcreteTypeId::Enum(concrete_enum_id)) = long_ty else {
         return Err(LoweringFlowError::Failed(
-            ctx.diagnostics.report(expr.stable_ptr.untyped(), UnsupportedMatchedValue),
+            ctx.diagnostics.report(matched_expr.stable_ptr().untyped(), UnsupportedMatchedValue),
         ));
     };
     let enum_id = concrete_enum_id.enum_id(ctx.db.upcast());
