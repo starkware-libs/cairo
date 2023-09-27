@@ -1,4 +1,4 @@
-//! > Expansion of a contract with a component with "conflicting" interfaces.
+//! > Expansion of a contract with a component with conflicting interfaces.
 
 //! > test_runner_name
 ExpandContractTestRunner(expect_diagnostics: false)
