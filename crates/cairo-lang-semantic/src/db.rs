@@ -5,8 +5,8 @@ use cairo_lang_defs::diagnostic_utils::StableLocation;
 use cairo_lang_defs::ids::{
     ConstantId, EnumId, ExternFunctionId, ExternTypeId, FreeFunctionId, FunctionTitleId,
     FunctionWithBodyId, GenericParamId, GenericTypeId, ImplAliasId, ImplDefId, ImplFunctionId,
-    LookupItemId, ModuleId, ModuleItemId, StructId, TraitFunctionId, TraitId, TypeAliasId, UseId,
-    VariantId,
+    LookupItemId, ModuleId, ModuleItemId, StructId, TraitAliasId, TraitFunctionId, TraitId,
+    TypeAliasId, UseId, VariantId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, Diagnostics, DiagnosticsBuilder, Maybe};
 use cairo_lang_filesystem::db::{AsFilesGroupMut, FilesGroup};
@@ -273,37 +273,74 @@ pub trait SemanticGroup:
     /// Returns the impl definition pointed to by the impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_impl_def)]
     fn impl_alias_impl_def(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId>;
-    /// Private query to compute data about a type alias.
+    /// Private query to compute data about a impl alias.
     #[salsa::invoke(items::impl_alias::priv_impl_alias_semantic_data)]
     #[salsa::cycle(items::impl_alias::priv_impl_alias_semantic_data_cycle)]
     fn priv_impl_alias_semantic_data(
         &self,
         impl_alias_id: ImplAliasId,
     ) -> Maybe<items::impl_alias::ImplAliasData>;
-    /// Returns the semantic diagnostics of a type alias.
+    /// Returns the semantic diagnostics of a impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_semantic_diagnostics)]
     fn impl_alias_semantic_diagnostics(
         &self,
         impl_alias_id: ImplAliasId,
     ) -> Diagnostics<SemanticDiagnostic>;
-    /// Returns the resolved type of a type alias.
+    /// Returns the resolved impl of an impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolved_impl)]
     fn impl_alias_resolved_impl(&self, impl_alias_id: ImplAliasId) -> Maybe<ImplId>;
-    /// Returns the generic parameters of a type alias.
+    /// Returns the generic parameters of a impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_generic_params)]
     fn impl_alias_generic_params(&self, impl_alias_id: ImplAliasId) -> Maybe<Vec<GenericParam>>;
-    /// Returns the generic parameters data of a type alias.
+    /// Returns the generic parameters data of a impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_generic_params_data)]
     fn impl_alias_generic_params_data(
         &self,
         impl_alias_id: ImplAliasId,
     ) -> Maybe<GenericParamsData>;
-    /// Returns the resolution resolved_items of a type alias.
+    /// Returns the resolution resolved_items of a impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_resolver_data)]
     fn impl_alias_resolver_data(&self, impl_alias_id: ImplAliasId) -> Maybe<Arc<ResolverData>>;
     /// Returns the attributes attached to the impl alias.
     #[salsa::invoke(items::impl_alias::impl_alias_attributes)]
     fn impl_alias_attributes(&self, impl_def_id: ImplAliasId) -> Maybe<Vec<Attribute>>;
+
+    // Trait Alias.
+    // ====
+    /// Returns the trait pointed to by the trait alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_trait)]
+    fn trait_alias_trait(&self, trait_alias_id: TraitAliasId) -> Maybe<TraitId>;
+    /// Private query to compute data about a type alias.
+    #[salsa::invoke(items::trait_alias::priv_trait_alias_semantic_data)]
+    #[salsa::cycle(items::trait_alias::priv_trait_alias_semantic_data_cycle)]
+    fn priv_trait_alias_semantic_data(
+        &self,
+        trait_alias_id: TraitAliasId,
+    ) -> Maybe<items::trait_alias::TraitAliasData>;
+    /// Returns the semantic diagnostics of a type alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_semantic_diagnostics)]
+    fn trait_alias_semantic_diagnostics(
+        &self,
+        trait_alias_id: TraitAliasId,
+    ) -> Diagnostics<SemanticDiagnostic>;
+    /// Returns the resolved type of a type alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_resolved_trait)]
+    fn trait_alias_resolved_trait(&self, trait_alias_id: TraitAliasId) -> Maybe<ConcreteTraitId>;
+    /// Returns the generic parameters of a type alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_generic_params)]
+    fn trait_alias_generic_params(&self, trait_alias_id: TraitAliasId) -> Maybe<Vec<GenericParam>>;
+    /// Returns the generic parameters data of a type alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_generic_params_data)]
+    fn trait_alias_generic_params_data(
+        &self,
+        trait_alias_id: TraitAliasId,
+    ) -> Maybe<GenericParamsData>;
+    /// Returns the resolution resolved_items of a type alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_resolver_data)]
+    fn trait_alias_resolver_data(&self, trait_alias_id: TraitAliasId) -> Maybe<Arc<ResolverData>>;
+    /// Returns the attributes attached to the trait alias.
+    #[salsa::invoke(items::trait_alias::trait_alias_attributes)]
+    fn trait_alias_attributes(&self, trait_def_id: TraitAliasId) -> Maybe<Vec<Attribute>>;
 
     // Trait.
     // =======
@@ -1076,8 +1113,11 @@ fn module_semantic_diagnostics(
             ModuleItemId::TypeAlias(type_alias) => {
                 diagnostics.extend(db.type_alias_semantic_diagnostics(*type_alias));
             }
-            ModuleItemId::ImplAlias(type_alias) => {
-                diagnostics.extend(db.impl_alias_semantic_diagnostics(*type_alias));
+            ModuleItemId::ImplAlias(impl_alias) => {
+                diagnostics.extend(db.impl_alias_semantic_diagnostics(*impl_alias));
+            }
+            ModuleItemId::TraitAlias(trait_alias) => {
+                diagnostics.extend(db.trait_alias_semantic_diagnostics(*trait_alias));
             }
         }
     }
@@ -1196,6 +1236,7 @@ fn get_resolver_datas(id: LookupItemId, db: &dyn SemanticGroup) -> Vec<Arc<Resol
             }
             ModuleItemId::TypeAlias(id) => vec![db.type_alias_resolver_data(id)],
             ModuleItemId::ImplAlias(id) => vec![db.impl_alias_resolver_data(id)],
+            ModuleItemId::TraitAlias(id) => vec![db.trait_alias_resolver_data(id)],
             ModuleItemId::Trait(_) => vec![],
             ModuleItemId::Impl(id) => vec![db.impl_def_resolver_data(id)],
             ModuleItemId::ExternType(_) => vec![],

@@ -264,6 +264,7 @@ fn maybe_add_extra_use(
         | ast::Item::Trait(_)
         | ast::Item::FreeFunction(_)
         | ast::Item::ImplAlias(_)
+        | ast::Item::TraitAlias(_)
         | ast::Item::Missing(_)
         | ast::Item::InlineMacro(_) => None,
     } {

@@ -1,6 +1,6 @@
 use cairo_lang_defs::ids::{
     ConstantId, FunctionWithBodyId, GenericTypeId, ImplAliasId, ImplDefId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitFunctionId, TraitId, TypeAliasId, VarId,
+    TopLevelLanguageElementId, TraitAliasId, TraitFunctionId, TraitId, TypeAliasId, VarId,
 };
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_proc_macros::DebugWithDb;
@@ -26,6 +26,7 @@ pub enum ResolvedGenericItem {
     GenericType(GenericTypeId),
     GenericTypeAlias(TypeAliasId),
     GenericImplAlias(ImplAliasId),
+    GenericTraitAlias(TraitAliasId),
     Variant(Variant),
     Trait(TraitId),
     Impl(ImplDefId),
@@ -55,6 +56,7 @@ impl ResolvedGenericItem {
             ModuleItemId::Enum(id) => ResolvedGenericItem::GenericType(GenericTypeId::Enum(id)),
             ModuleItemId::TypeAlias(id) => ResolvedGenericItem::GenericTypeAlias(id),
             ModuleItemId::ImplAlias(id) => ResolvedGenericItem::GenericImplAlias(id),
+            ModuleItemId::TraitAlias(id) => ResolvedGenericItem::GenericTraitAlias(id),
             ModuleItemId::ExternType(id) => {
                 ResolvedGenericItem::GenericType(GenericTypeId::Extern(id))
             }
@@ -73,6 +75,7 @@ impl ResolvedGenericItem {
             ResolvedGenericItem::GenericType(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericTypeAlias(id) => id.full_path(defs_db),
             ResolvedGenericItem::GenericImplAlias(id) => id.full_path(defs_db),
+            ResolvedGenericItem::GenericTraitAlias(id) => id.full_path(defs_db),
             ResolvedGenericItem::Variant(id) => id.id.full_path(defs_db),
             ResolvedGenericItem::Trait(id) => id.full_path(defs_db),
             ResolvedGenericItem::Impl(id) => id.full_path(defs_db),

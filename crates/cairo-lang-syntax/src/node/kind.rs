@@ -100,6 +100,7 @@ pub enum SyntaxKind {
     ImplItemList,
     ImplItemMissing,
     ItemImplAlias,
+    ItemTraitAlias,
     ItemStruct,
     ItemEnum,
     ItemTypeAlias,

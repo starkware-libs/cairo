@@ -573,7 +573,7 @@ impl<'db> Resolver<'db> {
                 ResolvedConcreteItem::Type(ty)
             }
             ResolvedGenericItem::GenericImplAlias(impl_alias_id) => {
-                // Check for cycles in this type alias definition.
+                // Check for cycles in this impl alias definition.
                 // TODO(orizi): Handle this without using `priv_impl_alias_semantic_data`.
                 self.db.priv_impl_alias_semantic_data(impl_alias_id)?.check_no_cycle()?;
 
@@ -589,6 +589,24 @@ impl<'db> Resolver<'db> {
                 let impl_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
                     .rewrite(impl_id)?;
                 ResolvedConcreteItem::Impl(impl_id)
+            }
+            ResolvedGenericItem::GenericTraitAlias(trait_alias_id) => {
+                // Check for cycles in this trait alias definition.
+                // TODO(orizi): Handle this without using `priv_trait_alias_semantic_data`.
+                self.db.priv_trait_alias_semantic_data(trait_alias_id)?.check_no_cycle()?;
+
+                let trait_id = self.db.trait_alias_resolved_trait(trait_alias_id)?;
+                let generic_params = self.db.trait_alias_generic_params(trait_alias_id)?;
+                let generic_args = self.resolve_generic_args(
+                    diagnostics,
+                    &generic_params,
+                    generic_args_syntax.unwrap_or_default(),
+                    identifier.stable_ptr().untyped(),
+                )?;
+                let substitution = GenericSubstitution::new(&generic_params, &generic_args);
+                let trait_id = SubstitutionRewriter { db: self.db, substitution: &substitution }
+                    .rewrite(trait_id)?;
+                ResolvedConcreteItem::Trait(trait_id)
             }
             ResolvedGenericItem::Trait(trait_id) => {
                 ResolvedConcreteItem::Trait(self.specialize_trait(

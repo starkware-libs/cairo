@@ -42,6 +42,7 @@ pub fn priv_module_semantic_data(
             ModuleItemId::Enum(item_id) => item_id.name(def_db),
             ModuleItemId::TypeAlias(item_id) => item_id.name(def_db),
             ModuleItemId::ImplAlias(item_id) => item_id.name(def_db),
+            ModuleItemId::TraitAlias(item_id) => item_id.name(def_db),
             ModuleItemId::Trait(item_id) => item_id.name(def_db),
             ModuleItemId::Impl(item_id) => item_id.name(def_db),
             ModuleItemId::ExternType(item_id) => item_id.name(def_db),
@@ -106,8 +107,14 @@ pub fn module_usable_trait_ids(
     db: &dyn SemanticGroup,
     module_id: ModuleId,
 ) -> Maybe<Arc<OrderedHashSet<TraitId>>> {
+    // Init with traits in the module.
     let mut module_traits =
         OrderedHashSet::from_iter(db.module_traits_ids(module_id)?.deref().clone());
+    // Add traits from trait aliases in the module.
+    for alias in db.module_trait_aliases_ids(module_id)?.iter().copied() {
+        let trait_id = db.trait_alias_trait(alias)?;
+        module_traits.insert(trait_id);
+    }
     // Add traits from impls in the module.
     for imp in db.module_impls_ids(module_id)?.iter().copied() {
         let trait_id = db.impl_def_trait(imp)?;

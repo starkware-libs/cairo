@@ -102,7 +102,9 @@ fn resolved_generic_item_completion_kind(item: ResolvedGenericItem) -> Completio
             CompletionItemKind::CLASS
         }
         ResolvedGenericItem::Variant(_) => CompletionItemKind::ENUM_MEMBER,
-        ResolvedGenericItem::Trait(_) => CompletionItemKind::INTERFACE,
+        ResolvedGenericItem::Trait(_) | ResolvedGenericItem::GenericTraitAlias(_) => {
+            CompletionItemKind::INTERFACE
+        }
         ResolvedGenericItem::Variable(_, _) => CompletionItemKind::VARIABLE,
     }
 }

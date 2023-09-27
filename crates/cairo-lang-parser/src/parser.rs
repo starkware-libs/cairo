@@ -205,7 +205,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalFunction => Ok(self.expect_function_with_body(attributes).into()),
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes).into()),
             SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes).into()),
-            SyntaxKind::TerminalImpl => Ok(self.expect_item_impl(attributes)),
+            SyntaxKind::TerminalImpl => Ok(self.expect_impl(attributes)),
             SyntaxKind::TerminalIdentifier => {
                 // We take the identifier to check if the next token is a `!`. If it is, we assume
                 // that a macro is following and handle it similarly to any other
@@ -637,10 +637,46 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Trait.
-    fn expect_trait(&mut self, attributes: AttributeListGreen) -> ItemTraitGreen {
+    /// Expects a trait as a module item.
+    fn expect_trait(&mut self, attributes: AttributeListGreen) -> ItemGreen {
+        match self.expect_trait_inner(attributes) {
+            TraitOrTraitAlias::Item(green) => green.into(),
+            TraitOrTraitAlias::Alias(green) => green.into(),
+        }
+    }
+
+    /// Assumes the current token is Trait.
+    /// Expects a trait as an impl item.
+    fn expect_impl_item_trait(&mut self, attributes: AttributeListGreen) -> ImplItemGreen {
+        match self.expect_trait_inner(attributes) {
+            TraitOrTraitAlias::Item(green) => green.into(),
+            TraitOrTraitAlias::Alias(green) => green.into(),
+        }
+    }
+
+    /// Assumes the current token is Trait.
+    fn expect_trait_inner(&mut self, attributes: AttributeListGreen) -> TraitOrTraitAlias {
         let trait_kw = self.take::<TerminalTrait>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
+
+        if self.peek().kind == SyntaxKind::TerminalEq {
+            let eq = self.take::<TerminalEq>();
+            let trait_path = self.parse_type_path();
+            let semicolon = self.parse_token::<TerminalSemicolon>();
+
+            return TraitOrTraitAlias::Alias(ItemTraitAlias::new_green(
+                self.db,
+                attributes,
+                trait_kw,
+                name,
+                generic_params,
+                eq,
+                trait_path,
+                semicolon,
+            ));
+        }
+
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
             let items = TraitItemList::new_green(
@@ -657,7 +693,14 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
-        ItemTrait::new_green(self.db, attributes, trait_kw, name, generic_params, body)
+        TraitOrTraitAlias::Item(ItemTrait::new_green(
+            self.db,
+            attributes,
+            trait_kw,
+            name,
+            generic_params,
+            body,
+        ))
     }
 
     /// Returns a GreenId of a node with a TraitItem.* kind (see
@@ -697,23 +740,25 @@ impl<'a> Parser<'a> {
     }
 
     /// Assumes the current token is Impl.
-    fn expect_item_impl(&mut self, attributes: AttributeListGreen) -> ItemGreen {
+    /// Expects an impl as a module item.
+    fn expect_impl(&mut self, attributes: AttributeListGreen) -> ItemGreen {
         match self.expect_impl_inner(attributes) {
-            ImplItemOrAlias::Item(green) => green.into(),
-            ImplItemOrAlias::Alias(green) => green.into(),
+            ImplOrImplAlias::Item(green) => green.into(),
+            ImplOrImplAlias::Alias(green) => green.into(),
         }
     }
 
     /// Assumes the current token is Impl.
+    /// Expects an impl as an impl item.
     fn expect_impl_item_impl(&mut self, attributes: AttributeListGreen) -> ImplItemGreen {
         match self.expect_impl_inner(attributes) {
-            ImplItemOrAlias::Item(green) => green.into(),
-            ImplItemOrAlias::Alias(green) => green.into(),
+            ImplOrImplAlias::Item(green) => green.into(),
+            ImplOrImplAlias::Alias(green) => green.into(),
         }
     }
 
     /// Assumes the current token is Impl.
-    fn expect_impl_inner(&mut self, attributes: AttributeListGreen) -> ImplItemOrAlias {
+    fn expect_impl_inner(&mut self, attributes: AttributeListGreen) -> ImplOrImplAlias {
         let impl_kw = self.take::<TerminalImpl>();
         let name = self.parse_identifier();
         let generic_params = self.parse_optional_generic_params();
@@ -723,7 +768,7 @@ impl<'a> Parser<'a> {
             let impl_path = self.parse_type_path();
             let semicolon = self.parse_token::<TerminalSemicolon>();
 
-            return ImplItemOrAlias::Alias(ItemImplAlias::new_green(
+            return ImplOrImplAlias::Alias(ItemImplAlias::new_green(
                 self.db,
                 attributes,
                 impl_kw,
@@ -736,6 +781,7 @@ impl<'a> Parser<'a> {
         }
 
         let of_kw = self.parse_token::<TerminalOf>();
+        // TODO(yg): allow, semantically "of trait_alias".
         let trait_path = self.parse_type_path();
         let body = if self.peek().kind == SyntaxKind::TerminalLBrace {
             let lbrace = self.take::<TerminalLBrace>();
@@ -753,7 +799,7 @@ impl<'a> Parser<'a> {
             self.parse_token::<TerminalSemicolon>().into()
         };
 
-        ImplItemOrAlias::Item(ItemImpl::new_green(
+        ImplOrImplAlias::Item(ItemImpl::new_green(
             self.db,
             attributes,
             impl_kw,
@@ -785,7 +831,7 @@ impl<'a> Parser<'a> {
             SyntaxKind::TerminalType => Ok(self.expect_type_alias(attributes).into()),
             SyntaxKind::TerminalExtern => Ok(self.expect_extern_impl_item(attributes)),
             SyntaxKind::TerminalUse => Ok(self.expect_use(attributes).into()),
-            SyntaxKind::TerminalTrait => Ok(self.expect_trait(attributes).into()),
+            SyntaxKind::TerminalTrait => Ok(self.expect_impl_item_trait(attributes)),
             SyntaxKind::TerminalImpl => Ok(self.expect_impl_item_impl(attributes)),
             _ => {
                 if has_attrs {
@@ -2352,9 +2398,14 @@ enum ExternItem {
     Type(ItemExternTypeGreen),
 }
 
-enum ImplItemOrAlias {
+enum ImplOrImplAlias {
     Item(ItemImplGreen),
     Alias(ItemImplAliasGreen),
+}
+
+enum TraitOrTraitAlias {
+    Item(ItemTraitGreen),
+    Alias(ItemTraitAliasGreen),
 }
 
 /// A parser diagnostic that is not yet reported as it is accumulated with similar consecutive

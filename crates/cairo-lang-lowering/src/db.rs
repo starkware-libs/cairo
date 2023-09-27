@@ -497,6 +497,7 @@ fn module_lowering_diagnostics(
             ModuleItemId::TypeAlias(_) => {}
             ModuleItemId::ImplAlias(_) => {}
             ModuleItemId::Trait(_) => {}
+            ModuleItemId::TraitAlias(_) => {}
             ModuleItemId::Impl(impl_def_id) => {
                 for impl_func in db.impl_functions(*impl_def_id)?.values() {
                     let function_id = defs::ids::FunctionWithBodyId::Impl(*impl_func);

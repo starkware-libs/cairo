@@ -15,7 +15,8 @@ use cairo_lang_defs::ids::{
     ConstantLongId, EnumLongId, ExternFunctionLongId, ExternTypeLongId, FileIndex,
     FreeFunctionLongId, FunctionTitleId, FunctionWithBodyId, ImplAliasLongId, ImplDefLongId,
     ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleFileId, ModuleId, ModuleItemId,
-    StructLongId, SubmoduleLongId, TraitFunctionLongId, TraitLongId, TypeAliasLongId, UseLongId,
+    StructLongId, SubmoduleLongId, TraitAliasLongId, TraitFunctionLongId, TraitLongId,
+    TypeAliasLongId, UseLongId,
 };
 use cairo_lang_diagnostics::{DiagnosticEntry, DiagnosticLocation, Diagnostics, ToOption};
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
@@ -871,6 +872,7 @@ fn resolved_generic_item_def(db: &dyn DefsGroup, item: ResolvedGenericItem) -> S
         ResolvedGenericItem::GenericType(generic_type) => generic_type.untyped_stable_ptr(db),
         ResolvedGenericItem::GenericTypeAlias(type_alias) => type_alias.untyped_stable_ptr(db),
         ResolvedGenericItem::GenericImplAlias(impl_alias) => impl_alias.untyped_stable_ptr(db),
+        ResolvedGenericItem::GenericTraitAlias(trait_alias) => trait_alias.untyped_stable_ptr(db),
         ResolvedGenericItem::Variant(variant) => variant.id.stable_ptr(db).untyped(),
         ResolvedGenericItem::Trait(trt) => trt.stable_ptr(db).untyped(),
         ResolvedGenericItem::Impl(imp) => imp.stable_ptr(db).untyped(),
@@ -1082,6 +1084,12 @@ fn lookup_item_from_ast(
             db.intern_impl_alias(ImplAliasLongId(
                 module_file_id,
                 ast::ItemImplAlias::from_syntax_node(syntax_db, node).stable_ptr(),
+            )),
+        ))],
+        SyntaxKind::ItemTraitAlias => vec![LookupItemId::ModuleItem(ModuleItemId::TraitAlias(
+            db.intern_trait_alias(TraitAliasLongId(
+                module_file_id,
+                ast::ItemTraitAlias::from_syntax_node(syntax_db, node).stable_ptr(),
             )),
         ))],
         _ => vec![],

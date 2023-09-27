@@ -328,6 +328,7 @@ impl AbiBuilder {
             return Err(ABIError::EmbeddedImplNotEmbeddable);
         }
 
+        // TODO(yg): consider allowing trait aliases as interfaces.
         // Verify the trait is marked as #[starknet::interface].
         if !db.impl_def_trait(impl_def)?.has_attr(db, INTERFACE_ATTR)? {
             return Err(ABIError::EmbeddedImplMustBeInterface);

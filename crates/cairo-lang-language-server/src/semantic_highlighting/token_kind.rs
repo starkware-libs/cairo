@@ -159,7 +159,8 @@ impl SemanticTokenKind {
                         ResolvedGenericItem::GenericType(_)
                         | ResolvedGenericItem::GenericTypeAlias(_) => SemanticTokenKind::Type,
                         ResolvedGenericItem::Variant(_) => SemanticTokenKind::EnumMember,
-                        ResolvedGenericItem::Trait(_) => SemanticTokenKind::Interface,
+                        ResolvedGenericItem::Trait(_)
+                        | ResolvedGenericItem::GenericTraitAlias(_) => SemanticTokenKind::Interface,
                         ResolvedGenericItem::Impl(_) | ResolvedGenericItem::GenericImplAlias(_) => {
                             SemanticTokenKind::Class
                         }

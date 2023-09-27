@@ -264,6 +264,9 @@ pub fn get_key_fields(kind: SyntaxKind, children: Vec<GreenId>) -> Vec<GreenId> 
         SyntaxKind::ItemImplAlias => {
             vec![/* name */ children[2]]
         }
+        SyntaxKind::ItemTraitAlias => {
+            vec![/* name */ children[2]]
+        }
         SyntaxKind::ItemStruct => {
             vec![/* name */ children[2]]
         }

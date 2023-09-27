@@ -132,7 +132,10 @@ impl DiagnosticEntry for SemanticDiagnostic {
                 "Cycle detected while resolving 'type alias' items.".into()
             }
             SemanticDiagnosticKind::ImplAliasCycle => {
-                "Cycle detected while resolving 'impls alias' items.".into()
+                "Cycle detected while resolving 'impl alias' items.".into()
+            }
+            SemanticDiagnosticKind::TraitAliasCycle => {
+                "Cycle detected while resolving 'trait alias' items.".into()
             }
             SemanticDiagnosticKind::ImplRequirementCycle => {
                 "Cycle detected while resolving generic param.".into()
@@ -638,6 +641,7 @@ pub enum SemanticDiagnosticKind {
     UseCycle,
     TypeAliasCycle,
     ImplAliasCycle,
+    TraitAliasCycle,
     ImplRequirementCycle,
     MissingMember {
         member_name: SmolStr,

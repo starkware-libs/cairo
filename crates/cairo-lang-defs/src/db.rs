@@ -45,6 +45,8 @@ pub trait DefsGroup:
     #[salsa::interned]
     fn intern_impl_alias(&self, id: ImplAliasLongId) -> ImplAliasId;
     #[salsa::interned]
+    fn intern_trait_alias(&self, id: TraitAliasLongId) -> TraitAliasId;
+    #[salsa::interned]
     fn intern_member(&self, id: MemberLongId) -> MemberId;
     #[salsa::interned]
     fn intern_variant(&self, id: VariantLongId) -> VariantId;
@@ -141,6 +143,11 @@ pub trait DefsGroup:
         module_id: ModuleId,
     ) -> Maybe<Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>>;
     fn module_impl_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<ImplAliasId>>>;
+    fn module_trait_aliases(
+        &self,
+        module_id: ModuleId,
+    ) -> Maybe<Arc<OrderedHashMap<TraitAliasId, ast::ItemTraitAlias>>>;
+    fn module_trait_aliases_ids(&self, module_id: ModuleId) -> Maybe<Arc<Vec<TraitAliasId>>>;
     fn module_traits(
         &self,
         module_id: ModuleId,
@@ -288,6 +295,7 @@ pub struct ModuleData {
     enums: Arc<OrderedHashMap<EnumId, ast::ItemEnum>>,
     type_aliases: Arc<OrderedHashMap<TypeAliasId, ast::ItemTypeAlias>>,
     impl_aliases: Arc<OrderedHashMap<ImplAliasId, ast::ItemImplAlias>>,
+    trait_aliases: Arc<OrderedHashMap<TraitAliasId, ast::ItemTraitAlias>>,
     traits: Arc<OrderedHashMap<TraitId, ast::ItemTrait>>,
     impls: Arc<OrderedHashMap<ImplDefId, ast::ItemImpl>>,
     extern_types: Arc<OrderedHashMap<ExternTypeId, ast::ItemExternType>>,
@@ -341,6 +349,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
     let mut enums = OrderedHashMap::default();
     let mut type_aliases = OrderedHashMap::default();
     let mut impl_aliases = OrderedHashMap::default();
+    let mut trait_aliases = OrderedHashMap::default();
     let mut traits = OrderedHashMap::default();
     let mut impls = OrderedHashMap::default();
     let mut extern_types = OrderedHashMap::default();
@@ -483,6 +492,14 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
                     impl_aliases.insert(item_id, impl_alias);
                     items.push(ModuleItemId::ImplAlias(item_id));
                 }
+                ast::Item::TraitAlias(trait_alias) => {
+                    let item_id = db.intern_trait_alias(TraitAliasLongId(
+                        module_file_id,
+                        trait_alias.stable_ptr(),
+                    ));
+                    trait_aliases.insert(item_id, trait_alias);
+                    items.push(ModuleItemId::TraitAlias(item_id));
+                }
                 ast::Item::InlineMacro(inline_macro_ast) => plugin_diagnostics.push((
                     module_file_id,
                     PluginDiagnostic {
@@ -507,6 +524,7 @@ fn priv_module_data(db: &dyn DefsGroup, module_id: ModuleId) -> Maybe<ModuleData
         enums: enums.into(),
         type_aliases: type_aliases.into(),
         impl_aliases: impl_aliases.into(),
+        trait_aliases: trait_aliases.into(),
         traits: traits.into(),
         impls: impls.into(),
         extern_types: extern_types.into(),
@@ -736,6 +754,20 @@ pub fn module_impl_aliases_ids(
     Ok(Arc::new(db.module_impl_aliases(module_id)?.keys().copied().collect()))
 }
 
+/// Returns all the trait aliases of the given module.
+pub fn module_trait_aliases(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<OrderedHashMap<TraitAliasId, ast::ItemTraitAlias>>> {
+    Ok(db.priv_module_data(module_id)?.trait_aliases)
+}
+pub fn module_trait_aliases_ids(
+    db: &dyn DefsGroup,
+    module_id: ModuleId,
+) -> Maybe<Arc<Vec<TraitAliasId>>> {
+    Ok(Arc::new(db.module_trait_aliases(module_id)?.keys().copied().collect()))
+}
+
 /// Returns all the traits of the given module.
 pub fn module_traits(
     db: &dyn DefsGroup,
@@ -832,6 +864,7 @@ fn module_item_name_stable_ptr(
         ModuleItemId::Enum(id) => data.enums[id].name(db).stable_ptr().untyped(),
         ModuleItemId::TypeAlias(id) => data.type_aliases[id].name(db).stable_ptr().untyped(),
         ModuleItemId::ImplAlias(id) => data.impl_aliases[id].name(db).stable_ptr().untyped(),
+        ModuleItemId::TraitAlias(id) => data.trait_aliases[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Trait(id) => data.traits[id].name(db).stable_ptr().untyped(),
         ModuleItemId::Impl(id) => data.impls[id].name(db).stable_ptr().untyped(),
         ModuleItemId::ExternType(id) => data.extern_types[id].name(db).stable_ptr().untyped(),

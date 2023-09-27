@@ -156,7 +156,7 @@ impl Solver {
     }
 }
 
-/// A solver for a candidate to a canonical trait.
+/// A solver for canonical impl candidates to a canonical trait.
 #[derive(Debug)]
 pub struct CandidateSolver {
     pub candidate: UninferredImpl,

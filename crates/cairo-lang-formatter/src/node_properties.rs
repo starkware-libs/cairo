@@ -198,7 +198,7 @@ impl SyntaxNodeFormat for SyntaxNode {
                 SyntaxKind::ExprPath => Some(4),
                 _ => None,
             },
-            Some(SyntaxKind::ItemImplAlias) => match self.kind(db) {
+            Some(SyntaxKind::ItemImplAlias | SyntaxKind::ItemTraitAlias) => match self.kind(db) {
                 SyntaxKind::AttributeList => Some(1),
                 SyntaxKind::WrappedGenericParamList => Some(2),
                 SyntaxKind::ExprPath => Some(3),

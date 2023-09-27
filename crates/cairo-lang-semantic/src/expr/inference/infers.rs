@@ -87,7 +87,8 @@ pub trait InferenceEmbeddings {
 }
 
 impl<'db> InferenceEmbeddings for Inference<'db> {
-    /// Infers all the variables required to make an uninferred impl provide a concrete trait.
+    /// Infers all the variables required to make an impl, given an uninferred impl and a concrete
+    /// trait.
     fn infer_impl(
         &mut self,
         uninferred_impl: UninferredImpl,
@@ -114,8 +115,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         Ok(impl_id)
     }
 
-    /// Infers all the variables required to make an impl (possibly with free generic params)
-    /// provide a concrete trait.
+    /// Infers all the variables required to make an impl (possibly with free generic params),
+    /// given an impl definition and a concrete trait.
     fn infer_impl_def(
         &mut self,
         impl_def_id: ImplDefId,
@@ -146,8 +147,8 @@ impl<'db> InferenceEmbeddings for Inference<'db> {
         ))
     }
 
-    /// Infers all the variables required to make an impl alias (possibly with free generic params)
-    /// provide a concrete trait.
+    /// Infers all the variables required to make an impl alias (possibly with free generic params),
+    /// given an impl alias and a concrete trait.
     fn infer_impl_alias(
         &mut self,
         impl_alias_id: ImplAliasId,
