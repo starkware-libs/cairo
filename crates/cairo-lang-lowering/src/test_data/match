@@ -188,9 +188,9 @@ foo
 
 //! > lowering_diagnostics
 error: Unsupported matched value. Currently, only matches on enums and felt252s are supported.
- --> lib.cairo:2:3
+ --> lib.cairo:2:9
   match 5_u32 {
-  ^***********^
+        ^***^
 
 //! > lowering_flat
 Parameters:
@@ -424,3 +424,34 @@ error: Unsupported match arm - variants must be the same order as enum declarati
 
 //! > lowering_flat
 Parameters: v0: test::A
+
+//! > ==========================================================================
+
+//! > Match on tuples.
+
+//! > test_runner_name
+test_function_lowering
+
+//! > function
+fn foo(a: (felt252, felt252)) -> felt252 {
+    match a {
+        (0, 1) => 0,
+        _ => 1,
+    }
+}
+
+//! > function_name
+foo
+
+//! > module_code
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+error: Unsupported matched value. Currently, only matches on enums and felt252s are supported.
+ --> lib.cairo:2:11
+    match a {
+          ^
+
+//! > lowering_flat
+Parameters: v0: (core::felt252, core::felt252)
