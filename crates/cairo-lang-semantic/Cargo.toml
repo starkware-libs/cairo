@@ -10,15 +10,15 @@ description = "Cairo semantic model."
 testing = ["dep:cairo-lang-test-utils", "dep:cairo-lang-plugins"]
 
 [dependencies]
-cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.2.0" }
-cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.2.0" }
-cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.2.0" }
-cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.2.0" }
-cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.2.0" }
+cairo-lang-debug = { path = "../cairo-lang-debug", version = "2.3.0-rc0" }
+cairo-lang-defs = { path = "../cairo-lang-defs", version = "2.3.0-rc0" }
+cairo-lang-diagnostics = { path = "../cairo-lang-diagnostics", version = "2.3.0-rc0" }
+cairo-lang-filesystem = { path = "../cairo-lang-filesystem", version = "2.3.0-rc0" }
+cairo-lang-parser = { path = "../cairo-lang-parser", version = "2.3.0-rc0" }
 cairo-lang-plugins = { path = "../cairo-lang-plugins", optional = true }
-cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.2.0" }
-cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.2.0" }
-cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.2.0" }
+cairo-lang-proc-macros = { path = "../cairo-lang-proc-macros", version = "2.3.0-rc0" }
+cairo-lang-syntax = { path = "../cairo-lang-syntax", version = "2.3.0-rc0" }
+cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.0-rc0" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", optional = true, features = ["testing"] }
 id-arena.workspace = true
 itertools.workspace = true
