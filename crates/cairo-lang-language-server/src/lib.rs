@@ -23,7 +23,7 @@ use cairo_lang_filesystem::db::{
     init_dev_corelib, AsFilesGroupMut, FilesGroup, FilesGroupEx, PrivRawFileContentQuery,
 };
 use cairo_lang_filesystem::detect::detect_corelib;
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileId, FileLongId};
+use cairo_lang_filesystem::ids::{CrateId, CrateLongId, Directory, FileId, FileLongId};
 use cairo_lang_filesystem::span::{FileSummary, TextOffset, TextPosition, TextWidth};
 use cairo_lang_formatter::{get_formatted_file, FormatterConfig};
 use cairo_lang_lowering::db::LoweringGroup;
@@ -46,6 +46,7 @@ use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use cairo_lang_syntax::node::utils::is_grandparent_of_kind;
 use cairo_lang_syntax::node::{ast, SyntaxNode, TypedSyntaxNode};
+use cairo_lang_test_plugin::TestPlugin;
 use cairo_lang_utils::ordered_hash_set::OrderedHashSet;
 use cairo_lang_utils::{try_extract_matches, OptionHelper, Upcast};
 use log::warn;
@@ -82,6 +83,7 @@ pub async fn serve_language_service() {
     let db = RootDatabase::builder()
         .with_cfg(CfgSet::from_iter([Cfg::name("test")]))
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+        .with_macro_plugin(Arc::new(TestPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
@@ -319,8 +321,10 @@ impl Backend {
                     warn!("Failed to find corelib path.");
                 }
 
-                match self.scarb.crate_roots(file_path.into()).await {
-                    Ok(create_roots) => update_crate_roots(db, create_roots),
+                match self.scarb.crate_source_paths(file_path.into()).await {
+                    Ok(source_paths) => {
+                        update_crate_roots(db, source_paths.clone());
+                    }
                     Err(err) => {
                         let err =
                             err.context("Failed to obtain scarb metadata from manifest file.");
@@ -1264,10 +1268,55 @@ fn nearest_semantic_pat(
     }
 }
 
-fn update_crate_roots(db: &mut dyn SemanticGroup, crate_roots: Vec<(CrateLongId, Directory)>) {
-    for (crate_long_id, crate_root) in crate_roots {
-        let crate_id = db.intern_crate(crate_long_id);
+fn update_crate_roots(db: &mut dyn SemanticGroup, source_paths: Vec<(CrateLongId, PathBuf)>) {
+    let source_paths = source_paths
+        .into_iter()
+        .filter_map(|(crate_long_id, source_path)| {
+            let file_stem =
+                source_path.clone().file_stem().map(|x| x.to_string_lossy().to_string());
+
+            let crate_root: Option<PathBuf> = if !source_path.is_dir() {
+                source_path.clone().parent().map(|x| x.to_path_buf())
+            } else {
+                Some(source_path.clone())
+            };
+
+            match (crate_root, file_stem) {
+                (Some(crate_root), Some(file_stem)) => {
+                    let crate_id = db.intern_crate(crate_long_id);
+                    Some((crate_id, crate_root, file_stem))
+                }
+                _ => None,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    for (crate_id, crate_root, _file_stem) in source_paths.clone() {
+        let crate_root = Directory::Real(crate_root);
         db.set_crate_root(crate_id, Some(crate_root));
+    }
+
+    let source_paths = source_paths
+        .into_iter()
+        .filter(|(_crate_id, _crate_root, file_stem)| *file_stem != "lib")
+        .map(|(crate_id, _crate_root, file_stem)| (crate_id, file_stem))
+        .collect::<Vec<_>>();
+
+    inject_virtual_wrapper_lib(db, source_paths);
+}
+
+/// Generates a wrapper lib file for appropriate compilation units.
+///
+/// This approach allows compiling crates that do not define `lib.cairo` file.
+/// For example, single file crates can be created this way.
+/// The actual single file module is defined as `mod` item in created lib file.
+fn inject_virtual_wrapper_lib(db: &mut dyn SemanticGroup, components: Vec<(CrateId, String)>) {
+    for (crate_id, file_stem) in components {
+        let module_id = ModuleId::CrateRoot(crate_id);
+        let file_id = db.module_main_file(module_id).unwrap();
+        // Inject virtual lib file wrapper.
+        db.as_files_group_mut()
+            .override_file_content(file_id, Some(Arc::new(format!("mod {file_stem};"))));
     }
 }
 
