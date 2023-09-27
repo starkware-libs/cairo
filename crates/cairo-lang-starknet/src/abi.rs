@@ -787,8 +787,8 @@ pub enum ABIError {
     EmbeddableImplWithExtraGenerics,
     #[error(
         "An impl marked with #[abi(per_item)] can't be of a trait marked with \
-         #[starknet::interface]. Consider using #[abi(embed_v0)] instead, or use a non-interface \
-         trait."
+         #[starknet::interface].\n    Consider using #[abi(embed_v0)] instead, or use a \
+         non-interface trait."
     )]
     ContractInterfaceImplCannotBePerItem,
     #[error(
@@ -796,7 +796,7 @@ pub enum ABIError {
          supported."
     )]
     InvalidDuplicatedItem { description: String },
-    #[error("Duplicate entry point name: {name}. This is not currently supported.")]
+    #[error("Duplicate entry point: '{name}'. This is not currently supported.")]
     DuplicateEntryPointName { name: String },
 }
 impl From<DiagnosticAdded> for ABIError {
@@ -829,14 +829,14 @@ pub enum Item {
 impl Item {
     fn description(&self) -> String {
         match self {
-            Item::Function(item) => format!("Function {}", item.name),
-            Item::Constructor(item) => format!("Constructor {}", item.name),
-            Item::L1Handler(item) => format!("L1 Handler {}", item.name),
-            Item::Event(item) => format!("Event {}", item.name),
-            Item::Struct(item) => format!("Struct {}", item.name),
-            Item::Enum(item) => format!("Enum {}", item.name),
-            Item::Interface(item) => format!("Interface {}", item.name),
-            Item::Impl(item) => format!("Impl {}", item.name),
+            Item::Function(item) => format!("Function '{}'", item.name),
+            Item::Constructor(item) => format!("Constructor '{}'", item.name),
+            Item::L1Handler(item) => format!("L1 Handler '{}'", item.name),
+            Item::Event(item) => format!("Event '{}'", item.name),
+            Item::Struct(item) => format!("Struct '{}'", item.name),
+            Item::Enum(item) => format!("Enum '{}'", item.name),
+            Item::Interface(item) => format!("Interface '{}'", item.name),
+            Item::Impl(item) => format!("Impl '{}'", item.name),
         }
     }
 }
