@@ -1,8 +1,10 @@
 mod abi_dispatchers_tests;
+mod components;
 mod contract_tests;
 mod events;
 mod interoperability;
 mod l2_to_l1_messages;
+mod multi_component_test;
 mod replace_class_test;
 mod storage_access;
 mod utils;
