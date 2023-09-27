@@ -8,6 +8,7 @@ use defs::diagnostic_utils::StableLocation;
 use defs::ids::FreeFunctionId;
 use semantic::substitution::{GenericSubstitution, SubstitutionRewriter};
 use semantic::{ExprVar, Mutability};
+use smol_str::SmolStr;
 use {cairo_lang_defs as defs, cairo_lang_semantic as semantic};
 
 use crate::db::LoweringGroup;
@@ -140,6 +141,12 @@ impl ConcreteFunctionWithBodyLongId {
             ConcreteFunctionWithBodyLongId::Generated(generated) => generated.parent,
         }
     }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        match self {
+            ConcreteFunctionWithBodyLongId::Semantic(id) => id.name(db.upcast()),
+            ConcreteFunctionWithBodyLongId::Generated(_) => "<generated>".into(),
+        }
+    }
 }
 impl ConcreteFunctionWithBodyId {
     pub fn from_semantic(
@@ -161,6 +168,9 @@ impl ConcreteFunctionWithBodyId {
     }
     pub fn function_id(&self, db: &dyn LoweringGroup) -> Maybe<FunctionId> {
         self.get(db).function_id(db)
+    }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        self.get(db).name(db)
     }
     pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
         let generic_signature = self.function_with_body_id(db).signature(db)?;
@@ -231,16 +241,25 @@ impl FunctionLongId {
             FunctionLongId::Generated(generated) => generated.body(db).signature(db),
         }
     }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        match *self {
+            FunctionLongId::Semantic(f) => f.name(db.upcast()),
+            FunctionLongId::Generated(_) => "<generated>".into(),
+        }
+    }
 }
 impl FunctionId {
-    pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
-        db.lookup_intern_lowering_function(*self).body(db)
-    }
-    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
-        db.lookup_intern_lowering_function(*self).signature(db)
-    }
     pub fn lookup(&self, db: &dyn LoweringGroup) -> FunctionLongId {
         db.lookup_intern_lowering_function(*self)
+    }
+    pub fn body(&self, db: &dyn LoweringGroup) -> Maybe<Option<ConcreteFunctionWithBodyId>> {
+        self.lookup(db).body(db)
+    }
+    pub fn signature(&self, db: &dyn LoweringGroup) -> Maybe<Signature> {
+        self.lookup(db).signature(db)
+    }
+    pub fn name(&self, db: &dyn LoweringGroup) -> SmolStr {
+        self.lookup(db).name(db)
     }
 }
 pub trait SemanticFunctionIdEx {
