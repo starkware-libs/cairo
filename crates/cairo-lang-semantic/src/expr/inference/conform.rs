@@ -68,7 +68,7 @@ impl<'db> InferenceConform for Inference<'db> {
     ) -> Result<(TypeId, usize), InferenceError> {
         let ty0 = self.rewrite(ty0).no_err();
         let ty1 = self.rewrite(ty1).no_err();
-        if ty0 == never_ty(self.db) {
+        if ty0 == never_ty(self.db) || ty0.is_missing(self.db) {
             return Ok((ty1, 0));
         }
         if ty0 == ty1 {

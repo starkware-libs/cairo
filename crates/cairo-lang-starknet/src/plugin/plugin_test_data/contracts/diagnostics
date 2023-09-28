@@ -1014,10 +1014,10 @@ error: Type not found.
         serde::Serde::<T>::deserialize(ref data),
                        ^
 
-error: Plugin diagnostic: Type annotations needed. Failed to infer ?8
- --> lib.cairo:6:8
-    fn foo<T>(ref self: ContractState, x: T) {
-       ^*^
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo[contract]:32:27
+    let __arg_x = option::OptionTraitImpl::expect(
+                          ^*************^
 
 error: Variable not dropped.
  --> lib.cairo:6:40
@@ -4793,10 +4793,10 @@ error: Plugin diagnostic: Type not found.
         component_storage: super::component::Storage,
                                              ^*****^
 
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:38:74
-                    starknet::Store::<super::super::component::Storage>::read(
-                                                                         ^**^
+error: Type annotations needed. Failed to infer ?0
+ --> lib.cairo[contract]:37:27
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                          ^********************^
 
 error: Plugin diagnostic: Type not found.
  --> lib.cairo:28:46
