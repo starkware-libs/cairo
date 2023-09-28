@@ -4726,7 +4726,7 @@ mod component {
 mod contract {
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component_storage: super::component::Storage,
     }
 
@@ -4758,61 +4758,6 @@ error: Plugin diagnostic: Plugin diagnostic: The `constructor` attribute is not 
         #[constructor]
         ^************^
 
-error: Plugin diagnostic: `component_storage` is not a substorage member in the contract's `Storage`.
-Consider adding to `Storage`:
-```
-#[substorage(v0)]
-component_storage: path::to::component::Storage,
-````
- --> lib.cairo:37:49
-    component!(path: super::component, storage: component_storage, event: CompEvent);
-                                                ^***************^
-
-error: Trait has no implementation in context: test::component::HasComponent::<test::contract::ContractState>
- --> lib.cairo:40:45
-    impl MyEmbeddedImpl = super::component::MyEmbeddableImpl<ContractState>;
-                                            ^**************^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:38:74
-                    starknet::Store::<super::super::component::Storage>::read(
-                                                                         ^**^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Plugin diagnostic: Type not found.
- --> lib.cairo:28:46
-        component_storage: super::component::Storage,
-                                             ^*****^
-
-error: Cannot infer trait core::starknet::storage_access::StorePacking::<?0, ?1>. First generic argument must be known.
- --> lib.cairo[contract]:48:74
-                    starknet::Store::<super::super::component::Storage>::write(
-                                                                         ^***^
-
 //! > generated_cairo_code
 lib.cairo:
 
@@ -4842,7 +4787,7 @@ mod component {
 mod contract {
     #[storage]
     struct Storage {
-        #[nested(v0)]
+        #[substorage(v0)]
         component_storage: super::component::Storage,
     }
 
@@ -5401,13 +5346,13 @@ contract:
 
 
     struct ContractState {
-        component_storage: component_storage::ContractMemberState,
+        component_storage: super::component::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            component_storage: component_storage::ContractMemberState {},
+            component_storage: super::component::unsafe_new_component_state::<ContractState>(),
         }
     }
     #[cfg(test)]
@@ -5416,50 +5361,12 @@ contract:
         unsafe_new_contract_state()
     }
     
-    use component_storage::InternalContractMemberStateTrait as component_storageContractMemberStateTrait;
-    mod component_storage {
-        use super::Event;
-        #[derive(Copy, Drop)]
-        struct ContractMemberState {}
-        trait InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
-            fn read(self: @ContractMemberState) -> super::super::component::Storage;
-            fn write(ref self: ContractMemberState, value: super::super::component::Storage);
-        }
-
-        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
-            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
-                starknet::storage_base_address_const::<0x296bf20d25eb4778c24b35fb0f35f9a952b492b10d892b1c494a6f2366b9028>()
-            }
-            fn read(self: @ContractMemberState) -> super::super::component::Storage {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::super::component::Storage>::read(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(self),
-                    )
-                )
-            }
-            fn write(ref self: ContractMemberState, value: super::super::component::Storage) {
-                // Only address_domain 0 is currently supported.
-                let address_domain = 0_u32;
-                starknet::SyscallResultTraitImpl::unwrap_syscall(
-                    starknet::Store::<super::super::component::Storage>::write(
-                        address_domain,
-                        InternalContractMemberStateImpl::address(@self),
-                        value,
-                    )
-                )
-            }
-        }
-    }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
 #[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x30293779cf895ead5ce1bd8368434741fe6d6b15e0b81383453dba41643c266;
+const TEST_CLASS_HASH: felt252 = 0x291a893aaae68e6364fac8003da0089f1c976946ebe457ce78ed62b5e680be2;
 
 impl ContractStateMyEmbeddableImpl of
     super::component::UnsafeNewContractStateTraitForMyEmbeddableImpl<ContractState> {
@@ -5496,6 +5403,25 @@ impl ContractStateMyEmbeddableImpl of
         }
     }
 
+impl HasComponentImpl_component of super::component::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @super::component::ComponentState<ContractState> {
+        self.component_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> super::component::ComponentState<ContractState> {
+        super::component::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @super::component::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: super::component::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, super::component::Event>>(ref self: super::component::ComponentState<ContractState>, event: S) {
+        let event: super::component::Event = traits::Into::into(event);
+        let mut contract = super::component::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::CompEvent(event));
+    }
+}
 
 
 impls:
