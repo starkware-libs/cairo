@@ -65,13 +65,13 @@ pub fn handle_embeddable(db: &dyn SyntaxGroup, item_impl: ast::ItemImpl) -> Plug
                 chain!(
                     [RewriteNode::Text(format!("::<{GENERIC_CONTRACT_STATE_NAME}"))],
                     elements.flat_map(|param| [
-                        RewriteNode::Text(", ".to_string()),
+                        RewriteNode::text(", "),
                         param
                             .name(db)
                             .map(|name| RewriteNode::new_trimmed(name.as_syntax_node()))
-                            .unwrap_or_else(|| RewriteNode::Text("_".into()))
+                            .unwrap_or_else(|| RewriteNode::text("_"))
                     ]),
-                    [RewriteNode::Text(">".to_string())],
+                    [RewriteNode::text(">")],
                 )
                 .collect(),
             );

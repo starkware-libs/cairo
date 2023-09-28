@@ -199,7 +199,7 @@ fn handle_enum(
     let mut event_into_impls = vec![];
     for variant in enum_ast.variants(db).elements(db) {
         let ty = match variant.type_clause(db) {
-            ast::OptionTypeClause::Empty(_) => RewriteNode::Text("()".to_string()),
+            ast::OptionTypeClause::Empty(_) => RewriteNode::text("()"),
             ast::OptionTypeClause::TypeClause(tc) => {
                 RewriteNode::new_trimmed(tc.ty(db).as_syntax_node())
             }
@@ -217,7 +217,7 @@ fn handle_enum(
             get_field_kind_for_variant(db, diagnostics, &variant, EventFieldKind::Nested);
         variants.push((name, member_kind));
 
-        let append_member = append_field(member_kind, RewriteNode::Text("val".into()));
+        let append_member = append_field(member_kind, RewriteNode::text("val"));
         let append_variant = RewriteNode::interpolate_patched(
             &format!(
                 "
@@ -254,8 +254,7 @@ fn handle_enum(
             );
             deserialize_flat_variants.push(deserialize_variant);
         } else {
-            let deserialize_member =
-                deserialize_field(member_kind, RewriteNode::Text("val".into()));
+            let deserialize_member = deserialize_field(member_kind, RewriteNode::text("val"));
             let deserialize_variant = RewriteNode::interpolate_patched(
                 "\
         if selector == selector!(\"$variant_name$\") {$deserialize_member$
@@ -387,14 +386,11 @@ fn deserialize_field(member_kind: EventFieldKind, member_name: RewriteNode) -> R
 }
 
 fn try_deserialize_field(member_kind: EventFieldKind) -> RewriteNode {
-    RewriteNode::Text(
-        match member_kind {
-            EventFieldKind::Nested | EventFieldKind::Flat => {
-                "starknet::Event::deserialize(ref keys, ref data)"
-            }
-            EventFieldKind::KeySerde => "serde::Serde::deserialize(ref keys)",
-            EventFieldKind::DataSerde => "serde::Serde::deserialize(ref data)",
+    RewriteNode::text(match member_kind {
+        EventFieldKind::Nested | EventFieldKind::Flat => {
+            "starknet::Event::deserialize(ref keys, ref data)"
         }
-        .to_string(),
-    )
+        EventFieldKind::KeySerde => "serde::Serde::deserialize(ref keys)",
+        EventFieldKind::DataSerde => "serde::Serde::deserialize(ref data)",
+    })
 }

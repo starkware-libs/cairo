@@ -346,7 +346,7 @@ fn declaration_method_impl(
     unwrap: bool,
 ) -> RewriteNode {
     let deserialization_code = if ret_decode.is_empty() {
-        RewriteNode::Text("()".to_string())
+        RewriteNode::text("()")
     } else {
         RewriteNode::Text(if unwrap {
             ret_decode.clone()
@@ -384,8 +384,8 @@ fn declaration_method_impl(
         &[
             ("func_decl".to_string(), func_declaration),
             ("entry_point_selector".to_string(), entry_point_selector),
-            ("syscall".to_string(), RewriteNode::Text(syscall.to_string())),
-            ("member".to_string(), RewriteNode::Text(member.to_string())),
+            ("syscall".to_string(), RewriteNode::text(syscall)),
+            ("member".to_string(), RewriteNode::text(member)),
             ("serialization_code".to_string(), RewriteNode::new_modified(serialization_code)),
             ("return_code".to_string(), return_code),
         ]
@@ -411,7 +411,7 @@ fn dispatcher_signature(
     drop(params.drain(0..std::cmp::min(2, params.len())));
     params.splice(
         0..0,
-        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::Text(", ".to_string())],
+        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::text(", ")],
     );
     if unwrap {
         return func_declaration;
@@ -425,7 +425,7 @@ fn dispatcher_signature(
         .unwrap();
 
     if return_type.is_empty() {
-        let new_ret_type = RewriteNode::Text(String::from(" -> starknet::SyscallResult<()>"));
+        let new_ret_type = RewriteNode::text(" -> starknet::SyscallResult<()>");
         return_type.splice(0..0, [new_ret_type]);
     } else {
         let previous_ret_type = RewriteNode::new_modified(return_type[1..2].into());
