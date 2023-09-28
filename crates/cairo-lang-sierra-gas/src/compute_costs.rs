@@ -474,6 +474,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     ) {
         finalized_excess_statements.insert(*idx);
 
+        let wallet_value = self.wallet_at(idx).value;
         let current_excess = excess.get(idx).cloned().unwrap_or_default();
 
         let invocation = match &self.program.get_statement(idx).unwrap() {
@@ -495,7 +496,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         );
 
         // Pass the excess to the branches.
-        for (branch_info, _branch_cost, _branch_requirement) in
+        for (branch_info, branch_cost, branch_requirement) in
             zip_eq3(&invocation.branches, &libfunc_cost, branch_requirements)
         {
             let branch_statement = idx.next(&branch_info.target);
@@ -504,10 +505,23 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 return;
             }
 
-            let actual_excess = current_excess.clone();
+            let mut actual_excess = current_excess.clone();
 
-            // TODO(lior): Modify actual_excess for statements such as `withdraw_gas`,
-            //   `redeposit_gas` and `branch_align`.
+            if invocation.branches.len() > 1 {
+                if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
+                    // TODO(lior): use existing excess instead of withdrawing.
+                    // TODO(lior): if there is no withdrawal, increase the excess similar to a
+                    //   regular `branch_align`.
+                } else {
+                    // Branch align of a non-withdraw-gas statement.
+                    // If there are branch align, increase the excess by the current difference,
+                    // so that future statements will be able to use it (e.g., `redeposit_gas`).
+                    let additional_excess = wallet_value.clone() - branch_requirement.value;
+                    actual_excess = actual_excess + CostType::rectify(&additional_excess);
+                }
+            }
+
+            // TODO(lior): Modify actual_excess for `redeposit_gas`.
 
             // Update the excess for `branch_statement` using the minimum of the existing excess and
             // `actual_excess`.
