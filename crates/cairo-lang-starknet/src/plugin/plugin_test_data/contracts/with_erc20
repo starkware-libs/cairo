@@ -1328,63 +1328,63 @@ impl IERC20<
     
     fn get_name(self: @TContractState) -> felt252 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::get_name(component, )
+        ERC20Impl::get_name(component)
     }
     
     fn get_symbol(self: @TContractState) -> felt252 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::get_symbol(component, )
+        ERC20Impl::get_symbol(component)
     }
     
     fn get_decimals(self: @TContractState) -> u8 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::get_decimals(component, )
+        ERC20Impl::get_decimals(component)
     }
     
     fn get_total_supply(self: @TContractState) -> u256 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::get_total_supply(component, )
+        ERC20Impl::get_total_supply(component)
     }
     
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::balance_of(component, account, )
+        ERC20Impl::balance_of(component, account)
     }
     
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress
 ) -> u256 {
         let component = HasComponent::get_component(self);
-        ERC20Impl::allowance(component, owner, spender, )
+        ERC20Impl::allowance(component, owner, spender)
     }
     
     fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        ERC20Impl::transfer(ref component, recipient, amount, )
+        ERC20Impl::transfer(ref component, recipient, amount)
     }
     
     fn transfer_from(ref self: TContractState,             sender: ContractAddress,             recipient: ContractAddress,             amount: u256
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        ERC20Impl::transfer_from(ref component,             sender,             recipient,             amount, )
+        ERC20Impl::transfer_from(ref component,             sender,             recipient,             amount)
     }
     
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        ERC20Impl::approve(ref component, spender, amount, )
+        ERC20Impl::approve(ref component, spender, amount)
     }
     
     fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        ERC20Impl::increase_allowance(ref component, spender, added_value, )
+        ERC20Impl::increase_allowance(ref component, spender, added_value)
     }
     
     fn decrease_allowance(ref self: TContractState,             spender: ContractAddress,             subtracted_value: u256
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        ERC20Impl::decrease_allowance(ref component,             spender,             subtracted_value, )
+        ERC20Impl::decrease_allowance(ref component,             spender,             subtracted_value)
     }
 }
 
