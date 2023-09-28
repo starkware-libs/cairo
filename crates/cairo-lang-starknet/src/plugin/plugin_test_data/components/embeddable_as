@@ -82,7 +82,7 @@ impl MyImpl<
     
     fn do_nothing(self: @TContractState) {
         let component = HasComponent::get_component(self);
-        MyInnerImpl::do_nothing(component, )
+        MyInnerImpl::do_nothing(component)
     }
 }
 
