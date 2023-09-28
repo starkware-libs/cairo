@@ -28,8 +28,12 @@ impl RewriteNode {
         Self::Modified(ModifiedNode { children: Some(children) })
     }
 
+    pub fn text(text: &str) -> Self {
+        Self::Text(text.to_string())
+    }
+
     pub fn empty() -> Self {
-        Self::Text("".to_string())
+        Self::text("")
     }
 
     /// Creates a rewrite node from an AST object.
@@ -158,7 +162,7 @@ impl RewriteNode {
             // If the string wasn't empty and there is some pending text, first flush it as a text
             // child.
             if !pending_text.is_empty() {
-                children.push(RewriteNode::Text(pending_text.clone()));
+                children.push(RewriteNode::text(&pending_text));
                 pending_text.clear();
             }
             // Replace the substring with the relevant rewrite node.
@@ -169,7 +173,7 @@ impl RewriteNode {
         }
         // Flush the remaining text as a text child.
         if !pending_text.is_empty() {
-            children.push(RewriteNode::Text(pending_text.clone()));
+            children.push(RewriteNode::text(&pending_text));
         }
 
         RewriteNode::new_modified(children)

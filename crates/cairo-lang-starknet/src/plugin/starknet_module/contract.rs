@@ -519,10 +519,7 @@ fn handle_embed_impl_alias(
         impl_module
             .iter()
             .flat_map(|segment| {
-                vec![
-                    RewriteNode::new_trimmed(segment.as_syntax_node()),
-                    RewriteNode::Text("::".to_string()),
-                ]
+                vec![RewriteNode::new_trimmed(segment.as_syntax_node()), RewriteNode::text("::")]
             })
             .collect(),
     );
