@@ -1,7 +1,7 @@
 //! > Test import alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 use u32 as myU32;

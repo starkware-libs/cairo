@@ -1,7 +1,7 @@
 //! > Test simple struct type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: RenamedStruct) -> felt252 {
@@ -25,7 +25,7 @@ type RenamedStruct = MyStruct;
 //! > Test simple enum type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: RenamedEnum) -> felt252 {
@@ -51,7 +51,7 @@ type RenamedEnum = MyEnum;
 //! > Test tuple type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: RenamedTuple) -> felt252 {
@@ -72,7 +72,7 @@ type RenamedTuple = (felt252, u128);
 //! > Test generic enum type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: OptionFelt252) -> felt252 {
@@ -95,7 +95,7 @@ type OptionFelt252 = Option::<felt252>;
 //! > Test generic tuple type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: RenamedTuple::<u128>) -> u128 {
@@ -116,7 +116,7 @@ type RenamedTuple<T> = (felt252, T);
 //! > Test type alias chain.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: A::<bool>) -> (felt252, u128, bool) {
@@ -137,7 +137,7 @@ type B<P1, P2, P3> = (P1, P3, P2);
 //! > Test type alias wrong generic argument.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A::<5>) -> felt252 {
@@ -162,7 +162,7 @@ fn foo(a: A::<5>) -> felt252 {
 //! > Test type alias cycle.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> B {
@@ -192,7 +192,7 @@ type B = A;
 //! > Test type alias cycle of size 1.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> A {
@@ -216,7 +216,7 @@ type A = A;
 //! > Test simple unknown type alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: Alias) -> felt252 {

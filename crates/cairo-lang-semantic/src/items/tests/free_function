@@ -1,7 +1,7 @@
 //! > Test free function param redefinition.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool, a: felt252) {
@@ -23,7 +23,7 @@ fn foo(a: bool, a: felt252) {
 //! > Test valid free function with implicit params.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: bool) implicits(felt252, bool) {

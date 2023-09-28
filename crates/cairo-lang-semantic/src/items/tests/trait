@@ -1,7 +1,7 @@
 //! > Test trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -151,7 +151,7 @@ impl abc of abc;
 //! > Test enum generics failures.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -186,7 +186,7 @@ impl MyImpl4 of foo;
 //! > Test copy and dup impls.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -254,7 +254,7 @@ impl T2Drop of Drop::<(felt252, NonCopy)>;
 //! > Mutable param is not allowed in trait functions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -278,7 +278,7 @@ error: Parameter of trait function `MyTrait::f` can't be defined as mutable.
 //! > Impl function param can be mutable or immutable.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -328,7 +328,7 @@ error: Trait function `MyTrait::foo` has a body. Trait functions with body are n
 //! > Test no impls of trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -354,7 +354,7 @@ error: Trait has no implementation in context: test::MyTrait
 //! > Test multiple impls of trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -386,7 +386,7 @@ error: Trait `test::MyTrait` has multiple implementations, in: test::MyImpl1, te
 //! > Test missing functions in empty impl.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -412,7 +412,7 @@ impl MyImpl of MyTrait;
 //! > Test missing functions in nonempty impl.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -443,7 +443,7 @@ impl MyImpl of MyTrait {
 //! > with the assignment of the generic args of the trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bla() {
@@ -474,7 +474,7 @@ error: Parameter type of impl function `Felt252Identity::foo` is incompatible wi
 //! > the assignment of the generic args of the trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bla() {
@@ -505,7 +505,7 @@ error: Return type of impl function `Felt252Identity::foo` is incompatible with 
 //! > Repeating generic params in trait.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn bla() {
@@ -530,7 +530,7 @@ impl Felt252Identity of Identity::<felt252, felt252> {
 //! > Repeating generic params in trait and function.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bla() {
@@ -559,7 +559,7 @@ error: Parameter type of impl function `Felt252Identity::foo` is incompatible wi
 //! > Matching generic arguments of functions in trait/impl.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn bla() {
@@ -584,7 +584,7 @@ impl Felt252Identity of Identity::<felt252> {
 //! > trait/impl fn declared twice.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn bla() {
