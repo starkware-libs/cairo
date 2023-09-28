@@ -1,4 +1,4 @@
-use cairo_lang_defs::patcher::RewriteNode;
+use cairo_lang_defs::patcher::{ModifiedNode, RewriteNode};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -6,7 +6,7 @@ use cairo_lang_syntax::node::helpers::{PathSegmentEx, QueryAttrs};
 use cairo_lang_syntax::node::{ast, Terminal, TypedSyntaxNode};
 use cairo_lang_utils::try_extract_matches;
 use indoc::{formatdoc, indoc};
-use itertools::{chain, Itertools};
+use itertools::Itertools;
 
 use super::generation_data::{ComponentGenerationData, StarknetModuleCommonGenerationData};
 use super::StarknetModuleKind;
@@ -301,16 +301,13 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
     let elements = trait_path.elements(db);
     let (last, prefix) = elements.split_last().unwrap();
     let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
-    RewriteNode::new_modified(
-        itertools::Itertools::intersperse(
-            chain!(
-                prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
-                [last_without_generics]
-            ),
-            RewriteNode::Text("::".to_string()),
-        )
-        .collect_vec(),
+
+    ModifiedNode::new(
+        prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())).collect_vec(),
     )
+    .add_child(last_without_generics)
+    .intersperse(RewriteNode::Text("::".to_string()))
+    .into()
 }
 
 /// Handles an item of an `#[embeddable_as]` impl inside a component module.
@@ -363,17 +360,11 @@ fn handle_component_embeddable_as_impl_item(
             })
             .collect(),
     );
-    let args_node = RewriteNode::new_modified(
-        rest_params
-            .iter()
-            .flat_map(|p| {
-                vec![
-                    RewriteNode::Copied(p.name(db).as_syntax_node()),
-                    RewriteNode::Text(", ".to_string()),
-                ]
-            })
-            .collect(),
-    );
+    let args_node = ModifiedNode::new(
+        rest_params.into_iter().map(|p| RewriteNode::Copied(p.name(db).as_syntax_node())).collect(),
+    )
+    .insert_child(0, RewriteNode::Text(format!("{callsite_modifier}component")))
+    .intersperse(RewriteNode::Text(", ".to_string()));
     let ret_ty = match signature.ret_ty(db) {
         ast::OptionReturnTypeClause::Empty(_) => RewriteNode::empty(),
         ast::OptionReturnTypeClause::ReturnTypeClause(x) => RewriteNode::interpolate_patched(
@@ -397,14 +388,14 @@ fn handle_component_embeddable_as_impl_item(
         &format!(
             "$generated_function_sig$ {{
         {get_component_call}
-        $impl_path$::$function_name$({callsite_modifier}component, $args_node$)
+        $impl_path$::$function_name$($args_node$)
     }}"
         ),
         &[
             ("generated_function_sig".to_string(), generated_function_sig),
             ("impl_path".to_string(), impl_path),
             ("function_name".to_string(), function_name),
-            ("args_node".to_string(), args_node),
+            ("args_node".to_string(), args_node.into()),
         ]
         .into(),
     );
