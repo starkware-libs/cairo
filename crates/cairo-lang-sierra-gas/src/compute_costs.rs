@@ -91,13 +91,22 @@ pub fn compute_costs<
     get_cost_fn: &dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     specific_cost_context: &SpecificCostContext,
 ) -> Result<GasInfo, CostError> {
-    let mut context = CostContext { program, costs: UnorderedHashMap::default(), get_cost_fn };
+    let mut context = CostContext {
+        program,
+        get_cost_fn,
+        costs: Default::default(),
+        target_values: Default::default(),
+    };
 
     context.prepare_wallet(specific_cost_context)?;
 
     if SpecificCostContext::should_handle_excess() {
         // Compute the excess cost and the corresponding target value for each statement.
-        context.compute_target_values(specific_cost_context)?;
+        context.target_values = context.compute_target_values(specific_cost_context)?;
+
+        // Recompute the wallet values for each statement, after setting the target values.
+        context.costs = Default::default();
+        context.prepare_wallet(specific_cost_context)?;
     }
 
     let mut variable_values = VariableValues::default();
@@ -270,8 +279,28 @@ pub struct WalletInfo<CostType: CostTypeTrait> {
 }
 
 impl<CostType: CostTypeTrait> WalletInfo<CostType> {
-    fn merge(branches: Vec<Self>) -> Self {
-        let max_value = CostType::max(branches.iter().map(|wallet_info| wallet_info.value.clone()));
+    /// Computes the wallet value of a statement, given the wallet values of its branches.
+    ///
+    /// `target_value` is the target value for this statement. See [CostType::target_values].
+    fn merge(
+        branch_costs: Vec<BranchCost>,
+        branches: Vec<Self>,
+        target_value: Option<&CostType>,
+    ) -> Self {
+        let n_branches = branches.len();
+        let mut max_value =
+            CostType::max(branches.iter().map(|wallet_info| wallet_info.value.clone()));
+
+        // If there are multiple branches, there must be a branch_align in each of them, which
+        // can be used to increase the wallet value up to the target value.
+        if n_branches > 1  {
+            if let Some(target_value) = target_value {
+                // If the target value is greater than the maximum value of the branches, use
+                // the target value.
+                max_value = CostType::max([max_value, target_value.clone()].into_iter());
+            }
+        }
+
         WalletInfo { value: max_value }
     }
 }
@@ -300,6 +329,8 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     get_cost_fn: &'a dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     /// The cost before executing a Sierra statement.
     costs: UnorderedHashMap<StatementIdx, WalletInfo<CostType>>,
+    /// A partial map from StatementIdx to a requested lower bound on the wallet value.
+    target_values: UnorderedHashMap<StatementIdx, CostType>,
 }
 impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     /// Returns the cost of a libfunc for every output branch.
@@ -376,7 +407,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 
                 // The wallet value at the beginning of the statement is the maximal value
                 // required by all the branches.
-                WalletInfo::merge(branch_requirements)
+                WalletInfo::merge(libfunc_cost, branch_requirements, self.target_values.get(idx))
             }
         }
     }
