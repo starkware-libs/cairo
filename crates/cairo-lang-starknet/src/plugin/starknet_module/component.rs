@@ -1,4 +1,4 @@
-use cairo_lang_defs::patcher::RewriteNode;
+use cairo_lang_defs::patcher::{ModifiedNode, RewriteNode};
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{AttributeArg, AttributeArgVariant};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -301,16 +301,13 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
     let elements = trait_path.elements(db);
     let (last, prefix) = elements.split_last().unwrap();
     let last_without_generics = RewriteNode::new_trimmed(last.identifier_ast(db).as_syntax_node());
-    RewriteNode::new_modified(
-        itertools::Itertools::intersperse(
-            chain!(
-                prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
-                [last_without_generics]
-            ),
-            RewriteNode::text("::"),
-        )
-        .collect_vec(),
+
+    ModifiedNode::new(
+        prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())).collect_vec(),
     )
+    .add_child(last_without_generics)
+    .intersperse(RewriteNode::text("::"))
+    .into()
 }
 
 /// Handles an item of an `#[embeddable_as]` impl inside a component module.
@@ -361,13 +358,12 @@ fn handle_component_embeddable_as_impl_item(
             .flat_map(|p| vec![RewriteNode::text(", "), RewriteNode::Copied(p.as_syntax_node())])
             .collect(),
     );
-    let args_node = RewriteNode::new_modified(
-        rest_params
-            .iter()
-            .flat_map(|p| {
-                vec![RewriteNode::Copied(p.name(db).as_syntax_node()), RewriteNode::text(", ")]
-            })
-            .collect(),
+    let args_node = RewriteNode::interspersed(
+        chain!(
+            [RewriteNode::Text(format!("{callsite_modifier}component"))],
+            rest_params.into_iter().map(|p| RewriteNode::Copied(p.name(db).as_syntax_node()))
+        ),
+        RewriteNode::text(", "),
     );
     let ret_ty = match signature.ret_ty(db) {
         ast::OptionReturnTypeClause::Empty(_) => RewriteNode::empty(),
@@ -392,14 +388,14 @@ fn handle_component_embeddable_as_impl_item(
         &format!(
             "$generated_function_sig$ {{
         {get_component_call}
-        $impl_path$::$function_name$({callsite_modifier}component, $args_node$)
+        $impl_path$::$function_name$($args_node$)
     }}"
         ),
         &[
             ("generated_function_sig".to_string(), generated_function_sig),
             ("impl_path".to_string(), impl_path),
             ("function_name".to_string(), function_name),
-            ("args_node".to_string(), args_node),
+            ("args_node".to_string(), args_node.into()),
         ]
         .into(),
     );
