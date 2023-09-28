@@ -1,4 +1,4 @@
-use cairo_lang_defs::patcher::RewriteNode;
+use cairo_lang_defs::patcher::{ModifiedNode, RewriteNode};
 use cairo_lang_defs::plugin::{PluginDiagnostic, PluginResult};
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::{
@@ -515,18 +515,18 @@ fn handle_embed_impl_alias(
         return;
     }
     let impl_name = impl_final_part.identifier_ast(db);
-    let impl_module = RewriteNode::new_modified(
+    let impl_module: RewriteNode = ModifiedNode::new(
         impl_module
             .iter()
-            .flat_map(|segment| {
-                vec![RewriteNode::new_trimmed(segment.as_syntax_node()), RewriteNode::text("::")]
-            })
+            .map(|segment| RewriteNode::new_trimmed(segment.as_syntax_node()))
             .collect(),
-    );
+    )
+    .intersperse(RewriteNode::text("::"))
+    .into();
     data.generated_wrapper_functions.push(RewriteNode::interpolate_patched(
         &formatdoc! {"
         impl ContractState$impl_name$ of
-            $impl_module$UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
+            $impl_module$::UnsafeNewContractStateTraitFor$impl_name$<{CONTRACT_STATE_NAME}> {{
             fn unsafe_new_contract_state() -> {CONTRACT_STATE_NAME} {{
                 unsafe_new_contract_state()
             }}
