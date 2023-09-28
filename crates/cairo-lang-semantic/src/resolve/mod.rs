@@ -211,8 +211,7 @@ impl<'db> Resolver<'db> {
         let mut item = self.resolve_concrete_path_first_segment(diagnostics, &mut segments)?;
 
         // Follow modules.
-        while segments.peek().is_some() {
-            let segment = segments.next().unwrap();
+        while let Some(segment) = segments.next() {
             let identifier = segment.identifier_ast(syntax_db);
             let generic_args = segment.generic_args(syntax_db);
 
@@ -415,7 +414,8 @@ impl<'db> Resolver<'db> {
         if module_id == self.module_file_id.0 { None } else { Some(Ok(module_id)) }
     }
 
-    /// Given the current resolved item, resolves the next segment.
+    /// Given the current resolved item, resolves the next segment, specified by `identifier` and
+    /// `generic_args_syntax`.
     fn resolve_next_concrete(
         &mut self,
         diagnostics: &mut SemanticDiagnostics,

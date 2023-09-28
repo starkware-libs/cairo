@@ -6,7 +6,7 @@ use cairo_lang_debug::DebugWithDb;
 use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, GenericParamId, ImplAliasId, ImplDefId,
     ImplFunctionId, ImplFunctionLongId, LanguageElementId, LookupItemId, ModuleId, ModuleItemId,
-    TopLevelLanguageElementId, TraitAliasId, TraitFunctionId, TraitId,
+    TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{
     skip_diagnostic, Diagnostics, DiagnosticsBuilder, Maybe, ToMaybe, ToOption,
@@ -282,7 +282,11 @@ pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<T
             NotFoundItemType::Trait,
         )
         .ok()
-        .and_then(|generic_item| try_extract_matches!(generic_item, ResolvedGenericItem::Trait))
+        .and_then(|generic_item| match generic_item {
+            ResolvedGenericItem::Trait(x) => Some(x),
+            ResolvedGenericItem::GenericTraitAlias(x) => db.trait_alias_trait(x).ok(),
+            _ => None,
+        })
         .ok_or_else(|| diagnostics.report(&trait_path_syntax, NotATrait))
 }
 
