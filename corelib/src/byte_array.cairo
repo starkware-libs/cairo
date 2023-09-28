@@ -29,6 +29,8 @@ struct ByteArray {
     pending_word_len: usize,
 }
 
+impl ByteArrayStringLiteral of string::StringLiteral<ByteArray>;
+
 impl ByteArrayDefault of Default<ByteArray> {
     fn default() -> ByteArray {
         ByteArray { data: Default::default(), pending_word: 0, pending_word_len: 0 }
