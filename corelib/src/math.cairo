@@ -100,7 +100,6 @@ trait Oneable<T> {
 }
 
 impl Felt252Oneable of Oneable<felt252> {
-    #[inline(always)]
     fn one() -> felt252 {
         1
     }
@@ -115,7 +114,6 @@ impl Felt252Oneable of Oneable<felt252> {
 }
 
 impl U8Oneable of Oneable<u8> {
-    #[inline(always)]
     fn one() -> u8 {
         1
     }
@@ -130,7 +128,6 @@ impl U8Oneable of Oneable<u8> {
 }
 
 impl U16Oneable of Oneable<u16> {
-    #[inline(always)]
     fn one() -> u16 {
         1
     }
@@ -145,7 +142,6 @@ impl U16Oneable of Oneable<u16> {
 }
 
 impl U32Oneable of Oneable<u32> {
-    #[inline(always)]
     fn one() -> u32 {
         1
     }
@@ -160,7 +156,6 @@ impl U32Oneable of Oneable<u32> {
 }
 
 impl U64Oneable of Oneable<u64> {
-    #[inline(always)]
     fn one() -> u64 {
         1
     }
@@ -175,7 +170,6 @@ impl U64Oneable of Oneable<u64> {
 }
 
 impl U128Oneable of Oneable<u128> {
-    #[inline(always)]
     fn one() -> u128 {
         1
     }
@@ -190,7 +184,6 @@ impl U128Oneable of Oneable<u128> {
 }
 
 impl U256Oneable of Oneable<u256> {
-    #[inline(always)]
     fn one() -> u256 {
         1
     }
