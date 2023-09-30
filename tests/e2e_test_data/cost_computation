@@ -358,6 +358,214 @@ ret;
 
 //! > ==========================================================================
 
+//! > withdraw_gas reduces excess
+
+//! > test_runner_name
+SmallE2ETestRunnerCostComputation
+
+//! > cairo
+fn foo(x: felt252) {
+    if x == 0 {
+        // Excess is created by the external `else` branch. Therefore, we don't need to withdraw
+        // gas here.
+        match gas::withdraw_gas() {
+            Option::Some(_) => {
+                // Here we have used the excess and we need to withdraw gas.
+                match gas::withdraw_gas() {
+                    Option::Some(_) => {
+                        bar();
+                    },
+                    Option::None(_) => {},
+                }
+            },
+            Option::None(_) => {},
+        }
+    } else {
+        bar();
+    }
+}
+
+#[inline(never)]
+fn bar() {
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+    bar_inner();
+}
+
+#[inline(never)]
+fn bar_inner() {
+}
+
+//! > gas_solution
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#2: OrderedHashMap({Const: 0})
+#3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#4: OrderedHashMap({Const: 900})
+#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 980})
+#17: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1430})
+#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Const: 2640})
+test::bar: OrderedHashMap({Const: 2000})
+test::bar_inner: OrderedHashMap({})
+
+//! > gas_solution_no_solver
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#2: OrderedHashMap({Const: 450})
+#3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#4: OrderedHashMap({Const: 450})
+#5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1430})
+#17: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1430})
+#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+
+test::foo: OrderedHashMap({Const: 2640})
+test::bar: OrderedHashMap({Const: 2000})
+test::bar_inner: OrderedHashMap({})
+
+//! > sierra_code
+type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
+type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
+type GasBuiltin = GasBuiltin [storable: true, drop: false, dup: false, zero_sized: false];
+type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
+type NonZero<felt252> = NonZero<felt252> [storable: true, drop: true, dup: true, zero_sized: false];
+
+libfunc felt252_is_zero = felt252_is_zero;
+libfunc branch_align = branch_align;
+libfunc withdraw_gas = withdraw_gas;
+libfunc function_call<user@test::bar> = function_call<user@test::bar>;
+libfunc drop<Unit> = drop<Unit>;
+libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
+libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
+libfunc jump = jump;
+libfunc rename<RangeCheck> = rename<RangeCheck>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
+libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
+libfunc struct_construct<Unit> = struct_construct<Unit>;
+libfunc store_temp<Unit> = store_temp<Unit>;
+libfunc function_call<user@test::bar_inner> = function_call<user@test::bar_inner>;
+
+felt252_is_zero([2]) { fallthrough() 23([3]) }; // 0
+branch_align() -> (); // 1
+withdraw_gas([0], [1]) { fallthrough([4], [5]) 17([6], [7]) }; // 2
+branch_align() -> (); // 3
+withdraw_gas([4], [5]) { fallthrough([8], [9]) 11([10], [11]) }; // 4
+branch_align() -> (); // 5
+function_call<user@test::bar>() -> ([12]); // 6
+drop<Unit>([12]) -> (); // 7
+store_temp<RangeCheck>([8]) -> ([13]); // 8
+store_temp<GasBuiltin>([9]) -> ([14]); // 9
+jump() { 14() }; // 10
+branch_align() -> (); // 11
+store_temp<RangeCheck>([10]) -> ([13]); // 12
+store_temp<GasBuiltin>([11]) -> ([14]); // 13
+rename<RangeCheck>([13]) -> ([15]); // 14
+rename<GasBuiltin>([14]) -> ([16]); // 15
+jump() { 20() }; // 16
+branch_align() -> (); // 17
+store_temp<RangeCheck>([6]) -> ([15]); // 18
+store_temp<GasBuiltin>([7]) -> ([16]); // 19
+rename<RangeCheck>([15]) -> ([17]); // 20
+rename<GasBuiltin>([16]) -> ([18]); // 21
+jump() { 29() }; // 22
+branch_align() -> (); // 23
+drop<NonZero<felt252>>([3]) -> (); // 24
+function_call<user@test::bar>() -> ([19]); // 25
+drop<Unit>([19]) -> (); // 26
+store_temp<RangeCheck>([0]) -> ([17]); // 27
+store_temp<GasBuiltin>([1]) -> ([18]); // 28
+struct_construct<Unit>() -> ([20]); // 29
+rename<RangeCheck>([17]) -> ([21]); // 30
+rename<GasBuiltin>([18]) -> ([22]); // 31
+store_temp<Unit>([20]) -> ([23]); // 32
+return([21], [22], [23]); // 33
+function_call<user@test::bar_inner>() -> ([0]); // 34
+drop<Unit>([0]) -> (); // 35
+function_call<user@test::bar_inner>() -> ([1]); // 36
+drop<Unit>([1]) -> (); // 37
+function_call<user@test::bar_inner>() -> ([2]); // 38
+drop<Unit>([2]) -> (); // 39
+function_call<user@test::bar_inner>() -> ([3]); // 40
+drop<Unit>([3]) -> (); // 41
+function_call<user@test::bar_inner>() -> ([4]); // 42
+drop<Unit>([4]) -> (); // 43
+function_call<user@test::bar_inner>() -> ([5]); // 44
+drop<Unit>([5]) -> (); // 45
+function_call<user@test::bar_inner>() -> ([6]); // 46
+drop<Unit>([6]) -> (); // 47
+function_call<user@test::bar_inner>() -> ([7]); // 48
+drop<Unit>([7]) -> (); // 49
+function_call<user@test::bar_inner>() -> ([8]); // 50
+drop<Unit>([8]) -> (); // 51
+function_call<user@test::bar_inner>() -> ([9]); // 52
+drop<Unit>([9]) -> (); // 53
+struct_construct<Unit>() -> ([10]); // 54
+store_temp<Unit>([10]) -> ([11]); // 55
+return([11]); // 56
+struct_construct<Unit>() -> ([0]); // 57
+store_temp<Unit>([0]) -> ([1]); // 58
+return([1]); // 59
+
+test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, Unit);
+test::bar@34() -> (Unit);
+test::bar_inner@57() -> (Unit);
+
+//! > casm
+jmp rel 43 if [fp + -3] != 0;
+%{ memory[ap + 0] = 0 <= memory[fp + -4] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [fp + -4] + 340282366920938463463374607431768211456, ap++;
+[ap + -1] = [[fp + -5] + 0];
+jmp rel 29;
+[fp + -4] = [ap + 0] + 0, ap++;
+[ap + -1] = [[fp + -5] + 0];
+%{ memory[ap + 0] = 900 <= memory[ap + -1] %}
+jmp rel 7 if [ap + 0] != 0, ap++;
+[ap + 0] = [ap + -2] + 340282366920938463463374607431768210556, ap++;
+[ap + -1] = [[fp + -5] + 1];
+jmp rel 12;
+[ap + -2] = [ap + 0] + 900, ap++;
+[ap + -1] = [[fp + -5] + 1];
+call rel 28;
+[ap + 0] = [fp + -5] + 2, ap++;
+[ap + 0] = [ap + -24], ap++;
+jmp rel 7;
+ap += 22;
+[ap + 0] = [fp + -5] + 2, ap++;
+[ap + 0] = [ap + -26], ap++;
+jmp rel 7;
+ap += 24;
+[ap + 0] = [fp + -5] + 1, ap++;
+[ap + 0] = [fp + -4], ap++;
+jmp rel 8;
+ap += 4;
+call rel 5;
+[ap + 0] = [fp + -5], ap++;
+[ap + 0] = [fp + -4], ap++;
+ret;
+call rel 21;
+call rel 19;
+call rel 17;
+call rel 15;
+call rel 13;
+call rel 11;
+call rel 9;
+call rel 7;
+call rel 5;
+call rel 3;
+ret;
+ret;
+
+//! > ==========================================================================
+
 //! > redeposit_gas libfunc
 
 //! > test_runner_name
