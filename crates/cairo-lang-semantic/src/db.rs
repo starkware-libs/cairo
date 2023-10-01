@@ -29,7 +29,6 @@ use crate::items::imp::{ImplId, ImplLookupContext, UninferredImpl};
 use crate::items::module::ModuleSemanticData;
 use crate::items::trt::{ConcreteTraitGenericFunctionId, ConcreteTraitId};
 use crate::plugin::PluginMappedDiagnostic;
-use crate::resolve::scope::Scope;
 use crate::resolve::{ResolvedConcreteItem, ResolvedGenericItem, ResolverData};
 use crate::{
     corelib, items, literals, lsp_helpers, semantic, types, FunctionId, Parameter,
@@ -133,10 +132,6 @@ pub trait SemanticGroup:
     /// Private query to compute data about the module.
     #[salsa::invoke(items::module::priv_module_semantic_data)]
     fn priv_module_semantic_data(&self, module_id: ModuleId) -> Maybe<Arc<ModuleSemanticData>>;
-
-    /// Returns the scope of a module. See [Scope].
-    #[salsa::invoke(items::module::module_scope)]
-    fn module_scope(&self, module_id: ModuleId) -> Maybe<Arc<Scope>>;
 
     /// Returns [Maybe::Err] if the module was not properly resolved.
     /// Returns [Maybe::Ok(Option::None)] if the item does not exist.
