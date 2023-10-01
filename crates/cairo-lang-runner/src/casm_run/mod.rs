@@ -1028,6 +1028,15 @@ impl<'a> CairoHintProcessor<'a> {
         new_class: Felt252,
     ) -> Result<SyscallResult, HintError> {
         deduct_gas!(gas_counter, REPLACE_CLASS);
+        // Validating the class hash was declared as one of the starknet contracts.
+        if !self
+            .runner
+            .expect("Runner is needed for starknet.")
+            .starknet_contracts_info
+            .contains_key(&new_class)
+        {
+            fail_syscall!(b"CLASS_HASH_NOT_FOUND");
+        };
         let address = self.starknet_state.exec_info.contract_address.clone();
         self.starknet_state.deployed_contracts.insert(address, new_class);
         Ok(SyscallResult::Success(vec![]))
