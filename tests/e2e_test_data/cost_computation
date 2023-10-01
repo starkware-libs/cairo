@@ -214,12 +214,12 @@ test::bar: OrderedHashMap({})
 
 //! > gas_solution_no_solver
 #0: OrderedHashMap({Const: 0})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 860})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#5: OrderedHashMap({Const: 80})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 370})
+#5: OrderedHashMap({Const: 0})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 780})
+#12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 860})
+#18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1230})
 #27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 
 test::foo: OrderedHashMap({Const: 2670})
@@ -419,11 +419,11 @@ test::bar_inner: OrderedHashMap({})
 
 //! > gas_solution_no_solver
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#2: OrderedHashMap({Const: 450})
+#2: OrderedHashMap({Const: 0})
 #3: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#4: OrderedHashMap({Const: 450})
+#4: OrderedHashMap({Const: 900})
 #5: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1430})
+#11: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 980})
 #17: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1430})
 #23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 

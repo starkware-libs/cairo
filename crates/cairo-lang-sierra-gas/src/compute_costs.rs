@@ -505,13 +505,22 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                 return;
             }
 
+            let future_wallet_value = self.wallet_at(&branch_statement).value;
             let mut actual_excess = current_excess.clone();
 
             if invocation.branches.len() > 1 {
                 if let BranchCost::WithdrawGas { success: true, .. } = branch_cost {
-                    // TODO(lior): use existing excess instead of withdrawing.
-                    // TODO(lior): if there is no withdrawal, increase the excess similar to a
-                    //   regular `branch_align`.
+                    let planned_withdrawal = specific_cost_context.get_gas_withdrawal(
+                        idx,
+                        branch_cost,
+                        &wallet_value,
+                        future_wallet_value,
+                    );
+
+                    // Note that planned_withdrawal may be either positive (where there is an actual
+                    // withdrawal) or negative (where we do not need to withdraw and the failing
+                    // branch is more expensive than the success branch).
+                    actual_excess = CostType::rectify(&(actual_excess - planned_withdrawal));
                 } else {
                     // Branch align of a non-withdraw-gas statement.
                     // If there are branch align, increase the excess by the current difference,
