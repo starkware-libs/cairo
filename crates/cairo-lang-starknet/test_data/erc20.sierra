@@ -4222,8 +4222,8 @@ branch_align() -> (); // 3730
 store_temp<RangeCheck>([0]) -> ([14]); // 3731
 store_temp<felt252>([8]) -> ([15]); // 3732
 function_call<user@core::integer::Felt252TryIntoU8::try_into>([14], [15]) -> ([12], [13]); // 3733
-store_temp<GasBuiltin>([6]) -> ([6]); // 3734
-store_temp<System>([7]) -> ([7]); // 3735
+store_temp<System>([7]) -> ([7]); // 3734
+store_temp<GasBuiltin>([6]) -> ([6]); // 3735
 enum_match<core::option::Option::<core::integer::u8>>([13]) { fallthrough([16]) 3746([17]) }; // 3736
 branch_align() -> (); // 3737
 enum_init<core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 3738
@@ -4290,8 +4290,8 @@ branch_align() -> (); // 3798
 store_temp<RangeCheck>([5]) -> ([29]); // 3799
 store_temp<felt252>([23]) -> ([30]); // 3800
 function_call<user@core::integer::u128_try_from_felt252>([29], [30]) -> ([27], [28]); // 3801
-store_temp<GasBuiltin>([21]) -> ([21]); // 3802
-store_temp<System>([22]) -> ([22]); // 3803
+store_temp<System>([22]) -> ([22]); // 3802
+store_temp<GasBuiltin>([21]) -> ([21]); // 3803
 enum_match<core::option::Option::<core::integer::u128>>([28]) { fallthrough([31]) 3815([32]) }; // 3804
 branch_align() -> (); // 3805
 struct_construct<core::integer::u256>([17], [31]) -> ([33]); // 3806
@@ -4684,8 +4684,8 @@ branch_align() -> (); // 4192
 store_temp<RangeCheck>([0]) -> ([14]); // 4193
 store_temp<felt252>([8]) -> ([15]); // 4194
 function_call<user@core::integer::u128_try_from_felt252>([14], [15]) -> ([12], [13]); // 4195
-store_temp<GasBuiltin>([6]) -> ([6]); // 4196
-store_temp<System>([7]) -> ([7]); // 4197
+store_temp<System>([7]) -> ([7]); // 4196
+store_temp<GasBuiltin>([6]) -> ([6]); // 4197
 enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([16]) 4208([17]) }; // 4198
 branch_align() -> (); // 4199
 enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 4200

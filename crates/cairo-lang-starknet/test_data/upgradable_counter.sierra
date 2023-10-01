@@ -1576,8 +1576,8 @@ branch_align() -> (); // 1267
 store_temp<RangeCheck>([0]) -> ([14]); // 1268
 store_temp<felt252>([8]) -> ([15]); // 1269
 function_call<user@core::integer::u128_try_from_felt252>([14], [15]) -> ([12], [13]); // 1270
-store_temp<GasBuiltin>([6]) -> ([6]); // 1271
-store_temp<System>([7]) -> ([7]); // 1272
+store_temp<System>([7]) -> ([7]); // 1271
+store_temp<GasBuiltin>([6]) -> ([6]); // 1272
 enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([16]) 1283([17]) }; // 1273
 branch_align() -> (); // 1274
 enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 1275
@@ -1874,8 +1874,8 @@ branch_align() -> (); // 1565
 store_temp<RangeCheck>([0]) -> ([14]); // 1566
 store_temp<felt252>([8]) -> ([15]); // 1567
 function_call<user@core::starknet::class_hash::Felt252TryIntoClassHash::try_into>([14], [15]) -> ([12], [13]); // 1568
-store_temp<GasBuiltin>([6]) -> ([6]); // 1569
-store_temp<System>([7]) -> ([7]); // 1570
+store_temp<System>([7]) -> ([7]); // 1569
+store_temp<GasBuiltin>([6]) -> ([6]); // 1570
 enum_match<core::option::Option::<core::starknet::class_hash::ClassHash>>([13]) { fallthrough([16]) 1581([17]) }; // 1571
 branch_align() -> (); // 1572
 enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 1573

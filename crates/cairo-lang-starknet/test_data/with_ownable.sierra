@@ -1396,8 +1396,8 @@ branch_align() -> (); // 1108
 store_temp<RangeCheck>([0]) -> ([14]); // 1109
 store_temp<felt252>([8]) -> ([15]); // 1110
 function_call<user@core::integer::u128_try_from_felt252>([14], [15]) -> ([12], [13]); // 1111
-store_temp<GasBuiltin>([6]) -> ([6]); // 1112
-store_temp<System>([7]) -> ([7]); // 1113
+store_temp<System>([7]) -> ([7]); // 1112
+store_temp<GasBuiltin>([6]) -> ([6]); // 1113
 enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([16]) 1124([17]) }; // 1114
 branch_align() -> (); // 1115
 enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 1116
@@ -1562,8 +1562,8 @@ branch_align() -> (); // 1274
 store_temp<RangeCheck>([0]) -> ([14]); // 1275
 store_temp<felt252>([8]) -> ([15]); // 1276
 function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([14], [15]) -> ([12], [13]); // 1277
-store_temp<GasBuiltin>([6]) -> ([6]); // 1278
-store_temp<System>([7]) -> ([7]); // 1279
+store_temp<System>([7]) -> ([7]); // 1278
+store_temp<GasBuiltin>([6]) -> ([6]); // 1279
 enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([16]) 1290([17]) }; // 1280
 branch_align() -> (); // 1281
 enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 1282

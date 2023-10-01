@@ -4616,12 +4616,12 @@ store_temp<GasBuiltin>([55]) -> ([84]); // 3909
 store_temp<System>([56]) -> ([85]); // 3910
 store_temp<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>([78]) -> ([86]); // 3911
 function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::read>([83], [84], [85], [86]) -> ([79], [80], [81], [82]); // 3912
-store_temp<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([71]) -> ([71]); // 3913
-store_temp<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([72]) -> ([72]); // 3914
-store_temp<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([73]) -> ([73]); // 3915
-store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([76]) -> ([76]); // 3916
-store_temp<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([75]) -> ([75]); // 3917
-store_temp<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>([77]) -> ([77]); // 3918
+store_temp<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([75]) -> ([75]); // 3913
+store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([76]) -> ([76]); // 3914
+store_temp<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>([77]) -> ([77]); // 3915
+store_temp<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([71]) -> ([71]); // 3916
+store_temp<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([72]) -> ([72]); // 3917
+store_temp<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([73]) -> ([73]); // 3918
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([82]) { fallthrough([87]) 4084([88]) }; // 3919
 branch_align() -> (); // 3920
 struct_deconstruct<Tuple<core::integer::u256>>([87]) -> ([89]); // 3921
@@ -6570,8 +6570,8 @@ branch_align() -> (); // 5863
 store_temp<RangeCheck>([5]) -> ([29]); // 5864
 store_temp<felt252>([23]) -> ([30]); // 5865
 function_call<user@core::integer::u128_try_from_felt252>([29], [30]) -> ([27], [28]); // 5866
-store_temp<GasBuiltin>([21]) -> ([21]); // 5867
-store_temp<System>([22]) -> ([22]); // 5868
+store_temp<System>([22]) -> ([22]); // 5867
+store_temp<GasBuiltin>([21]) -> ([21]); // 5868
 enum_match<core::option::Option::<core::integer::u128>>([28]) { fallthrough([31]) 5880([32]) }; // 5869
 branch_align() -> (); // 5870
 struct_construct<core::integer::u256>([17], [31]) -> ([33]); // 5871
@@ -6705,8 +6705,8 @@ branch_align() -> (); // 5998
 store_temp<RangeCheck>([0]) -> ([14]); // 5999
 store_temp<felt252>([8]) -> ([15]); // 6000
 function_call<user@core::integer::Felt252TryIntoU8::try_into>([14], [15]) -> ([12], [13]); // 6001
-store_temp<GasBuiltin>([6]) -> ([6]); // 6002
-store_temp<System>([7]) -> ([7]); // 6003
+store_temp<System>([7]) -> ([7]); // 6002
+store_temp<GasBuiltin>([6]) -> ([6]); // 6003
 enum_match<core::option::Option::<core::integer::u8>>([13]) { fallthrough([16]) 6014([17]) }; // 6004
 branch_align() -> (); // 6005
 enum_init<core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 6006
@@ -6916,8 +6916,8 @@ branch_align() -> (); // 6209
 store_temp<RangeCheck>([0]) -> ([14]); // 6210
 store_temp<felt252>([8]) -> ([15]); // 6211
 function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([14], [15]) -> ([12], [13]); // 6212
-store_temp<GasBuiltin>([6]) -> ([6]); // 6213
-store_temp<System>([7]) -> ([7]); // 6214
+store_temp<System>([7]) -> ([7]); // 6213
+store_temp<GasBuiltin>([6]) -> ([6]); // 6214
 enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([16]) 6225([17]) }; // 6215
 branch_align() -> (); // 6216
 enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 6217
@@ -7085,8 +7085,8 @@ branch_align() -> (); // 6378
 store_temp<RangeCheck>([0]) -> ([14]); // 6379
 store_temp<felt252>([8]) -> ([15]); // 6380
 function_call<user@core::starknet::class_hash::Felt252TryIntoClassHash::try_into>([14], [15]) -> ([12], [13]); // 6381
-store_temp<GasBuiltin>([6]) -> ([6]); // 6382
-store_temp<System>([7]) -> ([7]); // 6383
+store_temp<System>([7]) -> ([7]); // 6382
+store_temp<GasBuiltin>([6]) -> ([6]); // 6383
 enum_match<core::option::Option::<core::starknet::class_hash::ClassHash>>([13]) { fallthrough([16]) 6394([17]) }; // 6384
 branch_align() -> (); // 6385
 enum_init<core::result::Result::<core::starknet::class_hash::ClassHash, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 6386
@@ -7143,8 +7143,8 @@ branch_align() -> (); // 6436
 store_temp<RangeCheck>([0]) -> ([14]); // 6437
 store_temp<felt252>([8]) -> ([15]); // 6438
 function_call<user@core::integer::u128_try_from_felt252>([14], [15]) -> ([12], [13]); // 6439
-store_temp<GasBuiltin>([6]) -> ([6]); // 6440
-store_temp<System>([7]) -> ([7]); // 6441
+store_temp<System>([7]) -> ([7]); // 6440
+store_temp<GasBuiltin>([6]) -> ([6]); // 6441
 enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([16]) 6452([17]) }; // 6442
 branch_align() -> (); // 6443
 enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 6444

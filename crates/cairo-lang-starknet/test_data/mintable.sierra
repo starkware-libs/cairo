@@ -4306,12 +4306,12 @@ store_temp<GasBuiltin>([53]) -> ([82]); // 3694
 store_temp<System>([54]) -> ([83]); // 3695
 store_temp<test::erc20::total_supply::ComponentMemberState>([76]) -> ([84]); // 3696
 function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::erc20::total_supply::ComponentMemberState, core::integer::u256, test::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, test::erc20::total_supply::ComponentMemberStateDrop>::read>([81], [82], [83], [84]) -> ([77], [78], [79], [80]); // 3697
-store_temp<test::erc20::name::ComponentMemberState>([69]) -> ([69]); // 3698
-store_temp<test::erc20::symbol::ComponentMemberState>([70]) -> ([70]); // 3699
-store_temp<test::erc20::decimals::ComponentMemberState>([71]) -> ([71]); // 3700
-store_temp<test::erc20::allowances::ComponentMemberState>([74]) -> ([74]); // 3701
-store_temp<test::erc20::balances::ComponentMemberState>([73]) -> ([73]); // 3702
-store_temp<test::erc20::total_supply::ComponentMemberState>([75]) -> ([75]); // 3703
+store_temp<test::erc20::balances::ComponentMemberState>([73]) -> ([73]); // 3698
+store_temp<test::erc20::allowances::ComponentMemberState>([74]) -> ([74]); // 3699
+store_temp<test::erc20::total_supply::ComponentMemberState>([75]) -> ([75]); // 3700
+store_temp<test::erc20::name::ComponentMemberState>([69]) -> ([69]); // 3701
+store_temp<test::erc20::symbol::ComponentMemberState>([70]) -> ([70]); // 3702
+store_temp<test::erc20::decimals::ComponentMemberState>([71]) -> ([71]); // 3703
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([80]) { fallthrough([85]) 3869([86]) }; // 3704
 branch_align() -> (); // 3705
 struct_deconstruct<Tuple<core::integer::u256>>([85]) -> ([87]); // 3706
@@ -5993,8 +5993,8 @@ branch_align() -> (); // 5381
 store_temp<RangeCheck>([5]) -> ([29]); // 5382
 store_temp<felt252>([23]) -> ([30]); // 5383
 function_call<user@core::integer::u128_try_from_felt252>([29], [30]) -> ([27], [28]); // 5384
-store_temp<GasBuiltin>([21]) -> ([21]); // 5385
-store_temp<System>([22]) -> ([22]); // 5386
+store_temp<System>([22]) -> ([22]); // 5385
+store_temp<GasBuiltin>([21]) -> ([21]); // 5386
 enum_match<core::option::Option::<core::integer::u128>>([28]) { fallthrough([31]) 5398([32]) }; // 5387
 branch_align() -> (); // 5388
 struct_construct<core::integer::u256>([17], [31]) -> ([33]); // 5389
@@ -6128,8 +6128,8 @@ branch_align() -> (); // 5516
 store_temp<RangeCheck>([0]) -> ([14]); // 5517
 store_temp<felt252>([8]) -> ([15]); // 5518
 function_call<user@core::integer::Felt252TryIntoU8::try_into>([14], [15]) -> ([12], [13]); // 5519
-store_temp<GasBuiltin>([6]) -> ([6]); // 5520
-store_temp<System>([7]) -> ([7]); // 5521
+store_temp<System>([7]) -> ([7]); // 5520
+store_temp<GasBuiltin>([6]) -> ([6]); // 5521
 enum_match<core::option::Option::<core::integer::u8>>([13]) { fallthrough([16]) 5532([17]) }; // 5522
 branch_align() -> (); // 5523
 enum_init<core::result::Result::<core::integer::u8, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 5524
@@ -6337,8 +6337,8 @@ branch_align() -> (); // 5725
 store_temp<RangeCheck>([0]) -> ([14]); // 5726
 store_temp<felt252>([8]) -> ([15]); // 5727
 function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([14], [15]) -> ([12], [13]); // 5728
-store_temp<GasBuiltin>([6]) -> ([6]); // 5729
-store_temp<System>([7]) -> ([7]); // 5730
+store_temp<System>([7]) -> ([7]); // 5729
+store_temp<GasBuiltin>([6]) -> ([6]); // 5730
 enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([16]) 5741([17]) }; // 5731
 branch_align() -> (); // 5732
 enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 5733
@@ -6492,8 +6492,8 @@ branch_align() -> (); // 5880
 store_temp<RangeCheck>([0]) -> ([14]); // 5881
 store_temp<felt252>([8]) -> ([15]); // 5882
 function_call<user@core::integer::u128_try_from_felt252>([14], [15]) -> ([12], [13]); // 5883
-store_temp<GasBuiltin>([6]) -> ([6]); // 5884
-store_temp<System>([7]) -> ([7]); // 5885
+store_temp<System>([7]) -> ([7]); // 5884
+store_temp<GasBuiltin>([6]) -> ([6]); // 5885
 enum_match<core::option::Option::<core::integer::u128>>([13]) { fallthrough([16]) 5896([17]) }; // 5886
 branch_align() -> (); // 5887
 enum_init<core::result::Result::<core::integer::u128, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 5888

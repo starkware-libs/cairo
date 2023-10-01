@@ -2924,8 +2924,8 @@ branch_align() -> (); // 2525
 store_temp<RangeCheck>([0]) -> ([14]); // 2526
 store_temp<felt252>([8]) -> ([15]); // 2527
 function_call<user@core::starknet::contract_address::Felt252TryIntoContractAddress::try_into>([14], [15]) -> ([12], [13]); // 2528
-store_temp<GasBuiltin>([6]) -> ([6]); // 2529
-store_temp<System>([7]) -> ([7]); // 2530
+store_temp<System>([7]) -> ([7]); // 2529
+store_temp<GasBuiltin>([6]) -> ([6]); // 2530
 enum_match<core::option::Option::<core::starknet::contract_address::ContractAddress>>([13]) { fallthrough([16]) 2541([17]) }; // 2531
 branch_align() -> (); // 2532
 enum_init<core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>, 0>([16]) -> ([18]); // 2533
