@@ -46,11 +46,12 @@ pub fn add_store_statements<GetLibfuncSignature>(
     statements: Vec<pre_sierra::Statement>,
     get_lib_func_signature: &GetLibfuncSignature,
     local_variables: LocalVariables,
+    params: &[sierra::ids::VarId],
 ) -> Vec<pre_sierra::Statement>
 where
     GetLibfuncSignature: Fn(ConcreteLibfuncId) -> LibfuncInfo,
 {
-    let mut handler = AddStoreVariableStatements::new(db, local_variables);
+    let mut handler = AddStoreVariableStatements::new(db, local_variables, params);
     // Go over the statements, restarting whenever we see a branch or a label.
     for statement in statements.into_iter() {
         handler.handle_statement(statement, get_lib_func_signature);
@@ -76,12 +77,19 @@ struct AddStoreVariableStatements<'a> {
 }
 impl<'a> AddStoreVariableStatements<'a> {
     /// Constructs a new [AddStoreVariableStatements] object.
-    fn new(db: &'a dyn SierraGenGroup, local_variables: LocalVariables) -> Self {
+    fn new(
+        db: &'a dyn SierraGenGroup,
+        local_variables: LocalVariables,
+        params: &[sierra::ids::VarId],
+    ) -> Self {
+        let mut state = State::default();
+        state.variables.extend(params.iter().map(|var| (var.clone(), VarState::LocalVar)));
+
         AddStoreVariableStatements {
             db,
             local_variables,
             result: Vec::new(),
-            state_opt: Some(State::default()),
+            state_opt: Some(state),
             future_states: OrderedHashMap::default(),
         }
     }
@@ -251,8 +259,8 @@ impl<'a> AddStoreVariableStatements<'a> {
 
                     res_deferred_info = Some(deferred_info);
                 }
-                VarState::TempVar { ty } => {
-                    self.state().variables.insert(arg.clone(), VarState::TempVar { ty });
+                VarState::TempVar { .. } | VarState::LocalVar { .. } => {
+                    self.state().variables.insert(arg.clone(), var_state);
                 }
             }
         }
@@ -377,6 +385,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_deferred(&var, info);
                     }
                 }
+                VarState::LocalVar => {}
             }
         }
     }
@@ -405,17 +414,19 @@ impl<'a> AddStoreVariableStatements<'a> {
         )> = vec![];
         for (var, var_state) in self.state_ref().variables.iter() {
             if let Some(uninitialized_local_var_id) = self.local_variables.get(var).cloned() {
-                let ty = match var_state {
-                    VarState::Deferred { info } => &info.ty,
-                    VarState::TempVar { ty } => ty,
+                match var_state {
+                    VarState::Deferred { info: DeferredVariableInfo { ty, .. } }
+                    | VarState::TempVar { ty } => {
+                        vars_to_store.push((var.clone(), uninitialized_local_var_id, ty.clone()))
+                    }
+                    VarState::LocalVar => {}
                 };
-                vars_to_store.push((var.clone(), uninitialized_local_var_id, ty.clone()));
             }
         }
 
         for (var, uninitialized_local_var_id, ty) in vars_to_store {
-            self.store_local(&var, &uninitialized_local_var_id, &ty);
             assert!(self.state().variables.swap_remove(&var).is_some());
+            self.store_local(&var, &uninitialized_local_var_id, &ty);
         }
     }
 
@@ -461,6 +472,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             &[uninitialized_local_var_id.clone(), var.clone()],
             &[var.clone()],
         ));
+        self.state().variables.insert(var.clone(), VarState::LocalVar);
     }
 
     /// Adds a call to the dup() libfunc, duplicating `var` into `dup_var`.

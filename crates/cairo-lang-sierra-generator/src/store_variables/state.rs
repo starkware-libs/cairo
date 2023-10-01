@@ -33,10 +33,14 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar { ty: sierra::ids::ConcreteTypeId },
+    TempVar {
+        ty: sierra::ids::ConcreteTypeId,
+    },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred { info: DeferredVariableInfo },
-    // TODO(ilya): add LocalVar
+    Deferred {
+        info: DeferredVariableInfo,
+    },
+    LocalVar,
 }
 
 /// Represents information known about the state of the variables.
@@ -89,6 +93,7 @@ impl State {
     ) {
         let mut is_deferred: Option<DeferredVariableKind> = None;
         let mut is_temp_var: bool = false;
+        let mut is_local_var: bool = false;
         let mut add_to_known_stack: Option<isize> = None;
 
         match &output_info.ref_info {
@@ -111,13 +116,29 @@ impl State {
                 let arg = &args[*param_idx];
                 if let Some(deferred_info) = deferred_args.get(arg) {
                     is_deferred = Some(deferred_info.kind);
-                }
-                is_temp_var = matches!(self.variables.get(arg), Some(VarState::TempVar { .. }));
-                if matches!(output_info.ref_info, OutputVarReferenceInfo::SameAsParam { .. }) {
-                    add_to_known_stack = self.known_stack.get(arg);
+                } else {
+                    match self.variables.get(arg) {
+                        Some(VarState::TempVar { .. }) => {
+                            is_temp_var = true;
+                            if matches!(
+                                output_info.ref_info,
+                                OutputVarReferenceInfo::SameAsParam { .. }
+                            ) {
+                                add_to_known_stack = self.known_stack.get(arg);
+                            }
+                        }
+                        Some(VarState::LocalVar) => {
+                            is_local_var = true;
+                        }
+                        _ => {
+                            panic!("Unknown state for {}", arg);
+                        }
+                    }
                 }
             }
-            OutputVarReferenceInfo::NewLocalVar => {}
+            OutputVarReferenceInfo::NewLocalVar => {
+                is_local_var = true;
+            }
         }
 
         self.variables.swap_remove(&res);
@@ -133,10 +154,15 @@ impl State {
                     },
                 },
             );
-        }
-
-        if is_temp_var {
+        } else if is_temp_var {
             self.variables.insert(res.clone(), VarState::TempVar { ty: output_info.ty.clone() });
+        } else {
+            assert!(
+                is_local_var,
+                "Variable must be either deferred, temp or local. {}: {:?}",
+                res, output_info
+            );
+            self.variables.insert(res.clone(), VarState::LocalVar);
         }
 
         if let Some(idx) = add_to_known_stack {
