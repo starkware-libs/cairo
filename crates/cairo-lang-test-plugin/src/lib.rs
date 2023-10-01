@@ -34,6 +34,7 @@ const TEST_ATTR: &str = "test";
 const SHOULD_PANIC_ATTR: &str = "should_panic";
 const IGNORE_ATTR: &str = "ignore";
 const AVAILABLE_GAS_ATTR: &str = "available_gas";
+const STATIC_GAS_ARG: &str = "static";
 
 /// Runs Cairo compiler.
 ///

@@ -1,4 +1,3 @@
-#[available_gas(2000000)]
 #[test]
 fn main() {
     let mut a: Array<felt252> = array!['a', 'b'];

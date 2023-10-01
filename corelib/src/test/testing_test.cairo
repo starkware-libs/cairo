@@ -19,6 +19,7 @@ fn test_assert_true() {
 }
 
 #[test]
+#[available_gas(static)]
 fn test_get_available_gas_no_gas_supply() {
     assert_eq(@testing::get_available_gas(), @0, 'expected no_gas_supply')
 }

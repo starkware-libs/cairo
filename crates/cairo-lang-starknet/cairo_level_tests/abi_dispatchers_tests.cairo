@@ -43,7 +43,6 @@ mod test_contract {
 }
 
 #[test]
-#[available_gas(100000)]
 fn test_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_address(serialized(a));
@@ -55,7 +54,6 @@ fn test_dispatcher_serialization() {
 }
 
 #[test]
-#[available_gas(100000)]
 fn test_library_dispatcher_serialization() {
     let a = starknet::contract_address_const::<11>();
     test_contract::__external::set_another_class_hash(serialized(a));

@@ -172,21 +172,13 @@
   },
   "Creates a test": {
     "prefix": "test",
-    "body": [
-      "#[test]",
-      "#[available_gas(2000000)]",
-      "fn $1() {",
-      "\t$2",
-      "\tassert($3, '$4');",
-      "}"
-    ],
+    "body": ["#[test]", "fn $1() {", "\t$2", "\tassert($3, '$4');", "}"],
     "description": "Creates an simple test"
   },
   "Creates a test that should panic": {
     "prefix": ["panic", "test", "should panic"],
     "body": [
       "#[test]",
-      "#[available_gas(2000000)]",
       "#[should_panic(expected: ('$1', ))]",
       "fn $2() {",
       "\t$3",

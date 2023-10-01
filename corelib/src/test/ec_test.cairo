@@ -111,7 +111,6 @@ fn test_ecdsa() {
 }
 
 #[test]
-#[available_gas(100000000)]
 fn test_ecdsa_recover_public_key() {
     let message_hash = 0x503f4bea29baee10b22a7f10bdc82dda071c977c1f25b8f3973d34e6b03b2c;
     let signature_r = 0xbe96d72eb4f94078192c2e84d5230cde2a70f4b45c8797e2c907acff5060bb;

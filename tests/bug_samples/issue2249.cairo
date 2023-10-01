@@ -9,7 +9,6 @@ struct Node {
 }
 
 #[test]
-#[available_gas(2000000)]
 fn simple_test() {
     let bst = Node { value: 12, left: Option::None, };
 

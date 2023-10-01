@@ -1,5 +1,4 @@
 #[test]
-#[available_gas(10000000)]
 fn test_egcd() {
     let (g, s, t, sub_direction) = math::egcd(68_u8.try_into().unwrap(), 16_u8.try_into().unwrap());
     assert(g == 4, 'g != 4');
@@ -46,7 +45,6 @@ fn test_egcd() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_inv_mod() {
     let inv = math::inv_mod(5_u256.try_into().unwrap(), 24_u256.try_into().unwrap()).unwrap();
     assert(inv == 5, 'inv != 5');
@@ -71,7 +69,6 @@ fn test_inv_mod() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_u256_div_mod_n() {
     let q = math::u256_div_mod_n(6_u256, 2_u256.try_into().unwrap(), 7_u256.try_into().unwrap())
         .unwrap();

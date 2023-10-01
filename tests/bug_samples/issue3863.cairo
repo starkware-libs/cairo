@@ -37,7 +37,6 @@ impl CallContextImpl of CallContextTrait {
 }
 
 #[test]
-#[available_gas(1000000)]
 fn test_call_context_new() {
     // Given
     let bytecode = array![1, 2, 3];
