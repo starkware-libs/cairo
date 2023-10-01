@@ -132,7 +132,7 @@ pub fn use_resolver_data(db: &dyn SemanticGroup, use_id: UseId) -> Maybe<Arc<Res
 }
 
 pub trait SemanticUseEx<'a>: Upcast<dyn SemanticGroup + 'a> {
-    /// Returns the resolved items.
+    /// Returns the resolved item or an error if it can't be resolved.
     ///
     /// This is not a query as the cycle handling is done in priv_use_semantic_data.
     fn use_resolved_item(&self, use_id: UseId) -> Maybe<ResolvedGenericItem> {
