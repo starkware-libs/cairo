@@ -187,6 +187,10 @@ fn run_e2e_test(
         let metadata_no_solver = build_metadata(&sierra_program, true, true);
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
         res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
+
+        // Compile again, this time with the no-solver metadata.
+        cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata_no_solver, true)
+            .unwrap();
     } else {
         let function_costs_str = metadata
             .gas_info

@@ -613,9 +613,12 @@ test::bar: OrderedHashMap({})
 
 //! > gas_solution_no_solver
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#14: OrderedHashMap({Const: 0})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 240})
-#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 420})
+#21: OrderedHashMap({Const: 240})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#32: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#34: OrderedHashMap({Const: 180})
 
 test::foo: OrderedHashMap({Const: 1200})
 test::bar: OrderedHashMap({})

@@ -175,10 +175,12 @@ fn get_branch_requirements<
         .collect()
 }
 
-/// For every `branch_align` and `withdraw_gas` statements, computes the required cost variables.
+/// For every `branch_align`, `withdraw_gas` and `redeposit_gas` statements, computes the required
+/// variables.
 ///
 /// * For `branch_align` this is the amount of cost *reduced* from the wallet.
 /// * For `withdraw_gas` this is the amount that should be withdrawn and added to the wallet.
+/// * For `redeposit_gas` this is the amount that should be redeposited and removed from the wallet.
 fn analyze_gas_statements<
     CostType: CostTypeTrait,
     SpecificCostContext: SpecificCostContextTrait<CostType>,
@@ -228,6 +230,11 @@ fn analyze_gas_statements<
                     ),
                     None
                 );
+            }
+        } else if let BranchCost::RedepositGas = branch_cost {
+            let cost = wallet_value.clone() - branch_requirement.value.clone();
+            for (token_type, amount) in SpecificCostContext::to_full_cost_map(cost) {
+                assert_eq!(variable_values.insert((*idx, token_type), amount), None);
             }
         } else if invocation.branches.len() > 1 {
             let cost = wallet_value.clone() - branch_requirement.value.clone();
@@ -282,14 +289,23 @@ impl<CostType: CostTypeTrait> WalletInfo<CostType> {
     /// Computes the wallet value of a statement, given the wallet values of its branches.
     ///
     /// `target_value` is the target value for this statement. See [CostContext::target_values].
-    fn merge(branches: Vec<Self>, target_value: Option<&CostType>) -> Self {
+    fn merge(
+        branch_costs: &[BranchCost],
+        branches: Vec<Self>,
+        target_value: Option<&CostType>,
+    ) -> Self {
         let n_branches = branches.len();
         let mut max_value =
             CostType::max(branches.iter().map(|wallet_info| wallet_info.value.clone()));
 
         // If there are multiple branches, there must be a branch_align in each of them, which
         // can be used to increase the wallet value up to the target value.
-        if n_branches > 1 {
+        let is_branch_align = n_branches > 1;
+        // If this is `redeposit_gas`, the wallet value can be increased up to the target value,
+        // by redepositing the difference.
+        let is_redeposit = matches!(branch_costs[..], [BranchCost::RedepositGas]);
+
+        if is_branch_align || is_redeposit {
             if let Some(target_value) = target_value {
                 // If the target value is greater than the maximum value of the branches, use
                 // the target value.
@@ -403,7 +419,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 
                 // The wallet value at the beginning of the statement is the maximal value
                 // required by all the branches.
-                WalletInfo::merge(branch_requirements, self.target_values.get(idx))
+                WalletInfo::merge(&libfunc_cost, branch_requirements, self.target_values.get(idx))
             }
         }
     }
@@ -528,9 +544,10 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
                     let additional_excess = wallet_value.clone() - branch_requirement.value;
                     actual_excess = actual_excess + CostType::rectify(&additional_excess);
                 }
+            } else if let BranchCost::RedepositGas = branch_cost {
+                // All the excess can be redeposited.
+                actual_excess = Default::default();
             }
-
-            // TODO(lior): Modify actual_excess for `redeposit_gas`.
 
             // Update the excess for `branch_statement` using the minimum of the existing excess and
             // `actual_excess`.
@@ -619,10 +636,7 @@ impl SpecificCostContextTrait<PreCost> for PreCostContext {
                     Default::default()
                 }
             }
-            BranchCost::RedepositGas => {
-                // TODO(lior): Replace with actually redepositing the gas.
-                Default::default()
-            }
+            BranchCost::RedepositGas => Default::default(),
         };
         let future_wallet_value = wallet_at_fn(&idx.next(&branch_info.target));
         WalletInfo::from(branch_cost) + future_wallet_value
