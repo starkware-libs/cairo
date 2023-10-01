@@ -223,6 +223,7 @@ fn test_add_store_statements(
         statements,
         &(|libfunc| LibfuncInfo { signature: get_lib_func_signature(db, libfunc) }),
         local_variables,
+        &[],
     )
     .iter()
     .map(|statement| replace_sierra_ids(db, statement).to_string(db))

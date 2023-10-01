@@ -33,10 +33,14 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar { ty: sierra::ids::ConcreteTypeId },
+    TempVar {
+        ty: sierra::ids::ConcreteTypeId,
+    },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred { info: DeferredVariableInfo },
-    // TODO(ilya): add LocalVar
+    Deferred {
+        info: DeferredVariableInfo,
+    },
+    LocalVar,
 }
 
 /// Represents information known about the state of the variables.
@@ -87,58 +91,60 @@ impl State {
         args: &[sierra::ids::VarId],
         deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
     ) {
-        let mut is_deferred: Option<DeferredVariableKind> = None;
-        let mut is_temp_var: bool = false;
         let mut add_to_known_stack: Option<isize> = None;
 
-        match &output_info.ref_info {
-            OutputVarReferenceInfo::Deferred(kind) => {
-                is_deferred = Some(match kind {
-                    DeferredOutputKind::Const => DeferredVariableKind::Const,
-                    DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
-                    DeferredOutputKind::Generic => DeferredVariableKind::Generic,
-                });
-            }
+        let var_state = match &output_info.ref_info {
+            OutputVarReferenceInfo::Deferred(kind) => VarState::Deferred {
+                info: DeferredVariableInfo {
+                    ty: output_info.ty.clone(),
+                    kind: match kind {
+                        DeferredOutputKind::Const => DeferredVariableKind::Const,
+                        DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
+                        DeferredOutputKind::Generic => DeferredVariableKind::Generic,
+                    },
+                },
+            },
             OutputVarReferenceInfo::NewTempVar { idx } => {
                 add_to_known_stack = Some(idx.into_or_panic::<isize>());
-                is_temp_var = true;
+                VarState::TempVar { ty: output_info.ty.clone() }
             }
             OutputVarReferenceInfo::SimpleDerefs => {
-                is_temp_var = true;
+                VarState::TempVar { ty: output_info.ty.clone() }
             }
             OutputVarReferenceInfo::SameAsParam { param_idx }
             | OutputVarReferenceInfo::PartialParam { param_idx } => {
                 let arg = &args[*param_idx];
                 if let Some(deferred_info) = deferred_args.get(arg) {
-                    is_deferred = Some(deferred_info.kind);
-                }
-                is_temp_var = matches!(self.variables.get(arg), Some(VarState::TempVar { .. }));
-                if matches!(output_info.ref_info, OutputVarReferenceInfo::SameAsParam { .. }) {
-                    add_to_known_stack = self.known_stack.get(arg);
+                    VarState::Deferred {
+                        info: DeferredVariableInfo {
+                            // Note that the output type may differ from the param type.
+                            ty: output_info.ty.clone(),
+                            kind: deferred_info.kind,
+                        },
+                    }
+                } else {
+                    match self.variables.get(arg) {
+                        Some(VarState::TempVar { .. }) => {
+                            if matches!(
+                                output_info.ref_info,
+                                OutputVarReferenceInfo::SameAsParam { .. }
+                            ) {
+                                add_to_known_stack = self.known_stack.get(arg);
+                            }
+                            VarState::TempVar { ty: output_info.ty.clone() }
+                        }
+                        Some(VarState::LocalVar) => VarState::LocalVar,
+                        _ => {
+                            panic!("Unknown state for {}", arg);
+                        }
+                    }
                 }
             }
-            OutputVarReferenceInfo::NewLocalVar => {}
-        }
+            OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
+        };
+        self.variables.insert(res.clone(), var_state);
 
-        self.variables.swap_remove(&res);
         self.known_stack.remove_variable(&res);
-
-        if let Some(deferred_variable_info_kind) = is_deferred {
-            self.variables.insert(
-                res.clone(),
-                VarState::Deferred {
-                    info: DeferredVariableInfo {
-                        ty: output_info.ty.clone(),
-                        kind: deferred_variable_info_kind,
-                    },
-                },
-            );
-        }
-
-        if is_temp_var {
-            self.variables.insert(res.clone(), VarState::TempVar { ty: output_info.ty.clone() });
-        }
-
         if let Some(idx) = add_to_known_stack {
             self.known_stack.insert_signed(res, idx);
         }
