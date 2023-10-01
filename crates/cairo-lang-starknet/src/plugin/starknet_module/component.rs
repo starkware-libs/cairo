@@ -251,7 +251,7 @@ fn handle_component_impl(
         ) else {
             continue;
         };
-        impl_functions.push(RewriteNode::Text("\n    ".to_string()));
+        impl_functions.push(RewriteNode::text("\n    "));
         impl_functions.push(impl_function);
     }
     let has_drop_impl = params
@@ -307,7 +307,7 @@ fn remove_generics_from_path(db: &dyn SyntaxGroup, trait_path: &ast::ExprPath) -
                 prefix.iter().map(|x| RewriteNode::new_trimmed(x.as_syntax_node())),
                 [last_without_generics]
             ),
-            RewriteNode::Text("::".to_string()),
+            RewriteNode::text("::"),
         )
         .collect_vec(),
     )
@@ -358,19 +358,14 @@ fn handle_component_embeddable_as_impl_item(
     let rest_params_node = RewriteNode::new_modified(
         rest_params
             .iter()
-            .flat_map(|p| {
-                vec![RewriteNode::Text(", ".to_string()), RewriteNode::Copied(p.as_syntax_node())]
-            })
+            .flat_map(|p| vec![RewriteNode::text(", "), RewriteNode::Copied(p.as_syntax_node())])
             .collect(),
     );
     let args_node = RewriteNode::new_modified(
         rest_params
             .iter()
             .flat_map(|p| {
-                vec![
-                    RewriteNode::Copied(p.name(db).as_syntax_node()),
-                    RewriteNode::Text(", ".to_string()),
-                ]
+                vec![RewriteNode::Copied(p.name(db).as_syntax_node()), RewriteNode::text(", ")]
             })
             .collect(),
     );

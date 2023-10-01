@@ -279,7 +279,7 @@ fn get_substorage_member_code(
                             .flat_map(|segment| {
                                 vec![
                                     RewriteNode::new_trimmed(segment.as_syntax_node()),
-                                    RewriteNode::Text("::".to_string()),
+                                    RewriteNode::text("::"),
                                 ]
                             })
                             .collect(),
