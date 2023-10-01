@@ -23,7 +23,6 @@ fn test_array_out_of_bound_2() {
 }
 
 #[test]
-#[available_gas(100000)]
 fn test_array_clone() {
     let felt252_snap_array: @Array<felt252> = @array![10, 11, 12];
     let felt252_snap_array_clone = felt252_snap_array.clone();
@@ -75,7 +74,6 @@ fn test_slice_out_of_bound_2() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_equality() {
     let arr1 = array![];
     let arr2 = array![10, 11, 12];

@@ -2,7 +2,6 @@ use test::test_utils::assert_eq;
 use to_byte_array::{FormatAsByteArray, AppendFormattedToByteArray};
 
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_hex() {
     let hex_base: NonZero<u8> = 16_u8.try_into().unwrap();
 
@@ -38,7 +37,6 @@ fn test_to_string_hex() {
     assert_eq(@serialized, @expected_string, 'Bad felt252 hex representation');
 }
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_dec() {
     let dec_base: NonZero<u8> = 10_u8.try_into().unwrap();
 
@@ -75,7 +73,6 @@ fn test_to_string_dec() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_oct() {
     let oct_base: NonZero<u8> = 8_u8.try_into().unwrap();
 
@@ -112,7 +109,6 @@ fn test_to_string_oct() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_bin() {
     let bin_base: NonZero<u8> = 2_u8.try_into().unwrap();
 
@@ -149,7 +145,6 @@ fn test_to_string_bin() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_base7() {
     let base7: NonZero<u8> = 7_u8.try_into().unwrap();
 
@@ -186,7 +181,6 @@ fn test_to_string_base7() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_to_string_base36() {
     let base36: NonZero<u8> = 36_u8.try_into().unwrap();
 
@@ -223,7 +217,6 @@ fn test_to_string_base36() {
 }
 
 #[test]
-#[available_gas(10000000)]
 fn test_append() {
     let expected = "prefix_6f";
     let mut byte_array = "prefix_";

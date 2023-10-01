@@ -5,7 +5,6 @@ trait ISomeInterface<TContractState> {
 
 #[test]
 #[should_panic(expected: ('CLASS_HASH_NOT_DECLARED',))]
-#[available_gas(2000000)]
 fn call_not_declared() {
     ISomeInterfaceLibraryDispatcher { class_hash: 32.try_into().unwrap() }.some_lib_call();
 }

@@ -63,7 +63,6 @@ mod contract_with_event {
 use contract_with_event::{Event, IncrementalEvent, StaticEvent, FlatEvent};
 
 #[test]
-#[available_gas(30000000)]
 fn test_events() {
     internal::revoke_ap_tracking();
     // Set up.
@@ -136,7 +135,6 @@ fn test_events() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_pop_log() {
     let contract_address = starknet::contract_address_const::<0x1234>();
     starknet::testing::set_contract_address(contract_address);

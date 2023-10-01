@@ -1,7 +1,6 @@
 use integer::u256_from_felt252;
 
 #[test]
-#[available_gas(100000)]
 fn reproduce_bug() {
     match gas::withdraw_gas_all(get_builtin_costs()) {
         Option::Some(_) => {},
