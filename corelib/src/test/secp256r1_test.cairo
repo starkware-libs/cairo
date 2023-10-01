@@ -8,7 +8,6 @@ use starknet::secp256r1::{Secp256r1Point, Secp256r1PointImpl};
 use test::test_utils::assert_eq;
 
 #[test]
-#[available_gas(100000000)]
 fn test_secp256r1_recover_public_key() {
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, _) =
         get_message_and_signature();
@@ -38,7 +37,6 @@ fn get_message_and_signature() -> (u256, Signature, u256, u256, EthAddress) {
 }
 
 #[test]
-#[available_gas(100000000)]
 fn test_verify_eth_signature() {
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
         get_message_and_signature();
@@ -47,7 +45,6 @@ fn test_verify_eth_signature() {
 
 #[test]
 #[should_panic(expected: ('Invalid signature',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_wrong_eth_address() {
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
         get_message_and_signature();
@@ -57,7 +54,6 @@ fn test_verify_eth_signature_wrong_eth_address() {
 
 #[test]
 #[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_r() {
     let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
         get_message_and_signature();
@@ -67,7 +63,6 @@ fn test_verify_eth_signature_overflowing_signature_r() {
 
 #[test]
 #[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_s() {
     let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
         get_message_and_signature();
@@ -77,7 +72,6 @@ fn test_verify_eth_signature_overflowing_signature_s() {
 
 
 #[test]
-#[available_gas(100_000_000)]
 fn test_recover_public_key_y_even() {
     let x: u256 = 0x502a43ce77c6f5c736a82f847fa95f8c2d483fe223b12b91047d83258a958b0f;
     let y: u256 = 0xdb0a2e6710c71ba80afeb3abdf69d306ce729c7704f4ddf2eaaf0b76209fe1b0;

@@ -32,7 +32,6 @@ fn test_poseidon_hades_permutation() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_poseidon_hash_span() {
     // Test odd number of inputs.
     assert_eq(

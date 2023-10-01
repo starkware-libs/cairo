@@ -1,13 +1,14 @@
 use cairo_felt::Felt252;
 use cairo_lang_defs::plugin::PluginDiagnostic;
 use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, AttributeArgVariant};
-use cairo_lang_syntax::node::ast;
 use cairo_lang_syntax::node::db::SyntaxGroup;
+use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, TEST_ATTR};
+use crate::STATIC_GAS_ARG;
 
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -75,25 +76,7 @@ pub fn try_extract_test_config(
     } else {
         false
     };
-    let available_gas = if let Some(attr) = available_gas_attr {
-        if let [
-            AttributeArg {
-                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
-                ..
-            },
-        ] = &attr.args[..]
-        {
-            literal.numeric_value(db).unwrap_or_default().to_usize()
-        } else {
-            diagnostics.push(PluginDiagnostic {
-                stable_ptr: attr.id_stable_ptr.untyped(),
-                message: "Attribute should have a single value argument.".into(),
-            });
-            None
-        }
-    } else {
-        None
-    };
+    let available_gas = extract_available_gas(available_gas_attr, db, &mut diagnostics);
     let (should_panic, expected_panic_value) = if let Some(attr) = should_panic_attr {
         if attr.args.is_empty() {
             (true, None)
@@ -133,6 +116,42 @@ pub fn try_extract_test_config(
             ignored,
         })
     })
+}
+
+/// Extract the available gas from the attribute.
+fn extract_available_gas(
+    available_gas_attr: Option<&Attribute>,
+    db: &dyn SyntaxGroup,
+    diagnostics: &mut Vec<PluginDiagnostic>,
+) -> Option<usize> {
+    let Some(attr) = available_gas_attr else {
+        // If no gas is specified, we assume the reasonably large possible gas, such that inifinte
+        // loops will run out of gas.
+        return Some(u32::MAX as usize);
+    };
+    match &attr.args[..] {
+        [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Literal(literal), .. },
+                ..
+            },
+        ] => literal.numeric_value(db).unwrap_or_default().to_usize(),
+        [
+            AttributeArg {
+                variant: AttributeArgVariant::Unnamed { value: ast::Expr::Path(path), .. },
+                ..
+            },
+        ] if path.as_syntax_node().get_text_without_trivia(db) == STATIC_GAS_ARG => None,
+        _ => {
+            diagnostics.push(PluginDiagnostic {
+                stable_ptr: attr.id_stable_ptr.untyped(),
+                message: format!(
+                    "Attribute should have a single value argument or `{STATIC_GAS_ARG}`."
+                ),
+            });
+            None
+        }
+    }
 }
 
 /// Tries to extract the relevant expected panic values.

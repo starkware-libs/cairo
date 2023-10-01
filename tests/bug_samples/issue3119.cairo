@@ -22,7 +22,6 @@ fn index_of_min<T, +PartialEq<T>, +PartialOrd<T>, +Drop<T>, +Copy<T>>(
 }
 
 #[test]
-#[available_gas(100000)]
 fn issue_3119() {
     let min_index = index_of_min(array![5_usize, 4, 1, 2, 3].span());
 }
@@ -39,7 +38,6 @@ fn foo(mut y: felt252, mut z: felt252) {
 }
 
 #[test]
-#[available_gas(100000)]
 fn simplified_3119() {
     let mut z = 0;
     let mut y = 0;
