@@ -514,13 +514,13 @@ impl Transfer<
     
     fn owner(self: @TContractState) -> ContractAddress {
         let component = HasComponent::get_component(self);
-        TransferImpl::owner(component, )
+        TransferImpl::owner(component)
     }
     
     fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress
 ) {
         let mut component = HasComponent::get_component_mut(ref self);
-        TransferImpl::transfer_ownership(ref component, new_owner, )
+        TransferImpl::transfer_ownership(ref component, new_owner)
     }
 }
 
