@@ -142,16 +142,6 @@ impl State {
     fn clear_known_stack(&mut self) {
         self.known_stack.clear();
     }
-
-    /// Marks `dst` as a rename of `src`.
-    ///
-    /// Updates [Self::known_stack] and [Self::variables] if necessary.
-    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
-        self.known_stack.clone_if_on_stack(src, dst);
-        if let Some(var_state) = self.variables.get(src) {
-            self.variables.insert(dst.clone(), var_state.clone());
-        }
-    }
 }
 
 /// Merges the information from two [State]s.
