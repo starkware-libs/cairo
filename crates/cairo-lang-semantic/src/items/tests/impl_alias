@@ -1,7 +1,7 @@
 //! > Test simple impl alias.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> usize {
@@ -29,7 +29,7 @@ impl MyImpl1 = MyImpl;
 //! > Test impl alias inference
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> usize {
@@ -61,7 +61,7 @@ impl MyImplAlias = other_mod::other_other_mod::MyImpl;
 //! > Test impl alias inference with generics
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(x:Option<Box<usize>>) -> usize {
@@ -93,7 +93,7 @@ impl MyImplAlias<T> = other_mod::other_other_mod::MyImpl<Box<T>>;
 //! > Test impl alias inference with generics failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(x:Option<Box<usize>>) -> usize {

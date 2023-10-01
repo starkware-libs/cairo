@@ -1,7 +1,7 @@
 //! > Test extern fn diagnostics.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {

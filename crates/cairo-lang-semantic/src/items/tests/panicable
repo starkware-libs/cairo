@@ -1,7 +1,7 @@
 //! > Test panicable from panicable.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo_panic() {
@@ -23,7 +23,7 @@ fn bar_nopanic() nopanic {}
 //! > Test panicable from non-panicable.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo_nopanic() nopanic {

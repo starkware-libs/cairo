@@ -1,7 +1,7 @@
 //! > Test struct generics.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(a: A::<felt252>) -> felt252 {
