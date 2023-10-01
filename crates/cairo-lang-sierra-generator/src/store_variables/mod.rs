@@ -350,8 +350,8 @@ impl<'a> AddStoreVariableStatements<'a> {
     fn store_all_possibly_lost_variables(&mut self) {
         for (var, deferred_info) in self.state().deferred_variables.clone() {
             if deferred_info.kind != DeferredVariableKind::Const {
-                self.store_temp(&var, &var, &deferred_info.ty);
                 self.state().deferred_variables.swap_remove(&var);
+                self.store_deferred(&var, deferred_info);
             }
         }
     }
