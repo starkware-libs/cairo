@@ -192,11 +192,11 @@ pub fn impl_alias_attributes(
 /// Query implementation of [crate::db::SemanticGroup::impl_alias_impl_def].
 pub fn impl_alias_impl_def(db: &dyn SemanticGroup, impl_alias_id: ImplAliasId) -> Maybe<ImplDefId> {
     let module_file_id = impl_alias_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
 
-    let module_impl_aliases = db.module_impl_aliases(module_file_id.0)?;
+    let module_impl_aliases = db.module_impl_aliases(module_file_id.0).unwrap();
     let syntax_db = db.upcast();
-    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).to_maybe()?;
+    let impl_alias_ast = module_impl_aliases.get(&impl_alias_id).unwrap();
     let inference_id = InferenceId::ImplAliasImplDef(impl_alias_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);

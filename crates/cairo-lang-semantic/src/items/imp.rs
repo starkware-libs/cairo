@@ -264,11 +264,11 @@ pub fn impl_def_attributes(
 /// Query implementation of [crate::db::SemanticGroup::impl_def_trait].
 pub fn impl_def_trait(db: &dyn SemanticGroup, impl_def_id: ImplDefId) -> Maybe<TraitId> {
     let module_file_id = impl_def_id.module_file_id(db.upcast());
-    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast())?);
+    let mut diagnostics = SemanticDiagnostics::new(module_file_id.file_id(db.upcast()).unwrap());
 
-    let module_impls = db.module_impls(module_file_id.0)?;
+    let module_impls = db.module_impls(module_file_id.0).unwrap();
     let syntax_db = db.upcast();
-    let impl_ast = module_impls.get(&impl_def_id).to_maybe()?;
+    let impl_ast = module_impls.get(&impl_def_id).unwrap();
     let inference_id = InferenceId::ImplDefTrait(impl_def_id);
 
     let mut resolver = Resolver::new(db, module_file_id, inference_id);
@@ -976,7 +976,7 @@ pub fn infer_impl_by_self(
     ))
 }
 
-/// Returns all the trait functions that fits the given function name and can be called on a given
+/// Returns all the trait functions that fit the given function name and can be called on a given
 /// type.
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
@@ -987,7 +987,10 @@ pub fn filter_candidate_traits(
 ) -> Maybe<Vec<TraitFunctionId>> {
     let mut candidates = Vec::new();
     for trait_id in candidate_traits.iter().copied() {
-        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
+        let Ok(trait_functions) = ctx.db.trait_functions(trait_id) else {
+            continue;
+        };
+        for (name, trait_function) in trait_functions {
             if name == function_name
                 && can_infer_impl_by_self(ctx, trait_function, self_ty, stable_ptr)
             {
