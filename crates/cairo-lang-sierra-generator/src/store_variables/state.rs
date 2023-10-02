@@ -60,7 +60,7 @@ impl State {
         results: &[sierra::ids::VarId],
         branch_signature: &BranchSignature,
         args: &[sierra::ids::VarId],
-        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+        arg_states: &[VarState],
     ) {
         // Clear the stack if needed.
         match branch_signature.ap_change {
@@ -75,7 +75,7 @@ impl State {
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
-            self.register_output(var.clone(), var_info, args, deferred_args);
+            self.register_output(var.clone(), var_info, args, arg_states);
         }
 
         // Update `known_stack_size`. It is one more than the maximum of the indices in
@@ -89,7 +89,7 @@ impl State {
         res: sierra::ids::VarId,
         output_info: &OutputVarInfo,
         args: &[sierra::ids::VarId],
-        deferred_args: &OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo>,
+        arg_states: &[VarState],
     ) {
         let mut add_to_known_stack: Option<isize> = None;
 
@@ -113,31 +113,17 @@ impl State {
             }
             OutputVarReferenceInfo::SameAsParam { param_idx }
             | OutputVarReferenceInfo::PartialParam { param_idx } => {
-                let arg = &args[*param_idx];
-                if let Some(deferred_info) = deferred_args.get(arg) {
-                    VarState::Deferred {
-                        info: DeferredVariableInfo {
-                            // Note that the output type may differ from the param type.
-                            ty: output_info.ty.clone(),
-                            kind: deferred_info.kind,
-                        },
+                // Note that the output type may differ from the param type.
+                let ty = output_info.ty.clone();
+                match &arg_states[*param_idx] {
+                    VarState::TempVar { .. } => {
+                        add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        VarState::TempVar { ty }
                     }
-                } else {
-                    match self.variables.get(arg) {
-                        Some(VarState::TempVar { .. }) => {
-                            if matches!(
-                                output_info.ref_info,
-                                OutputVarReferenceInfo::SameAsParam { .. }
-                            ) {
-                                add_to_known_stack = self.known_stack.get(arg);
-                            }
-                            VarState::TempVar { ty: output_info.ty.clone() }
-                        }
-                        Some(VarState::LocalVar) => VarState::LocalVar,
-                        _ => {
-                            panic!("Unknown state for {}", arg);
-                        }
+                    VarState::Deferred { info } => {
+                        VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
+                    VarState::LocalVar => VarState::LocalVar,
                 }
             }
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
