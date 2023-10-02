@@ -374,7 +374,8 @@ mod mintable_erc20_ownable {
 TransferTraitDispatcherTrait:
 
 trait TransferTraitDispatcherTrait<T> {
-    fn owner(self: T, ) -> ContractAddress;    fn transfer_ownership(self: T, new_owner: ContractAddress);
+    fn owner(self: T) -> ContractAddress;
+    fn transfer_ownership(self: T, new_owner: ContractAddress);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -383,7 +384,7 @@ struct TransferTraitDispatcher {
 }
 
 impl TransferTraitDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitDispatcher> {
-    fn owner(self: TransferTraitDispatcher, ) -> ContractAddress {
+    fn owner(self: TransferTraitDispatcher) -> ContractAddress {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -418,7 +419,7 @@ struct TransferTraitLibraryDispatcher {
 }
 
 impl TransferTraitLibraryDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitLibraryDispatcher> {
-    fn owner(self: TransferTraitLibraryDispatcher, ) -> ContractAddress {
+    fn owner(self: TransferTraitLibraryDispatcher) -> ContractAddress {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -448,7 +449,8 @@ impl TransferTraitLibraryDispatcherImpl of TransferTraitDispatcherTrait<Transfer
 }
 
 trait TransferTraitSafeDispatcherTrait<T> {
-    fn owner(self: T, ) -> starknet::SyscallResult<ContractAddress>;    fn transfer_ownership(self: T, new_owner: ContractAddress) -> starknet::SyscallResult<()>;
+    fn owner(self: T) -> starknet::SyscallResult<ContractAddress>;
+    fn transfer_ownership(self: T, new_owner: ContractAddress) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -457,7 +459,7 @@ struct TransferTraitSafeLibraryDispatcher {
 }
 
 impl TransferTraitSafeLibraryDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeLibraryDispatcher> {
-    fn owner(self: TransferTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
+    fn owner(self: TransferTraitSafeLibraryDispatcher) -> starknet::SyscallResult<ContractAddress> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -495,7 +497,7 @@ struct TransferTraitSafeDispatcher {
 }
 
 impl TransferTraitSafeDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeDispatcher> {
-    fn owner(self: TransferTraitSafeDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
+    fn owner(self: TransferTraitSafeDispatcher) -> starknet::SyscallResult<ContractAddress> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -530,9 +532,19 @@ impl TransferTraitSafeDispatcherImpl of TransferTraitSafeDispatcherTrait<Transfe
 ERC20TraitDispatcherTrait:
 
 trait ERC20TraitDispatcherTrait<T> {
-    fn get_name(self: T, ) -> felt252;    fn get_symbol(self: T, ) -> felt252;    fn get_decimals(self: T, ) -> u8;    fn get_total_supply(self: T, ) -> u256;    fn balance_of(self: T, account: ContractAddress) -> u256;    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> u256;    fn transfer(self: T, recipient: ContractAddress, amount: u256);    fn transfer_from(
+    fn get_name(self: T) -> felt252;
+    fn get_symbol(self: T) -> felt252;
+    fn get_decimals(self: T) -> u8;
+    fn get_total_supply(self: T) -> u256;
+    fn balance_of(self: T, account: ContractAddress) -> u256;
+    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> u256;
+    fn transfer(self: T, recipient: ContractAddress, amount: u256);
+    fn transfer_from(
 self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    );    fn approve(self: T, spender: ContractAddress, amount: u256);    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256);    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256);
+    );
+    fn approve(self: T, spender: ContractAddress, amount: u256);
+    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256);
+    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -541,7 +553,7 @@ struct ERC20TraitDispatcher {
 }
 
 impl ERC20TraitDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitDispatcher> {
-    fn get_name(self: ERC20TraitDispatcher, ) -> felt252 {
+    fn get_name(self: ERC20TraitDispatcher) -> felt252 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -555,7 +567,7 @@ impl ERC20TraitDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitDispatcher>
             'Returned data too short',
         )
     }
-    fn get_symbol(self: ERC20TraitDispatcher, ) -> felt252 {
+    fn get_symbol(self: ERC20TraitDispatcher) -> felt252 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -569,7 +581,7 @@ impl ERC20TraitDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitDispatcher>
             'Returned data too short',
         )
     }
-    fn get_decimals(self: ERC20TraitDispatcher, ) -> u8 {
+    fn get_decimals(self: ERC20TraitDispatcher) -> u8 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -583,7 +595,7 @@ impl ERC20TraitDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitDispatcher>
             'Returned data too short',
         )
     }
-    fn get_total_supply(self: ERC20TraitDispatcher, ) -> u256 {
+    fn get_total_supply(self: ERC20TraitDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -706,7 +718,7 @@ struct ERC20TraitLibraryDispatcher {
 }
 
 impl ERC20TraitLibraryDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitLibraryDispatcher> {
-    fn get_name(self: ERC20TraitLibraryDispatcher, ) -> felt252 {
+    fn get_name(self: ERC20TraitLibraryDispatcher) -> felt252 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -720,7 +732,7 @@ impl ERC20TraitLibraryDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitLibr
             'Returned data too short',
         )
     }
-    fn get_symbol(self: ERC20TraitLibraryDispatcher, ) -> felt252 {
+    fn get_symbol(self: ERC20TraitLibraryDispatcher) -> felt252 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -734,7 +746,7 @@ impl ERC20TraitLibraryDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitLibr
             'Returned data too short',
         )
     }
-    fn get_decimals(self: ERC20TraitLibraryDispatcher, ) -> u8 {
+    fn get_decimals(self: ERC20TraitLibraryDispatcher) -> u8 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -748,7 +760,7 @@ impl ERC20TraitLibraryDispatcherImpl of ERC20TraitDispatcherTrait<ERC20TraitLibr
             'Returned data too short',
         )
     }
-    fn get_total_supply(self: ERC20TraitLibraryDispatcher, ) -> u256 {
+    fn get_total_supply(self: ERC20TraitLibraryDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -866,9 +878,19 @@ self: ERC20TraitLibraryDispatcher, sender: ContractAddress, recipient: ContractA
 }
 
 trait ERC20TraitSafeDispatcherTrait<T> {
-    fn get_name(self: T, ) -> starknet::SyscallResult<felt252>;    fn get_symbol(self: T, ) -> starknet::SyscallResult<felt252>;    fn get_decimals(self: T, ) -> starknet::SyscallResult<u8>;    fn get_total_supply(self: T, ) -> starknet::SyscallResult<u256>;    fn balance_of(self: T, account: ContractAddress) -> starknet::SyscallResult<u256>;    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256>;    fn transfer(self: T, recipient: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;    fn transfer_from(
+    fn get_name(self: T) -> starknet::SyscallResult<felt252>;
+    fn get_symbol(self: T) -> starknet::SyscallResult<felt252>;
+    fn get_decimals(self: T) -> starknet::SyscallResult<u8>;
+    fn get_total_supply(self: T) -> starknet::SyscallResult<u256>;
+    fn balance_of(self: T, account: ContractAddress) -> starknet::SyscallResult<u256>;
+    fn allowance(self: T, owner: ContractAddress, spender: ContractAddress) -> starknet::SyscallResult<u256>;
+    fn transfer(self: T, recipient: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;
+    fn transfer_from(
 self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> starknet::SyscallResult<()>;    fn approve(self: T, spender: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()>;    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256) -> starknet::SyscallResult<()>;
+    ) -> starknet::SyscallResult<()>;
+    fn approve(self: T, spender: ContractAddress, amount: u256) -> starknet::SyscallResult<()>;
+    fn increase_allowance(self: T, spender: ContractAddress, added_value: u256) -> starknet::SyscallResult<()>;
+    fn decrease_allowance(self: T, spender: ContractAddress, subtracted_value: u256) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -877,7 +899,7 @@ struct ERC20TraitSafeLibraryDispatcher {
 }
 
 impl ERC20TraitSafeLibraryDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20TraitSafeLibraryDispatcher> {
-    fn get_name(self: ERC20TraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<felt252> {
+    fn get_name(self: ERC20TraitSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -893,7 +915,7 @@ impl ERC20TraitSafeLibraryDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20T
             )
         )
     }
-    fn get_symbol(self: ERC20TraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<felt252> {
+    fn get_symbol(self: ERC20TraitSafeLibraryDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -909,7 +931,7 @@ impl ERC20TraitSafeLibraryDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20T
             )
         )
     }
-    fn get_decimals(self: ERC20TraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<u8> {
+    fn get_decimals(self: ERC20TraitSafeLibraryDispatcher) -> starknet::SyscallResult<u8> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -925,7 +947,7 @@ impl ERC20TraitSafeLibraryDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20T
             )
         )
     }
-    fn get_total_supply(self: ERC20TraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply(self: ERC20TraitSafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -1055,7 +1077,7 @@ struct ERC20TraitSafeDispatcher {
 }
 
 impl ERC20TraitSafeDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20TraitSafeDispatcher> {
-    fn get_name(self: ERC20TraitSafeDispatcher, ) -> starknet::SyscallResult<felt252> {
+    fn get_name(self: ERC20TraitSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -1071,7 +1093,7 @@ impl ERC20TraitSafeDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20TraitSaf
             )
         )
     }
-    fn get_symbol(self: ERC20TraitSafeDispatcher, ) -> starknet::SyscallResult<felt252> {
+    fn get_symbol(self: ERC20TraitSafeDispatcher) -> starknet::SyscallResult<felt252> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -1087,7 +1109,7 @@ impl ERC20TraitSafeDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20TraitSaf
             )
         )
     }
-    fn get_decimals(self: ERC20TraitSafeDispatcher, ) -> starknet::SyscallResult<u8> {
+    fn get_decimals(self: ERC20TraitSafeDispatcher) -> starknet::SyscallResult<u8> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -1103,7 +1125,7 @@ impl ERC20TraitSafeDispatcherImpl of ERC20TraitSafeDispatcherTrait<ERC20TraitSaf
             )
         )
     }
-    fn get_total_supply(self: ERC20TraitSafeDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply(self: ERC20TraitSafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -1330,7 +1352,7 @@ impl MintTraitSafeDispatcherImpl of MintTraitSafeDispatcherTrait<MintTraitSafeDi
 GetSupplyDispatcherTrait:
 
 trait GetSupplyDispatcherTrait<T> {
-    fn get_total_supply_plus_1(self: T, ) -> u256;
+    fn get_total_supply_plus_1(self: T) -> u256;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -1339,7 +1361,7 @@ struct GetSupplyDispatcher {
 }
 
 impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplyDispatcher, ) -> u256 {
+    fn get_total_supply_plus_1(self: GetSupplyDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -1362,7 +1384,7 @@ struct GetSupplyLibraryDispatcher {
 }
 
 impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher, ) -> u256 {
+    fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher) -> u256 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -1380,7 +1402,7 @@ impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibrary
 }
 
 trait GetSupplySafeDispatcherTrait<T> {
-    fn get_total_supply_plus_1(self: T, ) -> starknet::SyscallResult<u256>;
+    fn get_total_supply_plus_1(self: T) -> starknet::SyscallResult<u256>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -1389,7 +1411,7 @@ struct GetSupplySafeLibraryDispatcher {
 }
 
 impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -1415,7 +1437,7 @@ struct GetSupplySafeDispatcher {
 }
 
 impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
-    fn get_total_supply_plus_1(self: GetSupplySafeDispatcher, ) -> starknet::SyscallResult<u256> {
+    fn get_total_supply_plus_1(self: GetSupplySafeDispatcher) -> starknet::SyscallResult<u256> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(

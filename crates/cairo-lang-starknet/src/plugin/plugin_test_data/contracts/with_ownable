@@ -101,7 +101,8 @@ mod ownable_balance {
 TransferTraitDispatcherTrait:
 
 trait TransferTraitDispatcherTrait<T> {
-    fn owner(self: T, ) -> ContractAddress;    fn transfer_ownership(self: T, new_owner: ContractAddress);
+    fn owner(self: T) -> ContractAddress;
+    fn transfer_ownership(self: T, new_owner: ContractAddress);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -110,7 +111,7 @@ struct TransferTraitDispatcher {
 }
 
 impl TransferTraitDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitDispatcher> {
-    fn owner(self: TransferTraitDispatcher, ) -> ContractAddress {
+    fn owner(self: TransferTraitDispatcher) -> ContractAddress {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -145,7 +146,7 @@ struct TransferTraitLibraryDispatcher {
 }
 
 impl TransferTraitLibraryDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitLibraryDispatcher> {
-    fn owner(self: TransferTraitLibraryDispatcher, ) -> ContractAddress {
+    fn owner(self: TransferTraitLibraryDispatcher) -> ContractAddress {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -175,7 +176,8 @@ impl TransferTraitLibraryDispatcherImpl of TransferTraitDispatcherTrait<Transfer
 }
 
 trait TransferTraitSafeDispatcherTrait<T> {
-    fn owner(self: T, ) -> starknet::SyscallResult<ContractAddress>;    fn transfer_ownership(self: T, new_owner: ContractAddress) -> starknet::SyscallResult<()>;
+    fn owner(self: T) -> starknet::SyscallResult<ContractAddress>;
+    fn transfer_ownership(self: T, new_owner: ContractAddress) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -184,7 +186,7 @@ struct TransferTraitSafeLibraryDispatcher {
 }
 
 impl TransferTraitSafeLibraryDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeLibraryDispatcher> {
-    fn owner(self: TransferTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
+    fn owner(self: TransferTraitSafeLibraryDispatcher) -> starknet::SyscallResult<ContractAddress> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -222,7 +224,7 @@ struct TransferTraitSafeDispatcher {
 }
 
 impl TransferTraitSafeDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeDispatcher> {
-    fn owner(self: TransferTraitSafeDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
+    fn owner(self: TransferTraitSafeDispatcher) -> starknet::SyscallResult<ContractAddress> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(

@@ -318,7 +318,9 @@ impl IUpgradableSafeDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradable
 ICounterContractDispatcherTrait:
 
 trait ICounterContractDispatcherTrait<T> {
-    fn increase_counter(self: T, amount: u128);    fn decrease_counter(self: T, amount: u128);    fn get_counter(self: T, ) -> u128;
+    fn increase_counter(self: T, amount: u128);
+    fn decrease_counter(self: T, amount: u128);
+    fn get_counter(self: T) -> u128;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -351,7 +353,7 @@ impl ICounterContractDispatcherImpl of ICounterContractDispatcherTrait<ICounterC
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
-    fn get_counter(self: ICounterContractDispatcher, ) -> u128 {
+    fn get_counter(self: ICounterContractDispatcher) -> u128 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -398,7 +400,7 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
         let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
         ()
     }
-    fn get_counter(self: ICounterContractLibraryDispatcher, ) -> u128 {
+    fn get_counter(self: ICounterContractLibraryDispatcher) -> u128 {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -416,7 +418,9 @@ impl ICounterContractLibraryDispatcherImpl of ICounterContractDispatcherTrait<IC
 }
 
 trait ICounterContractSafeDispatcherTrait<T> {
-    fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;    fn decrease_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;    fn get_counter(self: T, ) -> starknet::SyscallResult<u128>;
+    fn increase_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
+    fn decrease_counter(self: T, amount: u128) -> starknet::SyscallResult<()>;
+    fn get_counter(self: T) -> starknet::SyscallResult<u128>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -449,7 +453,7 @@ impl ICounterContractSafeLibraryDispatcherImpl of ICounterContractSafeDispatcher
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
-    fn get_counter(self: ICounterContractSafeLibraryDispatcher, ) -> starknet::SyscallResult<u128> {
+    fn get_counter(self: ICounterContractSafeLibraryDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -499,7 +503,7 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
         let mut ret_data = ret_data?;
         Result::Ok(())
     }
-    fn get_counter(self: ICounterContractSafeDispatcher, ) -> starknet::SyscallResult<u128> {
+    fn get_counter(self: ICounterContractSafeDispatcher) -> starknet::SyscallResult<u128> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
