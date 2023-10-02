@@ -11,7 +11,6 @@ struct Member {
 }
 
 #[test]
-#[available_gas(100000)]
 fn sierra_type_dup() {
     let mut arr = array![];
     MemberType::Simple('ty').serialize(ref arr);

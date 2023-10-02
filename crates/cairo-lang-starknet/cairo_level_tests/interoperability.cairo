@@ -37,14 +37,12 @@ mod contract_a {
 
 use contract_a::MyTrait;
 #[test]
-#[available_gas(30000000)]
 fn test_internal_func() {
     let mut contract_state = contract_a::contract_state_for_testing();
     contract_state.internal_func();
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_flow() {
     // Set up.
     let (address0, _) = deploy_syscall(
@@ -101,14 +99,12 @@ fn test_flow_out_of_gas() {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_class_hash_not_found() {
     let mut err = deploy_syscall(5.try_into().unwrap(), 0, array![100].span(), false).unwrap_err();
     assert_eq(@err.pop_front().unwrap(), @'CLASS_HASH_NOT_FOUND', 'err == "CLASS_HASH_NOT_FOUND"');
 }
 
 #[test]
-#[available_gas(30000000)]
 #[should_panic(expected: ('CONTRACT_NOT_DEPLOYED',))]
 fn test_contract_not_deployed() {
     let mut contract = IContractDispatcher { contract_address: 5.try_into().unwrap() };
@@ -127,7 +123,6 @@ mod contract_failed_constructor {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_failed_constructor() {
     // Set up.
     let mut calldata = array![];
@@ -152,7 +147,6 @@ mod contract_failed_entrypoint {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_non_empty_calldata_nonexistent_constructor() {
     let mut err = deploy_syscall(
         contract_failed_entrypoint::TEST_CLASS_HASH.try_into().unwrap(),
@@ -165,7 +159,6 @@ fn test_non_empty_calldata_nonexistent_constructor() {
 }
 
 #[test]
-#[available_gas(30000000)]
 #[should_panic(expected: ('Failure', 'ENTRYPOINT_FAILED',))]
 fn test_entrypoint_failed() {
     let (address0, _) = deploy_syscall(
@@ -177,7 +170,6 @@ fn test_entrypoint_failed() {
 }
 
 #[test]
-#[available_gas(30000000)]
 #[should_panic(expected: ('GET_BLOCK_HASH_UNIMPLEMENTED',))]
 fn test_get_block_hash() {
     get_block_hash_syscall(0).unwrap_syscall();

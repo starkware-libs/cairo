@@ -90,7 +90,6 @@ fn test_wrapper_too_many_args() {
 }
 
 #[test]
-#[available_gas(50000)]
 fn test_wrapper_valid_args() {
     assert_eq(
         @test_contract::__external::get_plus_2(serialized(1)), @serialized(3), 'Wrong result'
@@ -105,7 +104,6 @@ fn test_wrapper_valid_args_out_of_gas() {
 }
 
 #[test]
-#[available_gas(200000)]
 fn test_wrapper_array_arg_and_output() {
     assert_eq(
         @test_contract::__external::get_appended_array(serialized(array![2])),
@@ -115,7 +113,6 @@ fn test_wrapper_array_arg_and_output() {
 }
 
 #[test]
-#[available_gas(200000)]
 fn read_first_value() {
     assert_eq(
         @test_contract::__external::get_value(serialized(())), @serialized(0), 'Wrong result'
@@ -123,7 +120,6 @@ fn read_first_value() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn write_read_value() {
     assert(test_contract::__external::set_value(serialized(4)).is_empty(), 'Not empty');
     assert_eq(
@@ -132,13 +128,11 @@ fn write_read_value() {
 }
 
 #[test]
-#[available_gas(200000)]
 fn empty_start() {
     assert_eq(@test_contract::__external::contains(serialized(4)), @serialized(0), 'Wrong result');
 }
 
 #[test]
-#[available_gas(300000)]
 fn contains_added() {
     assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
     assert_eq(@test_contract::__external::contains(serialized(4)), @serialized(1), 'Wrong result');
@@ -146,7 +140,6 @@ fn contains_added() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn not_contains_removed() {
     assert(test_contract::__external::insert(serialized(4)).is_empty(), 'Not empty');
     assert(test_contract::__external::remove(serialized(4)).is_empty(), 'Not empty');
@@ -154,7 +147,6 @@ fn not_contains_removed() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn read_large_first_value() {
     assert_eq(
         @test_contract::__external::get_large(serialized(0x200000000000000000000000000000001_u256)),
@@ -164,7 +156,6 @@ fn read_large_first_value() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn write_read_large_value() {
     assert(
         test_contract::__external::set_large(
@@ -183,7 +174,6 @@ fn write_read_large_value() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_block_info() {
     let info = starknet::get_block_info().unbox();
     assert_eq(@info.block_number, @0_u64, 'non default block_number');
@@ -199,7 +189,6 @@ fn test_get_block_info() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_caller_address() {
     assert(starknet::get_caller_address().is_zero(), 'non default value');
     starknet::testing::set_caller_address(starknet::contract_address_const::<1>());
@@ -207,7 +196,6 @@ fn test_get_caller_address() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_contract_address() {
     assert(starknet::get_contract_address().is_zero(), 'non default value');
     starknet::testing::set_contract_address(starknet::contract_address_const::<1>());
@@ -215,7 +203,6 @@ fn test_get_contract_address() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_version() {
     assert(starknet::get_tx_info().unbox().version.is_zero(), 'non default value');
     starknet::testing::set_version(1);
@@ -223,7 +210,6 @@ fn test_get_version() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_account_contract_address() {
     assert(starknet::get_tx_info().unbox().account_contract_address.is_zero(), 'non default value');
     starknet::testing::set_account_contract_address(starknet::contract_address_const::<1>());
@@ -233,7 +219,6 @@ fn test_get_account_contract_address() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_max_fee() {
     assert_eq(@starknet::get_tx_info().unbox().max_fee, @0_u128, 'non default value');
     starknet::testing::set_max_fee(1);
@@ -241,7 +226,6 @@ fn test_get_max_fee() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_transaction_hash() {
     assert(starknet::get_tx_info().unbox().transaction_hash.is_zero(), 'non default value');
     starknet::testing::set_transaction_hash(1);
@@ -249,7 +233,6 @@ fn test_get_transaction_hash() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_chain_id() {
     assert(starknet::get_tx_info().unbox().chain_id.is_zero(), 'non default value');
     starknet::testing::set_chain_id(1);
@@ -257,7 +240,6 @@ fn test_get_chain_id() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_nonce() {
     assert(starknet::get_tx_info().unbox().nonce.is_zero(), 'non default value');
     starknet::testing::set_nonce(1);
@@ -265,7 +247,6 @@ fn test_get_nonce() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_get_signature() {
     assert(starknet::get_tx_info().unbox().signature.is_empty(), 'non default value');
     starknet::testing::set_signature(array!['some', 'signature'].span());
@@ -276,7 +257,6 @@ fn test_get_signature() {
 }
 
 #[test]
-#[available_gas(300000)]
 #[should_panic]
 fn test_pop_log_empty_logs() {
     let contract_address = starknet::contract_address_const::<0x1234>();
@@ -284,7 +264,6 @@ fn test_pop_log_empty_logs() {
 }
 
 #[test]
-#[available_gas(300000)]
 #[should_panic]
 fn test_pop_l2_to_l1_message_empty_messages() {
     let contract_address = starknet::contract_address_const::<0x1234>();
@@ -298,7 +277,6 @@ fn test_out_of_range_storage_address_from_felt252() -> starknet::StorageAddress 
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_storage_address() {
     let mut args = array![0x17];
     let storage_address = starknet::storage_address_try_from_felt252(0x17).unwrap();
@@ -345,7 +323,6 @@ fn test_event_serde() {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_dispatcher_serde() {
     // Contract Dispatcher
     let contract_address = starknet::contract_address_const::<123>();

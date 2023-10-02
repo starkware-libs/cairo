@@ -59,7 +59,6 @@ fn generate_payload(n: u128) -> Array<felt252> {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_l2_to_l1_messages() {
     // Set up.
     let mut contract = contract_with_messages_sent_to_l1::unsafe_new_contract_state();
@@ -98,7 +97,6 @@ fn test_l2_to_l1_messages() {
 }
 
 #[test]
-#[available_gas(300000)]
 fn test_pop_l2_to_l1_message() {
     let contract_address = starknet::contract_address_const::<0x42>();
     testing::set_contract_address(contract_address);

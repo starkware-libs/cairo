@@ -49,7 +49,6 @@ mod contract_b {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_replace_flow() {
     // Deploy ContractA with 100 in the storage.
     let (address0, _) = deploy_syscall(

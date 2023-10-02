@@ -83,7 +83,6 @@ mod contract_with_4_components {
 }
 
 #[test]
-#[available_gas(30000000)]
 fn test_flow() {
     // Set up.
     let recipient = starknet::contract_address_const::<0x1337>();

@@ -7,7 +7,6 @@ use starknet::secp256_trait::{
 use starknet::secp256k1::{Secp256k1Point, Secp256k1PointImpl};
 
 #[test]
-#[available_gas(100000000)]
 fn test_secp256k1_recover_public_key() {
     let y_parity = true;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, _) =
@@ -63,7 +62,6 @@ fn get_message_and_signature(y_parity: bool) -> (u256, Signature, u256, u256, Et
 }
 
 #[test]
-#[available_gas(100000000)]
 fn test_verify_eth_signature() {
     let y_parity = true;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
@@ -75,7 +73,6 @@ fn test_verify_eth_signature() {
 
 #[test]
 #[should_panic(expected: ('Invalid signature',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_wrong_eth_address() {
     let y_parity = true;
     let (msg_hash, signature, expected_public_key_x, expected_public_key_y, eth_address) =
@@ -88,7 +85,6 @@ fn test_verify_eth_signature_wrong_eth_address() {
 
 #[test]
 #[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_r() {
     let y_parity = true;
     let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
@@ -101,7 +97,6 @@ fn test_verify_eth_signature_overflowing_signature_r() {
 
 #[test]
 #[should_panic(expected: ('Signature out of range',))]
-#[available_gas(100000000)]
 fn test_verify_eth_signature_overflowing_signature_s() {
     let y_parity = true;
     let (msg_hash, mut signature, expected_public_key_x, expected_public_key_y, eth_address) =
