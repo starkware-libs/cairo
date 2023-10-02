@@ -107,7 +107,7 @@ impl<'a> AddStoreVariableStatements<'a> {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
                 let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
                 let signature = libfunc_info.signature;
-                let deferred_args =
+                let arg_states =
                     self.prepare_libfunc_arguments(&invocation.args, &signature.param_signatures);
                 match &invocation.branches[..] {
                     [GenBranchInfo { target: GenBranchTarget::Fallthrough, results }] => {
@@ -126,7 +126,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                             results,
                             branch_signature,
                             &invocation.args,
-                            &deferred_args,
+                            &arg_states,
                         );
                     }
                     _ => {
@@ -146,7 +146,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                                 &branch.results,
                                 &branch_signature,
                                 &invocation.args,
-                                &deferred_args,
+                                &arg_states,
                             );
 
                             self.add_future_state(
@@ -196,82 +196,94 @@ impl<'a> AddStoreVariableStatements<'a> {
         &mut self,
         args: &[sierra::ids::VarId],
         param_signatures: &[ParamSignature],
-    ) -> OrderedHashMap<sierra::ids::VarId, DeferredVariableInfo> {
-        let mut deferred_args =
-            OrderedHashMap::<sierra::ids::VarId, DeferredVariableInfo>::default();
-        for (arg, param_signature) in zip_eq(args, param_signatures) {
-            let (_, deferred) = self.prepare_libfunc_argument(
-                arg,
-                param_signature.allow_deferred,
-                param_signature.allow_add_const,
-                param_signature.allow_const,
-            );
-
-            if let Some(deferred) = deferred {
-                deferred_args.insert(arg.clone(), deferred);
-            }
-        }
-        deferred_args
+    ) -> Vec<VarState> {
+        zip_eq(args, param_signatures)
+            .map(|(arg, param_signature)| {
+                self.prepare_libfunc_argument(
+                    arg,
+                    param_signature.allow_deferred,
+                    param_signature.allow_add_const,
+                    param_signature.allow_const,
+                )
+            })
+            .collect()
     }
 
     /// Prepares the given `arg` to be used as an argument for a libfunc.
     ///
-    /// Returns:
-    /// * whether the variable was copied to the stack.
-    /// * The [DeferredVariableInfo] if the variable has a deferred value after the function (that
-    ///   is, it was not stored as temp/local by the function).
+    /// Returns the VarState of the argument.
     fn prepare_libfunc_argument(
         &mut self,
         arg: &sierra::ids::VarId,
         allow_deferred: bool,
         allow_add_const: bool,
         allow_const: bool,
-    ) -> (bool, Option<DeferredVariableInfo>) {
-        let mut res_deferred_info: Option<DeferredVariableInfo> = None;
-
-        if let Some(var_state) = self.state().variables.swap_remove(arg) {
+    ) -> VarState {
+        let var_state = if let Some(var_state) = self.state().variables.swap_remove(arg) {
             match var_state {
-                VarState::Deferred { info: deferred_info } => {
+                VarState::Deferred { info: ref deferred_info } => {
                     if self.local_variables.get(arg).is_some() {
                         // If a deferred argument was marked as a local variable, then store
                         // it. This is important in case an alias of the variable is used later
                         // (for example, due to `SameAsParam` output).
-                        return (self.store_deferred(arg, deferred_info), None);
+                        return if self.store_deferred(arg, deferred_info.clone()) {
+                            VarState::TempVar { ty: deferred_info.ty.clone() }
+                        } else {
+                            VarState::LocalVar
+                        };
                     } else {
                         match deferred_info.kind {
                             state::DeferredVariableKind::Const => {
                                 if !allow_const {
-                                    return (self.store_deferred(arg, deferred_info), None);
+                                    return if self.store_deferred(arg, deferred_info.clone()) {
+                                        VarState::TempVar { ty: deferred_info.ty.clone() }
+                                    } else {
+                                        VarState::LocalVar
+                                    };
                                 }
                             }
                             state::DeferredVariableKind::AddConst => {
                                 if !allow_add_const {
-                                    return (self.store_deferred(arg, deferred_info), None);
+                                    return if self.store_deferred(arg, deferred_info.clone()) {
+                                        VarState::TempVar { ty: deferred_info.ty.clone() }
+                                    } else {
+                                        VarState::LocalVar
+                                    };
                                 }
                             }
                             state::DeferredVariableKind::Generic => {
                                 if !allow_deferred {
-                                    return (self.store_deferred(arg, deferred_info), None);
+                                    return if self.store_deferred(arg, deferred_info.clone()) {
+                                        VarState::TempVar { ty: deferred_info.ty.clone() }
+                                    } else {
+                                        VarState::LocalVar
+                                    };
                                 }
                             }
                         };
-                    }
 
-                    res_deferred_info = Some(deferred_info);
+                        var_state
+                    }
                 }
                 VarState::TempVar { .. } | VarState::LocalVar { .. } => {
-                    self.state().variables.insert(arg.clone(), var_state);
+                    self.state().variables.insert(arg.clone(), var_state.clone());
+                    var_state
                 }
             }
-        }
+        } else {
+            // TODO(ilya): Fail here.
+            VarState::LocalVar
+        };
 
         if matches!(self.state().variables.get(arg), Some(VarState::TempVar { .. }))
             && self.store_temp_as_local(arg)
         {
             self.known_stack().remove_variable(arg);
+
+            return VarState::LocalVar;
         }
 
-        (false, res_deferred_info)
+        var_state
     }
 
     /// Adds a store_temp() or store_local() instruction for the given deferred variable.
