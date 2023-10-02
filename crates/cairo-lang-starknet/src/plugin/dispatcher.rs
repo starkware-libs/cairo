@@ -190,12 +190,12 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
                     }
                 };
                 dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "$func_decl$;",
+                    "\n$func_decl$;",
                     &[("func_decl".to_string(), dispatcher_signature(db, &declaration, "T", true))]
                         .into(),
                 ));
                 safe_dispatcher_signatures.push(RewriteNode::interpolate_patched(
-                    "$func_decl$;",
+                    "\n$func_decl$;",
                     &[(
                         "func_decl".to_string(),
                         dispatcher_signature(db, &declaration, "T", false),
@@ -249,8 +249,7 @@ pub fn handle_trait(db: &dyn SyntaxGroup, trait_ast: ast::ItemTrait) -> PluginRe
     let mut builder = PatchBuilder::new(db);
     builder.add_modified(RewriteNode::interpolate_patched(
         &formatdoc!(
-            "trait {dispatcher_trait_name}<T> {{
-            $dispatcher_signatures$
+            "trait {dispatcher_trait_name}<T> {{$dispatcher_signatures$
             }}
 
             #[derive(Copy, Drop, {STORE_TRAIT}, Serde)]
@@ -408,10 +407,10 @@ fn dispatcher_signature(
         .children
         .as_mut()
         .unwrap();
-    drop(params.drain(0..std::cmp::min(2, params.len())));
+    let maybe_comma = if params.len() > 2 { ", " } else { "" };
     params.splice(
-        0..0,
-        [RewriteNode::Text(format!("self: {self_type_name}")), RewriteNode::text(", ")],
+        0..std::cmp::min(2, params.len()),
+        [RewriteNode::Text(format!("self: {self_type_name}{maybe_comma}"))],
     );
     if unwrap {
         return func_declaration;
