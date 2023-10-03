@@ -1,7 +1,7 @@
 //! > pattern type for a param.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(x: (felt252, felt252)) {
@@ -16,18 +16,16 @@ foo
 
 //! > ==========================================================================
 
-//! > Destructure a struct.
+//! > Valid destructures of a struct.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(s2: Struct2) {
     let Struct2{member1, member2, member3} = s2;
-    let Struct2{member1, member2} = s2;
     let Struct2{member1, member2, ..} = s2;
     let Struct2{member1, member2, member3: Struct1{member1: a,..}} = s2;
-    let Struct2{member1, member2, member3, member1, } = s2;
 }
 
 //! > function_name
@@ -45,12 +43,129 @@ struct Struct2 {
 }
 
 //! > expected_diagnostics
-error: Missing member "member3".
- --> lib.cairo:12:9
-    let Struct2{member1, member2} = s2;
-        ^***********************^
 
-error: Redefinition of member "member1" on struct "test::Struct2".
- --> lib.cairo:15:9
-    let Struct2{member1, member2, member3, member1, } = s2;
-        ^*******************************************^
+//! > ==========================================================================
+
+//! > Test struct pattern with missing members.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: MyStruct) {
+    let MyStruct { a } = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: usize,
+    b: usize,
+}
+
+//! > expected_diagnostics
+error: Missing member "b".
+ --> lib.cairo:6:9
+    let MyStruct { a } = s;
+        ^************^
+
+//! > ==========================================================================
+
+//! > Test struct pattern with non existing members.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: MyStruct) {
+    let MyStruct { a, b } = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+}
+
+//! > expected_diagnostics
+error: Struct "test::MyStruct" has no member "a"
+ --> lib.cairo:4:20
+    let MyStruct { a, b } = s;
+                   ^
+
+error: Struct "test::MyStruct" has no member "b"
+ --> lib.cairo:4:23
+    let MyStruct { a, b } = s;
+                      ^
+
+//! > ==========================================================================
+
+//! > Test struct pattern with members redefinition.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: MyStruct) {
+    let MyStruct { a, b, a, b } = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: usize,
+    b: usize,
+}
+
+//! > expected_diagnostics
+error: Redefinition of member "a" on struct "test::MyStruct".
+ --> lib.cairo:6:26
+    let MyStruct { a, b, a, b } = s;
+                         ^
+
+error: Redefinition of member "b" on struct "test::MyStruct".
+ --> lib.cairo:6:29
+    let MyStruct { a, b, a, b } = s;
+                            ^
+
+//! > ==========================================================================
+
+//! > Test struct pattern with non existing members, members redefinition and missing members.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo(s: MyStruct) {
+    let MyStruct { a, c, a } = s;
+}
+
+//! > function_name
+foo
+
+//! > module_code
+struct MyStruct {
+    a: usize,
+    b: usize,
+}
+
+//! > expected_diagnostics
+error: Struct "test::MyStruct" has no member "c"
+ --> lib.cairo:6:23
+    let MyStruct { a, c, a } = s;
+                      ^
+
+error: Redefinition of member "a" on struct "test::MyStruct".
+ --> lib.cairo:6:26
+    let MyStruct { a, c, a } = s;
+                         ^
+
+error: Missing member "b".
+ --> lib.cairo:6:9
+    let MyStruct { a, c, a } = s;
+        ^******************^

@@ -11,7 +11,7 @@ use cairo_lang_defs::ids::{
     FunctionTitleId, FunctionWithBodyId, GenericKind, LocalVarLongId, MemberId, TraitFunctionId,
     TraitId,
 };
-use cairo_lang_diagnostics::{Maybe, ToMaybe, ToOption};
+use cairo_lang_diagnostics::{Maybe, ToOption};
 use cairo_lang_filesystem::ids::{FileKind, FileLongId, VirtualFile};
 use cairo_lang_syntax::node::ast::{BlockOrIf, ExprPtr, PatternStructParam, UnaryOperator};
 use cairo_lang_syntax::node::db::SyntaxGroup;
@@ -1255,10 +1255,12 @@ fn maybe_compute_pattern_semantic(
             let struct_id = concrete_struct_id.struct_id(ctx.db);
             let mut members = ctx.db.concrete_struct_members(concrete_struct_id)?;
             let mut used_members = UnorderedHashSet::default();
-            let mut get_member = |ctx: &mut ComputationContext<'_>, member_name: SmolStr| {
+            let mut get_member = |ctx: &mut ComputationContext<'_>,
+                                  member_name: SmolStr,
+                                  stable_ptr: SyntaxStablePtrId| {
                 let member = members.swap_remove(&member_name).on_none(|| {
-                    ctx.diagnostics.report(
-                        pattern_struct,
+                    ctx.diagnostics.report_by_ptr(
+                        stable_ptr,
                         if used_members.contains(&member_name) {
                             StructMemberRedefinition { struct_id, member_name: member_name.clone() }
                         } else {
@@ -1275,7 +1277,11 @@ fn maybe_compute_pattern_semantic(
                 match pattern_param_ast {
                     PatternStructParam::Single(single) => {
                         let name = single.name(syntax_db);
-                        let member = get_member(ctx, name.text(syntax_db)).to_maybe()?;
+                        let Some(member) =
+                            get_member(ctx, name.text(syntax_db), name.stable_ptr().untyped())
+                        else {
+                            continue;
+                        };
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern = create_variable_pattern(
                             ctx,
@@ -1287,8 +1293,12 @@ fn maybe_compute_pattern_semantic(
                         field_patterns.push((member, ctx.patterns.alloc(pattern)));
                     }
                     PatternStructParam::WithExpr(with_expr) => {
-                        let member = get_member(ctx, with_expr.name(syntax_db).text(syntax_db))
-                            .to_maybe()?;
+                        let name = with_expr.name(syntax_db);
+                        let Some(member) =
+                            get_member(ctx, name.text(syntax_db), name.stable_ptr().untyped())
+                        else {
+                            continue;
+                        };
                         let ty = wrap_in_snapshots(ctx.db, member.ty, n_snapshots);
                         let pattern =
                             compute_pattern_semantic(ctx, &with_expr.pattern(syntax_db), ty);
