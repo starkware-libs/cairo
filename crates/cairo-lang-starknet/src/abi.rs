@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use cairo_lang_defs::ids::{
-    FunctionWithBodyId, ImplAliasId, ImplDefId, ImplFunctionId, LanguageElementId, ModuleId,
-    ModuleItemId, SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
+    FunctionWithBodyId, ImplAliasId, ImplDefId, LanguageElementId, ModuleId, ModuleItemId,
+    SubmoduleId, TopLevelLanguageElementId, TraitFunctionId, TraitId,
 };
 use cairo_lang_diagnostics::{DiagnosticAdded, Maybe};
 use cairo_lang_semantic::corelib::core_submodule;
@@ -267,8 +267,9 @@ impl AbiBuilder {
         impl_def_id: ImplDefId,
         storage_type: TypeId,
     ) -> Result<(), ABIError> {
-        for function in db.impl_functions(impl_def_id).unwrap_or_default().values() {
-            let function_abi = self.impl_function_as_abi(db, *function, storage_type)?;
+        let trait_id = db.impl_def_trait(impl_def_id)?;
+        for function in db.trait_functions(trait_id).unwrap_or_default().values() {
+            let function_abi = self.trait_function_as_abi(db, *function, storage_type)?;
             self.add_abi_item(function_abi, true)?;
         }
 
@@ -494,19 +495,6 @@ impl AbiBuilder {
         let outputs = self.get_signature_outputs(db, &signature)?;
 
         Ok(Item::Function(Function { name: name.to_string(), inputs, outputs, state_mutability }))
-    }
-
-    /// Converts a TraitFunctionId to an ABI::Function.
-    fn impl_function_as_abi(
-        &mut self,
-        db: &dyn SemanticGroup,
-        impl_function_id: ImplFunctionId,
-        storage_type: TypeId,
-    ) -> Result<Item, ABIError> {
-        let name: String = impl_function_id.name(db.upcast()).into();
-        let signature = db.impl_function_signature(impl_function_id)?;
-
-        self.function_as_abi(db, &name, signature, storage_type)
     }
 
     /// Adds an event to the ABI from a type with an Event derive.
