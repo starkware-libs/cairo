@@ -1045,7 +1045,7 @@ fn compute_method_function_call_data(
     method_syntax: SyntaxStablePtrId,
     generic_args_syntax: Option<Vec<ast::GenericArg>>,
     no_implementation_diagnostic: fn(TypeId, SmolStr) -> SemanticDiagnosticKind,
-    multiple_implementation_diagnostic: fn(
+    multiple_trait_diagnostic: fn(
         TypeId,
         TraitFunctionId,
         TraitFunctionId,
@@ -1069,7 +1069,7 @@ fn compute_method_function_call_data(
         [trait_function_id0, trait_function_id1, ..] => {
             return Err(ctx.diagnostics.report_by_ptr(
                 method_syntax,
-                multiple_implementation_diagnostic(self_ty, trait_function_id0, trait_function_id1),
+                multiple_trait_diagnostic(self_ty, trait_function_id0, trait_function_id1),
             ));
         }
     };
