@@ -90,10 +90,12 @@ pub fn compute_costs<
     program: &Program,
     get_cost_fn: &dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
     specific_cost_context: &SpecificCostContext,
+    enforced_wallet_values: &OrderedHashMap<StatementIdx, CostType>,
 ) -> Result<GasInfo, CostError> {
     let mut context = CostContext {
         program,
         get_cost_fn,
+        enforced_wallet_values,
         costs: Default::default(),
         target_values: Default::default(),
     };
@@ -339,6 +341,10 @@ struct CostContext<'a, CostType: CostTypeTrait> {
     program: &'a Program,
     /// A callback function returning the cost of a libfunc for every output branch.
     get_cost_fn: &'a dyn Fn(&ConcreteLibfuncId) -> Vec<BranchCost>,
+    /// A map from statement index to an enforced wallet value. For example, some functions
+    /// may have a required cost, in this case the functions entry points should have a predefined
+    /// wallet value.
+    enforced_wallet_values: &'a OrderedHashMap<StatementIdx, CostType>,
     /// The cost before executing a Sierra statement.
     costs: UnorderedHashMap<StatementIdx, WalletInfo<CostType>>,
     /// A partial map from StatementIdx to a requested lower bound on the wallet value.
@@ -357,6 +363,20 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
     /// For `branch_align` the function returns the result as if the alignment is zero (since the
     /// alignment is not know at this point).
     fn wallet_at(&self, idx: &StatementIdx) -> WalletInfo<CostType> {
+        self.wallet_at_ex(idx, true)
+    }
+
+    /// Extended version of [Self::wallet_at].
+    ///
+    /// If `with_enforced_values` is `true`, the enforced wallet values are used if set.
+    fn wallet_at_ex(&self, idx: &StatementIdx, with_enforced_values: bool) -> WalletInfo<CostType> {
+        if with_enforced_values {
+            if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
+                // If there is an enforced value, use it.
+                return WalletInfo::from(enforced_wallet_value.clone());
+            }
+        }
+
         self.costs
             .get(idx)
             .unwrap_or_else(|| panic!("Wallet value for statement {idx} was not yet computed."))
@@ -469,7 +489,8 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         Ok((0..self.program.statements.len())
             .map(|i| {
                 let idx = StatementIdx(i);
-                (idx, self.wallet_at(&idx).value + excess.get(&idx).cloned().unwrap_or_default())
+                let original_wallet_value = self.wallet_at_ex(&idx, false).value;
+                (idx, original_wallet_value + excess.get(&idx).cloned().unwrap_or_default())
             })
             .collect())
     }
@@ -488,9 +509,19 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         excess: &mut UnorderedHashMap<StatementIdx, CostType>,
         finalized_excess_statements: &mut UnorderedHashSet<StatementIdx>,
     ) {
+        let wallet_value = self.wallet_at_ex(idx, false).value;
+
+        if let Some(enforced_wallet_value) = self.enforced_wallet_values.get(idx) {
+            // No excess is expected at statement with enforced wallet value.
+            // If there is one, we ignore it.
+            excess.insert(
+                *idx,
+                CostType::rectify(&(enforced_wallet_value.clone() - wallet_value.clone())),
+            );
+        }
+
         finalized_excess_statements.insert(*idx);
 
-        let wallet_value = self.wallet_at(idx).value;
         let current_excess = excess.get(idx).cloned().unwrap_or_default();
 
         let invocation = match &self.program.get_statement(idx).unwrap() {
