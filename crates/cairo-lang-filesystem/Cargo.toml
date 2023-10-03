@@ -18,3 +18,6 @@ smol_str.workspace = true
 env_logger.workspace = true
 serde_json.workspace = true
 test-log.workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["cairo-lang-debug"]
