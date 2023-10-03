@@ -9,8 +9,8 @@ description = "Procedural macros."
 [lib]
 proc-macro = true
 
-[package.metadata.cargo-udeps.ignore]
-normal = ["cairo-lang-debug"]
+[package.metadata.cargo-machete]
+ignored = ["cairo-lang-debug"]
 
 [dependencies]
 # This is used only for docs.
