@@ -1,7 +1,7 @@
 //! > Test basic error propagation on Option.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -24,7 +24,7 @@ fn with_err() -> Option::<felt252> {
 //! > Test bad function for error propagation on Option.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -51,7 +51,7 @@ error: Return type "core::felt252" does not wrap error "()"
 //! > Test basic error propagation on Result.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Result::<felt252, u128> {
@@ -78,7 +78,7 @@ fn with_err2() -> Result::<felt252, u128> {
 //! > Test bad function for error propagation on Result.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {
@@ -105,7 +105,7 @@ error: Return type "core::felt252" does not wrap error "core::integer::u128"
 //! > Test error propagation on mismatching Result types.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Result::<felt252, u128> {
@@ -137,7 +137,7 @@ fn foo() -> Result::<felt252, u128> {
 //! > Test bad operand for error propagation.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {

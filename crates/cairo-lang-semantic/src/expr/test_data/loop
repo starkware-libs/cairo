@@ -1,7 +1,7 @@
 //! > Incompatible types in loop breaks
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -30,7 +30,7 @@ error: Mismatched types. The type core::bool cannot be created from a numeric li
 //! > Continue outside a loop.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -53,7 +53,7 @@ error: `continue` only allowed inside a `loop`.
 //! > Break outside a loop.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -76,7 +76,7 @@ error: `break` only allowed inside a `loop`.
 //! > Return inside a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
@@ -101,7 +101,7 @@ error: `return` not allowed inside a `loop`.
 //! > Valid loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> bool {
@@ -122,7 +122,7 @@ foo
 //! > Invalid return in regard to the return type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool{
@@ -145,7 +145,7 @@ error: Unexpected return type. Expected: "core::bool", found: "()".
 //! > Valid empty return
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -164,7 +164,7 @@ foo
 //! > Empty return inside a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool {
@@ -189,7 +189,7 @@ error: `return` not allowed inside a `loop`.
 //! > Invalid break in regard to the return type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> bool{
@@ -214,7 +214,7 @@ fn foo() -> bool{
 //! > Valid empty break 
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -235,7 +235,7 @@ foo
 //! > Empty break outside of a loop
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -258,7 +258,7 @@ error: `break` only allowed inside a `loop`.
 //! > Error propagation inside a loop.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option<bool> {
@@ -287,7 +287,7 @@ error: `?` not allowed inside a `loop`.
 //! > Loop with a felt252 tail expression.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> Option<bool> {
@@ -314,7 +314,7 @@ error: Tail expression not allowed in a `loop` block.
 //! > Loop with a unit tail expression.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<bool> {
@@ -337,7 +337,7 @@ use option::Option;
 //! > Loop with a never tail expression.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option<bool> {

@@ -1,7 +1,7 @@
 //! > Test enum
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 enum A {

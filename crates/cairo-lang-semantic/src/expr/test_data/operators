@@ -1,7 +1,7 @@
 //! > Test unexpected argument types for operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: MyType) {
@@ -25,7 +25,7 @@ error: Trait has no implementation in context: core::traits::Mul::<test::MyType>
 //! > Test operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: u128, b: bool) implicits(RangeCheck) {
@@ -69,7 +69,7 @@ error: Trait has no implementation in context: core::traits::PartialOrd::<core::
 //! > Test unary operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -94,7 +94,7 @@ error: Trait has no implementation in context: core::traits::Neg::<core::bool>
 //! > Test index operator
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {

@@ -1,7 +1,7 @@
 //! > Test return type inference
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> Option::<felt252> {
@@ -20,7 +20,7 @@ foo
 //! > Test array inference
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -40,7 +40,7 @@ foo
 //! > Test cycles
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > comments
 // TODO(spapini): Make better diagnostics.
@@ -77,7 +77,7 @@ error: Type annotations needed. Failed to infer ?0
 //! > Test undetermined system
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -100,7 +100,7 @@ error: Type annotations needed. Failed to infer ?0
 //! > Test type mismatch
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -123,7 +123,7 @@ error: Unexpected argument type. Expected: "core::felt252", found: "core::array:
 //! > Test never type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -142,7 +142,7 @@ foo
 //! > Test anti never type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> never {
@@ -165,7 +165,7 @@ fn foo() -> never {
 //! > Test trait inference.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -198,7 +198,7 @@ impl MyImpl3 of MyTrait::<Option::<felt252>> {
 //! > Test trait inference no impl failure.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -236,7 +236,7 @@ error: Trait has no implementation in context: test::MyTrait::<core::bool>
 //! > Test trait inference multiple impl failure.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -275,7 +275,7 @@ error: Trait `test::MyTrait::<core::felt252>` has multiple implementations, in: 
 //! > Test trait inference unresolved type for impl.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -313,7 +313,7 @@ error: Type annotations needed. Failed to infer ?1
 //! > Test dot_expr inference.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(my_box: Box::<MyStruct>) -> felt252 {
@@ -335,7 +335,7 @@ struct MyStruct {
 //! > Infer impl
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -363,7 +363,7 @@ impl MyImpl1 of MyTrait::<bool> {
 //! > Infer impl after inferring type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -400,7 +400,7 @@ impl MyImpl4 of MyTrait::<Option::<bool>> {
 //! > Infer impl failure
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -441,7 +441,7 @@ error: Trait has no implementation in context: test::MyTrait::<core::bool>
 //! > Infer impl generic param from generic param.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -469,7 +469,7 @@ impl MyImpl<T> of MyTrait::<T> {
 //! > Complex clone inference.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -489,7 +489,7 @@ foo
 //! > infer generic impl in a function.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -511,7 +511,7 @@ fn clone_loop<T, impl TClone: Clone::<T>>(x: T) {
 //! > infer drop impl.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -534,7 +534,7 @@ impl I<impl TI: Drop::<A>> of Drop::<B>;
 //! > equality from signature
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -557,7 +557,7 @@ fn assert_eq<T, impl TPartialEq: PartialEq<T>>(a: T, b: T, err_code: felt252) {
 //! > inference from struct pattern
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -576,7 +576,7 @@ foo
 //! > inference in impl generic params
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -609,7 +609,7 @@ impl BashStateEx<S, impl X0: BashStateTrait<S>, T, impl Y0: Bash<T, S, _>> of Ba
 //! > Test no default type for string literals.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -632,7 +632,7 @@ error: Type annotations needed. Failed to infer ?0
 //! > Test impl inference with an impl of a non-existing trait in context.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {

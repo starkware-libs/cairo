@@ -1,7 +1,7 @@
 //! > Test generics substitution.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 extern type A<S>;
@@ -29,7 +29,7 @@ error: Unexpected argument type. Expected: "test::A::<test::A::<core::bool>>", f
 //! > Test generics in trait functions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -57,7 +57,7 @@ foo
 //! > Test ref self in trait functions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
@@ -83,7 +83,7 @@ foo
 //! > Test generic kind failures
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -136,7 +136,7 @@ error: Impl not found.
 //! > Test generic impl
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -172,7 +172,7 @@ error: Supplied impl does not match the required trait
 //! > Test generic impl params usage
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn f(){}
@@ -218,7 +218,7 @@ error: Supplied impl does not match the required trait
 //! > Test generic impl params on generic impl
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn f(){
@@ -252,7 +252,7 @@ f
 //! > Test generic deduction
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -281,7 +281,7 @@ error: Unexpected argument type. Expected: "test::MyStruct::<core::felt252, core
 //! > Test out of order generics.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -304,7 +304,7 @@ struct B<impl Timpl1: ATrait<T>, T, impl Timpl2: ATrait2<T>> {
 //! > Test out of order generic impls.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {}
@@ -327,7 +327,7 @@ struct B<T, impl Timpl2: ATrait2<T>, impl Timpl1: ATrait<T>> {
 //! > Test named generics
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {

@@ -1,7 +1,7 @@
 //! > Test bad consteval_int! macros
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {}
@@ -147,7 +147,7 @@ const out_of_range: u8 = consteval_int!(120 + 160);
 //! > Test bad array! macros
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -181,7 +181,7 @@ error: Plugin diagnostic: Unexpected argument type. Expected: "core::felt252", f
 //! > Test unknown macro
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -204,7 +204,7 @@ error: Inline macro `foo` not found.
 //! > Test comment affects macro name
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() {
