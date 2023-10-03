@@ -976,8 +976,8 @@ pub fn infer_impl_by_self(
     ))
 }
 
-/// Returns all the trait functions that fits the given function name and can be called on a given
-/// type.
+/// Returns all the trait functions that fit the given function name, can be called on the given
+/// `self_ty`, and have at least one implementation in context.
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
     self_ty: TypeId,
