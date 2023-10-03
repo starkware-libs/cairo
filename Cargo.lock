@@ -625,7 +625,6 @@ dependencies = [
  "once_cell",
  "pretty_assertions",
  "salsa",
- "smol_str",
  "test-log",
 ]
 
