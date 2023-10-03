@@ -1407,9 +1407,7 @@ fn struct_ctor_expr(
             .ok_or_else(|| ctx.diagnostics.report(&path, NotAStruct))?;
 
     let members = db.concrete_struct_members(concrete_struct_id)?;
-    let mut member_exprs: OrderedHashMap<MemberId, ExprId> = OrderedHashMap::default();
-    // A set of struct members for which a diagnostic has been reported.
-    let mut skipped_members: UnorderedHashSet<MemberId> = UnorderedHashSet::default();
+    let mut member_exprs: OrderedHashMap<MemberId, Option<ExprId>> = OrderedHashMap::default();
     for arg in ctor_syntax.arguments(syntax_db).arguments(syntax_db).elements(syntax_db) {
         // TODO: Extract to a function for results.
         let arg = match arg {
@@ -1433,14 +1431,26 @@ fn struct_ctor_expr(
         // Extract expression.
         let arg_expr = match arg.arg_expr(syntax_db) {
             ast::OptionStructArgExpr::Empty(_) => {
-                let expr =
-                    resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())?;
+                let Ok(expr) =
+                    resolve_variable_by_name(ctx, &arg_identifier, path.stable_ptr().into())
+                else {
+                    // Insert only the member id, for correct duplicate member reporting.
+                    if member_exprs.insert(member.id, None).is_some() {
+                        ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+                    }
+                    continue;
+                };
                 ExprAndId { expr: expr.clone(), id: ctx.exprs.alloc(expr) }
             }
             ast::OptionStructArgExpr::StructArgExpr(arg_expr) => {
                 compute_expr_semantic(ctx, &arg_expr.expr(syntax_db))
             }
         };
+
+        // Insert and check for duplicates.
+        if member_exprs.insert(member.id, Some(arg_expr.id)).is_some() {
+            ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
+        }
 
         // Check types.
         let expected_ty = ctx.reduce_ty(member.ty);
@@ -1450,25 +1460,20 @@ fn struct_ctor_expr(
                 ctx.diagnostics
                     .report(&arg_identifier, WrongArgumentType { expected_ty, actual_ty });
             }
-            skipped_members.insert(member.id);
             continue;
-        }
-        // Insert and check for duplicates.
-        if member_exprs.insert(member.id, arg_expr.id).is_some() {
-            ctx.diagnostics.report(&arg_identifier, MemberSpecifiedMoreThanOnce);
         }
     }
 
     // Report errors for missing members.
     for (member_name, member) in members.iter() {
-        if !member_exprs.contains_key(&member.id) && !skipped_members.contains(&member.id) {
+        if !member_exprs.contains_key(&member.id) {
             ctx.diagnostics.report(ctor_syntax, MissingMember { member_name: member_name.clone() });
         }
     }
 
     Ok(Expr::StructCtor(ExprStructCtor {
         concrete_struct_id,
-        members: member_exprs.into_iter().collect(),
+        members: member_exprs.into_iter().filter_map(|(x, y)| Some((x, y?))).collect(),
         ty: db.intern_type(TypeLongId::Concrete(ConcreteTypeId::Struct(concrete_struct_id))),
         stable_ptr: ctor_syntax.stable_ptr().into(),
     }))
