@@ -976,7 +976,7 @@ pub fn infer_impl_by_self(
     ))
 }
 
-/// Returns all the trait functions that fits the given function name and can be called on a given
+/// Returns all the trait functions that fit the given function name and can be called on a given
 /// type.
 pub fn filter_candidate_traits(
     ctx: &mut ComputationContext<'_>,
@@ -987,7 +987,10 @@ pub fn filter_candidate_traits(
 ) -> Maybe<Vec<TraitFunctionId>> {
     let mut candidates = Vec::new();
     for trait_id in candidate_traits.iter().copied() {
-        for (name, trait_function) in ctx.db.trait_functions(trait_id)? {
+        let Ok(trait_functions) = ctx.db.trait_functions(trait_id) else {
+            continue;
+        };
+        for (name, trait_function) in trait_functions {
             if name == function_name
                 && can_infer_impl_by_self(ctx, trait_function, self_ty, stable_ptr)
             {
