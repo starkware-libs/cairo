@@ -77,7 +77,7 @@ mod counter_contract {
 Interface1DispatcherTrait:
 
 trait Interface1DispatcherTrait<T> {
-    fn foo(self: T, );
+    fn foo(self: T);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -86,7 +86,7 @@ struct Interface1Dispatcher {
 }
 
 impl Interface1DispatcherImpl of Interface1DispatcherTrait<Interface1Dispatcher> {
-    fn foo(self: Interface1Dispatcher, ) {
+    fn foo(self: Interface1Dispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -106,7 +106,7 @@ struct Interface1LibraryDispatcher {
 }
 
 impl Interface1LibraryDispatcherImpl of Interface1DispatcherTrait<Interface1LibraryDispatcher> {
-    fn foo(self: Interface1LibraryDispatcher, ) {
+    fn foo(self: Interface1LibraryDispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -121,7 +121,7 @@ impl Interface1LibraryDispatcherImpl of Interface1DispatcherTrait<Interface1Libr
 }
 
 trait Interface1SafeDispatcherTrait<T> {
-    fn foo(self: T, ) -> starknet::SyscallResult<()>;
+    fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -130,7 +130,7 @@ struct Interface1SafeLibraryDispatcher {
 }
 
 impl Interface1SafeLibraryDispatcherImpl of Interface1SafeDispatcherTrait<Interface1SafeLibraryDispatcher> {
-    fn foo(self: Interface1SafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+    fn foo(self: Interface1SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -151,7 +151,7 @@ struct Interface1SafeDispatcher {
 }
 
 impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1SafeDispatcher> {
-    fn foo(self: Interface1SafeDispatcher, ) -> starknet::SyscallResult<()> {
+    fn foo(self: Interface1SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -169,7 +169,7 @@ impl Interface1SafeDispatcherImpl of Interface1SafeDispatcherTrait<Interface1Saf
 Interface2DispatcherTrait:
 
 trait Interface2DispatcherTrait<T> {
-    fn foo(self: T, );
+    fn foo(self: T);
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -178,7 +178,7 @@ struct Interface2Dispatcher {
 }
 
 impl Interface2DispatcherImpl of Interface2DispatcherTrait<Interface2Dispatcher> {
-    fn foo(self: Interface2Dispatcher, ) {
+    fn foo(self: Interface2Dispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
@@ -198,7 +198,7 @@ struct Interface2LibraryDispatcher {
 }
 
 impl Interface2LibraryDispatcherImpl of Interface2DispatcherTrait<Interface2LibraryDispatcher> {
-    fn foo(self: Interface2LibraryDispatcher, ) {
+    fn foo(self: Interface2LibraryDispatcher) {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -213,7 +213,7 @@ impl Interface2LibraryDispatcherImpl of Interface2DispatcherTrait<Interface2Libr
 }
 
 trait Interface2SafeDispatcherTrait<T> {
-    fn foo(self: T, ) -> starknet::SyscallResult<()>;
+    fn foo(self: T) -> starknet::SyscallResult<()>;
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
@@ -222,7 +222,7 @@ struct Interface2SafeLibraryDispatcher {
 }
 
 impl Interface2SafeLibraryDispatcherImpl of Interface2SafeDispatcherTrait<Interface2SafeLibraryDispatcher> {
-    fn foo(self: Interface2SafeLibraryDispatcher, ) -> starknet::SyscallResult<()> {
+    fn foo(self: Interface2SafeLibraryDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::syscalls::library_call_syscall(
@@ -243,7 +243,7 @@ struct Interface2SafeDispatcher {
 }
 
 impl Interface2SafeDispatcherImpl of Interface2SafeDispatcherTrait<Interface2SafeDispatcher> {
-    fn foo(self: Interface2SafeDispatcher, ) -> starknet::SyscallResult<()> {
+    fn foo(self: Interface2SafeDispatcher) -> starknet::SyscallResult<()> {
         let mut __calldata__ = traits::Default::default();
 
         let mut ret_data = starknet::call_contract_syscall(
