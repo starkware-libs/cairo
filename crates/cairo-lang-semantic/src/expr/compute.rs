@@ -250,7 +250,7 @@ pub fn maybe_compute_expr_semantic(
             Ok(Expr::Literal(short_string_to_semantic(ctx, literal_syntax)?))
         }
         ast::Expr::String(literal_syntax) => {
-            Ok(Expr::StringLiteral(string_literal_to_semantic(ctx, literal_syntax)))
+            Ok(Expr::StringLiteral(string_literal_to_semantic(ctx, literal_syntax)?))
         }
         ast::Expr::False(syntax) => Ok(false_literal_expr(ctx, syntax.stable_ptr().into())),
         ast::Expr::True(syntax) => Ok(true_literal_expr(ctx, syntax.stable_ptr().into())),
@@ -1141,7 +1141,7 @@ fn maybe_compute_pattern_semantic(
             })
         }
         ast::Pattern::String(string_pattern) => {
-            let string_literal = string_literal_to_semantic(ctx, string_pattern);
+            let string_literal = string_literal_to_semantic(ctx, string_pattern)?;
             Pattern::StringLiteral(PatternStringLiteral {
                 string_literal,
                 stable_ptr: string_pattern.stable_ptr().into(),
@@ -1477,20 +1477,6 @@ fn get_tail_expression(
     Some(statement_expr.expr(syntax_db))
 }
 
-/// Creates the semantic model of a literal expression from its AST.
-fn literal_to_semantic(
-    ctx: &mut ComputationContext<'_>,
-    literal_syntax: &ast::TerminalLiteralNumber,
-) -> Maybe<ExprLiteral> {
-    let db = ctx.db;
-    let syntax_db = db.upcast();
-
-    let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
-    let ty = ty.as_ref().map(SmolStr::as_str);
-
-    new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
-}
-
 /// Creates a new numeric literal expression.
 fn new_literal_expr(
     ctx: &mut ComputationContext<'_>,
@@ -1511,13 +1497,26 @@ fn new_literal_expr(
     let concrete_trait_id =
         ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
     let lookup_context = ctx.resolver.impl_lookup_context();
-    let numeric_impl = ctx
-        .resolver
+    ctx.resolver
         .inference()
         .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
         .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
 
-    Ok(ExprLiteral { value, ty, numeric_impl, stable_ptr })
+    Ok(ExprLiteral { value, ty, stable_ptr })
+}
+
+/// Creates the semantic model of a literal expression from its AST.
+fn literal_to_semantic(
+    ctx: &mut ComputationContext<'_>,
+    literal_syntax: &ast::TerminalLiteralNumber,
+) -> Maybe<ExprLiteral> {
+    let db = ctx.db;
+    let syntax_db = db.upcast();
+
+    let (value, ty) = literal_syntax.numeric_value_and_suffix(syntax_db).unwrap_or_default();
+    let ty = ty.as_ref().map(SmolStr::as_str);
+
+    new_literal_expr(ctx, ty, value, literal_syntax.stable_ptr().into())
 }
 
 /// Creates the semantic model of a short string from its AST.
@@ -1536,20 +1535,41 @@ fn short_string_to_semantic(
     new_literal_expr(ctx, suffix, value, short_string_syntax.stable_ptr().into())
 }
 
+/// Creates a new string literal expression.
+fn new_string_literal_expr(
+    ctx: &mut ComputationContext<'_>,
+    value: String,
+    stable_ptr: ExprPtr,
+) -> Maybe<ExprStringLiteral> {
+    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
+
+    // String trait.
+    let trait_id = get_core_trait(ctx.db, "StringLiteral".into());
+    let generic_args = vec![GenericArgumentId::Type(ty)];
+    let concrete_trait_id =
+        ctx.db.intern_concrete_trait(semantic::ConcreteTraitLongId { trait_id, generic_args });
+    let lookup_context = ctx.resolver.impl_lookup_context();
+    ctx.resolver
+        .inference()
+        .new_impl_var(concrete_trait_id, Some(stable_ptr.untyped()), lookup_context)
+        .map_err(|err| err.report(ctx.diagnostics, stable_ptr.untyped()))?;
+
+    Ok(ExprStringLiteral { value, ty, stable_ptr })
+}
+
 /// Creates the semantic model of a string literal from its AST.
 fn string_literal_to_semantic(
     ctx: &mut ComputationContext<'_>,
     string_syntax: &ast::TerminalString,
-) -> ExprStringLiteral {
+) -> Maybe<ExprStringLiteral> {
     let db = ctx.db;
     let syntax_db = db.upcast();
     let stable_ptr = string_syntax.stable_ptr();
 
     let value = string_syntax.string_value(syntax_db).unwrap_or_default();
-    // TODO(yuval): support prefixes/suffixes for explicit types.
-    let ty = ctx.resolver.inference().new_type_var(Some(stable_ptr.untyped()));
+    // TODO(yuval): support prefixes/suffixes for explicit types?
 
-    ExprStringLiteral { value, stable_ptr: stable_ptr.into(), ty }
+    new_string_literal_expr(ctx, value, stable_ptr.into())
 }
 
 /// Given an expression syntax, if it's an identifier, returns it. Otherwise, returns the proper

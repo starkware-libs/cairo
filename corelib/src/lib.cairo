@@ -329,7 +329,11 @@ use bytes_31::{
 
 // BytesArray.
 mod byte_array;
-use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
+use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayStringLiteral, ByteArrayTrait};
+
+// String.
+mod string;
+use string::StringLiteral;
 
 // to_byte_array.
 mod to_byte_array;
