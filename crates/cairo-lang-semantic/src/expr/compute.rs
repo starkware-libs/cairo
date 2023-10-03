@@ -1636,7 +1636,9 @@ fn method_call_expr(
     // Add traits from impl generic args in the context.
     for generic_param in &ctx.resolver.data.generic_params {
         if generic_param.kind(ctx.db.upcast()) == GenericKind::Impl {
-            let trait_id = ctx.db.generic_impl_param_trait(*generic_param)?;
+            let Ok(trait_id) = ctx.db.generic_impl_param_trait(*generic_param) else {
+                continue;
+            };
             candidate_traits.insert(trait_id);
         }
     }
