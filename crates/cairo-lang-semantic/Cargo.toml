@@ -22,7 +22,6 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.0-rc0" }
 cairo-lang-test-utils = { path = "../cairo-lang-test-utils", optional = true, features = ["testing"] }
 id-arena.workspace = true
 itertools.workspace = true
-log.workspace = true
 num-bigint.workspace = true
 num-traits.workspace = true
 once_cell.workspace = true
