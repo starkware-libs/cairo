@@ -1,7 +1,7 @@
 //! > Named arguments
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(d: bool) {
@@ -55,7 +55,7 @@ error: Named arguments are not supported in this context.
 //! > Ref arguments
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(ref a: felt252) {
@@ -122,7 +122,7 @@ error: Argument to immutable parameter cannot have modifiers.
 //! > Unknown function
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(d: MyStruct) {

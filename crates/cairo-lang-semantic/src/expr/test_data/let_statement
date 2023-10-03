@@ -1,7 +1,7 @@
 //! > Repeated modifiers for a local variable (first modifier is `mut`).
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -39,7 +39,7 @@ error: `ref` modifier was specified after another modifier (`mut`). Only a singl
 //! > Repeated modifiers for a local variable (first modifier is `ref`).
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -67,7 +67,7 @@ error: `ref` is only allowed for function parameters, not for local variables.
 //! > Unsupported ref modifier for a local variable.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -90,7 +90,7 @@ error: `ref` is only allowed for function parameters, not for local variables.
 //! > Variable not found diagnostics
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {
@@ -119,7 +119,7 @@ error: Expected variable or constant, found function.
 //! > Type mismatch diagnostics
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() {

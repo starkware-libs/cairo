@@ -1,7 +1,7 @@
 //! > Constructor
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A) -> A {
@@ -49,7 +49,7 @@ error: Unsupported feature.
 //! > Blocks, `if`s, and `match`s, don't require semicolon, even not in tail expressions.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: A){

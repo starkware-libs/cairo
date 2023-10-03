@@ -1,7 +1,7 @@
 //! > Test basic return.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -20,7 +20,7 @@ foo
 //! > Test unreachable tail statement.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo() -> felt252 {
@@ -40,7 +40,7 @@ foo
 //! > Test unreachable internal return.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: false)
 
 //! > function
 fn foo(x: felt252) -> felt252 {
@@ -63,7 +63,7 @@ foo
 //! > Test type mismatch in return.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo() -> felt252 {}

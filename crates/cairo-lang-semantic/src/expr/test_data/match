@@ -1,7 +1,7 @@
 //! > Test match
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(b: A) -> felt252 {
@@ -51,7 +51,7 @@ error: Mismatched types. The type test::A cannot be created from a numeric liter
 //! > Match with missing type
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool) -> felt252 {
@@ -91,7 +91,7 @@ error: Mismatched types. The type core::bool cannot be created from a numeric li
 //! > Match incompatible arm types
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: felt252, b: bool) -> felt252 {

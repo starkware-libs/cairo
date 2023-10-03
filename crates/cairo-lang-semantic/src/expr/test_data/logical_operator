@@ -1,7 +1,7 @@
 //! > Test logical operators.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: u128, b: u128, c: u128) -> bool {
@@ -34,7 +34,7 @@ error: Expected type "core::bool", found: "core::integer::u128".
 //! > Single sided if.
 
 //! > test_runner_name
-test_function_diagnostics
+test_function_diagnostics(expect_diagnostics: true)
 
 //! > function
 fn foo(a: bool, b: bool, c: bool) -> bool {
