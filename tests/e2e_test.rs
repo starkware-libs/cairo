@@ -7,12 +7,16 @@ use cairo_lang_filesystem::db::FilesGroupEx;
 use cairo_lang_filesystem::flag::Flag;
 use cairo_lang_filesystem::ids::FlagId;
 use cairo_lang_semantic::test_utils::setup_test_module;
+use cairo_lang_sierra::extensions::gas::CostTokenType;
+use cairo_lang_sierra::ids::FunctionId;
+use cairo_lang_sierra::program::{Function, Program};
 use cairo_lang_sierra_generator::db::SierraGenGroup;
 use cairo_lang_sierra_generator::replace_ids::replace_sierra_ids_in_program;
-use cairo_lang_sierra_to_casm::test_utils::build_metadata;
+use cairo_lang_sierra_to_casm::metadata::{calc_metadata, MetadataComputationConfig};
 use cairo_lang_test_utils::parse_test_file::{TestFileRunner, TestRunnerResult};
 use cairo_lang_test_utils::test_lock;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
+use cairo_lang_utils::unordered_hash_map::UnorderedHashMap;
 use cairo_lang_utils::Upcast;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -173,8 +177,17 @@ fn run_e2e_test(
     let sierra_program = replace_sierra_ids_in_program(&db, &sierra_program);
     let sierra_program_str = sierra_program.to_string();
 
+    // Handle the `enforced_costs` argument.
+    let enforced_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> =
+        if let Some(enforced_costs_str) = inputs.get("enforced_costs") {
+            parse_enforced_costs(&sierra_program, enforced_costs_str)
+        } else {
+            Default::default()
+        };
+
     // Compute the metadata.
-    let metadata = build_metadata(&sierra_program, true, false);
+    let metadata_config = MetadataComputationConfig { function_set_costs: enforced_costs };
+    let metadata = calc_metadata(&sierra_program, metadata_config.clone(), false).unwrap();
 
     // Compile to casm.
     let casm = cairo_lang_sierra_to_casm::compiler::compile(&sierra_program, &metadata, true)
@@ -184,7 +197,7 @@ fn run_e2e_test(
     let mut res: OrderedHashMap<String, String> =
         OrderedHashMap::from([("casm".into(), casm), ("sierra_code".into(), sierra_program_str)]);
     if params.cost_computation {
-        let metadata_no_solver = build_metadata(&sierra_program, true, true);
+        let metadata_no_solver = calc_metadata(&sierra_program, metadata_config, true).unwrap();
         res.insert("gas_solution".into(), format!("{}", metadata.gas_info));
         res.insert("gas_solution_no_solver".into(), format!("{}", metadata_no_solver.gas_info));
 
@@ -202,4 +215,38 @@ fn run_e2e_test(
     }
 
     TestRunnerResult::success(res)
+}
+
+fn parse_enforced_costs(
+    sierra_program: &Program,
+    enforced_costs_str: &str,
+) -> OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>> {
+    // Create a map from function name to function id.
+    let function_name_to_id: UnorderedHashMap<&str, _> = sierra_program
+        .funcs
+        .iter()
+        .map(|Function { id, .. }| (id.debug_name.as_ref().unwrap().as_str(), id))
+        .collect();
+
+    enforced_costs_str
+        .split('\n')
+        .map(|line| {
+            // line is the name of the function and the enforced cost, separated by a space.
+            let [name, cost_str] = line.split(' ').collect_vec()[..] else {
+                panic!(
+                    "Invalid enforced cost line. Expected a line of the form '<function name> \
+                     <cost>'."
+                );
+            };
+
+            // Get the FunctionId from the name by searching program.funcs.
+            let function_id = *function_name_to_id
+                .get(name)
+                .unwrap_or_else(|| panic!("Function {name} was not found."));
+            let cost = cost_str
+                .parse::<i32>()
+                .unwrap_or_else(|_| panic!("Expected a number as the enforced cost."));
+            (function_id.clone(), [(CostTokenType::Const, cost)].into_iter().collect())
+        })
+        .collect::<OrderedHashMap<_, _>>()
 }
