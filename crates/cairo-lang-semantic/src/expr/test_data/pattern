@@ -51,6 +51,6 @@ error: Missing member "member3".
         ^***********************^
 
 error: Redefinition of member "member1" on struct "test::Struct2".
- --> lib.cairo:15:9
+ --> lib.cairo:15:44
     let Struct2{member1, member2, member3, member1, } = s2;
-        ^*******************************************^
+                                           ^*****^
