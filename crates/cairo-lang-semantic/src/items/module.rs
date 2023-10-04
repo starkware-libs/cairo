@@ -49,8 +49,10 @@ pub fn priv_module_semantic_data(
         };
 
         if items.insert(name.clone(), *item).is_some() {
+            // `item` is extracted from `module_items` and thus `module_item_name_stable_ptr` is
+            // guaranteed to succeed.
             let stable_location =
-                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item)?);
+                StableLocation::new(db.module_item_name_stable_ptr(module_id, *item).unwrap());
             let kind = SemanticDiagnosticKind::NameDefinedMultipleTimes { name: name.clone() };
             diagnostics.add(SemanticDiagnostic::new(stable_location, kind));
         }
