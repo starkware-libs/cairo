@@ -219,44 +219,41 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_add_const: bool,
         allow_const: bool,
     ) -> VarState {
-        let var_state = if let Some(var_state) = self.state().variables.swap_remove(arg) {
-            match var_state {
-                VarState::Deferred { info: ref deferred_info } => {
-                    if self.local_variables.get(arg).is_some() {
-                        // If a deferred argument was marked as a local variable, then store
-                        // it. This is important in case an alias of the variable is used later
-                        // (for example, due to `SameAsParam` output).
-                        return self.store_deferred(arg, &deferred_info.ty);
-                    } else {
-                        match deferred_info.kind {
-                            state::DeferredVariableKind::Const => {
-                                if !allow_const {
-                                    return self.store_deferred(arg, &deferred_info.ty);
-                                }
+        let var_state = self
+            .state()
+            .variables
+            .swap_remove(arg)
+            .unwrap_or_else(|| panic!("Unkonwn state for {arg}."));
+        match &var_state {
+            VarState::Deferred { info: ref deferred_info } => {
+                if self.local_variables.get(arg).is_some() {
+                    // If a deferred argument was marked as a local variable, then store
+                    // it. This is important in case an alias of the variable is used later
+                    // (for example, due to `SameAsParam` output).
+                    return self.store_deferred(arg, &deferred_info.ty);
+                } else {
+                    match deferred_info.kind {
+                        state::DeferredVariableKind::Const => {
+                            if !allow_const {
+                                return self.store_deferred(arg, &deferred_info.ty);
                             }
-                            state::DeferredVariableKind::AddConst => {
-                                if !allow_add_const {
-                                    return self.store_deferred(arg, &deferred_info.ty);
-                                }
+                        }
+                        state::DeferredVariableKind::AddConst => {
+                            if !allow_add_const {
+                                return self.store_deferred(arg, &deferred_info.ty);
                             }
-                            state::DeferredVariableKind::Generic => {
-                                if !allow_deferred {
-                                    return self.store_deferred(arg, &deferred_info.ty);
-                                }
+                        }
+                        state::DeferredVariableKind::Generic => {
+                            if !allow_deferred {
+                                return self.store_deferred(arg, &deferred_info.ty);
                             }
-                        };
-
-                        var_state
-                    }
-                }
-                VarState::TempVar { .. } | VarState::LocalVar { .. } => {
-                    self.state().variables.insert(arg.clone(), var_state.clone());
-                    var_state
+                        }
+                    };
                 }
             }
-        } else {
-            // TODO(ilya): Fail here.
-            VarState::LocalVar
+            VarState::TempVar { .. } | VarState::LocalVar { .. } => {
+                self.state().variables.insert(arg.clone(), var_state.clone());
+            }
         };
 
         if matches!(self.state().variables.get(arg), Some(VarState::TempVar { .. }))
@@ -310,9 +307,13 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let var_state = self.state().variables.swap_remove(var);
+            let var_state = self
+                .state()
+                .variables
+                .swap_remove(var)
+                .unwrap_or_else(|| panic!("Unkonwn state for {var}."));
 
-            let is_on_stack = if let Some(VarState::Deferred { info: deferred_info }) = var_state {
+            let is_on_stack = if let VarState::Deferred { info: deferred_info } = var_state {
                 let deferred_info = deferred_info.clone();
                 if let DeferredVariableKind::Const = deferred_info.kind {
                     // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
@@ -344,9 +345,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                     false
                 }
             } else {
-                if let Some(var_state) = var_state {
-                    self.state().variables.insert(var.clone(), var_state);
-                }
+                self.state().variables.insert(var.clone(), var_state);
 
                 // Check if this is part of the prefix. If it is, rename instead of adding
                 // `store_temp`.
