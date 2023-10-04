@@ -51,10 +51,11 @@ pub fn get_use_segments(
     use_path: &ast::UsePath,
     segments: &mut Vec<ast::PathSegment>,
 ) -> Maybe<()> {
-    // Find parent path.
+    // Add parent's segments.
     if let Some(parent_use_path) = get_parent_use_path(db, use_path) {
         get_use_segments(db, &parent_use_path, segments)?;
     }
+    // Add current segment.
     match use_path {
         ast::UsePath::Leaf(use_ast) => {
             segments.push(use_ast.ident(db));
@@ -71,20 +72,23 @@ pub fn get_use_segments(
 fn get_parent_use_path(db: &dyn SyntaxGroup, use_path: &ast::UsePath) -> Option<ast::UsePath> {
     let mut node = use_path.as_syntax_node();
     loop {
-        node = node.parent()?;
+        node = node.parent().expect("UsePath is not under an ItemUse.");
         return match node.kind(db) {
             SyntaxKind::ItemUse => None,
-            SyntaxKind::UsePathLeaf => {
-                Some(ast::UsePath::Leaf(ast::UsePathLeaf::from_syntax_node(db, node)))
-            }
             SyntaxKind::UsePathSingle => {
                 Some(ast::UsePath::Single(ast::UsePathSingle::from_syntax_node(db, node)))
             }
             SyntaxKind::UsePathMulti => {
                 Some(ast::UsePath::Multi(ast::UsePathMulti::from_syntax_node(db, node)))
             }
-            _ => {
+            SyntaxKind::UsePathList => {
                 continue;
+            }
+            SyntaxKind::UsePathLeaf => {
+                unreachable!("UsePathLeaf can't be a parent of another UsePath.");
+            }
+            _ => {
+                unreachable!();
             }
         };
     }
