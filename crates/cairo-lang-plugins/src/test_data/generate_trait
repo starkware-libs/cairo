@@ -4,6 +4,7 @@
 test_expand_plugin(expect_diagnostics: false)
 
 //! > cairo_code
+// Some doc.
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
@@ -33,6 +34,7 @@ impl SomeImpl<T> of SomeTrait<T> {
 }
 
 //! > expanded_cairo_code
+// Some doc.
 #[generate_trait]
 impl SomeImpl<T> of SomeTrait<T> {
     fn by_val(self: T) -> T {
