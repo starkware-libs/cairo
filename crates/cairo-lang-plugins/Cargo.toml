@@ -16,7 +16,6 @@ cairo-lang-utils = { path = "../cairo-lang-utils", version = "2.3.0-rc0" }
 indent.workspace = true
 indoc.workspace = true
 itertools.workspace = true
-num-bigint.workspace = true
 salsa.workspace = true
 smol_str.workspace = true
 
