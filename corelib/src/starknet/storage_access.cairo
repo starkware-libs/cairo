@@ -64,7 +64,9 @@ impl StorageBaseAddressIntoU256 of Into<StorageBaseAddress, u256> {
 
 impl StorageAddressPartialEq of PartialEq<StorageAddress> {
     fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        *lhs.into() == *rhs.into()
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
     }
     fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
         !(*lhs == *rhs)
@@ -73,7 +75,9 @@ impl StorageAddressPartialEq of PartialEq<StorageAddress> {
 
 impl StorageBaseAddressPartialEq of PartialEq<StorageBaseAddress> {
     fn eq(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
-        *lhs.into() == *rhs.into()
+        let lhs: felt252 = (*lhs).into();
+        let rhs: felt252 = (*rhs).into();
+        lhs == rhs
     }
     fn ne(lhs: @StorageBaseAddress, rhs: @StorageBaseAddress) -> bool {
         !(*lhs == *rhs)
