@@ -1,8 +1,9 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
+use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
@@ -27,6 +28,25 @@ pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     Mutex::new(
         RootDatabase::builder()
             .detect_corelib()
+            .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
+            .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+            .build()
+            .unwrap(),
+    )
+});
+
+const CONTRACTS_CRATE_DIR: &str = "cairo_level_tests";
+
+/// Salsa database configured to find the corelib, and the contracts crate. When reused by different
+/// tests should be able to use the cached queries that rely on the corelib's or the contracts
+/// crates code, which vastly reduces the tests runtime.
+pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
+    Mutex::new(
+        RootDatabase::builder()
+            .detect_corelib()
+            .with_project_config(
+                ProjectConfig::from_directory(Path::new(CONTRACTS_CRATE_DIR)).unwrap(),
+            )
             .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
             .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
             .build()

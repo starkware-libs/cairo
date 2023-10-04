@@ -1,0 +1,1024 @@
+//! > Test expansion of a contract with several components.
+
+//! > test_runner_name
+ExpandContractFromCrateTestRunner(expect_diagnostics: false)
+
+//! > contract_file_name
+cairo_level_tests/contracts/multi_component.cairo
+
+//! > generated_cairo_code
+#[starknet::interface]
+trait GetSupply<TContractState> {
+    fn get_total_supply_plus_1(self: @TContractState) -> u256;
+}
+
+#[starknet::contract]
+mod contract_with_4_components {
+    use starknet::ContractAddress;
+    use cairo_level_tests::components::erc20::erc20 as erc20_comp;
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use cairo_level_tests::components::mintable::mintable as mintable_comp;
+    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ERC20: erc20_comp::Event,
+        Ownable: ownable_comp::Event,
+        Mintable: mintable_comp::Event,
+        Upgradable: upgradable_comp::Event,
+    }
+
+    #[abi(embed_v0)]
+    impl ERC20Impl = erc20_comp::IERC20<ContractState>;
+
+    impl ERC20HelperImpl = erc20_comp::ERC20HelperImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl OwnershipTransfer = ownable_comp::Transfer<ContractState>;
+
+    impl OwnershipHelper = ownable_comp::OwnableHelperImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl MintImpl = mintable_comp::Mint<ContractState>;
+
+    #[abi(embed_v0)]
+    impl UpgradableImpl = upgradable_comp::UpgradableImpl<ContractState>;
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl ImplCtor of TraitCtor {
+        #[constructor]
+        fn constructor(
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress,
+            owner: ContractAddress,
+        ) {
+            self.ownable_storage.init_ownable(owner);
+            self.erc20_storage.init(name, symbol, decimals, initial_supply, recipient);
+        }
+    }
+
+    #[abi(embed_v0)]
+    impl ImplGetSupply of super::GetSupply<ContractState> {
+        fn get_total_supply_plus_1(self: @ContractState) -> u256 {
+            self.erc20_storage.get_total_supply() + 1
+        }
+    }
+
+
+    struct ContractState {
+        erc20_storage: erc20_comp::ComponentState<ContractState>,
+        ownable_storage: ownable_comp::ComponentState<ContractState>,
+        mintable_storage: mintable_comp::ComponentState<ContractState>,
+        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
+            mintable_storage: mintable_comp::unsafe_new_component_state::<ContractState>(),
+            upgradable_storage: upgradable_comp::unsafe_new_component_state::<ContractState>(),
+        }
+    }
+
+impl ContractStateIERC20 of
+    erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateTransfer of
+    ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateMint of
+    mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateUpgradableImpl of
+    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_name = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_symbol = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_decimals = option::OptionTraitImpl::expect(
+        serde::Serde::<u8>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    let __arg_initial_supply = option::OptionTraitImpl::expect(
+        serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #4'
+    );
+    let __arg_recipient = option::OptionTraitImpl::expect(
+        serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #5'
+    );
+    let __arg_owner = option::OptionTraitImpl::expect(
+        serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #6'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<u256>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+    mod __external {
+        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+        use super::__wrapper__ImplCtor__constructor as constructor;
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
+        self.erc20_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
+        erc20_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @erc20_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: erc20_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
+        let event: erc20_comp::Event = traits::Into::into(event);
+        let mut contract = erc20_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::ERC20(event));
+    }
+}
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
+        self.ownable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
+    }
+}
+impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @mintable_comp::ComponentState<ContractState> {
+        self.mintable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> mintable_comp::ComponentState<ContractState> {
+        mintable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @mintable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: mintable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, mintable_comp::Event>>(ref self: mintable_comp::ComponentState<ContractState>, event: S) {
+        let event: mintable_comp::Event = traits::Into::into(event);
+        let mut contract = mintable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Mintable(event));
+    }
+}
+impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
+        self.upgradable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
+        upgradable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
+        let event: upgradable_comp::Event = traits::Into::into(event);
+        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
+    }
+}
+impl EventDrop of Drop::<Event>;
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::ERC20(val) => {
+                array::ArrayTrait::append(ref keys, selector!("ERC20"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Ownable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Ownable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Mintable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Mintable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Upgradable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Upgradable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("ERC20") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::ERC20(val));
+        }
+        if selector == selector!("Ownable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Ownable(val));
+        }
+        if selector == selector!("Mintable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Mintable(val));
+        }
+        if selector == selector!("Upgradable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Upgradable(val));
+        }
+        Option::None
+    }
+}
+impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {
+    fn into(self: erc20_comp::Event) -> Event {
+        Event::ERC20(self)
+    }
+}
+impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
+        Event::Ownable(self)
+    }
+}
+impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
+    fn into(self: mintable_comp::Event) -> Event {
+        Event::Mintable(self)
+    }
+}
+impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
+    fn into(self: upgradable_comp::Event) -> Event {
+        Event::Upgradable(self)
+    }
+}
+    trait TraitCtor {
+        fn constructor(
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress,
+            owner: ContractAddress,
+        );
+    }
+}
+trait GetSupplyDispatcherTrait<T> {
+    fn get_total_supply_plus_1(self: T, ) -> u256;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct GetSupplyDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl GetSupplyDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyDispatcher> {
+    fn get_total_supply_plus_1(self: GetSupplyDispatcher, ) -> u256 {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get_total_supply_plus_1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u256>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct GetSupplyLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl GetSupplyLibraryDispatcherImpl of GetSupplyDispatcherTrait<GetSupplyLibraryDispatcher> {
+    fn get_total_supply_plus_1(self: GetSupplyLibraryDispatcher, ) -> u256 {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_total_supply_plus_1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        option::OptionTrait::expect(
+            serde::Serde::<u256>::deserialize(ref ret_data),
+            'Returned data too short',
+        )
+    }
+
+}
+
+trait GetSupplySafeDispatcherTrait<T> {
+    fn get_total_supply_plus_1(self: T, ) -> starknet::SyscallResult<u256>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct GetSupplySafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl GetSupplySafeLibraryDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeLibraryDispatcher> {
+    fn get_total_supply_plus_1(self: GetSupplySafeLibraryDispatcher, ) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("get_total_supply_plus_1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u256>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct GetSupplySafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl GetSupplySafeDispatcherImpl of GetSupplySafeDispatcherTrait<GetSupplySafeDispatcher> {
+    fn get_total_supply_plus_1(self: GetSupplySafeDispatcher, ) -> starknet::SyscallResult<u256> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("get_total_supply_plus_1"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(
+            option::OptionTrait::expect(
+                serde::Serde::<u256>::deserialize(ref ret_data),
+                'Returned data too short',
+            )
+        )
+    }
+
+}
+impl GetSupplyDispatcherCopy of Copy::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherDrop of Drop::<GetSupplyDispatcher>;
+impl GetSupplyDispatcherSerde of Serde::<GetSupplyDispatcher> {
+    fn serialize(self: @GetSupplyDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyDispatcher> {
+        Option::Some(GetSupplyDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreGetSupplyDispatcher of starknet::Store::<GetSupplyDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            GetSupplyDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            GetSupplyDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+impl GetSupplyLibraryDispatcherCopy of Copy::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherDrop of Drop::<GetSupplyLibraryDispatcher>;
+impl GetSupplyLibraryDispatcherSerde of Serde::<GetSupplyLibraryDispatcher> {
+    fn serialize(self: @GetSupplyLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplyLibraryDispatcher> {
+        Option::Some(GetSupplyLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreGetSupplyLibraryDispatcher of starknet::Store::<GetSupplyLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            GetSupplyLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplyLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            GetSupplyLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplyLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+impl GetSupplySafeLibraryDispatcherCopy of Copy::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherDrop of Drop::<GetSupplySafeLibraryDispatcher>;
+impl GetSupplySafeLibraryDispatcherSerde of Serde::<GetSupplySafeLibraryDispatcher> {
+    fn serialize(self: @GetSupplySafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeLibraryDispatcher> {
+        Option::Some(GetSupplySafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreGetSupplySafeLibraryDispatcher of starknet::Store::<GetSupplySafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            GetSupplySafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            GetSupplySafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+impl GetSupplySafeDispatcherCopy of Copy::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherDrop of Drop::<GetSupplySafeDispatcher>;
+impl GetSupplySafeDispatcherSerde of Serde::<GetSupplySafeDispatcher> {
+    fn serialize(self: @GetSupplySafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<GetSupplySafeDispatcher> {
+        Option::Some(GetSupplySafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+impl StoreGetSupplySafeDispatcher of starknet::Store::<GetSupplySafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            GetSupplySafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<GetSupplySafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            GetSupplySafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: GetSupplySafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+    use starknet::ContractAddress;
+    use cairo_level_tests::components::erc20::erc20 as erc20_comp;
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use cairo_level_tests::components::mintable::mintable as mintable_comp;
+    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        ERC20: erc20_comp::Event,
+        Ownable: ownable_comp::Event,
+        Mintable: mintable_comp::Event,
+        Upgradable: upgradable_comp::Event,
+    }
+
+    #[abi(embed_v0)]
+    impl ERC20Impl = erc20_comp::IERC20<ContractState>;
+
+    impl ERC20HelperImpl = erc20_comp::ERC20HelperImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl OwnershipTransfer = ownable_comp::Transfer<ContractState>;
+
+    impl OwnershipHelper = ownable_comp::OwnableHelperImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl MintImpl = mintable_comp::Mint<ContractState>;
+
+    #[abi(embed_v0)]
+    impl UpgradableImpl = upgradable_comp::UpgradableImpl<ContractState>;
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl ImplCtor of TraitCtor {
+        #[constructor]
+        fn constructor(
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress,
+            owner: ContractAddress,
+        ) {
+            self.ownable_storage.init_ownable(owner);
+            self.erc20_storage.init(name, symbol, decimals, initial_supply, recipient);
+        }
+    }
+
+    #[abi(embed_v0)]
+    impl ImplGetSupply of super::GetSupply<ContractState> {
+        fn get_total_supply_plus_1(self: @ContractState) -> u256 {
+            self.erc20_storage.get_total_supply() + 1
+        }
+    }
+
+
+    struct ContractState {
+        erc20_storage: erc20_comp::ComponentState<ContractState>,
+        ownable_storage: ownable_comp::ComponentState<ContractState>,
+        mintable_storage: mintable_comp::ComponentState<ContractState>,
+        upgradable_storage: upgradable_comp::ComponentState<ContractState>,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            erc20_storage: erc20_comp::unsafe_new_component_state::<ContractState>(),
+            ownable_storage: ownable_comp::unsafe_new_component_state::<ContractState>(),
+            mintable_storage: mintable_comp::unsafe_new_component_state::<ContractState>(),
+            upgradable_storage: upgradable_comp::unsafe_new_component_state::<ContractState>(),
+        }
+    }
+
+impl ContractStateIERC20 of
+    erc20_comp::UnsafeNewContractStateTraitForIERC20<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateTransfer of
+    ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateMint of
+    mintable_comp::UnsafeNewContractStateTraitForMint<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+impl ContractStateUpgradableImpl of
+    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__ImplCtor__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_name = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_symbol = option::OptionTraitImpl::expect(
+        serde::Serde::<felt252>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    let __arg_decimals = option::OptionTraitImpl::expect(
+        serde::Serde::<u8>::deserialize(ref data),
+        'Failed to deserialize param #3'
+    );
+    let __arg_initial_supply = option::OptionTraitImpl::expect(
+        serde::Serde::<u256>::deserialize(ref data),
+        'Failed to deserialize param #4'
+    );
+    let __arg_recipient = option::OptionTraitImpl::expect(
+        serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #5'
+    );
+    let __arg_owner = option::OptionTraitImpl::expect(
+        serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #6'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    ImplCtor::constructor(ref contract_state, __arg_name, __arg_symbol, __arg_decimals, __arg_initial_supply, __arg_recipient, __arg_owner);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__ImplGetSupply__get_total_supply_plus_1(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = ImplGetSupply::get_total_supply_plus_1(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<u256>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+
+    mod __external {
+        use super::__wrapper__ImplGetSupply__get_total_supply_plus_1 as get_total_supply_plus_1;
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+        use super::__wrapper__ImplCtor__constructor as constructor;
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+impl HasComponentImpl_erc20_comp of erc20_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @erc20_comp::ComponentState<ContractState> {
+        self.erc20_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> erc20_comp::ComponentState<ContractState> {
+        erc20_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @erc20_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: erc20_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, erc20_comp::Event>>(ref self: erc20_comp::ComponentState<ContractState>, event: S) {
+        let event: erc20_comp::Event = traits::Into::into(event);
+        let mut contract = erc20_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::ERC20(event));
+    }
+}
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
+        self.ownable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
+    }
+}
+impl HasComponentImpl_mintable_comp of mintable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @mintable_comp::ComponentState<ContractState> {
+        self.mintable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> mintable_comp::ComponentState<ContractState> {
+        mintable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @mintable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: mintable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, mintable_comp::Event>>(ref self: mintable_comp::ComponentState<ContractState>, event: S) {
+        let event: mintable_comp::Event = traits::Into::into(event);
+        let mut contract = mintable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Mintable(event));
+    }
+}
+impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
+        self.upgradable_storage
+    }
+    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
+        upgradable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
+        let event: upgradable_comp::Event = traits::Into::into(event);
+        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Upgradable(event));
+    }
+}
+impl EventDrop of Drop::<Event>;
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::ERC20(val) => {
+                array::ArrayTrait::append(ref keys, selector!("ERC20"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Ownable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Ownable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Mintable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Mintable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::Upgradable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Upgradable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("ERC20") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::ERC20(val));
+        }
+        if selector == selector!("Ownable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Ownable(val));
+        }
+        if selector == selector!("Mintable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Mintable(val));
+        }
+        if selector == selector!("Upgradable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Upgradable(val));
+        }
+        Option::None
+    }
+}
+impl EventERC20IntoEvent of Into<erc20_comp::Event, Event> {
+    fn into(self: erc20_comp::Event) -> Event {
+        Event::ERC20(self)
+    }
+}
+impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
+        Event::Ownable(self)
+    }
+}
+impl EventMintableIntoEvent of Into<mintable_comp::Event, Event> {
+    fn into(self: mintable_comp::Event) -> Event {
+        Event::Mintable(self)
+    }
+}
+impl EventUpgradableIntoEvent of Into<upgradable_comp::Event, Event> {
+    fn into(self: upgradable_comp::Event) -> Event {
+        Event::Upgradable(self)
+    }
+}
+    trait TraitCtor {
+        fn constructor(
+            ref self: ContractState,
+            name: felt252,
+            symbol: felt252,
+            decimals: u8,
+            initial_supply: u256,
+            recipient: ContractAddress,
+            owner: ContractAddress,
+        );
+    }
+
+//! > expected_diagnostics
