@@ -395,26 +395,33 @@ impl<'db> Inference<'db> {
         let mut ambiguous = std::mem::take(&mut self.ambiguous);
         self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
         while let Some(var) = self.pending.pop_front() {
-            let solution = match self.impl_var_solution_set(var)? {
-                SolutionSet::None => {
-                    self.refuted.push(var);
-                    continue;
-                }
-                SolutionSet::Ambiguous(ambiguity) => {
-                    self.ambiguous.push((var, ambiguity));
-                    continue;
-                }
-                SolutionSet::Unique(solution) => solution,
-            };
-
-            // Solution found. Assign it.
-            self.assign_local_impl(var, solution)?;
-
-            // Something changed.
-            self.solved.push(var);
-            let mut ambiguous = std::mem::take(&mut self.ambiguous);
-            self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+            // First inference error stops inference.
+            self.solve_single_pending(var)?;
         }
+        Ok(())
+    }
+
+    fn solve_single_pending(&mut self, var: LocalImplVarId) -> InferenceResult<()> {
+        let solution = match self.impl_var_solution_set(var)? {
+            SolutionSet::None => {
+                self.refuted.push(var);
+                return Ok(());
+            }
+            SolutionSet::Ambiguous(ambiguity) => {
+                self.ambiguous.push((var, ambiguity));
+                return Ok(());
+            }
+            SolutionSet::Unique(solution) => solution,
+        };
+
+        // Solution found. Assign it.
+        self.assign_local_impl(var, solution)?;
+
+        // Something changed.
+        self.solved.push(var);
+        let mut ambiguous = std::mem::take(&mut self.ambiguous);
+        self.pending.extend(ambiguous.drain(..).map(|(var, _)| var));
+
         Ok(())
     }
 
