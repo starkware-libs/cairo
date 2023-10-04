@@ -42,6 +42,12 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     }
 }
 
+impl StorageBaseAddressIntoFelt252 of Into<StorageBaseAddress, felt252> {
+    fn into(self: StorageBaseAddress) -> felt252 {
+        storage_address_from_base(self).into()
+    }
+}
+
 impl StorageAddressSerde of serde::Serde<StorageAddress> {
     fn serialize(self: @StorageAddress, ref output: Array<felt252>) {
         storage_address_to_felt252(*self).serialize(ref output);
