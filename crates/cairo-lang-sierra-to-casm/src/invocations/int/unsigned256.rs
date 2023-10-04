@@ -17,6 +17,7 @@ pub fn build(
         Uint256Concrete::IsZero(_) => build_u256_is_zero(builder),
         Uint256Concrete::Divmod(_) => build_u256_divmod(builder),
         Uint256Concrete::SquareRoot(_) => build_u256_sqrt(builder),
+        Uint256Concrete::InvModN(_) => build_u256_inv_mod_n(builder),
     }
 }
 
@@ -318,6 +319,270 @@ fn build_u256_sqrt(
     Ok(builder.build_from_casm_builder(
         casm_builder,
         [("Fallthrough", &[&[range_check], &[sqrt]], None)],
+        CostValidationInfo {
+            range_check_info: Some((orig_range_check, range_check)),
+            extra_costs: None,
+        },
+    ))
+}
+
+/// Generates casm instructions for `u256_inv_mod_n`.
+fn build_u256_inv_mod_n(
+    builder: CompiledInvocationBuilder<'_>,
+) -> Result<CompiledInvocation, InvocationError> {
+    let [range_check, b, n] = builder.try_get_refs()?;
+    let [range_check] = range_check.try_unpack()?;
+    let [b0, b1] = b.try_unpack()?;
+    let [n0, n1] = n.try_unpack()?;
+
+    let mut casm_builder = CasmBuilder::default();
+    add_input_variables! {casm_builder,
+        buffer(6) range_check;
+        deref b0;
+        deref b1;
+        deref n0;
+        deref n1;
+    };
+
+    casm_build_extend! {casm_builder,
+        const zero = 0;
+        const one = 1;
+        const u128_bound_minus_u65_bound = BigInt::from(2).pow(128) - BigInt::from(2).pow(65);
+        const u128_bound_minus_i16_upper_bound = u128::MAX - i16::MAX as u128;
+        const i16_lower_bound = i16::MIN;
+        const u128_limit = (BigInt::from(u128::MAX) + 1) as BigInt;
+        const u64_limit = (BigInt::from(u64::MAX) + 1) as BigInt;
+        let orig_range_check = range_check;
+
+        tempvar g0_or_no_inv;
+        tempvar g1_option;
+        tempvar s_or_r0;
+        tempvar s_or_r1;
+        tempvar t_or_k0;
+        tempvar t_or_k1;
+
+        // Find the inverse or an a proof there isn't one.
+        hint U256InvModN {
+            b0: b0,
+            b1: b1,
+            n0: n0,
+            n1: n1
+        } into {
+            g0_or_no_inv: g0_or_no_inv,
+            g1_option: g1_option,
+            s_or_r0: s_or_r0,
+            s_or_r1: s_or_r1,
+            t_or_k0: t_or_k0,
+            t_or_k1: t_or_k1
+        };
+
+        jump NoInverse if g0_or_no_inv != 0;
+        let r0 = s_or_r0;
+        let r1 = s_or_r1;
+        let k0 = t_or_k0;
+        let k1 = t_or_k1;
+        assert r0 = *(range_check++);
+        assert r1 = *(range_check++);
+        assert k0 = *(range_check++);
+        assert k1 = *(range_check++);
+
+        // Assert r is less than n.
+        tempvar diff1 = n1 - r1;
+
+        // Allocate memory cells for the hints,
+        // as well as for the memory used by just one branch.
+        ap += 18;
+        tempvar diff0;
+        tempvar diff0_min_1;
+        jump HighDiff if diff1 != 0;
+        assert diff0 = n0 - r0;
+        assert diff0_min_1 = diff0 - one;
+        assert diff0_min_1 = *(range_check++);
+        jump After;
+    HighDiff:
+        assert diff1 = *(range_check++);
+    After:
+
+        tempvar r0b0_low;
+        tempvar r0b0_high;
+        hint WideMul128 { lhs: r0, rhs: b0 } into { low: r0b0_low, high: r0b0_high };
+        tempvar r0b1_low;
+        tempvar r0b1_high;
+        hint WideMul128 { lhs: r0, rhs: b1 } into { low: r0b1_low, high: r0b1_high };
+        tempvar r1b0_low;
+        tempvar r1b0_high;
+        hint WideMul128 { lhs: r1, rhs: b0 } into { low: r1b0_low, high: r1b0_high };
+        tempvar r1b1_low;
+        tempvar r1b1_high;
+        hint WideMul128 { lhs: r1, rhs: b1 } into { low: r1b1_low, high: r1b1_high };
+
+        tempvar n0k0_low;
+        tempvar n0k0_high;
+        hint WideMul128 { lhs: n0, rhs: k0 } into { low: n0k0_low, high: n0k0_high };
+        tempvar n0k1_low;
+        tempvar n0k1_high;
+        hint WideMul128 { lhs: n0, rhs: k1 } into { low: n0k1_low, high: n0k1_high };
+        tempvar n1k0_low;
+        tempvar n1k0_high;
+        hint WideMul128 { lhs: n1, rhs: k0 } into { low: n1k0_low, high: n1k0_high };
+        tempvar n1k1_low;
+        tempvar n1k1_high;
+        hint WideMul128 { lhs: n1, rhs: k1 } into { low: n1k1_low, high: n1k1_high };
+    }
+    casm_build_extend! {casm_builder,
+        // Validating `k * n + 1 - r * b = 0`.
+        // Validate limb0.
+        tempvar part0 = n0k0_low + one;
+        tempvar part1 = part0 - r0b0_low;
+        tempvar leftover = part1 / u128_limit;
+        // leftover is an integer in range:
+        // [(0 + 1 - u128::MAX) / u128_limit, (u128::MAX + 1 - 0) / u128_limit] ==> [0, 1].
+        assert leftover = leftover * leftover;
+
+        // Validate limb1.
+        tempvar part0 = n0k0_high + leftover;
+        tempvar part1 = part0 + n0k1_low;
+        tempvar part2 = part1 + n1k0_low;
+        tempvar part3 = part2 - r0b0_high;
+        tempvar part4 = part3 - r0b1_low;
+        tempvar part5 = part4 - r1b0_low;
+        tempvar leftover = part5 / u128_limit;
+        // leftover is an integer in range:
+        // [(0 + 3 * 0 - 3 * u128::MAX) / u128_limit, (1 + 3 * u128::MAX - 3 * 0) / u128_limit]
+        //   ==> [-2, 2].
+        tempvar a = leftover - i16_lower_bound;
+        assert a = *(range_check++);
+        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
+        assert a = *(range_check++);
+
+        // Validate limb2.
+        tempvar part0 = n0k1_high + leftover;
+        tempvar part1 = part0 + n1k0_high;
+        tempvar part2 = part1 + n1k1_low;
+        tempvar part3 = part2 - r1b0_high;
+        tempvar part4 = part3 - r0b1_high;
+        tempvar part5 = part4 - r1b1_low;
+        tempvar leftover = part5 / u128_limit;
+        // leftover is an integer in range:
+        // [(-2 + 3 * 0 - 3 * u128::MAX) / u128_limit, (2 + 3 * u128::MAX - 3 * 0) / u128_limit]
+        //   ==> [-2, 2].
+        tempvar a = leftover - i16_lower_bound;
+        assert a = *(range_check++);
+        tempvar a = leftover + u128_bound_minus_i16_upper_bound;
+        assert a = *(range_check++);
+
+        // Validate limb3.
+        assert r1b1_high = n1k1_high + leftover;
+        jump Done;
+    }
+    casm_build_extend! {casm_builder,
+    NoInverse:
+        let g0 = g0_or_no_inv;
+        let g1 = g1_option;
+        let s0 = s_or_r0;
+        let s1 = s_or_r1;
+        let t0 = t_or_k0;
+        let t1 = t_or_k1;
+        assert g0 = *(range_check++);
+        assert g1 = *(range_check++);
+        assert s0 = *(range_check++);
+        assert s1 = *(range_check++);
+        assert t0 = *(range_check++);
+        assert t1 = *(range_check++);
+        // Validating `g > 1`.
+        tempvar g0_minus_1;
+        jump GIsValid if g1 != 0;
+        assert g0_minus_1 = g0 - one;
+        jump GIsValid if g0_minus_1 != 0;
+        fail;
+        GIsValid:
+
+        // Validating `g * s = b` and `g * t = n`.
+
+        // Only calculate the upper word, since we already know the lower word is `b0`.
+        let g0s0_low = b0;
+        tempvar g0s0_high;
+        hint WideMul128 { lhs: g0, rhs: s0 } into { low: g0s0_low, high: g0s0_high };
+
+        // Only calculate the upper word, since we already know the lower word is `n0`.
+        let g0t0_low = n0;
+        tempvar g0t0_high;
+        hint WideMul128 { lhs: g0, rhs: t0 } into { low: g0t0_low, high: g0t0_high };
+
+        // No need for Limb 0 validations - since we didn't actually calculate it.
+
+        // Validate limb1 for `b` and `n`.
+        // We know that for honest prover (completeness) `limb2` and `limb3` are 0.
+        // Therefore, `g1` is 0 or both `s1` and `t1` are 0.
+        // We also know that g0*s1, g1*s0, g0*t1 and g1*t0 should be smaller than 2**128.
+        // Therefore, the smaller of each pair must be smaller than 2**64.
+        // So by checking this we can avoid overflow in the field.
+        // In fact, instead of checking that two items are smaller than 2**64, we can
+        // check that their sum is smaller than 2**65.
+        tempvar gs1;
+        tempvar gt1;
+        tempvar smalls_sum;
+        jump S1_AND_T1_EQ_ZERO if g1 != 0;
+        // `g1` is 0 - no need to multiply it by `s` and `t`.
+        assert gs1 = s1 * g0;
+        assert gt1 = t1 * g0;
+        tempvar g0_is_small;
+        hint TestLessThan { lhs: g0, rhs: u64_limit } into { dst: g0_is_small };
+        jump G0IsSmall if g0_is_small != 0;
+        assert smalls_sum = s1 + t1;
+        jump MERGE;
+    G0IsSmall:
+        assert smalls_sum = g0;
+        jump MERGE;
+    S1_AND_T1_EQ_ZERO:
+        // s1 and t1 are 0 - no need to multiply them by g.
+        assert gs1 = s0 * g1;
+        assert gt1 = t0 * g1;
+        assert s1 = zero;
+        assert t1 = zero;
+        tempvar g1_is_small;
+        hint TestLessThan { lhs: g1, rhs: u64_limit } into { dst: g1_is_small };
+        jump G1IsSmall if g1_is_small != 0;
+        assert smalls_sum = s0 + t0;
+        jump MERGE;
+    G1IsSmall:
+        assert smalls_sum = g1;
+    MERGE:
+        tempvar smalls_sum_fixed = smalls_sum + u128_bound_minus_u65_bound;
+        assert smalls_sum_fixed = *(range_check++);
+        assert b1 = gs1 + g0s0_high;
+        assert n1 = gt1 + g0t0_high;
+
+        jump Failure;
+        Done:
+    };
+
+    let target_statement_id = get_non_fallthrough_statement_id(&builder);
+    Ok(builder.build_from_casm_builder(
+        casm_builder,
+        [
+            (
+                "Fallthrough",
+                &[
+                    &[range_check],
+                    &[r0, r1],
+                    &[r0, b0, r0b0_high, r0b0_low],
+                    &[r0, b1, r0b1_high, r0b1_low],
+                    &[r1, b0, r1b0_high, r1b0_low],
+                    &[r1, b1, r1b1_high, r1b1_low],
+                    &[n0, k0, n0k0_high, n0k0_low],
+                    &[n0, k1, n0k1_high, n0k1_low],
+                    &[n1, k0, n1k0_high, n1k0_low],
+                    &[n1, k1, n1k1_high, n1k1_low],
+                ],
+                None,
+            ),
+            (
+                "Failure",
+                &[&[range_check], &[g0, s0, g0s0_high, g0s0_low], &[g0, t0, g0t0_high, g0t0_low]],
+                Some(target_statement_id),
+            ),
+        ],
         CostValidationInfo {
             range_check_info: Some((orig_range_check, range_check)),
             extra_costs: None,
