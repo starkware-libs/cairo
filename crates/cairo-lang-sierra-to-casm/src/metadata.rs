@@ -29,7 +29,7 @@ pub enum MetadataError {
 }
 
 /// Configuration for metadata computation.
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct MetadataComputationConfig {
     pub function_set_costs: OrderedHashMap<FunctionId, OrderedHashMap<CostTokenType, i32>>,
 }
@@ -79,10 +79,16 @@ pub fn calc_metadata(
         })?;
 
     if no_eq_solver {
+        let enforced_function_costs: OrderedHashMap<FunctionId, i32> = config
+            .function_set_costs
+            .iter()
+            .map(|(func, costs)| (func.clone(), costs[CostTokenType::Const]))
+            .collect();
         let post_gas_info2 = compute_postcost_info(
             program,
             &|idx| ap_change_info.variable_values.get(idx).copied().unwrap_or_default(),
             &pre_gas_info2,
+            &enforced_function_costs,
         )?;
 
         // Replace post_gas_info with the result of the non-equation-based algorithm.
