@@ -387,3 +387,49 @@ error: Generic argument `T` is out of order.
  --> lib.cairo:14:23
     bar::<S: felt252, T: u32>();
                       ^****^
+
+//! > ==========================================================================
+
+//! > Unknown unnamed impl generic parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<+unknown>() {}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:9
+fn bar<+unknown>() {}
+        ^*****^
+
+//! > ==========================================================================
+
+//! > Unknown named impl generic parameter.
+
+//! > test_runner_name
+test_function_diagnostics(expect_diagnostics: true)
+
+//! > function
+fn foo() {
+}
+
+//! > function_name
+foo
+
+//! > module_code
+fn bar<impl X: unknown>() {}
+
+//! > expected_diagnostics
+error: Trait not found.
+ --> lib.cairo:1:9
+fn bar<+unknown>() {}
+        ^*****^
