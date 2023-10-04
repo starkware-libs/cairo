@@ -450,11 +450,11 @@ fn store_temp_push_values() {
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
-        dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["7"]),
         dummy_simple_statement(&db, "store_temp<felt252>", &["7"], &["7"]),
-        dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("6", "102"), ("7", "103")]),
+        dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("7", "102"), ("8", "103")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_return_statement(&["8"]),
+        dummy_return_statement(&["9"]),
     ];
 
     assert_eq!(
@@ -462,21 +462,21 @@ fn store_temp_push_values() {
             &db,
             statements,
             LocalVariables::default(),
-            &["0", "1", "3", "4", "7", "8"]
+            &["0", "1", "3", "4", "6", "8", "9"]
         ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
             "felt252_add(3, 4) -> (5)",
             "store_temp<felt252>(5) -> (5)",
-            "felt252_add(5, 5) -> (6)",
+            "felt252_add(5, 6) -> (7)",
             "store_temp<felt252>(7) -> (7)",
             "store_temp<felt252>(5) -> (100)",
             "store_temp<felt252>(2) -> (101)",
-            "store_temp<felt252>(6) -> (102)",
-            "store_temp<felt252>(7) -> (103)",
+            "store_temp<felt252>(7) -> (102)",
+            "store_temp<felt252>(8) -> (103)",
             "nope() -> ()",
-            "return(8)",
+            "return(9)",
         ]
     );
 }
@@ -495,20 +495,20 @@ fn store_temp_push_values_with_dup() {
                 // Deferred with dup.
                 ("2", "102", true),
                 // Temporary variable with dup.
-                ("0", "100", true),
+                ("3", "100", true),
             ],
         ),
         dummy_return_statement(&[]),
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1"]),
+        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1", "3"]),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
             "store_temp<felt252>(2) -> (102)",
             "dup<felt252>(102) -> (102, 2)",
-            "dup<felt252>(0) -> (0, 100)",
+            "dup<felt252>(3) -> (3, 100)",
             "store_temp<felt252>(100) -> (100)",
             "return()",
         ]
@@ -719,8 +719,8 @@ fn consecutive_const_additions() {
         dummy_simple_statement(&db, "felt252_add", &["0", "1"], &["2"]),
         dummy_simple_statement(&db, "felt252_add3", &["2"], &["3"]),
         dummy_simple_statement(&db, "felt252_add3", &["3"], &["4"]),
-        dummy_simple_statement(&db, "felt252_add", &["0", "4"], &["5"]),
-        dummy_simple_statement(&db, "felt252_add", &["0", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["6", "5"], &["6"]),
         dummy_simple_statement(&db, "felt252_add3", &["6"], &["7"]),
         dummy_simple_statement(&db, "felt252_add3", &["7"], &["8"]),
         dummy_push_values(&db, &[("8", "9")]),
@@ -728,7 +728,12 @@ fn consecutive_const_additions() {
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1"]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "5", "6"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "store_temp<felt252>(2) -> (2)",
@@ -736,9 +741,9 @@ fn consecutive_const_additions() {
             // There is no need to add a store_temp() instruction between two `felt252_add3()`.
             "felt252_add3(3) -> (4)",
             "store_temp<felt252>(4) -> (4)",
-            "felt252_add(0, 4) -> (5)",
+            "felt252_add(5, 4) -> (5)",
             "store_temp<felt252>(5) -> (5)",
-            "felt252_add(0, 5) -> (6)",
+            "felt252_add(6, 5) -> (6)",
             "store_temp<felt252>(6) -> (6)",
             "felt252_add3(6) -> (7)",
             // There is no need to add a store_temp() instruction between two `felt252_add3()`.
