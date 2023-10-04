@@ -6,15 +6,6 @@ use test::test_utils::assert_eq;
 use super::utils::serialized;
 use integer::BoundedInt;
 
-impl StorageAddressPartialEq of PartialEq<StorageAddress> {
-    fn eq(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs)
-    }
-    fn ne(lhs: @StorageAddress, rhs: @StorageAddress) -> bool {
-        !(storage_address_to_felt252(*lhs) == storage_address_to_felt252(*rhs))
-    }
-}
-
 #[derive(Drop, Serde, PartialEq, Copy, starknet::Store)]
 struct Abc {
     a: u8,
