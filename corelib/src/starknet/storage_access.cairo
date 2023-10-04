@@ -42,9 +42,23 @@ impl StorageAddressIntoFelt252 of Into<StorageAddress, felt252> {
     }
 }
 
+impl StorageAddressIntoU256 of Into<StorageAddress, u256> {
+    fn into(self: StorageAddress) -> u256 {
+        let self: felt252 = self.into();
+        self.into()
+    }
+}
+
 impl StorageBaseAddressIntoFelt252 of Into<StorageBaseAddress, felt252> {
     fn into(self: StorageBaseAddress) -> felt252 {
         storage_address_from_base(self).into()
+    }
+}
+
+impl StorageBaseAddressIntoU256 of Into<StorageBaseAddress, u256> {
+    fn into(self: StorageBaseAddress) -> u256 {
+        let self: felt252 = self.into();
+        self.into()
     }
 }
 
