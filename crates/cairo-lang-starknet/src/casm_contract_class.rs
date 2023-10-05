@@ -284,7 +284,12 @@ impl CasmContractClass {
                 .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
         };
-        let metadata = calc_metadata(&program, metadata_computation_config, false)?;
+
+        // TODO(lior): Remove this assert and condition once the equation solver is removed in major
+        //   version 2.
+        assert!(sierra_version.major == 1);
+        let no_eq_solver = sierra_version.minor >= 4;
+        let metadata = calc_metadata(&program, metadata_computation_config, no_eq_solver)?;
 
         let gas_usage_check = true;
         let cairo_program =
