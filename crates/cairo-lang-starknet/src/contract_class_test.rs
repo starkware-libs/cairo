@@ -10,7 +10,9 @@ use crate::contract_class::{
     ContractClass, ContractEntryPoint, ContractEntryPoints, DEFAULT_CONTRACT_CLASS_VERSION,
 };
 use crate::felt252_serde::sierra_from_felt252s;
-use crate::test_utils::{get_example_file_path, get_test_contract};
+use crate::test_utils::{
+    get_example_file_path, get_test_contract, get_test_contract_from_contracts_crate,
+};
 
 #[test]
 fn test_serialization() {
@@ -66,6 +68,17 @@ fn test_serialization() {
 #[test_case("mintable")]
 fn test_full_contract_deserialization(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
+    let serialized = serde_json::to_string_pretty(&contract).unwrap();
+    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
+}
+
+// Tests the serialization and deserialization of a contract.
+// TODO(Gil): Merge with `test_full_contract_deserialization`.
+#[test_case("multi_component::contract_with_4_components")]
+fn test_full_contract_deserialization_from_contracts_crate(example_file_name: &str) {
+    let contract = get_test_contract_from_contracts_crate(
+        format!("cairo_level_tests::contracts::{example_file_name}").as_str(),
+    );
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
