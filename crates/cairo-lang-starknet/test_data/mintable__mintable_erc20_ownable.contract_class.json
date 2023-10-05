@@ -14,8 +14,8 @@
     "0x456e756d",
     "0x800000000000000700000000000000000000000000000001",
     "0x0",
-    "0xb37a05f1af35f62c2c01f7c6ad18d76ada8f72e11b98a17a51baaa50bc92ee",
-    "0x814d9391f0f2dcde92b927254728f625227aecd0d90391ba33091be4afa6cb",
+    "0x1fad7bff5094ab4b5a0b1f6d3d52f2170573326940c1399edebfae26109ef38",
+    "0x5a20c88127742af3dece829f62c240230e1d74d5f48300f62573ab9f92c0b8",
     "0x426f78",
     "0x1",
     "0x25",
@@ -50,11 +50,11 @@
     "0x436f6e747261637441646472657373",
     "0x25e2ca4b84968c2d8b83ef476ca8549410346b00836ce79beaf538155990bb2",
     "0x800000000000000700000000000000000000000000000004",
-    "0x18a564b8597ea3e1c73c2adc7b01fa127ad172896b362af4b1caba782e44aa1",
+    "0x78939b348ae233254b1b483750ce6a44e0db4da4cb8b7cb485cd43558e937d",
     "0x11",
     "0x12",
-    "0x3aad77ecd6b1ddf19581cb077433a3210a5dc213ed2a45378429f5435373757",
-    "0x34e9929b1e7e8b3e2dd2fff010c6ee54d374061ab800f01987f986a19952a43",
+    "0x3e59d8fdd813342915fb8f7d5c46ce76465f3da210273eef2baa1b0d87ca1e2",
+    "0x146076acf8aa9ee98c98e44ce23d97f6e7694568584caa6f7c465b011045d20",
     "0x13",
     "0x14",
     "0x1b0dc7980e8a548b634c7cd1389a2c4e24a021cf83a6f1e6cff69ee452c50c7",
@@ -65,10 +65,10 @@
     "0x18",
     "0x145068ba3432c23eddd89dd45fe638a782885652788ad82ad6690857df46db5",
     "0x19",
-    "0x8bf1269e030efbef179a1ace6361deb4775f44af5864fbab6f9dcbd24a474b",
+    "0x2f300353197d98bab3a07d46922daec198ed3fe5ae791aaa754cabc90f52b92",
     "0x800000000000000f00000000000000000000000000000003",
     "0x1b",
-    "0x18bfcd260d4e1c96b542f14ed8b9fc4c1357d6db29ce9dd96688f26ccecefa",
+    "0x16cfa3d17fd4c50f1f1fb45da67ea1d349fd239da6beeac04f18271c0bec164",
     "0x1c",
     "0x22",
     "0x24",
@@ -100,46 +100,46 @@
     "0x34c208cc73eb75e315a7730284e475ee3050926253aba2fcbcbac0873ddbbc9",
     "0x30",
     "0x53746f726167654261736541646472657373",
-    "0x311e3830667adaabd3f5b09d1df82649c0c353aae0cab2e6bfa240be38605d9",
+    "0x179ecd968ca619773d390eef26818b48b181327e4126f5ae55e37bfa707da1e",
     "0x33",
-    "0x28c88d62f129cf5d5633d177614f72c52e1d8a7633ea4b08e545b7750f4f27d",
+    "0x45976e403dc08c55057e4d5f3d5264364a2c7356d25402e901bf5aabeb9918",
     "0x34",
-    "0x15e636df20e34dab5176d509d36b9ad7687ae92815d577b5b544bf7157e5e79",
+    "0x179f66c568b3d6751026746a1622c389353d51c37da986ac9a280ef021bcbbf",
     "0x36",
-    "0x1b561110774da10d461f767e499d43f192db0eb1fc5cc4e1278ba9938a133e9",
+    "0x17c099515b5a5da8cae8d33b99730bfa866ea1819a43178011670bb32b58868",
     "0x37",
-    "0x1bddb405edf27a89e335dd524dba939b963f224133f0e485c076d0e4990076d",
+    "0x1e9ee159ce56f87b364687b92dae2b3efcbecfc649672bf3c5311dc582cab75",
     "0x39",
-    "0x366a4aef0681d2fa5c363744db51586b6d25d958326ab463454a50dcbe4071e",
+    "0x3f56b4830caf3c820d2fba74aedda52515f439e5e965328c9a8e303ba96a505",
     "0x3a",
-    "0x1e0b21d6e2a8b7e3add9ca1650b6873a685a2d7c360d7a7e8dbd8ad8249795e",
+    "0x2fb1281812213f54a6042c8f6b37c0a5325903d0effb081c36d316bdaafee8a",
     "0x3c",
-    "0x3456c1d5b0a196ebf17376e9e970edb9ebacc7b80bb4604c745da3d9bcdb0ea",
+    "0x3ddbfe1a628070c51dd0e4e121effa123af8f3b83d3decff0b591ea2fad4061",
     "0x3d",
-    "0x31f32952a99e9b565b90c071a2d363e3dc7d5045ed1e2fd9d5e1310a13aa4b8",
+    "0x261901d737de69144f0222a272813205e6301c5bf96c56850fe35c12af61cce",
     "0x3f",
-    "0x256a165a0419004a2f562f58b51647ad0b23fa973a3bfc54503456585525243",
+    "0xa712db9db0329eebd0bd5650f0a3af0c7f14f179d21326c24f074df670f091",
     "0x40",
     "0x4e6f6e5a65726f",
-    "0x26a562a3ca457efe1d484ffe25c2c4d63e5e385638339aad6eaf8d9b15995fc",
+    "0x5988d0fd94c88164c17a9bbc3bfc77844f8a59f28416ac9a9743ef428cb262",
     "0x43",
-    "0x2e5f2ac45c5402dff93094f6549bfffa25bb1bf1600861304d9be613936f6f",
+    "0x237ce44eb5b637634208b73ad771adf973d23390aa2c20992e7953b9337c778",
     "0x44",
     "0x800000000000000f00000000000000000000000000000002",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x46",
-    "0xf59ade38b1c86d966e7d7cca0ed5225701af9ee03d8c448bb4776007ac76c3",
+    "0x31d561dcc79da21955dd461e26ad9a0cced0451c83cce9526f07a2ce450656b",
     "0x49",
-    "0x265c019897dbc181e28052c0b0dd0a4a4121c05b64b26d030c44d0af29cabd7",
+    "0x376aa822ecaa4d5c821fbd71644f73ebce3bc9fbbf056647662635aa4df5c17",
     "0x4a",
-    "0x1cbb748d19ee86da70add6b2d65a8a20e316e937568567205c0856bc7b423df",
+    "0x35beb6acdf22a2edffc1496acba7116834a029560423fec346ad9be8095a260",
     "0x4c",
-    "0x2029f9d83e88b6679dc9a2a6dade879b462343830c0f90ec711de592aa33ea2",
+    "0x917e5c9a5beb1b9faf18442c8069c0c9069988b5e01fc3184ad33e380e8da1",
     "0x4d",
     "0x800000000000000f00000000000000000000000000000007",
-    "0x809811f98c888199cd46c8bcfa77988a3cde6f38acf23dcbda9879f3d40c92",
+    "0x1d77757b525d004e566604838c4ac81e4144c6ecac9cc9d39060e2697b2213b",
     "0x4f",
-    "0x24df687ffe1a2472e286717ad066046835fefb428bb77e28d784b68706bca26",
+    "0x2891da115d48d2d9f8eb438a10cdbb35e4a65f9e06a363ff356c00a209a1e61",
     "0x50",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x3b9ddf97bd58cc7301a2107c3eabad82196f38221c880cd3645d07c3aac1422",
@@ -3485,11 +3485,11 @@
       ],
       [
         1,
-        "cairo_level_tests::contracts::mintable::mintable::Event"
+        "cairo_level_tests::components::mintable::mintable::Event"
       ],
       [
         2,
-        "cairo_level_tests::contracts::mintable::ownable::Event"
+        "cairo_level_tests::components::ownable::ownable::Event"
       ],
       [
         3,
@@ -3557,15 +3557,15 @@
       ],
       [
         19,
-        "cairo_level_tests::contracts::mintable::erc20::TransferEvent"
+        "cairo_level_tests::components::erc20::erc20::TransferEvent"
       ],
       [
         20,
-        "cairo_level_tests::contracts::mintable::erc20::ApprovalEvent"
+        "cairo_level_tests::components::erc20::erc20::ApprovalEvent"
       ],
       [
         21,
-        "cairo_level_tests::contracts::mintable::erc20::Event"
+        "cairo_level_tests::components::erc20::erc20::Event"
       ],
       [
         22,
@@ -3589,15 +3589,15 @@
       ],
       [
         27,
-        "cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState"
       ],
       [
         28,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>"
       ],
       [
         29,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>"
       ],
       [
         30,
@@ -3685,63 +3685,63 @@
       ],
       [
         51,
-        "cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState"
       ],
       [
         52,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>"
       ],
       [
         53,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>"
       ],
       [
         54,
-        "cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState"
       ],
       [
         55,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>"
       ],
       [
         56,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>"
       ],
       [
         57,
-        "cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::name::ComponentMemberState"
       ],
       [
         58,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>"
       ],
       [
         59,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>"
       ],
       [
         60,
-        "cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState"
       ],
       [
         61,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>"
       ],
       [
         62,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>"
       ],
       [
         63,
-        "cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState"
+        "cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState"
       ],
       [
         64,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>"
       ],
       [
         65,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>"
       ],
       [
         66,
@@ -3749,15 +3749,15 @@
       ],
       [
         67,
-        "cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState"
+        "cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState"
       ],
       [
         68,
-        "Tuple<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>"
       ],
       [
         69,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>"
       ],
       [
         70,
@@ -3773,39 +3773,39 @@
       ],
       [
         73,
-        "cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
+        "cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
       ],
       [
         74,
-        "Tuple<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
+        "Tuple<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
       ],
       [
         75,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
       ],
       [
         76,
-        "cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
+        "cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
       ],
       [
         77,
-        "Tuple<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
+        "Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
       ],
       [
         78,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
       ],
       [
         79,
-        "cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
+        "cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>"
       ],
       [
         80,
-        "Tuple<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
+        "Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>"
       ],
       [
         81,
-        "core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>"
       ],
       [
         82,
@@ -4011,43 +4011,43 @@
       ],
       [
         25,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
       ],
       [
         26,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
       ],
       [
         27,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
       ],
       [
         28,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
       ],
       [
         29,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
       ],
       [
         30,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>"
       ],
       [
         31,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         32,
-        "struct_construct<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         33,
-        "struct_construct<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "struct_construct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         34,
-        "struct_construct<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "struct_construct<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         35,
@@ -4131,7 +4131,7 @@
       ],
       [
         55,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_name>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_name>"
       ],
       [
         56,
@@ -4155,11 +4155,11 @@
       ],
       [
         61,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_symbol>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_symbol>"
       ],
       [
         62,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_decimals>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_decimals>"
       ],
       [
         63,
@@ -4187,7 +4187,7 @@
       ],
       [
         69,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_total_supply>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_total_supply>"
       ],
       [
         70,
@@ -4215,7 +4215,7 @@
       ],
       [
         76,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::balance_of>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::balance_of>"
       ],
       [
         77,
@@ -4223,7 +4223,7 @@
       ],
       [
         78,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::allowance>"
       ],
       [
         79,
@@ -4239,7 +4239,7 @@
       ],
       [
         82,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer>"
       ],
       [
         83,
@@ -4251,7 +4251,7 @@
       ],
       [
         85,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_from>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_from>"
       ],
       [
         86,
@@ -4259,19 +4259,19 @@
       ],
       [
         87,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::approve>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::approve>"
       ],
       [
         88,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::increase_allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::increase_allowance>"
       ],
       [
         89,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::decrease_allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::decrease_allowance>"
       ],
       [
         90,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::owner>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::owner>"
       ],
       [
         91,
@@ -4291,11 +4291,11 @@
       ],
       [
         95,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_ownership>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_ownership>"
       ],
       [
         96,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable::Mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint>"
+        "function_call<user@cairo_level_tests::components::mintable::mintable::Mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint>"
       ],
       [
         97,
@@ -4391,19 +4391,19 @@
       ],
       [
         120,
-        "drop<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "drop<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         121,
-        "drop<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "drop<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         122,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         123,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_total_supply>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_total_supply>"
       ],
       [
         124,
@@ -4463,11 +4463,11 @@
       ],
       [
         138,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::get_component>"
+        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::get_component>"
       ],
       [
         139,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_name>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_name>"
       ],
       [
         140,
@@ -4487,11 +4487,11 @@
       ],
       [
         144,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_symbol>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_symbol>"
       ],
       [
         145,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_decimals>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_decimals>"
       ],
       [
         146,
@@ -4527,11 +4527,11 @@
       ],
       [
         154,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::balance_of>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::balance_of>"
       ],
       [
         155,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::allowance>"
       ],
       [
         156,
@@ -4555,19 +4555,19 @@
       ],
       [
         161,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer>"
       ],
       [
         162,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         163,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         164,
-        "drop<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "drop<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         165,
@@ -4587,31 +4587,31 @@
       ],
       [
         169,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer_from>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer_from>"
       ],
       [
         170,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::approve>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::approve>"
       ],
       [
         171,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::increase_allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::increase_allowance>"
       ],
       [
         172,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::decrease_allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::decrease_allowance>"
       ],
       [
         173,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable::get_component>"
+        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp::get_component>"
       ],
       [
         174,
-        "store_temp<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "store_temp<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         175,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::owner>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::owner>"
       ],
       [
         176,
@@ -4639,31 +4639,31 @@
       ],
       [
         182,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::transfer_ownership>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::transfer_ownership>"
       ],
       [
         183,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         184,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         185,
-        "store_temp<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "store_temp<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         186,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable::MintImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint>"
+        "function_call<user@cairo_level_tests::components::mintable::mintable::MintImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint>"
       ],
       [
         187,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         188,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         189,
@@ -4703,47 +4703,47 @@
       ],
       [
         198,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::init>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::init>"
       ],
       [
         199,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::init_ownable>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::init_ownable>"
       ],
       [
         200,
-        "drop<Tuple<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         201,
-        "struct_deconstruct<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "struct_deconstruct<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         202,
-        "drop<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
       ],
       [
         203,
-        "drop<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
       ],
       [
         204,
-        "drop<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
       ],
       [
         205,
-        "drop<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
       ],
       [
         206,
-        "drop<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>"
       ],
       [
         207,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
       ],
       [
         208,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::read>"
       ],
       [
         209,
@@ -4755,39 +4755,39 @@
       ],
       [
         211,
-        "drop<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState>"
+        "drop<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
       ],
       [
         212,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
       ],
       [
         213,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::name::ComponentMemberStateDrop>::read>"
       ],
       [
         214,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
       ],
       [
         215,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberStateDrop>::read>"
       ],
       [
         216,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
       ],
       [
         217,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::contracts::mintable::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::components::erc20::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberStateDrop>::read>"
       ],
       [
         218,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
       ],
       [
         219,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         220,
@@ -4795,7 +4795,7 @@
       ],
       [
         221,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>"
       ],
       [
         222,
@@ -4803,7 +4803,7 @@
       ],
       [
         223,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read>"
       ],
       [
         224,
@@ -4831,23 +4831,23 @@
       ],
       [
         230,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer_helper>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer_helper>"
       ],
       [
         231,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         232,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
       ],
       [
         233,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         234,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
       ],
       [
         235,
@@ -4855,15 +4855,15 @@
       ],
       [
         236,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::spend_allowance>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::spend_allowance>"
       ],
       [
         237,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::approve_helper>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::approve_helper>"
       ],
       [
         238,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>"
       ],
       [
         239,
@@ -4871,23 +4871,23 @@
       ],
       [
         240,
-        "struct_deconstruct<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "struct_deconstruct<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         241,
-        "store_temp<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState>"
+        "store_temp<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         242,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read>"
       ],
       [
         243,
-        "snapshot_take<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
+        "snapshot_take<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>>"
       ],
       [
         244,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::validate_ownership>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::validate_ownership>"
       ],
       [
         245,
@@ -4899,31 +4899,31 @@
       ],
       [
         247,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write>"
       ],
       [
         248,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
       ],
       [
         249,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
       ],
       [
         250,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         251,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
       ],
       [
         252,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         253,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
       ],
       [
         254,
@@ -4967,35 +4967,35 @@
       ],
       [
         264,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 1>"
       ],
       [
         265,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>>"
       ],
       [
         266,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>"
       ],
       [
         267,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::write>"
       ],
       [
         268,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
       ],
       [
         269,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>"
       ],
       [
         270,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         271,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
       ],
       [
         272,
@@ -5003,91 +5003,91 @@
       ],
       [
         273,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
       ],
       [
         274,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
       ],
       [
         275,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::TransferEvent>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::TransferEvent>"
       ],
       [
         276,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::TransferEvent>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::TransferEvent>"
       ],
       [
         277,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::TransferEvent, cairo_level_tests::contracts::mintable::erc20::EventTransferIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::TransferEvent, cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent>>"
       ],
       [
         278,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, Unit>>"
       ],
       [
         279,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::mintable::mintable::ComponentState::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState>, ())>, 0>"
       ],
       [
         280,
-        "drop<Tuple<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
       ],
       [
         281,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::name::ComponentMemberStateDrop>::write>"
       ],
       [
         282,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>>"
       ],
       [
         283,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberStateDrop>::write>"
       ],
       [
         284,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>>"
       ],
       [
         285,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::contracts::mintable::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::components::erc20::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberStateDrop>::write>"
       ],
       [
         286,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>>"
       ],
       [
         287,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
       ],
       [
         288,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
       ],
       [
         289,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
       ],
       [
         290,
-        "enum_init<cairo_level_tests::contracts::mintable::erc20::Event, 0>"
+        "enum_init<cairo_level_tests::components::erc20::erc20::Event, 0>"
       ],
       [
         291,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::Event>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::Event>"
       ],
       [
         292,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::erc20::Event>>>"
+        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::Event, core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>>>"
       ],
       [
         293,
-        "drop<Tuple<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
       ],
       [
         294,
-        "drop<Tuple<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
       ],
       [
         295,
@@ -5191,11 +5191,11 @@
       ],
       [
         320,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl::address>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl::address>"
       ],
       [
         321,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl::address>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address>"
       ],
       [
         322,
@@ -5255,27 +5255,27 @@
       ],
       [
         336,
-        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
+        "function_call<user@core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write>"
       ],
       [
         337,
-        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
       ],
       [
         338,
-        "struct_deconstruct<Tuple<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
       ],
       [
         339,
-        "struct_construct<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent>"
+        "struct_construct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
       ],
       [
         340,
-        "store_temp<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent>"
+        "store_temp<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
       ],
       [
         341,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent, cairo_level_tests::contracts::mintable::erc20::EventApprovalIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::ApprovalEvent, cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent>>"
       ],
       [
         342,
@@ -5287,7 +5287,7 @@
       ],
       [
         344,
-        "drop<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState>"
+        "drop<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         345,
@@ -5339,7 +5339,7 @@
       ],
       [
         357,
-        "snapshot_take<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         358,
@@ -5371,19 +5371,19 @@
       ],
       [
         365,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, Unit>>"
       ],
       [
         366,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 0>"
       ],
       [
         367,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>>"
       ],
       [
         368,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, ())>, 1>"
       ],
       [
         369,
@@ -5391,39 +5391,39 @@
       ],
       [
         370,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, Unit>>"
       ],
       [
         371,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 0>"
       ],
       [
         372,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>>"
       ],
       [
         373,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, ())>, 1>"
       ],
       [
         374,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, Unit>>"
       ],
       [
         375,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 0>"
       ],
       [
         376,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>>"
       ],
       [
         377,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, ())>, 1>"
       ],
       [
         378,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::EventTransferIntoEvent::into>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent::into>"
       ],
       [
         379,
@@ -5439,67 +5439,67 @@
       ],
       [
         382,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>"
       ],
       [
         383,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, Unit>>"
       ],
       [
         384,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 0>"
       ],
       [
         385,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>>"
       ],
       [
         386,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, ())>, 1>"
       ],
       [
         387,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>"
       ],
       [
         388,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, Unit>>"
       ],
       [
         389,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 0>"
       ],
       [
         390,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>>"
       ],
       [
         391,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, ())>, 1>"
       ],
       [
         392,
-        "snapshot_take<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>"
       ],
       [
         393,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, Unit>>"
       ],
       [
         394,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 0>"
       ],
       [
         395,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>>"
       ],
       [
         396,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, ())>, 1>"
       ],
       [
         397,
-        "function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::mintable::erc20::Event>::into>"
+        "function_call<user@core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>::into>"
       ],
       [
         398,
@@ -5707,23 +5707,23 @@
       ],
       [
         449,
-        "struct_construct<Tuple<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, Unit>>"
       ],
       [
         450,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 0>"
       ],
       [
         451,
-        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>>"
       ],
       [
         452,
-        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, ())>, 1>"
       ],
       [
         453,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::EventApprovalIntoEvent::into>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent::into>"
       ],
       [
         454,
@@ -5819,7 +5819,7 @@
       ],
       [
         477,
-        "enum_init<cairo_level_tests::contracts::mintable::erc20::Event, 1>"
+        "enum_init<cairo_level_tests::components::erc20::erc20::Event, 1>"
       ],
       [
         478,
@@ -5839,7 +5839,7 @@
       ],
       [
         482,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data>"
       ],
       [
         483,
@@ -5847,11 +5847,11 @@
       ],
       [
         484,
-        "store_temp<cairo_level_tests::contracts::mintable::ownable::Event>"
+        "store_temp<cairo_level_tests::components::ownable::ownable::Event>"
       ],
       [
         485,
-        "function_call<user@cairo_level_tests::contracts::mintable::ownable::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data>"
       ],
       [
         486,
@@ -5859,11 +5859,11 @@
       ],
       [
         487,
-        "store_temp<cairo_level_tests::contracts::mintable::mintable::Event>"
+        "store_temp<cairo_level_tests::components::mintable::mintable::Event>"
       ],
       [
         488,
-        "function_call<user@cairo_level_tests::contracts::mintable::mintable::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::components::mintable::mintable::EventIsEvent::append_keys_and_data>"
       ],
       [
         489,
@@ -5871,7 +5871,7 @@
       ],
       [
         490,
-        "enum_match<cairo_level_tests::contracts::mintable::erc20::Event>"
+        "enum_match<cairo_level_tests::components::erc20::erc20::Event>"
       ],
       [
         491,
@@ -5879,7 +5879,7 @@
       ],
       [
         492,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::TransferEventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::TransferEventIsEvent::append_keys_and_data>"
       ],
       [
         493,
@@ -5887,31 +5887,31 @@
       ],
       [
         494,
-        "function_call<user@cairo_level_tests::contracts::mintable::erc20::ApprovalEventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::components::erc20::erc20::ApprovalEventIsEvent::append_keys_and_data>"
       ],
       [
         495,
-        "enum_match<cairo_level_tests::contracts::mintable::ownable::Event>"
+        "enum_match<cairo_level_tests::components::ownable::ownable::Event>"
       ],
       [
         496,
-        "enum_match<cairo_level_tests::contracts::mintable::mintable::Event>"
+        "enum_match<cairo_level_tests::components::mintable::mintable::Event>"
       ],
       [
         497,
-        "dup<cairo_level_tests::contracts::mintable::erc20::TransferEvent>"
+        "dup<cairo_level_tests::components::erc20::erc20::TransferEvent>"
       ],
       [
         498,
-        "struct_deconstruct<cairo_level_tests::contracts::mintable::erc20::TransferEvent>"
+        "struct_deconstruct<cairo_level_tests::components::erc20::erc20::TransferEvent>"
       ],
       [
         499,
-        "dup<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent>"
+        "dup<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
       ],
       [
         500,
-        "struct_deconstruct<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent>"
+        "struct_deconstruct<cairo_level_tests::components::erc20::erc20::ApprovalEvent>"
       ]
     ],
     "user_func_names": [
@@ -5921,59 +5921,59 @@
       ],
       [
         1,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_name::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         2,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__get_symbol::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_symbol::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         3,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__get_decimals::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_decimals::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         4,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__get_total_supply::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__get_total_supply::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         5,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__balance_of::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__balance_of::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         6,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         7,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         8,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__transfer_from::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__transfer_from::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         9,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__approve::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__approve::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         10,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__increase_allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__increase_allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         11,
-        "cairo_level_tests::contracts::mintable::erc20::__wrapper__IERC20__decrease_allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
+        "cairo_level_tests::components::erc20::erc20::__wrapper__IERC20__decrease_allowance::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateIERC20>"
       ],
       [
         12,
-        "cairo_level_tests::contracts::mintable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateTransfer>"
+        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateTransfer>"
       ],
       [
         13,
-        "cairo_level_tests::contracts::mintable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateTransfer>"
+        "cairo_level_tests::components::ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateTransfer>"
       ],
       [
         14,
-        "cairo_level_tests::contracts::mintable::mintable::__wrapper__Mint__mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateMint>"
+        "cairo_level_tests::components::mintable::mintable::__wrapper__Mint__mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateMint>"
       ],
       [
         15,
@@ -5989,7 +5989,7 @@
       ],
       [
         18,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_name"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_name"
       ],
       [
         19,
@@ -5997,15 +5997,15 @@
       ],
       [
         20,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_symbol"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_symbol"
       ],
       [
         21,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_decimals"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_decimals"
       ],
       [
         22,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_total_supply"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::get_total_supply"
       ],
       [
         23,
@@ -6013,11 +6013,11 @@
       ],
       [
         24,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::balance_of"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::balance_of"
       ],
       [
         25,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::allowance"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::allowance"
       ],
       [
         26,
@@ -6025,27 +6025,27 @@
       ],
       [
         27,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer"
       ],
       [
         28,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_from"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_from"
       ],
       [
         29,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::approve"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::approve"
       ],
       [
         30,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::increase_allowance"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::increase_allowance"
       ],
       [
         31,
-        "cairo_level_tests::contracts::mintable::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::decrease_allowance"
+        "cairo_level_tests::components::erc20::erc20::IERC20::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::decrease_allowance"
       ],
       [
         32,
-        "cairo_level_tests::contracts::mintable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::owner"
+        "cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::owner"
       ],
       [
         33,
@@ -6053,11 +6053,11 @@
       ],
       [
         34,
-        "cairo_level_tests::contracts::mintable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_ownership"
+        "cairo_level_tests::components::ownable::ownable::Transfer::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::transfer_ownership"
       ],
       [
         35,
-        "cairo_level_tests::contracts::mintable::mintable::Mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint"
+        "cairo_level_tests::components::mintable::mintable::Mint::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint"
       ],
       [
         36,
@@ -6073,7 +6073,7 @@
       ],
       [
         39,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_total_supply"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_total_supply"
       ],
       [
         40,
@@ -6081,27 +6081,27 @@
       ],
       [
         41,
-        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::get_component"
+        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::get_component"
       ],
       [
         42,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_name"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_name"
       ],
       [
         43,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_symbol"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_symbol"
       ],
       [
         44,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::get_decimals"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::get_decimals"
       ],
       [
         45,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::balance_of"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::balance_of"
       ],
       [
         46,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::allowance"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::allowance"
       ],
       [
         47,
@@ -6109,51 +6109,51 @@
       ],
       [
         48,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer"
       ],
       [
         49,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer_from"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer_from"
       ],
       [
         50,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::approve"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::approve"
       ],
       [
         51,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::increase_allowance"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::increase_allowance"
       ],
       [
         52,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::decrease_allowance"
+        "cairo_level_tests::components::erc20::erc20::ERC20Impl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::decrease_allowance"
       ],
       [
         53,
-        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable::get_component"
+        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp::get_component"
       ],
       [
         54,
-        "cairo_level_tests::contracts::mintable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::owner"
+        "cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::owner"
       ],
       [
         55,
-        "cairo_level_tests::contracts::mintable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::transfer_ownership"
+        "cairo_level_tests::components::ownable::ownable::TransferImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::transfer_ownership"
       ],
       [
         56,
-        "cairo_level_tests::contracts::mintable::mintable::MintImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint"
+        "cairo_level_tests::components::mintable::mintable::MintImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_mintable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractStateDrop>::mint"
       ],
       [
         57,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::init"
+        "cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::init"
       ],
       [
         58,
-        "cairo_level_tests::contracts::mintable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::init_ownable"
+        "cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::init_ownable"
       ],
       [
         59,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::read"
       ],
       [
         60,
@@ -6161,23 +6161,23 @@
       ],
       [
         61,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::name::ComponentMemberStateDrop>::read"
       ],
       [
         62,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberStateDrop>::read"
       ],
       [
         63,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::contracts::mintable::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::components::erc20::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberStateDrop>::read"
       ],
       [
         64,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         65,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::read"
       ],
       [
         66,
@@ -6185,15 +6185,15 @@
       ],
       [
         67,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::transfer_helper"
+        "cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::transfer_helper"
       ],
       [
         68,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::spend_allowance"
+        "cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::spend_allowance"
       ],
       [
         69,
-        "cairo_level_tests::contracts::mintable::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20>::approve_helper"
+        "cairo_level_tests::components::erc20::erc20::ERC20HelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp>::approve_helper"
       ],
       [
         70,
@@ -6201,43 +6201,43 @@
       ],
       [
         71,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::read"
       ],
       [
         72,
-        "cairo_level_tests::contracts::mintable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable>::validate_ownership"
+        "cairo_level_tests::components::ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::mintable::mintable_erc20_ownable::ContractState, cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_ownable_comp>::validate_ownership"
       ],
       [
         73,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::mintable::ownable::owner::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::components::ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::components::ownable::ownable::owner::ComponentMemberStateDrop>::write"
       ],
       [
         74,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::total_supply::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState, core::integer::u256, cairo_level_tests::components::erc20::erc20::total_supply::StorageComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberStateDrop>::write"
       ],
       [
         75,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState, core::starknet::contract_address::ContractAddress, core::integer::u256, cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::balances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         76,
-        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::TransferEvent, cairo_level_tests::contracts::mintable::erc20::EventTransferIntoEvent>"
+        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::TransferEvent, cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent>"
       ],
       [
         77,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::name::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::name::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::name::ComponentMemberStateDrop>::write"
       ],
       [
         78,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::contracts::mintable::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::contracts::mintable::erc20::symbol::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState, core::felt252, cairo_level_tests::components::erc20::erc20::symbol::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreFelt252, cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberStateDrop>::write"
       ],
       [
         79,
-        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::contracts::mintable::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::contracts::mintable::erc20::decimals::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState, core::integer::u8, cairo_level_tests::components::erc20::erc20::decimals::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreU8, cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberStateDrop>::write"
       ],
       [
         80,
-        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::Event, core::traits::TIntoT::<cairo_level_tests::contracts::mintable::erc20::Event>>"
+        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::Event, core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>>"
       ],
       [
         81,
@@ -6265,11 +6265,11 @@
       ],
       [
         87,
-        "cairo_level_tests::contracts::mintable::erc20::balances::StorageMapComponentMemberStateImpl::address"
+        "cairo_level_tests::components::erc20::erc20::balances::StorageMapComponentMemberStateImpl::address"
       ],
       [
         88,
-        "cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl::address"
+        "cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl::address"
       ],
       [
         89,
@@ -6277,11 +6277,11 @@
       ],
       [
         90,
-        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::contracts::mintable::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::contracts::mintable::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
+        "core::starknet::storage::StorageMapMemberAccessImpl::<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState, (core::starknet::contract_address::ContractAddress, core::starknet::contract_address::ContractAddress), core::integer::u256, cairo_level_tests::components::erc20::erc20::allowances::StorageMapComponentMemberStateImpl, core::integer::Storeu256, cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberStateDrop, core::traits::PanicDestructForDestruct::<core::integer::u256, core::traits::DestructFromDrop::<core::integer::u256, core::integer::u256Drop>>>::write"
       ],
       [
         91,
-        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20::emit::<cairo_level_tests::contracts::mintable::erc20::ApprovalEvent, cairo_level_tests::contracts::mintable::erc20::EventApprovalIntoEvent>"
+        "cairo_level_tests::contracts::mintable::mintable_erc20_ownable::HasComponentImpl_erc20_comp::emit::<cairo_level_tests::components::erc20::erc20::ApprovalEvent, cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent>"
       ],
       [
         92,
@@ -6305,7 +6305,7 @@
       ],
       [
         97,
-        "cairo_level_tests::contracts::mintable::erc20::EventTransferIntoEvent::into"
+        "cairo_level_tests::components::erc20::erc20::EventTransferIntoEvent::into"
       ],
       [
         98,
@@ -6313,7 +6313,7 @@
       ],
       [
         99,
-        "core::traits::TIntoT::<cairo_level_tests::contracts::mintable::erc20::Event>::into"
+        "core::traits::TIntoT::<cairo_level_tests::components::erc20::erc20::Event>::into"
       ],
       [
         100,
@@ -6325,7 +6325,7 @@
       ],
       [
         102,
-        "cairo_level_tests::contracts::mintable::erc20::EventApprovalIntoEvent::into"
+        "cairo_level_tests::components::erc20::erc20::EventApprovalIntoEvent::into"
       ],
       [
         103,
@@ -6345,23 +6345,23 @@
       ],
       [
         107,
-        "cairo_level_tests::contracts::mintable::erc20::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::components::erc20::erc20::EventIsEvent::append_keys_and_data"
       ],
       [
         108,
-        "cairo_level_tests::contracts::mintable::ownable::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::components::ownable::ownable::EventIsEvent::append_keys_and_data"
       ],
       [
         109,
-        "cairo_level_tests::contracts::mintable::mintable::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::components::mintable::mintable::EventIsEvent::append_keys_and_data"
       ],
       [
         110,
-        "cairo_level_tests::contracts::mintable::erc20::TransferEventIsEvent::append_keys_and_data"
+        "cairo_level_tests::components::erc20::erc20::TransferEventIsEvent::append_keys_and_data"
       ],
       [
         111,
-        "cairo_level_tests::contracts::mintable::erc20::ApprovalEventIsEvent::append_keys_and_data"
+        "cairo_level_tests::components::erc20::erc20::ApprovalEventIsEvent::append_keys_and_data"
       ]
     ]
   },
@@ -6507,11 +6507,11 @@
     {
       "type": "impl",
       "name": "ERC20Impl",
-      "interface_name": "cairo_level_tests::contracts::mintable::ERC20Trait"
+      "interface_name": "cairo_level_tests::components::erc20::ERC20Trait"
     },
     {
       "type": "interface",
-      "name": "cairo_level_tests::contracts::mintable::ERC20Trait",
+      "name": "cairo_level_tests::components::erc20::ERC20Trait",
       "items": [
         {
           "type": "function",
@@ -6682,11 +6682,11 @@
     {
       "type": "impl",
       "name": "OwnershipTransfer",
-      "interface_name": "cairo_level_tests::contracts::mintable::TransferTrait"
+      "interface_name": "cairo_level_tests::components::ownable::TransferTrait"
     },
     {
       "type": "interface",
-      "name": "cairo_level_tests::contracts::mintable::TransferTrait",
+      "name": "cairo_level_tests::components::ownable::TransferTrait",
       "items": [
         {
           "type": "function",
@@ -6716,11 +6716,11 @@
     {
       "type": "impl",
       "name": "MintImpl",
-      "interface_name": "cairo_level_tests::contracts::mintable::MintTrait"
+      "interface_name": "cairo_level_tests::components::mintable::MintTrait"
     },
     {
       "type": "interface",
-      "name": "cairo_level_tests::contracts::mintable::MintTrait",
+      "name": "cairo_level_tests::components::mintable::MintTrait",
       "items": [
         {
           "type": "function",
@@ -6742,7 +6742,7 @@
     },
     {
       "type": "event",
-      "name": "cairo_level_tests::contracts::mintable::erc20::TransferEvent",
+      "name": "cairo_level_tests::components::erc20::erc20::TransferEvent",
       "kind": "struct",
       "members": [
         {
@@ -6764,7 +6764,7 @@
     },
     {
       "type": "event",
-      "name": "cairo_level_tests::contracts::mintable::erc20::ApprovalEvent",
+      "name": "cairo_level_tests::components::erc20::erc20::ApprovalEvent",
       "kind": "struct",
       "members": [
         {
@@ -6786,30 +6786,30 @@
     },
     {
       "type": "event",
-      "name": "cairo_level_tests::contracts::mintable::erc20::Event",
+      "name": "cairo_level_tests::components::erc20::erc20::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "Transfer",
-          "type": "cairo_level_tests::contracts::mintable::erc20::TransferEvent",
+          "type": "cairo_level_tests::components::erc20::erc20::TransferEvent",
           "kind": "nested"
         },
         {
           "name": "Approval",
-          "type": "cairo_level_tests::contracts::mintable::erc20::ApprovalEvent",
+          "type": "cairo_level_tests::components::erc20::erc20::ApprovalEvent",
           "kind": "nested"
         }
       ]
     },
     {
       "type": "event",
-      "name": "cairo_level_tests::contracts::mintable::ownable::Event",
+      "name": "cairo_level_tests::components::ownable::ownable::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "cairo_level_tests::contracts::mintable::mintable::Event",
+      "name": "cairo_level_tests::components::mintable::mintable::Event",
       "kind": "enum",
       "variants": []
     },
@@ -6820,17 +6820,17 @@
       "variants": [
         {
           "name": "ERC20",
-          "type": "cairo_level_tests::contracts::mintable::erc20::Event",
+          "type": "cairo_level_tests::components::erc20::erc20::Event",
           "kind": "nested"
         },
         {
           "name": "Ownable",
-          "type": "cairo_level_tests::contracts::mintable::ownable::Event",
+          "type": "cairo_level_tests::components::ownable::ownable::Event",
           "kind": "nested"
         },
         {
           "name": "Mintable",
-          "type": "cairo_level_tests::contracts::mintable::mintable::Event",
+          "type": "cairo_level_tests::components::mintable::mintable::Event",
           "kind": "nested"
         }
       ]
