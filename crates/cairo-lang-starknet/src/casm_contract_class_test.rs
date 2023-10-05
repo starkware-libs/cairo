@@ -41,7 +41,8 @@ fn test_casm_contract_from_contract_class(example_file_name: &str) {
 
 #[test_case("test_contract")]
 #[test_case("new_syntax_test_contract")]
-fn test_casm_contract_from_contract_class_failure(example_file_name: &str) {
+fn test_casm_contract_from_contract_class_failure(example_contract_path: &str) {
+    let example_file_name = get_contract_file_name_from_path(example_contract_path);
     let f = std::fs::File::open(get_example_file_path(&format!(
         "{example_file_name}.contract_class.json"
     )))
