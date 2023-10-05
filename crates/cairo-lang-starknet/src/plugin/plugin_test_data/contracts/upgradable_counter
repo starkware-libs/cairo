@@ -8,183 +8,6 @@ cairo_level_tests/contracts/upgradable_counter.cairo
 
 //! > generated_cairo_code
 use starknet::ClassHash;
-
-#[starknet::interface]
-trait IUpgradable<TContractState> {
-    fn upgrade(ref self: TContractState, new_class_hash: ClassHash);
-}
-
-#[starknet::component]
-mod upgradable {
-    use starknet::ClassHash;
-    use starknet::syscalls::replace_class_syscall;
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        ContractUpgraded: ContractUpgraded
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct ContractUpgraded {
-        old_class_hash: ClassHash,
-        new_class_hash: ClassHash
-    }
-
-    #[embeddable_as(UpgradableImpl)]
-    impl Upgradable<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::IUpgradable<ComponentState<TContractState>> {
-        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
-            replace_class_syscall(new_class_hash).unwrap();
-            let old_class_hash = self.current_implementation.read();
-            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
-            self.current_implementation.write(new_class_hash);
-        }
-    }
-
-
-    struct ComponentState<TContractState> {
-        current_implementation: current_implementation::ComponentMemberState,
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
-            current_implementation: current_implementation::ComponentMemberState {},
-        }
-    }
-    
-    mod current_implementation {
-        use super::ClassHash;
-        use super::replace_class_syscall;
-        use super::Event;
-        use super::ContractUpgraded;
-        use super::Upgradable;
-        #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ClassHash> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x454ac3c855f3ea5ac58d9742da466de68252f6efa5081486a78dc60b2a3379>()
-            }
-        }
-impl ComponentMemberStateCopy of Copy::<ComponentMemberState>;
-impl ComponentMemberStateDrop of Drop::<ComponentMemberState>;
-    }
-
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
-};
-trait HasComponent<TContractState> {
-    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
-    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
-    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
-    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
-}
-
-#[starknet::embeddable]
-impl UpgradableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
-> of super::IUpgradable<TContractState> {
-    
-    fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Upgradable::upgrade(ref component, new_class_hash, )
-    }
-}impl EventDrop of Drop::<Event>;
-impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-        match self {
-            Event::ContractUpgraded(val) => {
-                array::ArrayTrait::append(ref keys, selector!("ContractUpgraded"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-        }
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ContractUpgraded") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ContractUpgraded(val));
-        }
-        Option::None
-    }
-}
-impl EventContractUpgradedIntoEvent of Into<ContractUpgraded, Event> {
-    fn into(self: ContractUpgraded) -> Event {
-        Event::ContractUpgraded(self)
-    }
-}
-impl ContractUpgradedDrop of Drop::<ContractUpgraded>;
-impl ContractUpgradedIsEvent of starknet::Event<ContractUpgraded> {
-    fn append_keys_and_data(
-        self: @ContractUpgraded, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-                serde::Serde::serialize(self.old_class_hash, ref data);
-                serde::Serde::serialize(self.new_class_hash, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<ContractUpgraded> {
-                let old_class_hash = serde::Serde::deserialize(
-                    ref data
-                )?;
-                let new_class_hash = serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(ContractUpgraded {old_class_hash, new_class_hash, })
-    }
-}
-trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
-    fn unsafe_new_contract_state() -> TContractState;
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__UpgradableImpl__upgrade<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_new_class_hash = option::OptionTraitImpl::expect(
-        serde::Serde::<ClassHash>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    UpgradableImpl::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
-
-
-mod __external_UpgradableImpl {
-        use super::__wrapper__UpgradableImpl__upgrade as upgrade;
-}
-
-mod __l1_handler_UpgradableImpl {
-}
-
-mod __constructor_UpgradableImpl {
-}
-}
-
 #[starknet::interface]
 trait ICounterContract<TContractState> {
     fn increase_counter(ref self: TContractState, amount: u128);
@@ -194,13 +17,16 @@ trait ICounterContract<TContractState> {
 
 #[starknet::contract]
 mod counter_contract {
+    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        UpgradableEvent: super::upgradable::Event
+        UpgradableEvent: upgradable_comp::Event,
+        OwnableEvent: ownable_comp::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -238,24 +64,28 @@ mod counter_contract {
     }
 
     #[abi(embed_v0)]
-    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+    impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
     struct ContractState {
         counter: counter::ContractMemberState,
-        upgradable: super::upgradable::ComponentState<ContractState>,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             counter: counter::ContractMemberState {},
-            upgradable: super::upgradable::unsafe_new_component_state::<ContractState>(),
+            upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
     use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
     mod counter {
+        use super::upgradable_comp;
+        use super::ownable_comp;
         use super::Event;
         use super::CounterIncreased;
         use super::CounterDecreased;
@@ -385,7 +215,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
 }
 
 impl ContractStateUpgradableImpl of
-    super::upgradable::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
@@ -423,23 +253,42 @@ impl ContractStateUpgradableImpl of
         }
     }
 
-impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @super::upgradable::ComponentState<ContractState> {
+impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
         self.upgradable
     }
-    fn get_component_mut(ref self: ContractState) -> super::upgradable::ComponentState<ContractState> {
-        super::upgradable::unsafe_new_component_state::<ContractState>()
+    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
+        upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
-    fn get_contract(self: @super::upgradable::ComponentState<ContractState>) -> @ContractState {
+    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
         @unsafe_new_contract_state()
     }
-    fn get_contract_mut(ref self: super::upgradable::ComponentState<ContractState>) -> ContractState {
+    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
-        let event: super::upgradable::Event = traits::Into::into(event);
-        let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
+    fn emit<S, impl IntoImp: traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
+        let event: upgradable_comp::Event = traits::Into::into(event);
+        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::UpgradableEvent(event));
+    }
+}
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
+        self.ownable
+    }
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
 impl EventDrop of Drop::<Event>;
@@ -462,6 +311,12 @@ impl EventIsEvent of starknet::Event<Event> {
             },
             Event::UpgradableEvent(val) => {
                 array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::OwnableEvent(val) => {
+                array::ArrayTrait::append(ref keys, selector!("OwnableEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -490,6 +345,12 @@ impl EventIsEvent of starknet::Event<Event> {
                 )?;
                 return Option::Some(Event::UpgradableEvent(val));
         }
+        if selector == selector!("OwnableEvent") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::OwnableEvent(val));
+        }
         Option::None
     }
 }
@@ -503,9 +364,14 @@ impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
         Event::CounterDecreased(self)
     }
 }
-impl EventUpgradableEventIntoEvent of Into<super::upgradable::Event, Event> {
-    fn into(self: super::upgradable::Event) -> Event {
+impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
+    fn into(self: upgradable_comp::Event) -> Event {
         Event::UpgradableEvent(self)
+    }
+}
+impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
+        Event::OwnableEvent(self)
     }
 }
 impl CounterIncreasedDrop of Drop::<CounterIncreased>;
@@ -540,98 +406,6 @@ impl CounterDecreasedIsEvent of starknet::Event<CounterDecreased> {
         Option::Some(CounterDecreased {amount, })
     }
 }
-}
-trait IUpgradableDispatcherTrait<T> {
-    fn upgrade(self: T, new_class_hash: ClassHash);
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct IUpgradableDispatcher {
-    contract_address: starknet::ContractAddress,
-}
-
-impl IUpgradableDispatcherImpl of IUpgradableDispatcherTrait<IUpgradableDispatcher> {
-    fn upgrade(self: IUpgradableDispatcher, new_class_hash: ClassHash) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("upgrade"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        ()
-    }
-
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct IUpgradableLibraryDispatcher {
-    class_hash: starknet::ClassHash,
-}
-
-impl IUpgradableLibraryDispatcherImpl of IUpgradableDispatcherTrait<IUpgradableLibraryDispatcher> {
-    fn upgrade(self: IUpgradableLibraryDispatcher, new_class_hash: ClassHash) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("upgrade"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        ()
-    }
-
-}
-
-trait IUpgradableSafeDispatcherTrait<T> {
-    fn upgrade(self: T, new_class_hash: ClassHash) -> starknet::SyscallResult<()>;
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct IUpgradableSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
-}
-
-impl IUpgradableSafeLibraryDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradableSafeLibraryDispatcher> {
-    fn upgrade(self: IUpgradableSafeLibraryDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("upgrade"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(())
-    }
-
-}
-
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct IUpgradableSafeDispatcher {
-    contract_address: starknet::ContractAddress,
-}
-
-impl IUpgradableSafeDispatcherImpl of IUpgradableSafeDispatcherTrait<IUpgradableSafeDispatcher> {
-    fn upgrade(self: IUpgradableSafeDispatcher, new_class_hash: ClassHash) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ClassHash>::serialize(@new_class_hash, ref __calldata__);
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("upgrade"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(())
-    }
-
 }
 trait ICounterContractDispatcherTrait<T> {
     fn increase_counter(self: T, amount: u128);    fn decrease_counter(self: T, amount: u128);    fn get_counter(self: T, ) -> u128;
@@ -833,178 +607,6 @@ impl ICounterContractSafeDispatcherImpl of ICounterContractSafeDispatcherTrait<I
     }
 
 }
-impl IUpgradableDispatcherCopy of Copy::<IUpgradableDispatcher>;
-impl IUpgradableDispatcherDrop of Drop::<IUpgradableDispatcher>;
-impl IUpgradableDispatcherSerde of Serde::<IUpgradableDispatcher> {
-    fn serialize(self: @IUpgradableDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableDispatcher> {
-        Option::Some(IUpgradableDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-impl StoreIUpgradableDispatcher of starknet::Store::<IUpgradableDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableDispatcher {
-                contract_address,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableDispatcher {
-                contract_address,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ContractAddress>::size()
-    }
-}
-impl IUpgradableLibraryDispatcherCopy of Copy::<IUpgradableLibraryDispatcher>;
-impl IUpgradableLibraryDispatcherDrop of Drop::<IUpgradableLibraryDispatcher>;
-impl IUpgradableLibraryDispatcherSerde of Serde::<IUpgradableLibraryDispatcher> {
-    fn serialize(self: @IUpgradableLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableLibraryDispatcher> {
-        Option::Some(IUpgradableLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-impl StoreIUpgradableLibraryDispatcher of starknet::Store::<IUpgradableLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ClassHash>::size()
-    }
-}
-impl IUpgradableSafeLibraryDispatcherCopy of Copy::<IUpgradableSafeLibraryDispatcher>;
-impl IUpgradableSafeLibraryDispatcherDrop of Drop::<IUpgradableSafeLibraryDispatcher>;
-impl IUpgradableSafeLibraryDispatcherSerde of Serde::<IUpgradableSafeLibraryDispatcher> {
-    fn serialize(self: @IUpgradableSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableSafeLibraryDispatcher> {
-        Option::Some(IUpgradableSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-impl StoreIUpgradableSafeLibraryDispatcher of starknet::Store::<IUpgradableSafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableSafeLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableSafeLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ClassHash>::size()
-    }
-}
-impl IUpgradableSafeDispatcherCopy of Copy::<IUpgradableSafeDispatcher>;
-impl IUpgradableSafeDispatcherDrop of Drop::<IUpgradableSafeDispatcher>;
-impl IUpgradableSafeDispatcherSerde of Serde::<IUpgradableSafeDispatcher> {
-    fn serialize(self: @IUpgradableSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<IUpgradableSafeDispatcher> {
-        Option::Some(IUpgradableSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-impl StoreIUpgradableSafeDispatcher of starknet::Store::<IUpgradableSafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<IUpgradableSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableSafeDispatcher {
-                contract_address,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: IUpgradableSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<IUpgradableSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            IUpgradableSafeDispatcher {
-                contract_address,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: IUpgradableSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ContractAddress>::size()
-    }
-}
 impl ICounterContractDispatcherCopy of Copy::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherDrop of Drop::<ICounterContractDispatcher>;
 impl ICounterContractDispatcherSerde of Serde::<ICounterContractDispatcher> {
@@ -1178,181 +780,16 @@ impl StoreICounterContractSafeDispatcher of starknet::Store::<ICounterContractSa
     }
 }
 
-    use starknet::ClassHash;
-    use starknet::syscalls::replace_class_syscall;
-
-    #[event]
-    #[derive(Drop, starknet::Event)]
-    enum Event {
-        ContractUpgraded: ContractUpgraded
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct ContractUpgraded {
-        old_class_hash: ClassHash,
-        new_class_hash: ClassHash
-    }
-
-    #[embeddable_as(UpgradableImpl)]
-    impl Upgradable<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::IUpgradable<ComponentState<TContractState>> {
-        fn upgrade(ref self: ComponentState<TContractState>, new_class_hash: ClassHash) {
-            replace_class_syscall(new_class_hash).unwrap();
-            let old_class_hash = self.current_implementation.read();
-            self.emit(ContractUpgraded { old_class_hash, new_class_hash });
-            self.current_implementation.write(new_class_hash);
-        }
-    }
-
-
-    struct ComponentState<TContractState> {
-        current_implementation: current_implementation::ComponentMemberState,
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
-            current_implementation: current_implementation::ComponentMemberState {},
-        }
-    }
-    
-    mod current_implementation {
-        use super::ClassHash;
-        use super::replace_class_syscall;
-        use super::Event;
-        use super::ContractUpgraded;
-        use super::Upgradable;
-        #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ClassHash> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x454ac3c855f3ea5ac58d9742da466de68252f6efa5081486a78dc60b2a3379>()
-            }
-        }
-impl ComponentMemberStateCopy of Copy::<ComponentMemberState>;
-impl ComponentMemberStateDrop of Drop::<ComponentMemberState>;
-    }
-
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
-};
-trait HasComponent<TContractState> {
-    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
-    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
-    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
-    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
-}
-
-#[starknet::embeddable]
-impl UpgradableImpl<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
-> of super::IUpgradable<TContractState> {
-    
-    fn upgrade(ref self: TContractState, new_class_hash: ClassHash) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        Upgradable::upgrade(ref component, new_class_hash, )
-    }
-}impl EventDrop of Drop::<Event>;
-impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-        match self {
-            Event::ContractUpgraded(val) => {
-                array::ArrayTrait::append(ref keys, selector!("ContractUpgraded"));
-                starknet::Event::append_keys_and_data(
-                    val, ref keys, ref data
-                );
-            },
-        }
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
-        if selector == selector!("ContractUpgraded") {
-                let val = starknet::Event::deserialize(
-                    ref keys, ref data
-                )?;
-                return Option::Some(Event::ContractUpgraded(val));
-        }
-        Option::None
-    }
-}
-impl EventContractUpgradedIntoEvent of Into<ContractUpgraded, Event> {
-    fn into(self: ContractUpgraded) -> Event {
-        Event::ContractUpgraded(self)
-    }
-}
-impl ContractUpgradedDrop of Drop::<ContractUpgraded>;
-impl ContractUpgradedIsEvent of starknet::Event<ContractUpgraded> {
-    fn append_keys_and_data(
-        self: @ContractUpgraded, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-                serde::Serde::serialize(self.old_class_hash, ref data);
-                serde::Serde::serialize(self.new_class_hash, ref data);
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<ContractUpgraded> {
-                let old_class_hash = serde::Serde::deserialize(
-                    ref data
-                )?;
-                let new_class_hash = serde::Serde::deserialize(
-                    ref data
-                )?;
-        Option::Some(ContractUpgraded {old_class_hash, new_class_hash, })
-    }
-}
-trait UnsafeNewContractStateTraitForUpgradableImpl<TContractState> {
-    fn unsafe_new_contract_state() -> TContractState;
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__UpgradableImpl__upgrade<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForUpgradableImpl<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_new_class_hash = option::OptionTraitImpl::expect(
-        serde::Serde::<ClassHash>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    UpgradableImpl::<TContractState, X, TContractStateDrop>::upgrade(ref contract_state, __arg_new_class_hash);
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
-
-
-mod __external_UpgradableImpl {
-        use super::__wrapper__UpgradableImpl__upgrade as upgrade;
-}
-
-mod __l1_handler_UpgradableImpl {
-}
-
-mod __constructor_UpgradableImpl {
-}
-
+    use cairo_level_tests::components::upgradable::upgradable as upgradable_comp;
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         CounterIncreased: CounterIncreased,
         CounterDecreased: CounterDecreased,
-        UpgradableEvent: super::upgradable::Event
+        UpgradableEvent: upgradable_comp::Event,
+        OwnableEvent: ownable_comp::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -1390,24 +827,28 @@ mod __constructor_UpgradableImpl {
     }
 
     #[abi(embed_v0)]
-    impl Upgradable = super::upgradable::UpgradableImpl<ContractState>;
+    impl Upgradable = upgradable_comp::UpgradableImpl<ContractState>;
 
 
     struct ContractState {
         counter: counter::ContractMemberState,
-        upgradable: super::upgradable::ComponentState<ContractState>,
+        upgradable: upgradable_comp::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
             counter: counter::ContractMemberState {},
-            upgradable: super::upgradable::unsafe_new_component_state::<ContractState>(),
+            upgradable: upgradable_comp::unsafe_new_component_state::<ContractState>(),
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
         }
     }
     
     use counter::InternalContractMemberStateTrait as counterContractMemberStateTrait;
     mod counter {
+        use super::upgradable_comp;
+        use super::ownable_comp;
         use super::Event;
         use super::CounterIncreased;
         use super::CounterDecreased;
@@ -1537,7 +978,7 @@ fn __wrapper__CounterContract__decrease_counter(mut data: Span::<felt252>) -> Sp
 }
 
 impl ContractStateUpgradableImpl of
-    super::upgradable::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
+    upgradable_comp::UnsafeNewContractStateTraitForUpgradableImpl<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
@@ -1575,23 +1016,42 @@ impl ContractStateUpgradableImpl of
         }
     }
 
-impl HasComponentImpl_upgradable of super::upgradable::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @super::upgradable::ComponentState<ContractState> {
+impl HasComponentImpl_upgradable_comp of upgradable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @upgradable_comp::ComponentState<ContractState> {
         self.upgradable
     }
-    fn get_component_mut(ref self: ContractState) -> super::upgradable::ComponentState<ContractState> {
-        super::upgradable::unsafe_new_component_state::<ContractState>()
+    fn get_component_mut(ref self: ContractState) -> upgradable_comp::ComponentState<ContractState> {
+        upgradable_comp::unsafe_new_component_state::<ContractState>()
     }
-    fn get_contract(self: @super::upgradable::ComponentState<ContractState>) -> @ContractState {
+    fn get_contract(self: @upgradable_comp::ComponentState<ContractState>) -> @ContractState {
         @unsafe_new_contract_state()
     }
-    fn get_contract_mut(ref self: super::upgradable::ComponentState<ContractState>) -> ContractState {
+    fn get_contract_mut(ref self: upgradable_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, super::upgradable::Event>>(ref self: super::upgradable::ComponentState<ContractState>, event: S) {
-        let event: super::upgradable::Event = traits::Into::into(event);
-        let mut contract = super::upgradable::HasComponent::get_contract_mut(ref self);
+    fn emit<S, impl IntoImp: traits::Into<S, upgradable_comp::Event>>(ref self: upgradable_comp::ComponentState<ContractState>, event: S) {
+        let event: upgradable_comp::Event = traits::Into::into(event);
+        let mut contract = upgradable_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::UpgradableEvent(event));
+    }
+}
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
+        self.ownable
+    }
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::OwnableEvent(event));
     }
 }
 impl EventDrop of Drop::<Event>;
@@ -1614,6 +1074,12 @@ impl EventIsEvent of starknet::Event<Event> {
             },
             Event::UpgradableEvent(val) => {
                 array::ArrayTrait::append(ref keys, selector!("UpgradableEvent"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+            Event::OwnableEvent(val) => {
+                array::ArrayTrait::append(ref keys, selector!("OwnableEvent"));
                 starknet::Event::append_keys_and_data(
                     val, ref keys, ref data
                 );
@@ -1642,6 +1108,12 @@ impl EventIsEvent of starknet::Event<Event> {
                 )?;
                 return Option::Some(Event::UpgradableEvent(val));
         }
+        if selector == selector!("OwnableEvent") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::OwnableEvent(val));
+        }
         Option::None
     }
 }
@@ -1655,9 +1127,14 @@ impl EventCounterDecreasedIntoEvent of Into<CounterDecreased, Event> {
         Event::CounterDecreased(self)
     }
 }
-impl EventUpgradableEventIntoEvent of Into<super::upgradable::Event, Event> {
-    fn into(self: super::upgradable::Event) -> Event {
+impl EventUpgradableEventIntoEvent of Into<upgradable_comp::Event, Event> {
+    fn into(self: upgradable_comp::Event) -> Event {
         Event::UpgradableEvent(self)
+    }
+}
+impl EventOwnableEventIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
+        Event::OwnableEvent(self)
     }
 }
 impl CounterIncreasedDrop of Drop::<CounterIncreased>;
