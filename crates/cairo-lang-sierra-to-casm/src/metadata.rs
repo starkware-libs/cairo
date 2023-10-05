@@ -35,6 +35,9 @@ pub struct MetadataComputationConfig {
 }
 
 /// Calculates the metadata for a Sierra program.
+///
+/// `no_eq_solver` uses a linear-time algorithm for calculating the gas, instead of solving
+/// equations.
 pub fn calc_metadata(
     program: &Program,
     config: MetadataComputationConfig,
