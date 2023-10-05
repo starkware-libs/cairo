@@ -8,6 +8,7 @@ use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
 use cairo_lang_test_utils::test_lock;
+use itertools::Itertools;
 use once_cell::sync::Lazy;
 
 use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
@@ -74,6 +75,42 @@ pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::Cont
     compile_contract_in_prepared_db(
         &db,
         None,
+        main_crate_ids,
+        CompilerConfig {
+            replace_ids: true,
+            allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
+            diagnostics_reporter,
+        },
+    )
+    .expect("compile_path failed")
+}
+
+/// Returns the compiled test contract from the contracts crate, with replaced ids.
+pub fn get_test_contract_from_contracts_crate(
+    example_file_name: &str,
+) -> crate::contract_class::ContractClass {
+    let locked_db = test_lock(&SHARED_DB_WITH_CONTRACTS);
+    let db = locked_db.snapshot();
+    drop(locked_db);
+    let crate_roots = db.crate_roots();
+    let contracts_crate = crate_roots
+        .iter()
+        .filter(|(_, dir)| match dir {
+            Directory::Real(path) => path.starts_with(CONTRACTS_CRATE_DIR),
+            Directory::Virtual { .. } => false,
+        })
+        .collect_vec();
+    let [(contracts_crate_id, _)] = contracts_crate.as_slice() else {
+        panic!(
+            "Expected exactly one crate with name starting with {}, found: {:?}",
+            CONTRACTS_CRATE_DIR, contracts_crate
+        );
+    };
+    let main_crate_ids = vec![**contracts_crate_id];
+    let diagnostics_reporter = DiagnosticsReporter::default().with_extra_crates(&main_crate_ids);
+    compile_contract_in_prepared_db(
+        &db,
+        Some(example_file_name),
         main_crate_ids,
         CompilerConfig {
             replace_ids: true,
