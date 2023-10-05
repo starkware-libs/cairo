@@ -199,12 +199,15 @@ impl<'a> AddStoreVariableStatements<'a> {
     ) -> Vec<VarState> {
         zip_eq(args, param_signatures)
             .map(|(arg, param_signature)| {
-                self.prepare_libfunc_argument(
+                let arg_state = self.prepare_libfunc_argument(
                     arg,
                     param_signature.allow_deferred,
                     param_signature.allow_add_const,
                     param_signature.allow_const,
-                )
+                );
+                // Make sure the argument is consumed.
+                self.state().variables.swap_remove(arg);
+                arg_state
             })
             .collect()
     }
@@ -220,8 +223,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_const: bool,
     ) -> VarState {
         let var_state = self.state().variables.swap_remove(arg).unwrap_or_else(|| {
-            eprintln!("Unkonwn state for {arg}.");
-            VarState::LocalVar
+            panic!("Unkonwn state for {arg}.");
         });
         match &var_state {
             VarState::Deferred { info: deferred_info } => {
@@ -255,8 +257,6 @@ impl<'a> AddStoreVariableStatements<'a> {
                 self.state().variables.insert(arg.clone(), var_state.clone());
                 if self.store_temp_as_local(arg) {
                     return VarState::LocalVar;
-                } else {
-                    self.state().variables.swap_remove(arg);
                 }
                 var_state
             }

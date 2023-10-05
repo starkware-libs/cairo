@@ -239,15 +239,20 @@ fn store_temp_simple() {
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_simple_statement(&db, "felt252_add", &["2", "3"], &["4"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_simple_statement(&db, "felt252_add", &["2", "4"], &["5"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "4"], &["5"]),
         dummy_simple_statement(&db, "nope", &[], &[]),
         dummy_label(&db, 0),
-        dummy_simple_statement(&db, "felt252_add", &["5", "5"], &["6"]),
+        dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["6"]),
         dummy_return_statement(&[]),
     ];
 
     assert_eq!(
-        test_add_store_statements(&db, statements, LocalVariables::default(), &["0", "1", "3"]),
+        test_add_store_statements(
+            &db,
+            statements,
+            LocalVariables::default(),
+            &["0", "1", "3", "5", "6"]
+        ),
         vec![
             "felt252_add(0, 1) -> (2)",
             "nope() -> ()",
@@ -255,11 +260,11 @@ fn store_temp_simple() {
             "felt252_add(2, 3) -> (4)",
             "nope() -> ()",
             "store_temp<felt252>(4) -> (4)",
-            "felt252_add(2, 4) -> (5)",
+            "felt252_add(5, 4) -> (5)",
             "nope() -> ()",
             "label_test::test::0:",
             "store_temp<felt252>(5) -> (5)",
-            "felt252_add(5, 5) -> (6)",
+            "felt252_add(5, 6) -> (6)",
             "return()",
         ]
     );
@@ -452,9 +457,9 @@ fn store_temp_push_values() {
         dummy_simple_statement(&db, "felt252_add", &["3", "4"], &["5"]),
         dummy_simple_statement(&db, "felt252_add", &["5", "6"], &["7"]),
         dummy_simple_statement(&db, "store_temp<felt252>", &["7"], &["7"]),
-        dummy_push_values(&db, &[("5", "100"), ("2", "101"), ("7", "102"), ("8", "103")]),
+        dummy_push_values(&db, &[("8", "100"), ("2", "101"), ("7", "102"), ("9", "103")]),
         dummy_simple_statement(&db, "nope", &[], &[]),
-        dummy_return_statement(&["9"]),
+        dummy_return_statement(&["10"]),
     ];
 
     assert_eq!(
@@ -462,7 +467,7 @@ fn store_temp_push_values() {
             &db,
             statements,
             LocalVariables::default(),
-            &["0", "1", "3", "4", "6", "8", "9"]
+            &["0", "1", "3", "4", "6", "8", "9", "10"]
         ),
         vec![
             "felt252_add(0, 1) -> (2)",
@@ -471,12 +476,12 @@ fn store_temp_push_values() {
             "store_temp<felt252>(5) -> (5)",
             "felt252_add(5, 6) -> (7)",
             "store_temp<felt252>(7) -> (7)",
-            "store_temp<felt252>(5) -> (100)",
+            "store_temp<felt252>(8) -> (100)",
             "store_temp<felt252>(2) -> (101)",
             "store_temp<felt252>(7) -> (102)",
-            "store_temp<felt252>(8) -> (103)",
+            "store_temp<felt252>(9) -> (103)",
             "nope() -> ()",
-            "return(9)",
+            "return(10)",
         ]
     );
 }
