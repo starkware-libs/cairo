@@ -82,10 +82,10 @@
     "0x28",
     "0x38f4af6e44b2e0a6ad228a4874672855e693db590abc7105a5a9819dbbf5ba6",
     "0x2a",
-    "0x2db784556f87e861d539d33c823cc21c4bbafa740aa585bc5f3db3cdefe3b2a",
+    "0x3159effdf4070c3cd4f5747858b2563cbe942968afdf03c961e8ff2c12bff49",
     "0x800000000000000f00000000000000000000000000000003",
     "0x2c",
-    "0x3c819625f4e9299c9644edae5d19d7898fb068eda859884b00eedb12b0ebb20",
+    "0xb4d924404bd3fd494d62fff24c0e93180294b862f1805082672cd99ad1aa05",
     "0x2d",
     "0x28f8d296e28032baef1f420f78ea9d933102ba47a50b1c5f80fc8a3a1041da",
     "0x30",
@@ -104,17 +104,17 @@
     "0x3508bb43f8880f8a37030d78eb1ac52d3a1abcccd991bf0258bdf64f81014ed",
     "0x3c",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
-    "0x17b20b8515bacb33cc4e5d817848d0e4a2d53b8a3902a30014b0931aa9871d2",
+    "0x207fa27a52ebac257418e1b237d6e847143fd38cfd828b37a2e5ab0088d32a5",
     "0x3f",
-    "0xf104fa09f5554cb2499eb013039e229e868834bcc42439af425f44b16e5cdf",
+    "0x391e45d7c1fbc1c58b825fb55026049aa2b8a0c8a718d8b725da005a004be02",
     "0x40",
     "0x74584e9f10ffb1a40aa5a3582e203f6758defc4a497d1a2d5a89f274a320e9",
     "0x42",
-    "0x1be5977c32fc96e90c3ca14758a1399c8ee531d214b863eda1e0834ed69fbf4",
+    "0x38e927a75d2700f5a54ad01fdc564f7648c67ce78643bfc58e66e99db16da8d",
     "0x44",
     "0x53797374656d",
     "0x46",
-    "0x5615ac12848ccdd8ae68c85275e04ba7b8e6718d9fae1265a4271d4e2b3172",
+    "0x307c4de8571011d841c3c28b7926cb1f48c5de32aade788d6921536cd795621",
     "0x48",
     "0x28f184fd9e4406cc4475e4faaa80e83b54a57026386ee7d5fc4fa8f347e327d",
     "0x4a",
@@ -1606,15 +1606,15 @@
       ],
       [
         44,
-        "test::account::public_key::ContractMemberState"
+        "cairo_level_tests::contracts::account::account::public_key::ContractMemberState"
       ],
       [
         45,
-        "Tuple<test::account::public_key::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>"
       ],
       [
         46,
-        "core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>"
       ],
       [
         47,
@@ -1682,15 +1682,15 @@
       ],
       [
         63,
-        "test::account::ContractState"
+        "cairo_level_tests::contracts::account::account::ContractState"
       ],
       [
         64,
-        "Tuple<test::account::ContractState, Unit>"
+        "Tuple<cairo_level_tests::contracts::account::account::ContractState, Unit>"
       ],
       [
         65,
-        "core::panics::PanicResult::<(test::account::ContractState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>"
       ],
       [
         66,
@@ -1702,11 +1702,11 @@
       ],
       [
         68,
-        "Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>"
+        "Tuple<cairo_level_tests::contracts::account::account::ContractState, Array<core::array::Span::<core::felt252>>>"
       ],
       [
         69,
-        "core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>"
       ],
       [
         70,
@@ -1718,11 +1718,11 @@
       ],
       [
         72,
-        "Tuple<test::account::ContractState, felt252>"
+        "Tuple<cairo_level_tests::contracts::account::account::ContractState, felt252>"
       ],
       [
         73,
-        "core::panics::PanicResult::<(test::account::ContractState, core::felt252)>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>"
       ],
       [
         74,
@@ -1896,27 +1896,27 @@
       ],
       [
         30,
-        "struct_construct<test::account::public_key::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
       ],
       [
         31,
-        "struct_construct<test::account::ContractState>"
+        "struct_construct<cairo_level_tests::contracts::account::account::ContractState>"
       ],
       [
         32,
-        "snapshot_take<test::account::ContractState>"
+        "snapshot_take<cairo_level_tests::contracts::account::account::ContractState>"
       ],
       [
         33,
-        "drop<test::account::ContractState>"
+        "drop<cairo_level_tests::contracts::account::account::ContractState>"
       ],
       [
         34,
-        "store_temp<test::account::ContractState>"
+        "store_temp<cairo_level_tests::contracts::account::account::ContractState>"
       ],
       [
         35,
-        "function_call<user@test::account::StorageImpl::validate_transaction>"
+        "function_call<user@cairo_level_tests::contracts::account::account::StorageImpl::validate_transaction>"
       ],
       [
         36,
@@ -2008,15 +2008,15 @@
       ],
       [
         58,
-        "function_call<user@test::account::AccountContractImpl::__validate__>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__validate__>"
       ],
       [
         59,
-        "enum_match<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>>"
       ],
       [
         60,
-        "struct_deconstruct<Tuple<test::account::ContractState, felt252>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::ContractState, felt252>>"
       ],
       [
         61,
@@ -2032,7 +2032,7 @@
       ],
       [
         64,
-        "function_call<user@test::account::AccountContractImpl::__execute__>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__>"
       ],
       [
         65,
@@ -2040,11 +2040,11 @@
       ],
       [
         66,
-        "enum_match<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
       ],
       [
         67,
-        "struct_deconstruct<Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
       ],
       [
         68,
@@ -2072,15 +2072,15 @@
       ],
       [
         74,
-        "function_call<user@test::account::constructor>"
+        "function_call<user@cairo_level_tests::contracts::account::account::constructor>"
       ],
       [
         75,
-        "enum_match<core::panics::PanicResult::<(test::account::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>>"
       ],
       [
         76,
-        "drop<Tuple<test::account::ContractState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::account::account::ContractState, Unit>>"
       ],
       [
         77,
@@ -2184,15 +2184,15 @@
       ],
       [
         102,
-        "struct_deconstruct<test::account::ContractState>"
+        "struct_deconstruct<cairo_level_tests::contracts::account::account::ContractState>"
       ],
       [
         103,
-        "store_temp<test::account::public_key::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
       ],
       [
         104,
-        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::read>"
       ],
       [
         105,
@@ -2284,19 +2284,19 @@
       ],
       [
         127,
-        "struct_construct<Tuple<test::account::ContractState, felt252>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, felt252>>"
       ],
       [
         128,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>, 0>"
       ],
       [
         129,
-        "store_temp<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>>"
       ],
       [
         130,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::felt252)>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::felt252)>, 1>"
       ],
       [
         131,
@@ -2356,11 +2356,11 @@
       ],
       [
         145,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 1>"
       ],
       [
         146,
-        "store_temp<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>>"
       ],
       [
         147,
@@ -2372,7 +2372,7 @@
       ],
       [
         149,
-        "function_call<user@test::account::AccountContractImpl::__execute__[expr33]>"
+        "function_call<user@cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]>"
       ],
       [
         150,
@@ -2384,11 +2384,11 @@
       ],
       [
         152,
-        "struct_construct<Tuple<test::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Array<core::array::Span::<core::felt252>>>>"
       ],
       [
         153,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, core::array::Array::<core::array::Span::<core::felt252>>)>, 0>"
       ],
       [
         154,
@@ -2436,31 +2436,31 @@
       ],
       [
         165,
-        "function_call<user@test::account::public_key::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::write>"
       ],
       [
         166,
-        "enum_match<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
       ],
       [
         167,
-        "struct_deconstruct<Tuple<test::account::public_key::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
       ],
       [
         168,
-        "struct_construct<Tuple<test::account::ContractState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::ContractState, Unit>>"
       ],
       [
         169,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>, 0>"
       ],
       [
         170,
-        "store_temp<core::panics::PanicResult::<(test::account::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>>"
       ],
       [
         171,
-        "enum_init<core::panics::PanicResult::<(test::account::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::ContractState, ())>, 1>"
       ],
       [
         172,
@@ -2504,7 +2504,7 @@
       ],
       [
         182,
-        "drop<test::account::public_key::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
       ],
       [
         183,
@@ -2808,7 +2808,7 @@
       ],
       [
         258,
-        "snapshot_take<test::account::public_key::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::account::account::public_key::ContractMemberState>"
       ],
       [
         259,
@@ -2844,19 +2844,19 @@
       ],
       [
         267,
-        "struct_construct<Tuple<test::account::public_key::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::account::account::public_key::ContractMemberState, Unit>>"
       ],
       [
         268,
-        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 0>"
       ],
       [
         269,
-        "store_temp<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>>"
       ],
       [
         270,
-        "enum_init<core::panics::PanicResult::<(test::account::public_key::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::account::account::public_key::ContractMemberState, ())>, 1>"
       ],
       [
         271,
@@ -3098,23 +3098,23 @@
     "user_func_names": [
       [
         0,
-        "test::account::__wrapper____validate_deploy__"
+        "cairo_level_tests::contracts::account::account::__wrapper____validate_deploy__"
       ],
       [
         1,
-        "test::account::__wrapper__AccountContractImpl____validate_declare__"
+        "cairo_level_tests::contracts::account::account::__wrapper__AccountContractImpl____validate_declare__"
       ],
       [
         2,
-        "test::account::__wrapper__AccountContractImpl____validate__"
+        "cairo_level_tests::contracts::account::account::__wrapper__AccountContractImpl____validate__"
       ],
       [
         3,
-        "test::account::__wrapper__AccountContractImpl____execute__"
+        "cairo_level_tests::contracts::account::account::__wrapper__AccountContractImpl____execute__"
       ],
       [
         4,
-        "test::account::__wrapper__constructor"
+        "cairo_level_tests::contracts::account::account::__wrapper__constructor"
       ],
       [
         5,
@@ -3122,7 +3122,7 @@
       ],
       [
         6,
-        "test::account::StorageImpl::validate_transaction"
+        "cairo_level_tests::contracts::account::account::StorageImpl::validate_transaction"
       ],
       [
         7,
@@ -3134,11 +3134,11 @@
       ],
       [
         9,
-        "test::account::AccountContractImpl::__validate__"
+        "cairo_level_tests::contracts::account::account::AccountContractImpl::__validate__"
       ],
       [
         10,
-        "test::account::AccountContractImpl::__execute__"
+        "cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__"
       ],
       [
         11,
@@ -3146,7 +3146,7 @@
       ],
       [
         12,
-        "test::account::constructor"
+        "cairo_level_tests::contracts::account::account::constructor"
       ],
       [
         13,
@@ -3154,7 +3154,7 @@
       ],
       [
         14,
-        "test::account::public_key::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::read"
       ],
       [
         15,
@@ -3174,7 +3174,7 @@
       ],
       [
         19,
-        "test::account::AccountContractImpl::__execute__[expr33]"
+        "cairo_level_tests::contracts::account::account::AccountContractImpl::__execute__[expr33]"
       ],
       [
         20,
@@ -3182,7 +3182,7 @@
       ],
       [
         21,
-        "test::account::public_key::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::account::account::public_key::InternalContractMemberStateImpl::write"
       ],
       [
         22,
@@ -3394,7 +3394,7 @@
     },
     {
       "type": "event",
-      "name": "test::account::Event",
+      "name": "cairo_level_tests::contracts::account::account::Event",
       "kind": "enum",
       "variants": []
     }
