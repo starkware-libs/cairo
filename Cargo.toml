@@ -1,6 +1,10 @@
 [profile.release]
 overflow-checks = true     # Enable integer overflow checks.
 
+[profile.release-with-debug]
+inherits = "release"
+debug = true
+
 [workspace]
 resolver = "2"
 members = [
