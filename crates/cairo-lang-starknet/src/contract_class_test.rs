@@ -11,7 +11,7 @@ use crate::contract_class::{
 };
 use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::{
-    get_example_file_path, get_test_contract, get_test_contract_from_contracts_crate,
+    get_example_file_path, get_test_contract, get_test_contract_from_contracts_crate, get_contract_file_name_from_path,
 };
 
 #[test]
@@ -99,13 +99,28 @@ fn test_full_contract_deserialization_from_contracts_crate(example_file_name: &s
 #[test_case("mintable")]
 fn test_compile_path(example_file_name: &str) {
     let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
+    test_compile_path_aux(example_file_name, &contract);
+}
 
+/// Tests that the sierra compiled from a contract in the contracts crate is the same as in <test_case>.sierra, and
+/// that the resulted json is the same as in <test_case>.contract_class.json.
+/// TODO(Gil): Merge with `test_compile_path`.
+#[test_case("multi_component::contract_with_4_components")]
+fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
+    let contract =
+        get_test_contract_from_contracts_crate(format!("cairo_level_tests::contracts::{example_contract_path}").as_str());
+    let example_file_name = get_contract_file_name_from_path(example_contract_path);
+    test_compile_path_aux(&example_file_name, &contract);
+}
+
+// Helper function for the common parts `test_compile_path_*`.
+fn test_compile_path_aux(example_file_name: &str, contract: &ContractClass) {
     let list_selector = ListSelector::ListName("all".to_string());
-    validate_compatible_sierra_version(&contract, list_selector).unwrap();
+    validate_compatible_sierra_version(contract, list_selector).unwrap();
 
     compare_contents_or_fix_with_path(
         &get_example_file_path(format!("{example_file_name}.contract_class.json").as_str()),
-        serde_json::to_string_pretty(&contract).unwrap() + "\n",
+        serde_json::to_string_pretty(contract).unwrap() + "\n",
     );
 
     let (sierra_version_id, compiler_version_id, mut sierra_program) =
@@ -120,7 +135,7 @@ fn test_compile_path(example_file_name: &str) {
         compiler_version::current_compiler_version_id(),
         "Serialized compiler version should be the current version."
     );
-    contract.sierra_program_debug_info.unwrap().populate(&mut sierra_program);
+    contract.sierra_program_debug_info.clone().unwrap().populate(&mut sierra_program);
 
     // There is a separate file for the sierra code as it is hard to review inside the json.
     compare_contents_or_fix_with_path(

@@ -120,3 +120,8 @@ pub fn get_test_contract_from_contracts_crate(
     )
     .expect("compile_path failed")
 }
+
+/// Converts a Cairo path of a contract (e.g. `a::b::c`) to a file name with underscores (a_b_c).
+pub fn get_contract_file_name_from_path(path: &str) -> String {
+    path.replace("::", "__")
+}
