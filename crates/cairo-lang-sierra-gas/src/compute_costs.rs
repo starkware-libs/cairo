@@ -402,7 +402,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         specific_cost_context: &SpecificCostContext,
     ) -> Result<(), CostError> {
         let topological_order =
-            compute_topological_order(self.program.statements.len(), &|current_idx| {
+            compute_topological_order(self.program.statements.len(), true, &|current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -468,8 +468,10 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         // Unlike `prepare_wallet`:
         // * function calls are not treated as edges and
         // * the success branches of `withdraw_gas` are treated as edges.
+        //
+        // Note, that we allow cycles, but the result may not be optimal in such a case.
         let topological_order =
-            compute_topological_order(self.program.statements.len(), &|current_idx| {
+            compute_topological_order(self.program.statements.len(), false, &|current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -613,6 +615,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 /// Each statement appears in the ordering after its dependencies.
 fn compute_topological_order(
     n_statements: usize,
+    detect_cycles: bool,
     dependencies_callback: &dyn Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<Vec<StatementIdx>, CostError> {
     let mut topological_order: Vec<StatementIdx> = Default::default();
@@ -622,7 +625,7 @@ fn compute_topological_order(
             &mut topological_order,
             &mut status,
             &StatementIdx(idx),
-            true,
+            detect_cycles,
             dependencies_callback,
         )?;
     }
