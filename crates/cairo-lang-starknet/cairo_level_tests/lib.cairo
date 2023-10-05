@@ -1,5 +1,6 @@
 mod abi_dispatchers_tests;
 mod components;
+mod contracts;
 mod contract_tests;
 mod events;
 mod interoperability;
