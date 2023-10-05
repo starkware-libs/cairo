@@ -8,7 +8,7 @@ use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::{chain, Itertools};
 
 /// Gas information for a Sierra program.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct GasInfo {
     /// The values of variables at matching libfuncs at given statements indices.
     pub variable_values: OrderedHashMap<(StatementIdx, CostTokenType), i64>,
@@ -56,30 +56,41 @@ impl GasInfo {
         GasInfo { variable_values, function_costs }
     }
 
-    pub fn assert_eq(&self, other: &GasInfo) {
+    pub fn assert_eq_variables(&self, other: &GasInfo) {
+        let mut fail = false;
         for (key, val) in sub_maps(self.variable_values.clone(), other.variable_values.clone()) {
-            assert!(
-                val == 0,
-                "Difference in {key:?}: {:?} != {:?}",
-                self.variable_values.get(&key),
-                other.variable_values.get(&key)
-            );
+            if val != 0 {
+                println!(
+                    "Difference in {key:?}: {:?} != {:?}.",
+                    self.variable_values.get(&key),
+                    other.variable_values.get(&key)
+                );
+                fail = true;
+            }
         }
+        assert!(!fail, "Comparison failed.");
+    }
+
+    pub fn assert_eq_functions(&self, other: &GasInfo) {
+        let mut fail = false;
         for key in chain!(self.function_costs.keys(), other.function_costs.keys()) {
             let self_val = self.function_costs.get(key);
             let other_val = other.function_costs.get(key);
-            assert!(
-                match (self_val, other_val) {
-                    (Some(self_val), Some(other_val)) =>
-                        sub_maps(self_val.clone(), other_val.iter().map(|(k, v)| (*k, *v)))
-                            .into_iter()
-                            .all(|(_, val)| val == 0),
-                    (None, None) => true,
-                    _ => false,
-                },
-                "Difference in {key:?}: {self_val:?} != {other_val:?}",
-            );
+            let is_same = match (self_val, other_val) {
+                (Some(self_val), Some(other_val)) => {
+                    sub_maps(self_val.clone(), other_val.iter().map(|(k, v)| (*k, *v)))
+                        .into_iter()
+                        .all(|(_, val)| val == 0)
+                }
+                (None, None) => true,
+                _ => false,
+            };
+            if !is_same {
+                println!("Difference in {key:?}: {self_val:?} != {other_val:?}.");
+                fail = true;
+            }
         }
+        assert!(!fail, "Comparison failed.");
     }
 }
 
