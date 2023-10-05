@@ -45,6 +45,8 @@ pub enum CostError {
     SolvingGasEquationFailed,
     #[error("found an unexpected cycle during cost computation")]
     UnexpectedCycle,
+    #[error("failed to enforce function cost")]
+    EnforceWalletValueFailed(StatementIdx),
 }
 
 /// Helper to implement the `InvocationCostInfoProvider` for the equation generation.

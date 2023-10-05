@@ -109,6 +109,19 @@ pub fn compute_costs<
         // Recompute the wallet values for each statement, after setting the target values.
         context.costs = Default::default();
         context.prepare_wallet(specific_cost_context)?;
+
+        // Check that enforcing the wallet values succeeded.
+        for (idx, value) in enforced_wallet_values.iter() {
+            if context.wallet_at_ex(idx, false).value != *value {
+                return Err(CostError::EnforceWalletValueFailed(*idx));
+            }
+        }
+    } else {
+        // Check that enforced_wallet_values is empty.
+        assert!(
+            enforced_wallet_values.is_empty(),
+            "enforced_wallet_values cannot be used when should_handle_excess is false."
+        );
     }
 
     let mut variable_values = VariableValues::default();
