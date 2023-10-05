@@ -6,7 +6,7 @@ use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::ProjectConfig;
 use cairo_lang_compiler::CompilerConfig;
 use cairo_lang_filesystem::db::FilesGroup;
-use cairo_lang_filesystem::ids::{CrateLongId, Directory, FileLongId};
+use cairo_lang_filesystem::ids::Directory;
 use cairo_lang_test_utils::test_lock;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -55,40 +55,8 @@ pub static SHARED_DB_WITH_CONTRACTS: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
     )
 });
 
-/// Returns the compiled test contract, with replaced ids.
-pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
-    let path = get_example_file_path(example_file_name);
-    let locked_db = test_lock(&SHARED_DB);
-    // Setting up the contract path.
-    let db = locked_db.snapshot();
-    drop(locked_db);
-    let file_id = db.intern_file(FileLongId::OnDisk(PathBuf::from(&path)));
-    let crate_id = db.intern_crate(CrateLongId::Virtual {
-        name: "test".into(),
-        root: Directory::Virtual {
-            files: [("lib.cairo".into(), file_id)].into(),
-            dirs: Default::default(),
-        },
-    });
-    let main_crate_ids = vec![crate_id];
-    let diagnostics_reporter = DiagnosticsReporter::default().with_extra_crates(&main_crate_ids);
-    compile_contract_in_prepared_db(
-        &db,
-        None,
-        main_crate_ids,
-        CompilerConfig {
-            replace_ids: true,
-            allowed_libfuncs_list_name: Some(BUILTIN_ALL_LIBFUNCS_LIST.to_string()),
-            diagnostics_reporter,
-        },
-    )
-    .expect("compile_path failed")
-}
-
 /// Returns the compiled test contract from the contracts crate, with replaced ids.
-pub fn get_test_contract_from_contracts_crate(
-    example_file_name: &str,
-) -> crate::contract_class::ContractClass {
+pub fn get_test_contract(example_file_name: &str) -> crate::contract_class::ContractClass {
     let locked_db = test_lock(&SHARED_DB_WITH_CONTRACTS);
     let db = locked_db.snapshot();
     drop(locked_db);
