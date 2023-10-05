@@ -1,13 +1,8 @@
-use array::ArrayTrait;
-use serde::Serde;
-use array::SpanTrait;
-
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum Option<T> {
     Some: T,
     None,
 }
-
 
 trait OptionTrait<T> {
     /// If `val` is `Option::Some(x)`, returns `x`. Otherwise, panics with `err`.
@@ -22,10 +17,11 @@ trait OptionTrait<T> {
     /// Returns `true` if the `Option` is `Option::None`.
     fn is_none(self: @Option<T>) -> bool;
     /// Returns x if Option is Option::some(x), otherwise returns the provided default value
-    fn unwrap_or(self: Option<T>, default: T) -> T;
+    fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T;
     /// Returns x if Option is Option::some(x), otherwise returns Default::<T>::default()
-    fn unwrap_or_default(self: Option<T>) -> T;
+    fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
 }
+
 impl OptionTraitImpl<T> of OptionTrait<T> {
     #[inline(always)]
     fn expect(self: Option<T>, err: felt252) -> T {
@@ -64,15 +60,16 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 
-    #[inline(always)]
-    fn unwrap_or(self: Option<T>, default: T) -> T {
+    #[inline]
+    fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => default,
         }
     }
 
-    fn unwrap_or_default(self: Option<T>) -> T {
+    #[inline]
+    fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T {
         match self {
             Option::Some(x) => x,
             Option::None => Default::default(),
