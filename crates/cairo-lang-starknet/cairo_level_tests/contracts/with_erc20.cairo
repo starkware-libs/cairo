@@ -201,7 +201,7 @@ mod erc20 {
 
 
 #[starknet::contract]
-mod my_contract {
+mod erc20_contract {
     use starknet::ContractAddress;
     #[storage]
     struct Storage {

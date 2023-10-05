@@ -33,24 +33,24 @@
     "0x4",
     "0x6",
     "0x800000000000000700000000000000000000000000000003",
-    "0x3bb451458d586adb56d0c0b9a4d5fd6537c8b3ace69034384584192f367b882",
+    "0x115242e39573d7ab0bf03c160d4142e436b13c913805054e530a12d5b3bdbbd",
     "0x800000000000000700000000000000000000000000000002",
-    "0x359df3767ac626ebbf703b7f1007d3828dbbe6df04b2835c0e833501c9cf144",
+    "0x28c520ae71f577cfd5e64a132666de1c61cac188b7d5784e8ea6d68c5bb12e5",
     "0x8",
-    "0x3fe1b94d4df40ce31d48b4977bc33af0ca7ab1498936985989c8dc25db25973",
+    "0x1dc6e7d8b515b48779fa6e079943f17a476e0244e02c92f4b50e64eecd7972b",
     "0x800000000000000f00000000000000000000000000000003",
     "0xa",
     "0xb",
-    "0x26805b37f4d6027758637a7f0616cb98eb241c70c40db207f7cb10f07990021",
+    "0x69a25851549831ed365a92cee65551238474ff44b4fb19170e9e5e5bc9e1d1",
     "0xc",
     "0x224a57ba2504f0018c4fd92c0f0e6ef13a37bf8d3d6479b8faa16fc36f624d2",
     "0xe",
     "0x75313238",
-    "0x1a7af3a0b367ac11af2e7bc39793ff9efddaab92f3b20eb0bce9cddcd4e3111",
+    "0x70e78d8a9389e3f35dab121c66834dfb4af63fd874e407a4e094c3a99ddab1",
     "0x10",
-    "0xd1c5fc0255aaf04e6472cb278cf46cf09f8a38b1616f87a5dc2885e50e66fd",
+    "0xb5e52b4939d9632084d39f76a002f49faf3f1cd4ff9a50f164033b68ef1e38",
     "0x800000000000000700000000000000000000000000000004",
-    "0xf93bcbf5fe30777f8db495d57d0273ec23aa3600b639d6b6fc68154a505dbf",
+    "0x2583bcd2b995253f79119bbc89c1eab623376e52d1436c8e1b14ed78df3db01",
     "0x11",
     "0x12",
     "0x9",
@@ -65,20 +65,20 @@
     "0x35db377e57ca049334bdd283ee9a74d991b437ea21f0760006234ec7e529d20",
     "0x1a",
     "0x53746f726167654261736541646472657373",
-    "0x2c71bffd670f45cefadb861a72359813b668f090a5bd3eee54f155631395817",
+    "0x178a5bc566357360f0add19c5540d5ec8d8f98d5ef26f623d27aee2a7f0b9ca",
     "0x1d",
-    "0x2e565e6629baa8d614e7c35f57ff4812a7c2bd36cca20b20b1b121e4fc25d9b",
+    "0x12521ae5f27f9ecd99e424c417d1d5e2d50b5355cb88a4e770bcec3a7ce1729",
     "0x1e",
     "0x66656c74323532",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x144731a48142ce73f2ccdf911901c61016d5adfa535224620792d8c8905193d",
+    "0x363cb548dd7ed3e7f74ed7d3388fa4f4ee23f92831942e2a1570ce3906117ff",
     "0x22",
-    "0x3332c0d6390da43eaed2dac1c2c83116c1fc16c65ef6f17d8d8c3f43aff7649",
+    "0x15f3da29663b7d472bae10537060401af2905b06bc88f0a2fa7811190bf04cb",
     "0x23",
     "0x11771f2d3e7dc3ed5afe7eae405dfd127619490dec57ceaa021ac8bc2b9b315",
-    "0x2a2bc90f879f74024a98dc39591093f2c6656f38121b3ea36aac62bb7c818f8",
+    "0x24fe2ac16096168cd10de288444dd785b92c373930c6d06f20fb1334943537c",
     "0x26",
-    "0x9d6d5a405601834d30f54da0e154457a7ddf662c52f4f67593dcb4e95ecff4",
+    "0x3a4a68f7df265c7de0967bc3dbe3e852244fe46df29ddad2d76de8aabb32ddf",
     "0x27",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x426f78",
@@ -1105,15 +1105,15 @@
       ],
       [
         8,
-        "test::upgradable::ContractUpgraded"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded"
       ],
       [
         9,
-        "test::upgradable::Event"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::Event"
       ],
       [
         10,
-        "test::upgradable::current_implementation::ComponentMemberState"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState"
       ],
       [
         11,
@@ -1121,11 +1121,11 @@
       ],
       [
         12,
-        "Tuple<test::upgradable::current_implementation::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, Unit>"
       ],
       [
         13,
-        "core::panics::PanicResult::<(test::upgradable::current_implementation::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, ())>"
       ],
       [
         14,
@@ -1141,15 +1141,15 @@
       ],
       [
         17,
-        "test::counter_contract::CounterIncreased"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased"
       ],
       [
         18,
-        "test::counter_contract::CounterDecreased"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased"
       ],
       [
         19,
-        "test::counter_contract::Event"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::Event"
       ],
       [
         20,
@@ -1189,15 +1189,15 @@
       ],
       [
         29,
-        "test::upgradable::ComponentState::<test::counter_contract::ContractState>"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         30,
-        "Tuple<test::upgradable::ComponentState::<test::counter_contract::ContractState>, Unit>"
+        "Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>"
       ],
       [
         31,
-        "core::panics::PanicResult::<(test::upgradable::ComponentState::<test::counter_contract::ContractState>, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>"
       ],
       [
         32,
@@ -1209,15 +1209,15 @@
       ],
       [
         34,
-        "test::counter_contract::counter::ContractMemberState"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState"
       ],
       [
         35,
-        "Tuple<test::counter_contract::counter::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>"
       ],
       [
         36,
-        "core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>"
       ],
       [
         37,
@@ -1225,15 +1225,15 @@
       ],
       [
         38,
-        "test::counter_contract::ContractState"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState"
       ],
       [
         39,
-        "Tuple<test::counter_contract::ContractState, Unit>"
+        "Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit>"
       ],
       [
         40,
-        "core::panics::PanicResult::<(test::counter_contract::ContractState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>"
       ],
       [
         41,
@@ -1391,35 +1391,35 @@
       ],
       [
         25,
-        "struct_construct<test::counter_contract::counter::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
       ],
       [
         26,
-        "struct_construct<test::upgradable::current_implementation::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState>"
       ],
       [
         27,
-        "struct_construct<test::upgradable::ComponentState::<test::counter_contract::ContractState>>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>"
       ],
       [
         28,
-        "struct_construct<test::counter_contract::ContractState>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         29,
-        "snapshot_take<test::counter_contract::ContractState>"
+        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         30,
-        "drop<test::counter_contract::ContractState>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         31,
-        "store_temp<test::counter_contract::ContractState>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         32,
-        "function_call<user@test::counter_contract::CounterContract::get_counter>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::get_counter>"
       ],
       [
         33,
@@ -1535,15 +1535,15 @@
       ],
       [
         61,
-        "function_call<user@test::counter_contract::CounterContract::increase_counter>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::increase_counter>"
       ],
       [
         62,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>"
       ],
       [
         63,
-        "drop<Tuple<test::counter_contract::ContractState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit>>"
       ],
       [
         64,
@@ -1559,7 +1559,7 @@
       ],
       [
         67,
-        "function_call<user@test::counter_contract::CounterContract::decrease_counter>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::decrease_counter>"
       ],
       [
         68,
@@ -1583,27 +1583,27 @@
       ],
       [
         73,
-        "function_call<user@test::upgradable::UpgradableImpl::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_upgradable, test::counter_contract::ContractStateDrop>::upgrade>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::upgradable::UpgradableImpl::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop>::upgrade>"
       ],
       [
         74,
-        "function_call<user@test::counter_contract::constructor>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::constructor>"
       ],
       [
         75,
-        "struct_deconstruct<test::counter_contract::ContractState>"
+        "struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>"
       ],
       [
         76,
-        "drop<test::upgradable::ComponentState::<test::counter_contract::ContractState>>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>"
       ],
       [
         77,
-        "store_temp<test::counter_contract::counter::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
       ],
       [
         78,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read>"
       ],
       [
         79,
@@ -1647,7 +1647,7 @@
       ],
       [
         89,
-        "snapshot_take<test::counter_contract::counter::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
       ],
       [
         90,
@@ -1659,51 +1659,51 @@
       ],
       [
         92,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write>"
       ],
       [
         93,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>"
       ],
       [
         94,
-        "struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>"
       ],
       [
         95,
-        "struct_construct<test::counter_contract::CounterIncreased>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>"
       ],
       [
         96,
-        "store_temp<test::counter_contract::CounterIncreased>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>"
       ],
       [
         97,
-        "function_call<user@test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterIncreased, test::counter_contract::EventCounterIncreasedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent>>"
       ],
       [
         98,
-        "struct_deconstruct<Tuple<test::counter_contract::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit>>"
       ],
       [
         99,
-        "struct_construct<Tuple<test::counter_contract::ContractState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, Unit>>"
       ],
       [
         100,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 0>"
       ],
       [
         101,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>>"
       ],
       [
         102,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, ())>, 1>"
       ],
       [
         103,
-        "drop<test::counter_contract::counter::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState>"
       ],
       [
         104,
@@ -1711,15 +1711,15 @@
       ],
       [
         105,
-        "struct_construct<test::counter_contract::CounterDecreased>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>"
       ],
       [
         106,
-        "store_temp<test::counter_contract::CounterDecreased>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>"
       ],
       [
         107,
-        "function_call<user@test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterDecreased, test::counter_contract::EventCounterDecreasedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterDecreasedIntoEvent>>"
       ],
       [
         108,
@@ -1747,19 +1747,19 @@
       ],
       [
         114,
-        "store_temp<test::upgradable::ComponentState::<test::counter_contract::ContractState>>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>"
       ],
       [
         115,
-        "function_call<user@test::upgradable::Upgradable::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_upgradable>::upgrade>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::upgradable::Upgradable::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable>::upgrade>"
       ],
       [
         116,
-        "enum_match<core::panics::PanicResult::<(test::upgradable::ComponentState::<test::counter_contract::ContractState>, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>>"
       ],
       [
         117,
-        "struct_deconstruct<Tuple<test::upgradable::ComponentState::<test::counter_contract::ContractState>, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>>"
       ],
       [
         118,
@@ -1859,35 +1859,35 @@
       ],
       [
         142,
-        "struct_construct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, Unit>>"
       ],
       [
         143,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 0>"
       ],
       [
         144,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>>"
       ],
       [
         145,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::ContractMemberState, ())>, 1>"
       ],
       [
         146,
-        "function_call<user@test::counter_contract::EventCounterIncreasedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent::into>"
       ],
       [
         147,
-        "snapshot_take<test::counter_contract::Event>"
+        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
       ],
       [
         148,
-        "drop<test::counter_contract::Event>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
       ],
       [
         149,
-        "store_temp<test::counter_contract::Event>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
       ],
       [
         150,
@@ -1895,7 +1895,7 @@
       ],
       [
         151,
-        "function_call<user@test::counter_contract::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventIsEvent::append_keys_and_data>"
       ],
       [
         152,
@@ -1911,7 +1911,7 @@
       ],
       [
         155,
-        "function_call<user@test::counter_contract::EventCounterDecreasedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterDecreasedIntoEvent::into>"
       ],
       [
         156,
@@ -1943,19 +1943,19 @@
       ],
       [
         163,
-        "struct_deconstruct<test::upgradable::ComponentState::<test::counter_contract::ContractState>>"
+        "struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>>"
       ],
       [
         164,
-        "snapshot_take<test::upgradable::current_implementation::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState>"
       ],
       [
         165,
-        "store_temp<test::upgradable::current_implementation::ComponentMemberState>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState>"
       ],
       [
         166,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, test::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, test::upgradable::current_implementation::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberStateDrop>::read>"
       ],
       [
         167,
@@ -1967,47 +1967,47 @@
       ],
       [
         169,
-        "struct_construct<test::upgradable::ContractUpgraded>"
+        "struct_construct<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded>"
       ],
       [
         170,
-        "store_temp<test::upgradable::ContractUpgraded>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded>"
       ],
       [
         171,
-        "function_call<user@test::counter_contract::HasComponentImpl_upgradable::emit::<test::upgradable::ContractUpgraded, test::upgradable::EventContractUpgradedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable::emit::<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded, cairo_level_tests::contracts::upgradable_counter::upgradable::EventContractUpgradedIntoEvent>>"
       ],
       [
         172,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, test::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, test::upgradable::current_implementation::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberStateDrop>::write>"
       ],
       [
         173,
-        "enum_match<core::panics::PanicResult::<(test::upgradable::current_implementation::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, ())>>"
       ],
       [
         174,
-        "struct_deconstruct<Tuple<test::upgradable::current_implementation::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, Unit>>"
       ],
       [
         175,
-        "struct_construct<Tuple<test::upgradable::ComponentState::<test::counter_contract::ContractState>, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, Unit>>"
       ],
       [
         176,
-        "enum_init<core::panics::PanicResult::<(test::upgradable::ComponentState::<test::counter_contract::ContractState>, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 0>"
       ],
       [
         177,
-        "store_temp<core::panics::PanicResult::<(test::upgradable::ComponentState::<test::counter_contract::ContractState>, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>>"
       ],
       [
         178,
-        "enum_init<core::panics::PanicResult::<(test::upgradable::ComponentState::<test::counter_contract::ContractState>, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::ComponentState::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState>, ())>, 1>"
       ],
       [
         179,
-        "drop<test::upgradable::current_implementation::ComponentMemberState>"
+        "drop<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState>"
       ],
       [
         180,
@@ -2075,11 +2075,11 @@
       ],
       [
         196,
-        "enum_init<test::counter_contract::Event, 0>"
+        "enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 0>"
       ],
       [
         197,
-        "enum_match<test::counter_contract::Event>"
+        "enum_match<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>"
       ],
       [
         198,
@@ -2087,7 +2087,7 @@
       ],
       [
         199,
-        "function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>"
       ],
       [
         200,
@@ -2095,7 +2095,7 @@
       ],
       [
         201,
-        "function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>"
       ],
       [
         202,
@@ -2103,11 +2103,11 @@
       ],
       [
         203,
-        "store_temp<test::upgradable::Event>"
+        "store_temp<cairo_level_tests::contracts::upgradable_counter::upgradable::Event>"
       ],
       [
         204,
-        "function_call<user@test::upgradable::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::upgradable::EventIsEvent::append_keys_and_data>"
       ],
       [
         205,
@@ -2119,7 +2119,7 @@
       ],
       [
         207,
-        "enum_init<test::counter_contract::Event, 1>"
+        "enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 1>"
       ],
       [
         208,
@@ -2171,15 +2171,15 @@
       ],
       [
         220,
-        "function_call<user@test::upgradable::EventContractUpgradedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::upgradable::EventContractUpgradedIntoEvent::into>"
       ],
       [
         221,
-        "enum_init<test::counter_contract::Event, 2>"
+        "enum_init<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, 2>"
       ],
       [
         222,
-        "function_call<user@test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::Event, core::traits::TIntoT::<test::counter_contract::Event>>>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>>>"
       ],
       [
         223,
@@ -2187,31 +2187,31 @@
       ],
       [
         224,
-        "struct_construct<Tuple<test::upgradable::current_implementation::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, Unit>>"
       ],
       [
         225,
-        "enum_init<core::panics::PanicResult::<(test::upgradable::current_implementation::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, ())>, 0>"
       ],
       [
         226,
-        "store_temp<core::panics::PanicResult::<(test::upgradable::current_implementation::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, ())>>"
       ],
       [
         227,
-        "enum_init<core::panics::PanicResult::<(test::upgradable::current_implementation::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, ())>, 1>"
       ],
       [
         228,
-        "struct_deconstruct<test::counter_contract::CounterIncreased>"
+        "struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased>"
       ],
       [
         229,
-        "struct_deconstruct<test::counter_contract::CounterDecreased>"
+        "struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased>"
       ],
       [
         230,
-        "enum_match<test::upgradable::Event>"
+        "enum_match<cairo_level_tests::contracts::upgradable_counter::upgradable::Event>"
       ],
       [
         231,
@@ -2219,7 +2219,7 @@
       ],
       [
         232,
-        "function_call<user@test::upgradable::ContractUpgradedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgradedIsEvent::append_keys_and_data>"
       ],
       [
         233,
@@ -2259,19 +2259,19 @@
       ],
       [
         242,
-        "enum_init<test::upgradable::Event, 0>"
+        "enum_init<cairo_level_tests::contracts::upgradable_counter::upgradable::Event, 0>"
       ],
       [
         243,
-        "function_call<user@core::traits::TIntoT::<test::counter_contract::Event>::into>"
+        "function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>::into>"
       ],
       [
         244,
-        "dup<test::upgradable::ContractUpgraded>"
+        "dup<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded>"
       ],
       [
         245,
-        "struct_deconstruct<test::upgradable::ContractUpgraded>"
+        "struct_deconstruct<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded>"
       ],
       [
         246,
@@ -2297,27 +2297,27 @@
     "user_func_names": [
       [
         0,
-        "test::counter_contract::__wrapper__CounterContract__get_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__wrapper__CounterContract__get_counter"
       ],
       [
         1,
-        "test::counter_contract::__wrapper__CounterContract__increase_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__wrapper__CounterContract__increase_counter"
       ],
       [
         2,
-        "test::counter_contract::__wrapper__CounterContract__decrease_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__wrapper__CounterContract__decrease_counter"
       ],
       [
         3,
-        "test::upgradable::__wrapper__UpgradableImpl__upgrade::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_upgradable, test::counter_contract::ContractStateDrop, test::counter_contract::ContractStateUpgradableImpl>"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::__wrapper__UpgradableImpl__upgrade::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateUpgradableImpl>"
       ],
       [
         4,
-        "test::counter_contract::__wrapper__constructor"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::__wrapper__constructor"
       ],
       [
         5,
-        "test::counter_contract::CounterContract::get_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::get_counter"
       ],
       [
         6,
@@ -2325,11 +2325,11 @@
       ],
       [
         7,
-        "test::counter_contract::CounterContract::increase_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::increase_counter"
       ],
       [
         8,
-        "test::counter_contract::CounterContract::decrease_counter"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterContract::decrease_counter"
       ],
       [
         9,
@@ -2337,15 +2337,15 @@
       ],
       [
         10,
-        "test::upgradable::UpgradableImpl::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_upgradable, test::counter_contract::ContractStateDrop>::upgrade"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::UpgradableImpl::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable, cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateDrop>::upgrade"
       ],
       [
         11,
-        "test::counter_contract::constructor"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::constructor"
       ],
       [
         12,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::read"
       ],
       [
         13,
@@ -2353,11 +2353,11 @@
       ],
       [
         14,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::counter::InternalContractMemberStateImpl::write"
       ],
       [
         15,
-        "test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterIncreased, test::counter_contract::EventCounterIncreasedIntoEvent>"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent>"
       ],
       [
         16,
@@ -2365,7 +2365,7 @@
       ],
       [
         17,
-        "test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterDecreased, test::counter_contract::EventCounterDecreasedIntoEvent>"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased, cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterDecreasedIntoEvent>"
       ],
       [
         18,
@@ -2373,7 +2373,7 @@
       ],
       [
         19,
-        "test::upgradable::Upgradable::<test::counter_contract::ContractState, test::counter_contract::HasComponentImpl_upgradable>::upgrade"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::Upgradable::<cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractState, cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable>::upgrade"
       ],
       [
         20,
@@ -2393,15 +2393,15 @@
       ],
       [
         24,
-        "test::counter_contract::EventCounterIncreasedIntoEvent::into"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterIncreasedIntoEvent::into"
       ],
       [
         25,
-        "test::counter_contract::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::EventIsEvent::append_keys_and_data"
       ],
       [
         26,
-        "test::counter_contract::EventCounterDecreasedIntoEvent::into"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::EventCounterDecreasedIntoEvent::into"
       ],
       [
         27,
@@ -2409,27 +2409,27 @@
       ],
       [
         28,
-        "core::starknet::storage::StorageMemberAccessImpl::<test::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, test::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, test::upgradable::current_implementation::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberStateDrop>::read"
       ],
       [
         29,
-        "test::counter_contract::HasComponentImpl_upgradable::emit::<test::upgradable::ContractUpgraded, test::upgradable::EventContractUpgradedIntoEvent>"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::HasComponentImpl_upgradable::emit::<cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded, cairo_level_tests::contracts::upgradable_counter::upgradable::EventContractUpgradedIntoEvent>"
       ],
       [
         30,
-        "core::starknet::storage::StorageMemberAccessImpl::<test::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, test::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, test::upgradable::current_implementation::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberState, core::starknet::class_hash::ClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreClassHash, cairo_level_tests::contracts::upgradable_counter::upgradable::current_implementation::ComponentMemberStateDrop>::write"
       ],
       [
         31,
-        "test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreasedIsEvent::append_keys_and_data"
       ],
       [
         32,
-        "test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreasedIsEvent::append_keys_and_data"
       ],
       [
         33,
-        "test::upgradable::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::EventIsEvent::append_keys_and_data"
       ],
       [
         34,
@@ -2445,15 +2445,15 @@
       ],
       [
         37,
-        "test::upgradable::EventContractUpgradedIntoEvent::into"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::EventContractUpgradedIntoEvent::into"
       ],
       [
         38,
-        "test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::Event, core::traits::TIntoT::<test::counter_contract::Event>>"
+        "cairo_level_tests::contracts::upgradable_counter::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event, core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>>"
       ],
       [
         39,
-        "test::upgradable::ContractUpgradedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgradedIsEvent::append_keys_and_data"
       ],
       [
         40,
@@ -2461,7 +2461,7 @@
       ],
       [
         41,
-        "core::traits::TIntoT::<test::counter_contract::Event>::into"
+        "core::traits::TIntoT::<cairo_level_tests::contracts::upgradable_counter::counter_contract::Event>::into"
       ],
       [
         42,
@@ -2505,11 +2505,11 @@
     {
       "type": "impl",
       "name": "CounterContract",
-      "interface_name": "test::ICounterContract"
+      "interface_name": "cairo_level_tests::contracts::upgradable_counter::ICounterContract"
     },
     {
       "type": "interface",
-      "name": "test::ICounterContract",
+      "name": "cairo_level_tests::contracts::upgradable_counter::ICounterContract",
       "items": [
         {
           "type": "function",
@@ -2551,11 +2551,11 @@
     {
       "type": "impl",
       "name": "Upgradable",
-      "interface_name": "test::IUpgradable"
+      "interface_name": "cairo_level_tests::contracts::upgradable_counter::IUpgradable"
     },
     {
       "type": "interface",
-      "name": "test::IUpgradable",
+      "name": "cairo_level_tests::contracts::upgradable_counter::IUpgradable",
       "items": [
         {
           "type": "function",
@@ -2583,7 +2583,7 @@
     },
     {
       "type": "event",
-      "name": "test::counter_contract::CounterIncreased",
+      "name": "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased",
       "kind": "struct",
       "members": [
         {
@@ -2595,7 +2595,7 @@
     },
     {
       "type": "event",
-      "name": "test::counter_contract::CounterDecreased",
+      "name": "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased",
       "kind": "struct",
       "members": [
         {
@@ -2607,7 +2607,7 @@
     },
     {
       "type": "event",
-      "name": "test::upgradable::ContractUpgraded",
+      "name": "cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded",
       "kind": "struct",
       "members": [
         {
@@ -2624,34 +2624,34 @@
     },
     {
       "type": "event",
-      "name": "test::upgradable::Event",
+      "name": "cairo_level_tests::contracts::upgradable_counter::upgradable::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "ContractUpgraded",
-          "type": "test::upgradable::ContractUpgraded",
+          "type": "cairo_level_tests::contracts::upgradable_counter::upgradable::ContractUpgraded",
           "kind": "nested"
         }
       ]
     },
     {
       "type": "event",
-      "name": "test::counter_contract::Event",
+      "name": "cairo_level_tests::contracts::upgradable_counter::counter_contract::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "CounterIncreased",
-          "type": "test::counter_contract::CounterIncreased",
+          "type": "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterIncreased",
           "kind": "nested"
         },
         {
           "name": "CounterDecreased",
-          "type": "test::counter_contract::CounterDecreased",
+          "type": "cairo_level_tests::contracts::upgradable_counter::counter_contract::CounterDecreased",
           "kind": "nested"
         },
         {
           "name": "UpgradableEvent",
-          "type": "test::upgradable::Event",
+          "type": "cairo_level_tests::contracts::upgradable_counter::upgradable::Event",
           "kind": "nested"
         }
       ]
