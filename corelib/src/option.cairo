@@ -74,9 +74,9 @@ impl IntoOptionFromOptionImpl<T, S, +Into<T, S>> of Into<Option<T>, Option<S>> {
         }
     }
 }
-impl TryIntoOptionFromOptionImpl<T, S, +TryInto<T, S>> of Into<Option<T>, Option<S>> {
+impl TryIntoOptionFromOptionImpl<T, S, +TryInto<T, S>> of TryInto<Option<T>, S> {
     #[inline]
-    fn into(self: Option<T>) -> Option<S> {
+    fn try_into(self: Option<T>) -> Option<S> {
         match self {
             Option::Some(t) => t.try_into(),
             Option::None => Option::None,
