@@ -59,3 +59,9 @@ impl OptionTraitImpl<T> of OptionTrait<T> {
         }
     }
 }
+impl IntoOptionImpl<T> of Into<T, Option<T>> {
+    #[inline]
+    fn into(self: T) -> Option<T> {
+        Option::<T>::Some(self)
+    } 
+}
