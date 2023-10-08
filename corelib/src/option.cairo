@@ -1,7 +1,6 @@
 use array::ArrayTrait;
 use serde::Serde;
 use array::SpanTrait;
-use traits::TryInto;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum Option<T> {
