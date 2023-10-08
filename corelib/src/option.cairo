@@ -1,6 +1,7 @@
 use array::ArrayTrait;
 use serde::Serde;
 use array::SpanTrait;
+use traits::TryInto;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 enum Option<T> {
@@ -63,5 +64,23 @@ impl IntoOptionImpl<T> of Into<T, Option<T>> {
     #[inline]
     fn into(self: T) -> Option<T> {
         Option::<T>::Some(self)
+    }
+}
+impl IntoOptionFromOptionImpl<T, S, +Into<T, S>> of Into<Option<T>, Option<S>> {
+    #[inline]
+    fn into(self: Option<T>) -> Option<S> {
+        match self {
+            Option::Some(t) => Option::Some(t.into()),
+            Option::None => Option::None,
+        }
+    }
+}
+impl TryIntoOptionFromOptionImpl<T, S, +TryInto<T, S>> of Into<Option<T>, Option<S>> {
+    #[inline]
+    fn into(self: Option<T>) -> Option<S> {
+        match self {
+            Option::Some(t) => t.try_into(),
+            Option::None => Option::None,
+        }
     }
 }
