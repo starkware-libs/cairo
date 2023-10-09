@@ -17,6 +17,7 @@ extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic
 trait NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T;
     fn new(value: T) -> Nullable<T>;
+    fn is_null<+Drop<T>>(self: Nullable<T>) -> bool;
 }
 
 impl NullableImpl<T> of NullableTrait<T> {
@@ -28,6 +29,12 @@ impl NullableImpl<T> of NullableTrait<T> {
     }
     fn new(value: T) -> Nullable<T> {
         nullable_from_box(BoxTrait::new(value))
+    }
+    fn is_null<+Drop<T>>(self: Nullable<T>) -> bool {
+        match match_nullable(self) {
+            FromNullableResult::Null => true,
+            FromNullableResult::NotNull(_) => false,
+        }
     }
 }
 
