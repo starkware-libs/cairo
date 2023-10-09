@@ -33,14 +33,15 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar {
-        ty: sierra::ids::ConcreteTypeId,
-    },
+    TempVar { ty: sierra::ids::ConcreteTypeId },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred {
-        info: DeferredVariableInfo,
-    },
+    Deferred { info: DeferredVariableInfo },
+    /// The variable is a local variable.
     LocalVar,
+    /// The variable was consumed and can no longer be used.
+    /// This state is used because there is no efficent way of removing variables
+    /// from [VariablesState::variables] without effecting thier order.
+    Removed,
 }
 
 /// Represents information known about the state of the variables.
@@ -124,6 +125,9 @@ impl VariablesState {
                         VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
                     VarState::LocalVar => VarState::LocalVar,
+                    VarState::Removed => {
+                        unreachable!("Unexpected var state.")
+                    }
                 }
             }
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
@@ -141,6 +145,18 @@ impl VariablesState {
     /// This is called where the change in the value of `ap` is not known at compile time.
     fn clear_known_stack(&mut self) {
         self.known_stack.clear();
+    }
+
+    /// Pops the state of `var` from self.variables and returns it.
+    pub fn pop_var_state(&mut self, var: &sierra::ids::VarId) -> VarState {
+        match self.variables.entry(var.clone()) {
+            indexmap::map::Entry::Occupied(mut e) => {
+                std::mem::replace(e.get_mut(), VarState::Removed)
+            }
+            indexmap::map::Entry::Vacant(_) => {
+                unreachable!("Unknown state for variable `{var}`.")
+            }
+        }
     }
 }
 
@@ -160,7 +176,15 @@ pub fn merge_optional_states(
             // Merge the lists of deferred variables.
             let mut variables = OrderedHashMap::default();
             for (var, var_state_a) in a.variables {
+                if matches!(var_state_a, VarState::Removed) {
+                    continue;
+                }
+
                 if let Some(var_state_b) = b.variables.get(&var) {
+                    if matches!(var_state_b, VarState::Removed) {
+                        continue;
+                    }
+
                     assert_eq!(
                         var_state_a, *var_state_b,
                         "Internal compiler error: Found different deferred variables."
