@@ -228,10 +228,10 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_add_const: bool,
         allow_const: bool,
     ) -> VarState {
-        let var_state = state.variables.shift_remove(arg).unwrap_or_else(|| {
-            unreachable!("Unknown state for variable `{arg}`.");
-        });
-        match &var_state {
+        match state.pop_var_state(arg) {
+            VarState::Removed => {
+                unreachable!("`{arg}` was previously moved.");
+            }
             VarState::Deferred { info: deferred_info } => {
                 // If a deferred argument was marked as a local variable, then store
                 // it. This is important in case an alias of the variable is used later
@@ -268,14 +268,14 @@ impl<'a> AddStoreVariableStatements<'a> {
                             }
                         }
                     };
-                    var_state
+                    VarState::Deferred { info: deferred_info }
                 }
             }
             VarState::TempVar { ty } => {
-                if self.store_var_as_local(arg, ty) {
+                if self.store_var_as_local(arg, &ty) {
                     return VarState::LocalVar;
                 }
-                var_state
+                VarState::TempVar { ty }
             }
             VarState::LocalVar => VarState::LocalVar,
         }
@@ -327,11 +327,7 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let (is_on_stack, var_state) = match state
-                .variables
-                .shift_remove(var)
-                .unwrap_or_else(|| panic!("Unkonwn state for {var}."))
-            {
+            let (is_on_stack, var_state) = match state.pop_var_state(var) {
                 VarState::Deferred { info: deferred_info } => {
                     if let DeferredVariableKind::Const = deferred_info.kind {
                         // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
@@ -417,7 +413,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                     }
                 }
-                VarState::LocalVar => {}
+                VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
@@ -446,7 +442,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_local(var, &uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
-                    VarState::LocalVar => {}
+                    VarState::LocalVar | VarState::Removed => {}
                 };
             }
         }
