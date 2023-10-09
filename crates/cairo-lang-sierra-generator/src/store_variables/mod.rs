@@ -228,10 +228,18 @@ impl<'a> AddStoreVariableStatements<'a> {
         allow_add_const: bool,
         allow_const: bool,
     ) -> VarState {
-        let var_state = state.variables.shift_remove(arg).unwrap_or_else(|| {
-            unreachable!("Unknown state for variable `{arg}`.");
-        });
+        let var_state = match state.variables.entry(arg.clone()) {
+            indexmap::map::Entry::Occupied(mut e) => {
+                std::mem::replace(e.get_mut(), VarState::Moved)
+            }
+            indexmap::map::Entry::Vacant(_) => {
+                unreachable!("Unknown state for variable `{arg}`.")
+            }
+        };
         match &var_state {
+            VarState::Moved => {
+                unreachable!("`{arg}` was previously moved.");
+            }
             VarState::Deferred { info: deferred_info } => {
                 // If a deferred argument was marked as a local variable, then store
                 // it. This is important in case an alias of the variable is used later
@@ -327,11 +335,16 @@ impl<'a> AddStoreVariableStatements<'a> {
         for (i, pre_sierra::PushValue { var, var_on_stack, ty, dup }) in
             push_values.iter().enumerate()
         {
-            let (is_on_stack, var_state) = match state
-                .variables
-                .shift_remove(var)
-                .unwrap_or_else(|| panic!("Unkonwn state for {var}."))
-            {
+            let var_state = match state.variables.entry(var.clone()) {
+                indexmap::map::Entry::Occupied(mut e) => {
+                    std::mem::replace(e.get_mut(), VarState::Moved)
+                }
+                indexmap::map::Entry::Vacant(_) => {
+                    unreachable!("Unknown state for variable `{var}`.")
+                }
+            };
+
+            let (is_on_stack, var_state) = match var_state {
                 VarState::Deferred { info: deferred_info } => {
                     if let DeferredVariableKind::Const = deferred_info.kind {
                         // TODO(orizi): This is an ugly fix for case of literals. Fix properly.
@@ -417,7 +430,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                     }
                 }
-                VarState::LocalVar => {}
+                VarState::LocalVar | VarState::Moved => {}
             }
         }
     }
@@ -446,7 +459,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_local(var, &uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
-                    VarState::LocalVar => {}
+                    VarState::LocalVar | VarState::Moved => {}
                 };
             }
         }

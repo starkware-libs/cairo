@@ -33,14 +33,13 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar {
-        ty: sierra::ids::ConcreteTypeId,
-    },
+    TempVar { ty: sierra::ids::ConcreteTypeId },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred {
-        info: DeferredVariableInfo,
-    },
+    Deferred { info: DeferredVariableInfo },
+    /// The variable is a local variable.
     LocalVar,
+    /// The variable was previously moved and may not be used.
+    Moved,
 }
 
 /// Represents information known about the state of the variables.
@@ -124,6 +123,9 @@ impl VariablesState {
                         VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
                     VarState::LocalVar => VarState::LocalVar,
+                    VarState::Moved => {
+                        unreachable!("Unexpected var state.")
+                    }
                 }
             }
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
@@ -160,6 +162,10 @@ pub fn merge_optional_states(
             // Merge the lists of deferred variables.
             let mut variables = OrderedHashMap::default();
             for (var, var_state_a) in a.variables {
+                if matches!(var_state_a, VarState::Moved) {
+                    continue;
+                }
+
                 if let Some(var_state_b) = b.variables.get(&var) {
                     assert_eq!(
                         var_state_a, *var_state_b,
