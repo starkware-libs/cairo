@@ -1,70 +1,28 @@
 use starknet::ContractAddress;
-
-#[starknet::interface]
-trait TransferTrait<TContractState> {
-    fn owner(self: @TContractState) -> ContractAddress;
-    fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress);
-}
-
-#[starknet::component]
-mod ownable {
-    use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        owner: ContractAddress,
-    }
-
-    #[embeddable_as(Transfer)]
-    impl TransferImpl<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::TransferTrait<ComponentState<TContractState>> {
-        fn owner(self: @ComponentState<TContractState>) -> ContractAddress {
-            self.owner.read()
-        }
-
-        fn transfer_ownership(
-            ref self: ComponentState<TContractState>, new_owner: ContractAddress
-        ) {
-            self.validate_ownership();
-            self.owner.write(new_owner);
-        }
-    }
-
-    #[generate_trait]
-    impl OwnableHelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
-    > of OwnableHelperTrait<TContractState, X> {
-        fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress) {
-            self.owner.write(owner);
-        }
-        fn validate_ownership(self: @ComponentState<TContractState>) {
-            assert(self.owner.read() == starknet::get_caller_address(), 'Wrong owner.');
-        }
-    }
-}
-
 #[starknet::contract]
 mod ownable_balance {
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        ownable: super::ownable::Storage,
+        ownable: ownable_comp::Storage,
         balance: u128,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Ownable: super::ownable::Event,
+        Ownable: ownable_comp::Event,
     }
 
-    component!(path: super::ownable, storage: ownable, event: Ownable);
+    component!(path: ownable_comp, storage: ownable, event: Ownable);
 
     #[abi(embed_v0)]
-    impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
+    impl OwnershipTransfer = ownable_comp::Transfer<ContractState>;
 
-    impl OwnershipHelper = super::ownable::OwnableHelperImpl<ContractState>;
+    impl OwnershipHelper = ownable_comp::OwnableHelperImpl<ContractState>;
 
     #[abi(per_item)]
     #[generate_trait]
