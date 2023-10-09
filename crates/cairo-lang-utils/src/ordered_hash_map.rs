@@ -187,7 +187,7 @@ where
     K: Serialize + Deserialize<'de> + Hash + Eq,
     V: Serialize + Deserialize<'de>,
 {
-    v.iter().map(|(k, v)| (k.clone(), v.clone())).collect_vec().serialize(serializer)
+    v.iter().collect_vec().serialize(serializer)
 }
 
 pub fn deserialize_ordered_hashmap_vec<'de, K, V, D>(

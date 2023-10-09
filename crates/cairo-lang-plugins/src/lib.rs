@@ -6,6 +6,8 @@ use cairo_lang_defs::plugin::MacroPlugin;
 use crate::plugins::{ConfigPlugin, DerivePlugin, GenerateTraitPlugin, PanicablePlugin};
 
 pub mod plugins;
+#[cfg(any(feature = "testing", test))]
+pub mod test_utils;
 
 #[cfg(test)]
 mod test;

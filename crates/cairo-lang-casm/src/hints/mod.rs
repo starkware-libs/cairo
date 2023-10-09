@@ -224,6 +224,34 @@ pub enum CoreHint {
     /// Returns an address with `size` free locations afterwards.
     #[codec(index = 26)]
     AllocConstantSize { size: ResOperand, dst: CellRef },
+    /// Provides the inverse of b (represented by 2 128-bit limbs) modulo n (represented by 2
+    /// 128-bit limbs), or a proof that b has no inverse.
+    ///
+    /// In case b has an inverse: Returns `r` and `k` such that:
+    ///   * `r = 1 / b (mod n)`
+    ///   * `k = (r * b - 1) / n`
+    ///   * `g0_or_no_inv = 0`
+    ///
+    /// In case b has no inverse: Returns `g`, `s`, and `t`, such that:
+    /// `g > 1`
+    /// `g == 2 || g % 2 == 1` (in particular, `g0_or_no_inv = g0 != 0`)
+    /// `g * s = b`
+    /// `g * t = n`
+    ///
+    /// In all cases - `name`0 is the least significant limb.
+    #[codec(index = 27)]
+    U256InvModN {
+        b0: ResOperand,
+        b1: ResOperand,
+        n0: ResOperand,
+        n1: ResOperand,
+        g0_or_no_inv: CellRef,
+        g1_option: CellRef,
+        s_or_r0: CellRef,
+        s_or_r1: CellRef,
+        t_or_k0: CellRef,
+        t_or_k1: CellRef,
+    },
 }
 
 /// Represents a deprecated hint which is kept for backward compatibility of previously deployed
@@ -679,6 +707,50 @@ impl PythonicHint for CoreHint {
                         __boxed_segment += {}
                     ",
                     ResOperandAsIntegerFormatter(size)
+                )
+            }
+            CoreHint::U256InvModN {
+                b0,
+                b1,
+                n0,
+                n1,
+                g0_or_no_inv,
+                g1_option,
+                s_or_r0,
+                s_or_r1,
+                t_or_k0,
+                t_or_k1,
+            } => {
+                let [b0, b1, n0, n1] = [b0, b1, n0, n1].map(ResOperandAsIntegerFormatter);
+                formatdoc!(
+                    "
+
+                        from starkware.python.math_utils import igcdex
+
+                        b = {b0} + ({b1} << 128)
+                        n = {n0} + ({n1} << 128)
+
+                        (_, r, g) = igcdex(n, b)
+                        if g != 1:
+                            if g % 2 == 0:
+                                g = 2
+                            s = b // g
+                            t = n // g
+                            memory{g0_or_no_inv} = g & 0xffffffffffffffffffffffffffffffff
+                            memory{g1_option} = g >> 128
+                            memory{s_or_r0} = s & 0xffffffffffffffffffffffffffffffff
+                            memory{s_or_r1} = s >> 128
+                            memory{t_or_k0} = t & 0xffffffffffffffffffffffffffffffff
+                            memory{t_or_k1} = t >> 128
+                        else:
+                            r %= n
+                            k = (r * b - 1) // n
+                            memory{g0_or_no_inv} = 0
+                            memory{s_or_r0} = r & 0xffffffffffffffffffffffffffffffff
+                            memory{s_or_r1} = r >> 128
+                            memory{t_or_k0} = k & 0xffffffffffffffffffffffffffffffff
+                            memory{t_or_k1} = k >> 128
+                    "
                 )
             }
         }
