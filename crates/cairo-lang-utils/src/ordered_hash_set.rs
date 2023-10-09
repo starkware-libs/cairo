@@ -96,7 +96,7 @@ impl<Key: Hash + Eq> OrderedHashSet<Key> {
 }
 
 impl<Key: Hash + Eq, S: BuildHasher> OrderedHashSet<Key, S> {
-    /// Return an iterator over all values that are in `self` or `other`.
+    /// Return an iterator over all values that are either in `self` or `other`.
     ///
     /// Values from `self` are produced in their original order, followed by
     /// values that are unique to `other` in their original order.

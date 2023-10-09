@@ -778,9 +778,10 @@ impl MovableNode {
         }
     }
 }
-impl PartialOrd for MovableNode {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(match (self, other) {
+
+impl Ord for MovableNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match (self, other) {
             (MovableNode::Immovable, MovableNode::Immovable) => Ordering::Equal,
             (MovableNode::ItemModule(a), MovableNode::ItemModule(b))
             | (MovableNode::ItemUse(a), MovableNode::ItemUse(b)) => a.cmp(b),
@@ -790,11 +791,12 @@ impl PartialOrd for MovableNode {
             (MovableNode::Immovable, _) | (MovableNode::ItemUse(_), MovableNode::ItemModule(_)) => {
                 Ordering::Greater
             }
-        })
+        }
     }
 }
-impl Ord for MovableNode {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+
+impl PartialOrd for MovableNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
