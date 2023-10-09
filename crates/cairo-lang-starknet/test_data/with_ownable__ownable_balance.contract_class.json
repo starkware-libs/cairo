@@ -59,11 +59,11 @@
     "0x13",
     "0x145068ba3432c23eddd89dd45fe638a782885652788ad82ad6690857df46db5",
     "0x14",
-    "0x3b85fcac5868f37d0c4a4c55a4217aae685d2f01802e764d39bfbf12cddbe2",
+    "0x224cedce8eeba08bb7ffe9b694a67d7acd2e4065d8aa72cc9651bcad5b6dc36",
     "0x800000000000000f00000000000000000000000000000003",
     "0x16",
     "0x17",
-    "0x537e6d58ed0d2f1a18224a233cfa7174a48177190282406ad9db2c6952bbc8",
+    "0x3142d0ae18cf6c3ca552db57b2915b973ce1049c54d4ba8e5ab41d17867296b",
     "0x18",
     "0x101dc0399934cc08fa0d6f6f2daead4e4a38cabeea1c743e1fc28d2d6e58e99",
     "0x53746f7261676541646472657373",
@@ -74,24 +74,24 @@
     "0x1e",
     "0x53746f726167654261736541646472657373",
     "0x800000000000000f00000000000000000000000000000002",
-    "0x3c78beae1df1c6a12dcb014918c59ae5f442d03bb5d3378187e264e919cf9f3",
+    "0x107f44c87c8f0edd88ada40098a76518f5ca1ed2e4c2096a914582eee1b362d",
     "0x21",
-    "0x5cb472d11f9efe1ba138e35b04e6599c6bfd18907361c0114785553205c3cd",
+    "0x15fb9d4d6789ecdbaf03538386da747ba05850494dfb904c9c3ae27fa953664",
     "0x22",
     "0x800000000000000700000000000000000000000000000003",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
-    "0x161dc6fce7f44300e1d12afe1fc73a4d292b4c2582bacb2cd5dd3c5443df425",
+    "0xe96ebebf1f16f5b43715d929df5feb6c27c90325a754daef0e60f71c1f9e03",
     "0x25",
-    "0x38fb68d5cacb87ac4e0cedd04e05a7ea1c280285916e630abb7c6d598254bdc",
+    "0x22df026d62837ad7e53902516aaa1b9d9610ce92857b26a06eef5a0e5bbef81",
     "0x26",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x28",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
     "0x3e1934b18d91949ab9afdbdd1866a30ccca06c2b1e6581582c6b27f8b4f6555",
     "0x2b",
-    "0x41bc00a28a6270ac5f19360bd57f3dabcf1fe547cf44ec6a2f5f970763652b",
+    "0x25f8f5c5e967305995e3d95f2bf23a4bacb7d06b9d543fb8b1aae782ef4b2a",
     "0x2d",
-    "0x2d1e50d195877fbbc0ce9dc122248292abe4c8c758684ae1be53fd69c4884c6",
+    "0x2aff2da1d308b36f57e43c290b4e24dcae019e8413c508b4191571de51b67ea",
     "0x2e",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
@@ -994,7 +994,7 @@
       ],
       [
         22,
-        "test::ownable::owner::ComponentMemberState"
+        "cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState"
       ],
       [
         23,
@@ -1002,11 +1002,11 @@
       ],
       [
         24,
-        "Tuple<test::ownable::owner::ComponentMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, Unit>"
       ],
       [
         25,
-        "core::panics::PanicResult::<(test::ownable::owner::ComponentMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, ())>"
       ],
       [
         26,
@@ -1038,15 +1038,15 @@
       ],
       [
         33,
-        "test::ownable::ComponentState::<test::ownable_balance::ContractState>"
+        "cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         34,
-        "Tuple<test::ownable::ComponentState::<test::ownable_balance::ContractState>, Unit>"
+        "Tuple<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>"
       ],
       [
         35,
-        "core::panics::PanicResult::<(test::ownable::ComponentState::<test::ownable_balance::ContractState>, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>"
       ],
       [
         36,
@@ -1054,15 +1054,15 @@
       ],
       [
         37,
-        "test::ownable_balance::balance::ContractMemberState"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState"
       ],
       [
         38,
-        "Tuple<test::ownable_balance::balance::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>"
       ],
       [
         39,
-        "core::panics::PanicResult::<(test::ownable_balance::balance::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>"
       ],
       [
         40,
@@ -1086,15 +1086,15 @@
       ],
       [
         45,
-        "test::ownable_balance::ContractState"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState"
       ],
       [
         46,
-        "Tuple<test::ownable_balance::ContractState, Unit>"
+        "Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>"
       ],
       [
         47,
-        "core::panics::PanicResult::<(test::ownable_balance::ContractState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>"
       ],
       [
         48,
@@ -1244,35 +1244,35 @@
       ],
       [
         25,
-        "struct_construct<test::ownable::owner::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         26,
-        "struct_construct<test::ownable::ComponentState::<test::ownable_balance::ContractState>>"
+        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>"
       ],
       [
         27,
-        "struct_construct<test::ownable_balance::balance::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
       ],
       [
         28,
-        "struct_construct<test::ownable_balance::ContractState>"
+        "struct_construct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         29,
-        "snapshot_take<test::ownable_balance::ContractState>"
+        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         30,
-        "drop<test::ownable_balance::ContractState>"
+        "drop<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         31,
-        "store_temp<test::ownable_balance::ContractState>"
+        "store_temp<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         32,
-        "function_call<user@test::ownable_balance::OwnableBalanceImpl::get_balance>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::get_balance>"
       ],
       [
         33,
@@ -1388,15 +1388,15 @@
       ],
       [
         61,
-        "function_call<user@test::ownable_balance::OwnableBalanceImpl::set_balance>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::set_balance>"
       ],
       [
         62,
-        "enum_match<core::panics::PanicResult::<(test::ownable_balance::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>"
       ],
       [
         63,
-        "drop<Tuple<test::ownable_balance::ContractState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>"
       ],
       [
         64,
@@ -1412,7 +1412,7 @@
       ],
       [
         67,
-        "function_call<user@test::ownable::Transfer::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop>::owner>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::owner>"
       ],
       [
         68,
@@ -1456,11 +1456,11 @@
       ],
       [
         78,
-        "function_call<user@test::ownable::Transfer::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop>::transfer_ownership>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::transfer_ownership>"
       ],
       [
         79,
-        "function_call<user@test::ownable_balance::OwnableBalanceImpl::constructor>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::constructor>"
       ],
       [
         80,
@@ -1468,19 +1468,19 @@
       ],
       [
         81,
-        "struct_deconstruct<test::ownable_balance::ContractState>"
+        "struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>"
       ],
       [
         82,
-        "drop<test::ownable::ComponentState::<test::ownable_balance::ContractState>>"
+        "drop<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>"
       ],
       [
         83,
-        "store_temp<test::ownable_balance::balance::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
       ],
       [
         84,
-        "function_call<user@test::ownable_balance::balance::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read>"
       ],
       [
         85,
@@ -1524,15 +1524,15 @@
       ],
       [
         95,
-        "snapshot_take<test::ownable::ComponentState::<test::ownable_balance::ContractState>>"
+        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>"
       ],
       [
         96,
-        "store_temp<test::ownable::ComponentState::<test::ownable_balance::ContractState>>"
+        "store_temp<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>"
       ],
       [
         97,
-        "function_call<user@test::ownable::OwnableHelperImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::validate_ownership>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::validate_ownership>"
       ],
       [
         98,
@@ -1544,43 +1544,43 @@
       ],
       [
         100,
-        "function_call<user@test::ownable_balance::balance::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write>"
       ],
       [
         101,
-        "enum_match<core::panics::PanicResult::<(test::ownable_balance::balance::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>"
       ],
       [
         102,
-        "struct_deconstruct<Tuple<test::ownable_balance::balance::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>"
       ],
       [
         103,
-        "struct_construct<Tuple<test::ownable_balance::ContractState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, Unit>>"
       ],
       [
         104,
-        "enum_init<core::panics::PanicResult::<(test::ownable_balance::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 0>"
       ],
       [
         105,
-        "store_temp<core::panics::PanicResult::<(test::ownable_balance::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>>"
       ],
       [
         106,
-        "enum_init<core::panics::PanicResult::<(test::ownable_balance::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, ())>, 1>"
       ],
       [
         107,
-        "drop<test::ownable_balance::balance::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
       ],
       [
         108,
-        "function_call<user@test::ownable_balance::HasComponentImpl_ownable::get_component>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable::get_component>"
       ],
       [
         109,
-        "function_call<user@test::ownable::TransferImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::owner>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::owner>"
       ],
       [
         110,
@@ -1648,23 +1648,23 @@
       ],
       [
         126,
-        "function_call<user@test::ownable::TransferImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::transfer_ownership>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::transfer_ownership>"
       ],
       [
         127,
-        "enum_match<core::panics::PanicResult::<(test::ownable::ComponentState::<test::ownable_balance::ContractState>, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>"
       ],
       [
         128,
-        "struct_deconstruct<Tuple<test::ownable::ComponentState::<test::ownable_balance::ContractState>, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>"
       ],
       [
         129,
-        "function_call<user@test::ownable::OwnableHelperImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::init_ownable>"
+        "function_call<user@cairo_level_tests::contracts::with_ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::init_ownable>"
       ],
       [
         130,
-        "drop<Tuple<test::ownable::ComponentState::<test::ownable_balance::ContractState>, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>"
       ],
       [
         131,
@@ -1696,15 +1696,15 @@
       ],
       [
         138,
-        "struct_deconstruct<test::ownable::ComponentState::<test::ownable_balance::ContractState>>"
+        "struct_deconstruct<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>>"
       ],
       [
         139,
-        "store_temp<test::ownable::owner::ComponentMemberState>"
+        "store_temp<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         140,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, test::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::ownable::owner::ComponentMemberStateDrop>::read>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberStateDrop>::read>"
       ],
       [
         141,
@@ -1752,7 +1752,7 @@
       ],
       [
         152,
-        "snapshot_take<test::ownable_balance::balance::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState>"
       ],
       [
         153,
@@ -1788,19 +1788,19 @@
       ],
       [
         161,
-        "struct_construct<Tuple<test::ownable_balance::balance::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, Unit>>"
       ],
       [
         162,
-        "enum_init<core::panics::PanicResult::<(test::ownable_balance::balance::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 0>"
       ],
       [
         163,
-        "store_temp<core::panics::PanicResult::<(test::ownable_balance::balance::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>>"
       ],
       [
         164,
-        "enum_init<core::panics::PanicResult::<(test::ownable_balance::balance::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable_balance::balance::ContractMemberState, ())>, 1>"
       ],
       [
         165,
@@ -1816,31 +1816,31 @@
       ],
       [
         168,
-        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<test::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, test::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::ownable::owner::ComponentMemberStateDrop>::write>"
+        "function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberStateDrop>::write>"
       ],
       [
         169,
-        "enum_match<core::panics::PanicResult::<(test::ownable::owner::ComponentMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, ())>>"
       ],
       [
         170,
-        "struct_deconstruct<Tuple<test::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, Unit>>"
       ],
       [
         171,
-        "struct_construct<Tuple<test::ownable::ComponentState::<test::ownable_balance::ContractState>, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, Unit>>"
       ],
       [
         172,
-        "enum_init<core::panics::PanicResult::<(test::ownable::ComponentState::<test::ownable_balance::ContractState>, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 0>"
       ],
       [
         173,
-        "store_temp<core::panics::PanicResult::<(test::ownable::ComponentState::<test::ownable_balance::ContractState>, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>>"
       ],
       [
         174,
-        "enum_init<core::panics::PanicResult::<(test::ownable::ComponentState::<test::ownable_balance::ContractState>, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::ComponentState::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState>, ())>, 1>"
       ],
       [
         175,
@@ -1880,7 +1880,7 @@
       ],
       [
         184,
-        "drop<test::ownable::owner::ComponentMemberState>"
+        "drop<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         185,
@@ -1940,23 +1940,23 @@
       ],
       [
         199,
-        "snapshot_take<test::ownable::owner::ComponentMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState>"
       ],
       [
         200,
-        "struct_construct<Tuple<test::ownable::owner::ComponentMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, Unit>>"
       ],
       [
         201,
-        "enum_init<core::panics::PanicResult::<(test::ownable::owner::ComponentMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, ())>, 0>"
       ],
       [
         202,
-        "store_temp<core::panics::PanicResult::<(test::ownable::owner::ComponentMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, ())>>"
       ],
       [
         203,
-        "enum_init<core::panics::PanicResult::<(test::ownable::owner::ComponentMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, ())>, 1>"
       ],
       [
         204,
@@ -2046,27 +2046,27 @@
     "user_func_names": [
       [
         0,
-        "test::ownable_balance::__wrapper__OwnableBalanceImpl__get_balance"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__get_balance"
       ],
       [
         1,
-        "test::ownable_balance::__wrapper__OwnableBalanceImpl__set_balance"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__set_balance"
       ],
       [
         2,
-        "test::ownable::__wrapper__Transfer__owner::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop, test::ownable_balance::ContractStateTransfer>"
+        "cairo_level_tests::contracts::with_ownable::ownable::__wrapper__Transfer__owner::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>"
       ],
       [
         3,
-        "test::ownable::__wrapper__Transfer__transfer_ownership::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop, test::ownable_balance::ContractStateTransfer>"
+        "cairo_level_tests::contracts::with_ownable::ownable::__wrapper__Transfer__transfer_ownership::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateTransfer>"
       ],
       [
         4,
-        "test::ownable_balance::__wrapper__OwnableBalanceImpl__constructor"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::__wrapper__OwnableBalanceImpl__constructor"
       ],
       [
         5,
-        "test::ownable_balance::OwnableBalanceImpl::get_balance"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::get_balance"
       ],
       [
         6,
@@ -2074,11 +2074,11 @@
       ],
       [
         7,
-        "test::ownable_balance::OwnableBalanceImpl::set_balance"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::set_balance"
       ],
       [
         8,
-        "test::ownable::Transfer::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop>::owner"
+        "cairo_level_tests::contracts::with_ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::owner"
       ],
       [
         9,
@@ -2090,31 +2090,31 @@
       ],
       [
         11,
-        "test::ownable::Transfer::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable, test::ownable_balance::ContractStateDrop>::transfer_ownership"
+        "cairo_level_tests::contracts::with_ownable::ownable::Transfer::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable, cairo_level_tests::contracts::with_ownable::ownable_balance::ContractStateDrop>::transfer_ownership"
       ],
       [
         12,
-        "test::ownable_balance::OwnableBalanceImpl::constructor"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::OwnableBalanceImpl::constructor"
       ],
       [
         13,
-        "test::ownable_balance::balance::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::read"
       ],
       [
         14,
-        "test::ownable::OwnableHelperImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::validate_ownership"
+        "cairo_level_tests::contracts::with_ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::validate_ownership"
       ],
       [
         15,
-        "test::ownable_balance::balance::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::balance::InternalContractMemberStateImpl::write"
       ],
       [
         16,
-        "test::ownable_balance::HasComponentImpl_ownable::get_component"
+        "cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable::get_component"
       ],
       [
         17,
-        "test::ownable::TransferImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::owner"
+        "cairo_level_tests::contracts::with_ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::owner"
       ],
       [
         18,
@@ -2126,11 +2126,11 @@
       ],
       [
         20,
-        "test::ownable::TransferImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::transfer_ownership"
+        "cairo_level_tests::contracts::with_ownable::ownable::TransferImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::transfer_ownership"
       ],
       [
         21,
-        "test::ownable::OwnableHelperImpl::<test::ownable_balance::ContractState, test::ownable_balance::HasComponentImpl_ownable>::init_ownable"
+        "cairo_level_tests::contracts::with_ownable::ownable::OwnableHelperImpl::<cairo_level_tests::contracts::with_ownable::ownable_balance::ContractState, cairo_level_tests::contracts::with_ownable::ownable_balance::HasComponentImpl_ownable>::init_ownable"
       ],
       [
         22,
@@ -2142,7 +2142,7 @@
       ],
       [
         24,
-        "core::starknet::storage::StorageMemberAccessImpl::<test::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, test::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::ownable::owner::ComponentMemberStateDrop>::read"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberStateDrop>::read"
       ],
       [
         25,
@@ -2154,7 +2154,7 @@
       ],
       [
         27,
-        "core::starknet::storage::StorageMemberAccessImpl::<test::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, test::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, test::ownable::owner::ComponentMemberStateDrop>::write"
+        "core::starknet::storage::StorageMemberAccessImpl::<cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberState, core::starknet::contract_address::ContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::StorageComponentMemberStateImpl, core::starknet::storage_access::StoreContractAddress, cairo_level_tests::contracts::with_ownable::ownable::owner::ComponentMemberStateDrop>::write"
       ],
       [
         28,
@@ -2247,11 +2247,11 @@
     {
       "type": "impl",
       "name": "OwnershipTransfer",
-      "interface_name": "test::TransferTrait"
+      "interface_name": "cairo_level_tests::contracts::with_ownable::TransferTrait"
     },
     {
       "type": "interface",
-      "name": "test::TransferTrait",
+      "name": "cairo_level_tests::contracts::with_ownable::TransferTrait",
       "items": [
         {
           "type": "function",
@@ -2280,18 +2280,18 @@
     },
     {
       "type": "event",
-      "name": "test::ownable::Event",
+      "name": "cairo_level_tests::contracts::with_ownable::ownable::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "test::ownable_balance::Event",
+      "name": "cairo_level_tests::contracts::with_ownable::ownable_balance::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "Ownable",
-          "type": "test::ownable::Event",
+          "type": "cairo_level_tests::contracts::with_ownable::ownable::Event",
           "kind": "nested"
         }
       ]
