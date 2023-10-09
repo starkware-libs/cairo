@@ -46,13 +46,13 @@ pub enum VarState {
 /// Represents information known about the state of the variables.
 /// For example, which variable contains a deferred value and which variable is on the stack.
 #[derive(Clone, Debug, Default)]
-pub struct State {
+pub struct VariablesState {
     /// A map from [sierra::ids::VarId] of to its state.
     pub variables: OrderedHashMap<sierra::ids::VarId, VarState>,
     /// The information known about the top of the stack.
     pub known_stack: KnownStack,
 }
-impl State {
+impl VariablesState {
     /// Registers output variables of a libfunc. See [Self::register_output].
     /// Clears the stack if needed.
     pub fn register_outputs(
@@ -142,23 +142,16 @@ impl State {
     fn clear_known_stack(&mut self) {
         self.known_stack.clear();
     }
-
-    /// Marks `dst` as a rename of `src`.
-    ///
-    /// Updates [Self::known_stack] and [Self::variables] if necessary.
-    pub fn rename_var(&mut self, src: &sierra::ids::VarId, dst: &sierra::ids::VarId) {
-        self.known_stack.clone_if_on_stack(src, dst);
-        if let Some(var_state) = self.variables.get(src) {
-            self.variables.insert(dst.clone(), var_state.clone());
-        }
-    }
 }
 
-/// Merges the information from two [State]s.
+/// Merges the information from two [VariablesState]s.
 /// Used to determine the state at the merge of two code branches.
 ///
 /// If one of the given states is None, the second is returned.
-pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Option<State> {
+pub fn merge_optional_states(
+    a_opt: Option<VariablesState>,
+    b_opt: Option<VariablesState>,
+) -> Option<VariablesState> {
     match (a_opt, b_opt) {
         (None, None) => None,
         (None, Some(b)) => Some(b),
@@ -176,7 +169,10 @@ pub fn merge_optional_states(a_opt: Option<State>, b_opt: Option<State>) -> Opti
                 }
             }
 
-            Some(State { variables, known_stack: a.known_stack.merge_with(&b.known_stack) })
+            Some(VariablesState {
+                variables,
+                known_stack: a.known_stack.merge_with(&b.known_stack),
+            })
         }
     }
 }

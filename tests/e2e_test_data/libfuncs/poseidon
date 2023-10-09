@@ -55,21 +55,21 @@ fn foo(s0: felt252, s1: felt252, s2: felt252) -> felt252 {
 
 //! > casm
 [ap + 0] = 0, ap++;
-[ap + 0] = [fp + -3], ap++;
 [ap + 0] = [fp + -5], ap++;
 [ap + 0] = [fp + -4], ap++;
+[ap + 0] = [fp + -3], ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 [ap + 0] = 0, ap++;
 jmp rel 12 if [ap + -7] != 0;
 ap += 1;
 [ap + 0] = [fp + -6], ap++;
-[ap + 0] = [ap + -5] + [ap + -7], ap++;
+[ap + 0] = [ap + -5] + [ap + -8], ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = [ap + -5], ap++;
 [ap + 0] = 1, ap++;
 jmp rel 13;
-[ap + 0] = [ap + -2] + [ap + -5], ap++;
+[ap + 0] = [ap + -2] + [ap + -6], ap++;
 [ap + -4] = [[fp + -6] + 0];
 [ap + -1] = [[fp + -6] + 1];
 [ap + -2] = [[fp + -6] + 2];
@@ -81,12 +81,12 @@ jmp rel 13;
 jmp rel 12 if [ap + -1] != 0;
 ap += 1;
 [ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6] + [ap + -12], ap++;
+[ap + 0] = [ap + -6] + [ap + -13], ap++;
 [ap + 0] = [ap + -6], ap++;
 [ap + 0] = [ap + -6], ap++;
 [ap + 0] = 1, ap++;
 jmp rel 13;
-[ap + 0] = [ap + -3] + [ap + -10], ap++;
+[ap + 0] = [ap + -3] + [ap + -11], ap++;
 [ap + -5] = [[ap + -6] + 0];
 [ap + -1] = [[ap + -6] + 1];
 [ap + -3] = [[ap + -6] + 2];
@@ -98,12 +98,12 @@ jmp rel 13;
 jmp rel 12 if [ap + -1] != 0;
 ap += 1;
 [ap + 0] = [ap + -6], ap++;
-[ap + 0] = [ap + -6] + [ap + -20], ap++;
+[ap + 0] = [ap + -6] + [ap + -18], ap++;
 [ap + 0] = [ap + -6], ap++;
 [ap + 0] = [ap + -6], ap++;
 [ap + 0] = 1, ap++;
 jmp rel 13;
-[ap + 0] = [ap + -3] + [ap + -18], ap++;
+[ap + 0] = [ap + -3] + [ap + -16], ap++;
 [ap + -5] = [[ap + -6] + 0];
 [ap + -1] = [[ap + -6] + 1];
 [ap + -3] = [[ap + -6] + 2];
@@ -172,9 +172,9 @@ struct_construct<Tuple<felt252, felt252, felt252>>([1], [2], [3]) -> ([10]); // 
 struct_deconstruct<Tuple<felt252, felt252, felt252>>([10]) -> ([11], [12], [13]); // 7
 struct_deconstruct<core::poseidon::HashState>([9]) -> ([14], [15], [16], [17]); // 8
 store_temp<core::bool>([17]) -> ([17]); // 9
-store_temp<felt252>([13]) -> ([13]); // 10
-store_temp<felt252>([11]) -> ([11]); // 11
-store_temp<felt252>([12]) -> ([12]); // 12
+store_temp<felt252>([11]) -> ([11]); // 10
+store_temp<felt252>([12]) -> ([12]); // 11
+store_temp<felt252>([13]) -> ([13]); // 12
 store_temp<felt252>([14]) -> ([14]); // 13
 store_temp<felt252>([15]) -> ([15]); // 14
 store_temp<felt252>([16]) -> ([16]); // 15
