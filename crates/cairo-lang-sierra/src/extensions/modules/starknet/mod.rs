@@ -28,7 +28,7 @@ pub mod testing;
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
-use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
+use self::getter::{GetExecutionInfoTrait, GetExecutionInfoV2Trait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
     ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
@@ -78,6 +78,7 @@ define_libfunc_hierarchy! {
          EmitEvent(EmitEventLibfunc),
          GetBlockHash(GetBlockHashLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
+         GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
          Deploy(DeployLibfunc),
          Keccak(KeccakLibfunc),
          LibraryCall(LibraryCallLibfunc),
