@@ -43,6 +43,11 @@ extern fn get_execution_info_syscall() -> SyscallResult<
     Box<starknet::info::ExecutionInfo>
 > implicits(GasBuiltin, System) nopanic;
 
+// Gets information about the current execution, version 2.
+extern fn get_execution_info_v2_syscall() -> SyscallResult<
+    Box<starknet::info::v2::ExecutionInfo>
+> implicits(GasBuiltin, System) nopanic;
+
 // Calls the requested function in any previously declared class.
 // `class_hash` - The hash of the class you want to use.
 // `function_selector` - A selector for a function within that class.

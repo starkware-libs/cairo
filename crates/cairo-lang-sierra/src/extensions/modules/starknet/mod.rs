@@ -28,7 +28,7 @@ pub mod testing;
 pub mod interoperability;
 use interoperability::{CallContractLibfunc, ContractAddressConstLibfunc, ContractAddressType};
 
-use self::getter::{GetExecutionInfoTrait, GetterLibfunc};
+use self::getter::{GetExecutionInfoTrait, GetExecutionInfoV2Trait, GetterLibfunc};
 use self::interoperability::{
     ClassHashConstLibfunc, ClassHashToFelt252Libfunc, ClassHashTryFromFelt252Trait, ClassHashType,
     ContractAddressToFelt252Libfunc, ContractAddressTryFromFelt252Libfunc, DeployLibfunc,
@@ -78,6 +78,7 @@ define_libfunc_hierarchy! {
          EmitEvent(EmitEventLibfunc),
          GetBlockHash(GetBlockHashLibfunc),
          GetExecutionInfo(GetterLibfunc<GetExecutionInfoTrait>),
+         GetExecutionInfoV2(GetterLibfunc<GetExecutionInfoV2Trait>),
          Deploy(DeployLibfunc),
          Keccak(KeccakLibfunc),
          LibraryCall(LibraryCallLibfunc),
@@ -88,38 +89,36 @@ define_libfunc_hierarchy! {
     }, StarkNetConcreteLibfunc
 }
 
+/// User type for `Span<T>`.
+fn span_ty(
+    context: &dyn SignatureSpecializationContext,
+    wrapped_ty: ConcreteTypeId,
+    wrapped_ty_name: &str,
+) -> Result<ConcreteTypeId, SpecializationError> {
+    context.get_concrete_type(
+        StructType::id(),
+        &[
+            GenericArg::UserType(UserTypeId::from_string(format!(
+                "core::array::Span::<{wrapped_ty_name}>"
+            ))),
+            GenericArg::Type(snapshot_ty(
+                context,
+                context.get_wrapped_concrete_type(ArrayType::id(), wrapped_ty)?,
+            )?),
+        ],
+    )
+}
+
 /// User type for `Span<felt252>`.
 fn felt252_span_ty(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let felt252_array_ty = context.get_wrapped_concrete_type(
-        ArrayType::id(),
-        context.get_concrete_type(Felt252Type::id(), &[])?,
-    )?;
-    context.get_concrete_type(
-        StructType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string("core::array::Span::<core::felt252>")),
-            GenericArg::Type(snapshot_ty(context, felt252_array_ty)?),
-        ],
-    )
+    span_ty(context, context.get_concrete_type(Felt252Type::id(), &[])?, "core::felt252")
 }
 
 /// User type for `Span<u64>`.
 fn u64_span_ty(
     context: &dyn SignatureSpecializationContext,
 ) -> Result<ConcreteTypeId, SpecializationError> {
-    let u64_array_ty = context.get_wrapped_concrete_type(
-        ArrayType::id(),
-        context.get_concrete_type(Uint64Type::id(), &[])?,
-    )?;
-    context.get_concrete_type(
-        StructType::id(),
-        &[
-            GenericArg::UserType(UserTypeId::from_string(
-                "core::array::Span::<core::integer::u64>",
-            )),
-            GenericArg::Type(snapshot_ty(context, u64_array_ty)?),
-        ],
-    )
+    span_ty(context, context.get_concrete_type(Uint64Type::id(), &[])?, "core::integer::u64")
 }
