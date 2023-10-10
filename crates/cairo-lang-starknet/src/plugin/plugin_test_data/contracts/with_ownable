@@ -1,81 +1,29 @@
 //! > Test expansion of a simple starknet contract with ownable component.
 
 //! > test_runner_name
-ExpandContractTestRunner(expect_diagnostics: false)
+ExpandContractFromCrateTestRunner(expect_diagnostics: false)
 
-//! > cairo_code
->>> file: test_data/with_ownable.cairo
+//! > contract_file_name
+cairo_level_tests/contracts/with_ownable.cairo
 
 //! > generated_cairo_code
-lib.cairo:
-
 use starknet::ContractAddress;
-
-#[starknet::interface]
-trait TransferTrait<TContractState> {
-    fn owner(self: @TContractState) -> ContractAddress;
-    fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress);
-}
-
-#[starknet::component]
-mod ownable {
-    use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        owner: ContractAddress,
-    }
-
-    #[embeddable_as(Transfer)]
-    impl TransferImpl<
-        TContractState, impl X: HasComponent<TContractState>
-    > of super::TransferTrait<ComponentState<TContractState>> {
-        fn owner(self: @ComponentState<TContractState>) -> ContractAddress {
-            self.owner.read()
-        }
-
-        fn transfer_ownership(
-            ref self: ComponentState<TContractState>, new_owner: ContractAddress
-        ) {
-            self.validate_ownership();
-            self.owner.write(new_owner);
-        }
-    }
-
-    #[generate_trait]
-    impl OwnableHelperImpl<
-        TContractState, impl X: HasComponent<TContractState>
-    > of OwnableHelperTrait<TContractState, X> {
-        fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress) {
-            self.owner.write(owner);
-        }
-        fn validate_ownership(self: @ComponentState<TContractState>) {
-            assert(self.owner.read() == starknet::get_caller_address(), 'Wrong owner.');
-        }
-    }
-}
-
 #[starknet::contract]
 mod ownable_balance {
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use cairo_level_tests::components::ownable::TransferTrait;
     use starknet::ContractAddress;
-    #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: super::ownable::Storage,
-        balance: u128,
-    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Ownable: super::ownable::Event,
+        Ownable: ownable_comp::Event,
     }
 
-    component!(path: super::ownable, storage: ownable, event: Ownable);
-
     #[abi(embed_v0)]
-    impl OwnershipTransfer = super::ownable::Transfer<ContractState>;
+    impl OwnershipTransfer = ownable_comp::Transfer<ContractState>;
 
-    impl OwnershipHelper = super::ownable::OwnableHelperImpl<ContractState>;
+    impl OwnershipHelper = ownable_comp::OwnableHelperImpl<ContractState>;
 
     #[abi(per_item)]
     #[generate_trait]
@@ -95,555 +43,25 @@ mod ownable_balance {
             self.balance.write(new_balance);
         }
     }
-}
-
-
-TransferTraitDispatcherTrait:
-
-trait TransferTraitDispatcherTrait<T> {
-    fn owner(self: T, ) -> ContractAddress;    fn transfer_ownership(self: T, new_owner: ContractAddress);
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct TransferTraitDispatcher {
-    contract_address: starknet::ContractAddress,
-}
-
-impl TransferTraitDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitDispatcher> {
-    fn owner(self: TransferTraitDispatcher, ) -> ContractAddress {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("owner"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        option::OptionTrait::expect(
-            serde::Serde::<ContractAddress>::deserialize(ref ret_data),
-            'Returned data too short',
-        )
-    }
-    fn transfer_ownership(self: TransferTraitDispatcher, new_owner: ContractAddress) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@new_owner, ref __calldata__);
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("transfer_ownership"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        ()
-    }
-
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct TransferTraitLibraryDispatcher {
-    class_hash: starknet::ClassHash,
-}
-
-impl TransferTraitLibraryDispatcherImpl of TransferTraitDispatcherTrait<TransferTraitLibraryDispatcher> {
-    fn owner(self: TransferTraitLibraryDispatcher, ) -> ContractAddress {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("owner"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        option::OptionTrait::expect(
-            serde::Serde::<ContractAddress>::deserialize(ref ret_data),
-            'Returned data too short',
-        )
-    }
-    fn transfer_ownership(self: TransferTraitLibraryDispatcher, new_owner: ContractAddress) {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@new_owner, ref __calldata__);
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("transfer_ownership"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
-        ()
-    }
-
-}
-
-trait TransferTraitSafeDispatcherTrait<T> {
-    fn owner(self: T, ) -> starknet::SyscallResult<ContractAddress>;    fn transfer_ownership(self: T, new_owner: ContractAddress) -> starknet::SyscallResult<()>;
-}
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct TransferTraitSafeLibraryDispatcher {
-    class_hash: starknet::ClassHash,
-}
-
-impl TransferTraitSafeLibraryDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeLibraryDispatcher> {
-    fn owner(self: TransferTraitSafeLibraryDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("owner"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(
-            option::OptionTrait::expect(
-                serde::Serde::<ContractAddress>::deserialize(ref ret_data),
-                'Returned data too short',
-            )
-        )
-    }
-    fn transfer_ownership(self: TransferTraitSafeLibraryDispatcher, new_owner: ContractAddress) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@new_owner, ref __calldata__);
-
-        let mut ret_data = starknet::syscalls::library_call_syscall(
-            self.class_hash,
-            selector!("transfer_ownership"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(())
-    }
-
-}
-
-
-#[derive(Copy, Drop, starknet::Store, Serde)]
-struct TransferTraitSafeDispatcher {
-    contract_address: starknet::ContractAddress,
-}
-
-impl TransferTraitSafeDispatcherImpl of TransferTraitSafeDispatcherTrait<TransferTraitSafeDispatcher> {
-    fn owner(self: TransferTraitSafeDispatcher, ) -> starknet::SyscallResult<ContractAddress> {
-        let mut __calldata__ = traits::Default::default();
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("owner"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(
-            option::OptionTrait::expect(
-                serde::Serde::<ContractAddress>::deserialize(ref ret_data),
-                'Returned data too short',
-            )
-        )
-    }
-    fn transfer_ownership(self: TransferTraitSafeDispatcher, new_owner: ContractAddress) -> starknet::SyscallResult<()> {
-        let mut __calldata__ = traits::Default::default();
-        serde::Serde::<ContractAddress>::serialize(@new_owner, ref __calldata__);
-
-        let mut ret_data = starknet::call_contract_syscall(
-            self.contract_address,
-            selector!("transfer_ownership"),
-            array::ArrayTrait::span(@__calldata__),
-        );
-        let mut ret_data = ret_data?;
-        Result::Ok(())
-    }
-
-}
-
-
-impls:
-
-impl TransferTraitDispatcherCopy of Copy::<TransferTraitDispatcher>;
-impl TransferTraitDispatcherDrop of Drop::<TransferTraitDispatcher>;
-impl TransferTraitDispatcherSerde of Serde::<TransferTraitDispatcher> {
-    fn serialize(self: @TransferTraitDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TransferTraitDispatcher> {
-        Option::Some(TransferTraitDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-
-
-starknet_derive:
-
-impl StoreTransferTraitDispatcher of starknet::Store::<TransferTraitDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<TransferTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitDispatcher {
-                contract_address,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: TransferTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<TransferTraitDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitDispatcher {
-                contract_address,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: TransferTraitDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ContractAddress>::size()
-    }
-}
-
-
-impls:
-
-impl TransferTraitLibraryDispatcherCopy of Copy::<TransferTraitLibraryDispatcher>;
-impl TransferTraitLibraryDispatcherDrop of Drop::<TransferTraitLibraryDispatcher>;
-impl TransferTraitLibraryDispatcherSerde of Serde::<TransferTraitLibraryDispatcher> {
-    fn serialize(self: @TransferTraitLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TransferTraitLibraryDispatcher> {
-        Option::Some(TransferTraitLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-
-
-starknet_derive:
-
-impl StoreTransferTraitLibraryDispatcher of starknet::Store::<TransferTraitLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<TransferTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: TransferTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<TransferTraitLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: TransferTraitLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ClassHash>::size()
-    }
-}
-
-
-impls:
-
-impl TransferTraitSafeLibraryDispatcherCopy of Copy::<TransferTraitSafeLibraryDispatcher>;
-impl TransferTraitSafeLibraryDispatcherDrop of Drop::<TransferTraitSafeLibraryDispatcher>;
-impl TransferTraitSafeLibraryDispatcherSerde of Serde::<TransferTraitSafeLibraryDispatcher> {
-    fn serialize(self: @TransferTraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.class_hash, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TransferTraitSafeLibraryDispatcher> {
-        Option::Some(TransferTraitSafeLibraryDispatcher {
-            class_hash: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-
-
-starknet_derive:
-
-impl StoreTransferTraitSafeLibraryDispatcher of starknet::Store::<TransferTraitSafeLibraryDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<TransferTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitSafeLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: TransferTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<TransferTraitSafeLibraryDispatcher> {
-        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitSafeLibraryDispatcher {
-                class_hash,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: TransferTraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ClassHash>::size()
-    }
-}
-
-
-impls:
-
-impl TransferTraitSafeDispatcherCopy of Copy::<TransferTraitSafeDispatcher>;
-impl TransferTraitSafeDispatcherDrop of Drop::<TransferTraitSafeDispatcher>;
-impl TransferTraitSafeDispatcherSerde of Serde::<TransferTraitSafeDispatcher> {
-    fn serialize(self: @TransferTraitSafeDispatcher, ref output: array::Array<felt252>) {
-        serde::Serde::serialize(self.contract_address, ref output)
-    }
-    fn deserialize(ref serialized: array::Span<felt252>) -> Option<TransferTraitSafeDispatcher> {
-        Option::Some(TransferTraitSafeDispatcher {
-            contract_address: serde::Serde::deserialize(ref serialized)?,
-        })
-    }
-}
-
-
-starknet_derive:
-
-impl StoreTransferTraitSafeDispatcher of starknet::Store::<TransferTraitSafeDispatcher> {
-    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<TransferTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitSafeDispatcher {
-                contract_address,
-            }
-        )
-    }
-    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: TransferTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<TransferTraitSafeDispatcher> {
-        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
-        starknet::SyscallResult::Ok(
-            TransferTraitSafeDispatcher {
-                contract_address,
-            }
-        )
-    }
-    #[inline(always)]
-    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: TransferTraitSafeDispatcher) -> starknet::SyscallResult<()> {
-        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
-        starknet::SyscallResult::Ok(())
-    }
-    #[inline(always)]
-    fn size() -> u8 {
-        starknet::Store::<starknet::ContractAddress>::size()
-    }
-}
-
-
-component:
-
-#[event]
-#[derive(Drop, starknet::Event)]
-enum Event {}
-
-
-    struct ComponentState<TContractState> {
-        owner: owner::ComponentMemberState,
-    }
-    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
-    #[inline(always)]
-    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
-        ComponentState::<TContractState> {
-            owner: owner::ComponentMemberState {},
-        }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
-        unsafe_new_component_state::<TContractState>()
-    }
-    
-    mod owner {
-        use super::ContractAddress;
-        use super::TransferImpl;
-        use super::OwnableHelperImpl;
-        #[derive(Copy, Drop)]
-        struct ComponentMemberState {}
-        impl StorageComponentMemberStateImpl of starknet::storage::StorageMemberAddressTrait<ComponentMemberState, ContractAddress> {
-            fn address(self: @ComponentMemberState) -> starknet::StorageBaseAddress nopanic {
-                starknet::storage_base_address_const::<0x2016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0>()
-            }
-        }
-    }
-
-use starknet::storage::{
-    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
-    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
-};
-trait HasComponent<TContractState> {
-    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
-    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
-    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
-    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
-    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
-}
-
-#[starknet::embeddable]
-impl Transfer<
-            TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>
-> of super::TransferTrait<TContractState> {
-    
-    fn owner(self: @TContractState) -> ContractAddress {
-        let component = HasComponent::get_component(self);
-        TransferImpl::owner(component, )
-    }
-    
-    fn transfer_ownership(ref self: TContractState, new_owner: ContractAddress
-) {
-        let mut component = HasComponent::get_component_mut(ref self);
-        TransferImpl::transfer_ownership(ref component, new_owner, )
-    }
-}
-
-generate_trait:
-
-    trait OwnableHelperTrait<
-        TContractState, impl X: HasComponent<TContractState>
-    > {
-        fn init_ownable(ref self: ComponentState<TContractState>, owner: ContractAddress);
-        fn validate_ownership(self: @ComponentState<TContractState>);
-    }
-
-
-impls:
-
-impl EventDrop of Drop::<Event>;
-
-
-starknet_derive:
-
-impl EventIsEvent of starknet::Event<Event> {
-    fn append_keys_and_data(
-        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
-    ) {
-        match self {
-        }
-    }
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<Event> {
-        let selector = *array::SpanTrait::pop_front(ref keys)?;
-        Option::None
-    }
-}
-
-
-
-embeddable:
-
-trait UnsafeNewContractStateTraitForTransfer<TContractState> {
-    fn unsafe_new_contract_state() -> TContractState;
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__Transfer__owner<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    let res = Transfer::<TContractState, X, TContractStateDrop>::owner(@contract_state, );
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    serde::Serde::<ContractAddress>::serialize(@res, ref arr);
-    array::ArrayTrait::span(@arr)
-}
-
-#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
-fn __wrapper__Transfer__transfer_ownership<TContractState, impl X: HasComponent<TContractState>
-, impl TContractStateDrop: Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForTransfer<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
-    internal::require_implicit::<System>();
-    internal::revoke_ap_tracking();
-    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
-    let __arg_new_owner = option::OptionTraitImpl::expect(
-        serde::Serde::<ContractAddress>::deserialize(ref data),
-        'Failed to deserialize param #1'
-    );
-    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
-    option::OptionTraitImpl::expect(
-        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
-    );
-    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    Transfer::<TContractState, X, TContractStateDrop>::transfer_ownership(ref contract_state, __arg_new_owner);
-    let mut arr = array::array_new();
-    // References.
-    // Result.
-    array::ArrayTrait::span(@arr)
-}
-
-
-
-mod __external_Transfer {
-        use super::__wrapper__Transfer__owner as owner;
-        use super::__wrapper__Transfer__transfer_ownership as transfer_ownership;
-}
-
-mod __l1_handler_Transfer {
-}
-
-mod __constructor_Transfer {
-}
-
-
-contract:
-
 
 
     struct ContractState {
-        ownable: super::ownable::ComponentState<ContractState>,
+        ownable: ownable_comp::ComponentState<ContractState>,
         balance: balance::ContractMemberState,
     }
     impl ContractStateDrop of Drop<ContractState> {}
     #[inline(always)]
     fn unsafe_new_contract_state() -> ContractState {
         ContractState {
-            ownable: super::ownable::unsafe_new_component_state::<ContractState>(),
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
             balance: balance::ContractMemberState {},
         }
-    }
-    #[cfg(test)]
-    #[inline(always)]
-    fn contract_state_for_testing() -> ContractState {
-        unsafe_new_contract_state()
     }
     
     use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
     mod balance {
+        use super::ownable_comp;
+        use super::TransferTrait;
         use super::ContractAddress;
         use super::Event;
         use super::OwnableBalanceImpl;
@@ -681,16 +99,16 @@ contract:
                 )
             }
         }
+impl ContractMemberStateCopy of Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of Drop::<ContractMemberState>;
     }
 use starknet::storage::{
     StorageMapMemberAddressTrait, StorageMemberAddressTrait,
     StorageMapMemberAccessTrait, StorageMemberAccessTrait
 };
-#[cfg(test)]
-const TEST_CLASS_HASH: felt252 = 0x34ade7e6f6a6d6a778acbf8f46b99b6bb2e0469574ac58bfc9548d3d5db4d48;
 
 impl ContractStateTransfer of
-    super::ownable::UnsafeNewContractStateTraitForTransfer<ContractState> {
+    ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
     fn unsafe_new_contract_state() -> ContractState {
         unsafe_new_contract_state()
     }
@@ -792,34 +210,26 @@ fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span
         }
     }
 
-impl HasComponentImpl_ownable of super::ownable::HasComponent<ContractState> {
-    fn get_component(self: @ContractState) -> @super::ownable::ComponentState<ContractState> {
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
         self.ownable
     }
-    fn get_component_mut(ref self: ContractState) -> super::ownable::ComponentState<ContractState> {
-        super::ownable::unsafe_new_component_state::<ContractState>()
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
     }
-    fn get_contract(self: @super::ownable::ComponentState<ContractState>) -> @ContractState {
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
         @unsafe_new_contract_state()
     }
-    fn get_contract_mut(ref self: super::ownable::ComponentState<ContractState>) -> ContractState {
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
         unsafe_new_contract_state()
     }
-    fn emit<S, impl IntoImp: traits::Into<S, super::ownable::Event>>(ref self: super::ownable::ComponentState<ContractState>, event: S) {
-        let event: super::ownable::Event = traits::Into::into(event);
-        let mut contract = super::ownable::HasComponent::get_contract_mut(ref self);
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
         ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
     }
 }
-
-
-impls:
-
 impl EventDrop of Drop::<Event>;
-
-
-starknet_derive:
-
 impl EventIsEvent of starknet::Event<Event> {
     fn append_keys_and_data(
         self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
@@ -846,16 +256,269 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
-impl EventOwnableIntoEvent of Into<super::ownable::Event, Event> {
-    fn into(self: super::ownable::Event) -> Event {
+impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
         Event::Ownable(self)
     }
 }
+    trait OwnableBalance {
+        fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
+        fn get_balance(self: @ContractState) -> u128;
+        fn set_balance(ref self: ContractState, new_balance: u128);
+    }
+}
+
+    use cairo_level_tests::components::ownable::ownable as ownable_comp;
+    use cairo_level_tests::components::ownable::TransferTrait;
+    use starknet::ContractAddress;
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        Ownable: ownable_comp::Event,
+    }
+
+    #[abi(embed_v0)]
+    impl OwnershipTransfer = ownable_comp::Transfer<ContractState>;
+
+    impl OwnershipHelper = ownable_comp::OwnableHelperImpl<ContractState>;
+
+    #[abi(per_item)]
+    #[generate_trait]
+    impl OwnableBalanceImpl of OwnableBalance {
+        #[constructor]
+        fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128) {
+            self.ownable.init_ownable(owner);
+            self.balance.write(initial);
+        }
+        #[external(v0)]
+        fn get_balance(self: @ContractState) -> u128 {
+            self.balance.read()
+        }
+        #[external(v0)]
+        fn set_balance(ref self: ContractState, new_balance: u128) {
+            self.ownable.validate_ownership();
+            self.balance.write(new_balance);
+        }
+    }
 
 
+    struct ContractState {
+        ownable: ownable_comp::ComponentState<ContractState>,
+        balance: balance::ContractMemberState,
+    }
+    impl ContractStateDrop of Drop<ContractState> {}
+    #[inline(always)]
+    fn unsafe_new_contract_state() -> ContractState {
+        ContractState {
+            ownable: ownable_comp::unsafe_new_component_state::<ContractState>(),
+            balance: balance::ContractMemberState {},
+        }
+    }
+    
+    use balance::InternalContractMemberStateTrait as balanceContractMemberStateTrait;
+    mod balance {
+        use super::ownable_comp;
+        use super::TransferTrait;
+        use super::ContractAddress;
+        use super::Event;
+        use super::OwnableBalanceImpl;
+        #[derive(Copy, Drop)]
+        struct ContractMemberState {}
+        trait InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress;
+            fn read(self: @ContractMemberState) -> u128;
+            fn write(ref self: ContractMemberState, value: u128);
+        }
 
-generate_trait:
+        impl InternalContractMemberStateImpl of InternalContractMemberStateTrait {
+            fn address(self: @ContractMemberState) -> starknet::StorageBaseAddress {
+                starknet::storage_base_address_const::<0x206f38f7e4f15e87567361213c28f235cccdaa1d7fd34c9db1dfe9489c6a091>()
+            }
+            fn read(self: @ContractMemberState) -> u128 {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::read(
+                        address_domain,
+                        InternalContractMemberStateImpl::address(self),
+                    )
+                )
+            }
+            fn write(ref self: ContractMemberState, value: u128) {
+                // Only address_domain 0 is currently supported.
+                let address_domain = 0_u32;
+                starknet::SyscallResultTraitImpl::unwrap_syscall(
+                    starknet::Store::<u128>::write(
+                        address_domain,
+                        InternalContractMemberStateImpl::address(@self),
+                        value,
+                    )
+                )
+            }
+        }
+impl ContractMemberStateCopy of Copy::<ContractMemberState>;
+impl ContractMemberStateDrop of Drop::<ContractMemberState>;
+    }
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait
+};
 
+impl ContractStateTransfer of
+    ownable_comp::UnsafeNewContractStateTraitForTransfer<ContractState> {
+    fn unsafe_new_contract_state() -> ContractState {
+        unsafe_new_contract_state()
+    }
+}
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__OwnableBalanceImpl__constructor(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_owner = option::OptionTraitImpl::expect(
+        serde::Serde::<ContractAddress>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    let __arg_initial = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #2'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    OwnableBalanceImpl::constructor(ref contract_state, __arg_owner, __arg_initial);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__OwnableBalanceImpl__get_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    let res = OwnableBalanceImpl::get_balance(@contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    serde::Serde::<u128>::serialize(@res, ref arr);
+    array::ArrayTrait::span(@arr)
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__OwnableBalanceImpl__set_balance(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    let __arg_new_balance = option::OptionTraitImpl::expect(
+        serde::Serde::<u128>::deserialize(ref data),
+        'Failed to deserialize param #1'
+    );
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = unsafe_new_contract_state();
+    OwnableBalanceImpl::set_balance(ref contract_state, __arg_new_balance);
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+    mod __external {
+        use super::__wrapper__OwnableBalanceImpl__get_balance as get_balance;
+        use super::__wrapper__OwnableBalanceImpl__set_balance as set_balance;
+    }
+
+    mod __l1_handler {
+    }
+
+    mod __constructor {
+        use super::__wrapper__OwnableBalanceImpl__constructor as constructor;
+    }
+
+    impl ContractStateEventEmitter of starknet::event::EventEmitter<
+        ContractState, Event
+    > {
+        fn emit<S, impl IntoImp: traits::Into<S, Event>>(
+            ref self: ContractState, event: S
+        ) {
+            let event: Event = traits::Into::into(event);
+            let mut keys = Default::<array::Array>::default();
+            let mut data = Default::<array::Array>::default();
+            starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+            starknet::SyscallResultTraitImpl::unwrap_syscall(
+                starknet::syscalls::emit_event_syscall(
+                    array::ArrayTrait::span(@keys),
+                    array::ArrayTrait::span(@data),
+                )
+            )
+        }
+    }
+
+impl HasComponentImpl_ownable_comp of ownable_comp::HasComponent<ContractState> {
+    fn get_component(self: @ContractState) -> @ownable_comp::ComponentState<ContractState> {
+        self.ownable
+    }
+    fn get_component_mut(ref self: ContractState) -> ownable_comp::ComponentState<ContractState> {
+        ownable_comp::unsafe_new_component_state::<ContractState>()
+    }
+    fn get_contract(self: @ownable_comp::ComponentState<ContractState>) -> @ContractState {
+        @unsafe_new_contract_state()
+    }
+    fn get_contract_mut(ref self: ownable_comp::ComponentState<ContractState>) -> ContractState {
+        unsafe_new_contract_state()
+    }
+    fn emit<S, impl IntoImp: traits::Into<S, ownable_comp::Event>>(ref self: ownable_comp::ComponentState<ContractState>, event: S) {
+        let event: ownable_comp::Event = traits::Into::into(event);
+        let mut contract = ownable_comp::HasComponent::get_contract_mut(ref self);
+        ContractStateEventEmitter::emit(ref contract, Event::Ownable(event));
+    }
+}
+impl EventDrop of Drop::<Event>;
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+            Event::Ownable(val) => {
+                array::ArrayTrait::append(ref keys, selector!("Ownable"));
+                starknet::Event::append_keys_and_data(
+                    val, ref keys, ref data
+                );
+            },
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        if selector == selector!("Ownable") {
+                let val = starknet::Event::deserialize(
+                    ref keys, ref data
+                )?;
+                return Option::Some(Event::Ownable(val));
+        }
+        Option::None
+    }
+}
+impl EventOwnableIntoEvent of Into<ownable_comp::Event, Event> {
+    fn into(self: ownable_comp::Event) -> Event {
+        Event::Ownable(self)
+    }
+}
     trait OwnableBalance {
         fn constructor(ref self: ContractState, owner: ContractAddress, initial: u128);
         fn get_balance(self: @ContractState) -> u128;

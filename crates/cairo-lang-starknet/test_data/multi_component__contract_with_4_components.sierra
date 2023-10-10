@@ -4619,8 +4619,8 @@ function_call<user@core::starknet::storage::StorageMemberAccessImpl::<cairo_leve
 store_temp<cairo_level_tests::components::erc20::erc20::name::ComponentMemberState>([71]) -> ([71]); // 3913
 store_temp<cairo_level_tests::components::erc20::erc20::symbol::ComponentMemberState>([72]) -> ([72]); // 3914
 store_temp<cairo_level_tests::components::erc20::erc20::decimals::ComponentMemberState>([73]) -> ([73]); // 3915
-store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([76]) -> ([76]); // 3916
-store_temp<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([75]) -> ([75]); // 3917
+store_temp<cairo_level_tests::components::erc20::erc20::balances::ComponentMemberState>([75]) -> ([75]); // 3916
+store_temp<cairo_level_tests::components::erc20::erc20::allowances::ComponentMemberState>([76]) -> ([76]); // 3917
 store_temp<cairo_level_tests::components::erc20::erc20::total_supply::ComponentMemberState>([77]) -> ([77]); // 3918
 enum_match<core::panics::PanicResult::<(core::integer::u256,)>>([82]) { fallthrough([87]) 4084([88]) }; // 3919
 branch_align() -> (); // 3920
