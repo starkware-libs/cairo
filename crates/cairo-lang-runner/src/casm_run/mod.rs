@@ -199,7 +199,22 @@ struct TxInfo {
     transaction_hash: Felt252,
     chain_id: Felt252,
     nonce: Felt252,
+    resource_bounds: Vec<ResourceBounds>,
+    tip: Felt252,
+    paymaster_data: Vec<Felt252>,
+    nonce_data_availabilty_mode: Felt252,
+    fee_data_availabilty_mode: Felt252,
+    account_deployment_data: Vec<Felt252>,
 }
+
+/// Copy of the cairo `ResourceBounds` struct.
+#[derive(Clone, Default)]
+struct ResourceBounds {
+    resource: Felt252,
+    max_amount: Felt252,
+    max_price_per_unit: Felt252,
+}
+
 /// Execution scope for constant memory allocation.
 struct MemoryExecScope {
     /// The first free address in the segment.
@@ -838,6 +853,19 @@ impl<'a> CairoHintProcessor<'a> {
         let signature_start = res_segment.ptr;
         res_segment.write_data(tx_info.signature.iter().cloned())?;
         let signature_end = res_segment.ptr;
+        let resource_bounds_start = res_segment.ptr;
+        for value in &tx_info.resource_bounds {
+            res_segment.write(&value.resource)?;
+            res_segment.write(&value.max_amount)?;
+            res_segment.write(&value.max_price_per_unit)?;
+        }
+        let resource_bounds_end = res_segment.ptr;
+        let paymaster_data_start = res_segment.ptr;
+        res_segment.write_data(tx_info.paymaster_data.iter().cloned())?;
+        let paymaster_data_end = res_segment.ptr;
+        let account_deployment_data_start = res_segment.ptr;
+        res_segment.write_data(tx_info.account_deployment_data.iter().cloned())?;
+        let account_deployment_data_end = res_segment.ptr;
         let tx_info_ptr = res_segment.ptr;
         res_segment.write(tx_info.version.clone())?;
         res_segment.write(tx_info.account_contract_address.clone())?;
@@ -847,6 +875,15 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info.transaction_hash.clone())?;
         res_segment.write(tx_info.chain_id.clone())?;
         res_segment.write(tx_info.nonce.clone())?;
+        res_segment.write(resource_bounds_start)?;
+        res_segment.write(resource_bounds_end)?;
+        res_segment.write(tx_info.tip.clone())?;
+        res_segment.write(paymaster_data_start)?;
+        res_segment.write(paymaster_data_end)?;
+        res_segment.write(tx_info.nonce_data_availabilty_mode.clone())?;
+        res_segment.write(tx_info.fee_data_availabilty_mode.clone())?;
+        res_segment.write(account_deployment_data_start)?;
+        res_segment.write(account_deployment_data_end)?;
         let block_info_ptr = res_segment.ptr;
         res_segment.write(block_info.block_number.clone())?;
         res_segment.write(block_info.block_timestamp.clone())?;

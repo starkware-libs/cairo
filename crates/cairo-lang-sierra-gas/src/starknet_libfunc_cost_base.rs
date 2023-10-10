@@ -41,7 +41,8 @@ pub fn starknet_libfunc_cost_base(libfunc: &StarkNetConcreteLibfunc) -> Vec<Cons
         StarkNetConcreteLibfunc::StorageAddressFromBaseAndOffset(_) => vec![steps(0)],
         StarkNetConcreteLibfunc::EmitEvent(_) => syscall_cost(4),
         StarkNetConcreteLibfunc::GetBlockHash(_) => syscall_cost(1),
-        StarkNetConcreteLibfunc::GetExecutionInfo(_) => syscall_cost(0),
+        StarkNetConcreteLibfunc::GetExecutionInfo(_)
+        | StarkNetConcreteLibfunc::GetExecutionInfoV2(_) => syscall_cost(0),
         StarkNetConcreteLibfunc::Deploy(_) => syscall_cost(5),
         StarkNetConcreteLibfunc::Keccak(_) => syscall_cost(2),
         StarkNetConcreteLibfunc::LibraryCall(_) => syscall_cost(4),
