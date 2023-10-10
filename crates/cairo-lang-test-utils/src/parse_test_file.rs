@@ -424,8 +424,8 @@ pub fn run_test_file(
         let result = runner.run(&test.attributes, &runner_args);
 
         if gen_lean_mode {
-            write_lean_soundness_file(&path, &test_name, outputs.get("lean_soundness"))?;
-            write_lean_code_file(&path, &test_name, outputs.get("lean_code"), is_lean3_version)?;
+            write_lean_soundness_file(&path, &test_name, result.outputs.get("lean_soundness"))?;
+            write_lean_code_file(&path, &test_name, result.outputs.get("lean_code"), is_lean3_version)?;
         }
 
         // Fix if in fix mode, unrelated to the result.
