@@ -14,15 +14,17 @@ extern fn null<T>() -> Nullable<T> nopanic;
 extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
 extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
 
-trait NullableTrait<T> {
-    fn deref(self: Nullable<T>) -> T;
-    fn new(value: T) -> Nullable<T>;
-}
-
+#[generate_trait]
 impl NullableImpl<T> of NullableTrait<T> {
     fn deref(self: Nullable<T>) -> T {
         match match_nullable(self) {
             FromNullableResult::Null => panic_with_felt252('Attempted to deref null value'),
+            FromNullableResult::NotNull(value) => value.unbox(),
+        }
+    }
+    fn deref_or<+Drop<T>>(self: Nullable<T>, default: T) -> T {
+        match match_nullable(self) {
+            FromNullableResult::Null => default,
             FromNullableResult::NotNull(value) => value.unbox(),
         }
     }
