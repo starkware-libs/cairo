@@ -4,6 +4,7 @@ use anyhow::Result;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
+use crate::debug_info::DebugInfo;
 use crate::extensions::gas::{
     BuiltinCostWithdrawGasLibfunc, RedepositGasLibfunc, WithdrawGasLibfunc,
 };
@@ -20,17 +21,17 @@ use crate::ids::{
 #[serde(tag = "version")]
 pub enum VersionedProgram {
     #[serde(rename = "1")]
-    V1(Program),
+    V1(ProgramArtifact),
 }
 
-impl From<Program> for VersionedProgram {
-    fn from(value: Program) -> Self {
+impl From<ProgramArtifact> for VersionedProgram {
+    fn from(value: ProgramArtifact) -> Self {
         VersionedProgram::V1(value)
     }
 }
 
 impl VersionedProgram {
-    pub fn into_v1(self) -> Result<Program> {
+    pub fn into_v1(self) -> Result<ProgramArtifact> {
         match self {
             VersionedProgram::V1(program) => Ok(program),
         }
@@ -42,6 +43,37 @@ impl fmt::Display for VersionedProgram {
         match self {
             VersionedProgram::V1(program) => fmt::Display::fmt(program, f),
         }
+    }
+}
+
+/// Sierra program in a form for storage on the filesystem and sharing externally.
+///
+/// Do not serialize this struct directly, use [`VersionedProgram`] instead.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProgramArtifact {
+    /// Sierra program itself.
+    #[serde(flatten)]
+    pub program: Program,
+    /// Debug information for a Sierra program.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub debug_info: Option<DebugInfo>,
+}
+
+impl ProgramArtifact {
+    /// Create a new [`ProgramArtifact`] without any extra information.
+    pub fn stripped(program: Program) -> Self {
+        Self { program, debug_info: None }
+    }
+
+    /// Add [`DebugInfo`] to the [`ProgramArtifact`], replacing existing one.
+    pub fn with_debug_info(self, debug_info: DebugInfo) -> Self {
+        Self { program: self.program, debug_info: Some(debug_info) }
+    }
+}
+
+impl fmt::Display for ProgramArtifact {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.program, f)
     }
 }
 
@@ -60,6 +92,11 @@ pub struct Program {
 impl Program {
     pub fn get_statement(&self, id: &StatementIdx) -> Option<&Statement> {
         self.statements.get(id.0)
+    }
+
+    /// Create a new [`ProgramArtifact`] out of this [`Program`].
+    pub fn into_artifact(self) -> VersionedProgram {
+        VersionedProgram::V1(ProgramArtifact::stripped(self))
     }
 }
 
