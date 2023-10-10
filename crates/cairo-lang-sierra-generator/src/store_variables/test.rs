@@ -594,7 +594,15 @@ fn consecutive_push_values() {
     let db = SierraGenDatabaseForTesting::default();
     let statements: Vec<pre_sierra::Statement> = vec![
         dummy_push_values(&db, &[("0", "100"), ("1", "101")]),
-        dummy_push_values(&db, &[("100", "200"), ("101", "201"), ("2", "202"), ("3", "203")]),
+        dummy_push_values_ex(
+            &db,
+            &[
+                ("100", "200", false),
+                ("101", "201", true),
+                ("2", "202", false),
+                ("3", "203", false),
+            ],
+        ),
         dummy_push_values(&db, &[("101", "301"), ("202", "302"), ("203", "303"), ("4", "304")]),
         dummy_push_values(&db, &[("304", "404")]),
         dummy_return_statement(&["0"]),
@@ -613,7 +621,7 @@ fn consecutive_push_values() {
             "store_temp<felt252>(1) -> (101)",
             // Second statement. Reuse [100] and [101]. Push [2] and [3].
             "rename<felt252>(100) -> (200)",
-            "rename<felt252>(101) -> (201)",
+            "dup<felt252>(101) -> (101, 201)",
             "store_temp<felt252>(2) -> (202)",
             "store_temp<felt252>(3) -> (203)",
             // Third statement. Reuse [101], [202] and [203]. Push [4].

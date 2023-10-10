@@ -65,22 +65,22 @@
     "0x13",
     "0x38f4af6e44b2e0a6ad228a4874672855e693db590abc7105a5a9819dbbf5ba6",
     "0x1a",
-    "0x3c2ed1735b10c84993f70a2acbdc768735472078414d5dc81d5b2702f666a0c",
+    "0x312c055f2969c35a401d1d601659a7f693135104ed508c475d3836bc7a5353f",
     "0x800000000000000f00000000000000000000000000000003",
     "0x1c",
-    "0xb57c61a0231e528fdf1047258fe4394ffafaf34123b2e16ca94e4f78dbb815",
+    "0x1d487eba41e9673fe4f5154f08c5b31719b61c918dbffa002d0492b952ebdba",
     "0x1d",
     "0x3233063c5dc6197e9bf4ddc53b925e10907665cf58255b7899f8212442d4605",
-    "0x114a8f96e6697265bf3ce48ba5bbe3adebdd73ce511f8a05167250ff3913c2",
+    "0x30d0623aa4d601018c12fe5580d31ed60d952601c81e47c84120257822719b3",
     "0x1f",
-    "0x2b0bebbcc7e173d41ed8f24317daab4e2f494ab320d454da6ee529663b8cf8c",
+    "0x2880fb8f58f7e76273307dff0d63dcb714556cba2b26630625702e733f89f58",
     "0x800000000000000700000000000000000000000000000003",
     "0x25e2ca4b84968c2d8b83ef476ca8549410346b00836ce79beaf538155990bb2",
-    "0x23cc81f4f10dcd22dbe585bb89f901470e3f04270fef34f860a531e6e6a0a78",
+    "0xf0ff5b19889b79110e0d6ed111df7b80bc04b692b230041f1d6a7afef305af",
     "0x22",
-    "0x35e6c87bb5c59b172490ec15203dd30d574b27ee520155a68d8b4ae9d54bbc2",
+    "0x7370520b071a5b499f915b8abb5a5e73d316f779156b01e38e0dfccf493697",
     "0x800000000000000700000000000000000000000000000005",
-    "0x3197f705fd01b62d45c570ca4672b089839f5ee4037455806fc18ae7b3f1c44",
+    "0x15e654f8ef7c99dbaa7ea89b3e2add7fa35eabdfd746098fe5c2c4e81d9fe28",
     "0x20",
     "0x21",
     "0x23",
@@ -88,17 +88,17 @@
     "0x800000000000000f00000000000000000000000000000002",
     "0xcc5e86243f861d2d64b08c35db21013e773ac5cf10097946fe0011304886d5",
     "0x26",
-    "0x30920112989da333f9b67d13e384684bfe3230c929b75fce5c645b4fabf7fc1",
+    "0x1522d5df7845fca8d7ad493cef9231ff4d4d92338377636e8bedd834ee999ed",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x29d7d57c04a880978e7b3689f6218e507f3be17588744b58dc17762447ad0e7",
     "0x2a",
-    "0x3f8215028d572bb0bec94fa2836cefa4ce5b8fe1e857e98fabeb4317367d15e",
+    "0x38cf8ce7399f66b15eae8d20f0848c6225a4c817af8249087563781c52bf083",
     "0x2c",
-    "0x8a56feb19a22d9c4b047367f5a6b437e0e1e99fc514a4df8b4d3414d9d29d",
+    "0x2191b162955d68a1027e83bc767969acd630187aa76b64f27a6491e4242eeef",
     "0x2d",
-    "0x3b6fc3d804b65b96ff2f80d3d3d30b2ed21f932ba26840cdb860c85e91f06ba",
+    "0xbb2f86070fed4ae06b853e63d2b2d833d18a943e118c0e70061cb58188f501",
     "0x2f",
-    "0x1d6c1aa23db1cc451bb8718fff02860893552c4bb49e817d758c3e2b323875b",
+    "0xd20bd2b45fc41317f4caa53f895739f2282779d935db580eb77da653efab00",
     "0x30",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0x10203be321c62a7bd4c060d69539c1fbe065baa9e253c74d2cc48be163e259",
@@ -110,9 +110,9 @@
     "0x12867ecd09c884a5cf1f6d9eb0193b4695ce3bb3b2d796a8367d0c371f59cb2",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
     "0x800000000000000f00000000000000000000000000000004",
-    "0x2e5662a69f154da2d2a0febbfb85a2af12ec91a1cdb77dd2b8d649befea729f",
+    "0x1ba29a9762f97a1b1b66c02ba71a5cec83d7bf9195c7897148a76550ef3df58",
     "0x3b",
-    "0x1669f1ccc5d8f79f2fc9206d397852bba324fa130637d15c5e9681b56c49bcc",
+    "0x1a53bfff2eaa7bdba0524eda33c14528de062306d5e3f1355e57ba26ad856df",
     "0x3c",
     "0x24d668d7ede46c87d2cddfbcf73195c96f0ca8075ae10c8a468054b80120d78",
     "0x4275696c74696e436f737473",
@@ -1771,15 +1771,15 @@
       ],
       [
         28,
-        "test::token_bridge::governor::ContractMemberState"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState"
       ],
       [
         29,
-        "Tuple<test::token_bridge::governor::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>"
       ],
       [
         30,
-        "core::panics::PanicResult::<(test::token_bridge::governor::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>"
       ],
       [
         31,
@@ -1787,11 +1787,11 @@
       ],
       [
         32,
-        "test::token_bridge::L1BridgeSet"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet"
       ],
       [
         33,
-        "test::token_bridge::L2TokenSet"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet"
       ],
       [
         34,
@@ -1799,15 +1799,15 @@
       ],
       [
         35,
-        "test::token_bridge::WithdrawInitiated"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated"
       ],
       [
         36,
-        "test::token_bridge::DepositHandled"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled"
       ],
       [
         37,
-        "test::token_bridge::Event"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::Event"
       ],
       [
         38,
@@ -1819,7 +1819,7 @@
       ],
       [
         40,
-        "test::IMintableTokenDispatcher"
+        "cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher"
       ],
       [
         41,
@@ -1835,27 +1835,27 @@
       ],
       [
         44,
-        "test::token_bridge::l2_token::ContractMemberState"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState"
       ],
       [
         45,
-        "Tuple<test::token_bridge::l2_token::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>"
       ],
       [
         46,
-        "core::panics::PanicResult::<(test::token_bridge::l2_token::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>"
       ],
       [
         47,
-        "test::token_bridge::l1_bridge::ContractMemberState"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState"
       ],
       [
         48,
-        "Tuple<test::token_bridge::l1_bridge::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>"
       ],
       [
         49,
-        "core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>"
       ],
       [
         50,
@@ -1895,15 +1895,15 @@
       ],
       [
         59,
-        "test::token_bridge::ContractState"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::ContractState"
       ],
       [
         60,
-        "Tuple<test::token_bridge::ContractState, Unit>"
+        "Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>"
       ],
       [
         61,
-        "core::panics::PanicResult::<(test::token_bridge::ContractState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>"
       ],
       [
         62,
@@ -2109,23 +2109,23 @@
       ],
       [
         43,
-        "struct_construct<test::token_bridge::governor::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>"
       ],
       [
         44,
-        "struct_construct<test::token_bridge::l1_bridge::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>"
       ],
       [
         45,
-        "struct_construct<test::token_bridge::l2_token::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>"
       ],
       [
         46,
-        "struct_construct<test::token_bridge::ContractState>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>"
       ],
       [
         47,
-        "store_temp<test::token_bridge::ContractState>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>"
       ],
       [
         48,
@@ -2133,15 +2133,15 @@
       ],
       [
         49,
-        "function_call<user@test::token_bridge::TokenBridgeImpl::set_l1_bridge>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge>"
       ],
       [
         50,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>"
       ],
       [
         51,
-        "drop<Tuple<test::token_bridge::ContractState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         52,
@@ -2165,7 +2165,7 @@
       ],
       [
         57,
-        "function_call<user@test::token_bridge::TokenBridgeImpl::set_l2_token>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l2_token>"
       ],
       [
         58,
@@ -2185,7 +2185,7 @@
       ],
       [
         62,
-        "function_call<user@test::token_bridge::TokenBridgeImpl::initiate_withdraw>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw>"
       ],
       [
         63,
@@ -2201,7 +2201,7 @@
       ],
       [
         66,
-        "function_call<user@test::token_bridge::handle_deposit>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::handle_deposit>"
       ],
       [
         67,
@@ -2209,7 +2209,7 @@
       ],
       [
         68,
-        "function_call<user@test::token_bridge::constructor>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::constructor>"
       ],
       [
         69,
@@ -2245,19 +2245,19 @@
       ],
       [
         77,
-        "struct_deconstruct<test::token_bridge::ContractState>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>"
       ],
       [
         78,
-        "snapshot_take<test::token_bridge::governor::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>"
       ],
       [
         79,
-        "store_temp<test::token_bridge::governor::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>"
       ],
       [
         80,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read>"
       ],
       [
         81,
@@ -2285,15 +2285,15 @@
       ],
       [
         87,
-        "snapshot_take<test::token_bridge::l1_bridge::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>"
       ],
       [
         88,
-        "store_temp<test::token_bridge::l1_bridge::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>"
       ],
       [
         89,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read>"
       ],
       [
         90,
@@ -2345,15 +2345,15 @@
       ],
       [
         102,
-        "drop<test::token_bridge::governor::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState>"
       ],
       [
         103,
-        "drop<test::token_bridge::l2_token::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>"
       ],
       [
         104,
-        "drop<test::token_bridge::l1_bridge::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState>"
       ],
       [
         105,
@@ -2361,11 +2361,11 @@
       ],
       [
         106,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 1>"
       ],
       [
         107,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>>"
       ],
       [
         108,
@@ -2373,39 +2373,39 @@
       ],
       [
         109,
-        "function_call<user@test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write>"
       ],
       [
         110,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>"
       ],
       [
         111,
-        "struct_deconstruct<Tuple<test::token_bridge::l1_bridge::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>"
       ],
       [
         112,
-        "struct_construct<test::token_bridge::L1BridgeSet>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         113,
-        "store_temp<test::token_bridge::L1BridgeSet>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         114,
-        "function_call<user@test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::L1BridgeSet, test::token_bridge::EventL1BridgeSetIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>>"
       ],
       [
         115,
-        "struct_deconstruct<Tuple<test::token_bridge::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         116,
-        "struct_construct<Tuple<test::token_bridge::ContractState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, Unit>>"
       ],
       [
         117,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::ContractState, ())>, 0>"
       ],
       [
         118,
@@ -2421,7 +2421,7 @@
       ],
       [
         121,
-        "drop<test::token_bridge::ContractState>"
+        "drop<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>"
       ],
       [
         122,
@@ -2441,15 +2441,15 @@
       ],
       [
         126,
-        "snapshot_take<test::token_bridge::l2_token::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>"
       ],
       [
         127,
-        "store_temp<test::token_bridge::l2_token::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState>"
       ],
       [
         128,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read>"
       ],
       [
         129,
@@ -2461,27 +2461,27 @@
       ],
       [
         131,
-        "function_call<user@test::token_bridge::l2_token::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write>"
       ],
       [
         132,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>"
       ],
       [
         133,
-        "struct_deconstruct<Tuple<test::token_bridge::l2_token::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>"
       ],
       [
         134,
-        "struct_construct<test::token_bridge::L2TokenSet>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         135,
-        "store_temp<test::token_bridge::L2TokenSet>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         136,
-        "function_call<user@test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::L2TokenSet, test::token_bridge::EventL2TokenSetIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>>"
       ],
       [
         137,
@@ -2545,19 +2545,19 @@
       ],
       [
         152,
-        "snapshot_take<test::token_bridge::ContractState>"
+        "snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::ContractState>"
       ],
       [
         153,
-        "function_call<user@test::token_bridge::HelperImpl::read_initialized_l2_token>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l2_token>"
       ],
       [
         154,
-        "struct_construct<test::IMintableTokenDispatcher>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>"
       ],
       [
         155,
-        "store_temp<test::IMintableTokenDispatcher>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>"
       ],
       [
         156,
@@ -2565,7 +2565,7 @@
       ],
       [
         157,
-        "function_call<user@test::IMintableTokenDispatcherImpl::permissioned_burn>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_burn>"
       ],
       [
         158,
@@ -2589,7 +2589,7 @@
       ],
       [
         163,
-        "function_call<user@test::token_bridge::HelperImpl::read_initialized_l1_bridge>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge>"
       ],
       [
         164,
@@ -2597,7 +2597,7 @@
       ],
       [
         165,
-        "struct_construct<test::token_bridge::WithdrawInitiated>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         166,
@@ -2609,11 +2609,11 @@
       ],
       [
         168,
-        "store_temp<test::token_bridge::WithdrawInitiated>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         169,
-        "function_call<user@test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::WithdrawInitiated, test::token_bridge::EventWithdrawInitiatedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent>>"
       ],
       [
         170,
@@ -2629,23 +2629,23 @@
       ],
       [
         173,
-        "function_call<user@test::IMintableTokenDispatcherImpl::permissioned_mint>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_mint>"
       ],
       [
         174,
-        "struct_construct<test::token_bridge::DepositHandled>"
+        "struct_construct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         175,
-        "enum_init<test::token_bridge::Event, 3>"
+        "enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 3>"
       ],
       [
         176,
-        "store_temp<test::token_bridge::Event>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::Event>"
       ],
       [
         177,
-        "function_call<user@test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::Event, core::traits::TIntoT::<test::token_bridge::Event>>>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>>"
       ],
       [
         178,
@@ -2657,15 +2657,15 @@
       ],
       [
         180,
-        "function_call<user@test::token_bridge::governor::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write>"
       ],
       [
         181,
-        "enum_match<core::panics::PanicResult::<(test::token_bridge::governor::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>"
       ],
       [
         182,
-        "struct_deconstruct<Tuple<test::token_bridge::governor::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>"
       ],
       [
         183,
@@ -2857,35 +2857,35 @@
       ],
       [
         230,
-        "struct_construct<Tuple<test::token_bridge::l1_bridge::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, Unit>>"
       ],
       [
         231,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 0>"
       ],
       [
         232,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>>"
       ],
       [
         233,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l1_bridge::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::ContractMemberState, ())>, 1>"
       ],
       [
         234,
-        "function_call<user@test::token_bridge::EventL1BridgeSetIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into>"
       ],
       [
         235,
-        "snapshot_take<test::token_bridge::Event>"
+        "snapshot_take<cairo_level_tests::contracts::token_bridge::token_bridge::Event>"
       ],
       [
         236,
-        "drop<test::token_bridge::Event>"
+        "drop<cairo_level_tests::contracts::token_bridge::token_bridge::Event>"
       ],
       [
         237,
-        "function_call<user@test::token_bridge::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data>"
       ],
       [
         238,
@@ -2897,23 +2897,23 @@
       ],
       [
         240,
-        "struct_construct<Tuple<test::token_bridge::l2_token::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, Unit>>"
       ],
       [
         241,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 0>"
       ],
       [
         242,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>>"
       ],
       [
         243,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::l2_token::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::ContractMemberState, ())>, 1>"
       ],
       [
         244,
-        "function_call<user@test::token_bridge::EventL2TokenSetIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into>"
       ],
       [
         245,
@@ -2953,7 +2953,7 @@
       ],
       [
         254,
-        "struct_deconstruct<test::IMintableTokenDispatcher>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcher>"
       ],
       [
         255,
@@ -3013,7 +3013,7 @@
       ],
       [
         269,
-        "function_call<user@test::token_bridge::EventWithdrawInitiatedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into>"
       ],
       [
         270,
@@ -3021,23 +3021,23 @@
       ],
       [
         271,
-        "function_call<user@core::traits::TIntoT::<test::token_bridge::Event>::into>"
+        "function_call<user@core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into>"
       ],
       [
         272,
-        "struct_construct<Tuple<test::token_bridge::governor::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, Unit>>"
       ],
       [
         273,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::governor::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 0>"
       ],
       [
         274,
-        "store_temp<core::panics::PanicResult::<(test::token_bridge::governor::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>>"
       ],
       [
         275,
-        "enum_init<core::panics::PanicResult::<(test::token_bridge::governor::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::token_bridge::token_bridge::governor::ContractMemberState, ())>, 1>"
       ],
       [
         276,
@@ -3145,11 +3145,11 @@
       ],
       [
         302,
-        "enum_init<test::token_bridge::Event, 0>"
+        "enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 0>"
       ],
       [
         303,
-        "enum_match<test::token_bridge::Event>"
+        "enum_match<cairo_level_tests::contracts::token_bridge::token_bridge::Event>"
       ],
       [
         304,
@@ -3157,7 +3157,7 @@
       ],
       [
         305,
-        "function_call<user@test::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>"
       ],
       [
         306,
@@ -3165,7 +3165,7 @@
       ],
       [
         307,
-        "function_call<user@test::token_bridge::L2TokenSetIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data>"
       ],
       [
         308,
@@ -3173,7 +3173,7 @@
       ],
       [
         309,
-        "function_call<user@test::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>"
       ],
       [
         310,
@@ -3181,11 +3181,11 @@
       ],
       [
         311,
-        "store_temp<test::token_bridge::DepositHandled>"
+        "store_temp<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         312,
-        "function_call<user@test::token_bridge::DepositHandledIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data>"
       ],
       [
         313,
@@ -3193,7 +3193,7 @@
       ],
       [
         314,
-        "enum_init<test::token_bridge::Event, 1>"
+        "enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 1>"
       ],
       [
         315,
@@ -3201,7 +3201,7 @@
       ],
       [
         316,
-        "enum_init<test::token_bridge::Event, 2>"
+        "enum_init<cairo_level_tests::contracts::token_bridge::token_bridge::Event, 2>"
       ],
       [
         317,
@@ -3213,7 +3213,7 @@
       ],
       [
         319,
-        "struct_deconstruct<test::token_bridge::L1BridgeSet>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet>"
       ],
       [
         320,
@@ -3221,53 +3221,53 @@
       ],
       [
         321,
-        "struct_deconstruct<test::token_bridge::L2TokenSet>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet>"
       ],
       [
         322,
-        "dup<test::token_bridge::WithdrawInitiated>"
+        "dup<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         323,
-        "struct_deconstruct<test::token_bridge::WithdrawInitiated>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated>"
       ],
       [
         324,
-        "dup<test::token_bridge::DepositHandled>"
+        "dup<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>"
       ],
       [
         325,
-        "struct_deconstruct<test::token_bridge::DepositHandled>"
+        "struct_deconstruct<cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled>"
       ]
     ],
     "user_func_names": [
       [
         0,
-        "test::token_bridge::__wrapper__TokenBridgeImpl__get_version"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__get_version"
       ],
       [
         1,
-        "test::token_bridge::__wrapper__TokenBridgeImpl__get_identity"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__get_identity"
       ],
       [
         2,
-        "test::token_bridge::__wrapper__TokenBridgeImpl__set_l1_bridge"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__set_l1_bridge"
       ],
       [
         3,
-        "test::token_bridge::__wrapper__TokenBridgeImpl__set_l2_token"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__set_l2_token"
       ],
       [
         4,
-        "test::token_bridge::__wrapper__TokenBridgeImpl__initiate_withdraw"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__TokenBridgeImpl__initiate_withdraw"
       ],
       [
         5,
-        "test::token_bridge::__wrapper__handle_deposit"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__handle_deposit"
       ],
       [
         6,
-        "test::token_bridge::__wrapper__constructor"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::__wrapper__constructor"
       ],
       [
         7,
@@ -3279,7 +3279,7 @@
       ],
       [
         9,
-        "test::token_bridge::TokenBridgeImpl::set_l1_bridge"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l1_bridge"
       ],
       [
         10,
@@ -3287,7 +3287,7 @@
       ],
       [
         11,
-        "test::token_bridge::TokenBridgeImpl::set_l2_token"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::set_l2_token"
       ],
       [
         12,
@@ -3295,7 +3295,7 @@
       ],
       [
         13,
-        "test::token_bridge::TokenBridgeImpl::initiate_withdraw"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::TokenBridgeImpl::initiate_withdraw"
       ],
       [
         14,
@@ -3303,11 +3303,11 @@
       ],
       [
         15,
-        "test::token_bridge::handle_deposit"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::handle_deposit"
       ],
       [
         16,
-        "test::token_bridge::constructor"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::constructor"
       ],
       [
         17,
@@ -3319,11 +3319,11 @@
       ],
       [
         19,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::read"
       ],
       [
         20,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::read"
       ],
       [
         21,
@@ -3331,23 +3331,23 @@
       ],
       [
         22,
-        "test::token_bridge::l1_bridge::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l1_bridge::InternalContractMemberStateImpl::write"
       ],
       [
         23,
-        "test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::L1BridgeSet, test::token_bridge::EventL1BridgeSetIntoEvent>"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent>"
       ],
       [
         24,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::read"
       ],
       [
         25,
-        "test::token_bridge::l2_token::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::l2_token::InternalContractMemberStateImpl::write"
       ],
       [
         26,
-        "test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::L2TokenSet, test::token_bridge::EventL2TokenSetIntoEvent>"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet, cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent>"
       ],
       [
         27,
@@ -3355,31 +3355,31 @@
       ],
       [
         28,
-        "test::token_bridge::HelperImpl::read_initialized_l2_token"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l2_token"
       ],
       [
         29,
-        "test::IMintableTokenDispatcherImpl::permissioned_burn"
+        "cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_burn"
       ],
       [
         30,
-        "test::token_bridge::HelperImpl::read_initialized_l1_bridge"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::HelperImpl::read_initialized_l1_bridge"
       ],
       [
         31,
-        "test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::WithdrawInitiated, test::token_bridge::EventWithdrawInitiatedIntoEvent>"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated, cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent>"
       ],
       [
         32,
-        "test::IMintableTokenDispatcherImpl::permissioned_mint"
+        "cairo_level_tests::contracts::token_bridge::IMintableTokenDispatcherImpl::permissioned_mint"
       ],
       [
         33,
-        "test::token_bridge::ContractStateEventEmitter::emit::<test::token_bridge::Event, core::traits::TIntoT::<test::token_bridge::Event>>"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::token_bridge::token_bridge::Event, core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>>"
       ],
       [
         34,
-        "test::token_bridge::governor::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::governor::InternalContractMemberStateImpl::write"
       ],
       [
         35,
@@ -3411,15 +3411,15 @@
       ],
       [
         42,
-        "test::token_bridge::EventL1BridgeSetIntoEvent::into"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::EventL1BridgeSetIntoEvent::into"
       ],
       [
         43,
-        "test::token_bridge::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::EventIsEvent::append_keys_and_data"
       ],
       [
         44,
-        "test::token_bridge::EventL2TokenSetIntoEvent::into"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::EventL2TokenSetIntoEvent::into"
       ],
       [
         45,
@@ -3435,11 +3435,11 @@
       ],
       [
         48,
-        "test::token_bridge::EventWithdrawInitiatedIntoEvent::into"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::EventWithdrawInitiatedIntoEvent::into"
       ],
       [
         49,
-        "core::traits::TIntoT::<test::token_bridge::Event>::into"
+        "core::traits::TIntoT::<cairo_level_tests::contracts::token_bridge::token_bridge::Event>::into"
       ],
       [
         50,
@@ -3451,19 +3451,19 @@
       ],
       [
         52,
-        "test::token_bridge::L1BridgeSetIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSetIsEvent::append_keys_and_data"
       ],
       [
         53,
-        "test::token_bridge::L2TokenSetIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSetIsEvent::append_keys_and_data"
       ],
       [
         54,
-        "test::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data"
       ],
       [
         55,
-        "test::token_bridge::DepositHandledIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandledIsEvent::append_keys_and_data"
       ],
       [
         56,
@@ -3627,7 +3627,7 @@
     },
     {
       "type": "event",
-      "name": "test::token_bridge::L1BridgeSet",
+      "name": "cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet",
       "kind": "struct",
       "members": [
         {
@@ -3639,7 +3639,7 @@
     },
     {
       "type": "event",
-      "name": "test::token_bridge::L2TokenSet",
+      "name": "cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet",
       "kind": "struct",
       "members": [
         {
@@ -3651,7 +3651,7 @@
     },
     {
       "type": "event",
-      "name": "test::token_bridge::WithdrawInitiated",
+      "name": "cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated",
       "kind": "struct",
       "members": [
         {
@@ -3673,7 +3673,7 @@
     },
     {
       "type": "event",
-      "name": "test::token_bridge::DepositHandled",
+      "name": "cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled",
       "kind": "struct",
       "members": [
         {
@@ -3690,27 +3690,27 @@
     },
     {
       "type": "event",
-      "name": "test::token_bridge::Event",
+      "name": "cairo_level_tests::contracts::token_bridge::token_bridge::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "L1BridgeSet",
-          "type": "test::token_bridge::L1BridgeSet",
+          "type": "cairo_level_tests::contracts::token_bridge::token_bridge::L1BridgeSet",
           "kind": "nested"
         },
         {
           "name": "L2TokenSet",
-          "type": "test::token_bridge::L2TokenSet",
+          "type": "cairo_level_tests::contracts::token_bridge::token_bridge::L2TokenSet",
           "kind": "nested"
         },
         {
           "name": "WithdrawInitiated",
-          "type": "test::token_bridge::WithdrawInitiated",
+          "type": "cairo_level_tests::contracts::token_bridge::token_bridge::WithdrawInitiated",
           "kind": "nested"
         },
         {
           "name": "DepositHandled",
-          "type": "test::token_bridge::DepositHandled",
+          "type": "cairo_level_tests::contracts::token_bridge::token_bridge::DepositHandled",
           "kind": "nested"
         }
       ]

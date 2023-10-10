@@ -37,7 +37,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::allowed_libfuncs::AllowedLibfuncsError;
-use crate::compiler_version::current_compiler_version_id;
+use crate::compiler_version::{current_compiler_version_id, current_sierra_version_id, VersionId};
 use crate::contract::starknet_keccak;
 use crate::contract_class::{ContractClass, ContractEntryPoint};
 use crate::felt252_serde::{sierra_from_felt252s, Felt252SerdeError};
@@ -74,6 +74,11 @@ pub enum StarknetSierraCompilationError {
     EntryPointsOutOfOrder,
     #[error("Out of range value in serialization.")]
     ValueOutOfRange,
+    #[error(
+        "Cannot compile Sierra version {version_in_contract} with the current compiler (sierra \
+         version: {version_of_compiler})"
+    )]
+    UnsupportedSierraVersion { version_in_contract: VersionId, version_of_compiler: VersionId },
 }
 
 fn skip_if_none<T>(opt_field: &Option<T>) -> bool {
@@ -235,7 +240,16 @@ impl CasmContractClass {
             }
         }
 
-        let (_, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+        let (sierra_version, _, program) = sierra_from_felt252s(&contract_class.sierra_program)?;
+        let current_sierra_version = current_sierra_version_id();
+        if !(sierra_version.major == current_sierra_version.major
+            && sierra_version.minor <= current_sierra_version.minor)
+        {
+            return Err(StarknetSierraCompilationError::UnsupportedSierraVersion {
+                version_in_contract: sierra_version,
+                version_of_compiler: current_sierra_version,
+            });
+        }
 
         match &contract_class.entry_points_by_type.constructor.as_slice() {
             [] => {}
