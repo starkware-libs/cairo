@@ -41,6 +41,7 @@ use cairo_lang_semantic::{SemanticDiagnostic, TypeLongId};
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
 use cairo_lang_syntax::node::ast::PathSegment;
+use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::helpers::GetIdentifier;
 use cairo_lang_syntax::node::ids::SyntaxStablePtrId;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -935,7 +936,7 @@ fn completion_kind(db: &RootDatabase, node: SyntaxNode) -> CompletionKind {
             let grandparent = parent.parent().unwrap();
             eprintln!("grandparent.kind: {:#?}", grandparent.kind(db));
             if grandparent.kind(db) == SyntaxKind::ExprPath {
-                if grandparent.children(db).next().unwrap().stable_ptr() != parent.stable_ptr() {
+                if db.get_children(grandparent.clone())[0].stable_ptr() != parent.stable_ptr() {
                     // Not first segment.
                     eprintln!("Not first segment");
                     return completion_kind_from_path_node(db, grandparent);

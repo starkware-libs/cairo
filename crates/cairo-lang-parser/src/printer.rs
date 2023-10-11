@@ -170,7 +170,7 @@ impl<'a> Printer<'a> {
             format!(" (kind: {kind:?})")
         };
 
-        let children: Vec<_> = syntax_node.children(self.db).collect();
+        let children = self.db.get_children(syntax_node.clone());
         let num_children = children.len();
         let suffix = if self.ignored_kinds.contains(&format!("{kind:?}")) {
             " <ignored>".to_string()

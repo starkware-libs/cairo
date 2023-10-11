@@ -613,7 +613,7 @@ impl TypedSyntaxNode for ExprList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Arg {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Arg {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -673,7 +673,7 @@ impl TypedSyntaxNode for Arg {
             kind,
             SyntaxKind::Arg
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -778,7 +778,7 @@ impl ArgClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseNamed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgClauseNamed {
     pub const INDEX_NAME: usize = 0;
@@ -847,7 +847,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
             kind,
             SyntaxKind::ArgClauseNamed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -860,7 +860,7 @@ impl TypedSyntaxNode for ArgClauseNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseUnnamed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgClauseUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -912,7 +912,7 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
             kind,
             SyntaxKind::ArgClauseUnnamed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -925,7 +925,7 @@ impl TypedSyntaxNode for ArgClauseUnnamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgClauseFieldInitShorthand {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgClauseFieldInitShorthand {
     pub const INDEX_COLON: usize = 0;
@@ -985,7 +985,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
             kind,
             SyntaxKind::ArgClauseFieldInitShorthand
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -998,7 +998,7 @@ impl TypedSyntaxNode for ArgClauseFieldInitShorthand {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFieldInitShorthand {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprFieldInitShorthand {
     pub const INDEX_NAME: usize = 0;
@@ -1053,7 +1053,7 @@ impl TypedSyntaxNode for ExprFieldInitShorthand {
             kind,
             SyntaxKind::ExprFieldInitShorthand
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1144,7 +1144,7 @@ impl TypedSyntaxNode for ArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ExprMissingGreen {
@@ -1188,7 +1188,7 @@ impl TypedSyntaxNode for ExprMissing {
             kind,
             SyntaxKind::ExprMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1277,7 +1277,7 @@ impl PathSegment {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentSimple {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PathSegmentSimple {
     pub const INDEX_IDENT: usize = 0;
@@ -1332,7 +1332,7 @@ impl TypedSyntaxNode for PathSegmentSimple {
             kind,
             SyntaxKind::PathSegmentSimple
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1424,7 +1424,7 @@ impl OptionTerminalColonColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalColonColonEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionTerminalColonColonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalColonColonEmptyGreen {
@@ -1468,7 +1468,7 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
             kind,
             SyntaxKind::OptionTerminalColonColonEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1481,7 +1481,7 @@ impl TypedSyntaxNode for OptionTerminalColonColonEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PathSegmentWithGenericArgs {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PathSegmentWithGenericArgs {
     pub const INDEX_IDENT: usize = 0;
@@ -1550,7 +1550,7 @@ impl TypedSyntaxNode for PathSegmentWithGenericArgs {
             kind,
             SyntaxKind::PathSegmentWithGenericArgs
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1641,7 +1641,7 @@ impl TypedSyntaxNode for ExprPath {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprParenthesized {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -1710,7 +1710,7 @@ impl TypedSyntaxNode for ExprParenthesized {
             kind,
             SyntaxKind::ExprParenthesized
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1723,7 +1723,7 @@ impl TypedSyntaxNode for ExprParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprUnary {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprUnary {
     pub const INDEX_OP: usize = 0;
@@ -1783,7 +1783,7 @@ impl TypedSyntaxNode for ExprUnary {
             kind,
             SyntaxKind::ExprUnary
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -1916,7 +1916,7 @@ impl UnaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBinary {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprBinary {
     pub const INDEX_LHS: usize = 0;
@@ -1985,7 +1985,7 @@ impl TypedSyntaxNode for ExprBinary {
             kind,
             SyntaxKind::ExprBinary
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2400,7 +2400,7 @@ impl BinaryOperator {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprListParenthesized {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -2469,7 +2469,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
             kind,
             SyntaxKind::ExprListParenthesized
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2482,7 +2482,7 @@ impl TypedSyntaxNode for ExprListParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprFunctionCall {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprFunctionCall {
     pub const INDEX_PATH: usize = 0;
@@ -2542,7 +2542,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
             kind,
             SyntaxKind::ExprFunctionCall
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2555,7 +2555,7 @@ impl TypedSyntaxNode for ExprFunctionCall {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListParenthesized {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgListParenthesized {
     pub const INDEX_LPAREN: usize = 0;
@@ -2624,7 +2624,7 @@ impl TypedSyntaxNode for ArgListParenthesized {
             kind,
             SyntaxKind::ArgListParenthesized
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2716,7 +2716,7 @@ impl OptionArgListParenthesized {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionArgListParenthesizedEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionArgListParenthesizedEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionArgListParenthesizedEmptyGreen {
@@ -2760,7 +2760,7 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
             kind,
             SyntaxKind::OptionArgListParenthesizedEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2773,7 +2773,7 @@ impl TypedSyntaxNode for OptionArgListParenthesizedEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprStructCtorCall {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprStructCtorCall {
     pub const INDEX_PATH: usize = 0;
@@ -2833,7 +2833,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
             kind,
             SyntaxKind::ExprStructCtorCall
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2846,7 +2846,7 @@ impl TypedSyntaxNode for ExprStructCtorCall {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgListBraced {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StructArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -2915,7 +2915,7 @@ impl TypedSyntaxNode for StructArgListBraced {
             kind,
             SyntaxKind::StructArgListBraced
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -2928,7 +2928,7 @@ impl TypedSyntaxNode for StructArgListBraced {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprBlock {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprBlock {
     pub const INDEX_LBRACE: usize = 0;
@@ -2997,7 +2997,7 @@ impl TypedSyntaxNode for ExprBlock {
             kind,
             SyntaxKind::ExprBlock
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3010,7 +3010,7 @@ impl TypedSyntaxNode for ExprBlock {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprMatch {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprMatch {
     pub const INDEX_MATCH_KW: usize = 0;
@@ -3091,7 +3091,7 @@ impl TypedSyntaxNode for ExprMatch {
             kind,
             SyntaxKind::ExprMatch
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3182,7 +3182,7 @@ impl TypedSyntaxNode for MatchArms {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct MatchArm {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl MatchArm {
     pub const INDEX_PATTERN: usize = 0;
@@ -3251,7 +3251,7 @@ impl TypedSyntaxNode for MatchArm {
             kind,
             SyntaxKind::MatchArm
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3264,7 +3264,7 @@ impl TypedSyntaxNode for MatchArm {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIf {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprIf {
     pub const INDEX_IF_KW: usize = 0;
@@ -3339,7 +3339,7 @@ impl TypedSyntaxNode for ExprIf {
             kind,
             SyntaxKind::ExprIf
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3424,7 +3424,7 @@ impl BlockOrIf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprLoop {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprLoop {
     pub const INDEX_LOOP_KW: usize = 0;
@@ -3484,7 +3484,7 @@ impl TypedSyntaxNode for ExprLoop {
             kind,
             SyntaxKind::ExprLoop
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3497,7 +3497,7 @@ impl TypedSyntaxNode for ExprLoop {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ElseClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ElseClause {
     pub const INDEX_ELSE_KW: usize = 0;
@@ -3557,7 +3557,7 @@ impl TypedSyntaxNode for ElseClause {
             kind,
             SyntaxKind::ElseClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3649,7 +3649,7 @@ impl OptionElseClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionElseClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionElseClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionElseClauseEmptyGreen {
@@ -3693,7 +3693,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
             kind,
             SyntaxKind::OptionElseClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3706,7 +3706,7 @@ impl TypedSyntaxNode for OptionElseClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprErrorPropagate {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprErrorPropagate {
     pub const INDEX_EXPR: usize = 0;
@@ -3766,7 +3766,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
             kind,
             SyntaxKind::ExprErrorPropagate
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3779,7 +3779,7 @@ impl TypedSyntaxNode for ExprErrorPropagate {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprIndexed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprIndexed {
     pub const INDEX_EXPR: usize = 0;
@@ -3854,7 +3854,7 @@ impl TypedSyntaxNode for ExprIndexed {
             kind,
             SyntaxKind::ExprIndexed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3867,7 +3867,7 @@ impl TypedSyntaxNode for ExprIndexed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprInlineMacro {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprInlineMacro {
     pub const INDEX_PATH: usize = 0;
@@ -3936,7 +3936,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
             kind,
             SyntaxKind::ExprInlineMacro
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -3949,7 +3949,7 @@ impl TypedSyntaxNode for ExprInlineMacro {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgExpr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StructArgExpr {
     pub const INDEX_COLON: usize = 0;
@@ -4009,7 +4009,7 @@ impl TypedSyntaxNode for StructArgExpr {
             kind,
             SyntaxKind::StructArgExpr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4101,7 +4101,7 @@ impl OptionStructArgExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionStructArgExprEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionStructArgExprEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionStructArgExprEmptyGreen {
@@ -4145,7 +4145,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
             kind,
             SyntaxKind::OptionStructArgExprEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4158,7 +4158,7 @@ impl TypedSyntaxNode for OptionStructArgExprEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgSingle {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StructArgSingle {
     pub const INDEX_IDENTIFIER: usize = 0;
@@ -4229,7 +4229,7 @@ impl TypedSyntaxNode for StructArgSingle {
             kind,
             SyntaxKind::StructArgSingle
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4242,7 +4242,7 @@ impl TypedSyntaxNode for StructArgSingle {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StructArgTail {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StructArgTail {
     pub const INDEX_DOTDOT: usize = 0;
@@ -4302,7 +4302,7 @@ impl TypedSyntaxNode for StructArgTail {
             kind,
             SyntaxKind::StructArgTail
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4469,7 +4469,7 @@ impl TypedSyntaxNode for StructArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBraced {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgListBraced {
     pub const INDEX_LBRACE: usize = 0;
@@ -4538,7 +4538,7 @@ impl TypedSyntaxNode for ArgListBraced {
             kind,
             SyntaxKind::ArgListBraced
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4551,7 +4551,7 @@ impl TypedSyntaxNode for ArgListBraced {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ArgListBracketed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ArgListBracketed {
     pub const INDEX_LBRACK: usize = 0;
@@ -4620,7 +4620,7 @@ impl TypedSyntaxNode for ArgListBracketed {
             kind,
             SyntaxKind::ArgListBracketed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4743,7 +4743,7 @@ impl WrappedArgList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedArgListMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl WrappedArgListMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> WrappedArgListMissingGreen {
@@ -4787,7 +4787,7 @@ impl TypedSyntaxNode for WrappedArgListMissing {
             kind,
             SyntaxKind::WrappedArgListMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -4980,7 +4980,7 @@ impl Pattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternIdentifier {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternIdentifier {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -5048,7 +5048,7 @@ impl TypedSyntaxNode for PatternIdentifier {
             kind,
             SyntaxKind::PatternIdentifier
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5061,7 +5061,7 @@ impl TypedSyntaxNode for PatternIdentifier {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStruct {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternStruct {
     pub const INDEX_PATH: usize = 0;
@@ -5136,7 +5136,7 @@ impl TypedSyntaxNode for PatternStruct {
             kind,
             SyntaxKind::PatternStruct
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5227,7 +5227,7 @@ impl TypedSyntaxNode for PatternStructParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternTuple {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternTuple {
     pub const INDEX_LPAREN: usize = 0;
@@ -5296,7 +5296,7 @@ impl TypedSyntaxNode for PatternTuple {
             kind,
             SyntaxKind::PatternTuple
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5482,7 +5482,7 @@ impl PatternStructParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternStructParamWithExpr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternStructParamWithExpr {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -5557,7 +5557,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
             kind,
             SyntaxKind::PatternStructParamWithExpr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5570,7 +5570,7 @@ impl TypedSyntaxNode for PatternStructParamWithExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnum {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternEnum {
     pub const INDEX_PATH: usize = 0;
@@ -5633,7 +5633,7 @@ impl TypedSyntaxNode for PatternEnum {
             kind,
             SyntaxKind::PatternEnum
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5646,7 +5646,7 @@ impl TypedSyntaxNode for PatternEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct PatternEnumInnerPattern {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl PatternEnumInnerPattern {
     pub const INDEX_LPAREN: usize = 0;
@@ -5715,7 +5715,7 @@ impl TypedSyntaxNode for PatternEnumInnerPattern {
             kind,
             SyntaxKind::PatternEnumInnerPattern
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5809,7 +5809,7 @@ impl OptionPatternEnumInnerPattern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionPatternEnumInnerPatternEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionPatternEnumInnerPatternEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionPatternEnumInnerPatternEmptyGreen {
@@ -5853,7 +5853,7 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
             kind,
             SyntaxKind::OptionPatternEnumInnerPatternEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -5866,7 +5866,7 @@ impl TypedSyntaxNode for OptionPatternEnumInnerPatternEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TypeClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl TypeClause {
     pub const INDEX_COLON: usize = 0;
@@ -5926,7 +5926,7 @@ impl TypedSyntaxNode for TypeClause {
             kind,
             SyntaxKind::TypeClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6018,7 +6018,7 @@ impl OptionTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTypeClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTypeClauseEmptyGreen {
@@ -6062,7 +6062,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
             kind,
             SyntaxKind::OptionTypeClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6075,7 +6075,7 @@ impl TypedSyntaxNode for OptionTypeClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ReturnTypeClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ReturnTypeClause {
     pub const INDEX_ARROW: usize = 0;
@@ -6135,7 +6135,7 @@ impl TypedSyntaxNode for ReturnTypeClause {
             kind,
             SyntaxKind::ReturnTypeClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6227,7 +6227,7 @@ impl OptionReturnTypeClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionReturnTypeClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionReturnTypeClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionReturnTypeClauseEmptyGreen {
@@ -6271,7 +6271,7 @@ impl TypedSyntaxNode for OptionReturnTypeClauseEmpty {
             kind,
             SyntaxKind::OptionReturnTypeClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6472,7 +6472,7 @@ impl TypedSyntaxNode for StatementList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> StatementMissingGreen {
@@ -6516,7 +6516,7 @@ impl TypedSyntaxNode for StatementMissing {
             kind,
             SyntaxKind::StatementMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6529,7 +6529,7 @@ impl TypedSyntaxNode for StatementMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementLet {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementLet {
     pub const INDEX_LET_KW: usize = 0;
@@ -6625,7 +6625,7 @@ impl TypedSyntaxNode for StatementLet {
             kind,
             SyntaxKind::StatementLet
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6717,7 +6717,7 @@ impl OptionTerminalSemicolon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalSemicolonEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionTerminalSemicolonEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalSemicolonEmptyGreen {
@@ -6761,7 +6761,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
             kind,
             SyntaxKind::OptionTerminalSemicolonEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6774,7 +6774,7 @@ impl TypedSyntaxNode for OptionTerminalSemicolonEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementExpr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -6834,7 +6834,7 @@ impl TypedSyntaxNode for StatementExpr {
             kind,
             SyntaxKind::StatementExpr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6847,7 +6847,7 @@ impl TypedSyntaxNode for StatementExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementContinue {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementContinue {
     pub const INDEX_CONTINUE_KW: usize = 0;
@@ -6907,7 +6907,7 @@ impl TypedSyntaxNode for StatementContinue {
             kind,
             SyntaxKind::StatementContinue
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -6920,7 +6920,7 @@ impl TypedSyntaxNode for StatementContinue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ExprClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ExprClause {
     pub const INDEX_EXPR: usize = 0;
@@ -6972,7 +6972,7 @@ impl TypedSyntaxNode for ExprClause {
             kind,
             SyntaxKind::ExprClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7064,7 +7064,7 @@ impl OptionExprClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionExprClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionExprClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionExprClauseEmptyGreen {
@@ -7108,7 +7108,7 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
             kind,
             SyntaxKind::OptionExprClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7121,7 +7121,7 @@ impl TypedSyntaxNode for OptionExprClauseEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementReturn {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementReturn {
     pub const INDEX_RETURN_KW: usize = 0;
@@ -7190,7 +7190,7 @@ impl TypedSyntaxNode for StatementReturn {
             kind,
             SyntaxKind::StatementReturn
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7203,7 +7203,7 @@ impl TypedSyntaxNode for StatementReturn {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct StatementBreak {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl StatementBreak {
     pub const INDEX_BREAK_KW: usize = 0;
@@ -7272,7 +7272,7 @@ impl TypedSyntaxNode for StatementBreak {
             kind,
             SyntaxKind::StatementBreak
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7285,7 +7285,7 @@ impl TypedSyntaxNode for StatementBreak {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Param {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Param {
     pub const INDEX_MODIFIERS: usize = 0;
@@ -7362,7 +7362,7 @@ impl TypedSyntaxNode for Param {
             kind,
             SyntaxKind::Param
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7577,7 +7577,7 @@ impl TypedSyntaxNode for ParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplicitsClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ImplicitsClause {
     pub const INDEX_IMPLICITS_KW: usize = 0;
@@ -7652,7 +7652,7 @@ impl TypedSyntaxNode for ImplicitsClause {
             kind,
             SyntaxKind::ImplicitsClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7822,7 +7822,7 @@ impl OptionImplicitsClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionImplicitsClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionImplicitsClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionImplicitsClauseEmptyGreen {
@@ -7866,7 +7866,7 @@ impl TypedSyntaxNode for OptionImplicitsClauseEmpty {
             kind,
             SyntaxKind::OptionImplicitsClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -7958,7 +7958,7 @@ impl OptionTerminalNoPanic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionTerminalNoPanicEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionTerminalNoPanicEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionTerminalNoPanicEmptyGreen {
@@ -8002,7 +8002,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
             kind,
             SyntaxKind::OptionTerminalNoPanicEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8015,7 +8015,7 @@ impl TypedSyntaxNode for OptionTerminalNoPanicEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionSignature {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl FunctionSignature {
     pub const INDEX_LPAREN: usize = 0;
@@ -8109,7 +8109,7 @@ impl TypedSyntaxNode for FunctionSignature {
             kind,
             SyntaxKind::FunctionSignature
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8122,7 +8122,7 @@ impl TypedSyntaxNode for FunctionSignature {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Member {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Member {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -8199,7 +8199,7 @@ impl TypedSyntaxNode for Member {
             kind,
             SyntaxKind::Member
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8290,7 +8290,7 @@ impl TypedSyntaxNode for MemberList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Variant {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Variant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -8367,7 +8367,7 @@ impl TypedSyntaxNode for Variant {
             kind,
             SyntaxKind::Variant
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8758,7 +8758,7 @@ impl TypedSyntaxNode for ItemList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ItemMissingGreen {
@@ -8802,7 +8802,7 @@ impl TypedSyntaxNode for ItemMissing {
             kind,
             SyntaxKind::ItemMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8815,7 +8815,7 @@ impl TypedSyntaxNode for ItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Attribute {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Attribute {
     pub const INDEX_HASH: usize = 0;
@@ -8896,7 +8896,7 @@ impl TypedSyntaxNode for Attribute {
             kind,
             SyntaxKind::Attribute
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -8961,7 +8961,7 @@ impl TypedSyntaxNode for AttributeList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemModule {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemModule {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9044,7 +9044,7 @@ impl TypedSyntaxNode for ItemModule {
             kind,
             SyntaxKind::ItemModule
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9133,7 +9133,7 @@ impl MaybeModuleBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ModuleBody {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ModuleBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -9202,7 +9202,7 @@ impl TypedSyntaxNode for ModuleBody {
             kind,
             SyntaxKind::ModuleBody
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9215,7 +9215,7 @@ impl TypedSyntaxNode for ModuleBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionDeclaration {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl FunctionDeclaration {
     pub const INDEX_FUNCTION_KW: usize = 0;
@@ -9298,7 +9298,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
             kind,
             SyntaxKind::FunctionDeclaration
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9311,7 +9311,7 @@ impl TypedSyntaxNode for FunctionDeclaration {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemConstant {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemConstant {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9413,7 +9413,7 @@ impl TypedSyntaxNode for ItemConstant {
             kind,
             SyntaxKind::ItemConstant
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9426,7 +9426,7 @@ impl TypedSyntaxNode for ItemConstant {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct FunctionWithBody {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl FunctionWithBody {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9503,7 +9503,7 @@ impl TypedSyntaxNode for FunctionWithBody {
             kind,
             SyntaxKind::FunctionWithBody
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9516,7 +9516,7 @@ impl TypedSyntaxNode for FunctionWithBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternFunction {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemExternFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9599,7 +9599,7 @@ impl TypedSyntaxNode for ItemExternFunction {
             kind,
             SyntaxKind::ItemExternFunction
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9612,7 +9612,7 @@ impl TypedSyntaxNode for ItemExternFunction {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemExternType {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemExternType {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9708,7 +9708,7 @@ impl TypedSyntaxNode for ItemExternType {
             kind,
             SyntaxKind::ItemExternType
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9721,7 +9721,7 @@ impl TypedSyntaxNode for ItemExternType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTrait {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemTrait {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -9811,7 +9811,7 @@ impl TypedSyntaxNode for ItemTrait {
             kind,
             SyntaxKind::ItemTrait
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -9900,7 +9900,7 @@ impl MaybeTraitBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitBody {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl TraitBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -9969,7 +9969,7 @@ impl TypedSyntaxNode for TraitBody {
             kind,
             SyntaxKind::TraitBody
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10110,7 +10110,7 @@ impl TraitItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl TraitItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> TraitItemMissingGreen {
@@ -10154,7 +10154,7 @@ impl TypedSyntaxNode for TraitItemMissing {
             kind,
             SyntaxKind::TraitItemMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10167,7 +10167,7 @@ impl TypedSyntaxNode for TraitItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TraitItemFunction {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl TraitItemFunction {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10244,7 +10244,7 @@ impl TypedSyntaxNode for TraitItemFunction {
             kind,
             SyntaxKind::TraitItemFunction
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10336,7 +10336,7 @@ impl MaybeTraitFunctionBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImpl {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemImpl {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10438,7 +10438,7 @@ impl TypedSyntaxNode for ItemImpl {
             kind,
             SyntaxKind::ItemImpl
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10451,7 +10451,7 @@ impl TypedSyntaxNode for ItemImpl {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemInlineMacro {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemInlineMacro {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -10532,7 +10532,7 @@ impl TypedSyntaxNode for ItemInlineMacro {
             kind,
             SyntaxKind::ItemInlineMacro
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10619,7 +10619,7 @@ impl MaybeImplBody {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplBody {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ImplBody {
     pub const INDEX_LBRACE: usize = 0;
@@ -10688,7 +10688,7 @@ impl TypedSyntaxNode for ImplBody {
             kind,
             SyntaxKind::ImplBody
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -10993,7 +10993,7 @@ impl ImplItem {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ImplItemMissing {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ImplItemMissing {
     pub fn new_green(db: &dyn SyntaxGroup) -> ImplItemMissingGreen {
@@ -11037,7 +11037,7 @@ impl TypedSyntaxNode for ImplItemMissing {
             kind,
             SyntaxKind::ImplItemMissing
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11050,7 +11050,7 @@ impl TypedSyntaxNode for ImplItemMissing {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemImplAlias {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemImplAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11152,7 +11152,7 @@ impl TypedSyntaxNode for ItemImplAlias {
             kind,
             SyntaxKind::ItemImplAlias
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11165,7 +11165,7 @@ impl TypedSyntaxNode for ItemImplAlias {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemStruct {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemStruct {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11274,7 +11274,7 @@ impl TypedSyntaxNode for ItemStruct {
             kind,
             SyntaxKind::ItemStruct
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11287,7 +11287,7 @@ impl TypedSyntaxNode for ItemStruct {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemEnum {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemEnum {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11389,7 +11389,7 @@ impl TypedSyntaxNode for ItemEnum {
             kind,
             SyntaxKind::ItemEnum
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11402,7 +11402,7 @@ impl TypedSyntaxNode for ItemEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemTypeAlias {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemTypeAlias {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11504,7 +11504,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
             kind,
             SyntaxKind::ItemTypeAlias
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11517,7 +11517,7 @@ impl TypedSyntaxNode for ItemTypeAlias {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct ItemUse {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl ItemUse {
     pub const INDEX_ATTRIBUTES: usize = 0;
@@ -11600,7 +11600,7 @@ impl TypedSyntaxNode for ItemUse {
             kind,
             SyntaxKind::ItemUse
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11699,7 +11699,7 @@ impl UsePath {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathLeaf {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl UsePathLeaf {
     pub const INDEX_IDENT: usize = 0;
@@ -11775,7 +11775,7 @@ impl TypedSyntaxNode for UsePathLeaf {
             kind,
             SyntaxKind::UsePathLeaf
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11788,7 +11788,7 @@ impl TypedSyntaxNode for UsePathLeaf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathSingle {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl UsePathSingle {
     pub const INDEX_IDENT: usize = 0;
@@ -11857,7 +11857,7 @@ impl TypedSyntaxNode for UsePathSingle {
             kind,
             SyntaxKind::UsePathSingle
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -11870,7 +11870,7 @@ impl TypedSyntaxNode for UsePathSingle {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct UsePathMulti {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl UsePathMulti {
     pub const INDEX_LBRACE: usize = 0;
@@ -11939,7 +11939,7 @@ impl TypedSyntaxNode for UsePathMulti {
             kind,
             SyntaxKind::UsePathMulti
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12030,7 +12030,7 @@ impl TypedSyntaxNode for UsePathList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct AliasClause {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl AliasClause {
     pub const INDEX_AS_KW: usize = 0;
@@ -12098,7 +12098,7 @@ impl TypedSyntaxNode for AliasClause {
             kind,
             SyntaxKind::AliasClause
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12190,7 +12190,7 @@ impl OptionAliasClause {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionAliasClauseEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionAliasClauseEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionAliasClauseEmptyGreen {
@@ -12234,7 +12234,7 @@ impl TypedSyntaxNode for OptionAliasClauseEmpty {
             kind,
             SyntaxKind::OptionAliasClauseEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12323,7 +12323,7 @@ impl GenericArg {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgNamed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericArgNamed {
     pub const INDEX_NAME: usize = 0;
@@ -12392,7 +12392,7 @@ impl TypedSyntaxNode for GenericArgNamed {
             kind,
             SyntaxKind::GenericArgNamed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12405,7 +12405,7 @@ impl TypedSyntaxNode for GenericArgNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgUnnamed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericArgUnnamed {
     pub const INDEX_VALUE: usize = 0;
@@ -12457,7 +12457,7 @@ impl TypedSyntaxNode for GenericArgUnnamed {
             kind,
             SyntaxKind::GenericArgUnnamed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12548,7 +12548,7 @@ impl GenericArgValue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgValueExpr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericArgValueExpr {
     pub const INDEX_EXPR: usize = 0;
@@ -12600,7 +12600,7 @@ impl TypedSyntaxNode for GenericArgValueExpr {
             kind,
             SyntaxKind::GenericArgValueExpr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12613,7 +12613,7 @@ impl TypedSyntaxNode for GenericArgValueExpr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericArgs {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericArgs {
     pub const INDEX_LANGLE: usize = 0;
@@ -12682,7 +12682,7 @@ impl TypedSyntaxNode for GenericArgs {
             kind,
             SyntaxKind::GenericArgs
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12854,7 +12854,7 @@ impl OptionWrappedGenericParamList {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct OptionWrappedGenericParamListEmpty {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl OptionWrappedGenericParamListEmpty {
     pub fn new_green(db: &dyn SyntaxGroup) -> OptionWrappedGenericParamListEmptyGreen {
@@ -12898,7 +12898,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
             kind,
             SyntaxKind::OptionWrappedGenericParamListEmpty
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -12911,7 +12911,7 @@ impl TypedSyntaxNode for OptionWrappedGenericParamListEmpty {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct WrappedGenericParamList {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl WrappedGenericParamList {
     pub const INDEX_LANGLE: usize = 0;
@@ -12980,7 +12980,7 @@ impl TypedSyntaxNode for WrappedGenericParamList {
             kind,
             SyntaxKind::WrappedGenericParamList
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13179,7 +13179,7 @@ impl GenericParam {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamType {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericParamType {
     pub const INDEX_NAME: usize = 0;
@@ -13239,7 +13239,7 @@ impl TypedSyntaxNode for GenericParamType {
             kind,
             SyntaxKind::GenericParamType
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13252,7 +13252,7 @@ impl TypedSyntaxNode for GenericParamType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamConst {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericParamConst {
     pub const INDEX_CONST_KW: usize = 0;
@@ -13335,7 +13335,7 @@ impl TypedSyntaxNode for GenericParamConst {
             kind,
             SyntaxKind::GenericParamConst
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13348,7 +13348,7 @@ impl TypedSyntaxNode for GenericParamConst {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplNamed {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericParamImplNamed {
     pub const INDEX_IMPL_KW: usize = 0;
@@ -13431,7 +13431,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
             kind,
             SyntaxKind::GenericParamImplNamed
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13444,7 +13444,7 @@ impl TypedSyntaxNode for GenericParamImplNamed {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct GenericParamImplAnonymous {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl GenericParamImplAnonymous {
     pub const INDEX_PLUS: usize = 0;
@@ -13504,7 +13504,7 @@ impl TypedSyntaxNode for GenericParamImplAnonymous {
             kind,
             SyntaxKind::GenericParamImplAnonymous
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13578,7 +13578,7 @@ impl TypedSyntaxNode for TokenIdentifier {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIdentifier {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalIdentifier {
     const KIND: SyntaxKind = SyntaxKind::TerminalIdentifier;
@@ -13649,7 +13649,7 @@ impl TypedSyntaxNode for TerminalIdentifier {
             kind,
             SyntaxKind::TerminalIdentifier
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13724,7 +13724,7 @@ impl TypedSyntaxNode for TokenLiteralNumber {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLiteralNumber {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLiteralNumber {
     const KIND: SyntaxKind = SyntaxKind::TerminalLiteralNumber;
@@ -13795,7 +13795,7 @@ impl TypedSyntaxNode for TerminalLiteralNumber {
             kind,
             SyntaxKind::TerminalLiteralNumber
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -13869,7 +13869,7 @@ impl TypedSyntaxNode for TokenShortString {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalShortString {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalShortString {
     const KIND: SyntaxKind = SyntaxKind::TerminalShortString;
@@ -13940,7 +13940,7 @@ impl TypedSyntaxNode for TerminalShortString {
             kind,
             SyntaxKind::TerminalShortString
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14014,7 +14014,7 @@ impl TypedSyntaxNode for TokenString {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalString {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalString {
     const KIND: SyntaxKind = SyntaxKind::TerminalString;
@@ -14085,7 +14085,7 @@ impl TypedSyntaxNode for TerminalString {
             kind,
             SyntaxKind::TerminalString
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14159,7 +14159,7 @@ impl TypedSyntaxNode for TokenAs {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAs {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalAs {
     const KIND: SyntaxKind = SyntaxKind::TerminalAs;
@@ -14230,7 +14230,7 @@ impl TypedSyntaxNode for TerminalAs {
             kind,
             SyntaxKind::TerminalAs
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14304,7 +14304,7 @@ impl TypedSyntaxNode for TokenConst {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalConst {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalConst {
     const KIND: SyntaxKind = SyntaxKind::TerminalConst;
@@ -14375,7 +14375,7 @@ impl TypedSyntaxNode for TerminalConst {
             kind,
             SyntaxKind::TerminalConst
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14449,7 +14449,7 @@ impl TypedSyntaxNode for TokenElse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalElse {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalElse {
     const KIND: SyntaxKind = SyntaxKind::TerminalElse;
@@ -14520,7 +14520,7 @@ impl TypedSyntaxNode for TerminalElse {
             kind,
             SyntaxKind::TerminalElse
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14594,7 +14594,7 @@ impl TypedSyntaxNode for TokenEnum {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEnum {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalEnum {
     const KIND: SyntaxKind = SyntaxKind::TerminalEnum;
@@ -14665,7 +14665,7 @@ impl TypedSyntaxNode for TerminalEnum {
             kind,
             SyntaxKind::TerminalEnum
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14739,7 +14739,7 @@ impl TypedSyntaxNode for TokenExtern {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalExtern {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalExtern {
     const KIND: SyntaxKind = SyntaxKind::TerminalExtern;
@@ -14810,7 +14810,7 @@ impl TypedSyntaxNode for TerminalExtern {
             kind,
             SyntaxKind::TerminalExtern
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -14884,7 +14884,7 @@ impl TypedSyntaxNode for TokenFalse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFalse {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalFalse {
     const KIND: SyntaxKind = SyntaxKind::TerminalFalse;
@@ -14955,7 +14955,7 @@ impl TypedSyntaxNode for TerminalFalse {
             kind,
             SyntaxKind::TerminalFalse
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15029,7 +15029,7 @@ impl TypedSyntaxNode for TokenFunction {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalFunction {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalFunction {
     const KIND: SyntaxKind = SyntaxKind::TerminalFunction;
@@ -15100,7 +15100,7 @@ impl TypedSyntaxNode for TerminalFunction {
             kind,
             SyntaxKind::TerminalFunction
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15174,7 +15174,7 @@ impl TypedSyntaxNode for TokenIf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalIf {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalIf {
     const KIND: SyntaxKind = SyntaxKind::TerminalIf;
@@ -15245,7 +15245,7 @@ impl TypedSyntaxNode for TerminalIf {
             kind,
             SyntaxKind::TerminalIf
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15319,7 +15319,7 @@ impl TypedSyntaxNode for TokenLoop {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLoop {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLoop {
     const KIND: SyntaxKind = SyntaxKind::TerminalLoop;
@@ -15390,7 +15390,7 @@ impl TypedSyntaxNode for TerminalLoop {
             kind,
             SyntaxKind::TerminalLoop
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15464,7 +15464,7 @@ impl TypedSyntaxNode for TokenImpl {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImpl {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalImpl {
     const KIND: SyntaxKind = SyntaxKind::TerminalImpl;
@@ -15535,7 +15535,7 @@ impl TypedSyntaxNode for TerminalImpl {
             kind,
             SyntaxKind::TerminalImpl
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15609,7 +15609,7 @@ impl TypedSyntaxNode for TokenImplicits {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalImplicits {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalImplicits {
     const KIND: SyntaxKind = SyntaxKind::TerminalImplicits;
@@ -15680,7 +15680,7 @@ impl TypedSyntaxNode for TerminalImplicits {
             kind,
             SyntaxKind::TerminalImplicits
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15754,7 +15754,7 @@ impl TypedSyntaxNode for TokenLet {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLet {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLet {
     const KIND: SyntaxKind = SyntaxKind::TerminalLet;
@@ -15825,7 +15825,7 @@ impl TypedSyntaxNode for TerminalLet {
             kind,
             SyntaxKind::TerminalLet
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -15899,7 +15899,7 @@ impl TypedSyntaxNode for TokenMatch {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatch {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMatch {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatch;
@@ -15970,7 +15970,7 @@ impl TypedSyntaxNode for TerminalMatch {
             kind,
             SyntaxKind::TerminalMatch
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16044,7 +16044,7 @@ impl TypedSyntaxNode for TokenModule {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModule {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalModule {
     const KIND: SyntaxKind = SyntaxKind::TerminalModule;
@@ -16115,7 +16115,7 @@ impl TypedSyntaxNode for TerminalModule {
             kind,
             SyntaxKind::TerminalModule
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16189,7 +16189,7 @@ impl TypedSyntaxNode for TokenMut {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMut {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMut {
     const KIND: SyntaxKind = SyntaxKind::TerminalMut;
@@ -16260,7 +16260,7 @@ impl TypedSyntaxNode for TerminalMut {
             kind,
             SyntaxKind::TerminalMut
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16334,7 +16334,7 @@ impl TypedSyntaxNode for TokenNoPanic {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNoPanic {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalNoPanic {
     const KIND: SyntaxKind = SyntaxKind::TerminalNoPanic;
@@ -16405,7 +16405,7 @@ impl TypedSyntaxNode for TerminalNoPanic {
             kind,
             SyntaxKind::TerminalNoPanic
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16479,7 +16479,7 @@ impl TypedSyntaxNode for TokenOf {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOf {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalOf {
     const KIND: SyntaxKind = SyntaxKind::TerminalOf;
@@ -16550,7 +16550,7 @@ impl TypedSyntaxNode for TerminalOf {
             kind,
             SyntaxKind::TerminalOf
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16624,7 +16624,7 @@ impl TypedSyntaxNode for TokenRef {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRef {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalRef {
     const KIND: SyntaxKind = SyntaxKind::TerminalRef;
@@ -16695,7 +16695,7 @@ impl TypedSyntaxNode for TerminalRef {
             kind,
             SyntaxKind::TerminalRef
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16769,7 +16769,7 @@ impl TypedSyntaxNode for TokenContinue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalContinue {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalContinue {
     const KIND: SyntaxKind = SyntaxKind::TerminalContinue;
@@ -16840,7 +16840,7 @@ impl TypedSyntaxNode for TerminalContinue {
             kind,
             SyntaxKind::TerminalContinue
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -16914,7 +16914,7 @@ impl TypedSyntaxNode for TokenReturn {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalReturn {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalReturn {
     const KIND: SyntaxKind = SyntaxKind::TerminalReturn;
@@ -16985,7 +16985,7 @@ impl TypedSyntaxNode for TerminalReturn {
             kind,
             SyntaxKind::TerminalReturn
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17059,7 +17059,7 @@ impl TypedSyntaxNode for TokenBreak {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBreak {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalBreak {
     const KIND: SyntaxKind = SyntaxKind::TerminalBreak;
@@ -17130,7 +17130,7 @@ impl TypedSyntaxNode for TerminalBreak {
             kind,
             SyntaxKind::TerminalBreak
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17204,7 +17204,7 @@ impl TypedSyntaxNode for TokenStruct {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalStruct {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalStruct {
     const KIND: SyntaxKind = SyntaxKind::TerminalStruct;
@@ -17275,7 +17275,7 @@ impl TypedSyntaxNode for TerminalStruct {
             kind,
             SyntaxKind::TerminalStruct
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17349,7 +17349,7 @@ impl TypedSyntaxNode for TokenTrait {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrait {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalTrait {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrait;
@@ -17420,7 +17420,7 @@ impl TypedSyntaxNode for TerminalTrait {
             kind,
             SyntaxKind::TerminalTrait
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17494,7 +17494,7 @@ impl TypedSyntaxNode for TokenTrue {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalTrue {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalTrue {
     const KIND: SyntaxKind = SyntaxKind::TerminalTrue;
@@ -17565,7 +17565,7 @@ impl TypedSyntaxNode for TerminalTrue {
             kind,
             SyntaxKind::TerminalTrue
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17639,7 +17639,7 @@ impl TypedSyntaxNode for TokenType {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalType {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalType {
     const KIND: SyntaxKind = SyntaxKind::TerminalType;
@@ -17710,7 +17710,7 @@ impl TypedSyntaxNode for TerminalType {
             kind,
             SyntaxKind::TerminalType
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17784,7 +17784,7 @@ impl TypedSyntaxNode for TokenUse {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUse {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalUse {
     const KIND: SyntaxKind = SyntaxKind::TerminalUse;
@@ -17855,7 +17855,7 @@ impl TypedSyntaxNode for TerminalUse {
             kind,
             SyntaxKind::TerminalUse
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -17929,7 +17929,7 @@ impl TypedSyntaxNode for TokenAnd {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAnd {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAnd;
@@ -18000,7 +18000,7 @@ impl TypedSyntaxNode for TerminalAnd {
             kind,
             SyntaxKind::TerminalAnd
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18074,7 +18074,7 @@ impl TypedSyntaxNode for TokenAndAnd {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAndAnd {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalAndAnd {
     const KIND: SyntaxKind = SyntaxKind::TerminalAndAnd;
@@ -18145,7 +18145,7 @@ impl TypedSyntaxNode for TerminalAndAnd {
             kind,
             SyntaxKind::TerminalAndAnd
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18219,7 +18219,7 @@ impl TypedSyntaxNode for TokenArrow {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalArrow {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalArrow;
@@ -18290,7 +18290,7 @@ impl TypedSyntaxNode for TerminalArrow {
             kind,
             SyntaxKind::TerminalArrow
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18364,7 +18364,7 @@ impl TypedSyntaxNode for TokenAt {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalAt {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalAt {
     const KIND: SyntaxKind = SyntaxKind::TerminalAt;
@@ -18435,7 +18435,7 @@ impl TypedSyntaxNode for TerminalAt {
             kind,
             SyntaxKind::TerminalAt
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18510,7 +18510,7 @@ impl TypedSyntaxNode for TokenBadCharacters {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBadCharacters {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalBadCharacters {
     const KIND: SyntaxKind = SyntaxKind::TerminalBadCharacters;
@@ -18581,7 +18581,7 @@ impl TypedSyntaxNode for TerminalBadCharacters {
             kind,
             SyntaxKind::TerminalBadCharacters
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18655,7 +18655,7 @@ impl TypedSyntaxNode for TokenColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColon {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColon;
@@ -18726,7 +18726,7 @@ impl TypedSyntaxNode for TerminalColon {
             kind,
             SyntaxKind::TerminalColon
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18800,7 +18800,7 @@ impl TypedSyntaxNode for TokenColonColon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalColonColon {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalColonColon {
     const KIND: SyntaxKind = SyntaxKind::TerminalColonColon;
@@ -18871,7 +18871,7 @@ impl TypedSyntaxNode for TerminalColonColon {
             kind,
             SyntaxKind::TerminalColonColon
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -18945,7 +18945,7 @@ impl TypedSyntaxNode for TokenComma {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalComma {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalComma {
     const KIND: SyntaxKind = SyntaxKind::TerminalComma;
@@ -19016,7 +19016,7 @@ impl TypedSyntaxNode for TerminalComma {
             kind,
             SyntaxKind::TerminalComma
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19090,7 +19090,7 @@ impl TypedSyntaxNode for TokenDiv {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDiv {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalDiv {
     const KIND: SyntaxKind = SyntaxKind::TerminalDiv;
@@ -19161,7 +19161,7 @@ impl TypedSyntaxNode for TerminalDiv {
             kind,
             SyntaxKind::TerminalDiv
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19235,7 +19235,7 @@ impl TypedSyntaxNode for TokenDivEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDivEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalDivEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalDivEq;
@@ -19306,7 +19306,7 @@ impl TypedSyntaxNode for TerminalDivEq {
             kind,
             SyntaxKind::TerminalDivEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19380,7 +19380,7 @@ impl TypedSyntaxNode for TokenDot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDot {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDot;
@@ -19451,7 +19451,7 @@ impl TypedSyntaxNode for TerminalDot {
             kind,
             SyntaxKind::TerminalDot
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19525,7 +19525,7 @@ impl TypedSyntaxNode for TokenDotDot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalDotDot {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalDotDot {
     const KIND: SyntaxKind = SyntaxKind::TerminalDotDot;
@@ -19596,7 +19596,7 @@ impl TypedSyntaxNode for TerminalDotDot {
             kind,
             SyntaxKind::TerminalDotDot
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19670,7 +19670,7 @@ impl TypedSyntaxNode for TokenEndOfFile {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEndOfFile {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalEndOfFile {
     const KIND: SyntaxKind = SyntaxKind::TerminalEndOfFile;
@@ -19741,7 +19741,7 @@ impl TypedSyntaxNode for TerminalEndOfFile {
             kind,
             SyntaxKind::TerminalEndOfFile
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19815,7 +19815,7 @@ impl TypedSyntaxNode for TokenEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEq;
@@ -19886,7 +19886,7 @@ impl TypedSyntaxNode for TerminalEq {
             kind,
             SyntaxKind::TerminalEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -19960,7 +19960,7 @@ impl TypedSyntaxNode for TokenEqEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalEqEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalEqEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalEqEq;
@@ -20031,7 +20031,7 @@ impl TypedSyntaxNode for TerminalEqEq {
             kind,
             SyntaxKind::TerminalEqEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20105,7 +20105,7 @@ impl TypedSyntaxNode for TokenGE {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGE {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalGE {
     const KIND: SyntaxKind = SyntaxKind::TerminalGE;
@@ -20176,7 +20176,7 @@ impl TypedSyntaxNode for TerminalGE {
             kind,
             SyntaxKind::TerminalGE
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20250,7 +20250,7 @@ impl TypedSyntaxNode for TokenGT {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalGT {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalGT {
     const KIND: SyntaxKind = SyntaxKind::TerminalGT;
@@ -20321,7 +20321,7 @@ impl TypedSyntaxNode for TerminalGT {
             kind,
             SyntaxKind::TerminalGT
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20395,7 +20395,7 @@ impl TypedSyntaxNode for TokenHash {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalHash {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalHash {
     const KIND: SyntaxKind = SyntaxKind::TerminalHash;
@@ -20466,7 +20466,7 @@ impl TypedSyntaxNode for TerminalHash {
             kind,
             SyntaxKind::TerminalHash
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20540,7 +20540,7 @@ impl TypedSyntaxNode for TokenLBrace {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrace {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrace;
@@ -20611,7 +20611,7 @@ impl TypedSyntaxNode for TerminalLBrace {
             kind,
             SyntaxKind::TerminalLBrace
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20685,7 +20685,7 @@ impl TypedSyntaxNode for TokenLBrack {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLBrack {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalLBrack;
@@ -20756,7 +20756,7 @@ impl TypedSyntaxNode for TerminalLBrack {
             kind,
             SyntaxKind::TerminalLBrack
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20830,7 +20830,7 @@ impl TypedSyntaxNode for TokenLE {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLE {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLE {
     const KIND: SyntaxKind = SyntaxKind::TerminalLE;
@@ -20901,7 +20901,7 @@ impl TypedSyntaxNode for TerminalLE {
             kind,
             SyntaxKind::TerminalLE
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -20975,7 +20975,7 @@ impl TypedSyntaxNode for TokenLParen {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLParen {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalLParen;
@@ -21046,7 +21046,7 @@ impl TypedSyntaxNode for TerminalLParen {
             kind,
             SyntaxKind::TerminalLParen
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21120,7 +21120,7 @@ impl TypedSyntaxNode for TokenLT {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalLT {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalLT {
     const KIND: SyntaxKind = SyntaxKind::TerminalLT;
@@ -21191,7 +21191,7 @@ impl TypedSyntaxNode for TerminalLT {
             kind,
             SyntaxKind::TerminalLT
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21265,7 +21265,7 @@ impl TypedSyntaxNode for TokenMatchArrow {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMatchArrow {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMatchArrow {
     const KIND: SyntaxKind = SyntaxKind::TerminalMatchArrow;
@@ -21336,7 +21336,7 @@ impl TypedSyntaxNode for TerminalMatchArrow {
             kind,
             SyntaxKind::TerminalMatchArrow
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21410,7 +21410,7 @@ impl TypedSyntaxNode for TokenMinus {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinus {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMinus {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinus;
@@ -21481,7 +21481,7 @@ impl TypedSyntaxNode for TerminalMinus {
             kind,
             SyntaxKind::TerminalMinus
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21555,7 +21555,7 @@ impl TypedSyntaxNode for TokenMinusEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMinusEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMinusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMinusEq;
@@ -21626,7 +21626,7 @@ impl TypedSyntaxNode for TerminalMinusEq {
             kind,
             SyntaxKind::TerminalMinusEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21700,7 +21700,7 @@ impl TypedSyntaxNode for TokenMod {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMod {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMod {
     const KIND: SyntaxKind = SyntaxKind::TerminalMod;
@@ -21771,7 +21771,7 @@ impl TypedSyntaxNode for TerminalMod {
             kind,
             SyntaxKind::TerminalMod
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21845,7 +21845,7 @@ impl TypedSyntaxNode for TokenModEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalModEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalModEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalModEq;
@@ -21916,7 +21916,7 @@ impl TypedSyntaxNode for TerminalModEq {
             kind,
             SyntaxKind::TerminalModEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -21990,7 +21990,7 @@ impl TypedSyntaxNode for TokenMul {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMul {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMul {
     const KIND: SyntaxKind = SyntaxKind::TerminalMul;
@@ -22061,7 +22061,7 @@ impl TypedSyntaxNode for TerminalMul {
             kind,
             SyntaxKind::TerminalMul
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22135,7 +22135,7 @@ impl TypedSyntaxNode for TokenMulEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalMulEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalMulEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalMulEq;
@@ -22206,7 +22206,7 @@ impl TypedSyntaxNode for TerminalMulEq {
             kind,
             SyntaxKind::TerminalMulEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22280,7 +22280,7 @@ impl TypedSyntaxNode for TokenNeq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNeq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalNeq {
     const KIND: SyntaxKind = SyntaxKind::TerminalNeq;
@@ -22351,7 +22351,7 @@ impl TypedSyntaxNode for TerminalNeq {
             kind,
             SyntaxKind::TerminalNeq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22425,7 +22425,7 @@ impl TypedSyntaxNode for TokenNot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalNot {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalNot;
@@ -22496,7 +22496,7 @@ impl TypedSyntaxNode for TerminalNot {
             kind,
             SyntaxKind::TerminalNot
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22570,7 +22570,7 @@ impl TypedSyntaxNode for TokenBitNot {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalBitNot {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalBitNot {
     const KIND: SyntaxKind = SyntaxKind::TerminalBitNot;
@@ -22641,7 +22641,7 @@ impl TypedSyntaxNode for TerminalBitNot {
             kind,
             SyntaxKind::TerminalBitNot
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22715,7 +22715,7 @@ impl TypedSyntaxNode for TokenOr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOr;
@@ -22786,7 +22786,7 @@ impl TypedSyntaxNode for TerminalOr {
             kind,
             SyntaxKind::TerminalOr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -22860,7 +22860,7 @@ impl TypedSyntaxNode for TokenOrOr {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalOrOr {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalOrOr {
     const KIND: SyntaxKind = SyntaxKind::TerminalOrOr;
@@ -22931,7 +22931,7 @@ impl TypedSyntaxNode for TerminalOrOr {
             kind,
             SyntaxKind::TerminalOrOr
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23005,7 +23005,7 @@ impl TypedSyntaxNode for TokenPlus {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlus {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalPlus {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlus;
@@ -23076,7 +23076,7 @@ impl TypedSyntaxNode for TerminalPlus {
             kind,
             SyntaxKind::TerminalPlus
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23150,7 +23150,7 @@ impl TypedSyntaxNode for TokenPlusEq {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalPlusEq {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalPlusEq {
     const KIND: SyntaxKind = SyntaxKind::TerminalPlusEq;
@@ -23221,7 +23221,7 @@ impl TypedSyntaxNode for TerminalPlusEq {
             kind,
             SyntaxKind::TerminalPlusEq
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23295,7 +23295,7 @@ impl TypedSyntaxNode for TokenQuestionMark {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalQuestionMark {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalQuestionMark {
     const KIND: SyntaxKind = SyntaxKind::TerminalQuestionMark;
@@ -23366,7 +23366,7 @@ impl TypedSyntaxNode for TerminalQuestionMark {
             kind,
             SyntaxKind::TerminalQuestionMark
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23440,7 +23440,7 @@ impl TypedSyntaxNode for TokenRBrace {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrace {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalRBrace {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrace;
@@ -23511,7 +23511,7 @@ impl TypedSyntaxNode for TerminalRBrace {
             kind,
             SyntaxKind::TerminalRBrace
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23585,7 +23585,7 @@ impl TypedSyntaxNode for TokenRBrack {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRBrack {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalRBrack {
     const KIND: SyntaxKind = SyntaxKind::TerminalRBrack;
@@ -23656,7 +23656,7 @@ impl TypedSyntaxNode for TerminalRBrack {
             kind,
             SyntaxKind::TerminalRBrack
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23730,7 +23730,7 @@ impl TypedSyntaxNode for TokenRParen {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalRParen {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalRParen {
     const KIND: SyntaxKind = SyntaxKind::TerminalRParen;
@@ -23801,7 +23801,7 @@ impl TypedSyntaxNode for TerminalRParen {
             kind,
             SyntaxKind::TerminalRParen
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -23875,7 +23875,7 @@ impl TypedSyntaxNode for TokenSemicolon {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalSemicolon {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalSemicolon {
     const KIND: SyntaxKind = SyntaxKind::TerminalSemicolon;
@@ -23946,7 +23946,7 @@ impl TypedSyntaxNode for TerminalSemicolon {
             kind,
             SyntaxKind::TerminalSemicolon
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24020,7 +24020,7 @@ impl TypedSyntaxNode for TokenUnderscore {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalUnderscore {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalUnderscore {
     const KIND: SyntaxKind = SyntaxKind::TerminalUnderscore;
@@ -24091,7 +24091,7 @@ impl TypedSyntaxNode for TerminalUnderscore {
             kind,
             SyntaxKind::TerminalUnderscore
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24165,7 +24165,7 @@ impl TypedSyntaxNode for TokenXor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct TerminalXor {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl Terminal for TerminalXor {
     const KIND: SyntaxKind = SyntaxKind::TerminalXor;
@@ -24236,7 +24236,7 @@ impl TypedSyntaxNode for TerminalXor {
             kind,
             SyntaxKind::TerminalXor
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
@@ -24249,7 +24249,7 @@ impl TypedSyntaxNode for TerminalXor {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SyntaxFile {
     node: SyntaxNode,
-    children: Vec<SyntaxNode>,
+    children: Arc<Vec<SyntaxNode>>,
 }
 impl SyntaxFile {
     pub const INDEX_ITEMS: usize = 0;
@@ -24309,7 +24309,7 @@ impl TypedSyntaxNode for SyntaxFile {
             kind,
             SyntaxKind::SyntaxFile
         );
-        let children = node.children(db).collect();
+        let children = db.get_children(node.clone());
         Self { node, children }
     }
     fn as_syntax_node(&self) -> SyntaxNode {
