@@ -1,6 +1,7 @@
 use std::collections::hash_map;
 use std::ops::{Add, Sub};
 
+use cairo_lang_sierra::algorithm::topological_order::get_topological_ordering;
 use cairo_lang_sierra::extensions::gas::{BuiltinCostWithdrawGasLibfunc, CostTokenType};
 use cairo_lang_sierra::ids::ConcreteLibfuncId;
 use cairo_lang_sierra::program::{BranchInfo, Invocation, Program, Statement, StatementIdx};
@@ -13,7 +14,6 @@ use cairo_lang_utils::unordered_hash_set::UnorderedHashSet;
 use itertools::zip_eq;
 
 use crate::gas_info::GasInfo;
-use crate::generate_equations::{calculate_reverse_topological_ordering, TopologicalOrderStatus};
 use crate::objects::{BranchCost, ConstCost, PreCost};
 use crate::CostError;
 
@@ -402,7 +402,7 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         specific_cost_context: &SpecificCostContext,
     ) -> Result<(), CostError> {
         let topological_order =
-            compute_topological_order(self.program.statements.len(), true, &|current_idx| {
+            compute_topological_order(self.program.statements.len(), true, |current_idx| {
                 match &self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
@@ -471,8 +471,8 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
         //
         // Note, that we allow cycles, but the result may not be optimal in such a case.
         let topological_order =
-            compute_topological_order(self.program.statements.len(), false, &|current_idx| {
-                match &self.program.get_statement(current_idx).unwrap() {
+            compute_topological_order(self.program.statements.len(), false, |current_idx| {
+                match self.program.get_statement(current_idx).unwrap() {
                     Statement::Return(_) => {
                         // Return has no dependencies.
                         vec![]
@@ -616,21 +616,16 @@ impl<'a, CostType: CostTypeTrait> CostContext<'a, CostType> {
 fn compute_topological_order(
     n_statements: usize,
     detect_cycles: bool,
-    dependencies_callback: &dyn Fn(&StatementIdx) -> Vec<StatementIdx>,
+    dependencies_callback: impl Fn(&StatementIdx) -> Vec<StatementIdx>,
 ) -> Result<Vec<StatementIdx>, CostError> {
-    let mut topological_order: Vec<StatementIdx> = Default::default();
-    let mut status = vec![TopologicalOrderStatus::NotStarted; n_statements];
-    for idx in 0..n_statements {
-        calculate_reverse_topological_ordering(
-            &mut topological_order,
-            &mut status,
-            &StatementIdx(idx),
-            detect_cycles,
-            dependencies_callback,
-        )?;
-    }
-
-    Ok(topological_order)
+    get_topological_ordering(
+        detect_cycles,
+        (0..n_statements).map(StatementIdx),
+        n_statements,
+        |idx| Ok(dependencies_callback(&idx)),
+        CostError::StatementOutOfBounds,
+        |_| CostError::UnexpectedCycle,
+    )
 }
 
 pub struct PreCostContext {}
