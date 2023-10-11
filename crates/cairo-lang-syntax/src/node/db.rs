@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use cairo_lang_filesystem::db::FilesGroup;
 use cairo_lang_utils::Upcast;
 
@@ -9,7 +11,7 @@ use super::stable_ptr::SyntaxStablePtr;
 #[salsa::query_group(SyntaxDatabase)]
 pub trait SyntaxGroup: FilesGroup + Upcast<dyn FilesGroup> {
     #[salsa::interned]
-    fn intern_green(&self, field: GreenNode) -> GreenId;
+    fn intern_green(&self, field: Arc<GreenNode>) -> GreenId;
     #[salsa::interned]
     fn intern_stable_ptr(&self, field: SyntaxStablePtr) -> SyntaxStablePtrId;
 }
