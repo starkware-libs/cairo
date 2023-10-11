@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::vec;
 
 use cairo_lang_filesystem::span::TextOffset;
+use itertools::Itertools;
 
 use crate::node::db::SyntaxGroup;
 use crate::node::ids::GreenId;
@@ -51,7 +52,13 @@ impl<'db> SyntaxNodeChildIterator<'db> {
         SyntaxNodeChildIterator {
             db,
             node: node.clone(),
-            green_iterator: node.green_node(db).children().into_iter(),
+            green_iterator: node
+                .green_node(db)
+                .children()
+                .iter()
+                .cloned()
+                .collect_vec()
+                .into_iter(),
             offset: node.offset(),
             key_map: HashMap::new(),
         }

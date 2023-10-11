@@ -70,12 +70,12 @@ impl SyntaxNode {
     }
     /// Returns the text of the token if this node is a token.
     pub fn text(&self, db: &dyn SyntaxGroup) -> Option<SmolStr> {
-        match self.green_node(db).details {
-            green::GreenNodeDetails::Token(text) => Some(text),
+        match &self.green_node(db).details {
+            green::GreenNodeDetails::Token(text) => Some(text.clone()),
             green::GreenNodeDetails::Node { .. } => None,
         }
     }
-    pub fn green_node(&self, db: &dyn SyntaxGroup) -> GreenNode {
+    pub fn green_node(&self, db: &dyn SyntaxGroup) -> Arc<GreenNode> {
         db.lookup_intern_green(self.0.green)
     }
     pub fn span_without_trivia(&self, db: &dyn SyntaxGroup) -> TextSpan {
@@ -250,7 +250,7 @@ pub struct NodeTextFormatter<'a> {
 impl<'a> Display for NodeTextFormatter<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let node = self.node.green_node(self.db);
-        match node.details {
+        match &node.details {
             green::GreenNodeDetails::Token(text) => write!(f, "{text}")?,
             green::GreenNodeDetails::Node { .. } => {
                 for child in self.node.children(self.db) {

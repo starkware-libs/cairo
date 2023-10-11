@@ -97,7 +97,7 @@ pub fn borrow_as_box<T: Default, R, F: FnOnce(Box<T>) -> (R, Box<T>)>(ptr: &mut 
 //   usually include the short id of the entity's parent.
 #[macro_export]
 macro_rules! define_short_id {
-    ($short_id:ident, $long_id:ident, $db:ident, $lookup:ident) => {
+    ($short_id:ident, $long_id:path, $db:ident, $lookup:ident) => {
         #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq)]
         pub struct $short_id(salsa::InternId);
         impl salsa::InternKey for $short_id {
