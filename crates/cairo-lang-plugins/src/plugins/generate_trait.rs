@@ -150,7 +150,7 @@ fn generate_trait_for_impl(db: &dyn SyntaxGroup, impl_ast: ast::ItemImpl) -> Plu
                 builder.add_node(decl.name(db).as_syntax_node());
                 builder.add_node(decl.generic_params(db).as_syntax_node());
                 builder.add_node(signature.lparen(db).as_syntax_node());
-                for node in signature.parameters(db).node.children(db) {
+                for node in db.get_children(signature.parameters(db).node.clone()).iter().cloned() {
                     if node.kind(db) != SyntaxKind::Param {
                         builder.add_node(node);
                     } else {

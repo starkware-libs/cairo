@@ -634,7 +634,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
         #[derive(Clone, Debug, Eq, Hash, PartialEq)]
         pub struct $(&name){
             node: SyntaxNode,
-            children: Vec<SyntaxNode>,
+            children: Arc<Vec<SyntaxNode>>,
         }
         $new_green_impl
         impl $(&name) {
@@ -672,7 +672,7 @@ fn gen_struct_code(name: String, members: Vec<Member>, is_terminal: bool) -> rus
             fn from_syntax_node(db: &dyn SyntaxGroup, node: SyntaxNode) -> Self {
                 let kind = node.kind(db);
                 assert_eq!(kind, SyntaxKind::$(&name), "Unexpected SyntaxKind {:?}. Expected {:?}.", kind, SyntaxKind::$(&name));
-                let children = node.children(db).collect();
+                let children = db.get_children(node.clone());
                 Self { node, children }
             }
             fn as_syntax_node(&self) -> SyntaxNode {
