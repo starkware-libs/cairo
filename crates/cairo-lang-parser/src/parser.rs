@@ -1195,7 +1195,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::ExprPath,
             details: GreenNodeDetails::Node { children: children0, .. },
-        } = &self.db.lookup_intern_green(expr.0)
+        } = &*self.db.lookup_intern_green(expr.0)
         else {
             return None;
         };
@@ -1209,7 +1209,7 @@ impl<'a> Parser<'a> {
         let GreenNode {
             kind: SyntaxKind::PathSegmentSimple,
             details: GreenNodeDetails::Node { children: children1, .. },
-        } = self.db.lookup_intern_green(path_segment)
+        } = &*self.db.lookup_intern_green(path_segment)
         else {
             return None;
         };
@@ -1221,7 +1221,7 @@ impl<'a> Parser<'a> {
 
         // Check that it is indeed `TerminalIdentifier`.
         let GreenNode { kind: SyntaxKind::TerminalIdentifier, .. } =
-            self.db.lookup_intern_green(ident)
+            &*self.db.lookup_intern_green(ident)
         else {
             return None;
         };
@@ -1478,7 +1478,8 @@ impl<'a> Parser<'a> {
                         PatternEnum::new_green(self.db, path, inner_pattern.into()).into()
                     }
                     _ => {
-                        let children = match self.db.lookup_intern_green(path.0).details {
+                        let green_node = self.db.lookup_intern_green(path.0);
+                        let children = match &green_node.details {
                             GreenNodeDetails::Node { children, width: _ } => children,
                             _ => return Err(TryParseFailure::SkipToken),
                         };

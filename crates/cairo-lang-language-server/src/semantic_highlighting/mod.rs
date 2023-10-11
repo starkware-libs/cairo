@@ -34,7 +34,7 @@ impl SemanticTokensTraverser {
     ) {
         let syntax_db = db.upcast();
         let green_node = node.green_node(syntax_db);
-        match green_node.details {
+        match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if green_node.kind == SyntaxKind::TokenNewline {
                     self.encoder.next_line();

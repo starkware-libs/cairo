@@ -91,14 +91,14 @@ impl<'a> Printer<'a> {
     ) {
         let extra_head_indent = if is_last { "└── " } else { "├── " };
         let green_node = syntax_node.green_node(self.db);
-        match green_node.details {
+        match &green_node.details {
             syntax::node::green::GreenNodeDetails::Token(text) => {
                 if under_top_level {
                     self.print_token_node(
                         field_description,
                         indent,
                         extra_head_indent,
-                        text,
+                        text.clone(),
                         green_node.kind,
                     )
                 }
