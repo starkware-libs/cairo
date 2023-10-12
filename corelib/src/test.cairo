@@ -11,6 +11,7 @@ mod integer_test;
 mod keccak_test;
 mod math_test;
 mod plugins_test;
+mod repr_test;
 mod secp256k1_test;
 mod secp256r1_test;
 mod test_utils;
