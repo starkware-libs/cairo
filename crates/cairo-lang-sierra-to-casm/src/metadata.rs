@@ -2,6 +2,7 @@ use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
 use cairo_lang_sierra::program::Program;
 use cairo_lang_sierra_ap_change::ap_change_info::ApChangeInfo;
+use cairo_lang_sierra_ap_change::compute::calc_ap_changes as linear_calc_ap_changes;
 use cairo_lang_sierra_ap_change::{calc_ap_changes, ApChangeError};
 use cairo_lang_sierra_gas::gas_info::GasInfo;
 use cairo_lang_sierra_gas::{
@@ -37,6 +38,9 @@ pub struct MetadataComputationConfig {
     /// If true, uses a linear-time algorithm for calculating the gas, instead of solving
     /// equations.
     pub linear_gas_solver: bool,
+    /// If true, uses a linear-time algorithm for calculating ap changes, instead of solving
+    /// equations.
+    pub linear_ap_change_solver: bool,
 }
 
 /// Calculates the metadata for a Sierra program, with ap change info only.
@@ -72,9 +76,11 @@ pub fn calc_metadata(
     pre_gas_info.assert_eq_variables(&pre_gas_info2);
     pre_gas_info.assert_eq_functions(&pre_gas_info2);
 
-    let ap_change_info = calc_ap_changes(program, |idx, token_type| {
-        pre_gas_info.variable_values[(idx, token_type)] as usize
-    })?;
+    let ap_change_info =
+        if config.linear_ap_change_solver { linear_calc_ap_changes } else { calc_ap_changes }(
+            program,
+            |idx, token_type| pre_gas_info.variable_values[(idx, token_type)] as usize,
+        )?;
 
     let post_function_set_costs = config
         .function_set_costs
