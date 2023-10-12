@@ -57,7 +57,7 @@ Some non-trivial interactions to consider with other syntax elements:
 
 - `if` branches.
 - `for` loop bodies. In particular, assignment is the "only way" to change something inside
-  a loop for next iterations. Using a "let" in this context will defined a "new" variable that
+  a loop for next iterations. Using a "let" in this context will define a "new" variable that
   will go out of scope at the end of the iteration, and the next iteration will use the "old"
   variable. This is similar to other programming languages.
 

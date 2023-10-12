@@ -12,7 +12,6 @@ use crate::contract_class::{
 use crate::felt252_serde::sierra_from_felt252s;
 use crate::test_utils::{
     get_contract_file_name_from_path, get_example_file_path, get_test_contract,
-    get_test_contract_from_contracts_crate,
 };
 
 #[test]
@@ -58,57 +57,41 @@ fn test_serialization() {
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
 }
 
-#[test_case("test_contract")]
-#[test_case("new_syntax_test_contract")]
-#[test_case("hello_starknet")]
-#[test_case("erc20")]
-#[test_case("with_erc20")]
-#[test_case("with_ownable")]
-#[test_case("ownable_erc20")]
-#[test_case("upgradable_counter")]
-#[test_case("mintable")]
-fn test_full_contract_deserialization(example_file_name: &str) {
-    let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
-    let serialized = serde_json::to_string_pretty(&contract).unwrap();
-    assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
-}
-
 // Tests the serialization and deserialization of a contract.
-// TODO(Gil): Merge with `test_full_contract_deserialization`.
+#[test_case("test_contract::test_contract")]
+#[test_case("hello_starknet::hello_starknet")]
+#[test_case("erc20::erc_20")]
+#[test_case("with_erc20::erc20_contract")]
+#[test_case("with_ownable::ownable_balance")]
+#[test_case("ownable_erc20::ownable_erc20_contract")]
+#[test_case("upgradable_counter::counter_contract")]
+#[test_case("mintable::mintable_erc20_ownable")]
 #[test_case("multi_component::contract_with_4_components")]
 fn test_full_contract_deserialization_from_contracts_crate(example_file_name: &str) {
-    let contract = get_test_contract_from_contracts_crate(
-        format!("cairo_level_tests::contracts::{example_file_name}").as_str(),
-    );
+    let contract =
+        get_test_contract(format!("cairo_level_tests::contracts::{example_file_name}").as_str());
     let serialized = serde_json::to_string_pretty(&contract).unwrap();
     assert_eq!(contract, serde_json::from_str(&serialized).unwrap())
-}
-
-/// Tests that the sierra compiled from <test_case>.cairo is the same as in <test_case>.sierra, and
-/// that the resulted json is the same as in <test_case>.contract_class.json.
-#[test_case("account")]
-#[test_case("test_contract")]
-#[test_case("new_syntax_test_contract")]
-#[test_case("minimal_contract")]
-#[test_case("hello_starknet")]
-#[test_case("erc20")]
-#[test_case("token_bridge")]
-#[test_case("with_erc20")]
-#[test_case("ownable_erc20")]
-#[test_case("with_ownable")]
-#[test_case("upgradable_counter")]
-#[test_case("mintable")]
-fn test_compile_path(example_file_name: &str) {
-    let contract = get_test_contract(format!("{example_file_name}.cairo").as_str());
-    test_compile_path_aux(example_file_name, &contract);
 }
 
 /// Tests that the sierra compiled from a contract in the contracts crate is the same as in
 /// <test_case>.sierra, and that the resulted json is the same as in
-/// <test_case>.contract_class.json. TODO(Gil): Merge with `test_compile_path`.
+/// <test_case>.contract_class.json.
+#[test_case("account::account")]
+#[test_case("test_contract::test_contract")]
+#[test_case("new_syntax_test_contract::counter_contract")]
+#[test_case("minimal_contract::minimal_contract")]
+#[test_case("hello_starknet::hello_starknet")]
+#[test_case("erc20::erc_20")]
+#[test_case("token_bridge::token_bridge")]
+#[test_case("with_erc20::erc20_contract")]
+#[test_case("with_ownable::ownable_balance")]
+#[test_case("ownable_erc20::ownable_erc20_contract")]
+#[test_case("upgradable_counter::counter_contract")]
+#[test_case("mintable::mintable_erc20_ownable")]
 #[test_case("multi_component::contract_with_4_components")]
 fn test_compile_path_from_contracts_crate(example_contract_path: &str) {
-    let contract = get_test_contract_from_contracts_crate(
+    let contract = get_test_contract(
         format!("cairo_level_tests::contracts::{example_contract_path}").as_str(),
     );
     let example_file_name = get_contract_file_name_from_path(example_contract_path);

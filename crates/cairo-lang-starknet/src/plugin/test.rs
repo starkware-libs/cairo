@@ -73,7 +73,6 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         embedded_impl: "embedded_impl",
         raw_output: "raw_output",
         storage: "storage",
-        hello_starknet: "hello_starknet",
         dispatcher: "dispatcher",
         user_defined_types: "user_defined_types",
         l1_handler: "l1_handler",
@@ -81,12 +80,7 @@ cairo_lang_test_utils::test_file_test_with_runner!(
         external_event: "external_event",
         with_component: "with_component",
         with_component_diagnostics: "with_component_diagnostics",
-        with_ownable: "with_ownable",
-        with_erc20: "with_erc20",
-        upgradable_counter: "upgradable_counter",
-        ownable_erc20: "ownable_erc20",
         interfaces: "interfaces",
-        mintable: "mintable",
     },
     ExpandContractTestRunner
 );
@@ -141,6 +135,12 @@ cairo_lang_test_utils::test_file_test_with_runner!(
     expand_contract_from_crate,
     "src/plugin/plugin_test_data/contracts",
     {
+        hello_starknet: "hello_starknet",
+        with_ownable: "with_ownable",
+        with_erc20: "with_erc20",
+        upgradable_counter: "upgradable_counter",
+        ownable_erc20: "ownable_erc20",
+        mintable: "mintable",
         multi_component: "multi_component",
     },
     ExpandContractFromCrateTestRunner

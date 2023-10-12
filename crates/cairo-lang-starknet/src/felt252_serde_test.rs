@@ -12,7 +12,7 @@ use crate::compiler_version;
 use crate::felt252_serde::Felt252Serde;
 use crate::test_utils::{get_contract_file_name_from_path, get_example_file_path};
 
-#[test_case("test_contract")]
+#[test_case("test_contract::test_contract")]
 #[test_case("new_syntax_test_contract")]
 #[test_case("hello_starknet")]
 #[test_case("with_erc20")]

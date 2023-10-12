@@ -35,8 +35,8 @@
     "0x145068ba3432c23eddd89dd45fe638a782885652788ad82ad6690857df46db5",
     "0x6",
     "0x8",
-    "0x381c5197a85ed5784c4e8fef666d50b6b706dbee3b143c46e94bd300983a519",
-    "0xbf60f932fba858cb112654706e1683cc4ea560a8c65f1ef03da879baac2198",
+    "0x5cc057a6da60c94c448fb121ace42243627d71887283ae070d104af9618736",
+    "0x16665eef311e13d06d9b5b1d04cf1e0bd2e4b0c900a071442cd4e4c8d1beee",
     "0x800000000000000700000000000000000000000000000003",
     "0x3288d594b9a45d15bb2fcb7903f06cdb06b27f0ba88186ec4cfaa98307cb972",
     "0xc",
@@ -48,18 +48,18 @@
     "0xf",
     "0x161ee0e6962e56453b5d68e09d1cabe5633858c1ba3a7e73fee8c70867eced0",
     "0x10",
-    "0x1ef3e1182164a62fea0a1b0875f3797302278efdbe1c1df56f0d7d78f0e26f1",
-    "0xe9b7b56f98fe65857fe18b695e2328c9c16a3fc1e8fadab6403779286bf9c9",
+    "0x2741386f18e4e72ad3fc92dcdad2c7cad03c1247933b33e879f386f8c4247ef",
+    "0x1d9298938f65874b325fd90b31c25d5baf3e0eb04b4b11f6febc941423a0617",
     "0x12",
     "0x13",
-    "0x1c7fe0a508ed2f85075607a086b7a6e51d6160a730d1f661623c87d3bff3ec5",
+    "0x6181eb85f1fd544c57d41eefb4babf49faa2173c07ddc9a5e5c2262b3d8cb1",
     "0x14",
     "0x75313238",
-    "0x1a7af3a0b367ac11af2e7bc39793ff9efddaab92f3b20eb0bce9cddcd4e3111",
+    "0xf44363f69ff3b07347204448f0ed38f89807e186350e3fcf099bfaa032e488",
     "0x16",
-    "0xd1c5fc0255aaf04e6472cb278cf46cf09f8a38b1616f87a5dc2885e50e66fd",
+    "0x366377fd6d335cdbf6923468aea7342ecfd8c9693260d2a4cf189c316822bc3",
     "0x800000000000000700000000000000000000000000000005",
-    "0xf93bcbf5fe30777f8db495d57d0273ec23aa3600b639d6b6fc68154a505dbf",
+    "0x1d145d256cfe9163ff10a4538f676965c7deca1018325c02574290bcfbd0e55",
     "0xb",
     "0x17",
     "0x18",
@@ -75,29 +75,29 @@
     "0x35db377e57ca049334bdd283ee9a74d991b437ea21f0760006234ec7e529d20",
     "0x20",
     "0x53746f726167654261736541646472657373",
-    "0x21d1086bf22c5d582fcc66baf1d729c30661d4ab430743a2512d421b89f4778",
+    "0x3a2d4c1dc9c23ea9787a2f074af6cf207889bfb18a3d30bce9f958ee4853684",
     "0x800000000000000f00000000000000000000000000000003",
     "0x23",
-    "0x3e5c6e02c1edae55fa1764d7f87b8851b08f6885e4409195b2d3d2dc755c7bd",
+    "0x6a807512a14b9d0a24ae042ac01c7e304a6fc778c5f32464ab247fbfbc080",
     "0x24",
     "0x11c6d8087e00642489f92d2821ad6ebd6532ad1a3b6d12833da6d6810391511",
     "0xa853c166304d20fb0711becf2cbdf482dee3cac4e9717d040b7a7ab1df7eec",
     "0x27",
-    "0x306057767cf14ff67f67b53bdaa9f2db8ebe288bbe3f2d3194137fa6d78675b",
+    "0x16f978af685e97356e52dc72c0268103fe4e3da6737d775ae536e888c6da3fb",
     "0x29",
-    "0x144731a48142ce73f2ccdf911901c61016d5adfa535224620792d8c8905193d",
+    "0x57dde8b492b764b6f80451352f242660836d2fd63763780e49a4d9e5ce95d0",
     "0x2b",
-    "0x3332c0d6390da43eaed2dac1c2c83116c1fc16c65ef6f17d8d8c3f43aff7649",
+    "0x376dd03c55c07a136ced8aa87df02615bfc9d71a433f5649b80e4a387b09838",
     "0x2c",
     "0x3d37ad6eafb32512d2dd95a2917f6bf14858de22c27a1114392429f2e5c15d7",
-    "0x26c86b4c0ee474bfdf24eb0b66da4e150f36ff6e1169ababe6419b6bfc42232",
-    "0x2dde2c98cc5b781659c6a834c85389ee7a1c8d357b14797627d7e42ece0c6c9",
+    "0x3e8be53440f4e80fa5d07389e0d6476b9b30d36a954f21efe9cafbe6688aa9e",
+    "0x2e46b8b465a0524402c90af86e61c40458512738f2658af68620b8d2d401ec1",
     "0x2f",
     "0x800000000000000f00000000000000000000000000000004",
-    "0x2a2bc90f879f74024a98dc39591093f2c6656f38121b3ea36aac62bb7c818f8",
+    "0x1a1e30e249b14491d8e402837a91a7e04ed70ff1379c4431706bba351f809c8",
     "0x30",
     "0x31",
-    "0x9d6d5a405601834d30f54da0e154457a7ddf662c52f4f67593dcb4e95ecff4",
+    "0x33d16473b966eed4d0e5edc396fcb58421059315bfcdf907fefc9c02c731a58",
     "0x32",
     "0x1909a2057b9c1373b889e003e050a09f431d8108e0659d03444ced99a6eea68",
     "0x426f78",
@@ -1156,11 +1156,11 @@
       ],
       [
         10,
-        "test::OutOfScopeEvent"
+        "cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent"
       ],
       [
         11,
-        "test::test_component::Event"
+        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event"
       ],
       [
         12,
@@ -1188,19 +1188,19 @@
       ],
       [
         18,
-        "test::IOtherContractDispatcher"
+        "cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher"
       ],
       [
         19,
-        "core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>"
+        "core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>"
       ],
       [
         20,
-        "Tuple<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
+        "Tuple<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
       ],
       [
         21,
-        "core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>"
+        "core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>"
       ],
       [
         22,
@@ -1208,15 +1208,15 @@
       ],
       [
         23,
-        "test::counter_contract::CounterIncreased"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased"
       ],
       [
         24,
-        "test::counter_contract::CounterDecreased"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased"
       ],
       [
         25,
-        "test::counter_contract::Event"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event"
       ],
       [
         26,
@@ -1256,15 +1256,15 @@
       ],
       [
         35,
-        "test::counter_contract::other_contract::ContractMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState"
       ],
       [
         36,
-        "Tuple<test::counter_contract::other_contract::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>"
       ],
       [
         37,
-        "core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>"
       ],
       [
         38,
@@ -1280,23 +1280,23 @@
       ],
       [
         41,
-        "Tuple<test::IOtherContractDispatcher>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>"
       ],
       [
         42,
-        "core::panics::PanicResult::<(test::IOtherContractDispatcher,)>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>"
       ],
       [
         43,
-        "test::counter_contract::counter::ContractMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState"
       ],
       [
         44,
-        "Tuple<test::counter_contract::counter::ContractMemberState, Unit>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>"
       ],
       [
         45,
-        "core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>"
       ],
       [
         46,
@@ -1304,23 +1304,23 @@
       ],
       [
         47,
-        "test::test_component::data::ComponentMemberState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::data::ComponentMemberState"
       ],
       [
         48,
-        "test::test_component::ComponentState::<test::counter_contract::ContractState>"
+        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::ComponentState::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         49,
-        "test::counter_contract::ContractState"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState"
       ],
       [
         50,
-        "Tuple<test::counter_contract::ContractState, Unit>"
+        "Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, Unit>"
       ],
       [
         51,
-        "core::panics::PanicResult::<(test::counter_contract::ContractState, ())>"
+        "core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>"
       ],
       [
         52,
@@ -1470,39 +1470,39 @@
       ],
       [
         25,
-        "struct_construct<test::test_component::data::ComponentMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::test_component::data::ComponentMemberState>"
       ],
       [
         26,
-        "struct_construct<test::test_component::ComponentState::<test::counter_contract::ContractState>>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::test_component::ComponentState::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>>"
       ],
       [
         27,
-        "struct_construct<test::counter_contract::counter::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
       ],
       [
         28,
-        "struct_construct<test::counter_contract::other_contract::ContractMemberState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
       ],
       [
         29,
-        "struct_construct<test::counter_contract::ContractState>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         30,
-        "snapshot_take<test::counter_contract::ContractState>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         31,
-        "drop<test::counter_contract::ContractState>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         32,
-        "store_temp<test::counter_contract::ContractState>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         33,
-        "function_call<user@test::counter_contract::CounterContract::get_counter>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::get_counter>"
       ],
       [
         34,
@@ -1618,15 +1618,15 @@
       ],
       [
         62,
-        "function_call<user@test::counter_contract::CounterContract::increase_counter>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::increase_counter>"
       ],
       [
         63,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>>"
       ],
       [
         64,
-        "drop<Tuple<test::counter_contract::ContractState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         65,
@@ -1642,7 +1642,7 @@
       ],
       [
         68,
-        "function_call<user@test::counter_contract::CounterContract::decrease_counter>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::decrease_counter>"
       ],
       [
         69,
@@ -1666,7 +1666,7 @@
       ],
       [
         74,
-        "function_call<user@test::counter_contract::constructor>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::constructor>"
       ],
       [
         75,
@@ -1674,23 +1674,23 @@
       ],
       [
         76,
-        "struct_deconstruct<test::counter_contract::ContractState>"
+        "struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>"
       ],
       [
         77,
-        "drop<test::test_component::ComponentState::<test::counter_contract::ContractState>>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::test_component::ComponentState::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState>>"
       ],
       [
         78,
-        "drop<test::counter_contract::other_contract::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
       ],
       [
         79,
-        "store_temp<test::counter_contract::counter::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
       ],
       [
         80,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::read>"
       ],
       [
         81,
@@ -1734,7 +1734,7 @@
       ],
       [
         91,
-        "snapshot_take<test::counter_contract::counter::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
       ],
       [
         92,
@@ -1746,79 +1746,79 @@
       ],
       [
         94,
-        "function_call<user@test::counter_contract::counter::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::write>"
       ],
       [
         95,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>>"
       ],
       [
         96,
-        "struct_deconstruct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
       ],
       [
         97,
-        "struct_construct<test::counter_contract::CounterIncreased>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         98,
-        "store_temp<test::counter_contract::CounterIncreased>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         99,
-        "function_call<user@test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterIncreased, test::counter_contract::EventCounterIncreasedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent>>"
       ],
       [
         100,
-        "struct_deconstruct<Tuple<test::counter_contract::ContractState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         101,
-        "struct_construct<Tuple<test::counter_contract::ContractState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, Unit>>"
       ],
       [
         102,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>, 0>"
       ],
       [
         103,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>>"
       ],
       [
         104,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::ContractState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractState, ())>, 1>"
       ],
       [
         105,
-        "drop<test::counter_contract::counter::ContractMemberState>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState>"
       ],
       [
         106,
-        "snapshot_take<test::counter_contract::other_contract::ContractMemberState>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
       ],
       [
         107,
-        "store_temp<test::counter_contract::other_contract::ContractMemberState>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState>"
       ],
       [
         108,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::read>"
       ],
       [
         109,
-        "enum_match<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>>"
       ],
       [
         110,
-        "struct_deconstruct<Tuple<test::IOtherContractDispatcher>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>>"
       ],
       [
         111,
-        "store_temp<test::IOtherContractDispatcher>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>"
       ],
       [
         112,
-        "function_call<user@test::IOtherContractDispatcherImpl::decrease_allowed>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcherImpl::decrease_allowed>"
       ],
       [
         113,
@@ -1838,15 +1838,15 @@
       ],
       [
         117,
-        "struct_construct<test::counter_contract::CounterDecreased>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         118,
-        "store_temp<test::counter_contract::CounterDecreased>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         119,
-        "function_call<user@test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterDecreased, test::counter_contract::EventCounterDecreasedIntoEvent>>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>>"
       ],
       [
         120,
@@ -1874,23 +1874,23 @@
       ],
       [
         126,
-        "struct_construct<test::IOtherContractDispatcher>"
+        "struct_construct<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>"
       ],
       [
         127,
-        "function_call<user@test::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::write>"
       ],
       [
         128,
-        "enum_match<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>>"
+        "enum_match<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>>"
       ],
       [
         129,
-        "struct_deconstruct<Tuple<test::counter_contract::other_contract::ContractMemberState, Unit>>"
+        "struct_deconstruct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>>"
       ],
       [
         130,
-        "drop<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>"
+        "drop<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
       ],
       [
         131,
@@ -1990,35 +1990,35 @@
       ],
       [
         155,
-        "struct_construct<Tuple<test::counter_contract::counter::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, Unit>>"
       ],
       [
         156,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>, 0>"
       ],
       [
         157,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>>"
       ],
       [
         158,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::counter::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::ContractMemberState, ())>, 1>"
       ],
       [
         159,
-        "function_call<user@test::counter_contract::EventCounterIncreasedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent::into>"
       ],
       [
         160,
-        "snapshot_take<test::counter_contract::Event>"
+        "snapshot_take<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         161,
-        "drop<test::counter_contract::Event>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         162,
-        "store_temp<test::counter_contract::Event>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         163,
@@ -2026,7 +2026,7 @@
       ],
       [
         164,
-        "function_call<user@test::counter_contract::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventIsEvent::append_keys_and_data>"
       ],
       [
         165,
@@ -2038,43 +2038,43 @@
       ],
       [
         167,
-        "function_call<user@test::StoreIOtherContractDispatcher::read>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::read>"
       ],
       [
         168,
-        "enum_match<core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
+        "enum_match<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         169,
-        "struct_deconstruct<Tuple<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>>>"
+        "struct_deconstruct<Tuple<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>>"
       ],
       [
         170,
-        "store_temp<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
+        "store_temp<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
       ],
       [
         171,
-        "function_call<user@core::starknet::SyscallResultTraitImpl::<test::IOtherContractDispatcher>::unwrap_syscall>"
+        "function_call<user@core::starknet::SyscallResultTraitImpl::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>::unwrap_syscall>"
       ],
       [
         172,
-        "struct_construct<Tuple<test::IOtherContractDispatcher>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>>"
       ],
       [
         173,
-        "enum_init<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>, 0>"
       ],
       [
         174,
-        "store_temp<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>>"
       ],
       [
         175,
-        "enum_init<core::panics::PanicResult::<(test::IOtherContractDispatcher,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher,)>, 1>"
       ],
       [
         176,
-        "struct_deconstruct<test::IOtherContractDispatcher>"
+        "struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>"
       ],
       [
         177,
@@ -2150,7 +2150,7 @@
       ],
       [
         195,
-        "function_call<user@test::counter_contract::EventCounterDecreasedIntoEvent::into>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into>"
       ],
       [
         196,
@@ -2166,23 +2166,23 @@
       ],
       [
         199,
-        "function_call<user@test::StoreIOtherContractDispatcher::write>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::write>"
       ],
       [
         200,
-        "struct_construct<Tuple<test::counter_contract::other_contract::ContractMemberState, Unit>>"
+        "struct_construct<Tuple<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, Unit>>"
       ],
       [
         201,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>, 0>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>, 0>"
       ],
       [
         202,
-        "store_temp<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>>"
+        "store_temp<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>>"
       ],
       [
         203,
-        "enum_init<core::panics::PanicResult::<(test::counter_contract::other_contract::ContractMemberState, ())>, 1>"
+        "enum_init<core::panics::PanicResult::<(cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::ContractMemberState, ())>, 1>"
       ],
       [
         204,
@@ -2250,19 +2250,19 @@
       ],
       [
         220,
-        "enum_init<test::counter_contract::Event, 1>"
+        "enum_init<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event, 1>"
       ],
       [
         221,
-        "enum_match<test::counter_contract::Event>"
+        "enum_match<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>"
       ],
       [
         222,
-        "store_temp<test::test_component::Event>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>"
       ],
       [
         223,
-        "function_call<user@test::test_component::EventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data>"
       ],
       [
         224,
@@ -2270,7 +2270,7 @@
       ],
       [
         225,
-        "function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>"
       ],
       [
         226,
@@ -2278,7 +2278,7 @@
       ],
       [
         227,
-        "function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>"
       ],
       [
         228,
@@ -2286,11 +2286,11 @@
       ],
       [
         229,
-        "store_temp<test::OutOfScopeEvent>"
+        "store_temp<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>"
       ],
       [
         230,
-        "function_call<user@test::OutOfScopeEventIsEvent::append_keys_and_data>"
+        "function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEventIsEvent::append_keys_and_data>"
       ],
       [
         231,
@@ -2318,31 +2318,31 @@
       ],
       [
         237,
-        "enum_init<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>, 0>"
+        "enum_init<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>, 0>"
       ],
       [
         238,
-        "struct_construct<Tuple<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>>>"
+        "struct_construct<Tuple<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>>"
       ],
       [
         239,
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 0>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 0>"
       ],
       [
         240,
-        "store_temp<core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
+        "store_temp<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>>"
       ],
       [
         241,
-        "enum_init<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>, 1>"
+        "enum_init<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>, 1>"
       ],
       [
         242,
-        "enum_init<core::panics::PanicResult::<(core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 1>"
+        "enum_init<core::panics::PanicResult::<(core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>,)>, 1>"
       ],
       [
         243,
-        "enum_match<core::result::Result::<test::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
+        "enum_match<core::result::Result::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher, core::array::Array::<core::felt252>>>"
       ],
       [
         244,
@@ -2398,7 +2398,7 @@
       ],
       [
         257,
-        "enum_init<test::counter_contract::Event, 2>"
+        "enum_init<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event, 2>"
       ],
       [
         258,
@@ -2406,19 +2406,19 @@
       ],
       [
         259,
-        "enum_match<test::test_component::Event>"
+        "enum_match<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>"
       ],
       [
         260,
-        "struct_deconstruct<test::counter_contract::CounterIncreased>"
+        "struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased>"
       ],
       [
         261,
-        "struct_deconstruct<test::counter_contract::CounterDecreased>"
+        "struct_deconstruct<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased>"
       ],
       [
         262,
-        "drop<test::OutOfScopeEvent>"
+        "drop<cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent>"
       ],
       [
         263,
@@ -2460,23 +2460,23 @@
     "user_func_names": [
       [
         0,
-        "test::counter_contract::__wrapper__CounterContract__get_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__get_counter"
       ],
       [
         1,
-        "test::counter_contract::__wrapper__CounterContract__increase_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__increase_counter"
       ],
       [
         2,
-        "test::counter_contract::__wrapper__CounterContract__decrease_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__CounterContract__decrease_counter"
       ],
       [
         3,
-        "test::counter_contract::__wrapper__constructor"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::__wrapper__constructor"
       ],
       [
         4,
-        "test::counter_contract::CounterContract::get_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::get_counter"
       ],
       [
         5,
@@ -2484,11 +2484,11 @@
       ],
       [
         6,
-        "test::counter_contract::CounterContract::increase_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::increase_counter"
       ],
       [
         7,
-        "test::counter_contract::CounterContract::decrease_counter"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterContract::decrease_counter"
       ],
       [
         8,
@@ -2496,11 +2496,11 @@
       ],
       [
         9,
-        "test::counter_contract::constructor"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::constructor"
       ],
       [
         10,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::read"
       ],
       [
         11,
@@ -2508,19 +2508,19 @@
       ],
       [
         12,
-        "test::counter_contract::counter::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::counter::InternalContractMemberStateImpl::write"
       ],
       [
         13,
-        "test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterIncreased, test::counter_contract::EventCounterIncreasedIntoEvent>"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent>"
       ],
       [
         14,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::read"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::read"
       ],
       [
         15,
-        "test::IOtherContractDispatcherImpl::decrease_allowed"
+        "cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcherImpl::decrease_allowed"
       ],
       [
         16,
@@ -2528,7 +2528,7 @@
       ],
       [
         17,
-        "test::counter_contract::ContractStateEventEmitter::emit::<test::counter_contract::CounterDecreased, test::counter_contract::EventCounterDecreasedIntoEvent>"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::ContractStateEventEmitter::emit::<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased, cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent>"
       ],
       [
         18,
@@ -2536,7 +2536,7 @@
       ],
       [
         19,
-        "test::counter_contract::other_contract::InternalContractMemberStateImpl::write"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::other_contract::InternalContractMemberStateImpl::write"
       ],
       [
         20,
@@ -2556,19 +2556,19 @@
       ],
       [
         24,
-        "test::counter_contract::EventCounterIncreasedIntoEvent::into"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterIncreasedIntoEvent::into"
       ],
       [
         25,
-        "test::counter_contract::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventIsEvent::append_keys_and_data"
       ],
       [
         26,
-        "test::StoreIOtherContractDispatcher::read"
+        "cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::read"
       ],
       [
         27,
-        "core::starknet::SyscallResultTraitImpl::<test::IOtherContractDispatcher>::unwrap_syscall"
+        "core::starknet::SyscallResultTraitImpl::<cairo_level_tests::contracts::new_syntax_test_contract::IOtherContractDispatcher>::unwrap_syscall"
       ],
       [
         28,
@@ -2580,27 +2580,27 @@
       ],
       [
         30,
-        "test::counter_contract::EventCounterDecreasedIntoEvent::into"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::EventCounterDecreasedIntoEvent::into"
       ],
       [
         31,
-        "test::StoreIOtherContractDispatcher::write"
+        "cairo_level_tests::contracts::new_syntax_test_contract::StoreIOtherContractDispatcher::write"
       ],
       [
         32,
-        "test::test_component::EventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data"
       ],
       [
         33,
-        "test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data"
       ],
       [
         34,
-        "test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data"
       ],
       [
         35,
-        "test::OutOfScopeEventIsEvent::append_keys_and_data"
+        "cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEventIsEvent::append_keys_and_data"
       ],
       [
         36,
@@ -2640,11 +2640,11 @@
     {
       "type": "impl",
       "name": "CounterContract",
-      "interface_name": "test::ICounterContract"
+      "interface_name": "cairo_level_tests::contracts::new_syntax_test_contract::ICounterContract"
     },
     {
       "type": "interface",
-      "name": "test::ICounterContract",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::ICounterContract",
       "items": [
         {
           "type": "function",
@@ -2699,13 +2699,13 @@
     },
     {
       "type": "event",
-      "name": "test::test_component::Event",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event",
       "kind": "enum",
       "variants": []
     },
     {
       "type": "event",
-      "name": "test::counter_contract::CounterIncreased",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased",
       "kind": "struct",
       "members": [
         {
@@ -2717,7 +2717,7 @@
     },
     {
       "type": "event",
-      "name": "test::counter_contract::CounterDecreased",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased",
       "kind": "struct",
       "members": [
         {
@@ -2729,33 +2729,33 @@
     },
     {
       "type": "event",
-      "name": "test::OutOfScopeEvent",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent",
       "kind": "struct",
       "members": []
     },
     {
       "type": "event",
-      "name": "test::counter_contract::Event",
+      "name": "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event",
       "kind": "enum",
       "variants": [
         {
           "name": "ABC",
-          "type": "test::test_component::Event",
+          "type": "cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event",
           "kind": "flat"
         },
         {
           "name": "CounterIncreased",
-          "type": "test::counter_contract::CounterIncreased",
+          "type": "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreased",
           "kind": "nested"
         },
         {
           "name": "CounterDecreased",
-          "type": "test::counter_contract::CounterDecreased",
+          "type": "cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreased",
           "kind": "nested"
         },
         {
           "name": "OutOfScopeEvent",
-          "type": "test::OutOfScopeEvent",
+          "type": "cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEvent",
           "kind": "nested"
         }
       ]
