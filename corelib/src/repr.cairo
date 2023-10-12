@@ -8,36 +8,44 @@ trait Representation<T> {
 }
 
 impl U8Representation of Representation<u8> {
+    #[inline(always)]
     fn bits() -> u8 {
         8
     }
+    #[inline(always)]
     fn in_bits(self: @u8) -> u8 {
         U8Representation::bits()
     }
 }
 
 impl U16Representation of Representation<u16> {
+    #[inline(always)]
     fn bits() -> u16 {
         16
     }
+    #[inline(always)]
     fn in_bits(self: @u16) -> u16 {
         U16Representation::bits()
     }
 }
 
 impl U32Representation of Representation<u32> {
+    #[inline(always)]
     fn bits() -> u32 {
         32
     }
+    #[inline(always)]
     fn in_bits(self: @u32) -> u32 {
         U32Representation::bits()
     }
 }
 
 impl U64Representation of Representation<u64> {
+    #[inline(always)]
     fn bits() -> u64 {
         64
     }
+    #[inline(always)]
     fn in_bits(self: @u64) -> u64 {
         U64Representation::bits()
     }
@@ -51,17 +59,6 @@ impl U128Representation of Representation<u128> {
     #[inline(always)]
     fn in_bits(self: @u128) -> u128 {
         U128Representation::bits()
-    }
-}
-
-impl Felt252Representation of Representation<felt252> {
-    #[inline(always)]
-    fn bits() -> felt252 {
-        252
-    }
-    #[inline(always)]
-    fn in_bits(self: @felt252) -> felt252 {
-        Felt252Representation::bits()
     }
 }
 
@@ -128,5 +125,16 @@ impl I128Representation of Representation<i128> {
     #[inline(always)]
     fn in_bits(self: @i128) -> i128 {
         I128Representation::bits()
+    }
+}
+
+impl Felt252Representation of Representation<felt252> {
+    #[inline(always)]
+    fn bits() -> felt252 {
+        252
+    }
+    #[inline(always)]
+    fn in_bits(self: @felt252) -> felt252 {
+        Felt252Representation::bits()
     }
 }
