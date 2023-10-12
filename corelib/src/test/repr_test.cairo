@@ -3,7 +3,7 @@ use test::test_utils::assert_eq;
 use repr::{
     U8Representation, U16Representation, U32Representation, U64Representation, U128Representation,
     U256Representation, I8Representation, I16Representation, I32Representation, I64Representation,
-    I128Representation
+    I128Representation, Felt252Representation
 };
 
 #[test]
@@ -19,6 +19,7 @@ fn test_bits_representation() {
     assert_eq(@(I32Representation::bits()), @32, 'i32 bits repr != 32');
     assert_eq(@(I64Representation::bits()), @64, 'i64 bits repr != 64');
     assert_eq(@(I128Representation::bits()), @128, 'i128 bits repr != 128');
+    assert_eq(@(Felt252Representation::bits()), @252, 'felt252 bits repr != 252');
 }
 
 #[test]
@@ -34,4 +35,5 @@ fn test_bits_representation_variables() {
     assert_eq(@(1_i32.in_bits()), @32, 'i32 bits repr != 32');
     assert_eq(@(1_i64.in_bits()), @64, 'i64 bits repr != 64');
     assert_eq(@(1_i128.in_bits()), @128, 'i128 bits repr != 128');
+    assert_eq(@(1_felt252.in_bits()), @252, 'felt252 bits repr != 252');
 }
