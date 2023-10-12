@@ -807,7 +807,6 @@ dependencies = [
 name = "cairo-lang-sierra-ap-change"
 version = "2.3.0-rc0"
 dependencies = [
- "cairo-lang-eq-solver",
  "cairo-lang-sierra",
  "cairo-lang-sierra-type-size",
  "cairo-lang-utils",
