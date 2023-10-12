@@ -16,9 +16,9 @@ trait OptionTrait<T> {
     fn is_some(self: @Option<T>) -> bool;
     /// Returns `true` if the `Option` is `Option::None`.
     fn is_none(self: @Option<T>) -> bool;
-    /// Returns x if Option is Option::some(x), otherwise returns the provided default value
+    /// Returns x if Option is Option::some(x), otherwise returns the provided default value.
     fn unwrap_or<+Drop<T>>(self: Option<T>, default: T) -> T;
-    /// Returns x if Option is Option::some(x), otherwise returns Default::<T>::default()
+    /// Returns x if Option is Option::some(x), otherwise returns Default::<T>::default().
     fn unwrap_or_default<+Default<T>>(self: Option<T>) -> T;
 }
 
