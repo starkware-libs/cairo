@@ -1,6 +1,6 @@
 use test::test_utils::assert_eq;
 
-use repr::{
+use representation::{
     U8Representation, U16Representation, U32Representation, U64Representation, U128Representation,
     U256Representation, I8Representation, I16Representation, I32Representation, I64Representation,
     I128Representation, Felt252Representation
