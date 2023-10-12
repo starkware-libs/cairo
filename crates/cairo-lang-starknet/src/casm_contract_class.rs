@@ -284,6 +284,7 @@ impl CasmContractClass {
                 .map(|id| (id, [(CostTokenType::Const, ENTRY_POINT_COST)].into()))
                 .collect(),
             linear_gas_solver: false,
+            linear_ap_change_solver: false,
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 
