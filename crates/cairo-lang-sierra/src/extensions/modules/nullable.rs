@@ -1,4 +1,5 @@
 use super::boxing::BoxType;
+use super::snapshot::snapshot_ty;
 use super::utils::reinterpret_cast_signature;
 use crate::define_libfunc_hierarchy;
 use crate::extensions::lib_func::{
@@ -54,6 +55,7 @@ define_libfunc_hierarchy! {
         Null(NullLibfunc),
         NullableFromBox(NullableFromBoxLibfunc),
         MatchNullable(MatchNullableLibfunc),
+        MatchNullableSnapshot(MatchNullableSnapshotLibfunc),
     }, NullableConcreteLibfunc
 }
 
@@ -134,3 +136,42 @@ impl SignatureAndTypeGenericLibfunc for MatchNullableLibfuncWrapped {
     }
 }
 pub type MatchNullableLibfunc = WrapSignatureAndTypeGenericLibfunc<MatchNullableLibfuncWrapped>;
+
+/// Libfunc for converting `@Nullable<T>` to either `Box<@T>` or nothing (in the case of `null`).
+#[derive(Default)]
+pub struct MatchNullableSnapshotLibfuncWrapped {}
+impl SignatureAndTypeGenericLibfunc for MatchNullableSnapshotLibfuncWrapped {
+    const STR_ID: &'static str = "match_nullable_snapshot";
+
+    fn specialize_signature(
+        &self,
+        context: &dyn SignatureSpecializationContext,
+        ty: ConcreteTypeId,
+    ) -> Result<LibfuncSignature, SpecializationError> {
+        Ok(LibfuncSignature {
+            param_signatures: vec![ParamSignature::new(snapshot_ty(
+                context,
+                context.get_wrapped_concrete_type(NullableType::id(), ty.clone())?,
+            )?)],
+            branch_signatures: vec![
+                // `null`.
+                BranchSignature {
+                    vars: vec![],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+                // `Box<T>`.
+                BranchSignature {
+                    vars: vec![OutputVarInfo {
+                        ty: context
+                            .get_wrapped_concrete_type(BoxType::id(), snapshot_ty(context, ty)?)?,
+                        ref_info: OutputVarReferenceInfo::SameAsParam { param_idx: 0 },
+                    }],
+                    ap_change: SierraApChange::Known { new_vars_only: true },
+                },
+            ],
+            fallthrough: Some(0),
+        })
+    }
+}
+pub type MatchNullableSnapshotLibfunc =
+    WrapSignatureAndTypeGenericLibfunc<MatchNullableSnapshotLibfuncWrapped>;
