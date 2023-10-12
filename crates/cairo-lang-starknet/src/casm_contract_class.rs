@@ -289,6 +289,12 @@ impl CasmContractClass {
                 assert_eq!(sierra_version.major, 1);
                 sierra_version.minor >= 4
             },
+            linear_ap_change_solver: {
+                // TODO(orizi): Remove this assert and condition once the equation solver is removed
+                // in major version 2.
+                assert_eq!(sierra_version.major, 1);
+                sierra_version.minor >= 5
+            },
         };
         let metadata = calc_metadata(&program, metadata_computation_config)?;
 

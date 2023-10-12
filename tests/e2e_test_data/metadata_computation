@@ -67,6 +67,13 @@ test::bar: OrderedHashMap({Const: 10000})
 test::bar: 1
 test::foo: 10
 
+//! > ap_solution_no_solver
+#2: 2
+#8: 2
+
+test::foo: 10
+test::bar: 1
+
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -255,6 +262,13 @@ test::bar: OrderedHashMap({Const: 10000})
 test::bar: 1
 test::foo: 11
 
+//! > ap_solution_no_solver
+#13: 4
+#19: 2
+
+test::foo: 11
+test::bar: 1
+
 //! > sierra_code
 type RangeCheck = RangeCheck [storable: true, drop: false, dup: false, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -442,6 +456,14 @@ test::bar: OrderedHashMap({Const: 2000})
 test::bar: 1
 test::foo: 10
 
+//! > ap_solution_no_solver
+#12: 4
+#18: 6
+#24: 4
+
+test::foo: 10
+test::bar: 1
+
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
 type Unit = Struct<ut@Tuple> [storable: true, drop: true, dup: true, zero_sized: true];
@@ -611,6 +633,13 @@ test::bar: OrderedHashMap({Const: 10000})
 
 test::bar: 1
 test::foo: 8
+
+//! > ap_solution_no_solver
+#13: 2
+#27: 3
+
+test::foo: 8
+test::bar: 1
 
 //! > sierra_code
 type felt252 = felt252 [storable: true, drop: true, dup: true, zero_sized: false];
