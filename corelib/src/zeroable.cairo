@@ -1,3 +1,4 @@
+use num::traits::Zero;
 // === Zeroable ===
 
 trait Zeroable<T> {
@@ -9,17 +10,17 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl Felt252Zeroable of Zeroable<felt252> {
-    fn zero() -> felt252 {
-        0
+impl ZeroableImpl<T, +Zero<T>, +Drop<T>> of Zeroable<T> {
+    fn zero() -> T {
+        Zero::zero()
     }
     #[inline(always)]
-    fn is_zero(self: felt252) -> bool {
-        self == 0
+    fn is_zero(self: T) -> bool {
+        Zero::is_zero(@self)
     }
     #[inline(always)]
-    fn is_non_zero(self: felt252) -> bool {
-        !self.is_zero()
+    fn is_non_zero(self: T) -> bool {
+        Zero::is_non_zero(@self)
     }
 }
 
