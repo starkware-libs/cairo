@@ -335,7 +335,7 @@ use byte_array::{ByteArray, ByteArrayIndexView, ByteArrayTrait};
 mod to_byte_array;
 
 // Representation.
-mod representation;
+mod bits_length;
 
 #[cfg(test)]
 mod test;
