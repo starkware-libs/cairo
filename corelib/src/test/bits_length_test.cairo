@@ -38,8 +38,6 @@ fn test_bits_length_self() {
     assert_eq(@(1_i128.bits_len()), @128, 'i128 bits len != 128');
     assert_eq(@(1_felt252.bits_len()), @252, 'felt252 bits len != 252');
     assert_eq(
-        @(Into::<usize, bytes31>::into(1_usize).bits_len()),
-        @31_usize.into(),
-        'bytes31 bits len != 31'
+        @(bytes31_const::<1>().bits_len()), @(bytes31_const::<31>()), 'bytes31 bits len != 31'
     );
 }
