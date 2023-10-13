@@ -117,7 +117,7 @@ impl Felt252BitsLength of BitsLength<felt252> {
 
 impl Bytes31BitsLength of BitsLength<bytes31> {
     fn bits() -> bytes31 {
-        31_usize.into()
+        bytes31_const::<31>()
     }
     fn bits_len(self: @bytes31) -> bytes31 {
         Bytes31BitsLength::bits()
