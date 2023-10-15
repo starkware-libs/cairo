@@ -8,6 +8,7 @@ use cmp::min;
 use integer::{u128_safe_divmod, U32TryIntoNonZero};
 use option::OptionTrait;
 use traits::{Into, TryInto};
+use serde::Serde;
 use zeroable::NonZeroIntoImpl;
 
 const BYTES_IN_U128: usize = 16;
@@ -15,7 +16,7 @@ const BYTES_IN_U128: usize = 16;
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-#[derive(Drop, Clone, PartialEq)]
+#[derive(Drop, Clone, PartialEq, Serde)]
 struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
