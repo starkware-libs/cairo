@@ -88,12 +88,7 @@ impl ByteArrayImpl of ByteArrayTrait {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
-            loop {
-                match other_data.pop_front() {
-                    Option::Some(current_word) => { self.data.append(*current_word); },
-                    Option::None => { break; }
-                };
-            };
+            self.data.append_span(other_data);
             self.pending_word = *other.pending_word;
             self.pending_word_len = *other.pending_word_len;
             return;
