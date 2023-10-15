@@ -118,7 +118,12 @@ impl VariablesState {
                 let ty = output_info.ty.clone();
                 match &arg_states[*param_idx] {
                     VarState::TempVar { .. } => {
-                        add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        if matches!(
+                            output_info.ref_info,
+                            OutputVarReferenceInfo::SameAsParam { .. }
+                        ) {
+                            add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                        }
                         VarState::TempVar { ty }
                     }
                     VarState::Deferred { info } => {
