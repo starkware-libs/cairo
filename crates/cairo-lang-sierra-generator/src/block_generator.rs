@@ -4,7 +4,7 @@ mod test;
 
 use cairo_lang_diagnostics::Maybe;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
-use itertools::{chain, enumerate, zip_eq, Itertools};
+use itertools::{chain, enumerate, zip_eq};
 use lowering::borrow_check::analysis::StatementLocation;
 use lowering::{MatchArm, VarUsage};
 use sierra::extensions::lib_func::SierraApChange;
@@ -283,15 +283,6 @@ fn generate_statement_call_code(
     statement: &lowering::StatementCall,
     statement_location: &StatementLocation,
 ) -> Maybe<Vec<pre_sierra::Statement>> {
-    // Prepare the Sierra input and output variables.
-    let inputs = statement
-        .inputs
-        .iter()
-        .map(|var_usage| context.get_sierra_variable(var_usage.var_id))
-        .collect_vec();
-
-    let outputs = context.get_sierra_variables(&statement.outputs);
-
     // Check if this is a user defined function or a libfunc.
     let (body, libfunc_id) = get_concrete_libfunc_id(context.get_db(), statement.function);
     // Checks if the call invalidates ap tracking.
@@ -311,14 +302,14 @@ fn generate_statement_call_code(
         let mut args_on_stack: Vec<sierra::ids::VarId> = vec![];
         let mut push_values_vec: Vec<pre_sierra::PushValue> = vec![];
 
-        for (idx, (var_usage, var)) in zip_eq(&statement.inputs, inputs).enumerate() {
+        for (idx, var_usage) in statement.inputs.iter().enumerate() {
             let use_location = UseLocation { statement_location: *statement_location, idx };
             let should_dup = should_dup(context, &use_location);
             // Allocate a temporary Sierra variable that represents the argument placed on the
             // stack.
             let arg_on_stack = context.allocate_sierra_variable();
             push_values_vec.push(pre_sierra::PushValue {
-                var,
+                var: context.get_sierra_variable(var_usage.var_id),
                 var_on_stack: arg_on_stack.clone(),
                 ty: context.get_variable_sierra_type(var_usage.var_id)?,
                 dup: should_dup,
@@ -330,7 +321,11 @@ fn generate_statement_call_code(
             // Push the arguments.
             pre_sierra::Statement::PushValues(push_values_vec),
             // Call the function.
-            simple_statement(libfunc_id, &args_on_stack, &outputs),
+            simple_statement(
+                libfunc_id,
+                &args_on_stack,
+                &context.get_sierra_variables(&statement.outputs),
+            ),
         ])
     } else {
         // Dup variables as needed.
@@ -342,7 +337,11 @@ fn generate_statement_call_code(
             &mut statements,
         )?;
 
-        statements.push(simple_statement(libfunc_id, &inputs_after_dup, &outputs));
+        statements.push(simple_statement(
+            libfunc_id,
+            &inputs_after_dup,
+            &context.get_sierra_variables(&statement.outputs),
+        ));
         Ok(statements)
     }
 }

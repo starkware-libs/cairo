@@ -79,9 +79,9 @@ End:
 
 //! > sierra_code
 felt252_const<2>() -> ([0])
-dup<felt252>([1]) -> ([1], [3])
-felt252_sub([3], [0]) -> ([2])
-felt252_is_zero([2]) { fallthrough() label_test::foo::0([4]) }
+dup<felt252>([1]) -> ([1], [2])
+felt252_sub([2], [0]) -> ([3])
+felt252_is_zero([3]) { fallthrough() label_test::foo::0([4]) }
 branch_align() -> ()
 felt252_is_zero([1]) { fallthrough() label_test::foo::2([5]) }
 branch_align() -> ()

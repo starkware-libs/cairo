@@ -42,15 +42,15 @@ fn test_program_generator() {
 
             drop<felt252>([0]) -> (); // 0
             felt252_const<5>() -> ([1]); // 1
-            store_temp<felt252>([1]) -> ([3]); // 2
-            function_call<user@test::bar>([3]) -> ([2]); // 3
-            rename<felt252>([2]) -> ([4]); // 4
+            store_temp<felt252>([1]) -> ([2]); // 2
+            function_call<user@test::bar>([2]) -> ([3]); // 3
+            rename<felt252>([3]) -> ([4]); // 4
             return([4]); // 5
-            dup<felt252>([0]) -> ([0], [2]); // 6
-            dup<felt252>([0]) -> ([0], [3]); // 7
-            felt252_add([2], [3]) -> ([1]); // 8
-            store_temp<felt252>([1]) -> ([1]); // 9
-            felt252_add([1], [0]) -> ([4]); // 10
+            dup<felt252>([0]) -> ([0], [1]); // 6
+            dup<felt252>([0]) -> ([0], [2]); // 7
+            felt252_add([1], [2]) -> ([3]); // 8
+            store_temp<felt252>([3]) -> ([3]); // 9
+            felt252_add([3], [0]) -> ([4]); // 10
             store_temp<felt252>([4]) -> ([5]); // 11
             return([5]); // 12
 
