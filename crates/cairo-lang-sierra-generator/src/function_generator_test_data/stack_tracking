@@ -1,0 +1,37 @@
+//! > Test that accessing a member of a struct does not cause all the struct to be stored.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo() {
+    let (a, b) = get_val();
+    test_func(a, b)
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn get_val() -> (u32, u32) {
+  (13, 17)
+}
+
+fn test_func(a: u32, b: u32) {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+function_call<user@test::get_val>() -> ([0])
+struct_deconstruct<Tuple<u32, u32>>([0]) -> ([1], [2])
+store_temp<u32>([1]) -> ([4])
+store_temp<u32>([2]) -> ([5])
+function_call<user@test::test_func>([4], [5]) -> ([3])
+rename<Unit>([3]) -> ([6])
+return([6])
