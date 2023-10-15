@@ -88,12 +88,7 @@ impl ByteArrayImpl of ByteArrayTrait {
         let mut other_data = other.data.span();
 
         if self.pending_word_len == 0 {
-            loop {
-                match other_data.pop_front() {
-                    Option::Some(current_word) => { self.data.append(*current_word); },
-                    Option::None => { break; }
-                };
-            };
+            self.data.append_span(other_data);
             self.pending_word = *other.pending_word;
             self.pending_word_len = *other.pending_word_len;
             return;
@@ -107,7 +102,9 @@ impl ByteArrayImpl of ByteArrayTrait {
                     Option::Some(current_word) => {
                         self.append_split_index_16((*current_word).into());
                     },
-                    Option::None => { break; }
+                    Option::None => {
+                        break;
+                    }
                 };
             };
         } else if self.pending_word_len < BYTES_IN_U128 {
@@ -119,7 +116,9 @@ impl ByteArrayImpl of ByteArrayTrait {
                                 (*current_word).into(), self.pending_word_len
                             );
                     },
-                    Option::None => { break; }
+                    Option::None => {
+                        break;
+                    }
                 };
             };
         } else {
@@ -132,7 +131,9 @@ impl ByteArrayImpl of ByteArrayTrait {
                                 (*current_word).into(), self.pending_word_len
                             );
                     },
-                    Option::None => { break; }
+                    Option::None => {
+                        break;
+                    }
                 };
             };
         }
@@ -213,7 +214,9 @@ impl ByteArrayImpl of ByteArrayTrait {
                 Option::Some(current_word) => {
                     result.append_word_rev((*current_word).into(), BYTES_IN_BYTES31);
                 },
-                Option::None => { break; }
+                Option::None => {
+                    break;
+                }
             };
         };
         result
