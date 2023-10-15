@@ -444,6 +444,50 @@ fn test_reverse() {
     assert_eq(@palindrome, @palindrome.rev(), 'palindrome is not a palindrome');
 }
 
+#[test]
+// TODO(yuval): use BYTE_ARRAY_MAGIC in these tests once constants are supported.
+#[should_panic(
+    expected: (
+        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
+        0, // data len
+        0, // pending_word
+        0 // pending_word_len
+    )
+)]
+fn test_panic_with_byte_array_empty() {
+    let ba: ByteArray = Default::default();
+    byte_array::panic_with_byte_array(ba);
+}
+
+#[test]
+#[should_panic(
+    expected: (
+        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
+        0, // data len
+        0x6572726f72, // pending_word
+        5 // pending_word_len
+    )
+)]
+fn test_panic_with_byte_array_short() {
+    let ba: ByteArray = "error";
+    byte_array::panic_with_byte_array(ba);
+}
+
+#[test]
+#[should_panic(
+    expected: (
+        0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3, // BYTE_ARRAY_MAGIC
+        1, // data len
+        0x6c6f6e67206572726f722077697468206d6f7265207468616e203331206368, // data
+        0x6172616374657273, // pending_word
+        8 // pending_word_len
+    )
+)]
+fn test_panic_with_byte_array_long() {
+    let ba: ByteArray = "long error with more than 31 characters";
+    byte_array::panic_with_byte_array(ba);
+}
+
 // ========= Test helper functions =========
 
 use debug::PrintTrait;
@@ -470,7 +514,9 @@ fn compare_byte_array(
                     panic_with_felt252('wrong data');
                 }
             },
-            Option::None(_) => { break; }
+            Option::None(_) => {
+                break;
+            }
         }
         data_index += 1;
     };
