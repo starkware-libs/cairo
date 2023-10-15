@@ -8,14 +8,16 @@ use cmp::min;
 use integer::{u128_safe_divmod, U32TryIntoNonZero};
 use option::OptionTrait;
 use traits::{Into, TryInto};
+use serde::Serde;
 use zeroable::NonZeroIntoImpl;
 
 const BYTES_IN_U128: usize = 16;
+const BYTE_ARRAY_MAGIC: felt252 = 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
 // TODO(yuval): don't allow creation of invalid ByteArray?
-#[derive(Drop, Clone, PartialEq)]
+#[derive(Drop, Clone, PartialEq, Serde)]
 struct ByteArray {
     // Full "words" of 31 bytes each. The first byte of each word in the byte array
     // is the most significant byte in the word.
@@ -356,4 +358,13 @@ impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }
+}
+
+/// Panics with the given ByteArray. That is, panics with an `Array<felt252>` with
+/// `BYTE_ARRAY_MAGIC`, and then the serialized given ByteArray.
+#[inline(always)]
+fn panic_with_byte_array(err: @ByteArray) -> never {
+    let mut serialized = array![BYTE_ARRAY_MAGIC];
+    err.serialize(ref serialized);
+    panic(serialized)
 }
