@@ -8,9 +8,11 @@ use cmp::min;
 use integer::{u128_safe_divmod, U32TryIntoNonZero};
 use option::OptionTrait;
 use traits::{Into, TryInto};
+use serde::Serde;
 use zeroable::NonZeroIntoImpl;
 
 const BYTES_IN_U128: usize = 16;
+const BYTE_ARRAY_MAGIC: felt252 = 0x46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3;
 // TODO(yuval): change to `BYTES_IN_BYTES31 - 1` once consteval_int supports non-literals.
 const BYTES_IN_BYTES31_MINUS_ONE: usize = consteval_int!(31 - 1);
 
@@ -256,6 +258,13 @@ impl ByteArrayImpl of ByteArrayTrait {
         }
     }
 
+    /// Panics with `self`. That is, panics with an `Array<felt252>` with `BYTE_ARRAY_MAGIC`, and
+    /// then the serialization of `self`.
+    #[inline(always)]
+    fn panic(self: ByteArray) -> never {
+        panic_with_byte_array(self)
+    }
+
     // === Helpers ===
 
     // Appends a single word of `len` bytes to the end of the ByteArray, assuming there
@@ -345,6 +354,18 @@ impl ByteArrayImpl of ByteArrayTrait {
         self.data.append(to_append.try_into().unwrap());
         self.pending_word = new_pending;
     }
+
+    /// Serializes the ByteArray into a felt array, for panicking/printing.
+    fn serialize(self: @ByteArray) -> Array<felt252> {
+        let mut result = array![];
+        result.append(BYTE_ARRAY_MAGIC);
+        let mut serialized_data = array![];
+        self.data.serialize(ref serialized_data);
+        result.append_array(serialized_data.span());
+        result.append(*self.pending_word);
+        result.append((*self.pending_word_len).into());
+        result
+    }
 }
 
 impl ByteArrayAdd of Add<ByteArray> {
@@ -364,4 +385,12 @@ impl ByteArrayIndexView of IndexView<ByteArray, usize, u8> {
     fn index(self: @ByteArray, index: usize) -> u8 {
         self.at(index).expect('Index out of bounds')
     }
+}
+
+/// Panics with the given ByteArray. That is, panics with an `Array<felt252>` with
+/// `BYTE_ARRAY_MAGIC`, and then the serialized given ByteArray.
+#[inline(always)]
+fn panic_with_byte_array(err: ByteArray) -> never {
+    let serialized = err.serialize();
+    panic(serialized)
 }
