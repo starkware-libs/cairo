@@ -28,12 +28,12 @@ return([5], [6]); // 8
 branch_align() -> (); // 9
 drop<NonZero<felt252>>([3]) -> (); // 10
 felt252_const<1>() -> ([7]); // 11
-dup<felt252>([1]) -> ([1], [9]); // 12
-felt252_sub([9], [7]) -> ([8]); // 13
-store_temp<Pedersen>([0]) -> ([12]); // 14
-store_temp<felt252>([8]) -> ([13]); // 15
-function_call<user@examples::hash_chain::hash_chain>([12], [13]) -> ([10], [11]); // 16
-pedersen([10], [11], [1]) -> ([14], [15]); // 17
+dup<felt252>([1]) -> ([1], [8]); // 12
+felt252_sub([8], [7]) -> ([9]); // 13
+store_temp<Pedersen>([0]) -> ([10]); // 14
+store_temp<felt252>([9]) -> ([11]); // 15
+function_call<user@examples::hash_chain::hash_chain>([10], [11]) -> ([12], [13]); // 16
+pedersen([12], [13], [1]) -> ([14], [15]); // 17
 store_temp<Pedersen>([14]) -> ([16]); // 18
 store_temp<felt252>([15]) -> ([17]); // 19
 return([16], [17]); // 20
