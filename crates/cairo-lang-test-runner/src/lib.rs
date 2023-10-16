@@ -1,14 +1,15 @@
 use std::path::Path;
 use std::sync::{Arc, Mutex};
+use std::vec::IntoIter;
 
 use anyhow::{bail, Context, Result};
-use cairo_felt::Felt252;
+use cairo_felt::{felt_str, Felt252};
 use cairo_lang_compiler::db::RootDatabase;
 use cairo_lang_compiler::diagnostics::DiagnosticsReporter;
 use cairo_lang_compiler::project::setup_project;
 use cairo_lang_filesystem::cfg::{Cfg, CfgSet};
 use cairo_lang_filesystem::ids::CrateId;
-use cairo_lang_runner::short_string::as_cairo_short_string;
+use cairo_lang_runner::short_string::{as_cairo_short_string, as_cairo_short_string_ex};
 use cairo_lang_runner::{RunResultValue, SierraCasmRunner};
 use cairo_lang_sierra::extensions::gas::CostTokenType;
 use cairo_lang_sierra::ids::FunctionId;
@@ -17,7 +18,9 @@ use cairo_lang_sierra_to_casm::metadata::MetadataComputationConfig;
 use cairo_lang_starknet::contract::ContractInfo;
 use cairo_lang_starknet::inline_macros::selector::SelectorMacro;
 use cairo_lang_starknet::plugin::StarkNetPlugin;
-use cairo_lang_test_plugin::test_config::{PanicExpectation, TestExpectation};
+use cairo_lang_test_plugin::test_config::{
+    PanicExpectation, TestExpectation, BYTES_IN_WORD, BYTE_ARRAY_PANIC_MAGIC,
+};
 use cairo_lang_test_plugin::{compile_test_prepared_db, TestCompilation, TestConfig, TestPlugin};
 use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
@@ -107,14 +110,17 @@ impl CompiledTestRunner {
                         println!("expected panic but finished successfully.");
                     }
                     RunResultValue::Panic(values) => {
-                        print!("panicked with [");
-                        for value in &values {
-                            match as_cairo_short_string(value) {
-                                Some(as_string) => print!("{value} ('{as_string}'), "),
-                                None => print!("{value}, "),
-                            }
+                        print!("panicked with ");
+                        let mut values_iter = values.into_iter();
+                        let mut items = Vec::new();
+                        while let Some(item) = next_printed_item(&mut values_iter) {
+                            items.push(item);
                         }
-                        println!("].")
+                        if items.len() == 1 {
+                            println!("{}.", items[0]);
+                        } else {
+                            println!("({}).", items.join(", "));
+                        }
                     }
                 }
             }
@@ -128,6 +134,50 @@ impl CompiledTestRunner {
             );
         }
     }
+}
+
+/// Formats a string or a `Felt252`.
+fn next_printed_item(values: &mut IntoIter<Felt252>) -> Option<String> {
+    let Some(first_felt) = values.next() else {
+        return None;
+    };
+
+    Some(if first_felt == felt_str!(BYTE_ARRAY_PANIC_MAGIC, 16) {
+        get_formatted_string(values)
+    } else {
+        get_formatted_short_string(&first_felt)
+    })
+}
+
+/// Formats a `Felt252`, as a short string if possible.
+fn get_formatted_short_string(value: &Felt252) -> String {
+    match as_cairo_short_string(value) {
+        Some(as_string) => format!("{value} ('{as_string}')"),
+        None => format!("{value}"),
+    }
+}
+
+/// Formats a string, represented as a sequence of `Felt252`s.
+/// Assumes the sequence is a valid serialization of a ByteArray.
+fn get_formatted_string(values: &mut IntoIter<Felt252>) -> String {
+    let num_full_words = values.next().unwrap().to_usize().unwrap();
+    let full_words = values.by_ref().take(num_full_words).collect_vec();
+    let pending_word = values.next().unwrap();
+    let pending_word_len = values.next().unwrap().to_usize().unwrap();
+
+    let full_words_strings = full_words
+        .into_iter()
+        .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
+        .collect::<Option<Vec<String>>>();
+    let Some(full_words_strings) = full_words_strings else {
+        return "<bad ByteArray serialization - full word>".to_string();
+    };
+    let full_words_string = full_words_strings.join("");
+    let Some(pending_word_string) = as_cairo_short_string_ex(&pending_word, pending_word_len)
+    else {
+        return "<bad ByteArray serialization - pending word>".to_string();
+    };
+    format!("\"{full_words_string}{pending_word_string}\"")
 }
 
 /// Configuration of compiled tests runner.
