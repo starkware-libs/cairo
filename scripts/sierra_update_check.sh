@@ -11,7 +11,7 @@ git diff --name-only $MERGE_BASE $HEAD_BRANCH | grep \
     -e 'crate/cairo-lang-sierra-ap-change/' \
     -e 'crate/cairo-lang-sierra-to-casm/' >/dev/null
 if [ $? -eq 0 ]; then
-    # If so, check if the commit message contains an explaination tag.
+    # If so, check if the commit message contains an explanation tag.
     git log $MERGE_BASE..$HEAD_BRANCH --pretty=format:"%b" | grep \
         -e 'SIERRA_UPDATE_NO_CHANGE_TAG=' \
         -e 'SIERRA_UPDATE_PATCH_CHANGE_TAG=' \
@@ -20,7 +20,7 @@ if [ $? -eq 0 ]; then
     if [ $? -eq 0 ]; then
         exit 0
     fi
-    echo "We have a change in one of the Sierra crates - an explaination tag is required."
+    echo "We have a change in one of the Sierra crates - an explanation tag is required."
     echo "If there's no actual change:"
     echo " - Add 'SIERRA_UPDATE_NO_CHANGE_TAG=<reason>'."
     echo "If there is a change - but it does not affect which code will be compiled:"
