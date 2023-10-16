@@ -60,30 +60,30 @@ store_temp<BuiltinCosts>([13]) -> ([13]); // 16
 withdraw_gas_all([0], [1], [13]) { fallthrough([14], [15]) 46([16], [17]) }; // 17
 branch_align() -> (); // 18
 felt252_const<1>() -> ([18]); // 19
-dup<felt252>([3]) -> ([3], [20]); // 20
-felt252_sub([20], [18]) -> ([19]); // 21
-store_temp<RangeCheck>([14]) -> ([25]); // 22
-store_temp<GasBuiltin>([15]) -> ([26]); // 23
-store_temp<Pedersen>([2]) -> ([27]); // 24
-store_temp<felt252>([19]) -> ([28]); // 25
-function_call<user@examples::hash_chain_gas::hash_chain>([25], [26], [27], [28]) -> ([21], [22], [23], [24]); // 26
-enum_match<core::panics::PanicResult::<(core::felt252,)>>([24]) { fallthrough([29]) 38([30]) }; // 27
+dup<felt252>([3]) -> ([3], [19]); // 20
+felt252_sub([19], [18]) -> ([20]); // 21
+store_temp<RangeCheck>([14]) -> ([21]); // 22
+store_temp<GasBuiltin>([15]) -> ([22]); // 23
+store_temp<Pedersen>([2]) -> ([23]); // 24
+store_temp<felt252>([20]) -> ([24]); // 25
+function_call<user@examples::hash_chain_gas::hash_chain>([21], [22], [23], [24]) -> ([25], [26], [27], [28]); // 26
+enum_match<core::panics::PanicResult::<(core::felt252,)>>([28]) { fallthrough([29]) 38([30]) }; // 27
 branch_align() -> (); // 28
 struct_deconstruct<Tuple<felt252>>([29]) -> ([31]); // 29
-pedersen([23], [31], [3]) -> ([32], [33]); // 30
+pedersen([27], [31], [3]) -> ([32], [33]); // 30
 struct_construct<Tuple<felt252>>([33]) -> ([34]); // 31
 enum_init<core::panics::PanicResult::<(core::felt252,)>, 0>([34]) -> ([35]); // 32
-store_temp<RangeCheck>([21]) -> ([36]); // 33
-store_temp<GasBuiltin>([22]) -> ([37]); // 34
+store_temp<RangeCheck>([25]) -> ([36]); // 33
+store_temp<GasBuiltin>([26]) -> ([37]); // 34
 store_temp<Pedersen>([32]) -> ([38]); // 35
 store_temp<core::panics::PanicResult::<(core::felt252,)>>([35]) -> ([39]); // 36
 return([36], [37], [38], [39]); // 37
 branch_align() -> (); // 38
 drop<felt252>([3]) -> (); // 39
 enum_init<core::panics::PanicResult::<(core::felt252,)>, 1>([30]) -> ([40]); // 40
-store_temp<RangeCheck>([21]) -> ([41]); // 41
-store_temp<GasBuiltin>([22]) -> ([42]); // 42
-store_temp<Pedersen>([23]) -> ([43]); // 43
+store_temp<RangeCheck>([25]) -> ([41]); // 41
+store_temp<GasBuiltin>([26]) -> ([42]); // 42
+store_temp<Pedersen>([27]) -> ([43]); // 43
 store_temp<core::panics::PanicResult::<(core::felt252,)>>([40]) -> ([44]); // 44
 return([41], [42], [43], [44]); // 45
 branch_align() -> (); // 46
