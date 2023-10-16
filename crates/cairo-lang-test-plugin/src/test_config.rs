@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
 
-const BYTE_ARRAY_MAGIC_HIGH: u128 = 0x46a6158a16a947e5916b2a2ca68501a;
-const BYTE_ARRAY_MAGIC_LOW: u128 = 0x45e93d7110e81aa2d6438b1c57c879a3;
+pub const BYTE_ARRAY_MAGIC_HIGH: u128 = 0x46a6158a16a947e5916b2a2ca68501a;
+pub const BYTE_ARRAY_MAGIC_LOW: u128 = 0x45e93d7110e81aa2d6438b1c57c879a3;
 
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -109,8 +109,8 @@ pub fn try_extract_test_config(
         Some(TestConfig {
             available_gas,
             expectation: if should_panic {
-                TestExpectation::Panics(if let Some(values) = expected_panic_felts {
-                    PanicExpectation::Exact(values)
+                TestExpectation::Panics(if let Some(felts) = expected_panic_felts {
+                    PanicExpectation::Exact(felts)
                 } else {
                     PanicExpectation::Any
                 })
