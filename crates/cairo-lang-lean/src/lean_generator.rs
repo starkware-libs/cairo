@@ -1,9 +1,11 @@
 use std::{fs, iter};
+use std::cmp::min;
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 use cairo_lang_casm::builder::{
     CasmBuilderAuxiliaryInfo,
@@ -613,6 +615,103 @@ impl<'a> LeanFuncInfo<'a> {
             )
         }
 
+        /// Returns the position in the list of statement descriptions of the label
+        /// which is the target of the jump statement. If this fails, the label is
+        /// probably a return block label.
+        fn get_jump_target_pos(&self, jump: &JumpDesc) -> Option<usize> {
+            self.aux_info.statements.iter().position(
+                |s|
+                    if let StatementDesc::Label(label) = s {
+                        label == &jump.target
+                    } else {
+                        false
+                    }
+            )
+        }
+
+        /// Given the start position of a block, returns all variable names used in the block before
+        /// being defined. These are the variables which are the input argument to the block.
+        fn get_block_args(&self, block_start: usize) -> HashSet<String> {
+
+            let mut vars = HashSet::new();
+            let mut declared: HashSet<String> = HashSet::new();
+
+            for statement in self.aux_info.statements[block_start..].iter() {
+                match statement {
+                    StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                        if let Some(expr) = &var.expr {
+                            let name = &expr.var_a.name;
+                            if !declared.contains(name) && !self.is_const(name) {
+                                vars.insert(name.clone());
+                            }
+                            if let Some(expr_b) = &expr.var_b {
+                                let name = &expr_b.name;
+                                if !declared.contains(name) && !self.is_const(name) {
+                                    vars.insert(name.clone());
+                                }
+                            }
+                        }
+                        declared.insert(var.name.clone());
+                    },
+                    StatementDesc::Let(assign)|StatementDesc::Assert(assign) => {
+                        let name = &assign.expr.var_a.name;
+                        if !declared.contains(name) && !self.is_const(name) {
+                            vars.insert(name.clone());
+                        }
+                        if let Some(expr_b) = &assign.expr.var_b {
+                            let name = &expr_b.name;
+                            if !declared.contains(name) && !self.is_const(name) {
+                                vars.insert(name.clone());
+                            }
+                        }
+                        declared.insert(assign.lhs.name.clone());
+                    },
+                    StatementDesc::Jump(jump) => {
+                        if let Some(target) = self.get_jump_target_pos(jump) {
+                            let branch_args = self.get_block_args(target + 1);
+                            // Add the variables used in the branch before being declared.
+                            for name in branch_args {
+                                if !declared.contains(&name) {
+                                    vars.insert(name);
+                                }
+                            }
+                        } else { // jump to a return label
+                            self.add_ret_block_args(&jump.target, &declared, &mut vars);
+                        }
+                        if jump.cond_var.is_none() {
+                            return vars;
+                        }
+                    },
+                    StatementDesc::Fail => {
+                        return vars;
+                    },
+                    StatementDesc::ApPlus(step) => {
+                        continue;
+                    },
+                    StatementDesc::Label(label) => {
+                        continue;
+                    },
+                }
+            }
+
+            // Handle the Fallthrough return block.
+            self.add_ret_block_args("Fallthrough", &declared, &mut vars);
+
+            vars
+        }
+
+        fn add_ret_block_args(&self, label: &str, declared: &HashSet<String>, block_args: &mut HashSet<String>) {
+
+            if let Some(branch) =
+                    self.aux_info.return_branches.iter().filter(|b| b.name == *label).next() {
+                for name in branch.flat_exprs() {
+                    if !declared.contains(&name) {
+                        block_args.insert(name);
+                    }
+                }
+            }
+        }
+
 }
 
 // Rebinding variables and assignments
@@ -664,6 +763,7 @@ fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
     prelude.push(String::from("set_option autoImplicit false"));
+    prelude.push("set_option maxRecDepth 1024".into());
     prelude.push(String::from(""));
     prelude.push(format!("open {}", lean_code_name(main_func_name)));
     prelude.push(String::from(""));
@@ -1140,7 +1240,16 @@ impl LeanGenerator for AutoSpecs {
             ret_arg_start = 1;
         }
 
-        for (name, expr) in ret_arg_names[ret_arg_start..].iter().zip(
+        // For the explicit return arguments we use the last return arg names and the first
+        // return expressions. Here, we determine the number of arg names to use.
+        // The number of explicit return expressions in this return block.
+        let explicit_len = min(
+            ret_exprs.len() - lean_info.ret_args.num_implicit_ret_args,
+            ret_arg_names.len() - ret_arg_start
+        );
+
+        // Use the last argument names for the explicit return argument expressions.
+        for (name, expr) in ret_arg_names[ret_arg_names.len() - explicit_len..].iter().zip(
             ret_exprs[lean_info.ret_args.num_implicit_ret_args..].iter()
         ) {
             let expr = rebind.replace_var_names_in_expr(expr);
@@ -2032,7 +2141,10 @@ fn generate_auto_block(
                 casm_pos += 1;
                 pc += op_size;
             }, // Do nothing
-            StatementDesc::Label(label) => {}, // Do nothing
+            StatementDesc::Label(label) => {
+                let args = lean_info.get_block_args(block_start + i + 1);
+                println!("args at {label}: {}", args.iter().join(", "));
+            }, // Do nothing
         }
     }
 
@@ -2050,14 +2162,7 @@ fn generate_jump_to_label(
     pc: usize,
     indent: usize
 ) {
-    let pos = lean_info.aux_info.statements.iter().position(
-        |s|
-            if let StatementDesc::Label(label) = s {
-                label == &jump.target
-            } else {
-                false
-            }
-    );
+    let pos = lean_info.get_jump_target_pos(jump);
 
     // The jump target may be a return branch name.
     if pos.is_none() {
@@ -2248,6 +2353,8 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram, is_lean
     let func_name = test_name.split_whitespace().next().unwrap();
 
     lean_code.push("import Verification.Semantics.Assembly".into());
+    lean_code.push("".into());
+    lean_code.push("set_option maxRecDepth 1024".into());
     lean_code.push("".into());
     lean_code.push("open Casm in".into());
     lean_code.push(format!("casm_code_def {code_def_name} := {{", code_def_name = lean_code_name(func_name)));
