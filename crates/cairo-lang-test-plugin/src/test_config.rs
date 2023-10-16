@@ -4,17 +4,22 @@ use cairo_lang_syntax::attribute::structured::{Attribute, AttributeArg, Attribut
 use cairo_lang_syntax::node::db::SyntaxGroup;
 use cairo_lang_syntax::node::{ast, TypedSyntaxNode};
 use cairo_lang_utils::OptionHelper;
+use itertools::chain;
+use num_bigint::{BigInt, Sign};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
+
+const BYTE_ARRAY_MAGIC_HIGH: u128 = 0x46a6158a16a947e5916b2a2ca68501a;
+const BYTE_ARRAY_MAGIC_LOW: u128 = 0x45e93d7110e81aa2d6438b1c57c879a3;
 
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub enum PanicExpectation {
     /// Accept any panic value.
     Any,
-    /// Accept only this specific vector of panics.
+    /// Accept only a panic with this specific vector of felts.
     Exact(Vec<Felt252>),
 }
 
@@ -76,7 +81,7 @@ pub fn try_extract_test_config(
         false
     };
     let available_gas = extract_available_gas(available_gas_attr, db, &mut diagnostics);
-    let (should_panic, expected_panic_value) = if let Some(attr) = should_panic_attr {
+    let (should_panic, expected_panic_felts) = if let Some(attr) = should_panic_attr {
         if attr.args.is_empty() {
             (true, None)
         } else {
@@ -86,7 +91,7 @@ pub fn try_extract_test_config(
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: attr.args_stable_ptr.untyped(),
                         message: "Expected panic must be of the form `expected: <tuple of \
-                                  felt252s>`."
+                                  felt252s>` or `expected: \"some string\"`."
                             .into(),
                     });
                 }),
@@ -104,7 +109,7 @@ pub fn try_extract_test_config(
         Some(TestConfig {
             available_gas,
             expectation: if should_panic {
-                TestExpectation::Panics(if let Some(values) = expected_panic_value {
+                TestExpectation::Panics(if let Some(values) = expected_panic_felts {
                     PanicExpectation::Exact(values)
                 } else {
                     PanicExpectation::Any
@@ -160,7 +165,7 @@ fn extract_available_gas(
 
 /// Tries to extract the relevant expected panic values.
 fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
-    let [AttributeArg { variant: AttributeArgVariant::Named { name, value: panics, .. }, .. }] =
+    let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
         return None;
@@ -168,19 +173,45 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
     if name != "expected" {
         return None;
     }
-    let ast::Expr::Tuple(panics) = panics else { return None };
-    panics
-        .expressions(db)
-        .elements(db)
-        .into_iter()
-        .map(|value| match value {
-            ast::Expr::Literal(literal) => {
-                Some(literal.numeric_value(db).unwrap_or_default().into())
+    match value {
+        ast::Expr::Tuple(panic_bytes) => panic_bytes
+            .expressions(db)
+            .elements(db)
+            .into_iter()
+            .map(|value| match value {
+                ast::Expr::Literal(literal) => {
+                    Some(literal.numeric_value(db).unwrap_or_default().into())
+                }
+                ast::Expr::ShortString(literal) => {
+                    Some(literal.numeric_value(db).unwrap_or_default().into())
+                }
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>(),
+        ast::Expr::String(panic_string) => {
+            let panic_string = panic_string.string_value(db).unwrap();
+            let chunks = panic_string.as_bytes().chunks_exact(31);
+            let data_len = chunks.len().into();
+            let remainder = chunks.remainder();
+            let pending_word_len = remainder.len().into();
+            let mut data_felts = Vec::new();
+            for chunk in chunks {
+                let value = BigInt::from_bytes_be(Sign::Plus, chunk);
+                data_felts.push(value.into());
             }
-            ast::Expr::ShortString(literal) => {
-                Some(literal.numeric_value(db).unwrap_or_default().into())
-            }
-            _ => None,
-        })
-        .collect::<Option<Vec<_>>>()
+            let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
+
+            let byte_array_magic: BigInt =
+                (BigInt::from(BYTE_ARRAY_MAGIC_HIGH) << 128) + BigInt::from(BYTE_ARRAY_MAGIC_LOW);
+            Some(
+                chain!(
+                    [byte_array_magic.into(), data_len],
+                    data_felts.into_iter(),
+                    [pending_word, pending_word_len]
+                )
+                .collect(),
+            )
+        }
+        _ => None,
+    }
 }
