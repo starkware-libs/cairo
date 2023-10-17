@@ -838,6 +838,7 @@ dependencies = [
 name = "cairo-lang-sierra-generator"
 version = "2.3.0-rc0"
 dependencies = [
+ "assert_matches",
  "cairo-lang-debug",
  "cairo-lang-defs",
  "cairo-lang-diagnostics",

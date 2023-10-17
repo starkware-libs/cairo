@@ -119,10 +119,13 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
         let struct_type = args_as_single_type(args)?;
-        let generic_args = context.get_type_info(struct_type.clone())?.long_id.generic_args;
+        let type_info = context.get_type_info(struct_type.clone())?;
+        let generic_args = type_info.long_id.generic_args;
+
         let member_types =
             StructConcreteType::new(context.as_type_specialization_context(), &generic_args)?
                 .members;
+
         Ok(LibfuncSignature::new_non_branch_ex(
             member_types
                 .into_iter()
@@ -135,7 +138,11 @@ impl SignatureOnlyGenericLibfunc for StructConstructLibfunc {
                 .collect(),
             vec![OutputVarInfo {
                 ty: struct_type,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ref_info: if type_info.zero_sized {
+                    OutputVarReferenceInfo::ZeroSized
+                } else {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
@@ -167,13 +174,19 @@ impl SignatureOnlyGenericLibfunc for StructDeconstructLibfunc {
             }],
             member_types
                 .into_iter()
-                .map(|ty| OutputVarInfo {
-                    ty,
-                    // All memory of the deconstruction would have the same lifetime as the first
-                    // param - as it is its deconstruction.
-                    ref_info: OutputVarReferenceInfo::PartialParam { param_idx: 0 },
+                .map(|ty| {
+                    Ok(OutputVarInfo {
+                        ty: ty.clone(),
+                        ref_info: if context.get_type_info(ty)?.zero_sized {
+                            OutputVarReferenceInfo::ZeroSized
+                        } else {
+                            // All memory of the deconstruction would have the same lifetime as the
+                            // first param - as it is its deconstruction.
+                            OutputVarReferenceInfo::PartialParam { param_idx: 0 }
+                        },
+                    })
                 })
-                .collect(),
+                .collect::<Result<Vec<_>, _>>()?,
             SierraApChange::Known { new_vars_only: true },
         ))
     }
