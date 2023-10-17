@@ -276,16 +276,14 @@ mod mintable {
     impl MintImpl<
         TContractState,
         +HasComponent<TContractState>,
-        impl Ownable: super::ownable::HasComponent<TContractState>,
-        impl ERC20: super::erc20::HasComponent<TContractState>,
+        +super::ownable::HasComponent<TContractState>,
+        +super::erc20::HasComponent<TContractState>,
         +Drop<TContractState>
     > of super::MintTrait<ComponentState<TContractState>> {
         fn mint(ref self: ComponentState<TContractState>, account: ContractAddress, amount: u256) {
             assert(!account.is_zero(), 'ERC20: mint to the 0 address');
-            let mut contract = self.get_contract_mut();
-            let ownable_component = Ownable::get_component(@contract);
-            ownable_component.validate_ownership();
-            let mut erc20_component = ERC20::get_component_mut(ref contract);
+            dep_component!(self, super::ownable).validate_ownership();
+            let mut erc20_component = dep_component_mut!(ref self, super::erc20);
             let total_supply = erc20_component.total_supply.read();
             erc20_component.total_supply.write(total_supply + amount);
             erc20_component
@@ -3141,8 +3139,8 @@ trait HasComponent<TContractState> {
 impl Mint<
             TContractState,
         +HasComponent<TContractState>,
-        impl Ownable: super::ownable::HasComponent<TContractState>,
-        impl ERC20: super::erc20::HasComponent<TContractState>,
+        +super::ownable::HasComponent<TContractState>,
+        +super::erc20::HasComponent<TContractState>,
         +Drop<TContractState>
 
 > of super::MintTrait<TContractState> {
@@ -3186,8 +3184,8 @@ trait UnsafeNewContractStateTraitForMint<TContractState> {
 #[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
 fn __wrapper__Mint__mint<TContractState,
         +HasComponent<TContractState>,
-        impl Ownable: super::ownable::HasComponent<TContractState>,
-        impl ERC20: super::erc20::HasComponent<TContractState>,
+        +super::ownable::HasComponent<TContractState>,
+        +super::erc20::HasComponent<TContractState>,
         +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForMint<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
     internal::require_implicit::<System>();
     internal::revoke_ap_tracking();
@@ -3205,7 +3203,7 @@ fn __wrapper__Mint__mint<TContractState,
         gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
     );
     let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
-    Mint::<TContractState, _, Ownable, ERC20, _>::mint(ref contract_state, __arg_account, __arg_amount);
+    Mint::<TContractState, _, _, _, _>::mint(ref contract_state, __arg_account, __arg_amount);
     let mut arr = array::array_new();
     // References.
     // Result.
