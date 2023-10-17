@@ -43,9 +43,16 @@ pub fn extract_single_unnamed_arg(
     macro_arguments: ast::ArgList,
 ) -> Option<ast::Expr> {
     if let Ok([arg]) = <[_; 1]>::try_from(macro_arguments.elements(db)) {
-        if let ast::ArgClause::Unnamed(arg_clause) = arg.arg_clause(db) {
-            return Some(arg_clause.value(db));
-        }
+        try_extract_unnamed_arg(db, &arg)
+    } else {
+        None
     }
-    None
+}
+
+pub fn try_extract_unnamed_arg(db: &dyn SyntaxGroup, arg_ast: &ast::Arg) -> Option<ast::Expr> {
+    if let ast::ArgClause::Unnamed(arg_clause) = arg_ast.arg_clause(db) {
+        Some(arg_clause.value(db))
+    } else {
+        None
+    }
 }
