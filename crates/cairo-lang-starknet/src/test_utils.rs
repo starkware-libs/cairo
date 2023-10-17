@@ -11,6 +11,7 @@ use once_cell::sync::Lazy;
 
 use crate::allowed_libfuncs::BUILTIN_ALL_LIBFUNCS_LIST;
 use crate::contract_class::compile_contract_in_prepared_db;
+use crate::inline_macros::dep_component::{DepComponentMacro, DepComponentMutMacro};
 use crate::inline_macros::selector::SelectorMacro;
 use crate::plugin::StarkNetPlugin;
 
@@ -29,6 +30,8 @@ pub static SHARED_DB: Lazy<Mutex<RootDatabase>> = Lazy::new(|| {
             .detect_corelib()
             .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
             .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+            .with_inline_macro_plugin(DepComponentMacro::NAME, Arc::new(DepComponentMacro))
+            .with_inline_macro_plugin(DepComponentMutMacro::NAME, Arc::new(DepComponentMutMacro))
             .build()
             .unwrap(),
     )
