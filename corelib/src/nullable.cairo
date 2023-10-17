@@ -13,6 +13,7 @@ enum FromNullableResult<T> {
 extern fn null<T>() -> Nullable<T> nopanic;
 extern fn nullable_from_box<T>(value: Box<T>) -> Nullable<T> nopanic;
 extern fn match_nullable<T>(value: Nullable<T>) -> FromNullableResult<T> nopanic;
+extern fn match_nullable_snapshot<T>(value: @Nullable<T>) -> FromNullableResult<@T> nopanic;
 
 #[generate_trait]
 impl NullableImpl<T> of NullableTrait<T> {
@@ -30,6 +31,12 @@ impl NullableImpl<T> of NullableTrait<T> {
     }
     fn new(value: T) -> Nullable<T> {
         nullable_from_box(BoxTrait::new(value))
+    }
+    fn is_null(self: @Nullable<T>) -> bool {
+        match match_nullable_snapshot(self) {
+            FromNullableResult::Null => true,
+            FromNullableResult::NotNull(_) => false,
+        }
     }
 }
 
