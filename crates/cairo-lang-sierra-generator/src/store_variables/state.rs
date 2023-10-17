@@ -31,13 +31,21 @@ pub enum DeferredVariableKind {
 
 /// Represents the state of Sierra variable.
 #[derive(Clone, Debug, Eq, PartialEq)]
+// TODO(ilya): Remove `#[allow(dead_code)]` once all `ZeroSizedVar` is used.
+#[allow(dead_code)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar { ty: sierra::ids::ConcreteTypeId },
+    TempVar {
+        ty: sierra::ids::ConcreteTypeId,
+    },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred { info: DeferredVariableInfo },
+    Deferred {
+        info: DeferredVariableInfo,
+    },
     /// The variable is a local variable.
     LocalVar,
+    // The variable is of size zero.
+    ZeroSizedVar,
     /// The variable was consumed and can no longer be used.
     /// This state is used because there is no efficent way of removing variables
     /// from [VariablesState::variables] without effecting thier order.
@@ -118,8 +126,8 @@ impl VariablesState {
                 let ty = output_info.ty.clone();
                 match &arg_states[*param_idx] {
                     VarState::TempVar { .. } => {
-                        // A partial paramater may be smaller than its parent so it can't replace it
-                        // on the stack.
+                        // A partial paramater may be smaller than its parent so it can't
+                        // replace it on the stack.
                         if matches!(
                             output_info.ref_info,
                             OutputVarReferenceInfo::SameAsParam { .. }
@@ -132,6 +140,7 @@ impl VariablesState {
                         VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
                     }
                     VarState::LocalVar => VarState::LocalVar,
+                    VarState::ZeroSizedVar => VarState::ZeroSizedVar,
                     VarState::Removed => {
                         unreachable!("Unexpected var state.")
                     }
@@ -139,6 +148,7 @@ impl VariablesState {
             }
             OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
         };
+
         self.variables.insert(res.clone(), var_state);
 
         self.known_stack.remove_variable(&res);
