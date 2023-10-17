@@ -86,11 +86,11 @@ pub fn try_extract_test_config(
         } else {
             (
                 true,
-                extract_panic_values(db, attr).on_none(|| {
+                extract_panic_bytes(db, attr).on_none(|| {
                     diagnostics.push(PluginDiagnostic {
                         stable_ptr: attr.args_stable_ptr.untyped(),
                         message: "Expected panic must be of the form `expected: <tuple of \
-                                  felt252s>` or `expected: \"some string\"`."
+                                  felt252s and strings>` or `expected: \"some string\"`."
                             .into(),
                     });
                 }),
@@ -162,8 +162,9 @@ fn extract_available_gas(
     }
 }
 
-/// Tries to extract the relevant expected panic values.
-fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
+/// Tries to extract the expected panic bytes out of the given `should_panic` attribute.
+/// Assumes the attribute is `should_panic`.
+fn extract_panic_bytes(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Felt252>> {
     let [AttributeArg { variant: AttributeArgVariant::Named { name, value, .. }, .. }] =
         &attr.args[..]
     else {
@@ -173,38 +174,52 @@ fn extract_panic_values(db: &dyn SyntaxGroup, attr: &Attribute) -> Option<Vec<Fe
         return None;
     }
     match value {
-        ast::Expr::Tuple(panic_bytes) => panic_bytes
-            .expressions(db)
-            .elements(db)
-            .into_iter()
-            .map(|value| match value {
-                ast::Expr::Literal(literal) => {
-                    Some(literal.numeric_value(db).unwrap_or_default().into())
+        ast::Expr::Tuple(panic_exprs) => {
+            let mut panic_bytes = Vec::new();
+            for panic_expr in panic_exprs.expressions(db).elements(db) {
+                match panic_expr {
+                    ast::Expr::Literal(panic_expr) => {
+                        panic_bytes.push(panic_expr.numeric_value(db).unwrap_or_default().into())
+                    }
+                    ast::Expr::ShortString(panic_expr) => {
+                        panic_bytes.push(panic_expr.numeric_value(db).unwrap_or_default().into())
+                    }
+                    ast::Expr::String(panic_expr) => {
+                        panic_bytes.append(&mut extract_string_panic_bytes(&panic_expr, db))
+                    }
+                    _ => return None,
                 }
-                ast::Expr::ShortString(literal) => {
-                    Some(literal.numeric_value(db).unwrap_or_default().into())
-                }
-                _ => None,
-            })
-            .collect::<Option<Vec<_>>>(),
-        ast::Expr::String(panic_string) => {
-            let panic_string = panic_string.string_value(db).unwrap();
-            let chunks = panic_string.as_bytes().chunks_exact(31);
-            let num_full_words = chunks.len().into();
-            let remainder = chunks.remainder();
-            let pending_word_len = remainder.len().into();
-            let full_words = chunks.map(|chunk| BigInt::from_bytes_be(Sign::Plus, chunk).into());
-            let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
-
-            Some(
-                chain!(
-                    [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
-                    full_words.into_iter(),
-                    [pending_word, pending_word_len]
-                )
-                .collect(),
-            )
+            }
+            Some(panic_bytes)
+        }
+        ast::Expr::String(panic_string) => Some(extract_string_panic_bytes(panic_string, db)),
+        ast::Expr::Literal(panic_expr) => {
+            Some(vec![panic_expr.numeric_value(db).unwrap_or_default().into()])
+        }
+        ast::Expr::ShortString(panic_expr) => {
+            Some(vec![panic_expr.numeric_value(db).unwrap_or_default().into()])
         }
         _ => None,
     }
+}
+
+/// Extracts panic bytes from a string.
+fn extract_string_panic_bytes(
+    panic_string: &ast::TerminalString,
+    db: &dyn SyntaxGroup,
+) -> Vec<Felt252> {
+    let panic_string = panic_string.string_value(db).unwrap();
+    let chunks = panic_string.as_bytes().chunks_exact(31);
+    let num_full_words = chunks.len().into();
+    let remainder = chunks.remainder();
+    let pending_word_len = remainder.len().into();
+    let full_words = chunks.map(|chunk| BigInt::from_bytes_be(Sign::Plus, chunk).into());
+    let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
+
+    chain!(
+        [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
+        full_words.into_iter(),
+        [pending_word, pending_word_len]
+    )
+    .collect()
 }
