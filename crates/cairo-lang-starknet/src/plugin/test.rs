@@ -12,6 +12,7 @@ use crate::test_utils::SHARED_DB;
 #[derive(Default)]
 struct ExpandContractTestRunner {}
 
+// TODO(Gil): Make this test expand inline macros as well.
 impl TestFileRunner for ExpandContractTestRunner {
     fn run(
         &mut self,
