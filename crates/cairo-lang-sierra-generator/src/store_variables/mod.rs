@@ -139,6 +139,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         }
 
                         state.register_outputs(
+                            self.db,
                             results,
                             branch_signature,
                             &invocation.args,
@@ -160,6 +161,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         {
                             let mut state_at_branch = state.clone();
                             state_at_branch.register_outputs(
+                                self.db,
                                 &branch.results,
                                 &branch_signature,
                                 &invocation.args,
@@ -291,6 +293,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 VarState::TempVar { ty }
             }
             VarState::LocalVar => VarState::LocalVar,
+            VarState::ZeroSizedVar => VarState::ZeroSizedVar,
         }
     }
 
@@ -380,6 +383,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         }
                     }
                 }
+                VarState::ZeroSizedVar => (true, VarState::ZeroSizedVar),
                 var_state => {
                     // Check if this is part of the prefix. If it is, rename instead of adding
                     // `store_temp`.
@@ -426,7 +430,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                     }
                 }
-                VarState::LocalVar | VarState::Removed => {}
+                VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
@@ -455,7 +459,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_local(var, &uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
-                    VarState::LocalVar | VarState::Removed => {}
+                    VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
                 };
             }
         }

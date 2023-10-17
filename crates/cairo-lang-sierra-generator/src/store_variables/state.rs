@@ -7,6 +7,7 @@ use cairo_lang_utils::casts::IntoOrPanic;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use super::known_stack::KnownStack;
+use crate::db::SierraGenGroup;
 
 /// Represents the known information about a Sierra variable which contains a deferred value.
 /// For example, `[ap - 1] + [ap - 2]`.
@@ -33,11 +34,17 @@ pub enum DeferredVariableKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum VarState {
     /// The variable is a temporary variable with the given type.
-    TempVar { ty: sierra::ids::ConcreteTypeId },
+    TempVar {
+        ty: sierra::ids::ConcreteTypeId,
+    },
     /// The variable is deferred with the given DeferredVariableInfo.
-    Deferred { info: DeferredVariableInfo },
+    Deferred {
+        info: DeferredVariableInfo,
+    },
     /// The variable is a local variable.
     LocalVar,
+    // The variable is of size zero.
+    ZeroSizedVar,
     /// The variable was consumed and can no longer be used.
     /// This state is used because there is no efficent way of removing variables
     /// from [VariablesState::variables] without effecting thier order.
@@ -58,6 +65,7 @@ impl VariablesState {
     /// Clears the stack if needed.
     pub fn register_outputs(
         &mut self,
+        db: &dyn SierraGenGroup,
         results: &[sierra::ids::VarId],
         branch_signature: &BranchSignature,
         args: &[sierra::ids::VarId],
@@ -76,7 +84,7 @@ impl VariablesState {
         }
 
         for (var, var_info) in itertools::zip_eq(results, &branch_signature.vars) {
-            self.register_output(var.clone(), var_info, args, arg_states);
+            self.register_output(db, var.clone(), var_info, args, arg_states);
         }
 
         // Update `known_stack_size`. It is one more than the maximum of the indices in
@@ -87,6 +95,7 @@ impl VariablesState {
     /// Register an output variable of a libfunc in [Self::variables].
     fn register_output(
         &mut self,
+        db: &dyn SierraGenGroup,
         res: sierra::ids::VarId,
         output_info: &OutputVarInfo,
         args: &[sierra::ids::VarId],
@@ -94,51 +103,56 @@ impl VariablesState {
     ) {
         let mut add_to_known_stack: Option<isize> = None;
 
-        let var_state = match &output_info.ref_info {
-            OutputVarReferenceInfo::Deferred(kind) => VarState::Deferred {
-                info: DeferredVariableInfo {
-                    ty: output_info.ty.clone(),
-                    kind: match kind {
-                        DeferredOutputKind::Const => DeferredVariableKind::Const,
-                        DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
-                        DeferredOutputKind::Generic => DeferredVariableKind::Generic,
+        let var_state = if db.get_type_info(output_info.ty.clone()).unwrap().zero_sized {
+            VarState::ZeroSizedVar
+        } else {
+            match &output_info.ref_info {
+                OutputVarReferenceInfo::Deferred(kind) => VarState::Deferred {
+                    info: DeferredVariableInfo {
+                        ty: output_info.ty.clone(),
+                        kind: match kind {
+                            DeferredOutputKind::Const => DeferredVariableKind::Const,
+                            DeferredOutputKind::AddConst { .. } => DeferredVariableKind::AddConst,
+                            DeferredOutputKind::Generic => DeferredVariableKind::Generic,
+                        },
                     },
                 },
-            },
-            OutputVarReferenceInfo::NewTempVar { idx } => {
-                add_to_known_stack = Some(idx.into_or_panic::<isize>());
-                VarState::TempVar { ty: output_info.ty.clone() }
-            }
-            OutputVarReferenceInfo::SimpleDerefs => {
-                VarState::TempVar { ty: output_info.ty.clone() }
-            }
-            OutputVarReferenceInfo::SameAsParam { param_idx }
-            | OutputVarReferenceInfo::PartialParam { param_idx } => {
-                // Note that the output type may differ from the param type.
-                let ty = output_info.ty.clone();
-                match &arg_states[*param_idx] {
-                    VarState::TempVar { .. } => {
-                        // A partial paramater may be smaller than its parent so it can't replace it
-                        // on the stack.
-                        if matches!(
-                            output_info.ref_info,
-                            OutputVarReferenceInfo::SameAsParam { .. }
-                        ) {
-                            add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                OutputVarReferenceInfo::NewTempVar { idx } => {
+                    add_to_known_stack = Some(idx.into_or_panic::<isize>());
+                    VarState::TempVar { ty: output_info.ty.clone() }
+                }
+                OutputVarReferenceInfo::SimpleDerefs => {
+                    VarState::TempVar { ty: output_info.ty.clone() }
+                }
+                OutputVarReferenceInfo::SameAsParam { param_idx }
+                | OutputVarReferenceInfo::PartialParam { param_idx } => {
+                    // Note that the output type may differ from the param type.
+                    let ty = output_info.ty.clone();
+                    match &arg_states[*param_idx] {
+                        VarState::TempVar { .. } => {
+                            // A partial paramater may be smaller than its parent so it can't
+                            // replace it on the stack.
+                            if matches!(
+                                output_info.ref_info,
+                                OutputVarReferenceInfo::SameAsParam { .. }
+                            ) {
+                                add_to_known_stack = self.known_stack.get(&args[*param_idx]);
+                            }
+                            VarState::TempVar { ty }
                         }
-                        VarState::TempVar { ty }
-                    }
-                    VarState::Deferred { info } => {
-                        VarState::Deferred { info: DeferredVariableInfo { ty, kind: info.kind } }
-                    }
-                    VarState::LocalVar => VarState::LocalVar,
-                    VarState::Removed => {
-                        unreachable!("Unexpected var state.")
+                        VarState::Deferred { info } => VarState::Deferred {
+                            info: DeferredVariableInfo { ty, kind: info.kind },
+                        },
+                        VarState::LocalVar => VarState::LocalVar,
+                        VarState::ZeroSizedVar | VarState::Removed => {
+                            unreachable!("Unexpected var state.")
+                        }
                     }
                 }
+                OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
             }
-            OutputVarReferenceInfo::NewLocalVar => VarState::LocalVar,
         };
+
         self.variables.insert(res.clone(), var_state);
 
         self.known_stack.remove_variable(&res);
