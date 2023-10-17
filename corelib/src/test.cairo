@@ -10,6 +10,7 @@ mod hash_test;
 mod integer_test;
 mod keccak_test;
 mod math_test;
+mod nullable_test;
 mod plugins_test;
 mod secp256k1_test;
 mod secp256r1_test;
