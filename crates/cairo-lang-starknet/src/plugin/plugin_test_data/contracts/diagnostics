@@ -5612,3 +5612,1393 @@ impl EventIsEvent of starknet::Event<Event> {
         Option::None
     }
 }
+
+//! > ==========================================================================
+
+//! > Test `get_dep_component!` bad arguments.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::component]
+mod component1 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo1(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::component]
+mod component2 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo2(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+trait NotHasComponentTrait {
+}
+impl NotHasComponent of NotHasComponentTrait{
+}
+
+#[starknet::interface]
+trait Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState);
+}
+
+#[starknet::component]
+mod component3 {
+    use super::component1::Comp1HelperImpl;
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(Comp3)]
+    impl Comp3Impl<
+        TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+    > of super::Comp3Trait<ComponentState<TContractState>> {
+        fn foo3(ref self: ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component!(self, Comp1).foo1();
+            
+            // Should raise diagnostics
+            get_dep_component!(Comp1, self).foo1();
+            get_dep_component!(self, self).foo1();
+            get_dep_component!(Comp1, Comp1).foo1();
+            get_dep_component!(self, Comp2).foo1();
+            get_dep_component!(self, Comp1).foo1();
+            get_dep_component!(self, super::NotHasComponent).foo1();
+            let not_contract_state: felt252 = 0;
+            get_dep_component!(not_contract_state, Comp1).foo1();
+            get_dep_component!(self, NonExistingImpl).foo1();
+            
+        }
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: Expected variable or constant, found impl.
+ --> lib.cairo:58:32
+            get_dep_component!(Comp1, self).foo1();
+                               ^***^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:58:39
+            get_dep_component!(Comp1, self).foo1();
+                                      ^**^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:59:38
+            get_dep_component!(self, self).foo1();
+                                     ^**^
+
+error: Plugin diagnostic: Expected variable or constant, found impl.
+ --> lib.cairo:60:32
+            get_dep_component!(Comp1, Comp1).foo1();
+                               ^***^
+
+error: Method `foo1` not found on type "@test::component2::ComponentState::<TContractState>". Did you import the correct trait and impl?
+ --> lib.cairo:61:45
+            get_dep_component!(self, Comp2).foo1();
+                                            ^**^
+
+error: Invalid path.
+ --> lib.cairo[get_dep_component_inline_macro]:4:41
+                super::NotHasComponent::get_component(__get_dep_component_macro_temp_contract__)
+                                        ^***********^
+
+error: Unexpected argument type. Expected: "@test::component3::ComponentState::<?14>", found: "@core::felt252".
+ --> lib.cairo[get_dep_component_inline_macro]:3:92
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@not_contract_state);
+                                                                                           ^*****************^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:66:38
+            get_dep_component!(self, NonExistingImpl).foo1();
+                                     ^*************^
+
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo[get_dep_component_inline_macro]:3:65
+                let __get_dep_component_macro_temp_contract__ = HasComponent::get_contract(@Comp1);
+                                                                ^**********^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod component1 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo1(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::component]
+mod component2 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo2(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+trait NotHasComponentTrait {
+}
+impl NotHasComponent of NotHasComponentTrait{
+}
+
+#[starknet::interface]
+trait Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState);
+}
+
+#[starknet::component]
+mod component3 {
+    use super::component1::Comp1HelperImpl;
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(Comp3)]
+    impl Comp3Impl<
+        TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+    > of super::Comp3Trait<ComponentState<TContractState>> {
+        fn foo3(ref self: ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component!(self, Comp1).foo1();
+            
+            // Should raise diagnostics
+            get_dep_component!(Comp1, self).foo1();
+            get_dep_component!(self, self).foo1();
+            get_dep_component!(Comp1, Comp1).foo1();
+            get_dep_component!(self, Comp2).foo1();
+            get_dep_component!(self, Comp1).foo1();
+            get_dep_component!(self, super::NotHasComponent).foo1();
+            let not_contract_state: felt252 = 0;
+            get_dep_component!(not_contract_state, Comp1).foo1();
+            get_dep_component!(self, NonExistingImpl).foo1();
+            
+        }
+    }
+}
+
+Comp3TraitDispatcherTrait:
+
+trait Comp3TraitDispatcherTrait<T> {
+    fn foo3(self: T);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
+    fn foo3(self: Comp3TraitDispatcher) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
+    fn foo3(self: Comp3TraitLibraryDispatcher) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait Comp3TraitSafeDispatcherTrait<T> {
+    fn foo3(self: T) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
+    fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
+    fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+impls:
+
+impl Comp3TraitDispatcherCopy of Copy::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherDrop of Drop::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherSerde of Serde::<Comp3TraitDispatcher> {
+    fn serialize(self: @Comp3TraitDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitDispatcher> {
+        Option::Some(Comp3TraitDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitLibraryDispatcherCopy of Copy::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherDrop of Drop::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherSerde of Serde::<Comp3TraitLibraryDispatcher> {
+    fn serialize(self: @Comp3TraitLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitLibraryDispatcher> {
+        Option::Some(Comp3TraitLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitSafeLibraryDispatcherCopy of Copy::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherDrop of Drop::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherSerde of Serde::<Comp3TraitSafeLibraryDispatcher> {
+    fn serialize(self: @Comp3TraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitSafeLibraryDispatcher> {
+        Option::Some(Comp3TraitSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitSafeDispatcherCopy of Copy::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherDrop of Drop::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherSerde of Serde::<Comp3TraitSafeDispatcher> {
+    fn serialize(self: @Comp3TraitSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitSafeDispatcher> {
+        Option::Some(Comp3TraitSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+
+
+generate_trait:
+
+    trait Comp1HelperTrait<
+        TContractState, impl X: HasComponent<TContractState>
+    > {
+        fn foo1(self: @ComponentState<TContractState>);
+    }
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+generate_trait:
+
+    trait Comp1HelperTrait<
+        TContractState, impl X: HasComponent<TContractState>
+    > {
+        fn foo2(self: @ComponentState<TContractState>);
+    }
+
+
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+#[starknet::embeddable]
+impl Comp3<
+            TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+
+> of super::Comp3Trait<TContractState> {
+    
+    fn foo3(ref self: TContractState) {
+        let mut component = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref component)
+    }
+}
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForComp3<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Comp3__foo3<TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_Comp3 {
+        use super::__wrapper__Comp3__foo3 as foo3;
+}
+
+mod __l1_handler_Comp3 {
+}
+
+mod __constructor_Comp3 {
+}
+
+//! > ==========================================================================
+
+//! > Test `get_dep_component_mut!` bad arguments.
+
+//! > test_runner_name
+ExpandContractTestRunner(expect_diagnostics: true)
+
+//! > cairo_code
+#[starknet::component]
+mod component1 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo1(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::component]
+mod component2 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo2(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::interface]
+trait Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState);
+}
+
+#[starknet::component]
+mod component3 {
+    use super::component1::Comp1HelperImpl;
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(Comp3)]
+    impl Comp3Impl<
+        TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+    > of super::Comp3Trait<ComponentState<TContractState>> {
+        fn foo3(ref self: ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component_mut!(ref self, Comp1).foo1();
+            
+            // Should raise diagnostics
+            get_dep_component_mut!(Comp1, self).foo1();
+            get_dep_component_mut!(ref self, self).foo1();
+            get_dep_component_mut!(ref Comp1, Comp1).foo1();
+            get_dep_component_mut!(ref self, Comp2).foo1();
+            get_dep_component_mut!(self, Comp1).foo1();
+            get_dep_component_mut!(mut self, Comp1).foo1();
+            get_dep_component_mut!(ref ref self, Comp1).foo1();
+            get_dep_component_mut!(ref mut self, Comp1).foo1();
+        }
+    }
+}
+
+//! > expected_diagnostics
+error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:53:13
+            get_dep_component_mut!(Comp1, self).foo1();
+            ^*********************************^
+
+error: Inline macro `get_dep_component_mut` failed.
+ --> lib.cairo:53:13
+            get_dep_component_mut!(Comp1, self).foo1();
+            ^*********************************^
+
+error: Plugin diagnostic: Identifier not found.
+ --> lib.cairo:54:46
+            get_dep_component_mut!(ref self, self).foo1();
+                                             ^**^
+
+error: Plugin diagnostic: Expected variable or constant, found impl.
+ --> lib.cairo:55:40
+            get_dep_component_mut!(ref Comp1, Comp1).foo1();
+                                       ^***^
+
+error: Plugin diagnostic: ref argument must be a variable.
+ --> lib.cairo:55:40
+            get_dep_component_mut!(ref Comp1, Comp1).foo1();
+                                       ^***^
+
+error: Method `foo1` not found on type "test::component2::ComponentState::<TContractState>". Did you import the correct trait and impl?
+ --> lib.cairo:56:53
+            get_dep_component_mut!(ref self, Comp2).foo1();
+                                                    ^**^
+
+error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:57:13
+            get_dep_component_mut!(self, Comp1).foo1();
+            ^*********************************^
+
+error: Inline macro `get_dep_component_mut` failed.
+ --> lib.cairo:57:13
+            get_dep_component_mut!(self, Comp1).foo1();
+            ^*********************************^
+
+error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:58:13
+            get_dep_component_mut!(mut self, Comp1).foo1();
+            ^*************************************^
+
+error: Inline macro `get_dep_component_mut` failed.
+ --> lib.cairo:58:13
+            get_dep_component_mut!(mut self, Comp1).foo1();
+            ^*************************************^
+
+error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:59:13
+            get_dep_component_mut!(ref ref self, Comp1).foo1();
+            ^*****************************************^
+
+error: Inline macro `get_dep_component_mut` failed.
+ --> lib.cairo:59:13
+            get_dep_component_mut!(ref ref self, Comp1).foo1();
+            ^*****************************************^
+
+error: Plugin diagnostic: The first argument of `get_dep_component_mut` macro must have only a `ref` modifier.
+ --> lib.cairo:60:13
+            get_dep_component_mut!(ref mut self, Comp1).foo1();
+            ^*****************************************^
+
+error: Inline macro `get_dep_component_mut` failed.
+ --> lib.cairo:60:13
+            get_dep_component_mut!(ref mut self, Comp1).foo1();
+            ^*****************************************^
+
+error: Type annotations needed. Failed to infer ?2
+ --> lib.cairo:53:49
+            get_dep_component_mut!(Comp1, self).foo1();
+                                                ^**^
+
+//! > generated_cairo_code
+lib.cairo:
+
+#[starknet::component]
+mod component1 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo1(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::component]
+mod component2 {
+    #[storage]
+    struct Storage {}
+
+    #[generate_trait]
+    impl Comp1HelperImpl<
+        TContractState, impl X: HasComponent<TContractState>
+    > of Comp1HelperTrait<TContractState, X> {
+        fn foo2(self: @ComponentState<TContractState>) {
+        }
+    }
+}
+
+#[starknet::interface]
+trait Comp3Trait<TContractState> {
+    fn foo3(ref self: TContractState);
+}
+
+#[starknet::component]
+mod component3 {
+    use super::component1::Comp1HelperImpl;
+    #[storage]
+    struct Storage {}
+
+    #[embeddable_as(Comp3)]
+    impl Comp3Impl<
+        TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+    > of super::Comp3Trait<ComponentState<TContractState>> {
+        fn foo3(ref self: ComponentState<TContractState>) {
+            // No diagnostics
+            get_dep_component_mut!(ref self, Comp1).foo1();
+            
+            // Should raise diagnostics
+            get_dep_component_mut!(Comp1, self).foo1();
+            get_dep_component_mut!(ref self, self).foo1();
+            get_dep_component_mut!(ref Comp1, Comp1).foo1();
+            get_dep_component_mut!(ref self, Comp2).foo1();
+            get_dep_component_mut!(self, Comp1).foo1();
+            get_dep_component_mut!(mut self, Comp1).foo1();
+            get_dep_component_mut!(ref ref self, Comp1).foo1();
+            get_dep_component_mut!(ref mut self, Comp1).foo1();
+        }
+    }
+}
+
+Comp3TraitDispatcherTrait:
+
+trait Comp3TraitDispatcherTrait<T> {
+    fn foo3(self: T);
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl Comp3TraitDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitDispatcher> {
+    fn foo3(self: Comp3TraitDispatcher) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl Comp3TraitLibraryDispatcherImpl of Comp3TraitDispatcherTrait<Comp3TraitLibraryDispatcher> {
+    fn foo3(self: Comp3TraitLibraryDispatcher) {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = starknet::SyscallResultTrait::unwrap_syscall(ret_data);
+        ()
+    }
+
+}
+
+trait Comp3TraitSafeDispatcherTrait<T> {
+    fn foo3(self: T) -> starknet::SyscallResult<()>;
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitSafeLibraryDispatcher {
+    class_hash: starknet::ClassHash,
+}
+
+impl Comp3TraitSafeLibraryDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeLibraryDispatcher> {
+    fn foo3(self: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::syscalls::library_call_syscall(
+            self.class_hash,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct Comp3TraitSafeDispatcher {
+    contract_address: starknet::ContractAddress,
+}
+
+impl Comp3TraitSafeDispatcherImpl of Comp3TraitSafeDispatcherTrait<Comp3TraitSafeDispatcher> {
+    fn foo3(self: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        let mut __calldata__ = traits::Default::default();
+
+        let mut ret_data = starknet::call_contract_syscall(
+            self.contract_address,
+            selector!("foo3"),
+            array::ArrayTrait::span(@__calldata__),
+        );
+        let mut ret_data = ret_data?;
+        Result::Ok(())
+    }
+
+}
+
+
+impls:
+
+impl Comp3TraitDispatcherCopy of Copy::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherDrop of Drop::<Comp3TraitDispatcher>;
+impl Comp3TraitDispatcherSerde of Serde::<Comp3TraitDispatcher> {
+    fn serialize(self: @Comp3TraitDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitDispatcher> {
+        Option::Some(Comp3TraitDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitDispatcher of starknet::Store::<Comp3TraitDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitLibraryDispatcherCopy of Copy::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherDrop of Drop::<Comp3TraitLibraryDispatcher>;
+impl Comp3TraitLibraryDispatcherSerde of Serde::<Comp3TraitLibraryDispatcher> {
+    fn serialize(self: @Comp3TraitLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitLibraryDispatcher> {
+        Option::Some(Comp3TraitLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitLibraryDispatcher of starknet::Store::<Comp3TraitLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitSafeLibraryDispatcherCopy of Copy::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherDrop of Drop::<Comp3TraitSafeLibraryDispatcher>;
+impl Comp3TraitSafeLibraryDispatcherSerde of Serde::<Comp3TraitSafeLibraryDispatcher> {
+    fn serialize(self: @Comp3TraitSafeLibraryDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.class_hash, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitSafeLibraryDispatcher> {
+        Option::Some(Comp3TraitSafeLibraryDispatcher {
+            class_hash: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitSafeLibraryDispatcher of starknet::Store::<Comp3TraitSafeLibraryDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write(address_domain, base, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitSafeLibraryDispatcher> {
+        let class_hash = starknet::Store::<starknet::ClassHash>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeLibraryDispatcher {
+                class_hash,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitSafeLibraryDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ClassHash>::write_at_offset(address_domain, base, offset, value.class_hash)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ClassHash>::size()
+    }
+}
+
+
+impls:
+
+impl Comp3TraitSafeDispatcherCopy of Copy::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherDrop of Drop::<Comp3TraitSafeDispatcher>;
+impl Comp3TraitSafeDispatcherSerde of Serde::<Comp3TraitSafeDispatcher> {
+    fn serialize(self: @Comp3TraitSafeDispatcher, ref output: array::Array<felt252>) {
+        serde::Serde::serialize(self.contract_address, ref output)
+    }
+    fn deserialize(ref serialized: array::Span<felt252>) -> Option<Comp3TraitSafeDispatcher> {
+        Option::Some(Comp3TraitSafeDispatcher {
+            contract_address: serde::Serde::deserialize(ref serialized)?,
+        })
+    }
+}
+
+
+starknet_derive:
+
+impl StoreComp3TraitSafeDispatcher of starknet::Store::<Comp3TraitSafeDispatcher> {
+    fn read(address_domain: u32, base: starknet::StorageBaseAddress) -> starknet::SyscallResult<Comp3TraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read(address_domain, base)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    fn write(address_domain: u32, base: starknet::StorageBaseAddress, value: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write(address_domain, base, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    fn read_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8) -> starknet::SyscallResult<Comp3TraitSafeDispatcher> {
+        let contract_address = starknet::Store::<starknet::ContractAddress>::read_at_offset(address_domain, base, offset)?;
+        starknet::SyscallResult::Ok(
+            Comp3TraitSafeDispatcher {
+                contract_address,
+            }
+        )
+    }
+    #[inline(always)]
+    fn write_at_offset(address_domain: u32, base: starknet::StorageBaseAddress, offset: u8, value: Comp3TraitSafeDispatcher) -> starknet::SyscallResult<()> {
+        starknet::Store::<starknet::ContractAddress>::write_at_offset(address_domain, base, offset, value.contract_address)?;
+        starknet::SyscallResult::Ok(())
+    }
+    #[inline(always)]
+    fn size() -> u8 {
+        starknet::Store::<starknet::ContractAddress>::size()
+    }
+}
+
+
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+
+
+generate_trait:
+
+    trait Comp1HelperTrait<
+        TContractState, impl X: HasComponent<TContractState>
+    > {
+        fn foo1(self: @ComponentState<TContractState>);
+    }
+
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+generate_trait:
+
+    trait Comp1HelperTrait<
+        TContractState, impl X: HasComponent<TContractState>
+    > {
+        fn foo2(self: @ComponentState<TContractState>);
+    }
+
+
+component:
+
+#[event]
+#[derive(Drop, starknet::Event)]
+enum Event {}
+
+
+    struct ComponentState<TContractState> {
+    }
+    impl ComponentStateDrop<TContractState> of Drop<ComponentState<TContractState>> {}
+    #[inline(always)]
+    fn unsafe_new_component_state<TContractState>() -> ComponentState<TContractState> {
+        ComponentState::<TContractState> {
+        }
+    }
+    #[cfg(test)]
+    #[inline(always)]
+    fn component_state_for_testing<TContractState>() -> ComponentState<TContractState> {
+        unsafe_new_component_state::<TContractState>()
+    }
+    
+
+use starknet::storage::{
+    StorageMapMemberAddressTrait, StorageMemberAddressTrait,
+    StorageMapMemberAccessTrait, StorageMemberAccessTrait,
+};
+trait HasComponent<TContractState> {
+    fn get_component(self: @TContractState) -> @ComponentState<TContractState>;
+    fn get_component_mut(ref self: TContractState) -> ComponentState<TContractState>;
+    fn get_contract(self: @ComponentState<TContractState>) -> @TContractState;
+    fn get_contract_mut(ref self: ComponentState<TContractState>) -> TContractState;
+    fn emit<S, impl IntoImp: traits::Into<S, Event>>(ref self: ComponentState<TContractState>, event: S);
+}
+
+#[starknet::embeddable]
+impl Comp3<
+            TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>
+
+> of super::Comp3Trait<TContractState> {
+    
+    fn foo3(ref self: TContractState) {
+        let mut component = HasComponent::get_component_mut(ref self);
+        Comp3Impl::foo3(ref component)
+    }
+}
+
+impls:
+
+impl EventDrop of Drop::<Event>;
+
+
+starknet_derive:
+
+impl EventIsEvent of starknet::Event<Event> {
+    fn append_keys_and_data(
+        self: @Event, ref keys: Array<felt252>, ref data: Array<felt252>
+    ) {
+        match self {
+        }
+    }
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<Event> {
+        let selector = *array::SpanTrait::pop_front(ref keys)?;
+        Option::None
+    }
+}
+
+
+
+embeddable:
+
+trait UnsafeNewContractStateTraitForComp3<TContractState> {
+    fn unsafe_new_contract_state() -> TContractState;
+}
+
+#[implicit_precedence(Pedersen, RangeCheck, Bitwise, EcOp, Poseidon, SegmentArena, GasBuiltin, System)]
+fn __wrapper__Comp3__foo3<TContractState,
+        impl Comp1: super::component1::HasComponent<TContractState>,
+        impl Comp2: super::component2::HasComponent<TContractState>,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>, impl UnsafeNewContractState: UnsafeNewContractStateTraitForComp3<TContractState>>(mut data: Span::<felt252>) -> Span::<felt252> {
+    internal::require_implicit::<System>();
+    internal::revoke_ap_tracking();
+    option::OptionTraitImpl::expect(gas::withdraw_gas(), 'Out of gas');
+    
+    assert(array::SpanTrait::is_empty(data), 'Input too long for arguments');
+    option::OptionTraitImpl::expect(
+        gas::withdraw_gas_all(get_builtin_costs()), 'Out of gas',
+    );
+    let mut contract_state = UnsafeNewContractState::unsafe_new_contract_state();
+    Comp3::<TContractState, Comp1, Comp2, _, _>::foo3(ref contract_state, );
+    let mut arr = array::array_new();
+    // References.
+    // Result.
+    array::ArrayTrait::span(@arr)
+}
+
+
+
+mod __external_Comp3 {
+        use super::__wrapper__Comp3__foo3 as foo3;
+}
+
+mod __l1_handler_Comp3 {
+}
+
+mod __constructor_Comp3 {
+}
