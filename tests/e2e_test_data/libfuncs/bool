@@ -26,8 +26,8 @@ libfunc bool_xor_impl = bool_xor_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
 bool_xor_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([3]); // 1
-return([3]); // 2
+store_temp<core::bool>([2]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -62,8 +62,8 @@ libfunc bool_or_impl = bool_or_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
 bool_or_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([3]); // 1
-return([3]); // 2
+store_temp<core::bool>([2]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -96,8 +96,8 @@ libfunc bool_and_impl = bool_and_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
 bool_and_impl([0], [1]) -> ([2]); // 0
-store_temp<core::bool>([2]) -> ([3]); // 1
-return([3]); // 2
+store_temp<core::bool>([2]) -> ([2]); // 1
+return([2]); // 2
 
 test::foo@0([0]: core::bool, [1]: core::bool) -> (core::bool);
 
@@ -132,8 +132,8 @@ libfunc bool_not_impl = bool_not_impl;
 libfunc store_temp<core::bool> = store_temp<core::bool>;
 
 bool_not_impl([0]) -> ([1]); // 0
-store_temp<core::bool>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<core::bool>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: core::bool) -> (core::bool);
 
@@ -168,7 +168,7 @@ libfunc bool_to_felt252 = bool_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
 bool_to_felt252([0]) -> ([1]); // 0
-store_temp<felt252>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: core::bool) -> (felt252);

@@ -506,17 +506,20 @@ impl<'a> AddStoreVariableStatements<'a> {
     }
 
     /// Adds a call to the rename() libfunc, renaming `src` to `dst`.
+    /// if `src` == `dst`, nothing is added.
     fn rename_var(
         &mut self,
         src: &sierra::ids::VarId,
         dst: &sierra::ids::VarId,
         ty: &sierra::ids::ConcreteTypeId,
     ) {
-        self.result.push(simple_statement(
-            rename_libfunc_id(self.db, ty.clone()),
-            &[src.clone()],
-            &[dst.clone()],
-        ));
+        if src != dst {
+            self.result.push(simple_statement(
+                rename_libfunc_id(self.db, ty.clone()),
+                &[src.clone()],
+                &[dst.clone()],
+            ));
+        }
     }
 
     /// Merges the given `state` into the future state that corresponds to `target`.

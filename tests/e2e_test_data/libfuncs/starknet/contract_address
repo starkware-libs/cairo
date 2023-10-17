@@ -69,8 +69,6 @@ libfunc store_temp<core::option::Option::<core::starknet::contract_address::Cont
 libfunc jump = jump;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1> = enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<core::option::Option::<core::starknet::contract_address::ContractAddress>> = rename<core::option::Option::<core::starknet::contract_address::ContractAddress>>;
 
 contract_address_try_from_felt252([0], [1]) { fallthrough([2], [3]) 6([4]) }; // 0
 branch_align() -> (); // 1
@@ -83,9 +81,7 @@ struct_construct<Unit>() -> ([8]); // 7
 enum_init<core::option::Option::<core::starknet::contract_address::ContractAddress>, 1>([8]) -> ([9]); // 8
 store_temp<RangeCheck>([4]) -> ([6]); // 9
 store_temp<core::option::Option::<core::starknet::contract_address::ContractAddress>>([9]) -> ([7]); // 10
-rename<RangeCheck>([6]) -> ([10]); // 11
-rename<core::option::Option::<core::starknet::contract_address::ContractAddress>>([7]) -> ([11]); // 12
-return([10], [11]); // 13
+return([6], [7]); // 11
 
 test::foo@0([0]: RangeCheck, [1]: felt252) -> (RangeCheck, core::option::Option::<core::starknet::contract_address::ContractAddress>);
 
@@ -118,7 +114,7 @@ libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc store_temp<felt252> = store_temp<felt252>;
 
 contract_address_to_felt252([0]) -> ([1]); // 0
-store_temp<felt252>([1]) -> ([2]); // 1
-return([2]); // 2
+store_temp<felt252>([1]) -> ([1]); // 1
+return([1]); // 2
 
 test::foo@0([0]: ContractAddress) -> (felt252);

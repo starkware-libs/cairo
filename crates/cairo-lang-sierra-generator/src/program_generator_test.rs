@@ -36,26 +36,24 @@ fn test_program_generator() {
             libfunc felt252_const<5> = felt252_const<5>;
             libfunc store_temp<felt252> = store_temp<felt252>;
             libfunc function_call<user@test::bar> = function_call<user@test::bar>;
-            libfunc rename<felt252> = rename<felt252>;
             libfunc dup<felt252> = dup<felt252>;
             libfunc felt252_add = felt252_add;
 
             drop<felt252>([0]) -> (); // 0
             felt252_const<5>() -> ([1]); // 1
-            store_temp<felt252>([1]) -> ([2]); // 2
-            function_call<user@test::bar>([2]) -> ([3]); // 3
-            rename<felt252>([3]) -> ([4]); // 4
-            return([4]); // 5
-            dup<felt252>([0]) -> ([0], [1]); // 6
-            dup<felt252>([0]) -> ([0], [2]); // 7
-            felt252_add([1], [2]) -> ([3]); // 8
-            store_temp<felt252>([3]) -> ([3]); // 9
-            felt252_add([3], [0]) -> ([4]); // 10
-            store_temp<felt252>([4]) -> ([5]); // 11
-            return([5]); // 12
+            store_temp<felt252>([1]) -> ([1]); // 2
+            function_call<user@test::bar>([1]) -> ([2]); // 3
+            return([2]); // 4
+            dup<felt252>([0]) -> ([0], [1]); // 5
+            dup<felt252>([0]) -> ([0], [2]); // 6
+            felt252_add([1], [2]) -> ([3]); // 7
+            store_temp<felt252>([3]) -> ([3]); // 8
+            felt252_add([3], [0]) -> ([4]); // 9
+            store_temp<felt252>([4]) -> ([4]); // 10
+            return([4]); // 11
 
             test::foo@0([0]: felt252) -> (felt252);
-            test::bar@6([0]: felt252) -> (felt252);
+            test::bar@5([0]: felt252) -> (felt252);
         "},
     );
 }
@@ -85,8 +83,8 @@ fn test_type_dependency() {
             unbox<Box<Box<felt252>>>([0]) -> ([1]); // 0
             store_temp<Box<Box<felt252>>>([1]) -> ([1]); // 1
             unbox<Box<felt252>>([1]) -> ([2]); // 2
-            store_temp<Box<felt252>>([2]) -> ([3]); // 3
-            return([3]); // 4
+            store_temp<Box<felt252>>([2]) -> ([2]); // 3
+            return([2]); // 4
 
             test::unbox_twice@0([0]: Box<Box<Box<felt252>>>) -> (Box<felt252>);
         "},

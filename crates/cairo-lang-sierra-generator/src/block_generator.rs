@@ -212,11 +212,12 @@ pub fn generate_return_code(
     for (idx, returned_variable) in returned_variables.iter().enumerate() {
         let use_location = UseLocation { statement_location: *statement_location, idx };
         let should_dup = should_dup(context, &use_location);
-
-        let return_variable_on_stack = context.allocate_sierra_variable();
+        let var = context.get_sierra_variable(*returned_variable);
+        let return_variable_on_stack =
+            if should_dup { context.allocate_sierra_variable() } else { var.clone() };
         return_variables_on_stack.push(return_variable_on_stack.clone());
         push_values.push(pre_sierra::PushValue {
-            var: context.get_sierra_variable(*returned_variable),
+            var,
             var_on_stack: return_variable_on_stack,
             ty: context.get_variable_sierra_type(*returned_variable)?,
             dup: should_dup,
@@ -305,11 +306,11 @@ fn generate_statement_call_code(
         for (idx, var_usage) in statement.inputs.iter().enumerate() {
             let use_location = UseLocation { statement_location: *statement_location, idx };
             let should_dup = should_dup(context, &use_location);
-            // Allocate a temporary Sierra variable that represents the argument placed on the
-            // stack.
-            let arg_on_stack = context.allocate_sierra_variable();
+            let var = context.get_sierra_variable(var_usage.var_id);
+            let arg_on_stack =
+                if should_dup { context.allocate_sierra_variable() } else { var.clone() };
             push_values_vec.push(pre_sierra::PushValue {
-                var: context.get_sierra_variable(var_usage.var_id),
+                var,
                 var_on_stack: arg_on_stack.clone(),
                 ty: context.get_variable_sierra_type(var_usage.var_id)?,
                 dup: should_dup,
