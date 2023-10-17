@@ -37,27 +37,27 @@ fn bar() {
 test::bar 10000
 
 //! > gas_solution
-#2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9870})
-#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9770})
+#2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9780})
+#8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9680})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 100})
 #27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#39: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#55: OrderedHashMap({Const: 9900})
+#38: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#51: OrderedHashMap({Const: 9900})
 
-test::foo: OrderedHashMap({Const: 31100})
+test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
 //! > gas_solution_no_solver
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #8: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19640})
-#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19740})
-#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9870})
-#39: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#55: OrderedHashMap({Const: 9900})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19460})
+#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19560})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9780})
+#38: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#51: OrderedHashMap({Const: 9900})
 
-test::foo: OrderedHashMap({Const: 31100})
+test::foo: OrderedHashMap({Const: 30800})
 test::bar: OrderedHashMap({Const: 10000})
 
 //! > sierra_code
@@ -76,16 +76,15 @@ libfunc felt252_const<2> = felt252_const<2>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc drop<Unit> = drop<Unit>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc jump = jump;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc redeposit_gas = redeposit_gas;
 
 dup<felt252>([1]) -> ([1], [2]); // 0
-felt252_is_zero([2]) { fallthrough() 39([3]) }; // 1
+felt252_is_zero([2]) { fallthrough() 38([3]) }; // 1
 branch_align() -> (); // 2
 felt252_const<1>() -> ([4]); // 3
 dup<felt252>([1]) -> ([1], [5]); // 4
@@ -101,82 +100,70 @@ branch_align() -> (); // 13
 store_temp<GasBuiltin>([0]) -> ([0]); // 14
 function_call<user@test::bar>([0]) -> ([11], [12]); // 15
 drop<Unit>([12]) -> (); // 16
-store_temp<GasBuiltin>([11]) -> ([13]); // 17
+rename<GasBuiltin>([11]) -> ([13]); // 17
 jump() { 25() }; // 18
 branch_align() -> (); // 19
 drop<NonZero<felt252>>([10]) -> (); // 20
 store_temp<GasBuiltin>([0]) -> ([0]); // 21
 function_call<user@test::bar>([0]) -> ([14], [15]); // 22
 drop<Unit>([15]) -> (); // 23
-store_temp<GasBuiltin>([14]) -> ([13]); // 24
+rename<GasBuiltin>([14]) -> ([13]); // 24
 rename<GasBuiltin>([13]) -> ([16]); // 25
-jump() { 37() }; // 26
+jump() { 36() }; // 26
 branch_align() -> (); // 27
 drop<NonZero<felt252>>([7]) -> (); // 28
 drop<felt252>([1]) -> (); // 29
 store_temp<GasBuiltin>([0]) -> ([0]); // 30
 function_call<user@test::bar>([0]) -> ([17], [18]); // 31
 drop<Unit>([18]) -> (); // 32
-store_temp<GasBuiltin>([17]) -> ([17]); // 33
-function_call<user@test::bar>([17]) -> ([19], [20]); // 34
-drop<Unit>([20]) -> (); // 35
-store_temp<GasBuiltin>([19]) -> ([16]); // 36
-rename<GasBuiltin>([16]) -> ([21]); // 37
-jump() { 52() }; // 38
-branch_align() -> (); // 39
-drop<NonZero<felt252>>([3]) -> (); // 40
-drop<felt252>([1]) -> (); // 41
-store_temp<GasBuiltin>([0]) -> ([0]); // 42
-function_call<user@test::bar>([0]) -> ([22], [23]); // 43
-drop<Unit>([23]) -> (); // 44
-store_temp<GasBuiltin>([22]) -> ([22]); // 45
-function_call<user@test::bar>([22]) -> ([24], [25]); // 46
-drop<Unit>([25]) -> (); // 47
-store_temp<GasBuiltin>([24]) -> ([24]); // 48
-function_call<user@test::bar>([24]) -> ([26], [27]); // 49
-drop<Unit>([27]) -> (); // 50
-store_temp<GasBuiltin>([26]) -> ([21]); // 51
-struct_construct<Unit>() -> ([28]); // 52
-store_temp<Unit>([28]) -> ([28]); // 53
-return([21], [28]); // 54
-redeposit_gas([0]) -> ([1]); // 55
-struct_construct<Unit>() -> ([2]); // 56
-store_temp<GasBuiltin>([1]) -> ([1]); // 57
-store_temp<Unit>([2]) -> ([2]); // 58
-return([1], [2]); // 59
+function_call<user@test::bar>([17]) -> ([19], [20]); // 33
+drop<Unit>([20]) -> (); // 34
+rename<GasBuiltin>([19]) -> ([16]); // 35
+rename<GasBuiltin>([16]) -> ([21]); // 36
+jump() { 49() }; // 37
+branch_align() -> (); // 38
+drop<NonZero<felt252>>([3]) -> (); // 39
+drop<felt252>([1]) -> (); // 40
+store_temp<GasBuiltin>([0]) -> ([0]); // 41
+function_call<user@test::bar>([0]) -> ([22], [23]); // 42
+drop<Unit>([23]) -> (); // 43
+function_call<user@test::bar>([22]) -> ([24], [25]); // 44
+drop<Unit>([25]) -> (); // 45
+function_call<user@test::bar>([24]) -> ([26], [27]); // 46
+drop<Unit>([27]) -> (); // 47
+rename<GasBuiltin>([26]) -> ([21]); // 48
+struct_construct<Unit>() -> ([28]); // 49
+return([21], [28]); // 50
+redeposit_gas([0]) -> ([1]); // 51
+struct_construct<Unit>() -> ([2]); // 52
+store_temp<GasBuiltin>([1]) -> ([1]); // 53
+return([1], [2]); // 54
 
 test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
-test::bar@55([0]: GasBuiltin) -> (GasBuiltin, Unit);
+test::bar@51([0]: GasBuiltin) -> (GasBuiltin, Unit);
 
 //! > casm
-jmp rel 35 if [fp + -3] != 0;
-ap += 3;
+jmp rel 31 if [fp + -3] != 0;
+ap += 2;
 [fp + -3] = [ap + 0] + 1, ap++;
-jmp rel 20 if [ap + -1] != 0;
-ap += 3;
+jmp rel 18 if [ap + -1] != 0;
+ap += 2;
 [fp + -3] = [ap + 0] + 2, ap++;
-jmp rel 8 if [ap + -1] != 0;
+jmp rel 7 if [ap + -1] != 0;
 [ap + 0] = [fp + -4], ap++;
-call rel 31;
-[ap + 0] = [ap + -1], ap++;
-jmp rel 6;
-[ap + 0] = [fp + -4], ap++;
-call rel 25;
-[ap + 0] = [ap + -1], ap++;
-jmp rel 9;
+call rel 24;
+jmp rel 5;
 [ap + 0] = [fp + -4], ap++;
 call rel 19;
-[ap + 0] = [ap + -1], ap++;
-call rel 16;
-[ap + 0] = [ap + -1], ap++;
-jmp rel 12;
+jmp rel 7;
 [ap + 0] = [fp + -4], ap++;
-call rel 10;
-[ap + 0] = [ap + -1], ap++;
+call rel 14;
+call rel 12;
+jmp rel 9;
+[ap + 0] = [fp + -4], ap++;
 call rel 7;
-[ap + 0] = [ap + -1], ap++;
-call rel 4;
-[ap + 0] = [ap + -1], ap++;
+call rel 5;
+call rel 3;
 ret;
 [ap + 0] = [fp + -3] + 9900, ap++;
 ret;
@@ -228,16 +215,16 @@ test::bar 10000
 
 //! > gas_solution
 #0: OrderedHashMap({Const: 0})
-#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9420})
+#1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9430})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #5: OrderedHashMap({Const: 0})
 #6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 10160})
 #19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 450})
 #29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#42: OrderedHashMap({Const: 9900})
+#40: OrderedHashMap({Const: 9900})
 
-test::foo: OrderedHashMap({Const: 21270})
+test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
 //! > gas_solution_no_solver
@@ -245,13 +232,13 @@ test::bar: OrderedHashMap({Const: 10000})
 #1: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #4: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
 #5: OrderedHashMap({Const: 0})
-#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9420})
-#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19580})
-#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9870})
+#6: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9430})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 19590})
+#19: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 9880})
 #29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#42: OrderedHashMap({Const: 9900})
+#40: OrderedHashMap({Const: 9900})
 
-test::foo: OrderedHashMap({Const: 21270})
+test::foo: OrderedHashMap({Const: 21170})
 test::bar: OrderedHashMap({Const: 10000})
 
 //! > sierra_code
@@ -274,7 +261,6 @@ libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc redeposit_gas = redeposit_gas;
 
 withdraw_gas([0], [1]) { fallthrough([3], [4]) 29([5], [6]) }; // 0
@@ -305,65 +291,60 @@ store_temp<RangeCheck>([3]) -> ([16]); // 24
 store_temp<GasBuiltin>([18]) -> ([17]); // 25
 rename<RangeCheck>([16]) -> ([20]); // 26
 rename<GasBuiltin>([17]) -> ([21]); // 27
-jump() { 39() }; // 28
+jump() { 38() }; // 28
 branch_align() -> (); // 29
 drop<felt252>([2]) -> (); // 30
 store_temp<GasBuiltin>([6]) -> ([6]); // 31
 function_call<user@test::bar>([6]) -> ([22], [23]); // 32
 drop<Unit>([23]) -> (); // 33
-store_temp<GasBuiltin>([22]) -> ([22]); // 34
-function_call<user@test::bar>([22]) -> ([24], [25]); // 35
-drop<Unit>([25]) -> (); // 36
-store_temp<RangeCheck>([5]) -> ([20]); // 37
-store_temp<GasBuiltin>([24]) -> ([21]); // 38
-struct_construct<Unit>() -> ([26]); // 39
-store_temp<Unit>([26]) -> ([26]); // 40
-return([20], [21], [26]); // 41
-redeposit_gas([0]) -> ([1]); // 42
-struct_construct<Unit>() -> ([2]); // 43
-store_temp<GasBuiltin>([1]) -> ([1]); // 44
-store_temp<Unit>([2]) -> ([2]); // 45
-return([1], [2]); // 46
+function_call<user@test::bar>([22]) -> ([24], [25]); // 34
+drop<Unit>([25]) -> (); // 35
+store_temp<RangeCheck>([5]) -> ([20]); // 36
+store_temp<GasBuiltin>([24]) -> ([21]); // 37
+struct_construct<Unit>() -> ([26]); // 38
+return([20], [21], [26]); // 39
+redeposit_gas([0]) -> ([1]); // 40
+struct_construct<Unit>() -> ([2]); // 41
+store_temp<GasBuiltin>([1]) -> ([1]); // 42
+return([1], [2]); // 43
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, Unit);
-test::bar@42([0]: GasBuiltin) -> (GasBuiltin, Unit);
+test::bar@40([0]: GasBuiltin) -> (GasBuiltin, Unit);
 
 //! > casm
 %{ memory[ap + 0] = 0 <= memory[fp + -4] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
 [ap + 0] = [fp + -4] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[fp + -5] + 0];
-jmp rel 45;
+jmp rel 43;
 [fp + -4] = [ap + 0] + 0, ap++;
 [ap + -1] = [[fp + -5] + 0];
-ap += 1;
 [ap + 0] = [fp + -5] + 1, ap++;
 jmp rel 27 if [fp + -3] != 0;
-%{ memory[ap + 0] = 0 <= memory[ap + -3] %}
+%{ memory[ap + 0] = 0 <= memory[ap + -2] %}
 jmp rel 7 if [ap + 0] != 0, ap++;
-[ap + 0] = [ap + -4] + 340282366920938463463374607431768211456, ap++;
+[ap + 0] = [ap + -3] + 340282366920938463463374607431768211456, ap++;
 [ap + -1] = [[ap + -3] + 0];
 jmp rel 13;
-[ap + -4] = [ap + 0] + 0, ap++;
+[ap + -3] = [ap + 0] + 0, ap++;
 [ap + -1] = [[ap + -3] + 0];
 [ap + 0] = [ap + -1], ap++;
-call rel 33;
+call rel 32;
 [ap + 0] = [ap + -7] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;
 jmp rel 7;
 ap += 4;
 [ap + 0] = [ap + -7] + 1, ap++;
-[ap + 0] = [ap + -10], ap++;
+[ap + 0] = [ap + -9], ap++;
 jmp rel 9;
 ap += 2;
-[ap + 0] = [ap + -5], ap++;
-call rel 16;
+[ap + 0] = [ap + -4], ap++;
+call rel 15;
 [ap + 0] = [ap + -7], ap++;
 [ap + 0] = [ap + -2], ap++;
-jmp rel 11;
+jmp rel 10;
 [ap + 0] = [fp + -4], ap++;
-call rel 9;
-[ap + 0] = [ap + -1], ap++;
+call rel 8;
 call rel 6;
 [ap + 0] = [fp + -5] + 1, ap++;
 [ap + 0] = [ap + -2], ap++;
@@ -420,7 +401,7 @@ test::bar 2000
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1260})
 #18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1710})
 #24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#34: OrderedHashMap({Const: 1900})
+#33: OrderedHashMap({Const: 1900})
 
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
@@ -434,7 +415,7 @@ test::bar: OrderedHashMap({Const: 2000})
 #12: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1260})
 #18: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 1710})
 #24: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#34: OrderedHashMap({Const: 1900})
+#33: OrderedHashMap({Const: 1900})
 
 test::foo: OrderedHashMap({Const: 2740})
 test::bar: OrderedHashMap({Const: 2000})
@@ -458,7 +439,6 @@ libfunc rename<RangeCheck> = rename<RangeCheck>;
 libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc redeposit_gas = redeposit_gas;
 
 felt252_is_zero([2]) { fallthrough() 24([3]) }; // 0
@@ -493,16 +473,14 @@ drop<Unit>([21]) -> (); // 28
 store_temp<RangeCheck>([0]) -> ([18]); // 29
 store_temp<GasBuiltin>([20]) -> ([19]); // 30
 struct_construct<Unit>() -> ([22]); // 31
-store_temp<Unit>([22]) -> ([22]); // 32
-return([18], [19], [22]); // 33
-redeposit_gas([0]) -> ([1]); // 34
-struct_construct<Unit>() -> ([2]); // 35
-store_temp<GasBuiltin>([1]) -> ([1]); // 36
-store_temp<Unit>([2]) -> ([2]); // 37
-return([1], [2]); // 38
+return([18], [19], [22]); // 32
+redeposit_gas([0]) -> ([1]); // 33
+struct_construct<Unit>() -> ([2]); // 34
+store_temp<GasBuiltin>([1]) -> ([1]); // 35
+return([1], [2]); // 36
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: felt252) -> (RangeCheck, GasBuiltin, Unit);
-test::bar@34([0]: GasBuiltin) -> (GasBuiltin, Unit);
+test::bar@33([0]: GasBuiltin) -> (GasBuiltin, Unit);
 
 //! > casm
 jmp rel 44 if [fp + -3] != 0;
@@ -581,26 +559,26 @@ test::foo 100000
 
 //! > gas_solution
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#10: OrderedHashMap({Const: 79200})
-#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#17: OrderedHashMap({Const: 88980})
-#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#31: OrderedHashMap({Const: 10260})
-#36: OrderedHashMap({Const: 9900})
+#9: OrderedHashMap({Const: 79300})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#15: OrderedHashMap({Const: 89080})
+#21: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#29: OrderedHashMap({Const: 10170})
+#33: OrderedHashMap({Const: 9900})
 
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
 
 //! > gas_solution_no_solver
 #2: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#10: OrderedHashMap({Const: 79200})
-#15: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#17: OrderedHashMap({Const: 88980})
-#23: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#29: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
-#31: OrderedHashMap({Const: 10260})
-#36: OrderedHashMap({Const: 9900})
+#9: OrderedHashMap({Const: 79300})
+#13: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#15: OrderedHashMap({Const: 89080})
+#21: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#27: OrderedHashMap({Pedersen: 0, Poseidon: 0, Bitwise: 0, EcOp: 0, Const: 0})
+#29: OrderedHashMap({Const: 10170})
+#33: OrderedHashMap({Const: 9900})
 
 test::foo: OrderedHashMap({Const: 100000})
 test::bar: OrderedHashMap({Const: 10000})
@@ -620,76 +598,70 @@ libfunc function_call<user@test::bar> = function_call<user@test::bar>;
 libfunc drop<Unit> = drop<Unit>;
 libfunc redeposit_gas = redeposit_gas;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc drop<NonZero<felt252>> = drop<NonZero<felt252>>;
 libfunc felt252_const<1> = felt252_const<1>;
 libfunc felt252_sub = felt252_sub;
 libfunc store_temp<felt252> = store_temp<felt252>;
+libfunc rename<GasBuiltin> = rename<GasBuiltin>;
 libfunc jump = jump;
 
 dup<felt252>([1]) -> ([1], [2]); // 0
-felt252_is_zero([2]) { fallthrough() 15([3]) }; // 1
+felt252_is_zero([2]) { fallthrough() 13([3]) }; // 1
 branch_align() -> (); // 2
 drop<felt252>([1]) -> (); // 3
 store_temp<GasBuiltin>([0]) -> ([0]); // 4
 function_call<user@test::bar>([0]) -> ([4], [5]); // 5
 drop<Unit>([5]) -> (); // 6
-store_temp<GasBuiltin>([4]) -> ([4]); // 7
-function_call<user@test::bar>([4]) -> ([6], [7]); // 8
-drop<Unit>([7]) -> (); // 9
-redeposit_gas([6]) -> ([8]); // 10
-struct_construct<Unit>() -> ([9]); // 11
-store_temp<GasBuiltin>([8]) -> ([8]); // 12
-store_temp<Unit>([9]) -> ([9]); // 13
-return([8], [9]); // 14
-branch_align() -> (); // 15
-drop<NonZero<felt252>>([3]) -> (); // 16
-redeposit_gas([0]) -> ([10]); // 17
-felt252_const<1>() -> ([11]); // 18
-felt252_sub([1], [11]) -> ([12]); // 19
-store_temp<felt252>([12]) -> ([12]); // 20
-store_temp<GasBuiltin>([10]) -> ([10]); // 21
-felt252_is_zero([12]) { fallthrough() 29([13]) }; // 22
-branch_align() -> (); // 23
-store_temp<GasBuiltin>([10]) -> ([10]); // 24
-function_call<user@test::bar>([10]) -> ([14], [15]); // 25
-drop<Unit>([15]) -> (); // 26
-store_temp<GasBuiltin>([14]) -> ([16]); // 27
-jump() { 33() }; // 28
-branch_align() -> (); // 29
-drop<NonZero<felt252>>([13]) -> (); // 30
-redeposit_gas([10]) -> ([17]); // 31
-store_temp<GasBuiltin>([17]) -> ([16]); // 32
-struct_construct<Unit>() -> ([18]); // 33
-store_temp<Unit>([18]) -> ([18]); // 34
-return([16], [18]); // 35
-redeposit_gas([0]) -> ([1]); // 36
-struct_construct<Unit>() -> ([2]); // 37
-store_temp<GasBuiltin>([1]) -> ([1]); // 38
-store_temp<Unit>([2]) -> ([2]); // 39
-return([1], [2]); // 40
+function_call<user@test::bar>([4]) -> ([6], [7]); // 7
+drop<Unit>([7]) -> (); // 8
+redeposit_gas([6]) -> ([8]); // 9
+struct_construct<Unit>() -> ([9]); // 10
+store_temp<GasBuiltin>([8]) -> ([8]); // 11
+return([8], [9]); // 12
+branch_align() -> (); // 13
+drop<NonZero<felt252>>([3]) -> (); // 14
+redeposit_gas([0]) -> ([10]); // 15
+felt252_const<1>() -> ([11]); // 16
+felt252_sub([1], [11]) -> ([12]); // 17
+store_temp<felt252>([12]) -> ([12]); // 18
+store_temp<GasBuiltin>([10]) -> ([10]); // 19
+felt252_is_zero([12]) { fallthrough() 27([13]) }; // 20
+branch_align() -> (); // 21
+store_temp<GasBuiltin>([10]) -> ([10]); // 22
+function_call<user@test::bar>([10]) -> ([14], [15]); // 23
+drop<Unit>([15]) -> (); // 24
+rename<GasBuiltin>([14]) -> ([16]); // 25
+jump() { 31() }; // 26
+branch_align() -> (); // 27
+drop<NonZero<felt252>>([13]) -> (); // 28
+redeposit_gas([10]) -> ([17]); // 29
+store_temp<GasBuiltin>([17]) -> ([16]); // 30
+struct_construct<Unit>() -> ([18]); // 31
+return([16], [18]); // 32
+redeposit_gas([0]) -> ([1]); // 33
+struct_construct<Unit>() -> ([2]); // 34
+store_temp<GasBuiltin>([1]) -> ([1]); // 35
+return([1], [2]); // 36
 
 test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
-test::bar@36([0]: GasBuiltin) -> (GasBuiltin, Unit);
+test::bar@33([0]: GasBuiltin) -> (GasBuiltin, Unit);
 
 //! > casm
-jmp rel 11 if [fp + -3] != 0;
+jmp rel 10 if [fp + -3] != 0;
 [ap + 0] = [fp + -4], ap++;
-call rel 27;
-[ap + 0] = [ap + -1], ap++;
-call rel 24;
-[ap + 0] = [ap + -1] + 79200, ap++;
+call rel 25;
+call rel 23;
+[ap + 0] = [ap + -1] + 79300, ap++;
 ret;
 ap += 2;
 [fp + -3] = [ap + 0] + 1, ap++;
-[ap + 0] = [fp + -4] + 88980, ap++;
-jmp rel 8 if [ap + -2] != 0;
+[ap + 0] = [fp + -4] + 89080, ap++;
+jmp rel 7 if [ap + -2] != 0;
 [ap + 0] = [ap + -1], ap++;
-call rel 10;
-[ap + 0] = [ap + -1], ap++;
+call rel 9;
 jmp rel 6;
-ap += 4;
-[ap + 0] = [ap + -5] + 10260, ap++;
+ap += 3;
+[ap + 0] = [ap + -4] + 10170, ap++;
 ret;
 [ap + 0] = [fp + -3] + 9900, ap++;
 ret;

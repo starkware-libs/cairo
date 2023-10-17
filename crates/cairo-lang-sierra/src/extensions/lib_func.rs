@@ -358,13 +358,17 @@ impl From<ConcreteTypeId> for ParamSignature {
 #[derive(Debug, Clone)]
 pub enum OutputVarReferenceInfo {
     /// The output value is exactly the same as one of the parameters.
-    SameAsParam { param_idx: usize },
+    SameAsParam {
+        param_idx: usize,
+    },
     /// The output value is a part of one of the parameters.
     /// For example, it may be the first element of a struct.
     ///
     /// Information, such as whether the parameter was a temporary or local variable, will be
     /// copied to the output variable.
-    PartialParam { param_idx: usize },
+    PartialParam {
+        param_idx: usize,
+    },
     /// The output was allocated as a temporary variable and it is at the top of the stack
     /// (contiguously).
     NewTempVar {
@@ -379,6 +383,8 @@ pub enum OutputVarReferenceInfo {
     Deferred(DeferredOutputKind),
     /// All the output cells are of the form `[ap/fp + const]`. For example, `([ap + 1], [fp])`.
     SimpleDerefs,
+    // The output is a of size 0.
+    ZeroSized,
 }
 
 /// The type of a deferred output.

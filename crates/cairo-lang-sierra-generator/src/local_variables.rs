@@ -284,7 +284,8 @@ impl<'a> FindLocalsContext<'a> {
                     self.partial_param_parents.insert(*var, input_vars[param_idx].var_id);
                 }
                 OutputVarReferenceInfo::Deferred(DeferredOutputKind::Const)
-                | OutputVarReferenceInfo::NewLocalVar => {
+                | OutputVarReferenceInfo::NewLocalVar
+                | OutputVarReferenceInfo::ZeroSized => {
                     self.non_ap_based.insert(*var);
                 }
                 OutputVarReferenceInfo::NewTempVar { .. }

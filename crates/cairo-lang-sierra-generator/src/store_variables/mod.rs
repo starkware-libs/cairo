@@ -112,6 +112,7 @@ impl<'a> AddStoreVariableStatements<'a> {
 
                 let libfunc_long_id =
                     self.db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
+
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.
@@ -291,6 +292,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                 VarState::TempVar { ty }
             }
             VarState::LocalVar => VarState::LocalVar,
+            VarState::ZeroSizedVar => VarState::ZeroSizedVar,
         }
     }
 
@@ -380,6 +382,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         }
                     }
                 }
+                VarState::ZeroSizedVar => (true, VarState::ZeroSizedVar),
                 var_state => {
                     // Check if this is part of the prefix. If it is, rename instead of adding
                     // `store_temp`.
@@ -426,7 +429,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         *var_state = self.store_deferred(&mut state.known_stack, var, &info.ty);
                     }
                 }
-                VarState::LocalVar | VarState::Removed => {}
+                VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
             }
         }
     }
@@ -455,7 +458,7 @@ impl<'a> AddStoreVariableStatements<'a> {
                         self.store_local(var, &uninitialized_local_var_id.clone(), ty);
                         *var_state = VarState::LocalVar;
                     }
-                    VarState::LocalVar | VarState::Removed => {}
+                    VarState::ZeroSizedVar | VarState::LocalVar | VarState::Removed => {}
                 };
             }
         }

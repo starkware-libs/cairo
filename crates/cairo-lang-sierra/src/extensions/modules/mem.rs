@@ -34,7 +34,8 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
         context: &dyn SignatureSpecializationContext,
         ty: ConcreteTypeId,
     ) -> Result<LibfuncSignature, SpecializationError> {
-        if !context.as_type_specialization_context().get_type_info(ty.clone())?.storable {
+        let type_info = context.as_type_specialization_context().get_type_info(ty.clone())?;
+        if !type_info.storable {
             return Err(SpecializationError::UnsupportedGenericArg);
         }
         Ok(LibfuncSignature::new_non_branch_ex(
@@ -44,7 +45,14 @@ impl SignatureAndTypeGenericLibfunc for StoreTempLibfuncWrapped {
                 allow_add_const: true,
                 allow_const: true,
             }],
-            vec![OutputVarInfo { ty, ref_info: OutputVarReferenceInfo::NewTempVar { idx: 0 } }],
+            vec![OutputVarInfo {
+                ty,
+                ref_info: if type_info.zero_sized {
+                    OutputVarReferenceInfo::ZeroSized
+                } else {
+                    OutputVarReferenceInfo::NewTempVar { idx: 0 }
+                },
+            }],
             SierraApChange::Known { new_vars_only: true },
         ))
     }

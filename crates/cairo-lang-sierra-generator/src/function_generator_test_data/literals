@@ -36,7 +36,6 @@ store_temp<felt252>([0]) -> ([0])
 function_call<user@test::bar>([0]) -> ([3])
 drop<Unit>([3]) -> ()
 struct_construct<Unit>() -> ([4])
-store_temp<Unit>([4]) -> ([4])
 return([4])
 
 //! > comment

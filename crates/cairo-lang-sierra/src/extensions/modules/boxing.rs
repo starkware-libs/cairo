@@ -74,8 +74,12 @@ impl SignatureAndTypeGenericLibfunc for UnboxLibfuncWrapped {
         Ok(LibfuncSignature::new_non_branch(
             vec![context.get_wrapped_concrete_type(BoxType::id(), ty.clone())?],
             vec![OutputVarInfo {
-                ty,
-                ref_info: OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic),
+                ty: ty.clone(),
+                ref_info: if context.get_type_info(ty)?.zero_sized {
+                    OutputVarReferenceInfo::ZeroSized
+                } else {
+                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                },
             }],
             SierraApChange::Known { new_vars_only: true },
         ))
