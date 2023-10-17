@@ -151,9 +151,10 @@ fn next_printed_item(values: &mut IntoIter<Felt252>) -> Option<String> {
 
 /// Formats a `Felt252`, as a short string if possible.
 fn get_formatted_short_string(value: &Felt252) -> String {
+    let hex_value = value.to_biguint();
     match as_cairo_short_string(value) {
-        Some(as_string) => format!("{value} ('{as_string}')"),
-        None => format!("{value}"),
+        Some(as_string) => format!("0x{hex_value:#x} ('{as_string}')"),
+        None => format!("0x{hex_value:#x}"),
     }
 }
 
