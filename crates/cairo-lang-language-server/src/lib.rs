@@ -86,6 +86,8 @@ pub async fn serve_language_service() {
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .with_macro_plugin(Arc::new(TestPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+        .with_inline_macro_plugin(DepComponentMacro::NAME, Arc::new(DepComponentMacro))
+        .with_inline_macro_plugin(DepComponentMutMacro::NAME, Arc::new(DepComponentMutMacro))
         .build()
         .expect("Failed to initialize Cairo compiler database.");
 
