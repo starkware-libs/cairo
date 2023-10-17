@@ -36,15 +36,15 @@ store_temp<examples::fib_struct::FibResult>([7]) -> ([8]); // 9
 jump() { 28() }; // 10
 branch_align() -> (); // 11
 drop<NonZero<felt252>>([4]) -> (); // 12
-dup<felt252>([1]) -> ([1], [10]); // 13
-felt252_add([0], [10]) -> ([9]); // 14
+dup<felt252>([1]) -> ([1], [9]); // 13
+felt252_add([0], [9]) -> ([10]); // 14
 felt252_const<1>() -> ([11]); // 15
 felt252_sub([2], [11]) -> ([12]); // 16
-store_temp<felt252>([1]) -> ([14]); // 17
-store_temp<felt252>([9]) -> ([15]); // 18
-store_temp<felt252>([12]) -> ([16]); // 19
-function_call<user@examples::fib_struct::fib>([14], [15], [16]) -> ([13]); // 20
-struct_deconstruct<examples::fib_struct::FibResult>([13]) -> ([17], [18], [19]); // 21
+store_temp<felt252>([1]) -> ([13]); // 17
+store_temp<felt252>([10]) -> ([14]); // 18
+store_temp<felt252>([12]) -> ([15]); // 19
+function_call<user@examples::fib_struct::fib>([13], [14], [15]) -> ([16]); // 20
+struct_deconstruct<examples::fib_struct::FibResult>([16]) -> ([17], [18], [19]); // 21
 drop<Unit>([19]) -> (); // 22
 felt252_const<1>() -> ([20]); // 23
 felt252_add([18], [20]) -> ([21]); // 24

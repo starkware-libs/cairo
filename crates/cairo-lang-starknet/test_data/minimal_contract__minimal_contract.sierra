@@ -88,10 +88,10 @@ store_temp<BuiltinCosts>([27]) -> ([27]); // 30
 withdraw_gas_all([4], [5], [27]) { fallthrough([28], [29]) 49([30], [31]) }; // 31
 branch_align() -> (); // 32
 struct_construct<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>() -> ([32]); // 33
-store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([32]) -> ([35]); // 34
-function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>([35]) -> ([33], [34]); // 35
-drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([33]) -> (); // 36
-drop<Unit>([34]) -> (); // 37
+store_temp<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([32]) -> ([33]); // 34
+function_call<user@cairo_level_tests::contracts::minimal_contract::minimal_contract::empty>([33]) -> ([34], [35]); // 35
+drop<cairo_level_tests::contracts::minimal_contract::minimal_contract::ContractState>([34]) -> (); // 36
+drop<Unit>([35]) -> (); // 37
 array_new<felt252>() -> ([36]); // 38
 snapshot_take<Array<felt252>>([36]) -> ([37], [38]); // 39
 drop<Array<felt252>>([37]) -> (); // 40

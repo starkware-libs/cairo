@@ -201,12 +201,12 @@ libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 
 u128_guarantee_mul([1], [2]) -> ([3], [4], [5]); // 0
-store_temp<RangeCheck>([0]) -> ([8]); // 1
-store_temp<U128MulGuarantee>([5]) -> ([9]); // 2
-function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([8], [9]) -> ([6], [7]); // 3
-drop<Unit>([7]) -> (); // 4
+store_temp<RangeCheck>([0]) -> ([6]); // 1
+store_temp<U128MulGuarantee>([5]) -> ([7]); // 2
+function_call<user@core::integer::U128MulGuaranteeDestruct::destruct>([6], [7]) -> ([8], [9]); // 3
+drop<Unit>([9]) -> (); // 4
 struct_construct<Tuple<u128, u128>>([3], [4]) -> ([10]); // 5
-store_temp<RangeCheck>([6]) -> ([11]); // 6
+store_temp<RangeCheck>([8]) -> ([11]); // 6
 store_temp<Tuple<u128, u128>>([10]) -> ([12]); // 7
 return([11], [12]); // 8
 u128_mul_guarantee_verify([0], [1]) -> ([2]); // 9
