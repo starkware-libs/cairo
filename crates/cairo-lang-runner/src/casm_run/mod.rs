@@ -179,6 +179,7 @@ struct ExecutionInfo {
     tx_info: TxInfo,
     caller_address: Felt252,
     contract_address: Felt252,
+    entry_point_selector: Felt252,
 }
 
 /// Copy of the cairo `BlockInfo` struct.
@@ -856,6 +857,7 @@ impl<'a> CairoHintProcessor<'a> {
         res_segment.write(tx_info_ptr)?;
         res_segment.write(exec_info.caller_address.clone())?;
         res_segment.write(exec_info.contract_address.clone())?;
+        res_segment.write(exec_info.entry_point_selector.clone())?;
         Ok(SyscallResult::Success(vec![exec_info_ptr.into()]))
     }
 
