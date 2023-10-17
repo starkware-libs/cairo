@@ -1,4 +1,5 @@
 use test::test_utils::{assert_eq, assert_ne};
+use byte_array::BYTE_ARRAY_MAGIC;
 
 #[test]
 fn test_append_byte() {
@@ -493,6 +494,26 @@ fn test_panic_with_byte_array_short() {
 fn test_panic_with_byte_array_long() {
     let ba: ByteArray = "long error with more than 31 characters";
     byte_array::panic_with_byte_array(ba);
+}
+
+#[test]
+#[should_panic(expected: ("error", 3, "hello", 5, 'short_string'))]
+fn test_panic_with_stacked_errors() {
+    let mut error = array![];
+    let ba: ByteArray = "error";
+    error.append(BYTE_ARRAY_MAGIC);
+    ba.serialize(ref error);
+
+    error.append(3);
+
+    let ba: ByteArray = "hello";
+    error.append(BYTE_ARRAY_MAGIC);
+    ba.serialize(ref error);
+
+    error.append(5);
+    error.append('short_string');
+
+    panic(error);
 }
 
 // ========= Test helper functions =========
