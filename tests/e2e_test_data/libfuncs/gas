@@ -64,19 +64,19 @@ drop<Unit>([4]) -> (); // 5
 function_call<user@test::bar>() -> ([5]); // 6
 drop<Unit>([5]) -> (); // 7
 struct_construct<Unit>() -> ([6]); // 8
-store_temp<GasBuiltin>([0]) -> ([7]); // 9
-store_temp<Unit>([6]) -> ([8]); // 10
-return([7], [8]); // 11
+store_temp<GasBuiltin>([0]) -> ([0]); // 9
+store_temp<Unit>([6]) -> ([6]); // 10
+return([0], [6]); // 11
 branch_align() -> (); // 12
 drop<NonZero<felt252>>([2]) -> (); // 13
-redeposit_gas([0]) -> ([9]); // 14
-struct_construct<Unit>() -> ([10]); // 15
-store_temp<GasBuiltin>([9]) -> ([11]); // 16
-store_temp<Unit>([10]) -> ([12]); // 17
-return([11], [12]); // 18
+redeposit_gas([0]) -> ([7]); // 14
+struct_construct<Unit>() -> ([8]); // 15
+store_temp<GasBuiltin>([7]) -> ([7]); // 16
+store_temp<Unit>([8]) -> ([8]); // 17
+return([7], [8]); // 18
 struct_construct<Unit>() -> ([0]); // 19
-store_temp<Unit>([0]) -> ([1]); // 20
-return([1]); // 21
+store_temp<Unit>([0]) -> ([0]); // 20
+return([0]); // 21
 
 test::foo@0([0]: GasBuiltin, [1]: felt252) -> (GasBuiltin, Unit);
 test::bar@19() -> (Unit);
@@ -126,30 +126,24 @@ libfunc branch_align = branch_align;
 libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
 
 disable_ap_tracking() -> (); // 0
-withdraw_gas([0], [1]) { fallthrough([2], [3]) 10([4], [5]) }; // 1
+withdraw_gas([0], [1]) { fallthrough([2], [3]) 7([4], [5]) }; // 1
 branch_align() -> (); // 2
-store_temp<RangeCheck>([2]) -> ([6]); // 3
-store_temp<GasBuiltin>([3]) -> ([7]); // 4
-function_call<user@test::foo>([6], [7]) -> ([8], [9], [10]); // 5
-rename<RangeCheck>([8]) -> ([11]); // 6
-rename<GasBuiltin>([9]) -> ([12]); // 7
-rename<core::option::Option::<()>>([10]) -> ([13]); // 8
-return([11], [12], [13]); // 9
-branch_align() -> (); // 10
-struct_construct<Unit>() -> ([14]); // 11
-enum_init<core::option::Option::<()>, 1>([14]) -> ([15]); // 12
-store_temp<RangeCheck>([4]) -> ([16]); // 13
-store_temp<GasBuiltin>([5]) -> ([17]); // 14
-store_temp<core::option::Option::<()>>([15]) -> ([18]); // 15
-return([16], [17], [18]); // 16
+store_temp<RangeCheck>([2]) -> ([2]); // 3
+store_temp<GasBuiltin>([3]) -> ([3]); // 4
+function_call<user@test::foo>([2], [3]) -> ([6], [7], [8]); // 5
+return([6], [7], [8]); // 6
+branch_align() -> (); // 7
+struct_construct<Unit>() -> ([9]); // 8
+enum_init<core::option::Option::<()>, 1>([9]) -> ([10]); // 9
+store_temp<RangeCheck>([4]) -> ([4]); // 10
+store_temp<GasBuiltin>([5]) -> ([5]); // 11
+store_temp<core::option::Option::<()>>([10]) -> ([10]); // 12
+return([4], [5], [10]); // 13
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
 
@@ -222,10 +216,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<Pedersen> = rename<Pedersen>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
@@ -233,7 +223,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 disable_ap_tracking() -> (); // 0
 get_builtin_costs() -> ([3]); // 1
 store_temp<BuiltinCosts>([3]) -> ([3]); // 2
-withdraw_gas_all([0], [1], [3]) { fallthrough([4], [5]) 20([6], [7]) }; // 3
+withdraw_gas_all([0], [1], [3]) { fallthrough([4], [5]) 16([6], [7]) }; // 3
 branch_align() -> (); // 4
 felt252_const<1>() -> ([8]); // 5
 felt252_const<1>() -> ([9]); // 6
@@ -241,23 +231,19 @@ store_temp<felt252>([8]) -> ([8]); // 7
 store_temp<felt252>([9]) -> ([9]); // 8
 pedersen([2], [8], [9]) -> ([10], [11]); // 9
 drop<felt252>([11]) -> (); // 10
-store_temp<RangeCheck>([4]) -> ([12]); // 11
-store_temp<GasBuiltin>([5]) -> ([13]); // 12
-store_temp<Pedersen>([10]) -> ([14]); // 13
-function_call<user@test::foo>([12], [13], [14]) -> ([15], [16], [17], [18]); // 14
-rename<RangeCheck>([15]) -> ([19]); // 15
-rename<GasBuiltin>([16]) -> ([20]); // 16
-rename<Pedersen>([17]) -> ([21]); // 17
-rename<core::option::Option::<()>>([18]) -> ([22]); // 18
-return([19], [20], [21], [22]); // 19
-branch_align() -> (); // 20
-struct_construct<Unit>() -> ([23]); // 21
-enum_init<core::option::Option::<()>, 1>([23]) -> ([24]); // 22
-store_temp<RangeCheck>([6]) -> ([25]); // 23
-store_temp<GasBuiltin>([7]) -> ([26]); // 24
-store_temp<Pedersen>([2]) -> ([27]); // 25
-store_temp<core::option::Option::<()>>([24]) -> ([28]); // 26
-return([25], [26], [27], [28]); // 27
+store_temp<RangeCheck>([4]) -> ([4]); // 11
+store_temp<GasBuiltin>([5]) -> ([5]); // 12
+store_temp<Pedersen>([10]) -> ([10]); // 13
+function_call<user@test::foo>([4], [5], [10]) -> ([12], [13], [14], [15]); // 14
+return([12], [13], [14], [15]); // 15
+branch_align() -> (); // 16
+struct_construct<Unit>() -> ([16]); // 17
+enum_init<core::option::Option::<()>, 1>([16]) -> ([17]); // 18
+store_temp<RangeCheck>([6]) -> ([6]); // 19
+store_temp<GasBuiltin>([7]) -> ([7]); // 20
+store_temp<Pedersen>([2]) -> ([2]); // 21
+store_temp<core::option::Option::<()>>([17]) -> ([17]); // 22
+return([6], [7], [2], [17]); // 23
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
 
@@ -352,11 +338,6 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<Bitwise> = rename<Bitwise>;
-libfunc rename<Pedersen> = rename<Pedersen>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
 libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option::<()>>;
@@ -364,7 +345,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 disable_ap_tracking() -> (); // 0
 get_builtin_costs() -> ([4]); // 1
 store_temp<BuiltinCosts>([4]) -> ([4]); // 2
-withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 38([7], [8]) }; // 3
+withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 33([7], [8]) }; // 3
 branch_align() -> (); // 4
 felt252_const<1>() -> ([9]); // 5
 felt252_const<1>() -> ([10]); // 6
@@ -388,26 +369,21 @@ bitwise([15], [19], [20]) -> ([21], [22], [23], [24]); // 23
 drop<u128>([22]) -> (); // 24
 drop<u128>([23]) -> (); // 25
 drop<u128>([24]) -> (); // 26
-store_temp<RangeCheck>([5]) -> ([25]); // 27
-store_temp<GasBuiltin>([6]) -> ([26]); // 28
-store_temp<Bitwise>([21]) -> ([27]); // 29
-store_temp<Pedersen>([11]) -> ([28]); // 30
-function_call<user@test::foo>([25], [26], [27], [28]) -> ([29], [30], [31], [32], [33]); // 31
-rename<RangeCheck>([29]) -> ([34]); // 32
-rename<GasBuiltin>([30]) -> ([35]); // 33
-rename<Bitwise>([31]) -> ([36]); // 34
-rename<Pedersen>([32]) -> ([37]); // 35
-rename<core::option::Option::<()>>([33]) -> ([38]); // 36
-return([34], [35], [36], [37], [38]); // 37
-branch_align() -> (); // 38
-struct_construct<Unit>() -> ([39]); // 39
-enum_init<core::option::Option::<()>, 1>([39]) -> ([40]); // 40
-store_temp<RangeCheck>([7]) -> ([41]); // 41
-store_temp<GasBuiltin>([8]) -> ([42]); // 42
-store_temp<Bitwise>([2]) -> ([43]); // 43
-store_temp<Pedersen>([3]) -> ([44]); // 44
-store_temp<core::option::Option::<()>>([40]) -> ([45]); // 45
-return([41], [42], [43], [44], [45]); // 46
+store_temp<RangeCheck>([5]) -> ([5]); // 27
+store_temp<GasBuiltin>([6]) -> ([6]); // 28
+store_temp<Bitwise>([21]) -> ([21]); // 29
+store_temp<Pedersen>([11]) -> ([11]); // 30
+function_call<user@test::foo>([5], [6], [21], [11]) -> ([25], [26], [27], [28], [29]); // 31
+return([25], [26], [27], [28], [29]); // 32
+branch_align() -> (); // 33
+struct_construct<Unit>() -> ([30]); // 34
+enum_init<core::option::Option::<()>, 1>([30]) -> ([31]); // 35
+store_temp<RangeCheck>([7]) -> ([7]); // 36
+store_temp<GasBuiltin>([8]) -> ([8]); // 37
+store_temp<Bitwise>([2]) -> ([2]); // 38
+store_temp<Pedersen>([3]) -> ([3]); // 39
+store_temp<core::option::Option::<()>>([31]) -> ([31]); // 40
+return([7], [8], [2], [3], [31]); // 41
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen) -> (RangeCheck, GasBuiltin, Bitwise, Pedersen, core::option::Option::<()>);
 
@@ -461,9 +437,6 @@ libfunc store_temp<RangeCheck> = store_temp<RangeCheck>;
 libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
@@ -471,24 +444,21 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> (); // 0
 dup<BuiltinCosts>([2]) -> ([2], [3]); // 1
-withdraw_gas_all([0], [1], [3]) { fallthrough([4], [5]) 12([6], [7]) }; // 2
+withdraw_gas_all([0], [1], [3]) { fallthrough([4], [5]) 9([6], [7]) }; // 2
 branch_align() -> (); // 3
-store_temp<RangeCheck>([4]) -> ([8]); // 4
-store_temp<GasBuiltin>([5]) -> ([9]); // 5
-store_temp<BuiltinCosts>([2]) -> ([10]); // 6
-function_call<user@test::foo>([8], [9], [10]) -> ([11], [12], [13]); // 7
-rename<RangeCheck>([11]) -> ([14]); // 8
-rename<GasBuiltin>([12]) -> ([15]); // 9
-rename<core::option::Option::<()>>([13]) -> ([16]); // 10
-return([14], [15], [16]); // 11
-branch_align() -> (); // 12
-drop<BuiltinCosts>([2]) -> (); // 13
-struct_construct<Unit>() -> ([17]); // 14
-enum_init<core::option::Option::<()>, 1>([17]) -> ([18]); // 15
-store_temp<RangeCheck>([6]) -> ([19]); // 16
-store_temp<GasBuiltin>([7]) -> ([20]); // 17
-store_temp<core::option::Option::<()>>([18]) -> ([21]); // 18
-return([19], [20], [21]); // 19
+store_temp<RangeCheck>([4]) -> ([4]); // 4
+store_temp<GasBuiltin>([5]) -> ([5]); // 5
+store_temp<BuiltinCosts>([2]) -> ([2]); // 6
+function_call<user@test::foo>([4], [5], [2]) -> ([8], [9], [10]); // 7
+return([8], [9], [10]); // 8
+branch_align() -> (); // 9
+drop<BuiltinCosts>([2]) -> (); // 10
+struct_construct<Unit>() -> ([11]); // 11
+enum_init<core::option::Option::<()>, 1>([11]) -> ([12]); // 12
+store_temp<RangeCheck>([6]) -> ([6]); // 13
+store_temp<GasBuiltin>([7]) -> ([7]); // 14
+store_temp<core::option::Option::<()>>([12]) -> ([12]); // 15
+return([6], [7], [12]); // 16
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: BuiltinCosts) -> (RangeCheck, GasBuiltin, core::option::Option::<()>);
 
@@ -558,10 +528,6 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<Pedersen> = rename<Pedersen>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
@@ -569,7 +535,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> (); // 0
 dup<BuiltinCosts>([3]) -> ([3], [4]); // 1
-withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 20([7], [8]) }; // 2
+withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 16([7], [8]) }; // 2
 branch_align() -> (); // 3
 felt252_const<1>() -> ([9]); // 4
 felt252_const<1>() -> ([10]); // 5
@@ -577,25 +543,21 @@ store_temp<felt252>([9]) -> ([9]); // 6
 store_temp<felt252>([10]) -> ([10]); // 7
 pedersen([2], [9], [10]) -> ([11], [12]); // 8
 drop<felt252>([12]) -> (); // 9
-store_temp<RangeCheck>([5]) -> ([13]); // 10
-store_temp<GasBuiltin>([6]) -> ([14]); // 11
-store_temp<Pedersen>([11]) -> ([15]); // 12
-store_temp<BuiltinCosts>([3]) -> ([16]); // 13
-function_call<user@test::foo>([13], [14], [15], [16]) -> ([17], [18], [19], [20]); // 14
-rename<RangeCheck>([17]) -> ([21]); // 15
-rename<GasBuiltin>([18]) -> ([22]); // 16
-rename<Pedersen>([19]) -> ([23]); // 17
-rename<core::option::Option::<()>>([20]) -> ([24]); // 18
-return([21], [22], [23], [24]); // 19
-branch_align() -> (); // 20
-drop<BuiltinCosts>([3]) -> (); // 21
-struct_construct<Unit>() -> ([25]); // 22
-enum_init<core::option::Option::<()>, 1>([25]) -> ([26]); // 23
-store_temp<RangeCheck>([7]) -> ([27]); // 24
-store_temp<GasBuiltin>([8]) -> ([28]); // 25
-store_temp<Pedersen>([2]) -> ([29]); // 26
-store_temp<core::option::Option::<()>>([26]) -> ([30]); // 27
-return([27], [28], [29], [30]); // 28
+store_temp<RangeCheck>([5]) -> ([5]); // 10
+store_temp<GasBuiltin>([6]) -> ([6]); // 11
+store_temp<Pedersen>([11]) -> ([11]); // 12
+store_temp<BuiltinCosts>([3]) -> ([3]); // 13
+function_call<user@test::foo>([5], [6], [11], [3]) -> ([13], [14], [15], [16]); // 14
+return([13], [14], [15], [16]); // 15
+branch_align() -> (); // 16
+drop<BuiltinCosts>([3]) -> (); // 17
+struct_construct<Unit>() -> ([17]); // 18
+enum_init<core::option::Option::<()>, 1>([17]) -> ([18]); // 19
+store_temp<RangeCheck>([7]) -> ([7]); // 20
+store_temp<GasBuiltin>([8]) -> ([8]); // 21
+store_temp<Pedersen>([2]) -> ([2]); // 22
+store_temp<core::option::Option::<()>>([18]) -> ([18]); // 23
+return([7], [8], [2], [18]); // 24
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Pedersen, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Pedersen, core::option::Option::<()>);
 
@@ -665,10 +627,6 @@ libfunc store_temp<GasBuiltin> = store_temp<GasBuiltin>;
 libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<Bitwise> = rename<Bitwise>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
@@ -676,7 +634,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> (); // 0
 dup<BuiltinCosts>([3]) -> ([3], [4]); // 1
-withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 22([7], [8]) }; // 2
+withdraw_gas_all([0], [1], [4]) { fallthrough([5], [6]) 18([7], [8]) }; // 2
 branch_align() -> (); // 3
 u128_const<1>() -> ([9]); // 4
 u128_const<1>() -> ([10]); // 5
@@ -686,25 +644,21 @@ bitwise([2], [9], [10]) -> ([11], [12], [13], [14]); // 8
 drop<u128>([12]) -> (); // 9
 drop<u128>([13]) -> (); // 10
 drop<u128>([14]) -> (); // 11
-store_temp<RangeCheck>([5]) -> ([15]); // 12
-store_temp<GasBuiltin>([6]) -> ([16]); // 13
-store_temp<Bitwise>([11]) -> ([17]); // 14
-store_temp<BuiltinCosts>([3]) -> ([18]); // 15
-function_call<user@test::foo>([15], [16], [17], [18]) -> ([19], [20], [21], [22]); // 16
-rename<RangeCheck>([19]) -> ([23]); // 17
-rename<GasBuiltin>([20]) -> ([24]); // 18
-rename<Bitwise>([21]) -> ([25]); // 19
-rename<core::option::Option::<()>>([22]) -> ([26]); // 20
-return([23], [24], [25], [26]); // 21
-branch_align() -> (); // 22
-drop<BuiltinCosts>([3]) -> (); // 23
-struct_construct<Unit>() -> ([27]); // 24
-enum_init<core::option::Option::<()>, 1>([27]) -> ([28]); // 25
-store_temp<RangeCheck>([7]) -> ([29]); // 26
-store_temp<GasBuiltin>([8]) -> ([30]); // 27
-store_temp<Bitwise>([2]) -> ([31]); // 28
-store_temp<core::option::Option::<()>>([28]) -> ([32]); // 29
-return([29], [30], [31], [32]); // 30
+store_temp<RangeCheck>([5]) -> ([5]); // 12
+store_temp<GasBuiltin>([6]) -> ([6]); // 13
+store_temp<Bitwise>([11]) -> ([11]); // 14
+store_temp<BuiltinCosts>([3]) -> ([3]); // 15
+function_call<user@test::foo>([5], [6], [11], [3]) -> ([15], [16], [17], [18]); // 16
+return([15], [16], [17], [18]); // 17
+branch_align() -> (); // 18
+drop<BuiltinCosts>([3]) -> (); // 19
+struct_construct<Unit>() -> ([19]); // 20
+enum_init<core::option::Option::<()>, 1>([19]) -> ([20]); // 21
+store_temp<RangeCheck>([7]) -> ([7]); // 22
+store_temp<GasBuiltin>([8]) -> ([8]); // 23
+store_temp<Bitwise>([2]) -> ([2]); // 24
+store_temp<core::option::Option::<()>>([20]) -> ([20]); // 25
+return([7], [8], [2], [20]); // 26
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Bitwise, core::option::Option::<()>);
 
@@ -790,11 +744,6 @@ libfunc store_temp<Bitwise> = store_temp<Bitwise>;
 libfunc store_temp<Pedersen> = store_temp<Pedersen>;
 libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 libfunc function_call<user@test::foo> = function_call<user@test::foo>;
-libfunc rename<RangeCheck> = rename<RangeCheck>;
-libfunc rename<GasBuiltin> = rename<GasBuiltin>;
-libfunc rename<Bitwise> = rename<Bitwise>;
-libfunc rename<Pedersen> = rename<Pedersen>;
-libfunc rename<core::option::Option::<()>> = rename<core::option::Option::<()>>;
 libfunc drop<BuiltinCosts> = drop<BuiltinCosts>;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc enum_init<core::option::Option::<()>, 1> = enum_init<core::option::Option::<()>, 1>;
@@ -802,7 +751,7 @@ libfunc store_temp<core::option::Option::<()>> = store_temp<core::option::Option
 
 disable_ap_tracking() -> (); // 0
 dup<BuiltinCosts>([4]) -> ([4], [5]); // 1
-withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 30([8], [9]) }; // 2
+withdraw_gas_all([0], [1], [5]) { fallthrough([6], [7]) 25([8], [9]) }; // 2
 branch_align() -> (); // 3
 felt252_const<1>() -> ([10]); // 4
 felt252_const<1>() -> ([11]); // 5
@@ -818,27 +767,22 @@ bitwise([2], [14], [15]) -> ([16], [17], [18], [19]); // 14
 drop<u128>([17]) -> (); // 15
 drop<u128>([18]) -> (); // 16
 drop<u128>([19]) -> (); // 17
-store_temp<RangeCheck>([6]) -> ([20]); // 18
-store_temp<GasBuiltin>([7]) -> ([21]); // 19
-store_temp<Bitwise>([16]) -> ([22]); // 20
-store_temp<Pedersen>([12]) -> ([23]); // 21
-store_temp<BuiltinCosts>([4]) -> ([24]); // 22
-function_call<user@test::foo>([20], [21], [22], [23], [24]) -> ([25], [26], [27], [28], [29]); // 23
-rename<RangeCheck>([25]) -> ([30]); // 24
-rename<GasBuiltin>([26]) -> ([31]); // 25
-rename<Bitwise>([27]) -> ([32]); // 26
-rename<Pedersen>([28]) -> ([33]); // 27
-rename<core::option::Option::<()>>([29]) -> ([34]); // 28
-return([30], [31], [32], [33], [34]); // 29
-branch_align() -> (); // 30
-drop<BuiltinCosts>([4]) -> (); // 31
-struct_construct<Unit>() -> ([35]); // 32
-enum_init<core::option::Option::<()>, 1>([35]) -> ([36]); // 33
-store_temp<RangeCheck>([8]) -> ([37]); // 34
-store_temp<GasBuiltin>([9]) -> ([38]); // 35
-store_temp<Bitwise>([2]) -> ([39]); // 36
-store_temp<Pedersen>([3]) -> ([40]); // 37
-store_temp<core::option::Option::<()>>([36]) -> ([41]); // 38
-return([37], [38], [39], [40], [41]); // 39
+store_temp<RangeCheck>([6]) -> ([6]); // 18
+store_temp<GasBuiltin>([7]) -> ([7]); // 19
+store_temp<Bitwise>([16]) -> ([16]); // 20
+store_temp<Pedersen>([12]) -> ([12]); // 21
+store_temp<BuiltinCosts>([4]) -> ([4]); // 22
+function_call<user@test::foo>([6], [7], [16], [12], [4]) -> ([20], [21], [22], [23], [24]); // 23
+return([20], [21], [22], [23], [24]); // 24
+branch_align() -> (); // 25
+drop<BuiltinCosts>([4]) -> (); // 26
+struct_construct<Unit>() -> ([25]); // 27
+enum_init<core::option::Option::<()>, 1>([25]) -> ([26]); // 28
+store_temp<RangeCheck>([8]) -> ([8]); // 29
+store_temp<GasBuiltin>([9]) -> ([9]); // 30
+store_temp<Bitwise>([2]) -> ([2]); // 31
+store_temp<Pedersen>([3]) -> ([3]); // 32
+store_temp<core::option::Option::<()>>([26]) -> ([26]); // 33
+return([8], [9], [2], [3], [26]); // 34
 
 test::foo@0([0]: RangeCheck, [1]: GasBuiltin, [2]: Bitwise, [3]: Pedersen, [4]: BuiltinCosts) -> (RangeCheck, GasBuiltin, Bitwise, Pedersen, core::option::Option::<()>);

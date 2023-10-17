@@ -32,7 +32,7 @@ libfunc store_temp<BuiltinCosts> = store_temp<BuiltinCosts>;
 get_builtin_costs() -> ([0]); // 0
 get_builtin_costs() -> ([1]); // 1
 drop<BuiltinCosts>([1]) -> (); // 2
-store_temp<BuiltinCosts>([0]) -> ([2]); // 3
-return([2]); // 4
+store_temp<BuiltinCosts>([0]) -> ([0]); // 3
+return([0]); // 4
 
 test::foo@0() -> (BuiltinCosts);

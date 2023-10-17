@@ -57,6 +57,5 @@ branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
 store_temp<felt252>([0]) -> ([9])
 label_test::foo::6:
-rename<felt252>([9]) -> ([10])
-return([10])
+return([9])
 label_test::foo::2:
