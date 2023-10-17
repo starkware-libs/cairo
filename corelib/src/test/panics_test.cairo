@@ -64,14 +64,14 @@ fn test_panic_with_byte_array_null_in_beginning() {
 }
 
 #[test]
-#[should_panic(expected: ("error", 3, "hello", 5, 'short_string'))]
+#[should_panic(expected: ("error", 11, "hello", 5, 'short_string'))]
 fn test_panic_with_stacked_errors() {
     let mut error = array![];
     let ba: ByteArray = "error";
     error.append(BYTE_ARRAY_PANIC_MAGIC);
     ba.serialize(ref error);
 
-    error.append(3);
+    error.append(11);
 
     let ba: ByteArray = "hello";
     error.append(BYTE_ARRAY_PANIC_MAGIC);
