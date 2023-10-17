@@ -111,6 +111,7 @@ pub struct PushValue {
     /// The variable id to push.
     pub var: sierra::ids::VarId,
     /// The variable id on the stack (e.g., the result of `store_temp()`).
+    /// If `dup` is true, this variable cannot be `var`.
     pub var_on_stack: sierra::ids::VarId,
     /// The type of the variable.
     pub ty: ConcreteTypeId,

@@ -32,12 +32,12 @@ dup<felt252>([0]) -> ([0], [1])
 store_temp<felt252>([1]) -> ([1])
 function_call<user@test::bar>([1]) -> ([2])
 drop<Unit>([2]) -> ()
-store_temp<felt252>([0]) -> ([3])
-function_call<user@test::bar>([3]) -> ([4])
-drop<Unit>([4]) -> ()
-struct_construct<Unit>() -> ([5])
-store_temp<Unit>([5]) -> ([6])
-return([6])
+store_temp<felt252>([0]) -> ([0])
+function_call<user@test::bar>([0]) -> ([3])
+drop<Unit>([3]) -> ()
+struct_construct<Unit>() -> ([4])
+store_temp<Unit>([4]) -> ([4])
+return([4])
 
 //! > comment
 When fixing this test, Make sure that the added dups are on the const, and not the temps.

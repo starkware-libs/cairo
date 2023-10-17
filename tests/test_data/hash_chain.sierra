@@ -22,20 +22,20 @@ felt252_is_zero([2]) { fallthrough() 9([3]) }; // 2
 branch_align() -> (); // 3
 drop<felt252>([1]) -> (); // 4
 felt252_const<0>() -> ([4]); // 5
-store_temp<Pedersen>([0]) -> ([5]); // 6
-store_temp<felt252>([4]) -> ([6]); // 7
-return([5], [6]); // 8
+store_temp<Pedersen>([0]) -> ([0]); // 6
+store_temp<felt252>([4]) -> ([4]); // 7
+return([0], [4]); // 8
 branch_align() -> (); // 9
 drop<NonZero<felt252>>([3]) -> (); // 10
-felt252_const<1>() -> ([7]); // 11
-dup<felt252>([1]) -> ([1], [8]); // 12
-felt252_sub([8], [7]) -> ([9]); // 13
-store_temp<Pedersen>([0]) -> ([10]); // 14
-store_temp<felt252>([9]) -> ([11]); // 15
-function_call<user@examples::hash_chain::hash_chain>([10], [11]) -> ([12], [13]); // 16
-pedersen([12], [13], [1]) -> ([14], [15]); // 17
-store_temp<Pedersen>([14]) -> ([16]); // 18
-store_temp<felt252>([15]) -> ([17]); // 19
-return([16], [17]); // 20
+felt252_const<1>() -> ([5]); // 11
+dup<felt252>([1]) -> ([1], [6]); // 12
+felt252_sub([6], [5]) -> ([7]); // 13
+store_temp<Pedersen>([0]) -> ([0]); // 14
+store_temp<felt252>([7]) -> ([7]); // 15
+function_call<user@examples::hash_chain::hash_chain>([0], [7]) -> ([8], [9]); // 16
+pedersen([8], [9], [1]) -> ([10], [11]); // 17
+store_temp<Pedersen>([10]) -> ([10]); // 18
+store_temp<felt252>([11]) -> ([11]); // 19
+return([10], [11]); // 20
 
 examples::hash_chain::hash_chain@0([0]: Pedersen, [1]: felt252) -> (Pedersen, felt252);

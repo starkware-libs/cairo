@@ -45,12 +45,11 @@ felt252_const<1>() -> ([12]); // 20
 felt252_sub([3], [12]) -> ([13]); // 21
 store_temp<felt252>([13]) -> ([13]); // 22
 into_box<felt252>([13]) -> ([14]); // 23
-store_temp<Box<felt252>>([1]) -> ([15]); // 24
-store_temp<Box<felt252>>([11]) -> ([16]); // 25
-store_temp<Box<felt252>>([14]) -> ([17]); // 26
-function_call<user@examples::fib_box::fib>([15], [16], [17]) -> ([18]); // 27
-rename<Box<felt252>>([18]) -> ([6]); // 28
-rename<Box<felt252>>([6]) -> ([19]); // 29
-return([19]); // 30
+store_temp<Box<felt252>>([1]) -> ([1]); // 24
+store_temp<Box<felt252>>([11]) -> ([11]); // 25
+store_temp<Box<felt252>>([14]) -> ([14]); // 26
+function_call<user@examples::fib_box::fib>([1], [11], [14]) -> ([15]); // 27
+rename<Box<felt252>>([15]) -> ([6]); // 28
+return([6]); // 29
 
 examples::fib_box::fib@0([0]: Box<felt252>, [1]: Box<felt252>, [2]: Box<felt252>) -> (Box<felt252>);

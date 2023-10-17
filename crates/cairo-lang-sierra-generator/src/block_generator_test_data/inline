@@ -102,6 +102,6 @@ branch_align() -> ()
 drop<NonZero<felt252>>([4]) -> ()
 PushValues([1]: felt252) -> ([9])
 label_test::foo::5:
-PushValues([9]: felt252) -> ([10])
-return([10])
+PushValues([9]: felt252) -> ([9])
+return([9])
 label_test::foo::1:
