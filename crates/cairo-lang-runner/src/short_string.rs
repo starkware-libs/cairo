@@ -7,7 +7,7 @@ pub fn as_cairo_short_string(value: &Felt252) -> Option<String> {
     for byte in value.to_bytes_be() {
         if byte == 0 {
             is_end = true;
-        } else if is_end || !byte.is_ascii() {
+        } else if is_end || !byte.is_ascii_graphic() {
             return None;
         } else {
             as_string.push(byte as char);
@@ -23,7 +23,7 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
         return Some("".to_string());
     }
     if length > 31 {
-        // A short string can't be longer than 31 bytes
+        // A short string can't be longer than 31 bytes.
         return None;
     }
 
@@ -38,7 +38,7 @@ pub fn as_cairo_short_string_ex(value: &Felt252, length: usize) -> Option<String
     for byte in bytes {
         if byte == 0 {
             as_string.push_str(r"\0");
-        } else if byte.is_ascii() {
+        } else if byte.is_ascii_graphic() {
             as_string.push(byte as char);
         } else {
             return None;
