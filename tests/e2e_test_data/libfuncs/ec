@@ -410,13 +410,11 @@ type NonZero<EcPoint> = NonZero<EcPoint> [storable: true, drop: true, dup: true,
 libfunc ec_state_add = ec_state_add;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<EcState> = store_temp<EcState>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
 ec_state_add([0], [1]) -> ([2]); // 0
 struct_construct<Unit>() -> ([3]); // 1
 store_temp<EcState>([2]) -> ([2]); // 2
-store_temp<Unit>([3]) -> ([3]); // 3
-return([2], [3]); // 4
+return([2], [3]); // 3
 
 test::foo@0([0]: EcState, [1]: NonZero<EcPoint>) -> (EcState, Unit);
 
@@ -531,13 +529,11 @@ libfunc ec_state_add_mul = ec_state_add_mul;
 libfunc struct_construct<Unit> = struct_construct<Unit>;
 libfunc store_temp<EcOp> = store_temp<EcOp>;
 libfunc store_temp<EcState> = store_temp<EcState>;
-libfunc store_temp<Unit> = store_temp<Unit>;
 
 ec_state_add_mul([0], [1], [2], [3]) -> ([4], [5]); // 0
 struct_construct<Unit>() -> ([6]); // 1
 store_temp<EcOp>([4]) -> ([4]); // 2
 store_temp<EcState>([5]) -> ([5]); // 3
-store_temp<Unit>([6]) -> ([6]); // 4
-return([4], [5], [6]); // 5
+return([4], [5], [6]); // 4
 
 test::foo@0([0]: EcOp, [1]: EcState, [2]: felt252, [3]: NonZero<EcPoint>) -> (EcOp, EcState, Unit);

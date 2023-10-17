@@ -44,6 +44,5 @@ label_test::foo::3:
 function_call<user@test::immovable::<(core::felt252, core::felt252)>>([5]) -> ([8])
 drop<Tuple<felt252, felt252>>([8]) -> ()
 struct_construct<Unit>() -> ([9])
-store_temp<Unit>([9]) -> ([9])
 return([9])
 label_test::foo::2:
