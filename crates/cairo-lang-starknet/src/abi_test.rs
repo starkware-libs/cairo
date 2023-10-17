@@ -9,6 +9,7 @@ use cairo_lang_test_utils::{get_direct_or_file_content, verify_diagnostics_expec
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 
 use crate::abi::AbiBuilder;
+use crate::inline_macros::dep_component::{DepComponentMacro, DepComponentMutMacro};
 use crate::inline_macros::selector::SelectorMacro;
 use crate::plugin::StarkNetPlugin;
 
@@ -21,6 +22,8 @@ pub fn test_abi_failure(
         .detect_corelib()
         .with_macro_plugin(Arc::new(StarkNetPlugin::default()))
         .with_inline_macro_plugin(SelectorMacro::NAME, Arc::new(SelectorMacro))
+        .with_inline_macro_plugin(DepComponentMacro::NAME, Arc::new(DepComponentMacro))
+        .with_inline_macro_plugin(DepComponentMutMacro::NAME, Arc::new(DepComponentMutMacro))
         .build()
         .unwrap();
     let (_, cairo_code) = get_direct_or_file_content(&inputs["cairo_code"]);
