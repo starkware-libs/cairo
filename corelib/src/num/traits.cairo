@@ -2,7 +2,6 @@
 
 trait Zero<T> {
     /// Returns the multiplicative identity element of Self, 0.
-    #[inline(always)]
     fn zero() -> T;
     /// Returns whether self is equal to 0, the multiplicative identity element.
     fn is_zero(self: @T) -> bool;
@@ -11,7 +10,6 @@ trait Zero<T> {
 }
 
 impl Felt252Zero of Zero<felt252> {
-    #[inline(always)]
     fn zero() -> felt252 {
         0
     }
@@ -29,7 +27,6 @@ impl Felt252Zero of Zero<felt252> {
 
 
 impl U8Zero of Zero<u8> {
-    #[inline(always)]
     fn zero() -> u8 {
         0
     }
@@ -44,7 +41,6 @@ impl U8Zero of Zero<u8> {
 }
 
 impl U16Zero of Zero<u16> {
-    #[inline(always)]
     fn zero() -> u16 {
         0
     }
@@ -59,7 +55,6 @@ impl U16Zero of Zero<u16> {
 }
 
 impl U32Zero of Zero<u32> {
-    #[inline(always)]
     fn zero() -> u32 {
         0
     }
@@ -74,7 +69,6 @@ impl U32Zero of Zero<u32> {
 }
 
 impl U64Zero of Zero<u64> {
-    #[inline(always)]
     fn zero() -> u64 {
         0
     }
@@ -89,7 +83,6 @@ impl U64Zero of Zero<u64> {
 }
 
 impl U128Zero of Zero<u128> {
-    #[inline(always)]
     fn zero() -> u128 {
         0
     }
@@ -104,7 +97,6 @@ impl U128Zero of Zero<u128> {
 }
 
 impl U256Zero of Zero<u256> {
-    #[inline(always)]
     fn zero() -> u256 {
         0
     }
@@ -119,7 +111,6 @@ impl U256Zero of Zero<u256> {
 }
 
 impl I8Zero of Zero<i8> {
-    #[inline(always)]
     fn zero() -> i8 {
         0
     }
@@ -134,7 +125,6 @@ impl I8Zero of Zero<i8> {
 }
 
 impl I16Zero of Zero<i16> {
-    #[inline(always)]
     fn zero() -> i16 {
         0
     }
@@ -149,7 +139,6 @@ impl I16Zero of Zero<i16> {
 }
 
 impl I32Zero of Zero<i32> {
-    #[inline(always)]
     fn zero() -> i32 {
         0
     }
@@ -164,7 +153,6 @@ impl I32Zero of Zero<i32> {
 }
 
 impl I64Zero of Zero<i64> {
-    #[inline(always)]
     fn zero() -> i64 {
         0
     }
@@ -179,7 +167,6 @@ impl I64Zero of Zero<i64> {
 }
 
 impl I128Zero of Zero<i128> {
-    #[inline(always)]
     fn zero() -> i128 {
         0
     }
@@ -203,7 +190,6 @@ trait One<T> {
 }
 
 impl Felt252One of One<felt252> {
-    #[inline(always)]
     fn one() -> felt252 {
         1
     }
@@ -220,7 +206,6 @@ impl Felt252One of One<felt252> {
 }
 
 impl U8One of One<u8> {
-    #[inline(always)]
     fn one() -> u8 {
         1
     }
@@ -235,7 +220,6 @@ impl U8One of One<u8> {
 }
 
 impl U16One of One<u16> {
-    #[inline(always)]
     fn one() -> u16 {
         1
     }
@@ -250,7 +234,6 @@ impl U16One of One<u16> {
 }
 
 impl U32One of One<u32> {
-    #[inline(always)]
     fn one() -> u32 {
         1
     }
@@ -265,7 +248,6 @@ impl U32One of One<u32> {
 }
 
 impl U64One of One<u64> {
-    #[inline(always)]
     fn one() -> u64 {
         1
     }
@@ -280,7 +262,6 @@ impl U64One of One<u64> {
 }
 
 impl U128One of One<u128> {
-    #[inline(always)]
     fn one() -> u128 {
         1
     }
@@ -295,7 +276,6 @@ impl U128One of One<u128> {
 }
 
 impl U256One of One<u256> {
-    #[inline(always)]
     fn one() -> u256 {
         1
     }
@@ -310,7 +290,6 @@ impl U256One of One<u256> {
 }
 
 impl I8One of One<i8> {
-    #[inline(always)]
     fn one() -> i8 {
         1
     }
@@ -327,7 +306,6 @@ impl I8One of One<i8> {
 }
 
 impl I16One of One<i16> {
-    #[inline(always)]
     fn one() -> i16 {
         1
     }
@@ -344,7 +322,6 @@ impl I16One of One<i16> {
 }
 
 impl I32One of One<i32> {
-    #[inline(always)]
     fn one() -> i32 {
         1
     }
@@ -361,7 +338,6 @@ impl I32One of One<i32> {
 }
 
 impl I64One of One<i64> {
-    #[inline(always)]
     fn one() -> i64 {
         1
     }
@@ -378,7 +354,6 @@ impl I64One of One<i64> {
 }
 
 impl I128One of One<i128> {
-    #[inline(always)]
     fn one() -> i128 {
         1
     }
