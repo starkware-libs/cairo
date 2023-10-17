@@ -21,7 +21,7 @@ pub fn as_cairo_short_string_ex(value: &Felt252, expected_length: Option<usize>)
             } else {
                 is_end = true;
             }
-        } else if is_end || !byte.is_ascii() {
+        } else if is_end || !byte.is_ascii_graphic() {
             return None;
         } else {
             as_string.push(byte as char);
