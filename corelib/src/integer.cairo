@@ -4,6 +4,7 @@ use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use array::ArrayTrait;
 use array::SpanTrait;
+use num::traits::{Zero, One};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
