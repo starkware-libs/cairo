@@ -14,6 +14,7 @@ use cairo_lang_utils::extract_matches;
 use cairo_lang_utils::ordered_hash_map::OrderedHashMap;
 use itertools::zip_eq;
 use sierra::extensions::function_call::FunctionCallLibfunc;
+use sierra::extensions::structure::StructDeconstructLibfunc;
 use sierra::extensions::NamedLibfunc;
 use state::{
     merge_optional_states, DeferredVariableInfo, DeferredVariableKind, VarState, VariablesState,
@@ -106,19 +107,56 @@ impl<'a> AddStoreVariableStatements<'a> {
         let mut state_opt = state_opt;
         match &statement {
             pre_sierra::Statement::Sierra(GenStatement::Invocation(invocation)) => {
-                let libfunc_info = get_lib_func_signature(invocation.libfunc_id.clone());
+                let libfunc_id = invocation.libfunc_id.clone();
+                let libfunc_info = get_lib_func_signature(libfunc_id.clone());
                 let signature = libfunc_info.signature;
                 let state = &mut state_opt.unwrap_or_default();
 
-                let libfunc_long_id =
-                    self.db.lookup_intern_concrete_lib_func(invocation.libfunc_id.clone());
-
+                let libfunc_long_id = self.db.lookup_intern_concrete_lib_func(libfunc_id.clone());
                 let arg_states = match libfunc_long_id.generic_id.0.as_str() {
                     FunctionCallLibfunc::STR_ID => {
                         // The arguments were already stored using `push_values`.
                         // Avoid calling `prepare_libfunc_arguments` as it might copy the
                         // arguments to a local variables.
                         invocation.args.iter().map(|var| state.pop_var_state(var)).collect()
+                    }
+                    StructDeconstructLibfunc::STR_ID => {
+                        let arg = &invocation.args[0];
+                        let var_state = state.pop_var_state(arg);
+
+                        let results = &invocation.branches[0].results;
+
+                        for (output, output_info) in
+                            zip_eq(results, &signature.branch_signatures[0].vars)
+                        {
+                            state.variables.insert(
+                                output.clone(),
+                                if self.db.get_type_info(output_info.ty.clone()).unwrap().zero_sized
+                                {
+                                    VarState::ZeroSizedVar
+                                } else {
+                                    match var_state {
+                                        VarState::TempVar { .. } => {
+                                            VarState::TempVar { ty: output_info.ty.clone() }
+                                        }
+                                        VarState::Deferred {
+                                            info: DeferredVariableInfo { kind, .. },
+                                        } => VarState::Deferred {
+                                            info: DeferredVariableInfo {
+                                                kind,
+                                                ty: output_info.ty.clone(),
+                                            },
+                                        },
+                                        VarState::LocalVar => VarState::LocalVar,
+                                        VarState::ZeroSizedVar => VarState::ZeroSizedVar,
+                                        VarState::Removed => unreachable!(),
+                                    }
+                                },
+                            );
+                        }
+                        state.known_stack.deconstruct_variable(arg, results);
+                        self.result.push(statement);
+                        return Some(std::mem::take(state));
                     }
                     _ => self.prepare_libfunc_arguments(
                         state,

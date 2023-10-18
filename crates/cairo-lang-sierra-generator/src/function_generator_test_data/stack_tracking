@@ -1,4 +1,4 @@
-//! > Test that accessing a member of a struct does not cause all the struct to be stored.
+//! > Test stack tracting
 
 //! > test_runner_name
 test_function_generator
@@ -30,7 +30,48 @@ fn test_func(a: u32, b: u32) {}
 label_test::foo::0:
 function_call<user@test::get_val>() -> ([0])
 struct_deconstruct<Tuple<u32, u32>>([0]) -> ([1], [2])
-store_temp<u32>([1]) -> ([1])
-store_temp<u32>([2]) -> ([2])
 function_call<user@test::test_func>([1], [2]) -> ([3])
 return([3])
+
+//! > ==========================================================================
+
+//! > Test that we lose track of the original stack item after `struct_deconstruct`.
+
+//! > test_runner_name
+test_function_generator
+
+//! > function
+fn foo() -> (felt252, felt252) {
+    let tuple = get_val();
+    let (a, b) = tuple;
+    // Call drop explicitly to avoid the `struct_deconstruct` above from being optimized out.
+    drop::<felt252>(b);
+    tuple
+}
+
+//! > function_name
+foo
+
+//! > module_code
+#[inline(never)]
+fn get_val() -> (felt252, felt252) {
+  (13, 17)
+}
+
+fn test_func(a: felt252, b: felt252) {}
+
+//! > semantic_diagnostics
+
+//! > lowering_diagnostics
+
+//! > sierra_gen_diagnostics
+
+//! > sierra_code
+label_test::foo::0:
+function_call<user@test::get_val>() -> ([0])
+dup<Tuple<felt252, felt252>>([0]) -> ([0], [1])
+struct_deconstruct<Tuple<felt252, felt252>>([1]) -> ([2], [3])
+drop<felt252>([2]) -> ()
+drop<felt252>([3]) -> ()
+store_temp<Tuple<felt252, felt252>>([0]) -> ([0])
+return([0])
