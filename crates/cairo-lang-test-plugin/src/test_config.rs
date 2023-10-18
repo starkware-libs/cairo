@@ -11,7 +11,9 @@ use serde::{Deserialize, Serialize};
 
 use super::{AVAILABLE_GAS_ATTR, IGNORE_ATTR, SHOULD_PANIC_ATTR, STATIC_GAS_ARG, TEST_ATTR};
 
-const BYTE_ARRAY_MAGIC: &str = "46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3";
+pub const BYTE_ARRAY_PANIC_MAGIC: &str =
+    "46a6158a16a947e5916b2a2ca68501a45e93d7110e81aa2d6438b1c57c879a3";
+pub const BYTES_IN_WORD: usize = 31;
 
 /// Expectation for a panic case.
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
@@ -109,8 +111,8 @@ pub fn try_extract_test_config(
         Some(TestConfig {
             available_gas,
             expectation: if should_panic {
-                TestExpectation::Panics(if let Some(values) = expected_panic_felts {
-                    PanicExpectation::Exact(values)
+                TestExpectation::Panics(if let Some(felts) = expected_panic_felts {
+                    PanicExpectation::Exact(felts)
                 } else {
                     PanicExpectation::Any
                 })
@@ -210,7 +212,7 @@ fn extract_string_panic_bytes(
     db: &dyn SyntaxGroup,
 ) -> Vec<Felt252> {
     let panic_string = panic_string.string_value(db).unwrap();
-    let chunks = panic_string.as_bytes().chunks_exact(31);
+    let chunks = panic_string.as_bytes().chunks_exact(BYTES_IN_WORD);
     let num_full_words = chunks.len().into();
     let remainder = chunks.remainder();
     let pending_word_len = remainder.len().into();
@@ -218,7 +220,7 @@ fn extract_string_panic_bytes(
     let pending_word = BigInt::from_bytes_be(Sign::Plus, remainder).into();
 
     chain!(
-        [felt_str!(BYTE_ARRAY_MAGIC, 16), num_full_words],
+        [felt_str!(BYTE_ARRAY_PANIC_MAGIC, 16), num_full_words],
         full_words.into_iter(),
         [pending_word, pending_word_len]
     )
