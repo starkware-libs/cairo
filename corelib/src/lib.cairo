@@ -298,9 +298,6 @@ use integer::{
 // Math.
 mod math;
 
-// Num.
-mod num;
-
 // Cmp.
 mod cmp;
 
