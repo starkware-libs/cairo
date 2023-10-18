@@ -8,4 +8,3 @@ trait One<T> {
     fn is_non_one(self: @T) -> bool;
 }
 
-
