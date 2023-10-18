@@ -17,6 +17,7 @@ impl NamedLibfunc for FunctionCallLibfunc {
         context: &dyn SignatureSpecializationContext,
         args: &[GenericArg],
     ) -> Result<LibfuncSignature, SpecializationError> {
+        let mut stack_idx = 0;
         match args {
             [GenericArg::UserFunc(function_id)] => {
                 let signature = context.get_function_signature(function_id)?;
@@ -26,12 +27,18 @@ impl NamedLibfunc for FunctionCallLibfunc {
                     signature
                         .ret_types
                         .iter()
-                        .enumerate()
-                        .map(|(i, ty)| OutputVarInfo {
-                            ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: i },
+                        .map(|ty| {
+                            Ok(OutputVarInfo {
+                                ty: ty.clone(),
+                                ref_info: if context.get_type_info(ty.clone())?.zero_sized {
+                                    OutputVarReferenceInfo::SimpleDerefs
+                                } else {
+                                    stack_idx += 1;
+                                    OutputVarReferenceInfo::NewTempVar { idx: stack_idx - 1 }
+                                },
+                            })
                         })
-                        .collect(),
+                        .collect::<Result<Vec<_>, _>>()?,
                     ap_change,
                 ))
             }
