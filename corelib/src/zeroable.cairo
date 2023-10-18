@@ -10,7 +10,7 @@ trait Zeroable<T> {
     fn is_non_zero(self: T) -> bool;
 }
 
-impl ZeroableImpl<T, +Zero<T>, +Drop<T>> of Zeroable<T> {
+impl TZeroableImpl<T, +Zero<T>, +Drop<T>, +Copy<T>> of Zeroable<T> {
     fn zero() -> T {
         Zero::zero()
     }

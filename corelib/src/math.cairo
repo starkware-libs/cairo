@@ -129,7 +129,7 @@ trait Oneable<T> {
     fn is_non_one(self: T) -> bool;
 }
 
-impl TOneableImpl<T, +One<T>, +Drop<T>> of Oneable<T> {
+impl TOneableImpl<T, +One<T>, +Drop<T>, +Copy<T>> of Oneable<T> {
     fn one() -> T {
         One::one()
     }
