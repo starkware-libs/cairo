@@ -377,9 +377,6 @@ use string::StringLiteral;
 // to_byte_array.
 mod to_byte_array;
 
-// Representation.
-mod bits_length;
-
 #[cfg(test)]
 mod test;
 

@@ -4,7 +4,7 @@ use traits::{Into, TryInto, Default, Felt252DictValue};
 use zeroable::{IsZeroResult, NonZeroIntoImpl, Zeroable};
 use array::ArrayTrait;
 use array::SpanTrait;
-use num::traits::{Zero, One};
+use num::traits::{Zero, One, BitSize};
 
 // TODO(spapini): Add method for const creation from Integer.
 trait NumericLiteral<T>;
@@ -260,6 +260,12 @@ impl U128BitNot of BitNot<u128> {
     }
 }
 
+impl U128BitSize of BitSize<u128> {
+    fn bits() -> usize {
+        128
+    }
+}
+
 extern fn u128_is_zero(a: u128) -> IsZeroResult<u128> implicits() nopanic;
 
 extern fn u128_byte_reverse(input: u128) -> u128 implicits(Bitwise) nopanic;
@@ -454,6 +460,12 @@ impl U8BitOr of BitOr<u8> {
     }
 }
 
+impl U8BitSize of BitSize<u8> {
+    fn bits() -> usize {
+        8
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type u16;
 impl NumericLiteralu16 of NumericLiteral<u16>;
@@ -641,6 +653,12 @@ impl U16BitOr of BitOr<u16> {
     fn bitor(lhs: u16, rhs: u16) -> u16 {
         let (_, _, v) = u16_bitwise(lhs, rhs);
         v
+    }
+}
+
+impl U16BitSize of BitSize<u16> {
+    fn bits() -> usize {
+        16
     }
 }
 
@@ -834,6 +852,12 @@ impl U32BitOr of BitOr<u32> {
     }
 }
 
+impl U32BitSize of BitSize<u32> {
+    fn bits() -> usize {
+        32
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type u64;
 impl NumericLiteralu64 of NumericLiteral<u64>;
@@ -1021,6 +1045,12 @@ impl U64BitOr of BitOr<u64> {
     fn bitor(lhs: u64, rhs: u64) -> u64 {
         let (_, _, v) = u64_bitwise(lhs, rhs);
         v
+    }
+}
+
+impl U64BitSize of BitSize<u64> {
+    fn bits() -> usize {
+        64
     }
 }
 
@@ -1262,6 +1292,12 @@ impl U256DivRem of DivRem<u256> {
 impl U256BitNot of BitNot<u256> {
     fn bitnot(a: u256) -> u256 {
         u256 { low: ~a.low, high: ~a.high }
+    }
+}
+
+impl U256BitSize of BitSize<u256> {
+    fn bits() -> usize {
+        256
     }
 }
 
@@ -1904,6 +1940,12 @@ impl I8PartialOrd of PartialOrd<i8> {
     }
 }
 
+impl I8BitSize of BitSize<i8> {
+    fn bits() -> usize {
+        8
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i16;
 impl NumericLiterali16 of NumericLiteral<i16>;
@@ -2002,6 +2044,12 @@ impl I16PartialOrd of PartialOrd<i16> {
     #[inline(always)]
     fn gt(lhs: i16, rhs: i16) -> bool {
         i16_diff(rhs, lhs).into_is_err()
+    }
+}
+
+impl I16BitSize of BitSize<i16> {
+    fn bits() -> usize {
+        16
     }
 }
 
@@ -2106,6 +2154,12 @@ impl I32PartialOrd of PartialOrd<i32> {
     }
 }
 
+impl I32BitSize of BitSize<i32> {
+    fn bits() -> usize {
+        32
+    }
+}
+
 #[derive(Copy, Drop)]
 extern type i64;
 impl NumericLiterali64 of NumericLiteral<i64>;
@@ -2204,6 +2258,12 @@ impl I64PartialOrd of PartialOrd<i64> {
     #[inline(always)]
     fn gt(lhs: i64, rhs: i64) -> bool {
         i64_diff(rhs, lhs).into_is_err()
+    }
+}
+
+impl I64BitSize of BitSize<i64> {
+    fn bits() -> usize {
+        64
     }
 }
 
@@ -2328,6 +2388,12 @@ impl U32Zeroable = zeroable::zero_based::ZeroableImpl<u32, integer::U32Zero>;
 impl U64Zeroable = zeroable::zero_based::ZeroableImpl<u64, integer::U64Zero>;
 impl U128Zeroable = zeroable::zero_based::ZeroableImpl<u128, integer::U128Zero>;
 impl U256Zeroable = zeroable::zero_based::ZeroableImpl<u256, integer::U256Zero>;
+
+impl I128BitSize of BitSize<i128> {
+    fn bits() -> usize {
+        128
+    }
+}
 
 // Zero trait implementations
 impl U8Zero of num::traits::Zero<u8> {
