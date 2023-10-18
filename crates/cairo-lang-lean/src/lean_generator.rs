@@ -1,5 +1,5 @@
 use std::{fs, iter};
-use std::cmp::min;
+use std::cmp::{min, max};
 use std::path::{Path, PathBuf};
 use cairo_lang_casm::cell_expression::{CellExpression, CellOperator};
 use itertools::Itertools;
@@ -30,6 +30,10 @@ pub fn lean_code_file_name(func_name: &str, with_suffix: bool) -> String {
     String::from(func_name) + "_code" + if with_suffix { ".lean" } else { "" }
 }
 
+pub fn lean_soundness_spec_file_name(func_name: &str, with_suffix: bool) -> String {
+    String::from(func_name) + "_soundness_spec" + if with_suffix { ".lean" } else { "" }
+}
+
 pub fn lean_soundness_file_name(func_name: &str, with_suffix: bool) -> String {
     String::from(func_name) + "_soundness" + if with_suffix { ".lean" } else { "" }
 }
@@ -53,6 +57,28 @@ fn make_subscript(idx: usize) -> String {
         idx /= 10;
     }
     res
+}
+
+/// This structure stores information about a single block in the function.
+/// A block must always begin at a label, except for the main block (which is
+/// the whole function).
+struct FuncBlock {
+    start_pos: usize,
+    casm_start_pos: usize,
+    pc_start_pos: usize,
+    ap_offset: usize,
+    label: Option<String>,
+    args: Vec<String>,
+}
+
+impl FuncBlock {
+    fn block_suffix(&self) -> String {
+        if let Some(label) = &self.label { format!("_{label}") } else { "".into() }
+    }
+
+    fn has_args(&self) -> bool {
+        0 < self.args.len()
+    }
 }
 
 struct RetArgs {
@@ -291,9 +317,10 @@ fn get_branch_id_pos(ret_blocks: &Vec<(usize, Option<usize>, bool)>) -> Option<u
 /// Rebinding information for variables.
 #[derive(Clone)]
 struct VarRebind {
-    /// Number of rebindings for each variable. 0 is for the first variable,
-    /// 1 for the bnext one, etc.
-    vars: HashMap<String, usize>,
+    /// The tuple stores the number of rebindings for each variable (0 for the first variable,
+    /// 1 for the next one, etc.) and the cell expression for the current rebinding of
+    /// the variable.
+    vars: HashMap<String, (usize, CellExpression)>,
 }
 
 impl VarRebind {
@@ -302,27 +329,35 @@ impl VarRebind {
     }
 
     pub fn get_var_name(&self, name: &str) -> String {
-        let count = self.vars.get(name).unwrap_or(&0);
-        if *count == 0 {
+        let count = if let Some(entry) = self.vars.get(name) { entry.0 } else { 0 };
+        if count == 0 {
             name.to_string()
         } else {
-            format!("{}{}", name, make_subscript(*count))
+            format!("{}{}", name, make_subscript(count))
+        }
+    }
+
+    pub fn get_expr(&self, name: &str) -> String {
+        if let Some(entry) = self.vars.get(name) {
+            cell_expr_to_lean(&entry.1, false)
+        } else {
+            "/- unknown -/".into()
         }
     }
 
     pub fn get_next_name(&self, name: &str) -> String {
-        let count = self.vars.get(name).unwrap_or(&0);
-        format!("{}{}", name, make_subscript(*count + 1))
+        let count = if let Some(entry) = self.vars.get(name) { entry.0 } else { 0 };
+        format!("{}{}", name, make_subscript(count + 1))
     }
 
-    pub fn rebind(&mut self, name: &str) -> usize {
-        *self.vars.entry(name.to_string())
-        .and_modify(|c| *c += 1)
-        .or_insert(0)
+    pub fn rebind(&mut self, name: &str, cell_expr: &CellExpression) -> usize {
+        self.vars.entry(name.to_string())
+        .and_modify(|e| { e.0 = e.0 + 1 ; e.1 = cell_expr.clone(); })
+        .or_insert((0, cell_expr.clone())).0
     }
 
-    pub fn get_rebind_name(&mut self, name: &str) -> String {
-        self.rebind(name);
+    pub fn get_rebind_name(&mut self, name: &str, cell_expr: &CellExpression) -> String {
+        self.rebind(name, cell_expr);
         self.get_var_name(name)
     }
 
@@ -337,6 +372,16 @@ impl VarRebind {
                 }
             })
             .join("")
+    }
+
+    /// Adds the given rebinds to the current rebinds as if the additional rebinds happened after
+    /// the rebinds already stored in this object.
+    pub fn add_rebinds(&mut self, rebind: &VarRebind) {
+        for (name, (count, cell_expr)) in rebind.vars.iter() {
+            self.vars.entry(name.clone())
+                .and_modify(|e| { e.0 = e.0 + count ; e.1 = cell_expr.clone(); })
+                .or_insert((*count, cell_expr.clone()));
+        }
     }
 }
 
@@ -410,308 +455,486 @@ struct LeanFuncInfo<'a> {
     casm_end: usize,
     ret_args: RetArgs,
     ret_branch_ap_steps: Vec<bool>,
+    blocks: Vec<FuncBlock>,
+    max_rc_count: usize,
     is_lean3: bool,
 }
 
 impl<'a> LeanFuncInfo<'a> {
 
-        pub fn new(
-            main_func_name: String,
-            func_name: String,
-            aux_info: &'a CasmBuilderAuxiliaryInfo,
-            casm_start: usize,
-            casm_end: usize,
-            cairo_program: &'a CairoProgram,
-            is_lean3: bool,
-        ) -> Self {
-            let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program, casm_start, casm_end);
-            Self { main_func_name, func_name, aux_info, casm_instructions: &cairo_program.instructions, casm_start, casm_end, ret_args, ret_branch_ap_steps, is_lean3 }
+    pub fn new(
+        main_func_name: String,
+        func_name: String,
+        aux_info: &'a CasmBuilderAuxiliaryInfo,
+        casm_start: usize,
+        casm_end: usize,
+        cairo_program: &'a CairoProgram,
+        is_lean3: bool,
+    ) -> Self {
+        let (ret_args, ret_branch_ap_steps) = LeanFuncInfo::make_ret_args(&aux_info, cairo_program, casm_start, casm_end);
+        let mut lean_info = Self {
+            main_func_name,
+            func_name,
+            aux_info,
+            casm_instructions: &cairo_program.instructions,
+            casm_start,
+            casm_end,
+            ret_args,
+            ret_branch_ap_steps,
+            blocks: Vec::new(),
+            max_rc_count: 0,
+            is_lean3
+        };
+
+        lean_info.make_blocks();
+        lean_info.max_rc_count = lean_info.get_max_rc_checks(0);
+
+        lean_info
+    }
+
+    pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, casm_start: usize, casm_end: usize) -> (RetArgs, Vec<bool>) {
+        let ret_blocks = get_ret_blocks(aux_info, cairo_program, casm_start, casm_end);
+        check_ret_blocks(&ret_blocks, aux_info.return_branches.len());
+
+        let branch_id_pos = get_branch_id_pos(&ret_blocks);
+        let mut ret_args = RetArgs {
+            branch_num: ret_blocks.len(),
+            arg_num: if ret_blocks.len() == 0 { 0 } else { ret_blocks[0].0 },
+            arg_names: Vec::new(),
+            branch_id_pos: branch_id_pos,
+            num_implicit_ret_args: 0, // will be set later
+        };
+        ret_args.set_arg_names(&aux_info.return_branches);
+        // Called functions need all their arguments to be explicit, so call this only
+        // for the main function.
+        if casm_start == 0 {
+            ret_args.set_implicit_ret_arg_num();
         }
+        (ret_args, ret_blocks.iter().map(|b| b.2).collect())
+    }
 
-        pub fn is_range_check_var(&self, name: &str) -> bool {
-            name == "range_check"
-        }
-
-        pub fn is_const(&self, name: &str) -> bool {
-            self.aux_info.consts.iter().any(|c| c.name == name)
-        }
-
-        pub fn make_ret_args(aux_info: &CasmBuilderAuxiliaryInfo, cairo_program: &CairoProgram, casm_start: usize, casm_end: usize) -> (RetArgs, Vec<bool>) {
-            let ret_blocks = get_ret_blocks(aux_info, cairo_program, casm_start, casm_end);
-            check_ret_blocks(&ret_blocks, aux_info.return_branches.len());
-
-            let branch_id_pos = get_branch_id_pos(&ret_blocks);
-            let mut ret_args = RetArgs {
-                branch_num: ret_blocks.len(),
-                arg_num: if ret_blocks.len() == 0 { 0 } else { ret_blocks[0].0 },
-                arg_names: Vec::new(),
-                branch_id_pos: branch_id_pos,
-                num_implicit_ret_args: 0, // will be set later
-            };
-            ret_args.set_arg_names(&aux_info.return_branches);
-            // Called functions need all their arguments to be explicit, so call this only
-            // for the main function.
-            if casm_start == 0 {
-                ret_args.set_implicit_ret_arg_num();
+    /// Goes over the labels in the function (in order) and creates their block information.
+    /// Begins with the block information for the main block (the start of the function).
+    fn make_blocks(&mut self) {
+        self.blocks.push(
+            FuncBlock {
+                start_pos: 0,
+                casm_start_pos: 0,
+                pc_start_pos: 0,
+                ap_offset: 0,
+                label: None,
+                args: self.get_arg_names()
             }
-            (ret_args, ret_blocks.iter().map(|b| b.2).collect())
-        }
+        );
 
-        pub fn has_args(&self) -> bool {
-            0 < self.aux_info.args.len()
-        }
-
-        /// Returns the list of all argument names.
-        pub fn get_arg_names(&self) -> Vec<String> {
-            self.aux_info.args.iter().map(
-                |v| -> String {
-                    if let Some(arg) = self.aux_info.var_names.get(&v.0) {
-                        String::from(arg)
-                    } else {
-                        String::from("")
-                    }
-                }
-            ).collect()
-        }
-
-        /// Returns all arguments with the Lean expression which defines their value.
-        fn get_arg_names_and_expr(&self) -> Vec<(String, String)> {
-            self.aux_info.args.iter().map(
-                |v| -> (String, String) {
-                    if let Some(arg) = self.aux_info.var_names.get(&v.0) {
-                        (String::from(arg), cell_expr_to_lean(&v.1, false))
-                    } else {
-                        ("".into(), "".into())
-                    }
-                }
-            ).collect()
-        }
-
-        pub fn has_range_check_arg(&self) -> bool {
-            self.get_arg_names().iter().any(|a| self.is_range_check_var(a))
-        }
-
-        pub fn get_range_check_arg_name(&self) -> Option<String> {
-            for (var, _) in self.aux_info.args.iter() {
-                if let Some(arg) = self.aux_info.var_names.get(var) {
-                    if self.is_range_check_var(arg) {
-                        return Some(arg.into());
-                    }
-                }
-            }
-            None
-        }
-
-        pub fn get_arg_expr(&self, name: &str, paren: bool) -> Option<String> {
-            for (var, expr) in self.aux_info.args.iter() {
-                if let Some(arg) = self.aux_info.var_names.get(var) {
-                    if arg == name {
-                        return Some(cell_expr_to_lean(expr, paren));
-                    }
-                }
-            }
-            None
-        }
-
-        pub fn ret_arg_num(&self) -> usize {
-            self.ret_args.arg_names.len()
-        }
-
-        pub fn implicit_ret_arg_num(&self) -> usize {
-            self.ret_args.num_implicit_ret_args
-        }
-
-        pub fn explicit_ret_arg_num(&self) -> usize {
-            self.ret_args.arg_names.len() - self.ret_args.num_implicit_ret_args
-        }
-
-        /// Returns the list of all return argument names, including the implicit ones.
-        pub fn get_all_ret_arg_names(&self) -> Vec<String> {
-            self.ret_args.arg_names.iter().map(
-                |s| { if s.starts_with("ρ") { s.to_string() } else { "ρ_".to_string() + s } }
-            ).collect()
-        }
-
-        /// The explicit return arguments are determined in two ways:
-        /// 1. If there is a branch ID return argument, it is the first explicit return argument.
-        /// 2. If there is no branch ID return argument, we skip specific argument names as implicit
-        ///    (such as 'range_check').
-        pub fn get_explicit_ret_arg_names(&self) -> Vec<String> {
-            self.ret_args.arg_names[self.ret_args.num_implicit_ret_args..].iter().map(
-                |s| { if s.starts_with("ρ") { s.to_string() } else { "ρ_".to_string() + s } }
-            ).collect()
-        }
-
-        /// return the offset from the final ap of the given return argument. The last return argument is
-        /// at offset 1, the second to last at offset 2, etc.
-        pub fn get_ret_arg_offset(&self, name: &str) -> Option<usize> {
-            match self.ret_args.arg_names.iter().position(|s| s == name) {
-                Some(pos) => Some(self.ret_args.arg_names.len() - pos),
-                _ => None
-            }
-        }
-
-        // True if this expression represents a range check: x = [<range check pointer>]
-        pub fn is_range_check(&self, expr: &ExprDesc) -> bool {
-            expr.op == "*()" &&
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-                self.is_range_check_var(str)
-            } else { false }
-        }
-
-        // If this expression represents a range check, x = [<range check pointer>], returns
-        // the name of the range check pointer.
-        pub fn get_range_check_ptr_name(&self, expr: &ExprDesc) -> Option<&str> {
-            if expr.op != "*()" {
-                return None;
-            }
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-                if self.is_range_check_var(str) { Some(str) } else { None }
-            } else { None }
-        }
-
-        // True if this expression increments the range check pointer.
-        pub fn is_range_check_inc(&self, expr: &ExprDesc) -> bool {
-            expr.op == "++" &&
-            if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
-                self.is_range_check_var(str)
-            } else { false }
-        }
-
-        pub fn get_code_len(&self) -> usize {
-            self.casm_instructions.iter().fold(0, |len, instr| len + instr.body.op_size())
-        }
-
-        /// Returns the pc at the given casm position, under the assumption that pc = 0 at the first casm position.
-        pub fn get_pc_at(&self, casm_pos: usize) -> usize {
-            self.casm_instructions[0..casm_pos].iter().fold(0, |len, instr| len + instr.body.op_size())
-        }
-
-        /// Returns the number of positions by which to increase casm instruction position to reach
-        /// the target of the jump, where jump_pos and target are the positions of the instruction
-        /// descriptions of the jump and the target, respectively.
-        fn casm_jump(&self, jump_pos: usize, target: usize) -> usize {
-
-            self.aux_info.statements[jump_pos..target].iter().fold(
-                0,
-                |acc, s| {
-                    match s {
-                        // These instructions have no corresponding instruction in the casm.
-                        StatementDesc::Let(_) | StatementDesc::Label(_) => acc,
-                        StatementDesc::TempVar(var) | StatementDesc::LocalVar(var) =>
-                            if var.expr.is_some() { acc + 1 } else { acc },
-                        _ => acc + 1
-                    }
-                }
-            )
-        }
-
-        fn pc_jump(&self, casm_jump_pos: usize, casm_target: usize) -> usize {
-            self.casm_instructions[casm_jump_pos..casm_target].iter().fold(
-                0,
-                |pc, instr| {
-                    pc + instr.body.op_size()
-                }
-            )
-        }
-
-        /// Returns the position in the list of statement descriptions of the label
-        /// which is the target of the jump statement. If this fails, the label is
-        /// probably a return block label.
-        fn get_jump_target_pos(&self, jump: &JumpDesc) -> Option<usize> {
-            self.aux_info.statements.iter().position(
-                |s|
-                    if let StatementDesc::Label(label) = s {
-                        label == &jump.target
-                    } else {
-                        false
-                    }
-            )
-        }
-
-        /// Given the start position of a block, returns all variable names used in the block before
-        /// being defined. These are the variables which are the input argument to the block.
-        fn get_block_args(&self, block_start: usize) -> HashSet<String> {
-
-            let mut vars = HashSet::new();
-            let mut declared: HashSet<String> = HashSet::new();
-
-            for statement in self.aux_info.statements[block_start..].iter() {
-                match statement {
-                    StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
-                        if let Some(expr) = &var.expr {
-                            let name = &expr.var_a.name;
-                            if !declared.contains(name) && !self.is_const(name) {
-                                vars.insert(name.clone());
-                            }
-                            if let Some(expr_b) = &expr.var_b {
-                                let name = &expr_b.name;
-                                if !declared.contains(name) && !self.is_const(name) {
-                                    vars.insert(name.clone());
-                                }
-                            }
+        for (i, statement) in self.aux_info.statements.iter().enumerate() {
+            match statement {
+                StatementDesc::Label(desc) => {
+                    let casm_start_pos = self.casm_jump(0, i + 1);
+                    self.blocks.push(
+                        FuncBlock {
+                            start_pos: i + 1,
+                            casm_start_pos,
+                            pc_start_pos: self.get_pc_at(casm_start_pos),
+                            ap_offset: desc.ap_change,
+                            label: Some(desc.label.clone()),
+                            args: Vec::from_iter(self.get_block_args(i)),
                         }
-                        declared.insert(var.name.clone());
+                    )
+                },
+                _ => {}
+            }
+        }
+    }
+
+    pub fn is_range_check_var(&self, name: &str) -> bool {
+        name == "range_check"
+    }
+
+    pub fn is_const(&self, name: &str) -> bool {
+        self.aux_info.consts.iter().any(|c| c.name == name)
+    }
+
+    pub fn has_args(&self) -> bool {
+        0 < self.aux_info.args.len()
+    }
+
+    /// Returns the list of all argument names.
+    pub fn get_arg_names(&self) -> Vec<String> {
+        self.aux_info.args.iter().map(
+            |v| -> String {
+                if let Some(arg) = self.aux_info.var_names.get(&v.0) {
+                    String::from(arg)
+                } else {
+                    String::from("")
+                }
+            }
+        ).collect()
+    }
+
+    /// Returns all arguments with the Lean expression which defines their value.
+    fn get_arg_names_and_expr(&self) -> Vec<(String, String)> {
+        self.aux_info.args.iter().map(
+            |v| -> (String, String) {
+                if let Some(arg) = self.aux_info.var_names.get(&v.0) {
+                    (String::from(arg), cell_expr_to_lean(&v.1, false))
+                } else {
+                    ("".into(), "".into())
+                }
+            }
+        ).collect()
+    }
+
+    /// Returns all arguments with the Lean expression which defines their value.
+    fn get_arg_names_and_cell_expr(&self) -> Vec<(String, &CellExpression)> {
+        self.aux_info.args.iter().map(
+            |v| -> (String, &CellExpression) {
+                if let Some(arg) = self.aux_info.var_names.get(&v.0) {
+                    (String::from(arg), &v.1)
+                } else {
+                    ("".into(), &v.1)
+                }
+            }
+        ).collect()
+    }
+
+    pub fn has_range_check_arg(&self) -> bool {
+        self.get_arg_names().iter().any(|a| self.is_range_check_var(a))
+    }
+
+    pub fn get_range_check_arg_name(&self) -> Option<String> {
+        for (var, _) in self.aux_info.args.iter() {
+            if let Some(arg) = self.aux_info.var_names.get(var) {
+                if self.is_range_check_var(arg) {
+                    return Some(arg.into());
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_arg_expr(&self, name: &str, paren: bool) -> Option<String> {
+        for (var, expr) in self.aux_info.args.iter() {
+            if let Some(arg) = self.aux_info.var_names.get(var) {
+                if arg == name {
+                    return Some(cell_expr_to_lean(expr, paren));
+                }
+            }
+        }
+        None
+    }
+
+    pub fn ret_arg_num(&self) -> usize {
+        self.ret_args.arg_names.len()
+    }
+
+    pub fn implicit_ret_arg_num(&self) -> usize {
+        self.ret_args.num_implicit_ret_args
+    }
+
+    pub fn explicit_ret_arg_num(&self) -> usize {
+        self.ret_args.arg_names.len() - self.ret_args.num_implicit_ret_args
+    }
+
+    /// Returns the list of all return argument names, including the implicit ones.
+    pub fn get_all_ret_arg_names(&self) -> Vec<String> {
+        self.ret_args.arg_names.iter().map(
+            |s| { if s.starts_with("ρ") { s.to_string() } else { "ρ_".to_string() + s } }
+        ).collect()
+    }
+
+    /// The explicit return arguments are determined in two ways:
+    /// 1. If there is a branch ID return argument, it is the first explicit return argument.
+    /// 2. If there is no branch ID return argument, we skip specific argument names as implicit
+    ///    (such as 'range_check').
+    pub fn get_explicit_ret_arg_names(&self) -> Vec<String> {
+        self.ret_args.arg_names[self.ret_args.num_implicit_ret_args..].iter().map(
+            |s| { if s.starts_with("ρ") { s.to_string() } else { "ρ_".to_string() + s } }
+        ).collect()
+    }
+
+    /// return the offset from the final ap of the given return argument. The last return argument is
+    /// at offset 1, the second to last at offset 2, etc.
+    pub fn get_ret_arg_offset(&self, name: &str) -> Option<usize> {
+        match self.ret_args.arg_names.iter().position(|s| s == name) {
+            Some(pos) => Some(self.ret_args.arg_names.len() - pos),
+            _ => None
+        }
+    }
+
+    // True if this expression represents a range check: x = [<range check pointer>]
+    pub fn is_range_check(&self, expr: &ExprDesc) -> bool {
+        expr.op == "*()" &&
+        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
+            self.is_range_check_var(str)
+        } else { false }
+    }
+
+    // If this expression represents a range check, x = [<range check pointer>], returns
+    // the name of the range check pointer.
+    pub fn get_range_check_ptr_name(&self, expr: &ExprDesc) -> Option<&str> {
+        if expr.op != "*()" {
+            return None;
+        }
+        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
+            if self.is_range_check_var(str) { Some(str) } else { None }
+        } else { None }
+    }
+
+    // True if this expression increments the range check pointer.
+    pub fn is_range_check_inc(&self, expr: &ExprDesc) -> bool {
+        expr.op == "++" &&
+        if let Some(str) = self.aux_info.var_names.get(&expr.var_a.var_id) {
+            self.is_range_check_var(str)
+        } else { false }
+    }
+
+    pub fn get_code_len(&self) -> usize {
+        self.casm_instructions.iter().fold(0, |len, instr| len + instr.body.op_size())
+    }
+
+    /// Returns the pc at the given casm position, under the assumption that pc = 0 at the first casm position.
+    pub fn get_pc_at(&self, casm_pos: usize) -> usize {
+        self.casm_instructions[0..casm_pos].iter().fold(0, |len, instr| len + instr.body.op_size())
+    }
+
+    /*
+    pub fn get_ap_at(&self, casm_pos: usize) -> BigInt {
+        self.casm_instructions[0..casm_pos].iter().fold(0.into(),
+            |offset: BigInt, instr: &Instruction| {
+                match &instr.body {
+                    InstructionBody::AddAp(body) => {
+                        if let ResOperand::Immediate(step) = &body.operand {
+                            offset + &step.value
+                        } else {
+                            // Other options not supported, need to fix manually.
+                            offset
+                        }
                     },
-                    StatementDesc::Let(assign)|StatementDesc::Assert(assign) => {
-                        let name = &assign.expr.var_a.name;
+                    _ => offset + if instr.inc_ap { BigInt::from(1) } else { 0.into() }
+                }
+            }
+        )
+    }*/
+
+    /// Returns the number of positions by which to increase casm instruction position to reach
+    /// the target of the jump, where jump_pos and target are the positions of the instruction
+    /// descriptions of the jump and the target, respectively.
+    fn casm_jump(&self, jump_pos: usize, target: usize) -> usize {
+
+        self.aux_info.statements[jump_pos..target].iter().fold(
+            0,
+            |acc, s| {
+                match s {
+                    // These instructions have no corresponding instruction in the casm.
+                    StatementDesc::Let(_) | StatementDesc::Label(_) => acc,
+                    StatementDesc::TempVar(var) | StatementDesc::LocalVar(var) =>
+                        if var.expr.is_some() { acc + 1 } else { acc },
+                    _ => acc + 1
+                }
+            }
+        )
+    }
+
+    fn pc_jump(&self, casm_jump_pos: usize, casm_target: usize) -> usize {
+        self.casm_instructions[casm_jump_pos..casm_target].iter().fold(
+            0,
+            |pc, instr| {
+                pc + instr.body.op_size()
+            }
+        )
+    }
+
+    /// Returns the position in the list of statement descriptions of the label
+    /// which is the target of the jump statement. If this fails, the label is
+    /// probably a return block label.
+    fn get_jump_target_pos(&self, jump: &JumpDesc) -> Option<usize> {
+        self.aux_info.statements.iter().position(
+            |s|
+                if let StatementDesc::Label(label) = s {
+                    label.label == jump.target
+                } else {
+                    false
+                }
+        )
+    }
+
+    /// Given the start position of a block, returns all variable names used in the block before
+    /// being defined. These are the variables which are the input argument to the block.
+    fn get_block_args(&self, block_start: usize) -> HashSet<String> {
+
+        let mut vars = HashSet::new();
+        let mut declared: HashSet<String> = HashSet::new();
+
+        for statement in self.aux_info.statements[block_start..].iter() {
+            match statement {
+                StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                    if let Some(expr) = &var.expr {
+                        let name = &expr.var_a.name;
                         if !declared.contains(name) && !self.is_const(name) {
                             vars.insert(name.clone());
                         }
-                        if let Some(expr_b) = &assign.expr.var_b {
+                        if let Some(expr_b) = &expr.var_b {
                             let name = &expr_b.name;
                             if !declared.contains(name) && !self.is_const(name) {
                                 vars.insert(name.clone());
                             }
                         }
-                        declared.insert(assign.lhs.name.clone());
-                    },
-                    StatementDesc::Jump(jump) => {
-                        if let Some(target) = self.get_jump_target_pos(jump) {
-                            let branch_args = self.get_block_args(target + 1);
-                            // Add the variables used in the branch before being declared.
-                            for name in branch_args {
-                                if !declared.contains(&name) {
-                                    vars.insert(name);
-                                }
-                            }
-                        } else { // jump to a return label
-                            self.add_ret_block_args(&jump.target, &declared, &mut vars);
-                        }
-                        if jump.cond_var.is_none() {
-                            return vars;
-                        }
-                    },
-                    StatementDesc::Fail => {
-                        return vars;
-                    },
-                    StatementDesc::ApPlus(step) => {
-                        continue;
-                    },
-                    StatementDesc::Label(label) => {
-                        continue;
-                    },
-                }
-            }
-
-            // Handle the Fallthrough return block.
-            self.add_ret_block_args("Fallthrough", &declared, &mut vars);
-
-            vars
-        }
-
-        fn add_ret_block_args(&self, label: &str, declared: &HashSet<String>, block_args: &mut HashSet<String>) {
-
-            if let Some(branch) =
-                    self.aux_info.return_branches.iter().filter(|b| b.name == *label).next() {
-                for name in branch.flat_exprs() {
-                    if !declared.contains(&name) {
-                        block_args.insert(name);
                     }
-                }
+                    declared.insert(var.name.clone());
+                },
+                StatementDesc::Let(assign) => {
+                    let name = &assign.expr.var_a.name;
+                    if !declared.contains(name) && !self.is_const(name) {
+                        vars.insert(name.clone());
+                    }
+                    if let Some(expr_b) = &assign.expr.var_b {
+                        let name = &expr_b.name;
+                        if !declared.contains(name) && !self.is_const(name) {
+                            vars.insert(name.clone());
+                        }
+                    }
+                    declared.insert(assign.lhs.name.clone());
+                },
+                StatementDesc::Assert(assign) => {
+                    let mut names: Vec<&String> = vec![&assign.lhs.name, &assign.expr.var_a.name];
+                    if let Some(expr_b) = &assign.expr.var_b {
+                        names.push(&expr_b.name);
+                    }
+                    for name in names {
+                        if !declared.contains(name) && !self.is_const(name) {
+                            vars.insert(name.clone());
+                        }
+                    }
+                },
+                StatementDesc::Jump(jump) => {
+                    if let Some(target) = self.get_jump_target_pos(jump) {
+                        let branch_args = self.get_block_args(target + 1);
+                        // Add the variables used in the branch before being declared.
+                        for name in branch_args {
+                            if !declared.contains(&name) {
+                                vars.insert(name);
+                            }
+                        }
+                    } else { // jump to a return label
+                        self.add_ret_block_args(&jump.target, &declared, &mut vars);
+                    }
+                    if jump.cond_var.is_none() {
+                        return vars;
+                    }
+                },
+                StatementDesc::Fail => {
+                    return vars;
+                },
+                StatementDesc::ApPlus(_) => {},
+                StatementDesc::Label(_) => {},
             }
         }
 
+        // Handle the Fallthrough return block.
+        self.add_ret_block_args("Fallthrough", &declared, &mut vars);
+
+        vars
+    }
+
+    fn add_ret_block_args(&self, label: &str, declared: &HashSet<String>, block_args: &mut HashSet<String>) {
+
+        if let Some(branch) =
+                self.aux_info.return_branches.iter().filter(|b| b.name == *label).next() {
+            for name in branch.flat_exprs() {
+                if !declared.contains(&name) {
+                    block_args.insert(name);
+                }
+            }
+        }
+    }
+
+    /// Given a label, returns a rebind structure with the rebinds beginning at the given start position and
+    /// accumulated up to first reaching the label. If the label is not reached, None is returned.
+    fn get_rebinds_before_label(&self, label: &String, start_pos: usize) -> Option<VarRebind> {
+        let mut rebind = VarRebind::new();
+        if start_pos == 0 {
+            // The input arguments to the function.
+            for (name, cell_expr) in self.get_arg_names_and_cell_expr().iter() {
+                rebind.rebind(name, cell_expr);
+            }
+        }
+
+        // Continue down all branches until we hit a jump to the branch.
+        for statement in self.aux_info.statements[start_pos..].iter() {
+            match statement {
+                StatementDesc::TempVar(var)|StatementDesc::LocalVar(var) => {
+                    rebind_var_assignment(var, &mut rebind);
+                },
+                StatementDesc::Let(assign) => {
+                    rebind_assignment_lhs(assign, &mut rebind);
+                },
+                StatementDesc::Jump(jump) => {
+                    if &jump.target == label {
+                        return Some(rebind); // Reached the label.
+                    }
+                    if let Some(target) = self.get_jump_target_pos(jump) {
+                        let branch_rebinds = self.get_rebinds_before_label(label, target + 1);
+                        if let Some(branch_rebinds) = branch_rebinds {
+                            // Branch reached the label add the rebinds to the ones already collected.
+                            rebind.add_rebinds(&branch_rebinds);
+                            return Some(rebind);
+                        }
+                    }
+                    if jump.cond_var.is_none() {
+                        return None; // No continuation and did not reach the label.
+                    }
+                },
+                StatementDesc::Fail => {
+                    return None; // Reached end before reaching label.
+                },
+                StatementDesc::Label(desc) => {
+                    if label == &desc.label {
+                        return Some(rebind);
+                    }
+                },
+                _ => {}
+            }
+        }
+
+        None // Did not reach the label.
+    }
+
+    /// Returns the maximal number of range checks performed by any of the branches
+    /// starting at the given start position.
+    fn get_max_rc_checks(&self, start_pos: usize) -> usize {
+
+        let mut rc_count = 0;
+
+        for (i, statement) in self.aux_info.statements[start_pos..].iter().enumerate() {
+            match statement {
+                StatementDesc::Assert(assign) => {
+                    if self.is_range_check(&assign.expr) {
+                        rc_count += 1;
+                    }
+                },
+                StatementDesc::Jump(jump) => {
+                    let jmp_rc_count = if let Some(target) = self.get_jump_target_pos(jump) {
+                        self.get_max_rc_checks(target + 1)
+                    } else {
+                        0
+                    };
+                    let cont_rc_count =  if jump.cond_var.is_none() {
+                        0
+                    } else {
+                        self.get_max_rc_checks(start_pos + i + 1)
+                    };
+                    return rc_count + max(jmp_rc_count, cont_rc_count);
+                },
+                StatementDesc::Fail => {
+                    return rc_count;
+                },
+                _ => {}
+            }
+        }
+
+        rc_count
+    }
 }
 
 // Rebinding variables and assignments
@@ -725,7 +948,7 @@ fn rebind_var_assignment(
         Some(rebind.replace_var_names_in_expr(&expr.expr))
     } else { None };
 
-    (rebind.get_rebind_name(&var.name), expr)
+    (rebind.get_rebind_name(&var.name, &var.var_expr), expr)
 }
 
 fn rebind_assignment(
@@ -734,15 +957,53 @@ fn rebind_assignment(
 ) -> (String, String) {
     // Must rewrite the rhs before the lhs.
     let rhs_str = rebind.replace_var_names_in_expr(&assignment.expr.expr);
-    (rebind.get_rebind_name(&assignment.lhs.name), rhs_str)
+    (rebind.get_rebind_name(&assignment.lhs.name, &assignment.lhs.var_expr), rhs_str)
+}
+
+fn rebind_assignment_lhs(
+    assignment: &AssertDesc,
+    rebind: &mut VarRebind,
+) -> String {
+    rebind.get_rebind_name(&assignment.lhs.name, &assignment.lhs.var_expr)
 }
 
 // Soundness generation functions
+
+/// Generates the prelude to the spec file. Lean 3 only.
+fn generate_soundness_spec_prelude(main_func_name: &str) -> Vec<String> {
+    let mut prelude: Vec<String> = Vec::new();
+    prelude.push(String::from("import starkware.cairo.lean.semantics.soundness.prelude"));
+    prelude.push(String::from("open tactic"));
+    prelude.push(String::from(""));
+    prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F] [prelude_hyps F]"));
+    prelude.push(String::from("variable  mem : F → F"));
+    prelude.push(String::from("variable  σ : register_state F"));
+    prelude.push(String::from(""));
+
+    prelude
+}
+
+/// Generates the prelude to the spec file. Lean 4 only.
+fn generate_soundness_spec_prelude4(main_func_name: &str) -> Vec<String> {
+    let mut prelude: Vec<String> = Vec::new();
+    prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
+    prelude.push(String::from("import Verification.Libfuncs.Basic"));
+    prelude.push(String::from(""));
+    prelude.push(String::from("open Tactic"));
+    prelude.push(String::from("set_option autoImplicit false"));
+    prelude.push("set_option maxRecDepth 1024".into());
+    prelude.push(String::from(""));
+    prelude.push(String::from("variable {F : Type} [Field F] [DecidableEq F] [PreludeHyps F]"));
+    prelude.push(String::from(""));
+
+    prelude
+}
 
 fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import starkware.cairo.lean.semantics.soundness.prelude"));
     prelude.push(format!("import .{}", lean_code_file_name(main_func_name, false)));
+    prelude.push(format!("import .{}", lean_soundness_spec_file_name(main_func_name, false)));
     prelude.push(String::from("open tactic"));
     prelude.push(String::from(""));
     prelude.push(String::from("variables {F : Type} [field F] [decidable_eq F] [prelude_hyps F]"));
@@ -756,9 +1017,8 @@ fn generate_soundness_prelude(main_func_name: &str) -> Vec<String> {
 fn generate_soundness_prelude4(main_func_name: &str) -> Vec<String> {
     let mut prelude: Vec<String> = Vec::new();
     prelude.push(String::from("import Verification.Semantics.Soundness.Prelude"));
-    prelude.push(String::from("import Verification.Semantics.Soundness.Hoare"));
-    prelude.push(String::from("import Verification.Semantics.Assembly"));
     prelude.push(String::from("import Verification.Libfuncs.Basic"));
+    prelude.push(format!("import Verification.Libfuncs.uXX.{}", lean_soundness_spec_file_name(main_func_name, false)));
     prelude.push(format!("import Verification.Libfuncs.uXX.{}", lean_code_file_name(main_func_name, false)));
     prelude.push(String::from(""));
     prelude.push(String::from("open Tactic"));
@@ -814,6 +1074,7 @@ trait LeanGenerator {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     );
 
@@ -1048,16 +1309,20 @@ impl LeanGenerator for AutoSpecs {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     ) {
         let args_str =
-            lean_info.get_arg_names().iter().chain(
+        block.args.iter().chain(
                 lean_info.get_explicit_ret_arg_names().iter()
             ).join(" ");
 
         self.push(
             indent,
-            &format!("def auto_spec_{func_name} (κ : ℕ) ({args_str} : F) : Prop :="));
+            &format!(
+                "def auto_spec_{func_name}{block_suffix} (κ : ℕ) ({args_str} : F) : Prop :=",
+                block_suffix = block.block_suffix())
+            );
     }
 
     fn generate_intro(
@@ -1097,6 +1362,7 @@ impl LeanGenerator for AutoSpecs {
                 var_id: var_desc.var_id,
                 var_expr: var_desc.var_expr.clone(),
                 expr: None,
+                ap_change: 0, // not used here.
             },
             lean_info,
             rebind,
@@ -1148,6 +1414,7 @@ impl LeanGenerator for AutoSpecs {
                     var_name = rebind.get_var_name(&assert.lhs.name)),
                 &format!("IsRangeChecked (rcBound F) {var_name}",
                     var_name = rebind.get_var_name(&assert.lhs.name)));
+            *rc_checks += 1;
         } else {
             self.push_spec( indent, &format!("{var_name} = {expr}",
                     var_name = rebind.get_var_name(&assert.lhs.name),
@@ -1366,7 +1633,7 @@ impl AutoProof {
     }
 
     fn make_codes(&self, pc: usize, op_size: usize) -> String {
-        (pc..pc + op_size).map(|i| format!("hmem{} h_mem", i)).join(", ")
+        (pc..pc + op_size).map(|i| format!("hmem{} hmem", i)).join(", ")
     }
 
     fn make_var_rw(&mut self, var_name: &str, lean_info: &LeanFuncInfo, rebind: &mut VarRebind) -> String {
@@ -1513,17 +1780,21 @@ impl LeanGenerator for AutoProof {
         main_func_name: &str,
         func_name: &str,
         lean_info: &LeanFuncInfo,
+        block: &FuncBlock,
         indent: usize,
     ) {
-        self.push_statement(indent, &format!("theorem auto_sound_{func_name}"));
+        self.push_statement(
+            indent,
+            &format!("theorem auto_sound_{func_name}{block_suffix}", block_suffix = block.block_suffix())
+        );
 
         let mut indent = indent + 2;
 
-        let args_str = lean_info.get_arg_names().join(" ");
+        let args_str = block.args.join(" ");
 
         // Arguments and hypotheses.
 
-        if lean_info.has_args() {
+        if block.has_args() {
             self.push_statement(indent, "-- arguments");
             self.push_statement(indent, &format!("({args_str} : F)"));
         }
@@ -1532,37 +1803,65 @@ impl LeanGenerator for AutoProof {
         let pc_start = lean_info.get_pc_at(lean_info.casm_start);
         let pc_str = if pc_start == 0 { "σ.pc".into() } else { format!("(σ.pc + {pc_start})") };
         let lean_code_def_name = lean_code_name(main_func_name);
-        self.push_statement4(indent, &format!("(h_mem : mem_at mem {lean_code_def_name} {pc_str})"),
-            &format!("(h_mem : MemAt mem {lean_code_def_name} {pc_str})"));
+        self.push_statement4(indent, &format!("(hmem : mem_at mem {lean_code_def_name} {pc_str})"),
+            &format!("(hmem : MemAt mem {lean_code_def_name} {pc_str})"));
 
-        if lean_info.has_args() {
+        if block.has_args() {
             self.push_statement(indent, "-- input arguments on the stack");
-            for (arg_name, arg_expr) in lean_info.get_arg_names_and_expr() {
+            let args_with_exprs = if let Some(label) = &block.label {
+                let arg_rebinds = lean_info.get_rebinds_before_label(&label, 0).expect("Failed to reach label.");
+                block.args.iter().map(|name| {
+                    (name.clone(), arg_rebinds.get_expr(name))
+                }).collect_vec()
+            } else {
+                lean_info.get_arg_names_and_expr()
+            };
+            for (arg_name, arg_expr) in args_with_exprs {
                 if arg_name.len() == 0 {
                     continue;
                 }
                 self.push_statement(indent, &format!("(htv_{arg_name} : {arg_name} = {arg_expr})"));
             }
         }
+        if block.label.is_some() {
+            self.push_statement(indent, "(νbound : ℕ)");
+        }
 
         // Conclusion
         self.push_statement(indent, "-- conclusion");
-        self.push_statement4(indent, ": ensures_ret mem σ (λ κ τ,",
-            ": EnsuresRet mem σ (fun κ τ =>");
+        if block.label.is_none() {
+            self.push_statement4(indent, ": ensures_ret mem σ (λ κ τ,",
+                ": EnsuresRet mem σ (fun κ τ =>");
+        } else {
+            self.push_statement4(indent, ": ensures_ret νbound mem",
+                ": EnsuresRet νbound mem");
+            self.push_statement(
+                indent + 2,
+                &format!(
+                        "{{ pc := σ.pc + {pc_offset}, ap := σ.ap + {ap_offset}, fp := σ.fp }}",
+                        pc_offset = block.pc_start_pos,
+                        ap_offset = block.ap_offset
+                    )
+                );
+            self.push_statement4(indent + 2, "(λ κ τ,",
+                "(fun κ τ =>");
+        }
 
         let range_check_arg_name = lean_info.get_range_check_arg_name();
         let has_rc = range_check_arg_name.is_some();
 
         if let Some(rc_name) = range_check_arg_name {
             indent += 2;
+            let rc_value: String = if block.label.is_none() { "μ".into() } else { lean_info.max_rc_count.to_string() };
+            let rc_exists: String = if block.label.is_none() { format!("∃ {rc_value}") } else { rc_value.clone() };
             self.push_statement4(
                 indent,
                 &format!(
-                    "∃ μ ≤ κ, rc_ensures mem (rc_bound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
+                    "{rc_exists} ≤ κ, rc_ensures mem (rc_bound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
                     rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()),
                 &format!(
-                    "∃ μ ≤ κ, RcEnsures mem (rcBound F) μ {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
+                    "{rc_exists} ≤ κ, RcEnsures mem (rcBound F) {rc_value} {rc_expr} (mem (τ.ap - {rc_ret_offset}))",
                     rc_expr = lean_info.get_arg_expr(&rc_name, true).unwrap(),
                     rc_ret_offset = lean_info.get_ret_arg_offset(&rc_name).unwrap()));
         }
@@ -1597,7 +1896,7 @@ impl LeanGenerator for AutoProof {
         if lean_info.is_lean3 {
             // unpack the memory
             let mut line = format!(
-                "unpack_memory {code_def_name} at h_mem with ⟨",
+                "unpack_memory {code_def_name} at hmem with ⟨",
                 code_def_name = lean_code_name(main_func_name)
             );
             let pc_start = lean_info.get_pc_at(lean_info.casm_start);
@@ -1648,6 +1947,7 @@ impl LeanGenerator for AutoProof {
                 var_id: var_desc.var_id,
                 var_expr: var_desc.var_expr.clone(),
                 expr: None,
+                ap_change: 0, // not used here.
             },
             false,
             lean_info,
@@ -1947,12 +2247,12 @@ impl LeanGenerator for AutoProof {
 
         // First pc after the jump instruction.
         let start_pc = lean_info.get_pc_at(casm_pos + 1);
-        self.push_main(indent, &format!("rcases h_mem with  ⟨{skip}, h_mem⟩ -- Skip pc memory to jump target.",
+        self.push_main(indent, &format!("rcases hmem with  ⟨{skip}, hmem⟩ -- Skip pc memory to jump target.",
             skip = (start_pc .. pc + pc_jump).map(|_| format!("-")).join(", ")));
 
 
 
-        //self.push_main(indent, &format!("rcases h_mem with  ⟨{skip}, h_mem⟩",
+        //self.push_main(indent, &format!("rcases hmem with  ⟨{skip}, hmem⟩",
         //    skip = "-".repeat(pc + pc_jump - lean_info.get_pc_at(casm_pos + 1))));
     }
 
@@ -1973,7 +2273,9 @@ fn generate_soundness_user_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
 fn generate_soundness_auto_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut auto_specs = AutoSpecs::new();
     auto_specs.is_lean3 = lean_info.is_lean3;
-    generate_auto(&mut auto_specs, lean_info);
+    for block in lean_info.blocks.iter().rev() {
+        generate_auto(&mut auto_specs, lean_info, &block);
+    }
 
     auto_specs.specs
 }
@@ -2008,18 +2310,21 @@ fn generate_user_soundness_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
 fn generate_soundness_auto_theorem(lean_info: &LeanFuncInfo) -> Vec<String> {
     let mut auto_theorem = AutoProof::new();
     auto_theorem.is_lean3 = lean_info.is_lean3;
-    generate_auto(&mut auto_theorem, lean_info);
+    for block in lean_info.blocks.iter().rev() {
+        generate_auto(&mut auto_theorem, lean_info, &block);
+    }
+
 
     auto_theorem.get_full_proof()
 }
 
-fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo) {
+fn generate_auto(lean_gen: &mut dyn LeanGenerator, lean_info: &LeanFuncInfo, block: &FuncBlock) {
     let mut rebind = VarRebind::new();
-    for arg in lean_info.get_arg_names() {
-        rebind.rebind(&arg);
+    for (arg_name, arg_expr) in lean_info.get_arg_names_and_cell_expr() {
+        rebind.rebind(&arg_name, arg_expr);
     }
 
-    lean_gen.generate_statement(&lean_info.main_func_name, &lean_info.func_name, lean_info, 0);
+    lean_gen.generate_statement(&lean_info.main_func_name, &lean_info.func_name, lean_info, block, 0);
     lean_gen.generate_intro(&lean_info.main_func_name, &lean_info.func_name, lean_info, 2);
     generate_auto_block(
         lean_gen,
@@ -2141,9 +2446,10 @@ fn generate_auto_block(
                 casm_pos += 1;
                 pc += op_size;
             }, // Do nothing
-            StatementDesc::Label(label) => {
+            StatementDesc::Label(desc) => {
+                // xxxxxxxxxxxxxxxxx call block with arguments.
                 let args = lean_info.get_block_args(block_start + i + 1);
-                println!("args at {label}: {}", args.iter().join(", "));
+                println!("args at {}: {}", desc.label, args.iter().join(", "));
             }, // Do nothing
         }
     }
@@ -2240,28 +2546,25 @@ fn find_func_offsets(cairo_program: &CairoProgram) -> Vec<(usize, usize)> {
     offsets
 }
 
-pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is_lean3: bool) -> String {
-
-    //let aux_info = match cairo_program.aux_info.as_ref() {
-    //    Some(info) => info,
-    //    _ => { return String::from("-- Could not find lean info."); }
-    //};
-
-    //if !check_supported(test_name, aux_info, cairo_program) {
-    //    return "".into();
-    //}
+/// Returns a tuple whose first string is the spec file for the function and the second string the automatic
+/// soundness proofs for the function.
+///
+pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is_lean3: bool) -> (String, String) {
 
     // Start and end offsets of each of the functions.
     let offsets = find_func_offsets(cairo_program);
     assert!(offsets.len() == cairo_program.aux_infos.len(), "Mismatch between number of functions and start offsets.");
 
     let main_func_name = test_name.split_whitespace().next().unwrap().to_string();
+    let mut soundness_spec: Vec<String> = Vec::new();
     let mut soundness: Vec<String> = Vec::new();
 
     // Generate the prelude
     if is_lean3 {
+        soundness_spec.append(generate_soundness_spec_prelude(&main_func_name).as_mut());
         soundness.append(generate_soundness_prelude(&main_func_name).as_mut());
     } else {
+        soundness_spec.append(generate_soundness_spec_prelude4(&main_func_name).as_mut());
         soundness.append(generate_soundness_prelude4(&main_func_name).as_mut());
     }
 
@@ -2269,52 +2572,49 @@ pub fn generate_lean_soundness(test_name: &str, cairo_program: &CairoProgram, is
         let casm_start = (*func_offsets).0;
         let casm_end = (*func_offsets).1;
         let func_name_suffix = if casm_start == 0 { "".to_string() } else { "_destr".to_string() + &casm_start.to_string() };
-        soundness.append(
-            generate_func_lean_soundness(
-                &main_func_name,
-                &format!("{main_func_name}{func_name_suffix}"),
-                cairo_program,
-                &aux_info,
-                casm_start,
-                casm_end,
-                is_lean3,
-            ).as_mut()
+        let lean_info = LeanFuncInfo::new(
+            main_func_name.clone(),
+            format!("{main_func_name}{func_name_suffix}"),
+            aux_info,
+            casm_start,
+            casm_end,
+            cairo_program,
+            is_lean3,
         );
+        soundness_spec.append(generate_func_lean_soundness_spec(&lean_info).as_mut());
+        soundness_spec.push("".into());
+
+        soundness.append(generate_func_lean_soundness(&lean_info).as_mut());
         soundness.push("".into());
     }
 
-    soundness.join("\n")
+    (soundness_spec.join("\n"), soundness.join("\n"))
 }
 
-fn generate_func_lean_soundness(
-    main_func_name: &str, func_name: &str, cairo_program: &CairoProgram, aux_info: &CasmBuilderAuxiliaryInfo, casm_start: usize, casm_end: usize, is_lean3: bool
-) -> Vec<String> {
+fn generate_func_lean_soundness_spec(lean_info: &LeanFuncInfo) -> Vec<String> {
 
-    let lean_info = LeanFuncInfo::new(
-        main_func_name.into(),
-        func_name.into(),
-        aux_info,
-        casm_start,
-        casm_end,
-        cairo_program,
-        is_lean3,
-    );
-
-    let mut soundness: Vec<String> = Vec::new();
+    let mut soundness_spec: Vec<String> = Vec::new();
 
     // Generate the constant definitions
-    soundness.append(generate_consts(&lean_info).as_mut());
-    soundness.push(String::from(""));
+    soundness_spec.append(generate_consts(&lean_info).as_mut());
+    soundness_spec.push(String::from(""));
 
     // Generate the user spec
-    soundness.append(generate_soundness_user_spec(&lean_info).as_mut());
-    soundness.push(String::from(""));
+    soundness_spec.append(generate_soundness_user_spec(&lean_info).as_mut());
+    soundness_spec.push(String::from(""));
     // Generate the auto spec
-    soundness.append(generate_soundness_auto_spec(&lean_info).as_mut());
+    soundness_spec.append(generate_soundness_auto_spec(&lean_info).as_mut());
 
     // Generate the (placeholder) user soundness proof.
-    soundness.push(String::from(""));
-    soundness.append(generate_user_soundness_theorem(&lean_info).as_mut());
+    soundness_spec.push(String::from(""));
+    soundness_spec.append(generate_user_soundness_theorem(&lean_info).as_mut());
+
+    soundness_spec
+}
+
+fn generate_func_lean_soundness(lean_info: &LeanFuncInfo) -> Vec<String> {
+
+    let mut soundness: Vec<String> = Vec::new();
 
     // Gneerate the soundness proof
     soundness.push(String::from(""));
@@ -2368,6 +2668,16 @@ pub fn generate_lean_code(test_name: &str, cairo_program: &CairoProgram, is_lean
 //
 // Lean Output Functions.
 //
+
+pub fn write_lean_soundness_spec_file(test_path: &Path, test_name: &str, spec: Option<&String>) -> Result<(), std::io::Error> {
+    let spec_str = match spec { Some(content) => { content }, _ => { return Ok(()); }};
+    let func_name = test_name.split_whitespace().next().unwrap();
+    let lean_path = lean_verification_path(test_path);
+    let soundness_file_path = lean_file_path(
+        &lean_path, &lean_soundness_spec_file_name(func_name, true));
+    fs::create_dir_all(lean_path)?;
+    fs::write(soundness_file_path, spec_str)
+}
 
 pub fn write_lean_soundness_file(test_path: &Path, test_name: &str, soundness: Option<&String>) -> Result<(), std::io::Error> {
     let soundness_str = match soundness { Some(content) => { content }, _ => { return Ok(()); }};
