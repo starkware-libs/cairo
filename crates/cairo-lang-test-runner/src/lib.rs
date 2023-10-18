@@ -143,7 +143,10 @@ fn next_printed_item(values: &mut IntoIter<Felt252>) -> Option<String> {
     };
 
     Some(if first_felt == felt_str!(BYTE_ARRAY_PANIC_MAGIC, 16) {
-        get_formatted_string(values)
+        match get_formatted_string(values) {
+            Some(string) => string,
+            None => get_formatted_short_string(&first_felt),
+        }
     } else {
         get_formatted_short_string(&first_felt)
     })
@@ -159,25 +162,28 @@ fn get_formatted_short_string(value: &Felt252) -> String {
 
 /// Formats a string, represented as a sequence of `Felt252`s.
 /// Assumes the sequence is a valid serialization of a ByteArray.
-fn get_formatted_string(values: &mut IntoIter<Felt252>) -> String {
-    let num_full_words = values.next().unwrap().to_usize().unwrap();
-    let full_words = values.by_ref().take(num_full_words).collect_vec();
-    let pending_word = values.next().unwrap();
-    let pending_word_len = values.next().unwrap().to_usize().unwrap();
+fn get_formatted_string(values: &mut IntoIter<Felt252>) -> Option<String> {
+    // Clone the iterator and work with the clone. If the extraction of the string is successful,
+    // change the original iterator to the one we worked with. If not, continue with the
+    // original iterator at the original point.
+    let mut cloned_iter = values.clone();
 
-    let full_words_strings = full_words
+    let num_full_words = cloned_iter.next().unwrap().to_usize().unwrap();
+    let full_words = cloned_iter.by_ref().take(num_full_words).collect_vec();
+    let pending_word = cloned_iter.next().unwrap();
+    let pending_word_len = cloned_iter.next().unwrap().to_usize().unwrap();
+
+    let full_words_string = full_words
         .into_iter()
         .map(|word| as_cairo_short_string_ex(&word, BYTES_IN_WORD))
-        .collect::<Option<Vec<String>>>();
-    let Some(full_words_strings) = full_words_strings else {
-        return "<bad ByteArray serialization - full word>".to_string();
-    };
-    let full_words_string = full_words_strings.join("");
-    let Some(pending_word_string) = as_cairo_short_string_ex(&pending_word, pending_word_len)
-    else {
-        return "<bad ByteArray serialization - pending word>".to_string();
-    };
-    format!("\"{full_words_string}{pending_word_string}\"")
+        .collect::<Option<Vec<String>>>()?
+        .join("");
+    let pending_word_string = as_cairo_short_string_ex(&pending_word, pending_word_len)?;
+
+    // Extraction was successful, change the original iterator to the one we worked with.
+    *values = cloned_iter;
+
+    Some(format!("\"{full_words_string}{pending_word_string}\""))
 }
 
 /// Configuration of compiled tests runner.
