@@ -374,6 +374,7 @@ libfunc enum_init<test::token_bridge::Event, 0> = enum_init<test::token_bridge::
 libfunc enum_match<test::token_bridge::Event> = enum_match<test::token_bridge::Event>;
 libfunc felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975> = felt252_const<479078749750237601567185152641671238301710808297595380691273447192239808975>;
 libfunc function_call<user@test::token_bridge::L1BridgeSetIsEvent::append_keys_and_data> = function_call<user@test::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443> = felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>;
 libfunc function_call<user@test::token_bridge::L2TokenSetIsEvent::append_keys_and_data> = function_call<user@test::token_bridge::L2TokenSetIsEvent::append_keys_and_data>;
 libfunc felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689> = felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>;
@@ -381,7 +382,6 @@ libfunc function_call<user@test::token_bridge::WithdrawInitiatedIsEvent::append_
 libfunc felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403> = felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>;
 libfunc store_temp<test::token_bridge::DepositHandled> = store_temp<test::token_bridge::DepositHandled>;
 libfunc function_call<user@test::token_bridge::DepositHandledIsEvent::append_keys_and_data> = function_call<user@test::token_bridge::DepositHandledIsEvent::append_keys_and_data>;
-libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc enum_init<test::token_bridge::Event, 1> = enum_init<test::token_bridge::Event, 1>;
 libfunc enum_match<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>> = enum_match<core::result::Result::<core::array::Span::<core::felt252>, core::array::Array::<core::felt252>>>;
 libfunc enum_init<test::token_bridge::Event, 2> = enum_init<test::token_bridge::Event, 2>;
@@ -3008,8 +3008,8 @@ store_temp<Array<felt252>>([8]) -> ([13]); // 2609
 store_temp<Array<felt252>>([2]) -> ([14]); // 2610
 function_call<user@test::token_bridge::L1BridgeSetIsEvent::append_keys_and_data>([12], [13], [14]) -> ([9], [10], [11]); // 2611
 drop<Unit>([11]) -> (); // 2612
-store_temp<Array<felt252>>([9]) -> ([15]); // 2613
-store_temp<Array<felt252>>([10]) -> ([16]); // 2614
+rename<Array<felt252>>([9]) -> ([15]); // 2613
+rename<Array<felt252>>([10]) -> ([16]); // 2614
 jump() { 2651() }; // 2615
 branch_align() -> (); // 2616
 felt252_const<1184098697392303947366893970066105115055525377648474241630611550646211146443>() -> ([17]); // 2617
@@ -3020,8 +3020,8 @@ store_temp<Array<felt252>>([18]) -> ([23]); // 2621
 store_temp<Array<felt252>>([2]) -> ([24]); // 2622
 function_call<user@test::token_bridge::L2TokenSetIsEvent::append_keys_and_data>([22], [23], [24]) -> ([19], [20], [21]); // 2623
 drop<Unit>([21]) -> (); // 2624
-store_temp<Array<felt252>>([19]) -> ([15]); // 2625
-store_temp<Array<felt252>>([20]) -> ([16]); // 2626
+rename<Array<felt252>>([19]) -> ([15]); // 2625
+rename<Array<felt252>>([20]) -> ([16]); // 2626
 jump() { 2651() }; // 2627
 branch_align() -> (); // 2628
 felt252_const<1136007654036593840550225178021426725990135865455490550301357317755621024689>() -> ([25]); // 2629
@@ -3032,8 +3032,8 @@ store_temp<Array<felt252>>([26]) -> ([31]); // 2633
 store_temp<Array<felt252>>([2]) -> ([32]); // 2634
 function_call<user@test::token_bridge::WithdrawInitiatedIsEvent::append_keys_and_data>([30], [31], [32]) -> ([27], [28], [29]); // 2635
 drop<Unit>([29]) -> (); // 2636
-store_temp<Array<felt252>>([27]) -> ([15]); // 2637
-store_temp<Array<felt252>>([28]) -> ([16]); // 2638
+rename<Array<felt252>>([27]) -> ([15]); // 2637
+rename<Array<felt252>>([28]) -> ([16]); // 2638
 jump() { 2651() }; // 2639
 branch_align() -> (); // 2640
 felt252_const<1562289135345261248104517711435216905273039781098090849547999316252638820403>() -> ([33]); // 2641
@@ -3044,8 +3044,8 @@ store_temp<Array<felt252>>([34]) -> ([39]); // 2645
 store_temp<Array<felt252>>([2]) -> ([40]); // 2646
 function_call<user@test::token_bridge::DepositHandledIsEvent::append_keys_and_data>([38], [39], [40]) -> ([35], [36], [37]); // 2647
 drop<Unit>([37]) -> (); // 2648
-store_temp<Array<felt252>>([35]) -> ([15]); // 2649
-store_temp<Array<felt252>>([36]) -> ([16]); // 2650
+rename<Array<felt252>>([35]) -> ([15]); // 2649
+rename<Array<felt252>>([36]) -> ([16]); // 2650
 struct_construct<Unit>() -> ([41]); // 2651
 rename<Array<felt252>>([15]) -> ([42]); // 2652
 rename<Array<felt252>>([16]) -> ([43]); // 2653
@@ -3063,7 +3063,7 @@ store_temp<Array<felt252>>([1]) -> ([9]); // 2664
 function_call<user@core::Felt252Serde::serialize>([8], [9]) -> ([6], [7]); // 2665
 drop<Unit>([7]) -> (); // 2666
 struct_construct<Unit>() -> ([10]); // 2667
-store_temp<Array<felt252>>([6]) -> ([11]); // 2668
+rename<Array<felt252>>([6]) -> ([11]); // 2668
 store_temp<Unit>([10]) -> ([12]); // 2669
 return([11], [12]); // 2670
 dup<core::integer::u256>([0]) -> ([0], [2]); // 2671
@@ -3196,7 +3196,7 @@ store_temp<Array<felt252>>([1]) -> ([6]); // 2797
 function_call<user@core::Felt252Serde::serialize>([5], [6]) -> ([3], [4]); // 2798
 drop<Unit>([4]) -> (); // 2799
 struct_construct<Unit>() -> ([7]); // 2800
-store_temp<Array<felt252>>([3]) -> ([8]); // 2801
+rename<Array<felt252>>([3]) -> ([8]); // 2801
 store_temp<Unit>([7]) -> ([9]); // 2802
 return([8], [9]); // 2803
 

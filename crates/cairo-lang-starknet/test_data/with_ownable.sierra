@@ -177,6 +177,7 @@ libfunc contract_address_to_felt252 = contract_address_to_felt252;
 libfunc snapshot_take<felt252> = snapshot_take<felt252>;
 libfunc drop<felt252> = drop<felt252>;
 libfunc function_call<user@core::Felt252Serde::serialize> = function_call<user@core::Felt252Serde::serialize>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc function_call<user@core::Felt252Serde::deserialize> = function_call<user@core::Felt252Serde::deserialize>;
 libfunc enum_match<core::option::Option::<core::felt252>> = enum_match<core::option::Option::<core::felt252>>;
@@ -1017,7 +1018,7 @@ store_temp<Array<felt252>>([1]) -> ([9]); // 729
 function_call<user@core::Felt252Serde::serialize>([8], [9]) -> ([6], [7]); // 730
 drop<Unit>([7]) -> (); // 731
 struct_construct<Unit>() -> ([10]); // 732
-store_temp<Array<felt252>>([6]) -> ([11]); // 733
+rename<Array<felt252>>([6]) -> ([11]); // 733
 store_temp<Unit>([10]) -> ([12]); // 734
 return([11], [12]); // 735
 store_temp<core::array::Span::<core::felt252>>([1]) -> ([4]); // 736

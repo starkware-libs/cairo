@@ -286,6 +286,7 @@ libfunc enum_init<test::counter_contract::Event, 1> = enum_init<test::counter_co
 libfunc enum_match<test::counter_contract::Event> = enum_match<test::counter_contract::Event>;
 libfunc store_temp<test::test_component::Event> = store_temp<test::test_component::Event>;
 libfunc function_call<user@test::test_component::EventIsEvent::append_keys_and_data> = function_call<user@test::test_component::EventIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824> = felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>;
 libfunc function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data> = function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>;
 libfunc felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140> = felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>;
@@ -293,7 +294,6 @@ libfunc function_call<user@test::counter_contract::CounterDecreasedIsEvent::appe
 libfunc felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124> = felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124>;
 libfunc store_temp<test::OutOfScopeEvent> = store_temp<test::OutOfScopeEvent>;
 libfunc function_call<user@test::OutOfScopeEventIsEvent::append_keys_and_data> = function_call<user@test::OutOfScopeEventIsEvent::append_keys_and_data>;
-libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc function_call<user@core::starknet::storage_access::StoreContractAddress::read> = function_call<user@core::starknet::storage_access::StoreContractAddress::read>;
 libfunc enum_match<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>> = enum_match<core::panics::PanicResult::<(core::result::Result::<core::starknet::contract_address::ContractAddress, core::array::Array::<core::felt252>>,)>>;
@@ -1689,8 +1689,8 @@ store_temp<Array<felt252>>([1]) -> ([11]); // 1350
 store_temp<Array<felt252>>([2]) -> ([12]); // 1351
 function_call<user@test::test_component::EventIsEvent::append_keys_and_data>([10], [11], [12]) -> ([7], [8], [9]); // 1352
 drop<Unit>([9]) -> (); // 1353
-store_temp<Array<felt252>>([7]) -> ([13]); // 1354
-store_temp<Array<felt252>>([8]) -> ([14]); // 1355
+rename<Array<felt252>>([7]) -> ([13]); // 1354
+rename<Array<felt252>>([8]) -> ([14]); // 1355
 jump() { 1392() }; // 1356
 branch_align() -> (); // 1357
 felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>() -> ([15]); // 1358
@@ -1701,8 +1701,8 @@ store_temp<Array<felt252>>([16]) -> ([21]); // 1362
 store_temp<Array<felt252>>([2]) -> ([22]); // 1363
 function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>([20], [21], [22]) -> ([17], [18], [19]); // 1364
 drop<Unit>([19]) -> (); // 1365
-store_temp<Array<felt252>>([17]) -> ([13]); // 1366
-store_temp<Array<felt252>>([18]) -> ([14]); // 1367
+rename<Array<felt252>>([17]) -> ([13]); // 1366
+rename<Array<felt252>>([18]) -> ([14]); // 1367
 jump() { 1392() }; // 1368
 branch_align() -> (); // 1369
 felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>() -> ([23]); // 1370
@@ -1713,8 +1713,8 @@ store_temp<Array<felt252>>([24]) -> ([29]); // 1374
 store_temp<Array<felt252>>([2]) -> ([30]); // 1375
 function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>([28], [29], [30]) -> ([25], [26], [27]); // 1376
 drop<Unit>([27]) -> (); // 1377
-store_temp<Array<felt252>>([25]) -> ([13]); // 1378
-store_temp<Array<felt252>>([26]) -> ([14]); // 1379
+rename<Array<felt252>>([25]) -> ([13]); // 1378
+rename<Array<felt252>>([26]) -> ([14]); // 1379
 jump() { 1392() }; // 1380
 branch_align() -> (); // 1381
 felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124>() -> ([31]); // 1382
@@ -1725,8 +1725,8 @@ store_temp<Array<felt252>>([32]) -> ([37]); // 1386
 store_temp<Array<felt252>>([2]) -> ([38]); // 1387
 function_call<user@test::OutOfScopeEventIsEvent::append_keys_and_data>([36], [37], [38]) -> ([33], [34], [35]); // 1388
 drop<Unit>([35]) -> (); // 1389
-store_temp<Array<felt252>>([33]) -> ([13]); // 1390
-store_temp<Array<felt252>>([34]) -> ([14]); // 1391
+rename<Array<felt252>>([33]) -> ([13]); // 1390
+rename<Array<felt252>>([34]) -> ([14]); // 1391
 struct_construct<Unit>() -> ([39]); // 1392
 rename<Array<felt252>>([13]) -> ([40]); // 1393
 rename<Array<felt252>>([14]) -> ([41]); // 1394

@@ -508,12 +508,12 @@ libfunc u128_overflowing_sub = u128_overflowing_sub;
 libfunc enum_match<test::my_contract::Event> = enum_match<test::my_contract::Event>;
 libfunc felt252_const<1190150164469695256489056864806728873972977054475874954637603409982778368090> = felt252_const<1190150164469695256489056864806728873972977054475874954637603409982778368090>;
 libfunc function_call<user@test::erc20::EventIsEvent::append_keys_and_data> = function_call<user@test::erc20::EventIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc enum_match<test::erc20::Event> = enum_match<test::erc20::Event>;
 libfunc felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697> = felt252_const<271746229759260285552388728919865295615886751538523744128730118297934206697>;
 libfunc function_call<user@test::erc20::TransferEventIsEvent::append_keys_and_data> = function_call<user@test::erc20::TransferEventIsEvent::append_keys_and_data>;
 libfunc felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999> = felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>;
 libfunc function_call<user@test::erc20::ApprovalEventIsEvent::append_keys_and_data> = function_call<user@test::erc20::ApprovalEventIsEvent::append_keys_and_data>;
-libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc dup<test::erc20::TransferEvent> = dup<test::erc20::TransferEvent>;
 libfunc struct_deconstruct<test::erc20::TransferEvent> = struct_deconstruct<test::erc20::TransferEvent>;
 libfunc function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize> = function_call<user@core::starknet::contract_address::ContractAddressSerde::serialize>;
@@ -5224,8 +5224,8 @@ store_temp<Array<felt252>>([2]) -> ([11]); // 4699
 function_call<user@test::erc20::EventIsEvent::append_keys_and_data>([9], [10], [11]) -> ([6], [7], [8]); // 4700
 drop<Unit>([8]) -> (); // 4701
 struct_construct<Unit>() -> ([12]); // 4702
-store_temp<Array<felt252>>([6]) -> ([13]); // 4703
-store_temp<Array<felt252>>([7]) -> ([14]); // 4704
+rename<Array<felt252>>([6]) -> ([13]); // 4703
+rename<Array<felt252>>([7]) -> ([14]); // 4704
 store_temp<Unit>([12]) -> ([15]); // 4705
 return([13], [14], [15]); // 4706
 enum_match<test::erc20::Event>([0]) { fallthrough([3]) 4720([4]) }; // 4707
@@ -5238,8 +5238,8 @@ store_temp<Array<felt252>>([6]) -> ([11]); // 4713
 store_temp<Array<felt252>>([2]) -> ([12]); // 4714
 function_call<user@test::erc20::TransferEventIsEvent::append_keys_and_data>([10], [11], [12]) -> ([7], [8], [9]); // 4715
 drop<Unit>([9]) -> (); // 4716
-store_temp<Array<felt252>>([7]) -> ([13]); // 4717
-store_temp<Array<felt252>>([8]) -> ([14]); // 4718
+rename<Array<felt252>>([7]) -> ([13]); // 4717
+rename<Array<felt252>>([8]) -> ([14]); // 4718
 jump() { 4731() }; // 4719
 branch_align() -> (); // 4720
 felt252_const<544914742286571513055574265148471203182105283038408585630116262969508767999>() -> ([15]); // 4721
@@ -5250,8 +5250,8 @@ store_temp<Array<felt252>>([16]) -> ([21]); // 4725
 store_temp<Array<felt252>>([2]) -> ([22]); // 4726
 function_call<user@test::erc20::ApprovalEventIsEvent::append_keys_and_data>([20], [21], [22]) -> ([17], [18], [19]); // 4727
 drop<Unit>([19]) -> (); // 4728
-store_temp<Array<felt252>>([17]) -> ([13]); // 4729
-store_temp<Array<felt252>>([18]) -> ([14]); // 4730
+rename<Array<felt252>>([17]) -> ([13]); // 4729
+rename<Array<felt252>>([18]) -> ([14]); // 4730
 struct_construct<Unit>() -> ([23]); // 4731
 rename<Array<felt252>>([13]) -> ([24]); // 4732
 rename<Array<felt252>>([14]) -> ([25]); // 4733
@@ -5322,7 +5322,7 @@ store_temp<Array<felt252>>([1]) -> ([9]); // 4797
 function_call<user@core::Felt252Serde::serialize>([8], [9]) -> ([6], [7]); // 4798
 drop<Unit>([7]) -> (); // 4799
 struct_construct<Unit>() -> ([10]); // 4800
-store_temp<Array<felt252>>([6]) -> ([11]); // 4801
+rename<Array<felt252>>([6]) -> ([11]); // 4801
 store_temp<Unit>([10]) -> ([12]); // 4802
 return([11], [12]); // 4803
 

@@ -253,12 +253,12 @@ libfunc enum_init<test::counter_contract::Event, 0> = enum_init<test::counter_co
 libfunc enum_match<test::counter_contract::Event> = enum_match<test::counter_contract::Event>;
 libfunc felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824> = felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>;
 libfunc function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data> = function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140> = felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>;
 libfunc function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data> = function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>;
 libfunc felt252_const<20679572143145055578227390170220963587562133719472661821696905634408685712> = felt252_const<20679572143145055578227390170220963587562133719472661821696905634408685712>;
 libfunc store_temp<test::upgradable::Event> = store_temp<test::upgradable::Event>;
 libfunc function_call<user@test::upgradable::EventIsEvent::append_keys_and_data> = function_call<user@test::upgradable::EventIsEvent::append_keys_and_data>;
-libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc store_temp<Unit> = store_temp<Unit>;
 libfunc enum_init<test::counter_contract::Event, 1> = enum_init<test::counter_contract::Event, 1>;
 libfunc felt252_const<30828113188794245257250221355944970489240709081949230> = felt252_const<30828113188794245257250221355944970489240709081949230>;
@@ -1664,8 +1664,8 @@ store_temp<Array<felt252>>([7]) -> ([12]); // 1355
 store_temp<Array<felt252>>([2]) -> ([13]); // 1356
 function_call<user@test::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>([11], [12], [13]) -> ([8], [9], [10]); // 1357
 drop<Unit>([10]) -> (); // 1358
-store_temp<Array<felt252>>([8]) -> ([14]); // 1359
-store_temp<Array<felt252>>([9]) -> ([15]); // 1360
+rename<Array<felt252>>([8]) -> ([14]); // 1359
+rename<Array<felt252>>([9]) -> ([15]); // 1360
 jump() { 1385() }; // 1361
 branch_align() -> (); // 1362
 felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>() -> ([16]); // 1363
@@ -1676,8 +1676,8 @@ store_temp<Array<felt252>>([17]) -> ([22]); // 1367
 store_temp<Array<felt252>>([2]) -> ([23]); // 1368
 function_call<user@test::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>([21], [22], [23]) -> ([18], [19], [20]); // 1369
 drop<Unit>([20]) -> (); // 1370
-store_temp<Array<felt252>>([18]) -> ([14]); // 1371
-store_temp<Array<felt252>>([19]) -> ([15]); // 1372
+rename<Array<felt252>>([18]) -> ([14]); // 1371
+rename<Array<felt252>>([19]) -> ([15]); // 1372
 jump() { 1385() }; // 1373
 branch_align() -> (); // 1374
 felt252_const<20679572143145055578227390170220963587562133719472661821696905634408685712>() -> ([24]); // 1375
@@ -1688,8 +1688,8 @@ store_temp<Array<felt252>>([25]) -> ([30]); // 1379
 store_temp<Array<felt252>>([2]) -> ([31]); // 1380
 function_call<user@test::upgradable::EventIsEvent::append_keys_and_data>([29], [30], [31]) -> ([26], [27], [28]); // 1381
 drop<Unit>([28]) -> (); // 1382
-store_temp<Array<felt252>>([26]) -> ([14]); // 1383
-store_temp<Array<felt252>>([27]) -> ([15]); // 1384
+rename<Array<felt252>>([26]) -> ([14]); // 1383
+rename<Array<felt252>>([27]) -> ([15]); // 1384
 struct_construct<Unit>() -> ([32]); // 1385
 rename<Array<felt252>>([14]) -> ([33]); // 1386
 rename<Array<felt252>>([15]) -> ([34]); // 1387
@@ -1848,8 +1848,8 @@ store_temp<Array<felt252>>([2]) -> ([11]); // 1539
 function_call<user@test::upgradable::ContractUpgradedIsEvent::append_keys_and_data>([9], [10], [11]) -> ([6], [7], [8]); // 1540
 drop<Unit>([8]) -> (); // 1541
 struct_construct<Unit>() -> ([12]); // 1542
-store_temp<Array<felt252>>([6]) -> ([13]); // 1543
-store_temp<Array<felt252>>([7]) -> ([14]); // 1544
+rename<Array<felt252>>([6]) -> ([13]); // 1543
+rename<Array<felt252>>([7]) -> ([14]); // 1544
 store_temp<Unit>([12]) -> ([15]); // 1545
 return([13], [14], [15]); // 1546
 enum_match<core::result::Result::<(), core::array::Array::<core::felt252>>>([0]) { fallthrough([2]) 1554([3]) }; // 1547
@@ -2017,7 +2017,7 @@ store_temp<Array<felt252>>([1]) -> ([9]); // 1708
 function_call<user@core::Felt252Serde::serialize>([8], [9]) -> ([6], [7]); // 1709
 drop<Unit>([7]) -> (); // 1710
 struct_construct<Unit>() -> ([10]); // 1711
-store_temp<Array<felt252>>([6]) -> ([11]); // 1712
+rename<Array<felt252>>([6]) -> ([11]); // 1712
 store_temp<Unit>([10]) -> ([12]); // 1713
 return([11], [12]); // 1714
 rename<felt252>([0]) -> ([2]); // 1715

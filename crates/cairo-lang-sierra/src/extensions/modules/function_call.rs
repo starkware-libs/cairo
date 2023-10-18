@@ -1,6 +1,6 @@
 use crate::extensions::lib_func::{
-    LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc, SignatureSpecializationContext,
-    SpecializationContext,
+    DeferredOutputKind, LibfuncSignature, OutputVarInfo, SignatureBasedConcreteLibfunc,
+    SignatureSpecializationContext, SpecializationContext,
 };
 use crate::extensions::{NamedLibfunc, OutputVarReferenceInfo, SpecializationError};
 use crate::program::{Function, GenericArg};
@@ -27,11 +27,17 @@ impl NamedLibfunc for FunctionCallLibfunc {
                         .ret_types
                         .iter()
                         .enumerate()
-                        .map(|(i, ty)| OutputVarInfo {
-                            ty: ty.clone(),
-                            ref_info: OutputVarReferenceInfo::NewTempVar { idx: i },
+                        .map(|(i, ty)| {
+                            Ok(OutputVarInfo {
+                                ty: ty.clone(),
+                                ref_info: if context.get_type_info(ty.clone())?.zero_sized {
+                                    OutputVarReferenceInfo::Deferred(DeferredOutputKind::Generic)
+                                } else {
+                                    OutputVarReferenceInfo::NewTempVar { idx: i }
+                                },
+                            })
                         })
-                        .collect(),
+                        .collect::<Result<Vec<_>, _>>()?,
                     ap_change,
                 ))
             }
