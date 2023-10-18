@@ -281,6 +281,7 @@ libfunc enum_init<cairo_level_tests::contracts::new_syntax_test_contract::counte
 libfunc enum_match<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event> = enum_match<cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::Event>;
 libfunc store_temp<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event> = store_temp<cairo_level_tests::contracts::new_syntax_test_contract::test_component::Event>;
 libfunc function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data>;
+libfunc rename<Array<felt252>> = rename<Array<felt252>>;
 libfunc felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824> = felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>;
 libfunc function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data> = function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>;
 libfunc felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140> = felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>;
@@ -1673,8 +1674,8 @@ store_temp<Array<felt252>>([1]) -> ([1]); // 1341
 store_temp<Array<felt252>>([2]) -> ([2]); // 1342
 function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::test_component::EventIsEvent::append_keys_and_data>([3], [1], [2]) -> ([7], [8], [9]); // 1343
 drop<Unit>([9]) -> (); // 1344
-store_temp<Array<felt252>>([7]) -> ([10]); // 1345
-store_temp<Array<felt252>>([8]) -> ([11]); // 1346
+rename<Array<felt252>>([7]) -> ([10]); // 1345
+rename<Array<felt252>>([8]) -> ([11]); // 1346
 jump() { 1383() }; // 1347
 branch_align() -> (); // 1348
 felt252_const<373502242078911797297509776863854163679541038429883461174855360031674187824>() -> ([12]); // 1349
@@ -1685,8 +1686,8 @@ store_temp<Array<felt252>>([13]) -> ([13]); // 1353
 store_temp<Array<felt252>>([2]) -> ([2]); // 1354
 function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterIncreasedIsEvent::append_keys_and_data>([4], [13], [2]) -> ([14], [15], [16]); // 1355
 drop<Unit>([16]) -> (); // 1356
-store_temp<Array<felt252>>([14]) -> ([10]); // 1357
-store_temp<Array<felt252>>([15]) -> ([11]); // 1358
+rename<Array<felt252>>([14]) -> ([10]); // 1357
+rename<Array<felt252>>([15]) -> ([11]); // 1358
 jump() { 1383() }; // 1359
 branch_align() -> (); // 1360
 felt252_const<364451368385661037075321874576483508309644891427381190745986300576661518140>() -> ([17]); // 1361
@@ -1697,8 +1698,8 @@ store_temp<Array<felt252>>([18]) -> ([18]); // 1365
 store_temp<Array<felt252>>([2]) -> ([2]); // 1366
 function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::counter_contract::CounterDecreasedIsEvent::append_keys_and_data>([5], [18], [2]) -> ([19], [20], [21]); // 1367
 drop<Unit>([21]) -> (); // 1368
-store_temp<Array<felt252>>([19]) -> ([10]); // 1369
-store_temp<Array<felt252>>([20]) -> ([11]); // 1370
+rename<Array<felt252>>([19]) -> ([10]); // 1369
+rename<Array<felt252>>([20]) -> ([11]); // 1370
 jump() { 1383() }; // 1371
 branch_align() -> (); // 1372
 felt252_const<919351712289634246300158463021408865763225970949890991975649277335387851124>() -> ([22]); // 1373
@@ -1709,8 +1710,8 @@ store_temp<Array<felt252>>([23]) -> ([23]); // 1377
 store_temp<Array<felt252>>([2]) -> ([2]); // 1378
 function_call<user@cairo_level_tests::contracts::new_syntax_test_contract::OutOfScopeEventIsEvent::append_keys_and_data>([6], [23], [2]) -> ([24], [25], [26]); // 1379
 drop<Unit>([26]) -> (); // 1380
-store_temp<Array<felt252>>([24]) -> ([10]); // 1381
-store_temp<Array<felt252>>([25]) -> ([11]); // 1382
+rename<Array<felt252>>([24]) -> ([10]); // 1381
+rename<Array<felt252>>([25]) -> ([11]); // 1382
 struct_construct<Unit>() -> ([27]); // 1383
 store_temp<Unit>([27]) -> ([27]); // 1384
 return([10], [11], [27]); // 1385
